@@ -465,6 +465,19 @@ pub struct SetStartBody {
     pub learning_path_topic_id: Option<Uuid>,
 }
 
+pub async fn content_pipeline_reset_path(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path((job_name, learning_path_id)): Path<(String, Uuid)>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    let cleared = content_pipeline::reset_path(&state.pool, &job_name, learning_path_id).await?;
+    let overview = content_pipeline::overview(&state.pool, &job_name).await?;
+    Ok(Json(
+        json!({ "success": true, "data": overview, "cleared": cleared }),
+    ))
+}
+
 pub async fn content_pipeline_set_start(
     State(state): State<AppState>,
     headers: HeaderMap,

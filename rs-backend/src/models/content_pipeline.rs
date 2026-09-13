@@ -489,6 +489,52 @@ pub async fn set_start(
     Ok(())
 }
 
+/// Clears the Telegram channel's record for every lesson in a learning path,
+/// so the channel posts those lessons again. Only the Telegram job has a
+/// resettable record: pre-warm progress is the generated guides themselves.
+///
+/// Today's rows are kept: the channel posts once per language per day, and
+/// removing today's row would let the next run post a second time today.
+/// A lesson that also belongs to another path is reset there too, because
+/// the record is kept per lesson, not per path.
+pub async fn reset_path(
+    pool: &PgPool,
+    job_name: &str,
+    learning_path_id: Uuid,
+) -> Result<u64, AppError> {
+    if !is_known_job(job_name) {
+        return Err(not_found(job_name));
+    }
+    if job_name != "telegram_daily_post" {
+        return Err(AppError::BadRequest(
+            "Only the Telegram channel's progress can be reset; pre-warm progress is the generated guides".into(),
+        ));
+    }
+
+    let exists: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM learning_paths WHERE id = $1)")
+            .bind(learning_path_id)
+            .fetch_one(pool)
+            .await?;
+    if !exists {
+        return Err(AppError::NotFound("Learning path not found".into()));
+    }
+
+    let result = sqlx::query(
+        "DELETE FROM telegram_daily_posts t
+          WHERE t.topic_id IN (
+                  SELECT lpt.topic_id FROM learning_path_topics lpt
+                   WHERE lpt.learning_path_id = $1
+                )
+            AND t.post_date < (now() AT TIME ZONE 'utc')::date",
+    )
+    .bind(learning_path_id)
+    .execute(pool)
+    .await?;
+
+    Ok(result.rows_affected())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -526,6 +572,21 @@ mod tests {
         assert!(is_known_job("telegram_daily_post"));
         assert!(is_known_job("prewarm"));
         assert!(!is_known_job("blog_generation"));
+    }
+
+    #[tokio::test]
+    async fn reset_path_rejects_prewarm_before_touching_the_database() {
+        // A lazily-connecting pool never opens a connection unless queried, so
+        // an Ok here would mean the guard was skipped.
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy("postgres://invalid:invalid@127.0.0.1:1/none")
+            .unwrap();
+        let err = reset_path(&pool, "prewarm", Uuid::nil()).await.unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+        let err = reset_path(&pool, "blog_generation", Uuid::nil())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)));
     }
 
     #[test]

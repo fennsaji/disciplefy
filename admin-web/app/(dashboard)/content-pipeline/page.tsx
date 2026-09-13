@@ -179,6 +179,38 @@ export default function ContentPipelinePage() {
     onError: (e: Error) => toast.error(e.message),
   })
 
+  const resetPath = useMutation({
+    mutationFn: async (path: PathProgress) => {
+      const res = await fetch(`/api/admin/content-pipeline/${job}/paths/${path.id}/reset`, {
+        method: 'POST',
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body?.error?.message ?? body?.error ?? 'Failed to reset progress')
+      return { data: body.data as Overview, cleared: (body.cleared as number) ?? 0, path }
+    },
+    onSuccess: ({ data, cleared, path }) => {
+      queryClient.setQueryData(['content-pipeline', job], data)
+      toast.success(
+        cleared === 0
+          ? `Nothing to reset in “${path.title}” (today's posts are kept)`
+          : `Reset “${path.title}”: ${cleared} sent ${cleared === 1 ? 'post' : 'posts'} cleared`,
+      )
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
+  const confirmResetPath = (path: PathProgress) => {
+    if (
+      !confirm(
+        `Reset progress for “${path.title}”?\n\n` +
+          `The channel will post these lessons again. Today's posts are kept so nothing posts twice today. ` +
+          `A lesson that is also in another path is reset there too.`,
+      )
+    )
+      return
+    resetPath.mutate(path)
+  }
+
   const cronAction = useMutation({
     mutationFn: async (action: 'enable' | 'disable' | 'trigger') => {
       const res = await fetch(`/api/admin/cron/${job}/${action}`, { method: 'POST' })
@@ -532,6 +564,15 @@ export default function ContentPipelinePage() {
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${PATH_STATUS[p.status].className}`}>
                           {PATH_STATUS[p.status].label}
                         </span>
+                        {job === 'telegram_daily_post' && p.done > 0 && (
+                          <button
+                            disabled={resetPath.isPending}
+                            onClick={() => confirmResetPath(p)}
+                            className="rounded-lg border border-red-300 px-2.5 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                          >
+                            Reset
+                          </button>
+                        )}
                         <button
                           disabled={setStart.isPending || p.status === 'done'}
                           onClick={() => confirmStart(`“${p.title}”`, { learning_path_id: p.id })}
