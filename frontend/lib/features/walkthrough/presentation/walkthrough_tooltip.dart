@@ -227,14 +227,15 @@ class _TooltipContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Action buttons
-          Row(
+          // Action buttons. Wrap, not Row: the Malayalam labels are too wide
+          // to sit side by side and overflowed the bubble.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _GotItButton(onTap: onNext, label: gotItLabel),
-              if (videoUrl != null) ...[
-                const SizedBox(width: 8),
+              if (videoUrl != null)
                 _WatchVideoButton(videoUrl: videoUrl!, label: watchVideoLabel),
-              ],
             ],
           ),
         ],

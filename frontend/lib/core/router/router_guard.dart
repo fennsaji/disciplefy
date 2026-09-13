@@ -343,54 +343,14 @@ class RouterGuard {
       // Don't throw - let AuthNotifier handle initialization completion
     }
 
-    // Check Hive storage for guest/local auth
-    try {
-      // Ensure box is open before accessing
-      if (!Hive.isBoxOpen(_hiveBboxName)) {
-        await Hive.openBox(_hiveBboxName);
-      }
-      final box = Hive.box(_hiveBboxName);
-      final userType = box.get(_userTypeKey);
-      final userId = box.get(_userIdKey);
-
-      if (userType != null && userType == 'google') {
-        // SECURITY FIX: Validate session expiration
-        final isExpired = _isSessionExpired();
-        if (isExpired) {
-          Logger.info(
-            'Stored session expired',
-            tag: 'AUTH_SECURITY',
-            context: {
-              'user_type': userType,
-              'user_id': userId,
-              'session_expired': true,
-            },
-          );
-          _clearExpiredSession();
-          return const AuthenticationState(isAuthenticated: false);
-        }
-
-        Logger.info(
-          'User authenticated via local storage',
-          tag: 'AUTH',
-          context: {
-            'user_type': userType,
-            'user_id': userId,
-          },
-        );
-        return AuthenticationState(
-          isAuthenticated: true,
-          userType: userType,
-          userId: userId,
-        );
-      }
-    } catch (e) {
-      Logger.error(
-        'Failed to read authentication from local storage',
-        tag: 'ROUTER',
-        error: e,
-      );
-    }
+    // No Supabase user and no session waiting to be restored means signed out.
+    // Hive's user_type is deliberately NOT consulted here: it outlives a
+    // Supabase sign-out whenever the session ends outside the ordered logout
+    // (a refresh the server refused, Supabase's own background refresh), and
+    // trusting it left users on Home while every screen reading the real
+    // session showed them signed out ("Welcome back, User" + "Sign In").
+    // Clear the leftovers so the stale record cannot resurface.
+    _clearExpiredSession();
 
     Logger.info('No authentication found', tag: 'AUTH');
     return const AuthenticationState(isAuthenticated: false);

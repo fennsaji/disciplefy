@@ -277,7 +277,7 @@ void main() {
     });
 
     testWidgets(
-        'should display the terms acceptance checkbox for a first-run user',
+        'should show the implicit terms notice, with no checkbox, for a first-run user',
         (tester) async {
       // Arrange — no acceptance recorded yet.
       await tester
@@ -291,13 +291,12 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Assert — the gate (not the static legal links) is shown, and the
-      // sentence includes the Terms of Use / Privacy Policy legal links.
-      expect(find.byType(TermsAcceptanceCheckbox), findsOneWidget);
-      expect(find.byType(LegalLinksLine), findsNothing);
+      // Assert
+      expect(find.byType(LegalLinksLine), findsOneWidget);
+      expect(find.byType(Checkbox), findsNothing);
     });
 
-    testWidgets('should display the static legal links for a returning user',
+    testWidgets('should show the same terms notice for a returning user',
         (tester) async {
       // Arrange — user already accepted on a previous visit.
       await tester
@@ -313,7 +312,7 @@ void main() {
 
       // Assert
       expect(find.byType(LegalLinksLine), findsOneWidget);
-      expect(find.byType(TermsAcceptanceCheckbox), findsNothing);
+      expect(find.byType(Checkbox), findsNothing);
     });
 
     testWidgets('should display app logo', (tester) async {

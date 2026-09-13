@@ -2,6 +2,7 @@
 import createMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { locales, defaultLocale } from "./i18n";
+import { downloadRedirectUrl } from "./lib/app-links";
 
 const intlMiddleware = createMiddleware({
   locales,
@@ -25,6 +26,19 @@ export default function middleware(req: NextRequest) {
   // landing pages live. Done before the intl middleware so a locale prefix is
   // never inserted into a link people have already shared.
   if (host.startsWith("go.")) {
+    // /download goes straight to the visitor's store (or the web app on
+    // desktop). Link-preview crawlers still get the page so shares keep their
+    // preview card.
+    const path = req.nextUrl.pathname.replace(/\/+$/, "");
+    if (path === "/download") {
+      const target = downloadRedirectUrl(req.headers.get("user-agent") ?? "");
+      if (target) {
+        const res = NextResponse.redirect(target, 302);
+        res.headers.set("Cache-Control", "no-store");
+        res.headers.set("Vary", "User-Agent");
+        return res;
+      }
+    }
     return NextResponse.rewrite(new URL(`/go${req.nextUrl.pathname}`, req.url));
   }
 

@@ -55,6 +55,28 @@ export function storeUrlFor(platform: StorePlatform): string | null {
 }
 
 /**
+ * Crawlers that fetch a shared link to build its preview card. They must get
+ * the landing page (title, description, OG image), not a store redirect.
+ */
+export function isLinkPreviewBot(userAgent: string): boolean {
+  return /WhatsApp|facebookexternalhit|Facebot|meta-externalagent|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Pinterest|redditbot|Googlebot|bingbot|Applebot|Embedly|vkShare|Viber/i.test(
+    userAgent,
+  );
+}
+
+/**
+ * Where go.disciplefy.in/download sends a visitor: the store for their phone,
+ * otherwise the web app. Null for link-preview crawlers, which get the page.
+ *
+ * iPadOS in desktop mode sends a Macintosh user agent and cannot be told
+ * apart from a Mac on the server, so it lands on the web app.
+ */
+export function downloadRedirectUrl(userAgent: string): string | null {
+  if (isLinkPreviewBot(userAgent)) return null;
+  return storeUrlFor(platformFromUserAgent(userAgent)) ?? WEB_APP_URL;
+}
+
+/**
  * Android intent URL that opens the app, or falls back to Play when it is not
  * installed.
  *

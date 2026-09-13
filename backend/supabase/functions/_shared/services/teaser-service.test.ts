@@ -109,7 +109,7 @@ Deno.test('losing the insert race returns the winner\'s wording, not this call\'
   const llmService = {
     // deno-lint-ignore no-explicit-any
     generateDailyTeaser: () => Promise.resolve({
-      content: JSON.stringify({ hook: 'Loser headline', body: 'Loser body' }),
+      content: JSON.stringify({ hook: 'Loser headline', body: 'Loser body.' }),
       model: 'model-b',
     }),
   }

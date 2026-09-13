@@ -1,6 +1,6 @@
 // backend/supabase/functions/fellowship-posts/daily-teaser.ts
 /**
- * POST /fellowship-posts/daily-teaser  { fellowship_id, topic_title, path_title, language, summary, verse?, question?, topic_id? }
+ * POST /fellowship-posts/daily-teaser  { fellowship_id, topic_title, path_title, language, summary, verse?, topic_id? }
  * Internal only (X-Internal-Api-Key). Called by the rs-backend cron before it posts a
  * fellowship's daily study — returns a short teaser so the caller can lead with it instead
  * of its own template. Any failure returns 503 so the caller falls back to its template.
@@ -23,7 +23,6 @@ interface DailyTeaserRequest {
   language: 'en' | 'hi' | 'ml'
   summary: string
   verse?: string
-  question?: string
   topic_id?: string
 }
 
@@ -45,7 +44,6 @@ function validate(body: unknown): DailyTeaserRequest {
   if (typeof b.language !== 'string' || !LANGUAGES.has(b.language)) throw new AppError('VALIDATION_ERROR', 'language must be en, hi or ml', 400)
   if (typeof b.summary !== 'string' || !b.summary.trim()) throw new AppError('VALIDATION_ERROR', 'summary is required', 400)
   if (b.verse !== undefined && typeof b.verse !== 'string') throw new AppError('VALIDATION_ERROR', 'verse must be a string', 400)
-  if (b.question !== undefined && typeof b.question !== 'string') throw new AppError('VALIDATION_ERROR', 'question must be a string', 400)
   return {
     fellowship_id: b.fellowship_id,
     topic_title: b.topic_title.trim(),
@@ -53,7 +51,6 @@ function validate(body: unknown): DailyTeaserRequest {
     language: b.language as 'en' | 'hi' | 'ml',
     summary: b.summary.trim(),
     verse: b.verse?.trim() || undefined,
-    question: b.question?.trim() || undefined,
     topic_id: typeof b.topic_id === 'string' && b.topic_id.trim() ? b.topic_id.trim() : undefined,
   }
 }
@@ -82,7 +79,6 @@ export async function handleDailyTeaser(req: Request, services: ServiceContainer
       language: input.language,
       summary: input.summary,
       verse: input.verse,
-      question: input.question,
     }, input.fellowship_id)
 
     console.log('[fellowship-posts/daily-teaser] served', {

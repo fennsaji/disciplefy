@@ -18,12 +18,22 @@ class StudyGuideChip extends StatefulWidget {
   final String? inputValue;
   final String? language;
 
+  /// When set, renders a card-style call to action: the guide [title] first,
+  /// with this fixed label under it, instead of the quiet outlined row.
+  final String? actionLabel;
+
+  /// Tint for the call-to-action style. Defaults to the theme primary; the
+  /// daily post passes its gold accent so the button belongs to the card.
+  final Color? accent;
+
   const StudyGuideChip({
     this.studyGuideId,
     required this.title,
     this.inputType,
     this.inputValue,
     this.language,
+    this.actionLabel,
+    this.accent,
     super.key,
   });
 
@@ -82,6 +92,8 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.actionLabel != null) return _buildActionButton(context);
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = context.appPrimary;
     final borderColor = accent.withAlpha(isDark ? 55 : 45);
@@ -130,6 +142,99 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
               color: accent.withAlpha(160),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = widget.accent ?? context.appPrimary;
+    // Light gold needs dark glyphs on it; the deeper light-theme accent needs
+    // white.
+    final onAccent = isDark ? const Color(0xFF1C1917) : Colors.white;
+    final surface =
+        isDark ? Colors.white.withAlpha(12) : Colors.white.withAlpha(210);
+    final radius = BorderRadius.circular(14);
+
+    return Material(
+      color: surface,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: _loading ? null : _navigate,
+        borderRadius: radius,
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: accent.withAlpha(isDark ? 90 : 70)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withAlpha(isDark ? 38 : 26),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                alignment: Alignment.center,
+                child: _loading
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: accent,
+                        ),
+                      )
+                    : Icon(Icons.menu_book_rounded, size: 22, color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        color: context.appTextPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      widget.actionLabel!,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                width: 34,
+                height: 34,
+                decoration:
+                    BoxDecoration(color: accent, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Icon(Icons.arrow_forward_rounded,
+                    size: 18, color: onAccent),
+              ),
+            ],
+          ),
         ),
       ),
     );

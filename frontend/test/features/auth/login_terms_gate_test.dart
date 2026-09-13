@@ -1,6 +1,7 @@
-// Verifies the Apple Guideline 1.2 terms gate: sign-in is blocked until the
-// user explicitly accepts the Terms of Use and Privacy Policy, and the
-// acceptance is persisted so returning users are not asked again.
+// Verifies implicit terms consent on the login screen: there is no checkbox,
+// the Terms of Use and Privacy Policy notice is always shown, sign-in starts
+// on the first tap, and acceptance is recorded at that tap so it survives the
+// OAuth round-trip and satisfies the router's terms gate.
 
 import 'dart:io';
 
@@ -69,58 +70,27 @@ void main() {
         ),
       );
 
-  testWidgets('blocks sign-in until the terms checkbox is ticked',
+  testWidgets('shows the terms notice and no checkbox on first run',
       (tester) async {
-    // Default 800x600 test surface clips the sign-in buttons below the
-    // fold once the gate widget adds height; widen it so tap() can
-    // hit-test them.
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
 
-    // The gate is visible on a device that has never accepted.
-    expect(find.byType(TermsAcceptanceCheckbox), findsOneWidget);
-
-    // Buttons stay tappable even before acceptance — tapping must not
-    // start sign-in, and must surface a toast instead of doing nothing.
-    final buttons =
-        tester.widgetList<OutlinedButton>(find.byType(OutlinedButton)).toList();
-    expect(buttons, isNotEmpty);
-    for (final button in buttons) {
-      expect(button.onPressed, isNotNull,
-          reason:
-              'sign-in buttons must stay tappable before acceptance so a tap gets a response');
-    }
-
-    await tester.tap(find.byType(OutlinedButton).first);
-    await tester.pump();
-
-    verifyNever(mockAuthBloc.add(any));
-    expect(find.byType(SnackBar), findsOneWidget);
-
-    // Tick the box.
-    await tester.tap(find.byType(Checkbox));
-    await tester.pumpAndSettle();
-
-    final enabled =
-        tester.widgetList<OutlinedButton>(find.byType(OutlinedButton)).toList();
-    for (final button in enabled) {
-      expect(button.onPressed, isNotNull,
-          reason: 'sign-in buttons must remain enabled once accepted');
-    }
+    expect(find.byType(Checkbox), findsNothing);
+    expect(find.byType(LegalLinksLine), findsOneWidget);
   });
 
-  testWidgets('persists acceptance when a sign-in button is tapped',
+  testWidgets(
+      'first sign-in tap starts sign-in and records acceptance, no toast',
       (tester) async {
-    // Default 800x600 test surface clips the sign-in buttons below the
-    // fold once the gate widget adds height; widen it so tap() can
-    // hit-test them.
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(Checkbox));
-    await tester.pumpAndSettle();
+    expect(
+      Hive.box('app_settings').get('terms_accepted', defaultValue: false),
+      isFalse,
+    );
 
     // Tap the Google button (first sign-in button on the screen).
     // _handleGoogleSignIn fires a real (un-awaited) Hive write; running the
@@ -129,16 +99,17 @@ void main() {
     await tester.runAsync(() => tester.tap(find.byType(OutlinedButton).first));
     await tester.pump();
 
+    verify(mockAuthBloc.add(const GoogleSignInRequested())).called(1);
+    expect(find.byType(SnackBar), findsNothing);
     expect(
       Hive.box('app_settings').get('terms_accepted', defaultValue: false),
       isTrue,
       reason: 'acceptance must persist at button-tap time so it survives the '
           'OAuth round-trip to the provider and back',
     );
-    verify(mockAuthBloc.add(const GoogleSignInRequested())).called(1);
   });
 
-  testWidgets('skips the checkbox for a user who already accepted',
+  testWidgets('a returning user sees the same notice and enabled buttons',
       (tester) async {
     // Real disk I/O must run via runAsync — inside the FakeAsync zone that
     // wraps a testWidgets body, an awaited real (non-timer) Future can
@@ -146,21 +117,18 @@ void main() {
     await tester
         .runAsync(() => Hive.box('app_settings').put('terms_accepted', true));
 
-    // Default 800x600 test surface clips the sign-in buttons below the
-    // fold once the gate widget adds height; widen it so tap() can
-    // hit-test them.
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
 
-    expect(find.byType(TermsAcceptanceCheckbox), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
     expect(find.byType(LegalLinksLine), findsOneWidget);
 
     final buttons =
         tester.widgetList<OutlinedButton>(find.byType(OutlinedButton)).toList();
+    expect(buttons, isNotEmpty);
     for (final button in buttons) {
-      expect(button.onPressed, isNotNull,
-          reason: 'a returning user must not be re-gated');
+      expect(button.onPressed, isNotNull);
     }
   });
 }

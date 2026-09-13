@@ -402,16 +402,12 @@ class AppTranslations {
           'Memorize Scripture with spaced repetition',
       'privacy_policy':
           'By continuing, you agree to our Terms of Service and Privacy Policy',
-      'terms_agree': 'I agree to the ',
       'terms_of_use': 'Terms of Use',
       'terms_and': ' and ',
       'privacy_policy_link': 'Privacy Policy',
-      'terms_suffix': '',
       'terms_notice': 'By continuing, you agree to our ',
       'terms_notice_suffix': '',
       'continue_with_email': 'Continue with Email',
-      'accept_terms_toast':
-          'Please agree to the Terms of Use and Privacy Policy to continue',
     },
     'email_auth': {
       'title': 'Email Sign In',
@@ -2577,16 +2573,12 @@ class AppTranslations {
       'feature_memory_verse_subtitle': 'स्पेस्ड रिपिटीशन से वचन याद करें',
       'privacy_policy':
           'जारी रखते हुए, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
-      'terms_agree': 'मैं ',
       'terms_of_use': 'सेवा की शर्तों',
       'terms_and': ' और ',
       'privacy_policy_link': 'गोपनीयता नीति',
-      'terms_suffix': ' से सहमत हूँ',
       'terms_notice': 'जारी रखते हुए, आप हमारी ',
       'terms_notice_suffix': ' से सहमत हैं',
       'continue_with_email': 'ईमेल से जारी रखें',
-      'accept_terms_toast':
-          'जारी रखने के लिए कृपया सेवा की शर्तों और गोपनीयता नीति से सहमत हों',
     },
     'email_auth': {
       'title': 'ईमेल से साइन इन',
@@ -4772,16 +4764,12 @@ class AppTranslations {
           'സ്‌പേസ്ഡ് റിപ്പീറ്റേഷൻ ഉപയോഗിച്ച് വചനങ്ങൾ മനഃപാഠമാക്കുക',
       'privacy_policy':
           'തുടരുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ സേവന നിബന്ധനകളും സ്വകാര്യതാ നീതിയുമായി സംമതിക്കുന്നു',
-      'terms_agree': 'ഞാൻ ',
       'terms_of_use': 'സേവന നിബന്ധനകളും',
       'terms_and': ' ',
       'privacy_policy_link': 'സ്വകാര്യതാ നയവും',
-      'terms_suffix': ' അംഗീകരിക്കുന്നു',
       'terms_notice': 'തുടരുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ ',
       'terms_notice_suffix': ' അംഗീകരിക്കുന്നു',
       'continue_with_email': 'ഇമെയിൽ ഉപയോഗിച്ച് തുടരുക',
-      'accept_terms_toast':
-          'തുടരുന്നതിന് ദയവായി സേവന നിബന്ധനകളും സ്വകാര്യതാ നയവും അംഗീകരിക്കുക',
     },
     'email_auth': {
       'title': 'ഇമെയിൽ സൈൻ ഇൻ',

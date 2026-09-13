@@ -22,10 +22,11 @@ Color dailyPostAccent(BuildContext context) =>
 /// - `📖` → small eyebrow with the lesson title
 /// - `✨` → the headline hook (largest text, emoji stripped)
 /// - `✝️` → verse reference in a pill
-/// - `💬` → semibold reflection prompt
 /// - anything else → plain body text
 ///
-/// Older daily posts without a `✨` line simply read as body text.
+/// Older daily posts without a `✨` line simply read as body text. Older posts
+/// also carried a `💬` reflection question; it is hidden — the question lives
+/// in the study guide the card links to.
 class DailyPostBody extends StatelessWidget {
   /// Raw post content (`FellowshipPostEntity.content`).
   final String content;
@@ -41,7 +42,9 @@ class DailyPostBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lines = content.split('\n').where((l) => l.trim().isNotEmpty);
+    final lines = content
+        .split('\n')
+        .where((l) => l.trim().isNotEmpty && !l.trimLeft().startsWith('💬'));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -137,14 +140,27 @@ class DailyPostCard extends StatelessWidget {
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.only(left: 44),
-            child: Text(
-              l10n.postTypeDaily,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: accent,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  l10n.postTypeDaily,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: accent,
+                  ),
+                ),
+                Text(
+                  '  ·  ',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+                PostTimestamp(createdAt: post.createdAt),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -152,13 +168,17 @@ class DailyPostCard extends StatelessWidget {
           // ── Body ───────────────────────────────────────────────────
           DailyPostBody(content: post.content, accent: accent),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+          // Labelled call to action in the card's own gold: the guide is what
+          // the post is for, and a plain outlined row read as decoration.
           StudyGuideChip(
             studyGuideId: post.studyGuideId,
             title: post.guideTitle ?? post.topicTitle ?? l10n.openFullStudy,
             inputType: 'topic',
             inputValue: post.topicTitle,
             language: post.guideLanguage,
+            actionLabel: l10n.openStudyGuide,
+            accent: accent,
           ),
           const SizedBox(height: 12),
 
@@ -231,20 +251,6 @@ class _DailyLine extends StatelessWidget {
               color: context.appTextPrimary,
               height: 1.5,
             ),
-          ),
-        ),
-      );
-    }
-    if (line.startsWith('💬')) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(
-          line,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: context.appTextPrimary,
           ),
         ),
       );

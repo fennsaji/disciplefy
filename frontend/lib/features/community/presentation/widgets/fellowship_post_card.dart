@@ -226,7 +226,7 @@ class FellowshipPostCard extends StatelessWidget {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          _PostTimestamp(createdAt: post.createdAt),
+                          PostTimestamp(createdAt: post.createdAt),
                           if (post.postType != 'general') ...[
                             Padding(
                               padding:
@@ -467,10 +467,11 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
 // Relative timestamp
 // ---------------------------------------------------------------------------
 
-class _PostTimestamp extends StatelessWidget {
+/// Relative time for a post ("2h ago"), or its date once it is a week old.
+class PostTimestamp extends StatelessWidget {
   final String createdAt;
 
-  const _PostTimestamp({required this.createdAt});
+  const PostTimestamp({required this.createdAt, super.key});
 
   String _format(String iso) {
     final dt = DateTime.tryParse(iso);
@@ -912,58 +913,63 @@ class FellowshipPostFooter extends StatelessWidget {
         FellowshipReactionButton(post: post, accentColor: accentColor),
         const SizedBox(width: 8),
         if (onCommentTap != null)
-          // Flexible: "reply" runs noticeably longer in Malayalam/Hindi than
-          // in English, and next to the reaction pill it could overflow the
-          // row by a few pixels. Flexible lets the pill's own text ellipsize
-          // instead.
-          Flexible(
-            // Sized to the 44px minimum touch target; the pill itself used to
-            // be ~29px tall and was easy to miss.
-            child: Material(
-              color: context.appSurfaceVariant,
-              borderRadius: BorderRadius.circular(22),
-              child: InkWell(
-                onTap: onCommentTap,
+          // Expanded + Align: the pill still shrinks (and its text ellipsizes)
+          // when "reply" runs long in Malayalam/Hindi, but all leftover width
+          // goes after it, so the share button sits at the right edge. A
+          // Flexible followed by a Spacer split that width in half, which on a
+          // wide screen parked the share button mid-card.
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              // Sized to the 44px minimum touch target; the pill itself used
+              // to be ~29px tall and was easy to miss.
+              child: Material(
+                color: context.appSurfaceVariant,
                 borderRadius: BorderRadius.circular(22),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline_rounded,
-                          size: 18,
-                          color: context.appTextSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            // Always the label, with the count appended when
-                            // there is one: a bare number on one card and a
-                            // word on another read as two different buttons.
-                            post.commentCount > 0
-                                ? '${l10n.replyAction} ${post.commentCount}'
-                                : l10n.replyAction,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: context.appTextSecondary,
+                child: InkWell(
+                  onTap: onCommentTap,
+                  borderRadius: BorderRadius.circular(22),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 18,
+                            color: context.appTextSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              // Always the label, with the count appended when
+                              // there is one: a bare number on one card and a
+                              // word on another read as two different buttons.
+                              post.commentCount > 0
+                                  ? '${l10n.replyAction} ${post.commentCount}'
+                                  : l10n.replyAction,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: context.appTextSecondary,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        const Spacer(),
+          )
+        else
+          const Spacer(),
         if (onShareTap != null)
           IconButton(
             onPressed: onShareTap,

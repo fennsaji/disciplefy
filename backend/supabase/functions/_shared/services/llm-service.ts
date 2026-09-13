@@ -735,14 +735,14 @@ Return ONLY the numeric score, nothing else.`
       const model = teaserModelForLanguage(language)
       const result = await this.getAnthropicClient().call({
         systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
-        temperature: 0.7, maxTokens: 220, model,
+        temperature: 0.7, maxTokens: 500, model,
       })
       return { content: result.content, usage: result.usage, model, provider }
     }
     const model = 'gpt-4o-mini-2024-07-18'
     const result = await this.getOpenAIClient().call({
       systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
-      temperature: 0.7, maxTokens: 220,
+      temperature: 0.7, maxTokens: 500,
     })
     return { content: result.content, usage: result.usage, model, provider }
   }
