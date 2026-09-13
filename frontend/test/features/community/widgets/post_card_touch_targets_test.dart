@@ -176,4 +176,34 @@ void main() {
           reason: 'the reply pill stays compact on the left');
     });
   }
+
+  testWidgets('a daily post shows when it was posted', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: FellowshipPostCard(
+          post: const FellowshipPostEntity(
+            id: 'p',
+            fellowshipId: 'f',
+            authorUserId: 'a',
+            content: '📖 Who is Jesus Christ?\n\n✨ A hook.\n\nA body.',
+            postType: 'daily',
+            reactionCounts: {},
+            isDeleted: false,
+            createdAt: '2026-03-21T10:00:00Z',
+            authorDisplayName: 'Discipler',
+            commentCount: 0,
+          ),
+          fellowshipId: 'f',
+          onCommentTap: () {},
+          onShareTap: () {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PostTimestamp), findsOneWidget);
+    expect(find.text('21/3/2026'), findsOneWidget);
+  });
 }

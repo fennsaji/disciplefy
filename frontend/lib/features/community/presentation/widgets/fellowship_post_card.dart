@@ -226,7 +226,7 @@ class FellowshipPostCard extends StatelessWidget {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          _PostTimestamp(createdAt: post.createdAt),
+                          PostTimestamp(createdAt: post.createdAt),
                           if (post.postType != 'general') ...[
                             Padding(
                               padding:
@@ -467,10 +467,11 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
 // Relative timestamp
 // ---------------------------------------------------------------------------
 
-class _PostTimestamp extends StatelessWidget {
+/// Relative time for a post ("2h ago"), or its date once it is a week old.
+class PostTimestamp extends StatelessWidget {
   final String createdAt;
 
-  const _PostTimestamp({required this.createdAt});
+  const PostTimestamp({required this.createdAt, super.key});
 
   String _format(String iso) {
     final dt = DateTime.tryParse(iso);

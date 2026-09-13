@@ -140,14 +140,27 @@ class DailyPostCard extends StatelessWidget {
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.only(left: 44),
-            child: Text(
-              l10n.postTypeDaily,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: accent,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  l10n.postTypeDaily,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: accent,
+                  ),
+                ),
+                Text(
+                  '  ·  ',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+                PostTimestamp(createdAt: post.createdAt),
+              ],
             ),
           ),
           const SizedBox(height: 12),
