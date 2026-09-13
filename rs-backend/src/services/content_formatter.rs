@@ -243,6 +243,17 @@ fn first_sentences(text: &str, n: usize) -> String {
     out.trim().to_string()
 }
 
+/// Grounding for the daily teaser: the first few sentences of the summary, so
+/// the teaser can name something specific from the lesson. The post itself
+/// only ever shows the one sentence from [extract_daily_fields].
+pub(crate) fn teaser_grounding(guide: &StudyGuideResult) -> String {
+    guide
+        .sections
+        .get("summary")
+        .map(|s| first_sentences(s, 3))
+        .unwrap_or_default()
+}
+
 /// First sentence of the summary section, the reflection question, and the
 /// first related verse reference — the fields shared by the plain-template
 /// daily post and the teaser request built from the same guide.

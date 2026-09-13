@@ -140,7 +140,8 @@ async fn post_for_fellowship(
     )
     .await?;
 
-    let (summary, _question, verse) = content_formatter::extract_daily_fields(&guide);
+    let (_summary, _question, verse) = content_formatter::extract_daily_fields(&guide);
+    let grounding = content_formatter::teaser_grounding(&guide);
     let teaser = fellowship_teaser::fetch_daily_teaser(
         config,
         http,
@@ -150,7 +151,7 @@ async fn post_for_fellowship(
             topic_title: l.title,
             path_title: l.path_title,
             language: &f.language,
-            summary: &summary,
+            summary: &grounding,
             verse: verse.as_deref(),
         },
     )
