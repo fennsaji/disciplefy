@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart' as material;
 import 'package:google_fonts/google_fonts.dart';
@@ -46,6 +46,72 @@ import '../../../../core/i18n/app_translations.dart';
 import '../../../../core/models/app_language.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../../core/utils/logger.dart';
+
+/// A run of text inside a [PdfTextBlock]; [bold] when it came from `**…**`.
+@visibleForTesting
+class PdfTextRun {
+  final String text;
+  final bool bold;
+  const PdfTextRun(this.text, {this.bold = false});
+}
+
+/// One block of study-guide prose laid out in the PDF: either a sub-heading
+/// line (`**Creation Declares God's Existence**`) or a paragraph whose inline
+/// `**bold**` runs stay bold. The markers themselves are never printed.
+@visibleForTesting
+class PdfTextBlock {
+  final bool isHeading;
+  final List<PdfTextRun> runs;
+  const PdfTextBlock({required this.isHeading, required this.runs});
+
+  String get plainText => runs.map((r) => r.text).join();
+}
+
+final _pdfHeadingLine = RegExp(r'^(?:#{1,6}\s*)?\*\*([^*]+)\*\*:?$');
+final _pdfHashHeading = RegExp(r'^#{1,6}\s+(.+)$');
+final _pdfBoldRun = RegExp(r'\*\*([^*]+)\*\*');
+final _pdfItalic = RegExp(r'(?<![*\w])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![*\w])');
+
+String _stripPdfItalic(String s) =>
+    s.replaceAllMapped(_pdfItalic, (m) => m.group(1)!);
+
+/// Splits generated study-guide text into headings and paragraphs, turning
+/// markdown emphasis into bold runs instead of literal asterisks.
+@visibleForTesting
+List<PdfTextBlock> parseStudyGuideText(String text) {
+  final blocks = <PdfTextBlock>[];
+  for (final raw in text.split(RegExp(r'\n+'))) {
+    final line = raw.trim();
+    if (line.isEmpty) continue;
+
+    final heading =
+        _pdfHeadingLine.firstMatch(line) ?? _pdfHashHeading.firstMatch(line);
+    if (heading != null) {
+      final title =
+          _stripPdfItalic(heading.group(1)!.replaceAll('**', '').trim());
+      blocks.add(PdfTextBlock(
+        isHeading: true,
+        runs: [PdfTextRun(title, bold: true)],
+      ));
+      continue;
+    }
+
+    final runs = <PdfTextRun>[];
+    var last = 0;
+    for (final m in _pdfBoldRun.allMatches(line)) {
+      if (m.start > last) {
+        runs.add(PdfTextRun(_stripPdfItalic(line.substring(last, m.start))));
+      }
+      runs.add(PdfTextRun(_stripPdfItalic(m.group(1)!), bold: true));
+      last = m.end;
+    }
+    if (last < line.length) {
+      runs.add(PdfTextRun(_stripPdfItalic(line.substring(last))));
+    }
+    blocks.add(PdfTextBlock(isHeading: false, runs: runs));
+  }
+  return blocks;
+}
 
 /// Service for generating PDF documents from study guides.
 ///
@@ -143,21 +209,7 @@ class StudyGuidePdfService {
         margin: const pw.EdgeInsets.all(40),
         header: (_) => _buildHeader(guide),
         footer: (ctx) => _buildFooter(ctx, guide),
-        build: (_) => [
-          _buildTitleSection(guide),
-          pw.SizedBox(height: 20),
-          ..._buildSection('Summary', guide.summary),
-          if (guide.passage != null && guide.passage!.isNotEmpty)
-            ..._buildSection('Passage', guide.passage!),
-          ..._buildSection('Interpretation', guide.interpretation),
-          ..._buildSection('Historical Context', guide.context),
-          ..._buildListSection('Related Scriptures', guide.relatedVerses),
-          ..._buildNumberedListSection(
-              'Reflection Questions', guide.reflectionQuestions),
-          ..._buildListSection('Prayer Points', guide.prayerPoints),
-          if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty)
-            ..._buildSection('Personal Notes', guide.personalNotes!),
-        ],
+        build: (_) => buildTextPdfContent(guide),
       ),
     );
 
@@ -296,7 +348,8 @@ class StudyGuidePdfService {
       // Split long content into paragraph-level chunks so that smaller images
       // can fill pages more efficiently (avoids large blank gaps when a single
       // tall image doesn't fit in the remaining page space).
-      final chunks = _splitContentForPdf(section.$2, maxChars: 1500);
+      final chunks =
+          _mergeHeadingChunks(_splitContentForPdf(section.$2, maxChars: 500));
       // First chunk gets the section heading + counts as one progress step
       final firstImage = await captureSection(
         _buildFlutterSection(section.$1, chunks.first, effectiveLanguage),
@@ -311,42 +364,33 @@ class StudyGuidePdfService {
       }
     }
 
-    // Related verses
-    if (guide.relatedVerses.isNotEmpty) {
-      final image = await captureSection(
-        _buildFlutterListSection(
-            _getLocalizedTitle('Related Scriptures', effectiveLanguage),
-            guide.relatedVerses,
-            effectiveLanguage),
-      );
-      if (image != null) sectionImages.add(image);
+    // Lists: the heading is captured with the first item, then one image per
+    // item, so a long list fills the page instead of moving as one block.
+    Future<void> captureList(
+        String titleKey, List<String> items, bool numbered) async {
+      if (items.isEmpty) return;
+      final title = _getLocalizedTitle(titleKey, effectiveLanguage);
+      for (var i = 0; i < items.length; i++) {
+        final widget = numbered
+            ? _buildFlutterNumberedListSection(
+                title, [items[i]], effectiveLanguage,
+                showHeading: i == 0, startNumber: i + 1)
+            : _buildFlutterListSection(title, [items[i]], effectiveLanguage,
+                showHeading: i == 0);
+        final image =
+            i == 0 ? await captureSection(widget) : await captureChunk(widget);
+        if (image != null) sectionImages.add(image);
+      }
     }
 
-    // Reflection questions
-    if (guide.reflectionQuestions.isNotEmpty) {
-      final image = await captureSection(
-        _buildFlutterNumberedListSection(
-            _getLocalizedTitle('Reflection Questions', effectiveLanguage),
-            guide.reflectionQuestions,
-            effectiveLanguage),
-      );
-      if (image != null) sectionImages.add(image);
-    }
-
-    // Prayer points
-    if (guide.prayerPoints.isNotEmpty) {
-      final image = await captureSection(
-        _buildFlutterListSection(
-            _getLocalizedTitle('Prayer Points', effectiveLanguage),
-            guide.prayerPoints,
-            effectiveLanguage),
-      );
-      if (image != null) sectionImages.add(image);
-    }
+    await captureList('Related Scriptures', guide.relatedVerses, false);
+    await captureList('Reflection Questions', guide.reflectionQuestions, true);
+    await captureList('Prayer Points', guide.prayerPoints, false);
 
     // Personal notes
     if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty) {
-      final chunks = _splitContentForPdf(guide.personalNotes!, maxChars: 1500);
+      final chunks = _mergeHeadingChunks(
+          _splitContentForPdf(guide.personalNotes!, maxChars: 500));
       final firstImage = await captureSection(
         _buildFlutterSection(
             _getLocalizedTitle('Personal Notes', effectiveLanguage),
@@ -616,18 +660,58 @@ class StudyGuidePdfService {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            content,
-            style: _getFontForLanguage(language)(
-              fontSize: 13,
-              color: Colors.grey[900],
-              height: 1.6,
-            ),
-            textAlign: TextAlign.justify,
-          ),
+          _buildFlutterRichText(content, language),
         ],
       ),
     );
+  }
+
+  /// Flutter rendering of [parseStudyGuideText] blocks for image capture:
+  /// sub-heading lines in bold, inline `**bold**` kept bold, no raw markers.
+  Widget _buildFlutterRichText(String content, String language) {
+    final base = _getFontForLanguage(language)(
+      fontSize: 13,
+      color: Colors.grey[900],
+      height: 1.6,
+    );
+    const bold = TextStyle(fontWeight: FontWeight.bold);
+    final blocks = parseStudyGuideText(content);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final block in blocks)
+          Padding(
+            padding: EdgeInsets.only(top: block.isHeading ? 4 : 0, bottom: 6),
+            child: Text.rich(
+              TextSpan(
+                style: base,
+                children: [
+                  for (final run in block.runs)
+                    TextSpan(
+                      text: run.text,
+                      style: run.bold || block.isHeading ? bold : null,
+                    ),
+                ],
+              ),
+              textAlign: block.isHeading ? TextAlign.start : TextAlign.justify,
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Keeps a lone sub-heading chunk together with the paragraph after it, so a
+  /// heading image never ends a page with its text on the next one.
+  static List<String> _mergeHeadingChunks(List<String> chunks) {
+    final merged = <String>[];
+    for (final chunk in chunks) {
+      if (merged.isNotEmpty && _pdfHeadingLine.hasMatch(merged.last.trim())) {
+        merged[merged.length - 1] = '${merged.last}\n$chunk';
+      } else {
+        merged.add(chunk);
+      }
+    }
+    return merged;
   }
 
   /// Renders a plain block of text with no section heading.
@@ -637,44 +721,39 @@ class StudyGuidePdfService {
     if (content.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(top: 6),
-      child: Text(
-        content,
-        style: _getFontForLanguage(language)(
-          fontSize: 13,
-          color: Colors.grey[900],
-          height: 1.6,
-        ),
-        textAlign: TextAlign.justify,
-      ),
+      child: _buildFlutterRichText(content, language),
     );
   }
 
   Widget _buildFlutterListSection(
-      String title, List<String> items, String language) {
+      String title, List<String> items, String language,
+      {bool showHeading = true}) {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.only(top: 15),
+      margin: EdgeInsets.only(top: showHeading ? 15 : 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: const BoxDecoration(
-              border:
-                  Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
-            ),
-            child: Text(
-              title.toUpperCase(),
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-                letterSpacing: 1,
+          if (showHeading) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: const BoxDecoration(
+                border:
+                    Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
+              ),
+              child: Text(
+                title.toUpperCase(),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                  letterSpacing: 1,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
           ...items.map((item) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -708,31 +787,34 @@ class StudyGuidePdfService {
   }
 
   Widget _buildFlutterNumberedListSection(
-      String title, List<String> items, String language) {
+      String title, List<String> items, String language,
+      {bool showHeading = true, int startNumber = 1}) {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.only(top: 15),
+      margin: EdgeInsets.only(top: showHeading ? 15 : 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: const BoxDecoration(
-              border:
-                  Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
-            ),
-            child: Text(
-              title.toUpperCase(),
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-                letterSpacing: 1,
+          if (showHeading) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: const BoxDecoration(
+                border:
+                    Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
+              ),
+              child: Text(
+                title.toUpperCase(),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                  letterSpacing: 1,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
           ...items.asMap().entries.map((entry) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -741,7 +823,7 @@ class StudyGuidePdfService {
                     SizedBox(
                       width: 22,
                       child: Text(
-                        '${entry.key + 1}.',
+                        '${entry.key + startNumber}.',
                         style: AppFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -921,22 +1003,7 @@ class StudyGuidePdfService {
         margin: const pw.EdgeInsets.all(40),
         header: (_) => service._buildHeader(guide),
         footer: (ctx) => service._buildFooter(ctx, guide),
-        build: (_) => [
-          service._buildTitleSection(guide),
-          pw.SizedBox(height: 20),
-          ...service._buildSection('Summary', guide.summary),
-          if (guide.passage != null && guide.passage!.isNotEmpty)
-            ...service._buildSection('Passage', guide.passage!),
-          ...service._buildSection('Interpretation', guide.interpretation),
-          ...service._buildSection('Historical Context', guide.context),
-          ...service._buildListSection(
-              'Related Scriptures', guide.relatedVerses),
-          ...service._buildNumberedListSection(
-              'Reflection Questions', guide.reflectionQuestions),
-          ...service._buildListSection('Prayer Points', guide.prayerPoints),
-          if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty)
-            ...service._buildSection('Personal Notes', guide.personalNotes!),
-        ],
+        build: (_) => service.buildTextPdfContent(guide),
       ),
     );
 
@@ -1229,112 +1296,145 @@ class StudyGuidePdfService {
     );
   }
 
-  /// Builds a standard text section as a **flat list** of page-safe widgets.
+  /// Builds a standard text section as a **flat list** of widgets.
   ///
-  /// Returning a list (rather than a single wrapped container) lets
-  /// [pw.MultiPage] place each chunk independently, so long sections can
-  /// span pages without looping indefinitely.
+  /// Each paragraph is its own [pw.RichText] with [pw.TextOverflow.span], so
+  /// [pw.MultiPage] can continue it on the next page. Without `span` a
+  /// paragraph that did not fit the space left was pushed whole to the next
+  /// page, leaving the rest of the current page blank.
   List<pw.Widget> _buildSection(String title, String content) {
-    if (content.isEmpty) return [];
+    if (content.trim().isEmpty) return [];
 
     return [
       _buildSectionHeading(title),
-      ..._splitContentForPdf(content).map(
-        (chunk) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 6),
-          child: pw.Text(
-            chunk,
-            style: const pw.TextStyle(
-              fontSize: 13,
-              color: PdfColors.grey900,
-              lineSpacing: 5,
-            ),
-            textAlign: pw.TextAlign.justify,
-          ),
-        ),
-      ),
+      ...parseStudyGuideText(content).map(_buildPdfBlock),
       pw.SizedBox(height: 14),
     ];
   }
 
-  /// Builds a bulleted list section as a **flat list** of page-safe widgets.
+  static const _pdfBodyStyle = pw.TextStyle(
+    fontSize: 13,
+    color: PdfColors.grey900,
+    lineSpacing: 5,
+  );
+
+  static final _pdfBold = pw.TextStyle(fontWeight: pw.FontWeight.bold);
+
+  pw.Widget _buildPdfBlock(PdfTextBlock block) {
+    if (block.isHeading) {
+      return pw.Padding(
+        padding: const pw.EdgeInsets.only(top: 6, bottom: 4),
+        child: pw.Text(
+          block.plainText,
+          style: pw.TextStyle(
+            fontSize: 13.5,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey900,
+          ),
+        ),
+      );
+    }
+
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.RichText(
+        text: pw.TextSpan(
+          style: _pdfBodyStyle,
+          children: [
+            for (final run in block.runs)
+              pw.TextSpan(text: run.text, style: run.bold ? _pdfBold : null),
+          ],
+        ),
+        textAlign: pw.TextAlign.justify,
+        overflow: pw.TextOverflow.span,
+      ),
+    );
+  }
+
+  /// One list entry as a single page-spanning text run with an inline marker.
+  /// A [pw.Row] (the previous bullet layout) can never break across pages, so a
+  /// long prayer point used to jump to a new page on its own.
+  pw.Widget _buildPdfListItem(String marker, String item) {
+    final runs = <PdfTextRun>[];
+    for (final block in parseStudyGuideText(item)) {
+      if (runs.isNotEmpty) runs.add(const PdfTextRun(' '));
+      runs.addAll(block.isHeading
+          ? [PdfTextRun(block.plainText, bold: true)]
+          : block.runs);
+    }
+
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.RichText(
+        text: pw.TextSpan(
+          style: const pw.TextStyle(
+            fontSize: 13,
+            color: PdfColors.grey900,
+            lineSpacing: 4,
+          ),
+          children: [
+            pw.TextSpan(
+              text: '$marker  ',
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.grey700,
+              ),
+            ),
+            for (final run in runs)
+              pw.TextSpan(text: run.text, style: run.bold ? _pdfBold : null),
+          ],
+        ),
+        overflow: pw.TextOverflow.span,
+      ),
+    );
+  }
+
+  /// Builds a bulleted list section as a **flat list** of page-spanning items.
   List<pw.Widget> _buildListSection(String title, List<String> items) {
     if (items.isEmpty) return [];
 
     return [
       _buildSectionHeading(title),
-      ...items.map(
-        (item) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 8),
-          child: pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Container(
-                width: 6,
-                height: 6,
-                margin: const pw.EdgeInsets.only(top: 4, right: 10),
-                decoration: const pw.BoxDecoration(
-                  color: PdfColors.grey600,
-                  shape: pw.BoxShape.circle,
-                ),
-              ),
-              pw.Expanded(
-                child: pw.Text(
-                  item,
-                  style: const pw.TextStyle(
-                    fontSize: 13,
-                    color: PdfColors.grey900,
-                    lineSpacing: 4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      for (final item in items) _buildPdfListItem('•', item),
       pw.SizedBox(height: 14),
     ];
   }
 
-  /// Builds a numbered list section as a **flat list** of page-safe widgets.
+  /// Builds a numbered list section as a **flat list** of page-spanning items.
   List<pw.Widget> _buildNumberedListSection(String title, List<String> items) {
     if (items.isEmpty) return [];
 
     return [
       _buildSectionHeading(title),
-      ...items.asMap().entries.map(
-            (entry) => pw.Padding(
-              padding: const pw.EdgeInsets.only(bottom: 8),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Container(
-                    width: 20,
-                    margin: const pw.EdgeInsets.only(right: 8),
-                    child: pw.Text(
-                      '${entry.key + 1}.',
-                      style: pw.TextStyle(
-                        fontSize: 13,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.grey700,
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    child: pw.Text(
-                      entry.value,
-                      style: const pw.TextStyle(
-                        fontSize: 13,
-                        color: PdfColors.grey900,
-                        lineSpacing: 4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+      for (var i = 0; i < items.length; i++)
+        _buildPdfListItem('${i + 1}.', items[i]),
       pw.SizedBox(height: 14),
     ];
   }
+
+  /// Text-path widgets for [guide], in page order. Exposed so tests can lay
+  /// the guide out with the default font and check how it paginates.
+  @visibleForTesting
+  List<pw.Widget> buildTextPdfContent(StudyGuide guide) => [
+        _buildTitleSection(guide),
+        pw.SizedBox(height: 20),
+        ..._buildSection('Summary', guide.summary),
+        if (guide.passage != null && guide.passage!.isNotEmpty)
+          ..._buildSection('Passage', guide.passage!),
+        ..._buildSection('Interpretation', guide.interpretation),
+        ..._buildSection('Historical Context', guide.context),
+        ..._buildListSection('Related Scriptures', guide.relatedVerses),
+        ..._buildNumberedListSection(
+            'Reflection Questions', guide.reflectionQuestions),
+        ..._buildListSection('Prayer Points', guide.prayerPoints),
+        if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty)
+          ..._buildSection('Personal Notes', guide.personalNotes!),
+      ];
+
+  @visibleForTesting
+  pw.Widget buildTextPdfHeader(StudyGuide guide) => _buildHeader(guide);
+
+  @visibleForTesting
+  pw.Widget buildTextPdfFooter(pw.Context context, StudyGuide guide) =>
+      _buildFooter(context, guide);
 }
