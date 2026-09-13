@@ -142,4 +142,38 @@ void main() {
     expect(find.textContaining('Fire'), findsOneWidget);
     expect(find.textContaining('Amen'), findsNothing);
   });
+
+  for (final daily in [false, true]) {
+    testWidgets(
+        'share button sits at the right edge on a wide screen '
+        '(${daily ? 'daily' : 'regular'} post)', (tester) async {
+      // iPad-width card: the reply pill and a Spacer used to split the free
+      // width, leaving the share button in the middle of the card.
+      tester.view.physicalSize = const Size(960, 1280);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpCard(tester, daily: daily);
+
+      final cardRight = tester.getTopRight(find.byType(FellowshipPostCard)).dx;
+      final shareRight = tester
+          .getTopRight(find.ancestor(
+            of: find.byIcon(Icons.share_outlined),
+            matching: find.byType(IconButton),
+          ))
+          .dx;
+      final replyRight = tester
+          .getTopRight(find
+              .ancestor(
+                of: find.byIcon(Icons.chat_bubble_outline_rounded),
+                matching: find.byType(InkWell),
+              )
+              .first)
+          .dx;
+
+      expect(cardRight - shareRight, lessThan(40),
+          reason: 'share belongs at the right edge of the card');
+      expect(replyRight, lessThan(cardRight / 2),
+          reason: 'the reply pill stays compact on the left');
+    });
+  }
 }
