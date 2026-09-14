@@ -4,7 +4,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const RS_BACKEND_URL = process.env.RS_BACKEND_URL || 'http://localhost:8080'
 
-export async function POST(
+/**
+ * GET - Which lessons on a learning path have a blog in each language
+ */
+export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -39,25 +42,19 @@ export async function POST(
       return NextResponse.json({ error: 'No session token' }, { status: 401 })
 
     const rsResponse = await fetch(
-      `${RS_BACKEND_URL}/api/v1/admin/study-guides/${id}/generate-blog`,
-      {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      `${RS_BACKEND_URL}/api/v1/admin/learning-paths/${id}/blog-status`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
     )
-
-    const data = await rsResponse.json().catch(() => ({ error: 'Unknown error' }))
+    const data = await rsResponse.json().catch(() => ({}))
     if (!rsResponse.ok) {
       return NextResponse.json(
-        // rs-backend errors are { success: false, error: { code, message } }
-        { error: data.error?.message || data.message || 'Failed to generate blog' },
+        { error: data.error?.message || 'Failed to load blog status' },
         { status: rsResponse.status },
       )
     }
-
     return NextResponse.json(data)
   } catch (err) {
-    console.error('generate-blog route error:', err)
+    console.error('blog-status route error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
