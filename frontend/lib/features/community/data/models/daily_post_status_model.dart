@@ -25,6 +25,7 @@ class DailyPostStatusModel {
         previewAllowed: settings['preview_allowed'] as bool? ?? false,
         regenerateAllowed: settings['regenerate_allowed'] as bool? ?? false,
         postNowAllowed: settings['post_now_allowed'] as bool? ?? false,
+        noLimits: settings['no_limits'] as bool? ?? false,
         times:
             ((settings['times'] as List<dynamic>?) ?? const []).cast<String>(),
       ),

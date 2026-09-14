@@ -544,7 +544,11 @@ class _FellowshipHomeContent extends StatelessWidget {
                           style: TextStyle(color: context.appTextPrimary)),
                     ]),
                   ),
-                if (isMentor && (fellowship?.disciplerAllowed ?? false))
+                // Daily posts show up in the activity list too, so groups with
+                // only daily posts need it to review and edit them.
+                if (isMentor &&
+                    ((fellowship?.disciplerAllowed ?? false) ||
+                        (fellowship?.dailyPostAllowed ?? false)))
                   PopupMenuItem(
                     value: 'discipler_activity',
                     child: Row(children: [

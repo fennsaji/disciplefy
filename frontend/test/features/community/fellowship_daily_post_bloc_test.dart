@@ -34,6 +34,36 @@ class _FakeRepository extends Fake implements CommunityRepository {
   }) async =>
       updateResult;
 
+  final List<Map<String, Object?>> fellowshipUpdates = [];
+
+  @override
+  Future<Either<Failure, void>> updateFellowship({
+    required String fellowshipId,
+    String? name,
+    String? description,
+    int? maxMembers,
+    String? postingPermission,
+    bool? isOfficial,
+    bool? disciplerAllowed,
+    bool? dailyPostAllowed,
+    String? disciplerReplyMode,
+    String? disciplerReplyScope,
+    int? disciplerReplyDelayMin,
+    bool? disciplerReactEnabled,
+    bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
+    bool? disciplerActivityPush,
+  }) async {
+    fellowshipUpdates.add({
+      'fellowshipId': fellowshipId,
+      'dailyPostOn': dailyPostOn,
+      'dailyPostFrequencyDays': dailyPostFrequencyDays,
+      'dailyPostAutoAdvance': dailyPostAutoAdvance,
+    });
+    return updateResult;
+  }
+
   @override
   Future<Either<Failure, void>> requestDailyPostAction(
       String fellowshipId, String kind,
@@ -152,5 +182,30 @@ void main() {
           .having((s) => s.notice?.error, 'notice error',
               'Daily posts can be paused for up to 90 days'),
     ],
+  );
+
+  final settingsRepo = _FakeRepository([Right(_status())]);
+  blocTest<FellowshipDailyPostBloc, FellowshipDailyPostState>(
+    'a settings change updates only that fellowship field',
+    build: () => FellowshipDailyPostBloc(repository: settingsRepo),
+    act: (bloc) async {
+      bloc.add(const FellowshipDailyPostLoadRequested(fellowshipId));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const FellowshipDailyPostSettingsChanged(frequencyDays: 7));
+    },
+    skip: 3,
+    expect: () => [
+      isA<FellowshipDailyPostState>()
+          .having((s) => s.notice?.kind, 'notice kind', 'schedule')
+          .having((s) => s.notice?.success, 'notice success', true),
+    ],
+    verify: (_) => expect(settingsRepo.fellowshipUpdates, [
+      {
+        'fellowshipId': fellowshipId,
+        'dailyPostOn': null,
+        'dailyPostFrequencyDays': 7,
+        'dailyPostAutoAdvance': null,
+      }
+    ]),
   );
 }

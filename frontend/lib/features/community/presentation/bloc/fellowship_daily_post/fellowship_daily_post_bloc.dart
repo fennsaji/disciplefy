@@ -26,6 +26,7 @@ class FellowshipDailyPostBloc
     on<FellowshipDailyPostLoadRequested>(_onLoad);
     on<FellowshipDailyPostRefreshRequested>(_onRefresh);
     on<FellowshipDailyPostScheduleChanged>(_onScheduleChanged);
+    on<FellowshipDailyPostSettingsChanged>(_onSettingsChanged);
     on<FellowshipDailyPostActionRequested>(_onActionRequested);
   }
 
@@ -84,6 +85,27 @@ class FellowshipDailyPostBloc
       clearPause: event.clearPause,
       time: event.time,
       nextLearningPathTopicId: event.nextLearningPathTopicId,
+    );
+    emit(state.copyWith(
+      saving: false,
+      notice: result.fold(
+        (failure) => _notice('schedule', false, failure.message),
+        (_) => _notice('schedule', true),
+      ),
+    ));
+    if (result.isRight()) add(const FellowshipDailyPostRefreshRequested());
+  }
+
+  Future<void> _onSettingsChanged(
+    FellowshipDailyPostSettingsChanged event,
+    Emitter<FellowshipDailyPostState> emit,
+  ) async {
+    emit(state.copyWith(saving: true));
+    final result = await _repository.updateFellowship(
+      fellowshipId: state.fellowshipId,
+      dailyPostOn: event.dailyPostOn,
+      dailyPostFrequencyDays: event.frequencyDays,
+      dailyPostAutoAdvance: event.autoAdvance,
     );
     emit(state.copyWith(
       saving: false,

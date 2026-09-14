@@ -93,6 +93,10 @@ class DailyPostSettingsEntity extends Equatable {
   final bool regenerateAllowed;
   final bool postNowAllowed;
 
+  /// Official groups: no daily caps on new teasers or posting again, and no
+  /// limit on how long posts can be paused.
+  final bool noLimits;
+
   /// The posting times a mentor can choose from.
   final List<String> times;
 
@@ -106,6 +110,7 @@ class DailyPostSettingsEntity extends Equatable {
     this.previewAllowed = false,
     this.regenerateAllowed = false,
     this.postNowAllowed = false,
+    this.noLimits = false,
     this.times = const [],
   });
 
@@ -120,6 +125,7 @@ class DailyPostSettingsEntity extends Equatable {
         previewAllowed,
         regenerateAllowed,
         postNowAllowed,
+        noLimits,
         times,
       ];
 }

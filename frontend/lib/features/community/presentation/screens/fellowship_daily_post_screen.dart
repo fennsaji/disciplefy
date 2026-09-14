@@ -114,6 +114,12 @@ String _timeLabel(BuildContext context, String hhmm) {
 String _isoDate(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+/// The pause covers its last day, so posting starts the day after.
+String _dayAfter(String isoDate) {
+  final date = DateTime.tryParse(isoDate);
+  return date == null ? isoDate : _isoDate(date.add(const Duration(days: 1)));
+}
+
 // ---------------------------------------------------------------------------
 // Body
 // ---------------------------------------------------------------------------
@@ -503,6 +509,63 @@ class _ScheduleSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              l10n.disciplerDailyToggle,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+            value: settings.dailyPostOn,
+            onChanged: saving
+                ? null
+                : (v) => bloc
+                    .add(FellowshipDailyPostSettingsChanged(dailyPostOn: v)),
+          ),
+          Divider(height: 1, color: scheme.outlineVariant),
+          const SizedBox(height: 14),
+          Text(
+            l10n.dailyPostFrequency,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: context.appTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Chips like the posting time below, so long labels never wrap
+          // inside a segment.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (days, label) in [
+                (1, l10n.frequencyDaily),
+                (2, l10n.frequencyEveryTwoDays),
+                (7, l10n.frequencyWeekly),
+              ])
+                ChoiceChip(
+                  label: Text(label),
+                  selected: days == settings.frequencyDays,
+                  showCheckmark: false,
+                  selectedColor: scheme.primary,
+                  labelStyle: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: days == settings.frequencyDays
+                        ? scheme.onPrimary
+                        : context.appTextPrimary,
+                  ),
+                  onSelected: saving || !settings.dailyPostOn
+                      ? null
+                      : (_) {
+                          if (days != settings.frequencyDays) {
+                            bloc.add(FellowshipDailyPostSettingsChanged(
+                                frequencyDays: days));
+                          }
+                        },
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
           Text(
             l10n.dailyPostTimeLabel,
             style: TextStyle(
@@ -546,6 +609,20 @@ class _ScheduleSection extends StatelessWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
+              l10n.disciplerAdvancesLessons,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            subtitle: Text(l10n.disciplerAdvancesLessonsSubtitle),
+            value: settings.autoAdvance,
+            onChanged: saving || !settings.dailyPostOn
+                ? null
+                : (v) => bloc
+                    .add(FellowshipDailyPostSettingsChanged(autoAdvance: v)),
+          ),
+          Divider(height: 1, color: scheme.outlineVariant),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
               l10n.dailyPostSkipNext,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
@@ -569,20 +646,32 @@ class _ScheduleSection extends StatelessWidget {
                   : l10n.dailyPostPause,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
-            trailing: paused
-                ? TextButton(
+            subtitle: Text(paused
+                ? l10n.dailyPostResumesOn(_dateLabel(
+                    context, _dayAfter(settings.pausedUntil!), data.today))
+                : l10n.dailyPostPauseSubtitle),
+          ),
+          // Under the text rather than trailing: in Malayalam a trailing
+          // button squeezed the title to one word per line.
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: paused
+                ? OutlinedButton.icon(
                     onPressed: saving
                         ? null
                         : () => bloc.add(
                             const FellowshipDailyPostScheduleChanged(
                                 clearPause: true)),
-                    child: Text(l10n.dailyPostResume),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                    label: Text(l10n.dailyPostResume),
                   )
-                : Icon(Icons.calendar_today_outlined,
-                    size: 20, color: context.appTextSecondary),
-            onTap: paused || saving || !settings.dailyPostOn
-                ? null
-                : () => _pickPauseDate(context),
+                : OutlinedButton.icon(
+                    onPressed: saving || !settings.dailyPostOn
+                        ? null
+                        : () => _pickPauseDate(context),
+                    icon: const Icon(Icons.calendar_today_outlined, size: 16),
+                    label: Text(l10n.dailyPostPickDate),
+                  ),
           ),
         ],
       ),
@@ -596,7 +685,9 @@ class _ScheduleSection extends StatelessWidget {
       context: context,
       initialDate: today.add(const Duration(days: 1)),
       firstDate: today,
-      lastDate: today.add(const Duration(days: 90)),
+      // Official groups can pause for as long as they need.
+      lastDate: today.add(Duration(days: data.settings.noLimits ? 3650 : 90)),
+      helpText: AppLocalizations.of(context)!.dailyPostPause,
     );
     if (picked == null) return;
     bloc.add(FellowshipDailyPostScheduleChanged(pausedUntil: _isoDate(picked)));
@@ -831,8 +922,12 @@ class _PreviewSection extends StatelessWidget {
                   preview.isCurrent)
                 OutlinedButton.icon(
                   icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-                  label: Text(l10n.dailyPostRegenerateLeft(regenerationsLeft)),
-                  onPressed: saving || working || regenerationsLeft <= 0
+                  label: Text(data.settings.noLimits
+                      ? l10n.dailyPostRegenerate
+                      : l10n.dailyPostRegenerateLeft(regenerationsLeft)),
+                  onPressed: saving ||
+                          working ||
+                          (!data.settings.noLimits && regenerationsLeft <= 0)
                       ? null
                       : () => bloc.add(const FellowshipDailyPostActionRequested(
                           'regenerate')),
@@ -993,8 +1088,12 @@ class _RepostButton extends StatelessWidget {
         ),
         icon: const Icon(Icons.refresh_rounded, size: 18),
         // The count explains a greyed-out button once today's limit is used.
-        label: Text(l10n.dailyPostRepostLeft(data.repostsLeftToday)),
-        onPressed: saving || anyRepostOpen || data.repostsLeftToday <= 0
+        label: Text(data.settings.noLimits
+            ? l10n.dailyPostRepost
+            : l10n.dailyPostRepostLeft(data.repostsLeftToday)),
+        onPressed: saving ||
+                anyRepostOpen ||
+                (!data.settings.noLimits && data.repostsLeftToday <= 0)
             ? null
             : () => _confirm(context),
       ),

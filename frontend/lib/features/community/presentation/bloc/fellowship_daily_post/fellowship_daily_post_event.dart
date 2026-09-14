@@ -43,6 +43,23 @@ class FellowshipDailyPostScheduleChanged extends FellowshipDailyPostEvent {
       [skipNext, pausedUntil, clearPause, time, nextLearningPathTopicId];
 }
 
+/// Changes the fellowship's daily post settings: on/off, how often, and
+/// whether lessons advance on their own. Only non-null fields are sent.
+class FellowshipDailyPostSettingsChanged extends FellowshipDailyPostEvent {
+  final bool? dailyPostOn;
+  final int? frequencyDays;
+  final bool? autoAdvance;
+
+  const FellowshipDailyPostSettingsChanged({
+    this.dailyPostOn,
+    this.frequencyDays,
+    this.autoAdvance,
+  });
+
+  @override
+  List<Object?> get props => [dailyPostOn, frequencyDays, autoAdvance];
+}
+
 /// Starts a gated action: `preview`, `regenerate` or `post_now`.
 class FellowshipDailyPostActionRequested extends FellowshipDailyPostEvent {
   final String kind;
