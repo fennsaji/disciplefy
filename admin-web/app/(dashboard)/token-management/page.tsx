@@ -163,7 +163,7 @@ export default function TokenManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Token Management"
         description="Manage user token balances, view consumption, and track purchases"
@@ -225,7 +225,7 @@ export default function TokenManagementPage() {
 
       {/* Stats cards */}
       {stats && (
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
           <StatsCard
             title="Total Users"
             value={formatCompactNumber(stats.total)}
@@ -254,7 +254,7 @@ export default function TokenManagementPage() {
       )}
 
       {/* User table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">User Token Balances</h2>
 
         {isLoading && <LoadingState label="Loading token balances..." />}

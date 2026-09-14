@@ -103,7 +103,7 @@ export default function UserTokenDetailsPage() {
   const purchases = purchaseData?.purchases || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Back Button */}
       <button
         onClick={() => router.push('/token-management')}
@@ -152,7 +152,7 @@ export default function UserTokenDetailsPage() {
       </div>
 
       {/* Basic Information Card */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-4 flex items-center gap-2">
           <div className="rounded-full bg-primary-100 p-2 dark:bg-primary-900">
             <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,7 +178,7 @@ export default function UserTokenDetailsPage() {
       </div>
 
       {/* Token Balance Card */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-4 flex items-center gap-2">
           <div className="rounded-full bg-yellow-100 p-2 dark:bg-yellow-900">
             <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -187,7 +187,7 @@ export default function UserTokenDetailsPage() {
           </div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Token Balance</h2>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-4">
           <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
             <p className="text-sm text-blue-600 dark:text-blue-400">Daily Tokens</p>
             <p className="mt-2 text-3xl font-bold text-blue-900 dark:text-blue-100">{balance.available_tokens.toLocaleString()}</p>
@@ -214,7 +214,7 @@ export default function UserTokenDetailsPage() {
       </div>
 
       {/* Usage History */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
         <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Token Usage History</h2>
         {usageHistory.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400">No usage history found</p>
@@ -266,7 +266,7 @@ export default function UserTokenDetailsPage() {
       </div>
 
       {/* Purchase History */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
         <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Purchase History</h2>
         {purchases.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400">No purchases found</p>
@@ -321,7 +321,7 @@ export default function UserTokenDetailsPage() {
       {/* Adjust Tokens Modal */}
       {showAdjustModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-gray-800">
+          <div className="w-full max-w-md rounded-lg bg-white p-4 sm:p-6 dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {adjustType === 'add' ? 'Add' : 'Remove'} Tokens
             </h3>

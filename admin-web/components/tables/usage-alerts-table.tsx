@@ -67,7 +67,7 @@ export function UsageAlertsTable({ alerts, onToggleAlert, onEditAlert, onCreateA
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {alerts.map((alert) => (
-            <div key={alert.id} className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <div key={alert.id} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">

@@ -244,7 +244,7 @@ function ToggleRow({
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="border-t border-gray-100 px-6 py-4 dark:border-gray-700">
+    <section className="border-t border-gray-100 px-3 py-3 sm:px-6 sm:py-4 dark:border-gray-700">
       <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
       {children}
     </section>
@@ -265,7 +265,7 @@ export default function FellowshipsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('fellowships')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader title="🤝 Fellowships" description="Groups, their mentors, and what Discipler may do in each" />
       <TabNav tabs={TABS} activeTab={activeTab} onChange={(v) => setActiveTab(v as TabType)} />
       <div className="mt-6">
@@ -354,7 +354,7 @@ function FellowshipsTab() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatsCard title="Active fellowships" value={summary?.active ?? '—'} icon="🤝" />
         <StatsCard title="Discipler on" value={summary?.discipler ?? '—'} icon="✨" />
@@ -531,7 +531,7 @@ function FellowshipDetail({
     <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="fellowship-detail-title">
       <button className="absolute inset-0 bg-gray-900/40" onClick={onClose} aria-label="Close" tabIndex={-1} />
       <aside className="relative flex h-full w-full max-w-lg flex-col overflow-y-auto bg-white shadow-xl dark:bg-gray-800">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-100 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-100 bg-white px-3 py-3 sm:px-6 sm:py-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="min-w-0">
             <h2 id="fellowship-detail-title" className="truncate text-lg font-semibold text-gray-900 dark:text-gray-100">
               {f.name}
@@ -548,7 +548,7 @@ function FellowshipDetail({
         </header>
 
         {f.description && (
-          <p className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{f.description}</p>
+          <p className="px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-600 dark:text-gray-300">{f.description}</p>
         )}
 
         <DetailSection title="General">
@@ -805,7 +805,7 @@ function ActivityTab() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <FilterPills
         options={KIND_OPTIONS}
         value={kindFilter}

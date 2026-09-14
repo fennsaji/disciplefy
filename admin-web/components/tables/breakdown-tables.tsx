@@ -22,9 +22,9 @@ export function BreakdownTables({
   byModel,
 }: BreakdownTablesProps) {
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
       {/* By Feature */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
           Cost by Feature
         </h2>
@@ -71,7 +71,7 @@ export function BreakdownTables({
       </div>
 
       {/* By Tier */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
           Cost by Tier
         </h2>
@@ -122,7 +122,7 @@ export function BreakdownTables({
       </div>
 
       {/* By Provider */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
           Cost by Provider
         </h2>
@@ -170,7 +170,7 @@ export function BreakdownTables({
       </div>
 
       {/* By Model */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
           Cost by Model
         </h2>

@@ -56,7 +56,7 @@ export default function PromoCodesPage() {
     : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Promotional Campaigns"
         description="Create and manage promotional codes for user acquisition and retention"
@@ -94,7 +94,7 @@ export default function PromoCodesPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
           <StatsCard
             title="Active Campaigns"
             value={formatCompactNumber(stats.active)}
@@ -148,7 +148,7 @@ export default function PromoCodesPage() {
 
       {/* Promo Codes Table */}
       {promoData && (
-        <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
             {statusFilter === 'all' ? 'All Campaigns' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Campaigns`}
           </h2>
@@ -164,7 +164,7 @@ export default function PromoCodesPage() {
 
       {/* Info Card */}
       {!isLoading && !error && promoData?.campaigns.length === 0 && (
-        <div className="rounded-lg bg-blue-50 p-6 dark:bg-blue-900/20">
+        <div className="rounded-lg bg-blue-50 p-4 sm:p-6 dark:bg-blue-900/20">
           <div className="flex gap-4">
             <div className="flex-shrink-0">
               <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -187,7 +187,7 @@ export default function PromoCodesPage() {
       {/* Campaign Details Modal */}
       {selectedCampaign && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-4 sm:p-6 shadow-xl dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Campaign Details</h2>
               <button

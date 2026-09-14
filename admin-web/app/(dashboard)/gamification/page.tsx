@@ -174,10 +174,10 @@ export default function GamificationPage() {
     const COLORS = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899']
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Achievements"
               value={stats.total}
@@ -207,7 +207,7 @@ export default function GamificationPage() {
 
         {/* Charts */}
         {stats && Object.keys(stats.by_category || {}).length > 0 && (
-          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Achievements by Category
             </h3>
@@ -272,10 +272,10 @@ export default function GamificationPage() {
     const COLORS = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444']
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Unlocks"
               value={stats.total_unlocks}
@@ -305,7 +305,7 @@ export default function GamificationPage() {
 
         {/* Charts */}
         {stats && Object.keys(stats.by_category || {}).length > 0 && (
-          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Unlocks by Category
             </h3>
@@ -363,10 +363,10 @@ export default function GamificationPage() {
     const leaderboards = streaksData?.leaderboards
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Users"
               value={stats.total_users}
@@ -396,7 +396,7 @@ export default function GamificationPage() {
 
         {/* Streak Distribution Chart */}
         {stats && (
-          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Study Streak Distribution
             </h3>
@@ -417,9 +417,9 @@ export default function GamificationPage() {
 
         {/* Leaderboards */}
         {leaderboards && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Top Current Study Streaks */}
-            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 🔥 Top Study Streaks
               </h3>
@@ -444,7 +444,7 @@ export default function GamificationPage() {
             </div>
 
             {/* Top Longest Streaks */}
-            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 🏅 Best Ever Streaks
               </h3>
@@ -469,7 +469,7 @@ export default function GamificationPage() {
             </div>
 
             {/* Top Daily Verse Streaks */}
-            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 📖 Top Verse Streaks
               </h3>
@@ -494,7 +494,7 @@ export default function GamificationPage() {
             </div>
 
             {/* Top XP Earners */}
-            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 ⭐ Top XP Earners
               </h3>
@@ -564,7 +564,7 @@ export default function GamificationPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Gamification Manager"
         description="Manage achievements, track user progress, and analyze engagement"

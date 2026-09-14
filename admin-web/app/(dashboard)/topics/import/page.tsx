@@ -154,7 +154,7 @@ export default function BulkImportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6">
@@ -185,11 +185,11 @@ export default function BulkImportPage() {
 
         {/* Content Container */}
         <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* Upload Stage */}
             {stage === 'upload' && (
-              <div className="space-y-6">
-                <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="rounded-lg border-2 border-dashed border-gray-300 p-5 sm:p-8 text-center dark:border-gray-600">
                   <svg
                     className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
                     fill="none"
@@ -424,7 +424,7 @@ export default function BulkImportPage() {
 
             {/* Complete Stage */}
             {stage === 'complete' && importResults && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="text-center">
                   <svg
                     className="mx-auto h-16 w-16 text-green-600 dark:text-green-400"
@@ -487,7 +487,7 @@ export default function BulkImportPage() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-700">
+          <div className="border-t border-gray-200 bg-gray-50 px-3 py-3 sm:px-6 sm:py-4 dark:border-gray-700 dark:bg-gray-700">
             <div className="flex justify-end gap-3">
               {stage === 'preview' && (
                 <>

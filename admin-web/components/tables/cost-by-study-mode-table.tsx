@@ -25,7 +25,7 @@ export function CostByStudyModeTable({ data }: CostByStudyModeTableProps) {
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
           Cost by Study Mode
         </h2>
@@ -37,7 +37,7 @@ export function CostByStudyModeTable({ data }: CostByStudyModeTableProps) {
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
       <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
         Cost by Study Mode
       </h2>

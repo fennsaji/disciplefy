@@ -60,7 +60,7 @@ export default function IssuesPage() {
   const [activeTab, setActiveTab] = useState<TabType>('purchase-issues')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="⚠️ Issues & Feedback"
         description="Manage purchase issues and user feedback"
@@ -107,7 +107,7 @@ function PurchaseIssuesTab() {
   const byStatus: Record<string, number> = data?.stats?.by_status ?? {}
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filter */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <select
@@ -137,7 +137,7 @@ function PurchaseIssuesTab() {
       </div>
 
       {/* Purchase Issues Table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Purchase Issues</h2>
 
         {isLoading ? (
@@ -201,7 +201,7 @@ function FeedbackTab() {
   const stats = data?.stats
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
@@ -279,7 +279,7 @@ function FeedbackTab() {
       )}
 
       {/* Feedback Table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">User Feedback</h2>
 
         {isLoading ? (

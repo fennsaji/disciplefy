@@ -67,22 +67,22 @@ export function FeedbackTable({ feedback }: FeedbackTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               User
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Category
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Helpful
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Sentiment
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Date
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Actions
             </th>
           </tr>
@@ -90,7 +90,7 @@ export function FeedbackTable({ feedback }: FeedbackTableProps) {
         <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
           {feedback.map((item) => (
             <tr key={item.id} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 group" onClick={() => router.push(`/issues/${item.id}`)}>
-              <td className="whitespace-nowrap px-6 py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
                 <div className="text-sm">
                   <div className="font-medium text-gray-900 dark:text-gray-100">
                     {item.user_name || 'Anonymous'}
@@ -100,12 +100,12 @@ export function FeedbackTable({ feedback }: FeedbackTableProps) {
                   </div>
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getCategoryColor(item.category)}`}>
                   {getCategoryLabel(item.category)}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
                   item.was_helpful
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
@@ -114,14 +114,14 @@ export function FeedbackTable({ feedback }: FeedbackTableProps) {
                   {item.was_helpful ? '👍 Yes' : '👎 No'}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-center text-2xl">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-center text-2xl">
                 {getSentimentEmoji(item.sentiment_score)}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                 {new Date(item.created_at).toLocaleDateString()} <br />
                 {new Date(item.created_at).toLocaleTimeString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

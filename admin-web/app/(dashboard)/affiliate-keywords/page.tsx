@@ -60,7 +60,7 @@ export default function AffiliateKeywordsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Affiliate Keywords"
         description="Terms auto-linked to Amazon affiliate search results in marketing blog posts (max 3 links per post, first occurrence only)"
@@ -75,7 +75,7 @@ export default function AffiliateKeywordsPage() {
       {isLoading && <LoadingState label="Loading affiliate keywords..." />}
 
       {data && (
-        <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
           {/* Inline add row */}
           <div className="mb-6 flex gap-2">
             <input

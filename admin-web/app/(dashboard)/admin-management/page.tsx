@@ -119,7 +119,7 @@ export default function AdminManagementPage() {
   const admins = adminsData?.admins ?? []
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <PageHeader
         title="Admin Management"
         description="Grant or revoke admin access for users"
@@ -147,16 +147,16 @@ export default function AdminManagementPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
               <thead>
                 <tr className="bg-gray-50 dark:bg-white/5">
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Added
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Actions
                   </th>
                 </tr>
@@ -164,7 +164,7 @@ export default function AdminManagementPage() {
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {admins.map((admin) => (
                   <tr key={admin.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-xs font-bold text-white">
                           {admin.full_name.charAt(0).toUpperCase()}
@@ -179,13 +179,13 @@ export default function AdminManagementPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-600 dark:text-gray-300">
                       {admin.email || '—'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                       {new Date(admin.created_at).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 text-right">
                       {admin.is_self ? (
                         <span className="text-xs text-gray-400 dark:text-gray-500">
                           Cannot remove self
@@ -219,7 +219,7 @@ export default function AdminManagementPage() {
           Grant Admin Access
         </h2>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-gray-900">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-white/10 dark:bg-gray-900">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <input
               type="text"
@@ -331,7 +331,7 @@ export default function AdminManagementPage() {
       {/* Confirm dialog */}
       {confirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-gray-900">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-2xl dark:border-white/10 dark:bg-gray-900">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-400/15">
               <span className="text-2xl">
                 {confirmDialog.action === 'grant' ? '🛡️' : '⚠️'}

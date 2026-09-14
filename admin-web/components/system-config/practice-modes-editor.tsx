@@ -151,7 +151,7 @@ export default function PracticeModesEditor({
   // Read-only view
   if (!editing) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -169,7 +169,7 @@ export default function PracticeModesEditor({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Free Tier */}
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
@@ -224,7 +224,7 @@ export default function PracticeModesEditor({
 
   // Edit mode view
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           📖 Practice Mode Availability
@@ -234,7 +234,7 @@ export default function PracticeModesEditor({
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Preset Buttons */}
         <div className="flex gap-2">
           <button
@@ -258,7 +258,7 @@ export default function PracticeModesEditor({
         </div>
 
         {/* Practice Modes Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Free Tier */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">

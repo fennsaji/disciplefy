@@ -60,19 +60,19 @@ export default function SuggestedVersesTable({
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Order
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Category
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Reference (EN)
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Translations
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -83,18 +83,18 @@ export default function SuggestedVersesTable({
             return (
               <React.Fragment key={verse.id}>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                     #{verse.display_order}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(verse.category)}`}>
                       {verse.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {verse.translations.en?.reference || 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-medium ${coverage.color}`}>
                         {coverage.percentage.toFixed(0)}%
@@ -115,7 +115,7 @@ export default function SuggestedVersesTable({
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
@@ -150,7 +150,7 @@ export default function SuggestedVersesTable({
                 </tr>
                 {expandedId === verse.id && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+                    <td colSpan={5} className="px-3 py-3 sm:px-6 sm:py-4 bg-gray-50 dark:bg-gray-800">
                       <div className="space-y-4">
                         {Object.entries(verse.translations).map(([lang, translation]) => (
                           <div key={lang} className="border-l-4 border-primary pl-4">

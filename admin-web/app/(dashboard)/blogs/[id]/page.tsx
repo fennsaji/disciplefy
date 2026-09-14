@@ -171,7 +171,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
   const LOCALE_LABELS: Record<BlogLocale, string> = { en: 'English', hi: 'Hindi', ml: 'Malayalam' }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Edit Blog Post"
         description={`/${post.locale}/${post.slug}`}
@@ -196,7 +196,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
         }
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0 space-y-4">
           <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-4">
@@ -252,7 +252,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
                   {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
                 </p>
               </div>
-              <div className="dark rounded-lg border border-white/10 bg-[#0F172A] p-6 overflow-auto max-h-[80vh]">
+              <div className="dark rounded-lg border border-white/10 bg-[#0F172A] p-4 sm:p-6 overflow-auto max-h-[80vh]">
                 <BlogPreview
                   content={content}
                   title={title}

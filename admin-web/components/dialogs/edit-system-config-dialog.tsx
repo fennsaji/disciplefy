@@ -417,13 +417,13 @@ export default function EditSystemConfigDialog({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-3 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {getSectionTitle()}
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           {section === 'token_system' && renderTokenSystemFields()}
           {section === 'voice_features' && renderVoiceFeaturesFields()}
           {section === 'maintenance_mode' && renderMaintenanceModeFields()}

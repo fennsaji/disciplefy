@@ -150,7 +150,7 @@ export default function MemoryVersesPage() {
   const mlCoverage = stats ? stats.translation_coverage.ml : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Memory Verses"
         description="Manage suggested verses that appear when users add memory verses"

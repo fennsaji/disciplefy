@@ -52,22 +52,22 @@ export function AdminLogsTable({ logs }: AdminLogsTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Time
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Admin
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Action
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Target
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               IP Address
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Details
             </th>
           </tr>
@@ -75,11 +75,11 @@ export function AdminLogsTable({ logs }: AdminLogsTableProps) {
         <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
           {logs.map((log) => (
             <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
                 {new Date(log.created_at).toLocaleDateString()}<br />
                 {new Date(log.created_at).toLocaleTimeString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <div className="text-sm">
                   <div className="font-medium text-gray-900 dark:text-gray-100">
                     {log.admin_name}
@@ -89,12 +89,12 @@ export function AdminLogsTable({ logs }: AdminLogsTableProps) {
                   </div>
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getActionColor(log.action)}`}>
                   {log.action.replace(/_/g, ' ')}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <div className="text-sm">
                   {log.target_table && (
                     <div className="font-medium text-gray-900 dark:text-gray-100">
@@ -116,10 +116,10 @@ export function AdminLogsTable({ logs }: AdminLogsTableProps) {
                   )}
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                 {log.ip_address || '—'}
               </td>
-              <td className="px-6 py-4">
+              <td className="px-3 py-3 sm:px-6 sm:py-4">
                 <div className="max-w-xs text-sm">
                   {log.details && Object.keys(log.details).length > 0 ? (
                     <details className="cursor-pointer">

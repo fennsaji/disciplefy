@@ -126,7 +126,7 @@ export default function IAPConfigPage() {
   const products = productsData?.products || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="In-App Purchase Configuration"
         description="Manage Google Play and Apple App Store credentials and product IDs"
@@ -140,7 +140,7 @@ export default function IAPConfigPage() {
 
       {/* Credentials Tab */}
       {activeTab === 'credentials' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <GooglePlayCredentials
             environment={activeEnvironment}
             onEnvironmentChange={setActiveEnvironment}
@@ -261,7 +261,7 @@ function IAPCredentialsCard({
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
       {/* Card Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex-1 min-w-0">
@@ -533,7 +533,7 @@ function ProductIDManagement({
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
       {/* Card Header */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -729,7 +729,7 @@ function ReceiptVerificationTool() {
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
       {/* Card Header */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">

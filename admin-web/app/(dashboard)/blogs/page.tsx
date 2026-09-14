@@ -133,7 +133,7 @@ export default function BlogsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Blog Posts"
         description="Manage all blog posts across languages"
@@ -206,7 +206,7 @@ export default function BlogsPage() {
       {isLoading ? (
         <div className="py-12 text-center text-sm text-indigo-400/60">Loading…</div>
       ) : error ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center text-sm text-red-400">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 sm:p-6 text-center text-sm text-red-400">
           {error}
           <button onClick={loadPosts} className="ml-3 underline">Retry</button>
         </div>

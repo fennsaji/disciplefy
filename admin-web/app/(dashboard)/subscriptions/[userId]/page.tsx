@@ -71,7 +71,7 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Back Button */}
       <button
         onClick={() => router.push('/subscriptions')}
@@ -171,7 +171,7 @@ export default function UserDetailsPage() {
           </h2>
         </div>
         {activeSubscription ? (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Primary Info */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -297,7 +297,7 @@ export default function UserDetailsPage() {
             )}
           </div>
         ) : (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-700">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-5 sm:p-8 text-center dark:border-gray-700 dark:bg-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400">No active subscription</p>
           </div>
         )}

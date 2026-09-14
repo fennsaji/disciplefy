@@ -143,7 +143,7 @@ export default function StudyGeneratorPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Study Generator"
         description="Generate and customize study guides for any topic, verse, or question"
@@ -362,7 +362,7 @@ export default function StudyGeneratorPage() {
       {/* Usage Tips */}
       {viewState === 'configure' && (
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
               💡 Generation Tips
             </h3>

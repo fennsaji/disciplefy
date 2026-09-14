@@ -94,7 +94,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -116,9 +116,9 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
         </span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Issue Information */}
-        <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
             Issue Information
           </h2>
@@ -197,7 +197,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
         </div>
 
         {/* Payment Information from Issue */}
-        <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
             Reported Payment Details
           </h2>
@@ -228,7 +228,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
         </div>
 
         {/* Admin Actions */}
-        <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+        <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
             Admin Actions
           </h2>
@@ -274,7 +274,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
         {/* Database Payment Record */}
         {dbPayment && (
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 lg:col-span-2">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 lg:col-span-2">
             <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
               Database Payment Record
             </h2>
@@ -365,7 +365,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
         {/* Razorpay Payment Details */}
         {razorpayPayment && (
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 lg:col-span-2">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 lg:col-span-2">
             <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
               Razorpay Payment Details
             </h2>
@@ -423,7 +423,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
         {/* Razorpay Order Details */}
         {razorpayOrder && (
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 lg:col-span-2">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 lg:col-span-2">
             <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
               Razorpay Order Details
             </h2>
@@ -467,7 +467,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
         {/* Razorpay Data Unavailable Warning */}
         {!razorpayPayment && !razorpayOrder && (
-          <div className="rounded-lg border-2 border-yellow-300 bg-yellow-50 p-6 dark:border-yellow-700 dark:bg-yellow-900/20 lg:col-span-2">
+          <div className="rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4 sm:p-6 dark:border-yellow-700 dark:bg-yellow-900/20 lg:col-span-2">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <span className="text-2xl">⚠️</span>
@@ -494,7 +494,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
         {/* Purchase History */}
         {purchaseHistory && purchaseHistory.length > 0 && (
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 lg:col-span-2">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 lg:col-span-2">
             <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
               Purchase History
             </h2>
@@ -547,7 +547,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
         {/* No Purchase History Message */}
         {(!purchaseHistory || purchaseHistory.length === 0) && (
-          <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+          <div className="rounded-lg border border-gray-300 bg-gray-50 p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
             <div className="text-center">
               <span className="text-2xl">📋</span>
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">

@@ -90,7 +90,7 @@ export default function FeedbackDetailPage() {
 
   if (!feedback) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Feedback Not Found</h1>
           <button
@@ -108,7 +108,7 @@ export default function FeedbackDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -140,9 +140,9 @@ export default function FeedbackDetailPage() {
       </div>
 
       {/* Content */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* User Information */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
             User Information
           </h2>
@@ -163,7 +163,7 @@ export default function FeedbackDetailPage() {
         </div>
 
         {/* Feedback Metadata */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
             Feedback Metadata
           </h2>
@@ -198,7 +198,7 @@ export default function FeedbackDetailPage() {
 
         {/* Context Information */}
         {feedback.context_type && feedback.context_id && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Context
             </h2>
@@ -220,7 +220,7 @@ export default function FeedbackDetailPage() {
         )}
 
         {/* Message */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
             Message
           </h2>

@@ -78,7 +78,7 @@ export default function CreateLearningPathPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-6">
@@ -133,7 +133,7 @@ export default function CreateLearningPathPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Basic Info Tab */}
               {activeTab === 'basic' && (
                 <div className="space-y-4">
@@ -214,7 +214,7 @@ export default function CreateLearningPathPage() {
 
               {/* Settings Tab */}
               {activeTab === 'settings' && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Estimated Days
@@ -352,7 +352,7 @@ export default function CreateLearningPathPage() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+            <div className="border-t border-gray-200 bg-gray-50 px-3 py-3 sm:px-6 sm:py-4 dark:border-gray-700 dark:bg-gray-800">
               <div className="flex justify-end gap-3">
                 <button
                   type="button"

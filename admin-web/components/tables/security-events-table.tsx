@@ -61,25 +61,25 @@ export function SecurityEventsTable({ events }: SecurityEventsTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Time
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               User
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Event Type
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Risk Score
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Action
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               IP Address
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Details
             </th>
           </tr>
@@ -87,11 +87,11 @@ export function SecurityEventsTable({ events }: SecurityEventsTableProps) {
         <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
           {events.map((event) => (
             <tr key={event.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
                 {new Date(event.created_at).toLocaleDateString()}<br />
                 {new Date(event.created_at).toLocaleTimeString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <div className="text-sm">
                   <div className="font-medium text-gray-900 dark:text-gray-100">
                     {event.user_email}
@@ -103,25 +103,25 @@ export function SecurityEventsTable({ events }: SecurityEventsTableProps) {
                   )}
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getEventTypeColor(event.event_type)}`}>
                   {event.event_type.replace('_', ' ')}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`text-lg font-bold ${getRiskColor(event.risk_score)}`}>
                   {event.risk_score !== null ? (event.risk_score * 100).toFixed(0) + '%' : '—'}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getActionColor(event.action_taken)}`}>
                   {event.action_taken}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                 {event.ip_address || '—'}
               </td>
-              <td className="px-6 py-4">
+              <td className="px-3 py-3 sm:px-6 sm:py-4">
                 <div className="max-w-xs text-sm text-gray-900 dark:text-gray-100">
                   {event.input_text ? (
                     <div className="truncate" title={event.input_text}>

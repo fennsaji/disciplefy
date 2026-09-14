@@ -21,7 +21,7 @@ export default function SecurityDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('security-events')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="🔒 Security Dashboard"
         description="Monitor security events, admin activity, and usage alerts"
@@ -116,7 +116,7 @@ function SecurityEventsTab() {
   const stats = data?.stats ?? null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
@@ -202,7 +202,7 @@ function SecurityEventsTab() {
       )}
 
       {/* Events Table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Security Events</h2>
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -264,7 +264,7 @@ function AdminLogsTab() {
   const stats = data?.stats ?? null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
@@ -306,7 +306,7 @@ function AdminLogsTab() {
       )}
 
       {/* Logs Table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Admin Activity Logs</h2>
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -438,9 +438,9 @@ function UsageAlertsTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Alerts Table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Usage Alerts Configuration</h2>
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -469,7 +469,7 @@ function UsageAlertsTab() {
       {/* Edit/Create Modal */}
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-gray-800">
+          <div className="w-full max-w-md rounded-lg bg-white p-4 sm:p-6 dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {editModal.mode === 'create' ? 'Create Usage Alert' : 'Edit Usage Alert'}
             </h3>

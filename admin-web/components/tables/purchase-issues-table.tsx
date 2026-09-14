@@ -58,22 +58,22 @@ export function PurchaseIssuesTable({ issues }: PurchaseIssuesTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Issue Type
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               User
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Payment/Order ID
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Reported
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Actions
             </th>
           </tr>
@@ -85,7 +85,7 @@ export function PurchaseIssuesTable({ issues }: PurchaseIssuesTableProps) {
               className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 group"
               onClick={() => router.push(`/issues/purchase/${issue.id}`)}
             >
-              <td className="whitespace-nowrap px-6 py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {getIssueTypeLabel(issue.issue_type)}
                 </div>
@@ -93,12 +93,12 @@ export function PurchaseIssuesTable({ issues }: PurchaseIssuesTableProps) {
                   {issue.description}
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <div className="text-sm text-gray-900 dark:text-gray-100">
                   {issue.user_email || 'Anonymous'}
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <div className="text-sm">
                   {issue.payment_id && (
                     <div className="text-gray-900 dark:text-gray-100 font-mono text-xs">
@@ -115,16 +115,16 @@ export function PurchaseIssuesTable({ issues }: PurchaseIssuesTableProps) {
                   )}
                 </div>
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(issue.status)}`}>
                   {issue.status}
                 </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                 {new Date(issue.created_at).toLocaleDateString()} <br />
                 {new Date(issue.created_at).toLocaleTimeString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

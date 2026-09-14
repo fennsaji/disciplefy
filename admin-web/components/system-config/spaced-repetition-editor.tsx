@@ -144,7 +144,7 @@ export default function SpacedRepetitionEditor({
     const readOnlySchedule = calculateSampleSchedule(initialSettings)
 
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -205,7 +205,7 @@ export default function SpacedRepetitionEditor({
 
   // Edit mode view
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           🧠 Spaced Repetition Algorithm (SM-2)
@@ -215,7 +215,7 @@ export default function SpacedRepetitionEditor({
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Reset Button */}
         <div className="flex justify-end">
           <button
@@ -227,7 +227,7 @@ export default function SpacedRepetitionEditor({
         </div>
 
         {/* Parameter Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Initial Ease Factor */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">

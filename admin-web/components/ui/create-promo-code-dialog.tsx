@@ -80,7 +80,7 @@ export function CreatePromoCodeDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-4 sm:p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Create Promo Code</h2>
           <button
@@ -94,7 +94,7 @@ export function CreatePromoCodeDialog({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Basic Info */}
           <div className="space-y-4">
             <h3 className="font-medium text-gray-900">Basic Information</h3>

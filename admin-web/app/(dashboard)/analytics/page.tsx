@@ -32,7 +32,7 @@ export default function AnalyticsDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('events')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Analytics Dashboard"
         description="Track analytics events, user engagement, and feature adoption"
@@ -83,7 +83,7 @@ function AnalyticsEventsTab() {
     : []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -147,9 +147,9 @@ function AnalyticsEventsTab() {
           </button>
         </div>
       ) : data ? (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Timeline Chart */}
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               Events Timeline
             </h3>
@@ -175,7 +175,7 @@ function AnalyticsEventsTab() {
           </div>
 
           {/* Event Types Pie Chart */}
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               Events by Type
             </h3>
@@ -216,7 +216,7 @@ function UserEngagementTab() {
     : []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -281,9 +281,9 @@ function UserEngagementTab() {
           </button>
         </div>
       ) : data ? (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Daily Active Users */}
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               Daily Active Users
             </h3>
@@ -309,7 +309,7 @@ function UserEngagementTab() {
           </div>
 
           {/* Retention */}
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               User Retention
             </h3>
@@ -332,19 +332,19 @@ function UserEngagementTab() {
       {/* Additional Metrics */}
       {data?.overview && (
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Longest Streak</h4>
             <p className="mt-2 text-3xl font-bold text-orange-600 dark:text-orange-400">
               {data.overview.avg_longest_streak} days
             </p>
           </div>
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400">New Enrollments</h4>
             <p className="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">
               {data.overview.new_enrollments.toLocaleString()}
             </p>
           </div>
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Path Progress</h4>
             <p className="mt-2 text-3xl font-bold text-purple-600 dark:text-purple-400">
               {data.overview.avg_path_progress}%
@@ -383,7 +383,7 @@ function FeatureAdoptionTab() {
     : []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -415,9 +415,9 @@ function FeatureAdoptionTab() {
           </button>
         </div>
       ) : data ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Feature Adoption Chart */}
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               Feature Adoption Rates
             </h3>
@@ -437,7 +437,7 @@ function FeatureAdoptionTab() {
           </div>
 
           {/* Feature Details Table */}
-          <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+          <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               Feature Details
             </h3>
@@ -445,19 +445,19 @@ function FeatureAdoptionTab() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                       Feature
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                       Users
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                       Usage Count
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                       Adoption Rate
                     </th>
                   </tr>
@@ -465,10 +465,10 @@ function FeatureAdoptionTab() {
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                   {data.features.map((feature: any) => (
                     <tr key={feature.name}>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
                         {feature.name}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm">
                         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                           feature.category === 'core' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
                           feature.category === 'engagement' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
@@ -478,13 +478,13 @@ function FeatureAdoptionTab() {
                           {feature.category}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                         {feature.users.toLocaleString()}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-gray-400">
                         {feature.usage_count.toLocaleString()}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-6 sm:py-4 text-sm">
                         <div className="flex items-center">
                           <div className="mr-2 h-2 w-20 bg-gray-200 rounded-full dark:bg-gray-700">
                             <div
@@ -506,7 +506,7 @@ function FeatureAdoptionTab() {
 
           {/* Study Modes Breakdown */}
           {studyModesData.length > 0 && (
-            <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800">
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Study Modes Usage
               </h3>

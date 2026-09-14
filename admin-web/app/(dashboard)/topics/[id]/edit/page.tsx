@@ -252,7 +252,7 @@ export default function EditTopicPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center dark:bg-gray-900">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading topic...</p>
@@ -263,7 +263,7 @@ export default function EditTopicPage({ params }: PageProps) {
 
   if (!topic) {
     return (
-      <div className="flex min-h-screen items-center justify-center dark:bg-gray-900">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">Topic not found</p>
           <button
@@ -278,7 +278,7 @@ export default function EditTopicPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -341,7 +341,7 @@ export default function EditTopicPage({ params }: PageProps) {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
             {/* Basic Info Tab */}
             {activeTab === 'basic' && (
               <div className="space-y-4">
@@ -404,7 +404,7 @@ export default function EditTopicPage({ params }: PageProps) {
 
             {/* Type & XP Tab */}
             {activeTab === 'type-xp' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Input Type

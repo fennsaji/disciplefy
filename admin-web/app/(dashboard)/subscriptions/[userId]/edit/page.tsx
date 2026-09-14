@@ -194,7 +194,7 @@ export default function EditSubscriptionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Back Button */}
       <button
         onClick={() => router.push(`/subscriptions/${userId}`)}
@@ -215,9 +215,9 @@ export default function EditSubscriptionPage() {
       </div>
 
       {/* Subscription Edit Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Plan & Status Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Plan & Status</h2>
 
           {/* Tier Selection */}
@@ -279,7 +279,7 @@ export default function EditSubscriptionPage() {
         </div>
 
         {/* Billing Details Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Billing Details</h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -333,7 +333,7 @@ export default function EditSubscriptionPage() {
         </div>
 
         {/* Dates Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Subscription Dates</h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -372,7 +372,7 @@ export default function EditSubscriptionPage() {
         </div>
 
         {/* Admin Notes */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Admin Notes</h2>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -408,7 +408,7 @@ export default function EditSubscriptionPage() {
       </form>
 
       {/* Manual Payment Record Section */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 sm:p-6 dark:border-blue-800 dark:bg-blue-900/20">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Manual Payment Record</h2>

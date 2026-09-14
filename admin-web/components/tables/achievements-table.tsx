@@ -56,22 +56,22 @@ export default function AchievementsTable({
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Achievement
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Category
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Tier
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               XP Reward
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Unlocks
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -79,7 +79,7 @@ export default function AchievementsTable({
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {achievements.map((achievement) => (
             <tr key={achievement.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
-              <td className="px-6 py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{achievement.icon}</span>
                   <div>
@@ -95,20 +95,20 @@ export default function AchievementsTable({
                   </div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(achievement.category)}`}>
                   {achievement.category.replace('_', ' ')}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTierColor(achievement.tier)}`}>
                   {achievement.tier}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm font-medium text-primary">
                 +{achievement.xp_reward} XP
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900 dark:text-gray-100">
                   <div className="font-medium">{achievement.total_unlocks} unlocks</div>
                   <div className="text-gray-500 dark:text-gray-400">
@@ -116,7 +116,7 @@ export default function AchievementsTable({
                   </div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-2">
                   {onEdit && (
                     <button
