@@ -248,6 +248,107 @@ pub struct DailyRequest {
     pub id: Uuid,
     pub fellowship_id: Uuid,
     pub kind: String,
+    /// For `repost`: the daily post to replace.
+    pub target_daily_post_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct DailyPostRow {
+    pub id: Uuid,
+    /// `None` when the fellowship post was removed outright (FK is SET NULL).
+    pub post_id: Option<Uuid>,
+    pub learning_path_topic_id: Uuid,
+}
+
+pub async fn load_daily_post_row(
+    pool: &PgPool,
+    fellowship_id: Uuid,
+    daily_post_id: Uuid,
+) -> Result<Option<DailyPostRow>, AppError> {
+    let row = sqlx::query_as::<_, DailyPostRow>(
+        "SELECT id, post_id, learning_path_topic_id FROM discipler_daily_posts
+          WHERE id = $1 AND fellowship_id = $2",
+    )
+    .bind(daily_post_id)
+    .bind(fellowship_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+pub struct RepostInsert<'a> {
+    pub fellowship_id: Uuid,
+    pub daily_post_id: Uuid,
+    /// The post being replaced, if it still exists. Already-deleted posts are fine.
+    pub old_post_id: Option<Uuid>,
+    pub content: &'a str,
+    pub topic_id: Uuid,
+    pub topic_title: &'a str,
+    pub study_guide_id: Option<Uuid>,
+    pub language: &'a str,
+}
+
+/// Replaces a daily post with a new version in one transaction: hides the old
+/// fellowship post (a no-op if a mentor already deleted it), inserts the new
+/// one, and points the daily post record at it. The study cursor and the
+/// post's date do not change, so the schedule is unaffected.
+pub async fn replace_daily_post(pool: &PgPool, input: RepostInsert<'_>) -> Result<Uuid, AppError> {
+    let discipler = Uuid::parse_str(DISCIPLER_USER_ID).expect("constant uuid");
+    let mut tx = pool.begin().await?;
+
+    if let Some(old) = input.old_post_id {
+        sqlx::query(
+            "UPDATE fellowship_posts SET is_deleted = true, updated_at = now()
+              WHERE id = $1 AND fellowship_id = $2 AND is_deleted = false",
+        )
+        .bind(old)
+        .bind(input.fellowship_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    let (post_id,): (Uuid,) = sqlx::query_as(
+        "INSERT INTO fellowship_posts
+           (fellowship_id, author_user_id, content, post_type, topic_id, topic_title, guide_title,
+            study_guide_id, guide_input_type, guide_language)
+         VALUES ($1, $2, $3, 'daily', $4, $5, $5, $6, 'topic', $7)
+         RETURNING id",
+    )
+    .bind(input.fellowship_id)
+    .bind(discipler)
+    .bind(input.content)
+    .bind(input.topic_id.to_string())
+    .bind(input.topic_title)
+    .bind(input.study_guide_id)
+    .bind(input.language)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    let updated = sqlx::query(
+        "UPDATE discipler_daily_posts SET post_id = $1, study_guide_id = COALESCE($2, study_guide_id)
+          WHERE id = $3 AND fellowship_id = $4",
+    )
+    .bind(post_id)
+    .bind(input.study_guide_id)
+    .bind(input.daily_post_id)
+    .bind(input.fellowship_id)
+    .execute(&mut *tx)
+    .await?;
+    if updated.rows_affected() == 0 {
+        tx.rollback().await?;
+        return Err(AppError::NotFound("That post is no longer available.".into()));
+    }
+
+    sqlx::query(
+        "INSERT INTO discipler_activity (fellowship_id, kind, summary) VALUES ($1, 'daily_post', $2)",
+    )
+    .bind(input.fellowship_id)
+    .bind(format!("Posted again at a mentor's request: {}", input.topic_title))
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    Ok(post_id)
 }
 
 /// Claims up to `limit` mentor requests, oldest first. `SKIP LOCKED` keeps two
@@ -265,7 +366,7 @@ pub async fn claim_pending_requests(pool: &PgPool, limit: i64) -> Result<Vec<Dai
              LIMIT $1
              FOR UPDATE SKIP LOCKED
           )
-          RETURNING id, fellowship_id, kind",
+          RETURNING id, fellowship_id, kind, target_daily_post_id",
     )
     .bind(limit)
     .fetch_all(pool)
@@ -379,27 +480,41 @@ const VISIBLE_WHERE: &str =
 /// returns `None` — "no visible lesson at a later position" — rather than
 /// comparing a raw position against a separate `COUNT(*)`, which silently
 /// breaks if positions are ever re-gapped.
+/// Columns and joins for a `Lesson`, shared by every lesson lookup.
+const LESSON_SELECT: &str =
+    "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type, lpt.position,
+            COALESCE(lp.recommended_mode, 'standard') AS study_mode,
+            lp.title AS path_title, lp.description AS path_description,
+            lp.disciple_level,
+            hi_t.title AS hi_title, ml_t.title AS ml_title,
+            hi_t.description AS hi_description, ml_t.description AS ml_description,
+            hi_lp.title AS hi_path_title, ml_lp.title AS ml_path_title,
+            hi_lp.description AS hi_path_description, ml_lp.description AS ml_path_description
+     FROM learning_path_topics lpt
+     JOIN recommended_topics rt ON rt.id = lpt.topic_id
+     JOIN learning_paths lp ON lp.id = lpt.learning_path_id
+     LEFT JOIN recommended_topics_translations hi_t ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
+     LEFT JOIN recommended_topics_translations ml_t ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
+     LEFT JOIN learning_path_translations hi_lp ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
+     LEFT JOIN learning_path_translations ml_lp ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'";
+
+/// A lesson by its `learning_path_topics.id`, visible or not: a mentor can
+/// post a past lesson again even if it has since been hidden from the path.
+pub async fn lesson_by_id(pool: &PgPool, learning_path_topic_id: Uuid) -> Result<Option<Lesson>, AppError> {
+    let lesson = sqlx::query_as::<_, Lesson>(&format!("{LESSON_SELECT} WHERE lpt.id = $1"))
+        .bind(learning_path_topic_id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(lesson)
+}
+
 pub async fn current_lesson(
     pool: &PgPool,
     path_id: Uuid,
     index: i32,
 ) -> Result<Option<Lesson>, AppError> {
     let sql = format!(
-        "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type, lpt.position,
-                COALESCE(lp.recommended_mode, 'standard') AS study_mode,
-                lp.title AS path_title, lp.description AS path_description,
-                lp.disciple_level,
-                hi_t.title AS hi_title, ml_t.title AS ml_title,
-                hi_t.description AS hi_description, ml_t.description AS ml_description,
-                hi_lp.title AS hi_path_title, ml_lp.title AS ml_path_title,
-                hi_lp.description AS hi_path_description, ml_lp.description AS ml_path_description
-         FROM learning_path_topics lpt
-         JOIN recommended_topics rt ON rt.id = lpt.topic_id
-         JOIN learning_paths lp ON lp.id = lpt.learning_path_id
-         LEFT JOIN recommended_topics_translations hi_t ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
-         LEFT JOIN recommended_topics_translations ml_t ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
-         LEFT JOIN learning_path_translations hi_lp ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
-         LEFT JOIN learning_path_translations ml_lp ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
+        "{LESSON_SELECT}
          WHERE {VISIBLE_WHERE} AND lpt.position >= $2
          ORDER BY lpt.position
          LIMIT 1"

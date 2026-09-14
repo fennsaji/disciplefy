@@ -428,6 +428,56 @@ async fn store_preview(
     .await
 }
 
+/// Replaces a daily post the mentor didn't like with a newly written version of
+/// the same lesson, published now. The old post may already be gone — deleted
+/// by a mentor, or removed outright — in which case the new one is simply posted.
+async fn repost_daily_post(
+    pool: &PgPool,
+    config: &Config,
+    http: &Client,
+    f: &DailyFellowship,
+    daily_post_id: Option<uuid::Uuid>,
+) -> Result<(), AppError> {
+    if !f.daily_post_post_now_allowed {
+        return Err(AppError::Forbidden(
+            "Posting again is not enabled for this fellowship.".into(),
+        ));
+    }
+    let Some(daily_post_id) = daily_post_id else {
+        return Err(AppError::BadRequest("Choose a post to post again.".into()));
+    };
+    let Some(row) = fellowship_daily::load_daily_post_row(pool, f.id, daily_post_id).await? else {
+        return Err(AppError::NotFound("That post is no longer available.".into()));
+    };
+    let Some(lesson) = fellowship_daily::lesson_by_id(pool, row.learning_path_topic_id).await? else {
+        return Err(AppError::NotFound("That lesson is no longer available.".into()));
+    };
+
+    // A fresh wording, not the cached one the mentor didn't like.
+    let built = build_post(config, http, f, &lesson, TeaserSource::Fresh).await?;
+    let l = localize(&lesson, &f.language);
+    let post_id = fellowship_daily::replace_daily_post(
+        pool,
+        fellowship_daily::RepostInsert {
+            fellowship_id: f.id,
+            daily_post_id: row.id,
+            old_post_id: row.post_id,
+            content: &built.content,
+            topic_id: lesson.topic_id,
+            topic_title: l.title,
+            study_guide_id: built.study_guide_id,
+            language: &f.language,
+        },
+    )
+    .await?;
+
+    tracing::info!(fellowship = %f.name, topic = %l.title, %post_id, "Daily post posted again");
+    if let Err(e) = notify(config, http, post_id).await {
+        tracing::error!(%post_id, "Repost notify failed (post kept): {}", e);
+    }
+    Ok(())
+}
+
 /// The message a mentor sees for a failed request. Only messages written for
 /// them are shown; anything internal becomes a generic line.
 fn request_error_message(e: &AppError) -> String {
@@ -462,6 +512,7 @@ async fn process_request(
         }
         "preview" => generate_preview(pool, config, http, &f).await,
         "regenerate" => regenerate_preview(pool, config, http, &f).await,
+        "repost" => repost_daily_post(pool, config, http, &f, r.target_daily_post_id).await,
         other => Err(AppError::BadRequest(format!("Unknown request: {other}"))),
     }
 }

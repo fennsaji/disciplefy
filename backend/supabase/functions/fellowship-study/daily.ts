@@ -22,14 +22,18 @@ export const POST_TIMES = ['06:30', '08:00', '12:00', '18:00', '20:00'] as const
 export const REGENERATE_DAILY_CAP = 3
 const UPCOMING_LIMIT = 5
 const HISTORY_LIMIT = 10
-const REQUEST_KINDS = ['preview', 'regenerate', 'post_now'] as const
+const REQUEST_KINDS = ['preview', 'regenerate', 'post_now', 'repost'] as const
 type RequestKind = typeof REQUEST_KINDS[number]
 
+// "Post again" publishes immediately, so it sits under the Post now switch.
 const FLAG_FOR_KIND: Record<RequestKind, string> = {
   preview: 'daily_post_preview_allowed',
   regenerate: 'daily_post_regenerate_allowed',
   post_now: 'daily_post_post_now_allowed',
+  repost: 'daily_post_post_now_allowed',
 }
+
+export const REPOST_DAILY_CAP = 3
 
 // ---------------------------------------------------------------------------
 // Schedule rules (mirror rs-backend models/fellowship_daily.rs)
@@ -260,7 +264,7 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
 
   // Latest request of each kind, so the app can show progress and errors.
   const { data: requestRows } = await db.from('discipler_daily_post_requests')
-    .select('kind, status, error, created_at, processed_at')
+    .select('kind, status, error, created_at, processed_at, target_daily_post_id')
     .eq('fellowship_id', f.id)
     .order('created_at', { ascending: false })
     .limit(20)
@@ -271,20 +275,37 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
 
   // History with how many members completed each guide.
   const { data: historyRows } = await db.from('discipler_daily_posts')
-    .select('post_date, post_id, study_guide_id, learning_path_topic_id, created_at')
+    .select('id, post_date, post_id, study_guide_id, learning_path_topic_id, topic_id, created_at')
     .eq('fellowship_id', f.id)
     .order('post_date', { ascending: false })
     .limit(HISTORY_LIMIT)
   const history = (historyRows ?? []) as {
-    post_date: string; post_id: string | null; study_guide_id: string | null; created_at: string
+    id: string; post_date: string; post_id: string | null; study_guide_id: string | null
+    topic_id: string; created_at: string
   }[]
   const postIds = history.map((h) => h.post_id).filter(Boolean) as string[]
   const guideIds = history.map((h) => h.study_guide_id).filter(Boolean) as string[]
   const titleByPost = new Map<string, string>()
+  const deletedPosts = new Set<string>()
   if (postIds.length) {
-    const { data: posts } = await db.from('fellowship_posts').select('id, topic_title').in('id', postIds)
-    for (const p of (posts ?? []) as { id: string; topic_title: string | null }[]) {
+    const { data: posts } = await db.from('fellowship_posts').select('id, topic_title, is_deleted').in('id', postIds)
+    for (const p of (posts ?? []) as { id: string; topic_title: string | null; is_deleted: boolean }[]) {
       if (p.topic_title) titleByPost.set(p.id, p.topic_title)
+      if (p.is_deleted) deletedPosts.add(p.id)
+    }
+  }
+  // A post removed outright leaves no title to show; fall back to the lesson's.
+  const titleByTopic = new Map<string, string>()
+  const untitled = history.filter((h) => !h.post_id || !titleByPost.has(h.post_id)).map((h) => h.topic_id)
+  if (untitled.length) {
+    const { data: topics } = await db.from('recommended_topics').select('id, title').in('id', untitled)
+    for (const t of (topics ?? []) as { id: string; title: string }[]) titleByTopic.set(t.id, t.title)
+    if (f.language !== 'en') {
+      const { data: translations } = await db.from('recommended_topics_translations')
+        .select('topic_id, title').eq('language_code', f.language).in('topic_id', untitled)
+      for (const t of (translations ?? []) as { topic_id: string; title: string | null }[]) {
+        if (t.title?.trim()) titleByTopic.set(t.topic_id, t.title)
+      }
     }
   }
   const completedByGuide = new Map<string, number>()
@@ -327,11 +348,17 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
     preview,
     requests,
     history: history.map((h) => ({
+      daily_post_id: h.id,
       post_date: h.post_date,
       post_id: h.post_id,
-      topic_title: h.post_id ? titleByPost.get(h.post_id) ?? null : null,
+      // Deleted by a mentor, or removed outright: "Post again" still works.
+      post_deleted: !h.post_id || deletedPosts.has(h.post_id),
+      topic_title: (h.post_id ? titleByPost.get(h.post_id) : undefined) ?? titleByTopic.get(h.topic_id) ?? null,
       completed_count: h.study_guide_id ? completedByGuide.get(h.study_guide_id) ?? 0 : 0,
     })),
+    reposts_left_today: f.daily_post_post_now_allowed === true
+      ? Math.max(REPOST_DAILY_CAP - (await repostsToday(db, f.id, today)), 0)
+      : 0,
   }
 
   return json({ success: true, data })
@@ -435,9 +462,20 @@ async function setNextLesson(db: Db, fellowshipId: string, learningPathTopicId: 
 // POST /daily/request
 // ---------------------------------------------------------------------------
 
+/** Reposts requested today that did not fail (open ones count too). */
+async function repostsToday(db: Db, fellowshipId: string, today: string): Promise<number> {
+  const { count } = await db.from('discipler_daily_post_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('fellowship_id', fellowshipId)
+    .eq('kind', 'repost')
+    .neq('status', 'failed')
+    .gte('created_at', `${today}T00:00:00Z`)
+  return count ?? 0
+}
+
 export async function handleDailyRequest(req: Request, services: ServiceContainer): Promise<Response> {
   const userId = await authenticate(req, services)
-  const body = await readBody<{ kind?: string }>(req)
+  const body = await readBody<{ kind?: string; daily_post_id?: string }>(req)
   if (!REQUEST_KINDS.includes(body.kind as RequestKind)) {
     throw new AppError('VALIDATION_ERROR', `kind must be one of ${REQUEST_KINDS.join(', ')}`, 400)
   }
@@ -467,10 +505,28 @@ export async function handleDailyRequest(req: Request, services: ServiceContaine
     }
   }
 
+  let targetDailyPostId: string | null = null
+  if (kind === 'repost') {
+    if (typeof body.daily_post_id !== 'string' || !body.daily_post_id) {
+      throw new AppError('VALIDATION_ERROR', 'daily_post_id is required to post again', 400)
+    }
+    const { data: dailyPost } = await db.from('discipler_daily_posts')
+      .select('id').eq('id', body.daily_post_id).eq('fellowship_id', f.id).maybeSingle()
+    if (!dailyPost) throw new AppError('NOT_FOUND', 'That post is no longer available', 404)
+    if (await repostsToday(db, f.id, today) >= REPOST_DAILY_CAP) {
+      throw new AppError('RATE_LIMIT_EXCEEDED', "You have posted again the most times allowed today", 429)
+    }
+    targetDailyPostId = dailyPost.id
+  }
+
   const { error } = await db.from('discipler_daily_post_requests').insert({
-    fellowship_id: f.id, kind, requested_by: userId,
+    fellowship_id: f.id, kind, requested_by: userId, target_daily_post_id: targetDailyPostId,
   })
-  // 23505: the same request is already waiting — nothing more to do.
+  if (error && error.code === '23505' && kind === 'repost') {
+    // Only one repost runs at a time, and it may be for a different post.
+    throw new AppError('VALIDATION_ERROR', 'Another post is being posted again. Try again in a minute', 409)
+  }
+  // 23505 otherwise: the same request is already waiting — nothing more to do.
   if (error && error.code !== '23505') {
     console.error('[fellowship-study/daily/request] insert error:', error)
     throw new AppError('DATABASE_ERROR', 'Failed to record the request', 500)

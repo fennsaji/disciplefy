@@ -64,8 +64,10 @@ CREATE TABLE IF NOT EXISTS discipler_daily_post_previews (
 CREATE TABLE IF NOT EXISTS discipler_daily_post_requests (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   fellowship_id UUID NOT NULL REFERENCES fellowships(id) ON DELETE CASCADE,
-  kind          TEXT NOT NULL CHECK (kind IN ('post_now', 'preview', 'regenerate')),
+  kind          TEXT NOT NULL CHECK (kind IN ('post_now', 'preview', 'regenerate', 'repost')),
   requested_by  UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- For 'repost': the daily post to replace with a newly written version.
+  target_daily_post_id UUID REFERENCES discipler_daily_posts(id) ON DELETE CASCADE,
   status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'done', 'failed')),
   error         TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
