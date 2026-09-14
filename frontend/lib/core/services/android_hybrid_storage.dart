@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,6 +33,13 @@ class AndroidHybridStorage extends LocalStorage {
     required SharedPreferences prefs,
   })  : _secure = secure,
         _prefs = prefs;
+
+  @visibleForTesting
+  factory AndroidHybridStorage.forTesting({
+    required FlutterSecureStorage secure,
+    required SharedPreferences prefs,
+  }) =>
+      AndroidHybridStorage._(secure: secure, prefs: prefs);
 
   /// Create instance - must be called in main() after WidgetsFlutterBinding
   static Future<AndroidHybridStorage> create() async {
@@ -122,19 +130,30 @@ class AndroidHybridStorage extends LocalStorage {
 
   @override
   Future<void> persistSession(String sessionString) async {
-    bool secureSuccess = false;
-
     // Write to SecureStorage FIRST (primary — encrypted at rest)
     try {
       await _secure.write(key: _secureKey, value: sessionString);
-      secureSuccess = true;
-      Logger.info('✅ [ANDROID STORAGE] Saved to SecureStorage (primary)');
+
+      // flutter_secure_storage does not report a store it could not open. When
+      // Android restores its encrypted prefs from a backup onto a reinstall,
+      // the Keystore key that decrypts them is gone: EncryptedSharedPreferences
+      // fails to initialise, write() silently does nothing and read() returns
+      // null. Without this read-back the session was never saved, and every
+      // cold start (opening the app, tapping a shared link) landed on login.
+      final stored = await _secure.read(key: _secureKey);
+      if (stored == sessionString) {
+        Logger.info('✅ [ANDROID STORAGE] Saved to SecureStorage (primary)');
+        // Drop any plaintext copy left by an earlier degraded write now that
+        // the encrypted copy is good.
+        try {
+          await _prefs.remove(_prefsKey);
+        } catch (_) {}
+        return;
+      }
+      Logger.warning(
+          '⚠️  [ANDROID STORAGE] SecureStorage accepted the write but did not keep it');
     } catch (e) {
       Logger.warning('⚠️  [ANDROID STORAGE] SecureStorage write failed: $e');
-    }
-
-    if (secureSuccess) {
-      return;
     }
 
     // SecureStorage failed — fall back to SharedPreferences as a degraded path.
@@ -177,11 +196,15 @@ class AndroidHybridStorage extends LocalStorage {
       if (session != null && session.isNotEmpty) {
         Logger.warning(
             '⚠️  [ANDROID STORAGE] Fell back to SharedPreferences (plaintext). Attempting migration to SecureStorage...');
-        // Attempt to migrate back into SecureStorage
+        // Attempt to migrate back into SecureStorage. The plaintext copy stays
+        // until persistSession confirms an encrypted one (see there): a store
+        // that cannot be opened accepts this write and keeps nothing.
         try {
           await _secure.write(key: _secureKey, value: session);
-          Logger.info(
-              '✅ [ANDROID STORAGE] Migrated session from SharedPrefs back to SecureStorage');
+          if (await _secure.read(key: _secureKey) == session) {
+            Logger.info(
+                '✅ [ANDROID STORAGE] Migrated session from SharedPrefs back to SecureStorage');
+          }
         } catch (e) {
           Logger.warning(
               '⚠️  [ANDROID STORAGE] Could not migrate back to SecureStorage: $e');
