@@ -144,7 +144,7 @@ pub fn next_post_date(
         }
     }
     if skip == Some(date) {
-        date = date + step;
+        date += step;
     }
     date
 }
