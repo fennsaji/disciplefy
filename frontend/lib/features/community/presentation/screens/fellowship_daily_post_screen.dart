@@ -592,8 +592,9 @@ class _ScheduleSection extends StatelessWidget {
                         : context.appTextPrimary,
                   ),
                   // Kept enabled when selected: a null handler greys the
-                  // chosen time out so it reads as unavailable.
-                  onSelected: saving
+                  // chosen time out so it reads as unavailable. Disabled with
+                  // the rest of the schedule while daily posts are off.
+                  onSelected: saving || !settings.dailyPostOn
                       ? null
                       : (_) {
                           if (time != settings.time) {

@@ -712,8 +712,7 @@ class AppLocalizations {
           'Moves the group to the next lesson after each post',
       'dailyPostScreenTitle': 'Daily post',
       'dailyPostNextTitle': 'Next post',
-      'dailyPostOff':
-          'Daily posts are off. Turn them on in Fellowship Settings.',
+      'dailyPostOff': 'Daily posts are off. Turn on Post a daily study below.',
       'dailyPostPostedToday': "Today's post has gone out",
       'dailyPostLastPost': 'Last post',
       'dailyPostPath': 'Learning path',
@@ -725,7 +724,7 @@ class AppLocalizations {
       'dailyPostTimeLabel': 'Posting time (IST)',
       'dailyPostSkipNext': 'Skip the next post',
       'dailyPostSkipNextSubtitle': 'Only the next post is skipped',
-      'dailyPostSkipped': 'Skipping {date}',
+      'dailyPostSkipped': 'Skipped: {date}',
       'dailyPostPause': 'Pause daily posts till',
       'dailyPostPauseSubtitle': 'Pick the last day with no post',
       'dailyPostPickDate': 'Pick date',
@@ -1480,7 +1479,7 @@ class AppLocalizations {
       'dailyPostScreenTitle': 'दैनिक पोस्ट',
       'dailyPostNextTitle': 'अगली पोस्ट',
       'dailyPostOff':
-          'दैनिक पोस्ट बंद हैं। इन्हें फेलोशिप सेटिंग्स में चालू करें।',
+          'दैनिक पोस्ट बंद हैं। नीचे दैनिक अध्ययन पोस्ट करें चालू करें।',
       'dailyPostPostedToday': 'आज की पोस्ट भेज दी गई है',
       'dailyPostLastPost': 'पिछली पोस्ट',
       'dailyPostPath': 'अध्ययन पथ',
@@ -2256,7 +2255,7 @@ class AppLocalizations {
       'dailyPostScreenTitle': 'ദിവസേനയുള്ള പോസ്റ്റ്',
       'dailyPostNextTitle': 'അടുത്ത പോസ്റ്റ്',
       'dailyPostOff':
-          'ദിവസേനയുള്ള പോസ്റ്റുകൾ ഓഫാണ്. ഫെലോഷിപ്പ് സെറ്റിംഗ്സിൽ ഓണാക്കുക.',
+          'ദിവസേനയുള്ള പോസ്റ്റുകൾ ഓഫാണ്. താഴെ ദിവസേനയുള്ള പഠനം ഓണാക്കുക.',
       'dailyPostPostedToday': 'ഇന്നത്തെ പോസ്റ്റ് പോയിക്കഴിഞ്ഞു',
       'dailyPostLastPost': 'അവസാന പോസ്റ്റ്',
       'dailyPostPath': 'പഠന പാത',
