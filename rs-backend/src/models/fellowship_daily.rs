@@ -16,7 +16,7 @@
 //! meantime the guard matches zero rows, the whole transaction (post, cursor,
 //! activity — everything) is rolled back and the run is counted as skipped,
 //! not posted. The next eligible run recomputes the plan from scratch.
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -31,20 +31,369 @@ pub struct DailyFellowship {
     pub language: String,
     pub daily_post_frequency_days: i32,
     pub daily_post_auto_advance: bool,
+    /// IST posting time, `HH:MM` (see the `fellowships_daily_post_time_check`).
+    pub daily_post_time: String,
+    pub daily_post_skip_date: Option<NaiveDate>,
+    pub daily_post_paused_until: Option<NaiveDate>,
+    pub daily_post_last_failed_at: Option<DateTime<Utc>>,
+    pub daily_post_preview_allowed: bool,
+    pub daily_post_regenerate_allowed: bool,
+    pub daily_post_post_now_allowed: bool,
 }
 
-/// Fellowships allowed a daily post today (admin allowed + mentor on + active).
-/// Frequency and already-posted checks happen per-fellowship (spec §4).
+const DAILY_FELLOWSHIP_COLUMNS: &str =
+    "f.id, f.name, f.language, f.daily_post_frequency_days, f.daily_post_auto_advance,
+     f.daily_post_time, f.daily_post_skip_date, f.daily_post_paused_until,
+     f.daily_post_last_failed_at, f.daily_post_preview_allowed,
+     f.daily_post_regenerate_allowed, f.daily_post_post_now_allowed";
+
+/// Fellowships that may still post today (admin allowed + mentor on + active,
+/// and nothing posted yet today). The job runs every minute, so groups that
+/// already posted are filtered here rather than re-checked one by one.
+/// Frequency, posting time, skip and pause are checked per fellowship.
 pub async fn list_daily_fellowships(pool: &PgPool) -> Result<Vec<DailyFellowship>, AppError> {
-    let rows = sqlx::query_as::<_, DailyFellowship>(
-        "SELECT f.id, f.name, f.language, f.daily_post_frequency_days, f.daily_post_auto_advance
+    let rows = sqlx::query_as::<_, DailyFellowship>(&format!(
+        "SELECT {DAILY_FELLOWSHIP_COLUMNS}
          FROM fellowships f
          WHERE f.is_active = true AND f.daily_post_allowed = true AND f.daily_post_on = true
-         ORDER BY f.created_at",
-    )
+           AND NOT EXISTS (
+             SELECT 1 FROM discipler_daily_posts d
+             WHERE d.fellowship_id = f.id AND d.post_date = (now() AT TIME ZONE 'utc')::date
+           )
+         ORDER BY f.created_at"
+    ))
     .fetch_all(pool)
     .await?;
     Ok(rows)
+}
+
+/// One fellowship for a mentor request. Requires the admin to allow daily posts
+/// but not the mentor's on/off switch: a mentor may preview or post while the
+/// schedule is off.
+pub async fn load_daily_fellowship(
+    pool: &PgPool,
+    fellowship_id: Uuid,
+) -> Result<Option<DailyFellowship>, AppError> {
+    let row = sqlx::query_as::<_, DailyFellowship>(&format!(
+        "SELECT {DAILY_FELLOWSHIP_COLUMNS}
+         FROM fellowships f
+         WHERE f.id = $1 AND f.is_active = true AND f.daily_post_allowed = true"
+    ))
+    .bind(fellowship_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+/// Posting times are India Standard Time.
+const IST_OFFSET_MINUTES: i64 = 330;
+
+/// The current time of day in IST.
+pub fn ist_time(now: DateTime<Utc>) -> NaiveTime {
+    (now + chrono::Duration::minutes(IST_OFFSET_MINUTES)).time()
+}
+
+/// True once the fellowship's IST posting time has been reached today. An
+/// unreadable value (the DB constraint should prevent it) posts rather than
+/// silently never posting.
+pub fn slot_reached(now_ist: NaiveTime, slot: &str) -> bool {
+    match NaiveTime::parse_from_str(slot, "%H:%M") {
+        Ok(t) => now_ist >= t,
+        Err(_) => {
+            tracing::warn!(slot, "unreadable daily_post_time, treating as reached");
+            true
+        }
+    }
+}
+
+pub fn is_paused(date: NaiveDate, paused_until: Option<NaiveDate>) -> bool {
+    paused_until.is_some_and(|p| date <= p)
+}
+
+/// The date cadence counts from. A skipped date that has arrived counts as a
+/// posting day, so skipping a weekly group's post moves it a week, not a day.
+pub fn effective_last_post(
+    last: Option<NaiveDate>,
+    skip: Option<NaiveDate>,
+    today: NaiveDate,
+) -> Option<NaiveDate> {
+    let skip = skip.filter(|s| *s <= today);
+    match (last, skip) {
+        (Some(l), Some(s)) => Some(l.max(s)),
+        (l, s) => l.or(s),
+    }
+}
+
+/// The date the next scheduled post goes out, applying cadence, a future skip
+/// and a pause. Mirrors the checks in the cron (and the Edge status endpoint).
+pub fn next_post_date(
+    last: Option<NaiveDate>,
+    today: NaiveDate,
+    freq: i32,
+    skip: Option<NaiveDate>,
+    paused_until: Option<NaiveDate>,
+) -> NaiveDate {
+    let step = chrono::Duration::days(i64::from(freq.max(1)));
+    let mut date = match effective_last_post(last, skip, today) {
+        None => today,
+        Some(l) => today.max(l + step),
+    };
+    if let Some(p) = paused_until {
+        if date <= p {
+            date = p + chrono::Duration::days(1);
+        }
+    }
+    if skip == Some(date) {
+        date += step;
+    }
+    date
+}
+
+/// Records a failed generation so the every-minute job waits before retrying.
+pub async fn mark_post_failed(pool: &PgPool, fellowship_id: Uuid) -> Result<(), AppError> {
+    sqlx::query("UPDATE fellowships SET daily_post_last_failed_at = now() WHERE id = $1")
+        .bind(fellowship_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct Preview {
+    pub post_date: NaiveDate,
+    pub learning_path_topic_id: Uuid,
+    pub teaser_hook: Option<String>,
+    pub teaser_body: Option<String>,
+    pub regenerate_date: Option<NaiveDate>,
+    pub regenerate_count: i32,
+}
+
+pub async fn load_preview(pool: &PgPool, fellowship_id: Uuid) -> Result<Option<Preview>, AppError> {
+    let row = sqlx::query_as::<_, Preview>(
+        "SELECT post_date, learning_path_topic_id, teaser_hook, teaser_body, regenerate_date, regenerate_count
+         FROM discipler_daily_post_previews WHERE fellowship_id = $1",
+    )
+    .bind(fellowship_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+pub struct PreviewWrite<'a> {
+    pub fellowship_id: Uuid,
+    pub post_date: NaiveDate,
+    pub learning_path_topic_id: Uuid,
+    pub topic_id: Uuid,
+    pub topic_title: &'a str,
+    pub study_guide_id: Option<Uuid>,
+    pub teaser_hook: Option<&'a str>,
+    pub teaser_body: Option<&'a str>,
+    pub content: &'a str,
+}
+
+/// Stores the preview. Leaves the regenerate counter alone so generating a new
+/// preview cannot reset the daily regenerate limit.
+pub async fn upsert_preview(pool: &PgPool, w: &PreviewWrite<'_>) -> Result<(), AppError> {
+    sqlx::query(
+        "INSERT INTO discipler_daily_post_previews
+           (fellowship_id, post_date, learning_path_topic_id, topic_id, topic_title,
+            study_guide_id, teaser_hook, teaser_body, content)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (fellowship_id) DO UPDATE SET
+           post_date = EXCLUDED.post_date,
+           learning_path_topic_id = EXCLUDED.learning_path_topic_id,
+           topic_id = EXCLUDED.topic_id,
+           topic_title = EXCLUDED.topic_title,
+           study_guide_id = EXCLUDED.study_guide_id,
+           teaser_hook = EXCLUDED.teaser_hook,
+           teaser_body = EXCLUDED.teaser_body,
+           content = EXCLUDED.content,
+           updated_at = now()",
+    )
+    .bind(w.fellowship_id)
+    .bind(w.post_date)
+    .bind(w.learning_path_topic_id)
+    .bind(w.topic_id)
+    .bind(w.topic_title)
+    .bind(w.study_guide_id)
+    .bind(w.teaser_hook)
+    .bind(w.teaser_body)
+    .bind(w.content)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn record_regenerate(
+    pool: &PgPool,
+    fellowship_id: Uuid,
+    today: NaiveDate,
+    count: i32,
+) -> Result<(), AppError> {
+    sqlx::query(
+        "UPDATE discipler_daily_post_previews
+            SET regenerate_date = $2, regenerate_count = $3, updated_at = now()
+          WHERE fellowship_id = $1",
+    )
+    .bind(fellowship_id)
+    .bind(today)
+    .bind(count)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct DailyRequest {
+    pub id: Uuid,
+    pub fellowship_id: Uuid,
+    pub kind: String,
+    /// For `repost`: the daily post to replace.
+    pub target_daily_post_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct DailyPostRow {
+    pub id: Uuid,
+    /// `None` when the fellowship post was removed outright (FK is SET NULL).
+    pub post_id: Option<Uuid>,
+    pub learning_path_topic_id: Uuid,
+}
+
+pub async fn load_daily_post_row(
+    pool: &PgPool,
+    fellowship_id: Uuid,
+    daily_post_id: Uuid,
+) -> Result<Option<DailyPostRow>, AppError> {
+    let row = sqlx::query_as::<_, DailyPostRow>(
+        "SELECT id, post_id, learning_path_topic_id FROM discipler_daily_posts
+          WHERE id = $1 AND fellowship_id = $2",
+    )
+    .bind(daily_post_id)
+    .bind(fellowship_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+pub struct RepostInsert<'a> {
+    pub fellowship_id: Uuid,
+    pub daily_post_id: Uuid,
+    /// The post being replaced, if it still exists. Already-deleted posts are fine.
+    pub old_post_id: Option<Uuid>,
+    pub content: &'a str,
+    pub topic_id: Uuid,
+    pub topic_title: &'a str,
+    pub study_guide_id: Option<Uuid>,
+    pub language: &'a str,
+}
+
+/// Replaces a daily post with a new version in one transaction: hides the old
+/// fellowship post (a no-op if a mentor already deleted it), inserts the new
+/// one, and points the daily post record at it. The study cursor and the
+/// post's date do not change, so the schedule is unaffected.
+pub async fn replace_daily_post(pool: &PgPool, input: RepostInsert<'_>) -> Result<Uuid, AppError> {
+    let discipler = Uuid::parse_str(DISCIPLER_USER_ID).expect("constant uuid");
+    let mut tx = pool.begin().await?;
+
+    if let Some(old) = input.old_post_id {
+        sqlx::query(
+            "UPDATE fellowship_posts SET is_deleted = true, updated_at = now()
+              WHERE id = $1 AND fellowship_id = $2 AND is_deleted = false",
+        )
+        .bind(old)
+        .bind(input.fellowship_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    let (post_id,): (Uuid,) = sqlx::query_as(
+        "INSERT INTO fellowship_posts
+           (fellowship_id, author_user_id, content, post_type, topic_id, topic_title, guide_title,
+            study_guide_id, guide_input_type, guide_language)
+         VALUES ($1, $2, $3, 'daily', $4, $5, $5, $6, 'topic', $7)
+         RETURNING id",
+    )
+    .bind(input.fellowship_id)
+    .bind(discipler)
+    .bind(input.content)
+    .bind(input.topic_id.to_string())
+    .bind(input.topic_title)
+    .bind(input.study_guide_id)
+    .bind(input.language)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    let updated = sqlx::query(
+        "UPDATE discipler_daily_posts SET post_id = $1, study_guide_id = COALESCE($2, study_guide_id)
+          WHERE id = $3 AND fellowship_id = $4",
+    )
+    .bind(post_id)
+    .bind(input.study_guide_id)
+    .bind(input.daily_post_id)
+    .bind(input.fellowship_id)
+    .execute(&mut *tx)
+    .await?;
+    if updated.rows_affected() == 0 {
+        tx.rollback().await?;
+        return Err(AppError::NotFound(
+            "That post is no longer available.".into(),
+        ));
+    }
+
+    sqlx::query(
+        // Linked to the new post so the activity row can open, edit or delete it.
+        "INSERT INTO discipler_activity (fellowship_id, kind, summary, post_id) VALUES ($1, 'daily_post', $2, $3)",
+    )
+    .bind(input.fellowship_id)
+    .bind(format!("Posted again at a mentor's request: {}", input.topic_title))
+    .bind(post_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    Ok(post_id)
+}
+
+/// Claims up to `limit` mentor requests, oldest first. `SKIP LOCKED` keeps two
+/// job instances from taking the same request; a request claimed over 15
+/// minutes ago and never finished was abandoned and is claimed again.
+pub async fn claim_pending_requests(
+    pool: &PgPool,
+    limit: i64,
+) -> Result<Vec<DailyRequest>, AppError> {
+    let rows = sqlx::query_as::<_, DailyRequest>(
+        "UPDATE discipler_daily_post_requests
+            SET status = 'processing', claimed_at = now()
+          WHERE id IN (
+            SELECT id FROM discipler_daily_post_requests
+             WHERE status = 'pending'
+                OR (status = 'processing' AND claimed_at < now() - interval '15 minutes')
+             ORDER BY created_at
+             LIMIT $1
+             FOR UPDATE SKIP LOCKED
+          )
+          RETURNING id, fellowship_id, kind, target_daily_post_id",
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// Marks a request done, or failed with a message the mentor will see.
+pub async fn finish_request(pool: &PgPool, id: Uuid, error: Option<&str>) -> Result<(), AppError> {
+    sqlx::query(
+        "UPDATE discipler_daily_post_requests
+            SET status = CASE WHEN $2::text IS NULL THEN 'done' ELSE 'failed' END,
+                error = $2, processed_at = now()
+          WHERE id = $1",
+    )
+    .bind(id)
+    .bind(error)
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -138,27 +487,44 @@ const VISIBLE_WHERE: &str =
 /// returns `None` — "no visible lesson at a later position" — rather than
 /// comparing a raw position against a separate `COUNT(*)`, which silently
 /// breaks if positions are ever re-gapped.
+/// Columns and joins for a `Lesson`, shared by every lesson lookup.
+const LESSON_SELECT: &str =
+    "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type, lpt.position,
+            COALESCE(lp.recommended_mode, 'standard') AS study_mode,
+            lp.title AS path_title, lp.description AS path_description,
+            lp.disciple_level,
+            hi_t.title AS hi_title, ml_t.title AS ml_title,
+            hi_t.description AS hi_description, ml_t.description AS ml_description,
+            hi_lp.title AS hi_path_title, ml_lp.title AS ml_path_title,
+            hi_lp.description AS hi_path_description, ml_lp.description AS ml_path_description
+     FROM learning_path_topics lpt
+     JOIN recommended_topics rt ON rt.id = lpt.topic_id
+     JOIN learning_paths lp ON lp.id = lpt.learning_path_id
+     LEFT JOIN recommended_topics_translations hi_t ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
+     LEFT JOIN recommended_topics_translations ml_t ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
+     LEFT JOIN learning_path_translations hi_lp ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
+     LEFT JOIN learning_path_translations ml_lp ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'";
+
+/// A lesson by its `learning_path_topics.id`, visible or not: a mentor can
+/// post a past lesson again even if it has since been hidden from the path.
+pub async fn lesson_by_id(
+    pool: &PgPool,
+    learning_path_topic_id: Uuid,
+) -> Result<Option<Lesson>, AppError> {
+    let lesson = sqlx::query_as::<_, Lesson>(&format!("{LESSON_SELECT} WHERE lpt.id = $1"))
+        .bind(learning_path_topic_id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(lesson)
+}
+
 pub async fn current_lesson(
     pool: &PgPool,
     path_id: Uuid,
     index: i32,
 ) -> Result<Option<Lesson>, AppError> {
     let sql = format!(
-        "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type, lpt.position,
-                COALESCE(lp.recommended_mode, 'standard') AS study_mode,
-                lp.title AS path_title, lp.description AS path_description,
-                lp.disciple_level,
-                hi_t.title AS hi_title, ml_t.title AS ml_title,
-                hi_t.description AS hi_description, ml_t.description AS ml_description,
-                hi_lp.title AS hi_path_title, ml_lp.title AS ml_path_title,
-                hi_lp.description AS hi_path_description, ml_lp.description AS ml_path_description
-         FROM learning_path_topics lpt
-         JOIN recommended_topics rt ON rt.id = lpt.topic_id
-         JOIN learning_paths lp ON lp.id = lpt.learning_path_id
-         LEFT JOIN recommended_topics_translations hi_t ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
-         LEFT JOIN recommended_topics_translations ml_t ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
-         LEFT JOIN learning_path_translations hi_lp ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
-         LEFT JOIN learning_path_translations ml_lp ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
+        "{LESSON_SELECT}
          WHERE {VISIBLE_WHERE} AND lpt.position >= $2
          ORDER BY lpt.position
          LIMIT 1"
@@ -667,6 +1033,87 @@ mod tests {
         assert!(!should_post_today(Some(today), today, 1));
         assert!(!should_post_today(Some(today), today, 2));
         assert!(!should_post_today(Some(today), today, 7));
+    }
+
+    fn d(y: i32, m: u32, day: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, day).unwrap()
+    }
+
+    #[test]
+    fn slot_reached_compares_ist_time_of_day() {
+        let t = |h, m| NaiveTime::from_hms_opt(h, m, 0).unwrap();
+        assert!(!slot_reached(t(6, 29), "06:30"));
+        assert!(slot_reached(t(6, 30), "06:30"));
+        assert!(slot_reached(t(21, 0), "20:00"));
+        assert!(slot_reached(t(0, 0), "garbage"));
+    }
+
+    #[test]
+    fn ist_time_is_five_and_a_half_hours_ahead_of_utc() {
+        let utc = DateTime::parse_from_rfc3339("2026-09-14T01:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        assert_eq!(ist_time(utc), NaiveTime::from_hms_opt(6, 30, 0).unwrap());
+    }
+
+    #[test]
+    fn paused_through_the_last_day_inclusive() {
+        assert!(is_paused(d(2026, 9, 14), Some(d(2026, 9, 14))));
+        assert!(!is_paused(d(2026, 9, 15), Some(d(2026, 9, 14))));
+        assert!(!is_paused(d(2026, 9, 14), None));
+    }
+
+    #[test]
+    fn a_skipped_day_counts_as_a_posting_day_once_it_arrives() {
+        let today = d(2026, 9, 14);
+        assert_eq!(
+            effective_last_post(Some(d(2026, 9, 13)), Some(today), today),
+            Some(today)
+        );
+        // A future skip does not count yet.
+        assert_eq!(
+            effective_last_post(Some(d(2026, 9, 13)), Some(d(2026, 9, 20)), today),
+            Some(d(2026, 9, 13))
+        );
+        assert_eq!(effective_last_post(None, None, today), None);
+        // Skipping today blocks today's post through the normal cadence check.
+        assert!(!should_post_today(
+            effective_last_post(Some(d(2026, 9, 13)), Some(today), today),
+            today,
+            1
+        ));
+    }
+
+    #[test]
+    fn next_post_date_applies_cadence_skip_and_pause() {
+        let today = d(2026, 9, 14);
+        // Daily, posted yesterday: today.
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 13)), today, 1, None, None),
+            today
+        );
+        // Daily, posted today: tomorrow.
+        assert_eq!(
+            next_post_date(Some(today), today, 1, None, None),
+            d(2026, 9, 15)
+        );
+        // Weekly, posted 2 days ago: 5 days out.
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 12)), today, 7, None, None),
+            d(2026, 9, 19)
+        );
+        // Skipping the next weekly post moves it a week.
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 12)), today, 7, Some(d(2026, 9, 19)), None),
+            d(2026, 9, 26)
+        );
+        // Paused through the 20th: the 21st.
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 13)), today, 1, None, Some(d(2026, 9, 20))),
+            d(2026, 9, 21)
+        );
+        // Never posted: today.
+        assert_eq!(next_post_date(None, today, 1, None, None), today);
     }
 
     #[test]

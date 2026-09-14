@@ -178,6 +178,34 @@ class FellowshipPostDeleteRequested extends FellowshipFeedEvent {
   List<Object?> get props => [postId];
 }
 
+/// Replaces the text of the Discipler post [postId] (mentors only).
+class FellowshipPostEditRequested extends FellowshipFeedEvent {
+  final String postId;
+  final String content;
+
+  const FellowshipPostEditRequested({
+    required this.postId,
+    required this.content,
+  });
+
+  @override
+  List<Object?> get props => [postId, content];
+}
+
+/// Replaces the text of the Discipler reply [commentId] (mentors only).
+class FellowshipCommentEditRequested extends FellowshipFeedEvent {
+  final String commentId;
+  final String content;
+
+  const FellowshipCommentEditRequested({
+    required this.commentId,
+    required this.content,
+  });
+
+  @override
+  List<Object?> get props => [commentId, content];
+}
+
 /// Toggles the current user's reaction on a post.
 class FellowshipReactionToggleRequested extends FellowshipFeedEvent {
   /// The ID of the post to react to.

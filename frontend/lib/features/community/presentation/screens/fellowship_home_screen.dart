@@ -516,6 +516,9 @@ class _FellowshipHomeContent extends StatelessWidget {
                 if (value == 'discipler_activity') {
                   context.push('/community/$fellowshipId/discipler-activity');
                 }
+                if (value == 'daily_post') {
+                  context.push('/community/$fellowshipId/daily-post');
+                }
                 if (value == 'delete') _showDeleteConfirm(context);
               },
               itemBuilder: (_) => [
@@ -530,7 +533,22 @@ class _FellowshipHomeContent extends StatelessWidget {
                           style: TextStyle(color: context.appTextPrimary)),
                     ]),
                   ),
-                if (isMentor && (fellowship?.disciplerAllowed ?? false))
+                if (isMentor && (fellowship?.dailyPostAllowed ?? false))
+                  PopupMenuItem(
+                    value: 'daily_post',
+                    child: Row(children: [
+                      Icon(Icons.event_note_outlined,
+                          color: context.appTextPrimary, size: 18),
+                      const SizedBox(width: 10),
+                      Text(l10n.dailyPostScreenTitle,
+                          style: TextStyle(color: context.appTextPrimary)),
+                    ]),
+                  ),
+                // Daily posts show up in the activity list too, so groups with
+                // only daily posts need it to review and edit them.
+                if (isMentor &&
+                    ((fellowship?.disciplerAllowed ?? false) ||
+                        (fellowship?.dailyPostAllowed ?? false)))
                   PopupMenuItem(
                     value: 'discipler_activity',
                     child: Row(children: [

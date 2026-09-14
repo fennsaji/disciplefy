@@ -38,6 +38,34 @@ void main() {
     expect(t.contains(ShareLinks.publicWebUrl), false);
   });
 
+  test('a daily post is shared without its old reflection question', () {
+    final p = FellowshipPostEntity(
+      id: 'p3',
+      fellowshipId: 'f1',
+      authorUserId: 'u',
+      content: '📖 What is Discipleship?\n\n'
+          '✨ Following Jesus isn\'t a hobby.\n\n'
+          'Luke 9:23-24 cuts to the heart of it.\n\n'
+          '✝️ Luke 9:23-24\n\n'
+          '💬 What areas of your life have you not surrendered?',
+      postType: 'daily',
+      reactionCounts: const {},
+      isDeleted: false,
+      createdAt: 't',
+      authorDisplayName: 'Discipler',
+      commentCount: 0,
+    );
+    final t = buildPostShareText(
+      post: p,
+      fellowshipName: 'Just Us',
+      suffix: 'on Disciplefy',
+    );
+    expect(t.contains('💬'), false);
+    expect(t.contains('What areas of your life'), false);
+    expect(t.contains('"📖 What is Discipleship?'), true);
+    expect(t.contains('✝️ Luke 9:23-24"'), true);
+  });
+
   test('a pathological post is capped rather than sent whole', () {
     final p = FellowshipPostEntity(
       id: 'p2',

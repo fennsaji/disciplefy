@@ -53,17 +53,13 @@ export const ADS: HouseAd[] = [
     // what a guide contains, which reassures a sceptic but gives nobody a
     // reason to tap. This opens on the reader's live question instead.
     //
-    // The angle differs by locale on purpose. "Not translated" is noise to an
-    // English reader, who was never going to be handed a translation; to a
-    // Hindi or Malayalam reader it is the rarest thing on offer, so it leads.
-    // Claims verified: "in seconds" matches howItWorks.step2, "keep asking"
-    // is the follow-up chat feature, and native generation is real — see
-    // backend llm-config/language-configs.ts, where each language has its own
-    // instructions, examples and cultural context.
+    // Same message in every locale: the reader's question, what they get, and
+    // that it is free. Claims verified: "in seconds" matches howItWorks.step2
+    // and "keep asking" is the follow-up chat feature.
     subtitle: {
-      en: "Whatever you're wondering about this verse, ask it. A full study guide in seconds — then keep asking until it clicks. Free.",
-      hi: "आख़िरकार, हिन्दी में लिखी गई असली बाइबल स्टडी — अनुवाद नहीं। कुछ ही सेकंड में पूरी गाइड, फिर समझ आने तक सवाल पूछते रहें। मुफ़्त।",
-      ml: "ഒടുവിൽ, മലയാളത്തിൽ സ്വാഭാവികമായി തയ്യാറാക്കിയ യഥാർത്ഥ ബൈബിൾ പഠനം — പരിഭാഷയല്ല. നിമിഷങ്ങൾക്കുള്ളിൽ പൂർണ്ണ ഗൈഡ്, പിന്നെ മനസ്സിലാകുന്നത് വരെ ചോദ്യങ്ങൾ ചോദിച്ചുകൊണ്ടിരിക്കാം. സൗജന്യം.",
+      en: "Have questions about this passage? Get a full study guide in seconds, then keep asking until it makes sense. Free.",
+      hi: "इस अंश को लेकर कोई सवाल है? कुछ ही सेकंड में पूरी स्टडी गाइड पाएं, फिर जब तक बात समझ न आए, सवाल पूछते रहें। मुफ़्त।",
+      ml: "ഈ ഭാഗത്തെക്കുറിച്ച് സംശയങ്ങളുണ്ടോ? നിമിഷങ്ങൾക്കുള്ളിൽ പൂർണ്ണ പഠന ഗൈഡ് നേടൂ, പിന്നെ മനസ്സിലാകുന്നതുവരെ ചോദിച്ചുകൊണ്ടിരിക്കൂ. സൗജന്യം.",
     },
     ctaLabel: {
       en: "Open free guide",

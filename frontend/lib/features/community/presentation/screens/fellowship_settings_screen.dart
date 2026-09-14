@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import '../../../../core/utils/error_message_sanitizer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/injection_container.dart';
@@ -474,56 +475,15 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
                         .add(FellowshipSettingsChanged(
                             disciplerReactEnabled: v)),
                   ),
-                  if (widget.fellowship.dailyPostAllowed) ...[
-                    SwitchListTile(
+                  // Daily post settings live on the Daily post screen.
+                  if (widget.fellowship.dailyPostAllowed)
+                    ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.disciplerDailyToggle),
-                      value: draft.dailyPostOn,
-                      onChanged: (v) => context
-                          .read<FellowshipSettingsBloc>()
-                          .add(FellowshipSettingsChanged(dailyPostOn: v)),
+                      title: Text(l10n.dailyPostScreenTitle),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(
+                          '/community/${widget.fellowship.id}/daily-post'),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.dailyPostFrequency,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: context.appTextSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SegmentedButton<int>(
-                      segments: [
-                        ButtonSegment(
-                            value: 1, label: Text(l10n.frequencyDaily)),
-                        ButtonSegment(
-                            value: 2, label: Text(l10n.frequencyEveryTwoDays)),
-                        ButtonSegment(
-                            value: 7, label: Text(l10n.frequencyWeekly)),
-                      ],
-                      selected: {draft.dailyPostFrequencyDays},
-                      showSelectedIcon: false,
-                      onSelectionChanged: draft.dailyPostOn
-                          ? (s) => context.read<FellowshipSettingsBloc>().add(
-                              FellowshipSettingsChanged(
-                                  dailyPostFrequencyDays: s.first))
-                          : null,
-                    ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.disciplerAdvancesLessons),
-                      subtitle: Text(l10n.disciplerAdvancesLessonsSubtitle),
-                      value: draft.dailyPostAutoAdvance,
-                      onChanged: draft.dailyPostOn
-                          ? (v) => context.read<FellowshipSettingsBloc>().add(
-                              FellowshipSettingsChanged(
-                                  dailyPostAutoAdvance: v))
-                          : null,
-                    ),
-                  ],
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.disciplerNotifyToggle),

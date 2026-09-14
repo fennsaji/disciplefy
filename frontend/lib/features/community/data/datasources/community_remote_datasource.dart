@@ -57,6 +57,9 @@ abstract class CommunityRemoteDatasource {
   /// Soft-deletes the post identified by [postId].
   Future<void> deletePost(String postId);
 
+  /// Replaces the text of a Discipler post (mentors only).
+  Future<void> editPost(String postId, String content);
+
   /// Returns all comments for [postId].
   Future<List<FellowshipCommentModel>> getComments(String postId);
 
@@ -69,6 +72,9 @@ abstract class CommunityRemoteDatasource {
 
   /// Soft-deletes the comment identified by [commentId].
   Future<void> deleteComment(String commentId);
+
+  /// Replaces the text of a Discipler reply (mentors only).
+  Future<void> editComment(String commentId, String content);
 
   /// Toggles the current user's [reactionType] emoji on [postId].
   ///
@@ -116,6 +122,21 @@ abstract class CommunityRemoteDatasource {
 
   /// Resets the fellowship study progress back to Guide 1 (mentor only).
   Future<void> resetStudy(String fellowshipId);
+
+  /// Mentor view of the Discipler daily post (schedule, queue, preview,
+  /// pending actions, history). Returns the raw `data` object.
+  Future<Map<String, dynamic>> getDailyPostStatus(String fellowshipId);
+
+  /// Changes the daily post schedule. [changes] may carry `skip_next`,
+  /// `paused_until`, `time` and `next_learning_path_topic_id`.
+  Future<void> updateDailyPost(
+      String fellowshipId, Map<String, dynamic> changes);
+
+  /// Asks the server to run a daily post action: `preview`, `regenerate` or
+  /// `post_now`. The action runs in the background within about a minute.
+  /// For `repost`, [dailyPostId] is the daily post to replace.
+  Future<void> requestDailyPostAction(String fellowshipId, String kind,
+      {String? dailyPostId});
 
   /// Leaves the fellowship. Blocks if the caller is the sole mentor.
   Future<void> leaveFellowship(String fellowshipId);
@@ -337,6 +358,12 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       '/functions/v1/fellowship-study/advance';
   static const String _fellowshipStudyResetEndpoint =
       '/functions/v1/fellowship-study/reset';
+  static const String _dailyPostStatusEndpoint =
+      '/functions/v1/fellowship-study/daily/status';
+  static const String _dailyPostUpdateEndpoint =
+      '/functions/v1/fellowship-study/daily/update';
+  static const String _dailyPostRequestEndpoint =
+      '/functions/v1/fellowship-study/daily/request';
 
   // Merged: fellowship-members (list, mute, unmute, remove, transfer)
   static const String _fellowshipMembersListEndpoint =
@@ -897,6 +924,50 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   }
 
   // ---------------------------------------------------------------------------
+  // Discipler posts and replies — edit
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> editPost(String postId, String content) => _patchContent(
+        '$_baseUrl$_fellowshipPostsDeleteEndpoint',
+        {'post_id': postId, 'content': content},
+        'FELLOWSHIP_POST_EDIT_ERROR',
+      );
+
+  @override
+  Future<void> editComment(String commentId, String content) => _patchContent(
+        '$_baseUrl$_fellowshipCommentsDeleteEndpoint',
+        {'comment_id': commentId, 'content': content},
+        'FELLOWSHIP_COMMENT_EDIT_ERROR',
+      );
+
+  Future<void> _patchContent(
+      String url, Map<String, String> fields, String errorCode) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.patch(url,
+          headers: headers, body: jsonEncode(fields));
+      if (response.statusCode >= 400) {
+        String? message;
+        try {
+          final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+          message = (decoded['error'] as Map<String, dynamic>?)?['message']
+              as String?;
+        } catch (_) {}
+        throw ServerException(
+          message: message ?? 'Failed to save changes: ${response.statusCode}',
+          code: errorCode,
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+          message: 'Failed to save changes: $e', code: errorCode);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Reactions — toggle
   // ---------------------------------------------------------------------------
 
@@ -1152,6 +1223,91 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       );
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Discipler daily post — mentor controls
+  // ---------------------------------------------------------------------------
+
+  /// Posts to a daily post endpoint and returns the response `data` (or an
+  /// empty map). Error messages come from the server's `{code, message}` error
+  /// object — they are written for the mentor, so they are shown as-is.
+  Future<Map<String, dynamic>> _postDailyPost(
+    String endpoint,
+    Map<String, dynamic> body,
+    String code,
+    String failMsg,
+  ) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.post('$_baseUrl$endpoint',
+          headers: headers, body: jsonEncode(body));
+
+      Map<String, dynamic>? json;
+      try {
+        json = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        json = null;
+      }
+
+      if (response.statusCode != 200 || json?['success'] != true) {
+        final error = json?['error'];
+        final message = error is Map<String, dynamic>
+            ? error['message'] as String?
+            : error as String?;
+        // A 4xx with a message is the server explaining a rule to the mentor
+        // ("paused for up to 90 days"); keep it apart from real failures.
+        final userFacing = message != null &&
+            response.statusCode >= 400 &&
+            response.statusCode < 500;
+        throw ServerException(
+          message: message ?? failMsg,
+          code: userFacing ? dailyPostUserErrorCode : code,
+        );
+      }
+      return (json!['data'] as Map<String, dynamic>?) ?? const {};
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: '$failMsg: $e', code: code);
+    }
+  }
+
+  /// Exception code for a daily post request the server rejected with a
+  /// message meant for the mentor.
+  static const String dailyPostUserErrorCode = 'DAILY_POST_USER_ERROR';
+
+  @override
+  Future<Map<String, dynamic>> getDailyPostStatus(String fellowshipId) =>
+      _postDailyPost(
+        _dailyPostStatusEndpoint,
+        {'fellowship_id': fellowshipId},
+        'DAILY_POST_STATUS_ERROR',
+        'Failed to load the daily post',
+      );
+
+  @override
+  Future<void> updateDailyPost(
+          String fellowshipId, Map<String, dynamic> changes) =>
+      _postDailyPost(
+        _dailyPostUpdateEndpoint,
+        {'fellowship_id': fellowshipId, ...changes},
+        'DAILY_POST_UPDATE_ERROR',
+        'Failed to update the daily post',
+      );
+
+  @override
+  Future<void> requestDailyPostAction(String fellowshipId, String kind,
+          {String? dailyPostId}) =>
+      _postDailyPost(
+        _dailyPostRequestEndpoint,
+        {
+          'fellowship_id': fellowshipId,
+          'kind': kind,
+          if (dailyPostId != null) 'daily_post_id': dailyPostId,
+        },
+        'DAILY_POST_REQUEST_ERROR',
+        'Failed to start the daily post action',
+      );
 
   // ---------------------------------------------------------------------------
   // Fellowship study — reset

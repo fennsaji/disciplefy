@@ -74,7 +74,9 @@ function validateCompletionConditions(
   timeSpent: number,
   scrolledToBottom: boolean
 ): void {
-  const MIN_TIME_SECONDS = 60; // 1 minute
+  // Must not exceed the shortest client minimum (StudyMode.quick in
+  // study_mode.dart), or auto-completion of quick guides is rejected.
+  const MIN_TIME_SECONDS = 30;
 
   if (timeSpent < MIN_TIME_SECONDS) {
     throw new AppError(

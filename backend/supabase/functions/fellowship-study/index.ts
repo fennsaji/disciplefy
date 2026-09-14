@@ -9,6 +9,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { handleDailyRequest, handleDailyStatus, handleDailyUpdate } from './daily.ts'
 
 // ---------------------------------------------------------------------------
 // Set study  POST /fellowship-study/set
@@ -336,6 +337,9 @@ async function handleStudy(req: Request, services: ServiceContainer): Promise<Re
   if (req.method !== 'POST') throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)
 
   const pathname = new URL(req.url).pathname
+  if (pathname.endsWith('/daily/status'))  return handleDailyStatus(req, services)
+  if (pathname.endsWith('/daily/update'))  return handleDailyUpdate(req, services)
+  if (pathname.endsWith('/daily/request')) return handleDailyRequest(req, services)
   if (pathname.endsWith('/set'))     return handleSetStudy(req, services)
   if (pathname.endsWith('/advance')) return handleAdvanceStudy(req, services)
   if (pathname.endsWith('/reset'))   return handleResetStudy(req, services)

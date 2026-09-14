@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup rules for Android 11 and lower (android:fullBackupContent).
+
+     flutter_secure_storage's EncryptedSharedPreferences file is encrypted with
+     a key that lives only in this install's Android Keystore. Restoring the
+     file onto a reinstall or a new phone leaves it undecryptable, and the
+     plugin then silently drops every write — the signed-in session was lost
+     on each cold start. Keep it out of backups; everything else still backs
+     up. Mirror any change in data_extraction_rules.xml. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+</full-backup-content>

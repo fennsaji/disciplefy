@@ -76,12 +76,16 @@ const MARKERS: ReadonlyArray<[RegExp, PostBlock["kind"]]> = [
  * it, and cutting the question off the end left the page ending mid-thought.
  * `max` only guards against a pathological post; it is not an excerpt length.
  */
-export function postBlocks(content: string, max = 20000): PostBlock[] {
+export function postBlocks(
+  content: string,
+  max = 20000,
+  postType?: string,
+): PostBlock[] {
   const trimmed = content.length <= max
     ? content
     : `${content.slice(0, max - 1).trimEnd()}…`;
 
-  return trimmed
+  const blocks = trimmed
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean)
@@ -94,4 +98,10 @@ export function postBlocks(content: string, max = 20000): PostBlock[] {
       // A leading ✨ marks the hook, which reads as ordinary lead text.
       return { kind: "body" as const, text: block.replace(/^✨\s*/, "").trim() };
     });
+
+  // Older daily posts still carry a 💬 reflection question. The app hides it
+  // (the question lives in the study guide), so the shared page does too.
+  return postType === "daily"
+    ? blocks.filter((block) => block.kind !== "question")
+    : blocks;
 }

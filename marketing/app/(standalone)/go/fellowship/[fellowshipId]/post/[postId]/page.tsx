@@ -97,7 +97,7 @@ export default async function SharedPostPage(
               className="flex flex-col gap-4 border-l-2 border-[#5B4FE9] pl-5 sm:pl-6"
               style={{ fontFamily: READING_STACK }}
             >
-              {postBlocks(preview.content ?? "").map((block, index) => {
+              {postBlocks(preview.content ?? "", undefined, preview.post_type).map((block, index) => {
                 if (block.kind === "topic") {
                   return (
                     <p key={index} className="text-[14px] text-[#94A2BD]">

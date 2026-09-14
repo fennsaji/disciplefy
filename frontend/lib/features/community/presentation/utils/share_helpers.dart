@@ -58,12 +58,22 @@ const int _maxShareBody = 5000;
 ///
 /// The Discipler AI helper is attributed as `'Discipler'` rather than its
 /// raw author display name.
+///
+/// Older daily posts still carry a `💬` reflection question. The card hides
+/// it (the question lives in the study guide), so sharing drops it too.
 String buildPostShareText({
   required FellowshipPostEntity post,
   required String fellowshipName,
   required String suffix,
 }) {
-  final content = post.content.trim();
+  final content = (post.isDaily
+          ? post.content
+              .split('\n')
+              .where((line) => !line.trimLeft().startsWith('💬'))
+              .join('\n')
+              .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+          : post.content)
+      .trim();
   final body = content.length > _maxShareBody
       ? '${content.substring(0, _maxShareBody)}…'
       : content;

@@ -65,7 +65,11 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         discipler_react_enabled,
         daily_post_on,
         daily_post_frequency_days,
-        daily_post_auto_advance
+        daily_post_auto_advance,
+        daily_post_time,
+        daily_post_preview_allowed,
+        daily_post_regenerate_allowed,
+        daily_post_post_now_allowed
       )
     `)
     .eq('user_id', user.id)
@@ -203,6 +207,10 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         daily_post_on: fellowship.daily_post_on ?? true,
         daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
         daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+        daily_post_time: fellowship.daily_post_time ?? '06:30',
+        daily_post_preview_allowed: fellowship.daily_post_preview_allowed ?? false,
+        daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
+        daily_post_post_now_allowed: fellowship.daily_post_post_now_allowed ?? false,
         my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
         completed_path_ids: completedPathsByFellowship.get(fellowshipId) ?? [],
         current_study: study
@@ -1153,6 +1161,10 @@ function fellowshipSettingsPayload(fellowship: any) {
     daily_post_on: fellowship.daily_post_on ?? true,
     daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
     daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+    daily_post_time: fellowship.daily_post_time ?? '06:30',
+    daily_post_preview_allowed: fellowship.daily_post_preview_allowed ?? false,
+    daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
+    daily_post_post_now_allowed: fellowship.daily_post_post_now_allowed ?? false,
     updated_at: fellowship.updated_at,
   }
 }
@@ -1177,7 +1189,7 @@ async function handleDisciplerActivity(req: Request, services: ServiceContainer)
   if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
 
   let q = db.from('discipler_activity')
-    .select('id, kind, post_id, comment_id, reaction, language, summary, reviewed_by, reviewed_at, created_at, fellowship_posts(content, author_user_id, post_type, topic_title), fellowship_comments(content, is_pending_review, is_deleted)')
+    .select('id, kind, post_id, comment_id, reaction, language, summary, reviewed_by, reviewed_at, created_at, fellowship_posts(content, author_user_id, post_type, topic_title, is_deleted), fellowship_comments(content, is_pending_review, is_deleted)')
     .eq('fellowship_id', fellowshipId).order('created_at', { ascending: false }).limit(limit + 1)
   if (kind && ['reply', 'react', 'draft', 'daily_post'].includes(kind)) q = q.eq('kind', kind)
   if (cursor) q = q.lt('created_at', cursor)
@@ -1191,7 +1203,7 @@ async function handleDisciplerActivity(req: Request, services: ServiceContainer)
     data: page.map((r: any) => ({
       id: r.id, kind: r.kind, post_id: r.post_id, comment_id: r.comment_id, reaction: r.reaction, language: r.language,
       summary: r.summary, reviewed_at: r.reviewed_at, created_at: r.created_at,
-      post: r.fellowship_posts ? { content: r.fellowship_posts.content, post_type: r.fellowship_posts.post_type, topic_title: r.fellowship_posts.topic_title } : null,
+      post: r.fellowship_posts ? { content: r.fellowship_posts.content, post_type: r.fellowship_posts.post_type, topic_title: r.fellowship_posts.topic_title, is_deleted: r.fellowship_posts.is_deleted } : null,
       comment: r.fellowship_comments ? { content: r.fellowship_comments.content, is_pending_review: r.fellowship_comments.is_pending_review, is_deleted: r.fellowship_comments.is_deleted } : null,
     })),
     pagination: { has_more: hasMore, next_cursor: hasMore ? page[page.length - 1].created_at : null },

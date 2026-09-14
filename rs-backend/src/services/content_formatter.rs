@@ -226,7 +226,6 @@ pub fn format_blog_post(
 #[allow(dead_code)]
 pub struct DailyPostContent {
     pub content: String,
-    pub question: Option<String>,
     pub verse: Option<String>,
 }
 
@@ -254,25 +253,16 @@ pub(crate) fn teaser_grounding(guide: &StudyGuideResult) -> String {
         .unwrap_or_default()
 }
 
-/// First sentence of the summary section, the reflection question, and the
-/// first related verse reference — the fields shared by the plain-template
-/// daily post and the teaser request built from the same guide.
-pub(crate) fn extract_daily_fields(
-    guide: &StudyGuideResult,
-) -> (String, Option<String>, Option<String>) {
+/// First sentence of the summary section and the first related verse
+/// reference — the fields shared by the plain-template daily post and the
+/// teaser request built from the same guide. The reflection questions stay in
+/// the study guide; a daily post never carries one.
+pub(crate) fn extract_daily_fields(guide: &StudyGuideResult) -> (String, Option<String>) {
     let summary = guide
         .sections
         .get("summary")
         .map(|s| first_sentences(s, 1))
         .unwrap_or_default();
-
-    let question = guide
-        .sections
-        .get("reflectionQuestions")
-        .and_then(|raw| serde_json::from_str::<Vec<String>>(raw).ok())
-        .and_then(|v| v.into_iter().next())
-        .map(|q| q.trim().to_string())
-        .filter(|q| !q.is_empty());
 
     let verse = guide
         .sections
@@ -293,7 +283,7 @@ pub(crate) fn extract_daily_fields(
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    (summary, question, verse)
+    (summary, verse)
 }
 
 /// Plain-text daily post body for fellowship feeds (no markdown headings).
@@ -308,7 +298,7 @@ pub fn format_daily_post(
     _locale: &str,
     teaser: Option<&Teaser>,
 ) -> DailyPostContent {
-    let (summary, question, verse) = extract_daily_fields(guide);
+    let (summary, verse) = extract_daily_fields(guide);
 
     let mut content = match teaser {
         Some(t) => format!("📖 {}\n\n✨ {}\n\n{}", topic_title.trim(), t.hook, t.body),
@@ -319,11 +309,7 @@ pub fn format_daily_post(
     }
 
     let content: String = content.chars().take(1900).collect();
-    DailyPostContent {
-        content,
-        question,
-        verse,
-    }
+    DailyPostContent { content, verse }
 }
 
 #[cfg(test)]
@@ -365,10 +351,6 @@ mod daily_tests {
             .contains("Paul reminds the Corinthians that trust outlasts sight."));
         assert!(!d.content.contains("Faith is sight fixed on the eternal."));
         assert_eq!(d.verse.as_deref(), Some("2 Corinthians 5:7"));
-        assert_eq!(
-            d.question.as_deref(),
-            Some("When has faith carried you past what you could see?")
-        );
         assert!(!d.content.contains("Open the full study"));
         // The reflection question stays in the guide, not the post.
         assert!(!d.content.contains("💬"));
@@ -385,10 +367,9 @@ mod daily_tests {
         ));
         assert!(!d.content.contains("Paul reminds the Corinthians"));
         assert_eq!(d.verse.as_deref(), Some("2 Corinthians 5:7"));
-        assert_eq!(
-            d.question.as_deref(),
-            Some("When has faith carried you past what you could see?")
-        );
+        // A teaser post carries no reflection question either.
+        assert!(!d.content.contains("💬"));
+        assert!(!d.content.contains("When has faith carried you"));
     }
 
     #[test]
@@ -400,7 +381,6 @@ mod daily_tests {
         };
         let d = format_daily_post("T", &g, "ml", None);
         assert_eq!(d.verse, None);
-        assert_eq!(d.question, None);
         assert!(d.content.contains("Only one."));
         assert!(d.content.ends_with("Only one."));
     }
@@ -415,7 +395,6 @@ mod daily_tests {
         let t = teaser();
         let d = format_daily_post("T", &g, "en", Some(&t));
         assert_eq!(d.verse, None);
-        assert_eq!(d.question, None);
         assert!(d
             .content
             .ends_with("It's trust anchored in what God has already shown to be true."));

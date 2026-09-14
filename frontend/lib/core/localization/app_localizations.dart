@@ -710,6 +710,63 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'Discipler advances lessons',
       'disciplerAdvancesLessonsSubtitle':
           'Moves the group to the next lesson after each post',
+      'dailyPostScreenTitle': 'Daily post',
+      'dailyPostNextTitle': 'Next post',
+      'dailyPostOff':
+          'Daily posts are off. Turn them on in Fellowship Settings.',
+      'dailyPostPostedToday': "Today's post has gone out",
+      'dailyPostLastPost': 'Last post',
+      'dailyPostPath': 'Learning path',
+      'dailyPostNothingNext': 'Nothing new to post',
+      'dailyPostToday': 'Today',
+      'dailyPostTomorrow': 'Tomorrow',
+      'dailyPostAtTime': '{date} at {time}',
+      'dailyPostScheduleTitle': 'Schedule',
+      'dailyPostTimeLabel': 'Posting time (IST)',
+      'dailyPostSkipNext': 'Skip the next post',
+      'dailyPostSkipNextSubtitle': 'Only the next post is skipped',
+      'dailyPostSkipped': 'Skipping {date}',
+      'dailyPostPause': 'Pause daily posts till',
+      'dailyPostPauseSubtitle': 'Pick the last day with no post',
+      'dailyPostPickDate': 'Pick date',
+      'dailyPostResumesOn': 'Posts start again {date}',
+      'dailyPostPausedUntil': 'Paused till {date}',
+      'dailyPostResume': 'Resume',
+      'dailyPostUpNextTitle': 'Up next',
+      'dailyPostUpNextEmpty':
+          'No new lesson is queued. Move the group to the next lesson from the study.',
+      'dailyPostPostsNext': 'Posts next',
+      'dailyPostPostThisNext': 'Post this next',
+      'dailyPostPreviewTitle': 'Preview',
+      'dailyPostPreviewGenerate': 'Preview next post',
+      'dailyPostPreviewAgain': 'Preview again',
+      'dailyPostPreviewStale':
+          'This preview is for a different lesson or date. Preview again to see the next post.',
+      'dailyPostRegenerate': 'New teaser',
+      'dailyPostRegenerateLeft': 'New teaser ({count} left today)',
+      'dailyPostWorking': 'Working on it. This usually takes under a minute.',
+      'dailyPostPostNow': 'Post now',
+      'dailyPostPostNowConfirm':
+          "Post today's lesson to the group now? The daily post won't go out again today.",
+      'dailyPostCancel': 'Cancel',
+      'dailyPostHistoryTitle': 'Recent posts',
+      'dailyPostHistoryEmpty': 'No daily posts yet',
+      'dailyPostCompletedCount': '{count} completed',
+      'dailyPostDoneSchedule': 'Schedule updated',
+      'dailyPostDonePreview': 'Preview ready',
+      'dailyPostDoneRegenerate': 'New teaser ready',
+      'dailyPostDonePostNow': 'Posted to the group',
+      'dailyPostError': "Couldn't do that. Please try again.",
+      'dailyPostLoadError': "Couldn't load the daily post.",
+      'dailyPostRetry': 'Try again',
+      'dailyPostRepost': 'Post again',
+      'dailyPostRepostLeft': 'Post again ({count} left today)',
+      'dailyPostRepostConfirm':
+          'Replace this post with a newly written version of the same lesson? The current post is removed and members are notified again.',
+      'dailyPostRepostConfirmDeleted':
+          'Post this lesson again with a newly written version? Members will be notified.',
+      'dailyPostDoneRepost': 'Posted again',
+      'dailyPostPostDeleted': 'Deleted',
       'disciplerNotifyToggle': 'Notify me about Discipler activity',
       'disciplerActivityTitle': 'Discipler activity',
       'activityTabAll': 'All',
@@ -723,6 +780,10 @@ class AppLocalizations {
       'activityKindDaily': 'DAILY STUDY',
       'activityEmpty': 'Nothing from Discipler yet.',
       'deleteAction': 'Delete',
+      'editAction': 'Edit',
+      'disciplerEditTitle': 'Edit Discipler text',
+      'disciplerEditHint': 'Members see your changes right away.',
+      'disciplerEditSaved': 'Changes saved',
       'createFellowshipOfficial': 'Official Disciplefy fellowship',
       'createFellowshipDisciplerAllowed': 'Allow Discipler replies',
       'createFellowshipDailyAllowed': 'Allow daily study post',
@@ -1416,6 +1477,63 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'डिसाइपलर पाठ आगे बढ़ाए',
       'disciplerAdvancesLessonsSubtitle':
           'हर पोस्ट के बाद समूह को अगले पाठ पर ले जाता है',
+      'dailyPostScreenTitle': 'दैनिक पोस्ट',
+      'dailyPostNextTitle': 'अगली पोस्ट',
+      'dailyPostOff':
+          'दैनिक पोस्ट बंद हैं। इन्हें फेलोशिप सेटिंग्स में चालू करें।',
+      'dailyPostPostedToday': 'आज की पोस्ट भेज दी गई है',
+      'dailyPostLastPost': 'पिछली पोस्ट',
+      'dailyPostPath': 'अध्ययन पथ',
+      'dailyPostNothingNext': 'पोस्ट करने के लिए कुछ नया नहीं है',
+      'dailyPostToday': 'आज',
+      'dailyPostTomorrow': 'कल',
+      'dailyPostAtTime': '{date}, {time}',
+      'dailyPostScheduleTitle': 'समय-सारणी',
+      'dailyPostTimeLabel': 'पोस्ट का समय (IST)',
+      'dailyPostSkipNext': 'अगली पोस्ट छोड़ें',
+      'dailyPostSkipNextSubtitle': 'सिर्फ़ अगली पोस्ट छोड़ी जाएगी',
+      'dailyPostSkipped': '{date} की पोस्ट छोड़ी जाएगी',
+      'dailyPostPause': 'दैनिक पोस्ट इस तारीख तक रोकें',
+      'dailyPostPauseSubtitle': 'वह आखिरी दिन चुनें जब पोस्ट नहीं होगी',
+      'dailyPostPickDate': 'तारीख चुनें',
+      'dailyPostResumesOn': 'पोस्ट {date} से फिर शुरू होंगी',
+      'dailyPostPausedUntil': '{date} तक रुकी हुई',
+      'dailyPostResume': 'फिर शुरू करें',
+      'dailyPostUpNextTitle': 'आगे के पाठ',
+      'dailyPostUpNextEmpty':
+          'कोई नया पाठ कतार में नहीं है। अध्ययन से समूह को अगले पाठ पर ले जाएँ।',
+      'dailyPostPostsNext': 'अगली पोस्ट',
+      'dailyPostPostThisNext': 'इसे अगली बार पोस्ट करें',
+      'dailyPostPreviewTitle': 'पूर्वावलोकन',
+      'dailyPostPreviewGenerate': 'अगली पोस्ट का पूर्वावलोकन',
+      'dailyPostPreviewAgain': 'फिर से पूर्वावलोकन',
+      'dailyPostPreviewStale':
+          'यह पूर्वावलोकन किसी दूसरे पाठ या तारीख का है। अगली पोस्ट देखने के लिए फिर से पूर्वावलोकन करें।',
+      'dailyPostRegenerate': 'नया टीज़र',
+      'dailyPostRegenerateLeft': 'नया टीज़र (आज {count} बाकी)',
+      'dailyPostWorking': 'तैयार हो रहा है। आमतौर पर एक मिनट से कम लगता है।',
+      'dailyPostPostNow': 'अभी पोस्ट करें',
+      'dailyPostPostNowConfirm':
+          'आज का पाठ अभी समूह में पोस्ट करें? आज दोबारा दैनिक पोस्ट नहीं जाएगी।',
+      'dailyPostCancel': 'रद्द करें',
+      'dailyPostHistoryTitle': 'हाल की पोस्ट',
+      'dailyPostHistoryEmpty': 'अभी तक कोई दैनिक पोस्ट नहीं',
+      'dailyPostCompletedCount': '{count} ने पूरा किया',
+      'dailyPostDoneSchedule': 'समय-सारणी अपडेट हो गई',
+      'dailyPostDonePreview': 'पूर्वावलोकन तैयार है',
+      'dailyPostDoneRegenerate': 'नया टीज़र तैयार है',
+      'dailyPostDonePostNow': 'समूह में पोस्ट हो गई',
+      'dailyPostError': 'यह नहीं हो सका। कृपया फिर से कोशिश करें।',
+      'dailyPostLoadError': 'दैनिक पोस्ट लोड नहीं हो सकी।',
+      'dailyPostRetry': 'फिर से कोशिश करें',
+      'dailyPostRepost': 'फिर से पोस्ट करें',
+      'dailyPostRepostLeft': 'फिर से पोस्ट करें (आज {count} बाकी)',
+      'dailyPostRepostConfirm':
+          'इस पोस्ट की जगह इसी पाठ का नया लिखा रूप पोस्ट करें? मौजूदा पोस्ट हटा दी जाएगी और सदस्यों को फिर से सूचना मिलेगी।',
+      'dailyPostRepostConfirmDeleted':
+          'इस पाठ को नए लिखे रूप में फिर से पोस्ट करें? सदस्यों को सूचना मिलेगी।',
+      'dailyPostDoneRepost': 'फिर से पोस्ट हो गई',
+      'dailyPostPostDeleted': 'हटाई गई',
       'disciplerNotifyToggle': 'डिसाइपलर गतिविधि की सूचना दें',
       'disciplerActivityTitle': 'डिसाइपलर गतिविधि',
       'activityTabAll': 'सभी',
@@ -1429,6 +1547,10 @@ class AppLocalizations {
       'activityKindDaily': 'दैनिक अध्ययन',
       'activityEmpty': 'डिसाइपलर की ओर से अभी तक कुछ नहीं।',
       'deleteAction': 'हटाएं',
+      'editAction': 'संपादित करें',
+      'disciplerEditTitle': 'डिसाइपलर का लेख संपादित करें',
+      'disciplerEditHint': 'सदस्यों को आपके बदलाव तुरंत दिखेंगे।',
+      'disciplerEditSaved': 'बदलाव सहेजे गए',
       'createFellowshipOfficial': 'आधिकारिक Disciplefy फेलोशिप',
       'createFellowshipDisciplerAllowed': 'डिसाइपलर के उत्तरों की अनुमति दें',
       'createFellowshipDailyAllowed': 'दैनिक अध्ययन पोस्ट की अनुमति दें',
@@ -2131,6 +2253,64 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'ഡിസൈപ്ലർ പാഠങ്ങൾ മുന്നോട്ട് നീക്കും',
       'disciplerAdvancesLessonsSubtitle':
           'ഓരോ പോസ്റ്റിനു ശേഷവും ഗ്രൂപ്പിനെ അടുത്ത പാഠത്തിലേക്ക് നീക്കുന്നു',
+      'dailyPostScreenTitle': 'ദിവസേനയുള്ള പോസ്റ്റ്',
+      'dailyPostNextTitle': 'അടുത്ത പോസ്റ്റ്',
+      'dailyPostOff':
+          'ദിവസേനയുള്ള പോസ്റ്റുകൾ ഓഫാണ്. ഫെലോഷിപ്പ് സെറ്റിംഗ്സിൽ ഓണാക്കുക.',
+      'dailyPostPostedToday': 'ഇന്നത്തെ പോസ്റ്റ് പോയിക്കഴിഞ്ഞു',
+      'dailyPostLastPost': 'അവസാന പോസ്റ്റ്',
+      'dailyPostPath': 'പഠന പാത',
+      'dailyPostNothingNext': 'പോസ്റ്റ് ചെയ്യാൻ പുതിയതൊന്നുമില്ല',
+      'dailyPostToday': 'ഇന്ന്',
+      'dailyPostTomorrow': 'നാളെ',
+      'dailyPostAtTime': '{date}, {time}',
+      'dailyPostScheduleTitle': 'സമയക്രമം',
+      'dailyPostTimeLabel': 'പോസ്റ്റ് സമയം (IST)',
+      'dailyPostSkipNext': 'അടുത്ത പോസ്റ്റ് ഒഴിവാക്കുക',
+      'dailyPostSkipNextSubtitle': 'അടുത്ത പോസ്റ്റ് മാത്രം ഒഴിവാക്കും',
+      'dailyPostSkipped': '{date} ഒഴിവാക്കും',
+      'dailyPostPause': 'ഈ തീയതി വരെ ദിവസേനയുള്ള പോസ്റ്റുകൾ നിർത്തുക',
+      'dailyPostPauseSubtitle': 'പോസ്റ്റ് വേണ്ടാത്ത അവസാന ദിവസം തിരഞ്ഞെടുക്കുക',
+      'dailyPostPickDate': 'തീയതി തിരഞ്ഞെടുക്കുക',
+      'dailyPostResumesOn': '{date} മുതൽ പോസ്റ്റുകൾ വീണ്ടും തുടങ്ങും',
+      'dailyPostPausedUntil': '{date} വരെ നിർത്തിവച്ചിരിക്കുന്നു',
+      'dailyPostResume': 'പുനരാരംഭിക്കുക',
+      'dailyPostUpNextTitle': 'അടുത്ത പാഠങ്ങൾ',
+      'dailyPostUpNextEmpty':
+          'പുതിയ പാഠമൊന്നും ക്യൂവിലില്ല. പഠനത്തിൽ നിന്ന് ഗ്രൂപ്പിനെ അടുത്ത പാഠത്തിലേക്ക് നീക്കുക.',
+      'dailyPostPostsNext': 'അടുത്തതായി പോസ്റ്റ് ചെയ്യും',
+      'dailyPostPostThisNext': 'ഇത് അടുത്തതായി പോസ്റ്റ് ചെയ്യുക',
+      'dailyPostPreviewTitle': 'പ്രിവ്യൂ',
+      'dailyPostPreviewGenerate': 'അടുത്ത പോസ്റ്റിന്റെ പ്രിവ്യൂ',
+      'dailyPostPreviewAgain': 'വീണ്ടും പ്രിവ്യൂ ചെയ്യുക',
+      'dailyPostPreviewStale':
+          'ഈ പ്രിവ്യൂ മറ്റൊരു പാഠത്തിനോ തീയതിക്കോ ഉള്ളതാണ്. അടുത്ത പോസ്റ്റ് കാണാൻ വീണ്ടും പ്രിവ്യൂ ചെയ്യുക.',
+      'dailyPostRegenerate': 'പുതിയ ടീസർ',
+      'dailyPostRegenerateLeft': 'പുതിയ ടീസർ (ഇന്ന് {count} ബാക്കി)',
+      'dailyPostWorking':
+          'തയ്യാറാക്കുന്നു. സാധാരണ ഒരു മിനിറ്റിൽ താഴെ എടുക്കും.',
+      'dailyPostPostNow': 'ഇപ്പോൾ പോസ്റ്റ് ചെയ്യുക',
+      'dailyPostPostNowConfirm':
+          'ഇന്നത്തെ പാഠം ഇപ്പോൾ ഗ്രൂപ്പിൽ പോസ്റ്റ് ചെയ്യണോ? ഇന്ന് ദിവസേനയുള്ള പോസ്റ്റ് വീണ്ടും പോകില്ല.',
+      'dailyPostCancel': 'റദ്ദാക്കുക',
+      'dailyPostHistoryTitle': 'അടുത്തിടെയുള്ള പോസ്റ്റുകൾ',
+      'dailyPostHistoryEmpty': 'ഇതുവരെ ദിവസേനയുള്ള പോസ്റ്റുകളില്ല',
+      'dailyPostCompletedCount': '{count} പേർ പൂർത്തിയാക്കി',
+      'dailyPostDoneSchedule': 'സമയക്രമം പുതുക്കി',
+      'dailyPostDonePreview': 'പ്രിവ്യൂ തയ്യാറാണ്',
+      'dailyPostDoneRegenerate': 'പുതിയ ടീസർ തയ്യാറാണ്',
+      'dailyPostDonePostNow': 'ഗ്രൂപ്പിൽ പോസ്റ്റ് ചെയ്തു',
+      'dailyPostError': 'അത് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'dailyPostLoadError': 'ദിവസേനയുള്ള പോസ്റ്റ് ലോഡ് ചെയ്യാനായില്ല.',
+      'dailyPostRetry': 'വീണ്ടും ശ്രമിക്കുക',
+      'dailyPostRepost': 'വീണ്ടും പോസ്റ്റ് ചെയ്യുക',
+      'dailyPostRepostLeft': 'വീണ്ടും പോസ്റ്റ് ചെയ്യുക (ഇന്ന് {count} ബാക്കി)',
+      'dailyPostRepostConfirm':
+          'ഈ പോസ്റ്റിനു പകരം ഇതേ പാഠത്തിന്റെ പുതുതായി എഴുതിയ രൂപം പോസ്റ്റ് ചെയ്യണോ? ഇപ്പോഴത്തെ പോസ്റ്റ് നീക്കം ചെയ്യും, അംഗങ്ങളെ വീണ്ടും അറിയിക്കും.',
+      'dailyPostRepostConfirmDeleted':
+          'ഈ പാഠം പുതുതായി എഴുതിയ രൂപത്തിൽ വീണ്ടും പോസ്റ്റ് ചെയ്യണോ? അംഗങ്ങളെ അറിയിക്കും.',
+      'dailyPostDoneRepost': 'വീണ്ടും പോസ്റ്റ് ചെയ്തു',
+      'dailyPostPostDeleted': 'നീക്കം ചെയ്തു',
       'disciplerNotifyToggle': 'ഡിസൈപ്ലർ പ്രവർത്തനത്തെക്കുറിച്ച് അറിയിക്കുക',
       'disciplerActivityTitle': 'ഡിസൈപ്ലർ പ്രവർത്തനം',
       'activityTabAll': 'എല്ലാം',
@@ -2144,6 +2324,10 @@ class AppLocalizations {
       'activityKindDaily': 'ദൈനംദിന പഠനം',
       'activityEmpty': 'ഡിസൈപ്ലറിൽ നിന്ന് ഇതുവരെ ഒന്നുമില്ല.',
       'deleteAction': 'ഇല്ലാതാക്കുക',
+      'editAction': 'തിരുത്തുക',
+      'disciplerEditTitle': 'ഡിസൈപ്ലറിന്റെ എഴുത്ത് തിരുത്തുക',
+      'disciplerEditHint': 'നിങ്ങളുടെ മാറ്റങ്ങൾ അംഗങ്ങൾക്ക് ഉടൻ കാണാം.',
+      'disciplerEditSaved': 'മാറ്റങ്ങൾ സേവ് ചെയ്തു',
       'createFellowshipOfficial': 'ഔദ്യോഗിക Disciplefy ഫെലോഷിപ്പ്',
       'createFellowshipDisciplerAllowed': 'ഡിസൈപ്ലർ മറുപടികൾ അനുവദിക്കുക',
       'createFellowshipDailyAllowed': 'ദിവസേനയുള്ള പഠന പോസ്റ്റ് അനുവദിക്കുക',
@@ -3121,6 +3305,71 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['disciplerAdvancesLessons']!;
   String get disciplerAdvancesLessonsSubtitle => _localizedValues[
       locale.languageCode]!['disciplerAdvancesLessonsSubtitle']!;
+  String _dailyPost(String key) =>
+      _localizedValues[locale.languageCode]![key] ??
+      _localizedValues['en']![key]!;
+  String get dailyPostScreenTitle => _dailyPost('dailyPostScreenTitle');
+  String get dailyPostNextTitle => _dailyPost('dailyPostNextTitle');
+  String get dailyPostOff => _dailyPost('dailyPostOff');
+  String get dailyPostPostedToday => _dailyPost('dailyPostPostedToday');
+  String get dailyPostLastPost => _dailyPost('dailyPostLastPost');
+  String get dailyPostPath => _dailyPost('dailyPostPath');
+  String get dailyPostNothingNext => _dailyPost('dailyPostNothingNext');
+  String get dailyPostToday => _dailyPost('dailyPostToday');
+  String get dailyPostTomorrow => _dailyPost('dailyPostTomorrow');
+  String dailyPostAtTime(String date, String time) =>
+      _dailyPost('dailyPostAtTime')
+          .replaceAll('{date}', date)
+          .replaceAll('{time}', time);
+  String get dailyPostScheduleTitle => _dailyPost('dailyPostScheduleTitle');
+  String get dailyPostTimeLabel => _dailyPost('dailyPostTimeLabel');
+  String get dailyPostSkipNext => _dailyPost('dailyPostSkipNext');
+  String get dailyPostSkipNextSubtitle =>
+      _dailyPost('dailyPostSkipNextSubtitle');
+  String dailyPostSkipped(String date) =>
+      _dailyPost('dailyPostSkipped').replaceAll('{date}', date);
+  String get dailyPostPause => _dailyPost('dailyPostPause');
+  String get dailyPostPauseSubtitle => _dailyPost('dailyPostPauseSubtitle');
+  String get dailyPostPickDate => _dailyPost('dailyPostPickDate');
+  String dailyPostResumesOn(String date) =>
+      _dailyPost('dailyPostResumesOn').replaceAll('{date}', date);
+  String dailyPostPausedUntil(String date) =>
+      _dailyPost('dailyPostPausedUntil').replaceAll('{date}', date);
+  String get dailyPostResume => _dailyPost('dailyPostResume');
+  String get dailyPostUpNextTitle => _dailyPost('dailyPostUpNextTitle');
+  String get dailyPostUpNextEmpty => _dailyPost('dailyPostUpNextEmpty');
+  String get dailyPostPostsNext => _dailyPost('dailyPostPostsNext');
+  String get dailyPostPostThisNext => _dailyPost('dailyPostPostThisNext');
+  String get dailyPostPreviewTitle => _dailyPost('dailyPostPreviewTitle');
+  String get dailyPostPreviewGenerate => _dailyPost('dailyPostPreviewGenerate');
+  String get dailyPostPreviewAgain => _dailyPost('dailyPostPreviewAgain');
+  String get dailyPostPreviewStale => _dailyPost('dailyPostPreviewStale');
+  String dailyPostRegenerateLeft(int count) =>
+      _dailyPost('dailyPostRegenerateLeft').replaceAll('{count}', '$count');
+  String get dailyPostWorking => _dailyPost('dailyPostWorking');
+  String get dailyPostPostNow => _dailyPost('dailyPostPostNow');
+  String get dailyPostPostNowConfirm => _dailyPost('dailyPostPostNowConfirm');
+  String get dailyPostCancel => _dailyPost('dailyPostCancel');
+  String get dailyPostHistoryTitle => _dailyPost('dailyPostHistoryTitle');
+  String get dailyPostHistoryEmpty => _dailyPost('dailyPostHistoryEmpty');
+  String dailyPostCompletedCount(int count) =>
+      _dailyPost('dailyPostCompletedCount').replaceAll('{count}', '$count');
+  String get dailyPostDoneSchedule => _dailyPost('dailyPostDoneSchedule');
+  String get dailyPostDonePreview => _dailyPost('dailyPostDonePreview');
+  String get dailyPostDoneRegenerate => _dailyPost('dailyPostDoneRegenerate');
+  String get dailyPostDonePostNow => _dailyPost('dailyPostDonePostNow');
+  String get dailyPostError => _dailyPost('dailyPostError');
+  String get dailyPostLoadError => _dailyPost('dailyPostLoadError');
+  String get dailyPostRetry => _dailyPost('dailyPostRetry');
+  String get dailyPostRepost => _dailyPost('dailyPostRepost');
+  String get dailyPostRegenerate => _dailyPost('dailyPostRegenerate');
+  String dailyPostRepostLeft(int count) =>
+      _dailyPost('dailyPostRepostLeft').replaceAll('{count}', '$count');
+  String get dailyPostRepostConfirm => _dailyPost('dailyPostRepostConfirm');
+  String get dailyPostRepostConfirmDeleted =>
+      _dailyPost('dailyPostRepostConfirmDeleted');
+  String get dailyPostDoneRepost => _dailyPost('dailyPostDoneRepost');
+  String get dailyPostPostDeleted => _dailyPost('dailyPostPostDeleted');
   String get disciplerNotifyToggle =>
       _localizedValues[locale.languageCode]!['disciplerNotifyToggle']!;
   String get disciplerActivityTitle =>
@@ -3147,6 +3396,14 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['activityEmpty']!;
   String get deleteAction =>
       _localizedValues[locale.languageCode]!['deleteAction']!;
+  String get editAction =>
+      _localizedValues[locale.languageCode]!['editAction']!;
+  String get disciplerEditTitle =>
+      _localizedValues[locale.languageCode]!['disciplerEditTitle']!;
+  String get disciplerEditHint =>
+      _localizedValues[locale.languageCode]!['disciplerEditHint']!;
+  String get disciplerEditSaved =>
+      _localizedValues[locale.languageCode]!['disciplerEditSaved']!;
   String get createFellowshipOfficial =>
       _localizedValues[locale.languageCode]!['createFellowshipOfficial']!;
   String get createFellowshipDisciplerAllowed => _localizedValues[

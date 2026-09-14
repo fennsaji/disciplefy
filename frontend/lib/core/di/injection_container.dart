@@ -241,6 +241,7 @@ import '../../features/community/presentation/bloc/fellowship_study/fellowship_s
 import '../../features/community/presentation/bloc/discover/discover_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_settings/fellowship_settings_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_daily_post/fellowship_daily_post_bloc.dart';
 import '../../features/community/presentation/bloc/blocked_users/blocked_users_bloc.dart';
 import '../../features/walkthrough/domain/walkthrough_repository.dart';
 import '../../features/walkthrough/data/walkthrough_repository_impl.dart';
@@ -1072,6 +1073,9 @@ Future<void> initializeDependencies() async {
     () => FellowshipMeetingsBloc(repository: sl()),
   );
 
+  sl.registerFactory<FellowshipDailyPostBloc>(
+    () => FellowshipDailyPostBloc(repository: sl()),
+  );
   sl.registerFactory<FellowshipSettingsBloc>(
     () => FellowshipSettingsBloc(repository: sl()),
   );

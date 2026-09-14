@@ -34,6 +34,8 @@ class FellowshipFeedBloc
     on<FellowshipCommentsOpenRequested>(_onCommentsOpenRequested);
     on<FellowshipCommentCreateRequested>(_onCommentCreateRequested);
     on<FellowshipCommentDeleteRequested>(_onCommentDeleteRequested);
+    on<FellowshipPostEditRequested>(_onPostEditRequested);
+    on<FellowshipCommentEditRequested>(_onCommentEditRequested);
     on<FellowshipReportRequested>(_onReportRequested);
     on<FellowshipBlockUserRequested>(_onBlockUserRequested);
     on<FellowshipTopicCountsRequested>(_onTopicCountsRequested);
@@ -339,6 +341,41 @@ class FellowshipFeedBloc
           posts: updatedPosts,
         ));
       },
+    );
+  }
+
+  Future<void> _onPostEditRequested(
+    FellowshipPostEditRequested event,
+    Emitter<FellowshipFeedState> emit,
+  ) async {
+    final result = await _repository.editPost(event.postId, event.content);
+    result.fold(
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
+      (_) => emit(state.copyWith(
+        posts: [
+          for (final p in state.posts)
+            p.id == event.postId ? p.copyWith(content: event.content) : p,
+        ],
+      )),
+    );
+  }
+
+  Future<void> _onCommentEditRequested(
+    FellowshipCommentEditRequested event,
+    Emitter<FellowshipFeedState> emit,
+  ) async {
+    final result =
+        await _repository.editComment(event.commentId, event.content);
+    result.fold(
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
+      (_) => emit(state.copyWith(
+        comments: [
+          for (final c in state.comments)
+            c.id == event.commentId ? c.copyWith(content: event.content) : c,
+        ],
+      )),
     );
   }
 

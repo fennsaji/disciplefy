@@ -99,7 +99,24 @@ export async function getOrCreateTeaser(
   llmService: Llm,
   lesson: TeaserLesson,
   audienceId: string,
+  options: { fresh?: boolean } = {},
 ): Promise<Teaser> {
+  // A mentor asking for a different wording: generate one for this group only.
+  // Reading the cache would hand back the wording they are replacing, and
+  // writing to it would change the teaser every other surface shows.
+  if (options.fresh) {
+    const fresh = await llmService.generateDailyTeaser({
+      systemMessage: buildDailyTeaserSystemPrompt(),
+      userMessage: buildDailyTeaserUserMessage({
+        topicTitle: lesson.topicTitle, pathTitle: lesson.pathTitle, language: lesson.language,
+        summary: lesson.summary, verse: lesson.verse,
+      }),
+    }, lesson.language)
+    const out = parseDailyTeaserOutput(fresh.content)
+    console.log('[teaser-service] generated fresh (not cached)', { audience: audienceId, model: fresh.model })
+    return { hook: out.hook, body: out.body, model: fresh.model, cached: false }
+  }
+
   const topicKey = await teaserCacheKey(lesson)
 
   // Every wording this lesson has, not just one slot: a teaser generated for a

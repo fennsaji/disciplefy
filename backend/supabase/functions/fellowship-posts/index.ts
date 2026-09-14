@@ -494,6 +494,71 @@ async function handleDeletePost(req: Request, services: ServiceContainer): Promi
 }
 
 // ---------------------------------------------------------------------------
+// Edit a Discipler post  PATCH /fellowship-posts
+// ---------------------------------------------------------------------------
+
+/** Mentors (and admins) can correct what the Discipler posted; nobody edits member posts. */
+async function handleEditPost(req: Request, services: ServiceContainer): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+    authHeader.replace('Bearer ', '')
+  )
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+
+  let body: { post_id?: string; content?: string }
+  try {
+    body = await req.json()
+  } catch {
+    throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400)
+  }
+  if (!body.post_id) throw new AppError('VALIDATION_ERROR', 'post_id is required', 400)
+  const content = body.content?.trim()
+  if (!content) throw new AppError('VALIDATION_ERROR', 'content is required', 400)
+  if (content.length > 4000) throw new AppError('VALIDATION_ERROR', 'content exceeds 4000 characters', 400)
+
+  const db = services.supabaseServiceClient
+  const { data: post, error: postError } = await db
+    .from('fellowship_posts')
+    .select('fellowship_id, author_user_id')
+    .eq('id', body.post_id)
+    .eq('is_deleted', false)
+    .maybeSingle()
+  if (postError) {
+    console.error('[fellowship-posts/edit] Post fetch error:', postError)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch post', 500)
+  }
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found', 404)
+  if (post.author_user_id !== DISCIPLER_USER_ID) {
+    throw new AppError('PERMISSION_DENIED', 'Only Discipler posts can be edited', 403)
+  }
+
+  const { data: isMentor, error: rpcError } = await db.rpc('is_fellowship_mentor', {
+    p_fellowship_id: post.fellowship_id,
+    p_user_id: user.id
+  })
+  if (rpcError) {
+    console.error('[fellowship-posts/edit] RPC error:', rpcError)
+    throw new AppError('DATABASE_ERROR', 'Failed to verify permissions', 500)
+  }
+  if (!isMentor) {
+    const { data: profile } = await db.from('user_profiles').select('is_admin').eq('id', user.id).maybeSingle()
+    if (profile?.is_admin !== true) throw new AppError('PERMISSION_DENIED', 'Only mentors can edit Discipler posts', 403)
+  }
+
+  const { error } = await db.from('fellowship_posts').update({ content }).eq('id', body.post_id)
+  if (error) {
+    console.error('[fellowship-posts/edit] Update error:', error)
+    throw new AppError('DATABASE_ERROR', 'Failed to update post', 500)
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, data: { content } }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Toggle reaction  POST /fellowship-posts/react
 // ---------------------------------------------------------------------------
 
@@ -762,12 +827,13 @@ async function handlePosts(req: Request, services: ServiceContainer): Promise<Re
 
   if (req.method === 'GET')    return handleListPosts(req, services)
   if (req.method === 'DELETE') return handleDeletePost(req, services)
+  if (req.method === 'PATCH')  return handleEditPost(req, services)
 
   throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)
 }
 
 createSimpleFunction(handlePosts, {
-  allowedMethods: ['GET', 'POST', 'DELETE'],
+  allowedMethods: ['GET', 'POST', 'DELETE', 'PATCH'],
   enableAnalytics: true,
   timeout: 15000,
 })
