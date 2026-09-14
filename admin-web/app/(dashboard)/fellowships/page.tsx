@@ -683,7 +683,7 @@ function FellowshipDetail({
             />
             <ToggleRow
               label="Post now"
-              description="The mentor can publish today's post straight away."
+              description="The mentor can publish today's post straight away, or post a recent one again with a new version (up to 3 a day)."
               checked={f.daily_post_post_now_allowed}
               disabled={saving || !f.daily_post_allowed}
               onChange={(v) => onPatch({ daily_post_post_now_allowed: v })}
