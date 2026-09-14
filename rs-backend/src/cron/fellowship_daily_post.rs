@@ -169,7 +169,7 @@ async fn build_post(
     let teaser = match source {
         TeaserSource::Reuse(t) => Some(t),
         TeaserSource::Cached | TeaserSource::Fresh => {
-            let (_summary, _question, verse) = content_formatter::extract_daily_fields(&guide);
+            let (_summary, verse) = content_formatter::extract_daily_fields(&guide);
             let grounding = content_formatter::teaser_grounding(&guide);
             fellowship_teaser::fetch_daily_teaser(
                 config,
@@ -230,8 +230,7 @@ async fn post_for_fellowship(
         if !fellowship_daily::slot_reached(fellowship_daily::ist_time(now), &f.daily_post_time) {
             return Ok(Outcome::Skipped("Before the posting time."));
         }
-        if f
-            .daily_post_last_failed_at
+        if f.daily_post_last_failed_at
             .is_some_and(|t| now - t < RETRY_AFTER_FAILURE)
         {
             return Ok(Outcome::Skipped("Waiting to retry after a failure."));
@@ -397,7 +396,9 @@ async fn regenerate_preview(
     let built = build_post(config, http, f, &lesson, TeaserSource::Fresh).await?;
     if built.teaser.is_none() {
         // Not counted against the cap: nothing new was produced.
-        return Err(AppError::Internal("teaser generation returned nothing".into()));
+        return Err(AppError::Internal(
+            "teaser generation returned nothing".into(),
+        ));
     }
     store_preview(pool, f, &lesson, preview.post_date, &built).await?;
     fellowship_daily::record_regenerate(pool, f.id, today, used + 1).await
@@ -447,10 +448,15 @@ async fn repost_daily_post(
         return Err(AppError::BadRequest("Choose a post to post again.".into()));
     };
     let Some(row) = fellowship_daily::load_daily_post_row(pool, f.id, daily_post_id).await? else {
-        return Err(AppError::NotFound("That post is no longer available.".into()));
+        return Err(AppError::NotFound(
+            "That post is no longer available.".into(),
+        ));
     };
-    let Some(lesson) = fellowship_daily::lesson_by_id(pool, row.learning_path_topic_id).await? else {
-        return Err(AppError::NotFound("That lesson is no longer available.".into()));
+    let Some(lesson) = fellowship_daily::lesson_by_id(pool, row.learning_path_topic_id).await?
+    else {
+        return Err(AppError::NotFound(
+            "That lesson is no longer available.".into(),
+        ));
     };
 
     // A fresh wording, not the cached one the mentor didn't like.
@@ -558,12 +564,7 @@ pub async fn run_fellowship_daily_post(
     }
     // Runs every minute: only report runs that did something.
     if posted > 0 || failed > 0 {
-        tracing::info!(
-            posted,
-            skipped,
-            failed,
-            "Discipler daily post run finished"
-        );
+        tracing::info!(posted, skipped, failed, "Discipler daily post run finished");
     }
     Ok(())
 }
