@@ -97,6 +97,9 @@ import '../../features/community/presentation/screens/fellowship_home_screen.dar
 import '../../features/community/presentation/screens/fellowship_settings_screen.dart';
 import '../../features/community/presentation/bloc/fellowship_settings/fellowship_settings_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_settings/fellowship_settings_event.dart';
+import '../../features/community/presentation/bloc/fellowship_daily_post/fellowship_daily_post_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_daily_post/fellowship_daily_post_event.dart';
+import '../../features/community/presentation/screens/fellowship_daily_post_screen.dart';
 import '../../features/community/presentation/bloc/discipler_activity/discipler_activity_bloc.dart';
 import '../../features/community/presentation/screens/discipler_activity_screen.dart';
 
@@ -346,6 +349,24 @@ class AppRouter {
                             child: BlocProvider(
                               create: (_) => sl<DisciplerActivityBloc>(),
                               child: DisciplerActivityScreen(
+                                fellowshipId: fellowshipId,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'daily-post',
+                        name: 'fellowship_daily_post',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          return MaxWidthWrapper(
+                            child: BlocProvider(
+                              create: (_) => sl<FellowshipDailyPostBloc>()
+                                ..add(FellowshipDailyPostLoadRequested(
+                                    fellowshipId)),
+                              child: FellowshipDailyPostScreen(
                                 fellowshipId: fellowshipId,
                               ),
                             ),

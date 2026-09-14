@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import '../entities/blocked_user_entity.dart';
+import '../entities/daily_post_status_entity.dart';
 import '../entities/discipler_activity_entity.dart';
 import '../entities/fellowship_comment_entity.dart';
 import '../entities/fellowship_entity.dart';
@@ -147,6 +148,25 @@ abstract class CommunityRepository {
 
   /// Resets the fellowship study progress back to Guide 1 (mentor only).
   Future<Either<Failure, void>> resetStudy(String fellowshipId);
+
+  /// Mentor view of the fellowship's Discipler daily post.
+  Future<Either<Failure, DailyPostStatusEntity>> getDailyPostStatus(
+      String fellowshipId);
+
+  /// Changes the daily post schedule. Only the provided fields change;
+  /// [clearPause] removes a pause, [skipNext] `false` removes a skip.
+  Future<Either<Failure, void>> updateDailyPost(
+    String fellowshipId, {
+    bool? skipNext,
+    String? pausedUntil,
+    bool clearPause = false,
+    String? time,
+    String? nextLearningPathTopicId,
+  });
+
+  /// Starts a gated daily post action (`preview`, `regenerate`, `post_now`).
+  Future<Either<Failure, void>> requestDailyPostAction(
+      String fellowshipId, String kind);
 
   /// Leaves the fellowship identified by [fellowshipId].
   Future<Either<Failure, void>> leaveFellowship(String fellowshipId);

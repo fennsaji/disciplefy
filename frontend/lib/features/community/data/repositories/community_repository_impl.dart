@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/blocked_user_entity.dart';
+import '../../domain/entities/daily_post_status_entity.dart';
 import '../../domain/entities/discipler_activity_entity.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
 import '../../domain/entities/fellowship_entity.dart';
@@ -13,6 +14,7 @@ import '../../domain/entities/public_fellowship_entity.dart';
 import '../../domain/entities/sync_calendar_result.dart';
 import '../../domain/repositories/community_repository.dart';
 import '../datasources/community_remote_datasource.dart';
+import '../models/daily_post_status_model.dart';
 
 /// [CommunityRemoteDatasource]-backed implementation of [CommunityRepository].
 ///
@@ -353,6 +355,61 @@ class CommunityRepositoryImpl implements CommunityRepository {
       return Left(ServerFailure(message: 'Failed to advance study: $e'));
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Discipler daily post — mentor controls
+  // ---------------------------------------------------------------------------
+
+  Future<Either<Failure, T>> _guardDailyPost<T>(
+      Future<T> Function() run, String failMsg) async {
+    try {
+      return Right(await run());
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: '$failMsg: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, DailyPostStatusEntity>> getDailyPostStatus(
+          String fellowshipId) =>
+      _guardDailyPost(
+        () async => DailyPostStatusModel.fromJson(
+            await _datasource.getDailyPostStatus(fellowshipId)),
+        'Failed to load the daily post',
+      );
+
+  @override
+  Future<Either<Failure, void>> updateDailyPost(
+    String fellowshipId, {
+    bool? skipNext,
+    String? pausedUntil,
+    bool clearPause = false,
+    String? time,
+    String? nextLearningPathTopicId,
+  }) =>
+      _guardDailyPost(
+        () => _datasource.updateDailyPost(fellowshipId, {
+          if (skipNext != null) 'skip_next': skipNext,
+          if (clearPause) 'paused_until': null,
+          if (!clearPause && pausedUntil != null) 'paused_until': pausedUntil,
+          if (time != null) 'time': time,
+          if (nextLearningPathTopicId != null)
+            'next_learning_path_topic_id': nextLearningPathTopicId,
+        }),
+        'Failed to update the daily post',
+      );
+
+  @override
+  Future<Either<Failure, void>> requestDailyPostAction(
+          String fellowshipId, String kind) =>
+      _guardDailyPost(
+        () => _datasource.requestDailyPostAction(fellowshipId, kind),
+        'Failed to start the daily post action',
+      );
 
   // ---------------------------------------------------------------------------
   // Fellowship study — reset

@@ -516,6 +516,9 @@ class _FellowshipHomeContent extends StatelessWidget {
                 if (value == 'discipler_activity') {
                   context.push('/community/$fellowshipId/discipler-activity');
                 }
+                if (value == 'daily_post') {
+                  context.push('/community/$fellowshipId/daily-post');
+                }
                 if (value == 'delete') _showDeleteConfirm(context);
               },
               itemBuilder: (_) => [
@@ -527,6 +530,17 @@ class _FellowshipHomeContent extends StatelessWidget {
                           color: context.appTextPrimary, size: 18),
                       const SizedBox(width: 10),
                       Text(l10n.fellowshipSettingsTitle,
+                          style: TextStyle(color: context.appTextPrimary)),
+                    ]),
+                  ),
+                if (isMentor && (fellowship?.dailyPostAllowed ?? false))
+                  PopupMenuItem(
+                    value: 'daily_post',
+                    child: Row(children: [
+                      Icon(Icons.event_note_outlined,
+                          color: context.appTextPrimary, size: 18),
+                      const SizedBox(width: 10),
+                      Text(l10n.dailyPostScreenTitle,
                           style: TextStyle(color: context.appTextPrimary)),
                     ]),
                   ),
