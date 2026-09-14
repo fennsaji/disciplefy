@@ -24,10 +24,14 @@ class DailyPostStatusEntity extends Equatable {
   /// Only present when previews are enabled and one has been generated.
   final DailyPostPreviewEntity? preview;
 
-  /// Latest request of each kind (`preview`, `regenerate`, `post_now`).
+  /// Latest request of each kind (`preview`, `regenerate`, `post_now`,
+  /// `repost`).
   final Map<String, DailyPostRequestEntity> requests;
 
   final List<DailyPostHistoryItemEntity> history;
+
+  /// How many more times a post can be posted again today.
+  final int repostsLeftToday;
 
   const DailyPostStatusEntity({
     required this.settings,
@@ -42,12 +46,21 @@ class DailyPostStatusEntity extends Equatable {
     this.preview,
     this.requests = const {},
     this.history = const [],
+    this.repostsLeftToday = 0,
   });
 
   /// True while any requested action is still waiting to be processed.
   bool get hasOpenRequest => requests.values.any((r) => r.isOpen);
 
   DailyPostRequestEntity? request(String kind) => requests[kind];
+
+  /// True while a "post again" is running for this daily post.
+  bool isReposting(String dailyPostId) {
+    final repost = requests['repost'];
+    return repost != null &&
+        repost.isOpen &&
+        repost.targetDailyPostId == dailyPostId;
+  }
 
   @override
   List<Object?> get props => [
@@ -63,6 +76,7 @@ class DailyPostStatusEntity extends Equatable {
         preview,
         requests,
         history,
+        repostsLeftToday,
       ];
 }
 
@@ -167,33 +181,46 @@ class DailyPostRequestEntity extends Equatable {
   final String? error;
   final String? processedAt;
 
+  /// For `repost`: the daily post being replaced.
+  final String? targetDailyPostId;
+
   const DailyPostRequestEntity({
     required this.kind,
     required this.status,
     this.error,
     this.processedAt,
+    this.targetDailyPostId,
   });
 
   bool get isOpen => status == 'pending' || status == 'processing';
   bool get isFailed => status == 'failed';
 
   @override
-  List<Object?> get props => [kind, status, error, processedAt];
+  List<Object?> get props =>
+      [kind, status, error, processedAt, targetDailyPostId];
 }
 
 class DailyPostHistoryItemEntity extends Equatable {
+  /// `discipler_daily_posts.id`; what "Post again" targets.
+  final String? dailyPostId;
   final String postDate;
   final String? postId;
   final String? topicTitle;
   final int completedCount;
 
+  /// True when the post was deleted or removed; it can still be posted again.
+  final bool postDeleted;
+
   const DailyPostHistoryItemEntity({
+    this.dailyPostId,
     required this.postDate,
     this.postId,
     this.topicTitle,
     this.completedCount = 0,
+    this.postDeleted = false,
   });
 
   @override
-  List<Object?> get props => [postDate, postId, topicTitle, completedCount];
+  List<Object?> get props =>
+      [dailyPostId, postDate, postId, topicTitle, completedCount, postDeleted];
 }

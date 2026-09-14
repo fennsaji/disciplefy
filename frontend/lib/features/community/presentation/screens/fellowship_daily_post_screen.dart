@@ -69,6 +69,7 @@ class FellowshipDailyPostScreen extends StatelessWidget {
         'preview' => l10n.dailyPostDonePreview,
         'regenerate' => l10n.dailyPostDoneRegenerate,
         'post_now' => l10n.dailyPostDonePostNow,
+        'repost' => l10n.dailyPostDoneRepost,
         _ => l10n.dailyPostDoneSchedule,
       };
     } else {
@@ -159,7 +160,7 @@ class _DailyPostBody extends StatelessWidget {
           const SizedBox(height: 28),
           _SectionTitle(
               icon: Icons.history_rounded, text: l10n.dailyPostHistoryTitle),
-          _HistorySection(data: data),
+          _HistorySection(data: data, saving: saving),
         ],
       ),
     );
@@ -850,8 +851,9 @@ class _PreviewSection extends StatelessWidget {
 
 class _HistorySection extends StatelessWidget {
   final DailyPostStatusEntity data;
+  final bool saving;
 
-  const _HistorySection({required this.data});
+  const _HistorySection({required this.data, required this.saving});
 
   @override
   Widget build(BuildContext context) {
@@ -911,8 +913,22 @@ class _HistorySection extends StatelessWidget {
                           style: meta,
                         ),
                       ]),
+                      if (data.history[i].postDeleted)
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.delete_outline_rounded,
+                              size: 14, color: context.appTextSecondary),
+                          const SizedBox(width: 4),
+                          Text(l10n.dailyPostPostDeleted, style: meta),
+                        ]),
                     ],
                   ),
+                  if (data.settings.postNowAllowed &&
+                      data.history[i].dailyPostId != null)
+                    _RepostButton(
+                      data: data,
+                      item: data.history[i],
+                      saving: saving,
+                    ),
                 ],
               ),
             ),
@@ -920,6 +936,97 @@ class _HistorySection extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// "Post again" for one history item: replaces that post with a newly written
+/// version of the same lesson. Works even when the post was already deleted.
+class _RepostButton extends StatelessWidget {
+  final DailyPostStatusEntity data;
+  final DailyPostHistoryItemEntity item;
+  final bool saving;
+
+  const _RepostButton({
+    required this.data,
+    required this.item,
+    required this.saving,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final reposting = data.isReposting(item.dailyPostId!);
+    final anyRepostOpen = data.request('repost')?.isOpen ?? false;
+
+    if (reposting) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: scheme.primary),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.dailyPostWorking,
+                style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: TextButton.icon(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(0, 36),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        ),
+        icon: const Icon(Icons.refresh_rounded, size: 18),
+        // The count explains a greyed-out button once today's limit is used.
+        label: Text(l10n.dailyPostRepostLeft(data.repostsLeftToday)),
+        onPressed: saving || anyRepostOpen || data.repostsLeftToday <= 0
+            ? null
+            : () => _confirm(context),
+      ),
+    );
+  }
+
+  Future<void> _confirm(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final bloc = context.read<FellowshipDailyPostBloc>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.dailyPostRepost),
+        content: Text(item.postDeleted
+            ? l10n.dailyPostRepostConfirmDeleted
+            : l10n.dailyPostRepostConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.dailyPostCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.dailyPostRepost),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      bloc.add(FellowshipDailyPostActionRequested('repost',
+          dailyPostId: item.dailyPostId));
+    }
   }
 }
 

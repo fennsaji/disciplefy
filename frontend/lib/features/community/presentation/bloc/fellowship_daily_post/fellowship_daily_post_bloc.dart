@@ -101,7 +101,8 @@ class FellowshipDailyPostBloc
   ) async {
     emit(state.copyWith(saving: true));
     final result = await _repository.requestDailyPostAction(
-        state.fellowshipId, event.kind);
+        state.fellowshipId, event.kind,
+        dailyPostId: event.dailyPostId);
     emit(state.copyWith(saving: false));
     result.fold(
       (failure) => emit(

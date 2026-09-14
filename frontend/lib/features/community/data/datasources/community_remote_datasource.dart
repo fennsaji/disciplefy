@@ -128,7 +128,9 @@ abstract class CommunityRemoteDatasource {
 
   /// Asks the server to run a daily post action: `preview`, `regenerate` or
   /// `post_now`. The action runs in the background within about a minute.
-  Future<void> requestDailyPostAction(String fellowshipId, String kind);
+  /// For `repost`, [dailyPostId] is the daily post to replace.
+  Future<void> requestDailyPostAction(String fellowshipId, String kind,
+      {String? dailyPostId});
 
   /// Leaves the fellowship. Blocks if the caller is the sole mentor.
   Future<void> leaveFellowship(String fellowshipId);
@@ -1232,10 +1234,15 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       );
 
   @override
-  Future<void> requestDailyPostAction(String fellowshipId, String kind) =>
+  Future<void> requestDailyPostAction(String fellowshipId, String kind,
+          {String? dailyPostId}) =>
       _postDailyPost(
         _dailyPostRequestEndpoint,
-        {'fellowship_id': fellowshipId, 'kind': kind},
+        {
+          'fellowship_id': fellowshipId,
+          'kind': kind,
+          if (dailyPostId != null) 'daily_post_id': dailyPostId,
+        },
         'DAILY_POST_REQUEST_ERROR',
         'Failed to start the daily post action',
       );

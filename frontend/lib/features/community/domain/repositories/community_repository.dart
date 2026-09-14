@@ -166,7 +166,8 @@ abstract class CommunityRepository {
 
   /// Starts a gated daily post action (`preview`, `regenerate`, `post_now`).
   Future<Either<Failure, void>> requestDailyPostAction(
-      String fellowshipId, String kind);
+      String fellowshipId, String kind,
+      {String? dailyPostId});
 
   /// Leaves the fellowship identified by [fellowshipId].
   Future<Either<Failure, void>> leaveFellowship(String fellowshipId);

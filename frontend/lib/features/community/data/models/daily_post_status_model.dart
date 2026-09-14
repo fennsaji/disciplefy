@@ -58,28 +58,32 @@ class DailyPostStatusModel {
       requests: {
         for (final entry in requests.entries)
           if (entry.value is Map<String, dynamic>)
-            entry.key: DailyPostRequestEntity(
-              kind: entry.key,
-              status:
-                  (entry.value as Map<String, dynamic>)['status'] as String? ??
-                      'done',
-              error: (entry.value as Map<String, dynamic>)['error'] as String?,
-              processedAt: (entry.value as Map<String, dynamic>)['processed_at']
-                  as String?,
-            ),
+            entry.key: _request(entry.key, entry.value as Map<String, dynamic>),
       },
       history: ((json['history'] as List<dynamic>?) ?? const [])
           .cast<Map<String, dynamic>>()
           .map(_historyItem)
           .toList(),
+      repostsLeftToday: (json['reposts_left_today'] as num?)?.toInt() ?? 0,
     );
   }
 
+  static DailyPostRequestEntity _request(String kind, Map<String, dynamic> r) =>
+      DailyPostRequestEntity(
+        kind: kind,
+        status: r['status'] as String? ?? 'done',
+        error: r['error'] as String?,
+        processedAt: r['processed_at'] as String?,
+        targetDailyPostId: r['target_daily_post_id'] as String?,
+      );
+
   static DailyPostHistoryItemEntity _historyItem(Map<String, dynamic> h) =>
       DailyPostHistoryItemEntity(
+        dailyPostId: h['daily_post_id'] as String?,
         postDate: h['post_date'] as String? ?? '',
         postId: h['post_id'] as String?,
         topicTitle: h['topic_title'] as String?,
         completedCount: (h['completed_count'] as num?)?.toInt() ?? 0,
+        postDeleted: h['post_deleted'] as bool? ?? false,
       );
 }

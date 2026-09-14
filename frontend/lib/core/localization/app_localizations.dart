@@ -755,6 +755,14 @@ class AppLocalizations {
       'dailyPostError': "Couldn't do that. Please try again.",
       'dailyPostLoadError': "Couldn't load the daily post.",
       'dailyPostRetry': 'Try again',
+      'dailyPostRepost': 'Post again',
+      'dailyPostRepostLeft': 'Post again ({count} left today)',
+      'dailyPostRepostConfirm':
+          'Replace this post with a newly written version of the same lesson? The current post is removed and members are notified again.',
+      'dailyPostRepostConfirmDeleted':
+          'Post this lesson again with a newly written version? Members will be notified.',
+      'dailyPostDoneRepost': 'Posted again',
+      'dailyPostPostDeleted': 'Deleted',
       'disciplerNotifyToggle': 'Notify me about Discipler activity',
       'disciplerActivityTitle': 'Discipler activity',
       'activityTabAll': 'All',
@@ -1506,6 +1514,14 @@ class AppLocalizations {
       'dailyPostError': 'यह नहीं हो सका। कृपया फिर से कोशिश करें।',
       'dailyPostLoadError': 'दैनिक पोस्ट लोड नहीं हो सकी।',
       'dailyPostRetry': 'फिर से कोशिश करें',
+      'dailyPostRepost': 'फिर से पोस्ट करें',
+      'dailyPostRepostLeft': 'फिर से पोस्ट करें (आज {count} बाकी)',
+      'dailyPostRepostConfirm':
+          'इस पोस्ट की जगह इसी पाठ का नया लिखा रूप पोस्ट करें? मौजूदा पोस्ट हटा दी जाएगी और सदस्यों को फिर से सूचना मिलेगी।',
+      'dailyPostRepostConfirmDeleted':
+          'इस पाठ को नए लिखे रूप में फिर से पोस्ट करें? सदस्यों को सूचना मिलेगी।',
+      'dailyPostDoneRepost': 'फिर से पोस्ट हो गई',
+      'dailyPostPostDeleted': 'हटाई गई',
       'disciplerNotifyToggle': 'डिसाइपलर गतिविधि की सूचना दें',
       'disciplerActivityTitle': 'डिसाइपलर गतिविधि',
       'activityTabAll': 'सभी',
@@ -2267,6 +2283,14 @@ class AppLocalizations {
       'dailyPostError': 'അത് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
       'dailyPostLoadError': 'ദിവസേനയുള്ള പോസ്റ്റ് ലോഡ് ചെയ്യാനായില്ല.',
       'dailyPostRetry': 'വീണ്ടും ശ്രമിക്കുക',
+      'dailyPostRepost': 'വീണ്ടും പോസ്റ്റ് ചെയ്യുക',
+      'dailyPostRepostLeft': 'വീണ്ടും പോസ്റ്റ് ചെയ്യുക (ഇന്ന് {count} ബാക്കി)',
+      'dailyPostRepostConfirm':
+          'ഈ പോസ്റ്റിനു പകരം ഇതേ പാഠത്തിന്റെ പുതുതായി എഴുതിയ രൂപം പോസ്റ്റ് ചെയ്യണോ? ഇപ്പോഴത്തെ പോസ്റ്റ് നീക്കം ചെയ്യും, അംഗങ്ങളെ വീണ്ടും അറിയിക്കും.',
+      'dailyPostRepostConfirmDeleted':
+          'ഈ പാഠം പുതുതായി എഴുതിയ രൂപത്തിൽ വീണ്ടും പോസ്റ്റ് ചെയ്യണോ? അംഗങ്ങളെ അറിയിക്കും.',
+      'dailyPostDoneRepost': 'വീണ്ടും പോസ്റ്റ് ചെയ്തു',
+      'dailyPostPostDeleted': 'നീക്കം ചെയ്തു',
       'disciplerNotifyToggle': 'ഡിസൈപ്ലർ പ്രവർത്തനത്തെക്കുറിച്ച് അറിയിക്കുക',
       'disciplerActivityTitle': 'ഡിസൈപ്ലർ പ്രവർത്തനം',
       'activityTabAll': 'എല്ലാം',
@@ -3309,6 +3333,14 @@ class AppLocalizations {
   String get dailyPostError => _dailyPost('dailyPostError');
   String get dailyPostLoadError => _dailyPost('dailyPostLoadError');
   String get dailyPostRetry => _dailyPost('dailyPostRetry');
+  String get dailyPostRepost => _dailyPost('dailyPostRepost');
+  String dailyPostRepostLeft(int count) =>
+      _dailyPost('dailyPostRepostLeft').replaceAll('{count}', '$count');
+  String get dailyPostRepostConfirm => _dailyPost('dailyPostRepostConfirm');
+  String get dailyPostRepostConfirmDeleted =>
+      _dailyPost('dailyPostRepostConfirmDeleted');
+  String get dailyPostDoneRepost => _dailyPost('dailyPostDoneRepost');
+  String get dailyPostPostDeleted => _dailyPost('dailyPostPostDeleted');
   String get disciplerNotifyToggle =>
       _localizedValues[locale.languageCode]!['disciplerNotifyToggle']!;
   String get disciplerActivityTitle =>

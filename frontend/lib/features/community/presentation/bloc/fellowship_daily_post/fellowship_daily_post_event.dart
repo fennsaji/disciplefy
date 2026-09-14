@@ -47,8 +47,11 @@ class FellowshipDailyPostScheduleChanged extends FellowshipDailyPostEvent {
 class FellowshipDailyPostActionRequested extends FellowshipDailyPostEvent {
   final String kind;
 
-  const FellowshipDailyPostActionRequested(this.kind);
+  /// For `repost`: the daily post to replace with a new version.
+  final String? dailyPostId;
+
+  const FellowshipDailyPostActionRequested(this.kind, {this.dailyPostId});
 
   @override
-  List<Object?> get props => [kind];
+  List<Object?> get props => [kind, dailyPostId];
 }

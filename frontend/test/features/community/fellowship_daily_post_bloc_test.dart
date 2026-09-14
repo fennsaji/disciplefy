@@ -36,7 +36,8 @@ class _FakeRepository extends Fake implements CommunityRepository {
 
   @override
   Future<Either<Failure, void>> requestDailyPostAction(
-      String fellowshipId, String kind) async {
+      String fellowshipId, String kind,
+      {String? dailyPostId}) async {
     requestedKinds.add(kind);
     return requestResult;
   }

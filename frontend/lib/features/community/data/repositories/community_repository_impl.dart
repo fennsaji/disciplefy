@@ -405,9 +405,11 @@ class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Either<Failure, void>> requestDailyPostAction(
-          String fellowshipId, String kind) =>
+          String fellowshipId, String kind,
+          {String? dailyPostId}) =>
       _guardDailyPost(
-        () => _datasource.requestDailyPostAction(fellowshipId, kind),
+        () => _datasource.requestDailyPostAction(fellowshipId, kind,
+            dailyPostId: dailyPostId),
         'Failed to start the daily post action',
       );
 
