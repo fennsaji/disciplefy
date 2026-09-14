@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -265,10 +266,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   // Delayed completion-sheet timer (cancelled if user taps notes)
   Timer? _completionSheetTimer;
 
-  // Fallback timer: fires the completion walkthrough if the sheet was never
-  // shown (e.g. user never scrolled to absolute bottom).
-  Timer? _completionWalkthroughFallbackTimer;
-
   // Walkthrough state
   WalkthroughScreen? _pendingMarkSeen;
   // Keys to show once read-mode content is rendered (set when keys not yet in tree)
@@ -339,8 +336,20 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   DateTime? _pageOpenedAt;
   int _timeSpentSeconds = 0;
   Timer? _timeTrackingTimer;
-  bool _hasScrolledToBottom = false;
+  // The guide counts as read once the end of the interpretation section has
+  // been on screen; related verses, questions and prayer points are optional.
+  final GlobalKey _interpretationKey = GlobalKey();
+  bool _reachedInterpretation = false;
   bool _completionMarked = false;
+  // Completion feedback (snackbars, achievement dialogs, notification prompt)
+  // held back until the user reaches the bottom of the guide.
+  final List<VoidCallback> _deferredCompletionFeedback = [];
+  bool _achievementCheckDeferred = false;
+  // Popups released at the bottom run one after another, never stacked:
+  // achievement dialogs, then the notification prompt, then the completion
+  // sheet. These complete when each earlier step has been dismissed.
+  Future<void>? _achievementDialogsSettled;
+  Future<void>? _completionPopupsDone;
   // Holds the in-flight topic-progress future so _handleBackNavigation can
   // await it before popping — prevents the race condition where the member
   // progress count in fellowship is still stale when the screen is dismissed.
@@ -412,7 +421,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (completionTriggers.contains(completed)) {
       Logger.debug(
           '🔊 [TTS→COMPLETION] Interpretation+ section completed via TTS — marking guide done');
-      _markStudyGuideComplete();
+      // Listening does not scroll, so the reading checks would reject it.
+      _markStudyGuideComplete(isManual: true);
     }
   }
 
@@ -480,8 +490,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _phase2WalkthroughStarted = true;
     _completionSheetTimer?.cancel();
     _completionSheetTimer = null;
-    _completionWalkthroughFallbackTimer?.cancel();
-    _completionWalkthroughFallbackTimer = null;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || _showcaseContext == null) return;
@@ -792,7 +800,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
     _completionSheetTimer?.cancel();
-    _completionWalkthroughFallbackTimer?.cancel();
+    // Completed but left before reaching the bottom: still record the streak
+    // and award achievements. Any dialog appears on the screen the user
+    // returns to, not over the guide.
+    if (_achievementCheckDeferred) {
+      sl<GamificationBloc>().add(const UpdateStudyStreak());
+      sl<GamificationBloc>().add(const CheckStudyAchievements());
+    }
     _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
@@ -1090,6 +1104,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           _notesLoaded = true;
         }
       });
+
+      // Like the other load paths: without this, guides opened from Saved,
+      // Recent or a shared link could never complete by reading.
+      _startCompletionTracking();
     } catch (e) {
       Logger.error('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
       _showError('Failed to load study guide. Please try again.');
@@ -1400,14 +1418,21 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       // Any scroll counts as user activity — reset the inactivity countdown.
       _onUserActivity();
 
-      // Completion tracking: 80% threshold
+      // Completion tracking: the guide counts as read once the end of the
+      // interpretation section has been on screen.
       if (!_completionMarked &&
-          !_hasScrolledToBottom &&
-          _isScrolledNearBottom()) {
+          !_reachedInterpretation &&
+          _hasReachedInterpretationEnd()) {
         setState(() {
-          _hasScrolledToBottom = true;
+          _reachedInterpretation = true;
         });
         _checkCompletionConditions();
+      }
+
+      // Nothing pops up before the bottom: release held-back completion
+      // feedback once the user gets there.
+      if (_isScrolledToAbsoluteBottom()) {
+        _releaseDeferredCompletionFeedback();
       }
 
       // Learning-path sheet: re-evaluate whether to start/cancel the inactivity
@@ -1465,14 +1490,25 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       // the sheet — completing a study fires CheckStudyAchievements which can
       // trigger an achievement dialog that would overlap the bottom sheet.
       final gamificationBloc = sl<GamificationBloc>();
-      if (gamificationBloc.state.hasPendingNotifications) {
-        try {
-          await gamificationBloc.stream
-              .firstWhere((s) => !s.hasPendingNotifications)
-              .timeout(const Duration(seconds: 10));
-        } catch (_) {
-          // Timeout — proceed anyway so the sheet is never blocked forever.
+
+      // Popups released on reaching the bottom (achievement dialog, then the
+      // notification prompt) go first; the sheet waits until they are closed.
+      final popupsDone = _completionPopupsDone;
+      if (popupsDone != null) {
+        await popupsDone;
+        if (!mounted ||
+            _isTopicCompletedFromPath ||
+            _phase2WalkthroughStarted ||
+            !_isScrolledToAbsoluteBottom()) {
+          return;
         }
+      }
+      if (gamificationBloc.state.hasPendingNotifications) {
+        // No timeout: an achievement dialog stays up until the user dismisses
+        // it, and a timeout here opened the sheet on top of it. The checks
+        // below still stop the sheet if the user has left or scrolled away.
+        await gamificationBloc.stream
+            .firstWhere((s) => !s.hasPendingNotifications);
         if (!mounted ||
             _isTopicCompletedFromPath ||
             _phase2WalkthroughStarted) {
@@ -1502,24 +1538,56 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _completionSheetTimer = null;
   }
 
-  /// Check if user has scrolled near the bottom of the content
-  /// Returns true when scroll position is at 80% or more of max scroll extent
-  bool _isScrolledNearBottom() {
-    if (!_scrollController.hasClients) {
-      return false;
+  /// Whether the end of the interpretation section has been scrolled into view.
+  ///
+  /// Asks the viewport for the scroll offset at which the section's bottom
+  /// edge meets the bottom of the screen; once the scroll position is past
+  /// it, the whole interpretation has been on screen.
+  bool _hasReachedInterpretationEnd() {
+    if (!_scrollController.hasClients) return false;
+    final box = _interpretationKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.attached) return false;
+    final viewport = RenderAbstractViewport.maybeOf(box);
+    if (viewport == null) return false;
+    final bottomAtScreenBottom = viewport.getOffsetToReveal(box, 1.0).offset;
+    return _scrollController.position.pixels >= bottomAtScreenBottom - 1;
+  }
+
+  /// Runs [show] now if the user is at the bottom of the guide, otherwise
+  /// holds it until they get there, so no completion popup interrupts reading.
+  void _whenAtBottom(VoidCallback show) {
+    if (!mounted) return;
+    if (_isScrolledToAbsoluteBottom()) {
+      show();
+    } else {
+      _deferredCompletionFeedback.add(show);
     }
+  }
 
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
-
-    // Handle case where content doesn't scroll (fits on screen)
-    if (maxScroll <= 0) {
-      return true;
+  void _releaseDeferredCompletionFeedback() {
+    if (_deferredCompletionFeedback.isEmpty || !mounted) return;
+    final pending = List<VoidCallback>.of(_deferredCompletionFeedback);
+    _deferredCompletionFeedback.clear();
+    for (final show in pending) {
+      show();
     }
+  }
 
-    // Check if scrolled to at least 80% of content (more forgiving threshold)
-    final scrollPercentage = currentScroll / maxScroll;
-    return scrollPercentage >= 0.80;
+  /// Completes once any achievement dialog from the check just dispatched has
+  /// been dismissed, or after a short wait if the check unlocks nothing.
+  Future<void> _settleAchievementDialogs() async {
+    final gamificationBloc = sl<GamificationBloc>();
+    if (!gamificationBloc.state.hasPendingNotifications) {
+      try {
+        await gamificationBloc.stream
+            .firstWhere((s) => s.hasPendingNotifications)
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {
+        return; // Nothing unlocked.
+      }
+    }
+    // A dialog stays up until the user dismisses it, so no timeout here.
+    await gamificationBloc.stream.firstWhere((s) => !s.hasPendingNotifications);
   }
 
   /// Check if user has scrolled to the absolute bottom of the content.
@@ -1598,8 +1666,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final minTimeSeconds = widget.studyMode.minCompletionSeconds;
     final timeConditionMet = _timeSpentSeconds >= minTimeSeconds;
 
-    // In Reflect Mode, there's no scrolling, so auto-satisfy scroll condition
-    final scrollConditionMet = _hasScrolledToBottom;
+    // Also checked on every timer tick: a short guide can show the end of the
+    // interpretation without any scrolling.
+    if (!_reachedInterpretation && _hasReachedInterpretationEnd()) {
+      _reachedInterpretation = true;
+    }
+    final scrollConditionMet = _reachedInterpretation;
 
     if (kDebugMode) {
       Logger.debug('📊 [COMPLETION] Conditions check:');
@@ -1615,9 +1687,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
   /// Call the API to mark the study guide as completed.
   ///
-  /// [isManual] should be true when triggered by the user tapping "Complete Study".
-  /// Auto-completion (conditions met) uses the default false, which enforces
-  /// time and scroll conditions on the server.
+  /// [isManual] bypasses the server's time and reading checks. Use it for
+  /// completions that are not about reading progress: tapping "Complete Study",
+  /// listening through the interpretation, or downloading the PDF.
+  /// Auto-completion from reading uses the default false.
   void _markStudyGuideComplete({bool isManual = false}) {
     if (_completionMarked || _currentStudyGuide == null) return;
 
@@ -1636,7 +1709,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       Logger.info('✅ [COMPLETION] Marking guide as complete:');
       Logger.debug('   Guide ID: ${_currentStudyGuide!.id}');
       Logger.debug('   Time spent: $_timeSpentSeconds seconds');
-      Logger.debug('   Scrolled to bottom: $_hasScrolledToBottom');
+      Logger.debug('   Reached interpretation: $_reachedInterpretation');
       Logger.debug('   Manual: $isManual');
     }
 
@@ -1644,24 +1717,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     context.read<StudyBloc>().add(MarkStudyGuideCompleteRequested(
           guideId: _currentStudyGuide!.id,
           timeSpentSeconds: _timeSpentSeconds,
-          scrolledToBottom: _hasScrolledToBottom,
+          // The API field predates the interpretation rule; it now means the
+          // user reached the point where the guide counts as read.
+          scrolledToBottom: _reachedInterpretation,
           isManual: isManual,
         ));
 
     // Cancel the tracking timer since completion is marked
     _timeTrackingTimer?.cancel();
 
-    // The completion sheet shows when the user reaches absolute bottom (97%).
-    // If the user never scrolls that far, fire the Phase 2 walkthrough after a
-    // 30 s grace period so it isn't deferred indefinitely.
-    // Do NOT trigger the walkthrough immediately here — that would set
-    // _phase2WalkthroughStarted = true and block the sheet from ever showing.
-    _completionWalkthroughFallbackTimer?.cancel();
-    _completionWalkthroughFallbackTimer =
-        Timer(const Duration(seconds: 30), () {
-      if (!mounted || _isTopicCompletedFromPath) return;
-      _triggerStudyGuideCompletionWalkthrough();
-    });
+    // The completion sheet (and the walkthrough after it) only appears once
+    // the user reaches the absolute bottom — never mid-read.
   }
 
   /// Complete topic progress tracking when study guide is finished.
@@ -1713,34 +1779,36 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
           // Show fellowship advance notification first so the XP snackbar
           // (shown below) is the last message visible when both fire together.
-          if (completionResult.fellowshipAdvanced && mounted) {
-            final msg = completionResult.studyCompleted
-                ? 'Your fellowship has completed the entire study path!'
-                : 'Your fellowship has moved to the next guide!';
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(
-                    msg,
-                    style: const TextStyle(fontFamily: 'Inter'),
+          if (completionResult.fellowshipAdvanced) {
+            _whenAtBottom(() {
+              final msg = completionResult.studyCompleted
+                  ? 'Your fellowship has completed the entire study path!'
+                  : 'Your fellowship has moved to the next guide!';
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      msg,
+                      style: const TextStyle(fontFamily: 'Inter'),
+                    ),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 3),
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 3),
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
+                );
+            });
           }
 
           // Show XP earned feedback if this is the first completion
           if (completionResult.isFirstCompletion &&
-              completionResult.xpEarned > 0 &&
-              mounted) {
-            _showXpEarnedFeedback(completionResult.xpEarned);
+              completionResult.xpEarned > 0) {
+            _whenAtBottom(
+                () => _showXpEarnedFeedback(completionResult.xpEarned));
           }
         },
       );
@@ -1772,9 +1840,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Guard: only show once
     if (_isTopicCompletedFromPath) return;
     setState(() => _isTopicCompletedFromPath = true);
-    // Walkthrough will fire via onDismissed — cancel the fallback timer.
-    _completionWalkthroughFallbackTimer?.cancel();
-    _completionWalkthroughFallbackTimer = null;
 
     final isFromLearningPath =
         widget.navigationSource == StudyNavigationSource.learningPath;
@@ -2191,11 +2256,20 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 // Store the future so _handleBackNavigation can await it.
                 _topicProgressFuture = _completeTopicProgress();
 
-                // Update study streak and check achievements
-                sl<GamificationBloc>().add(const UpdateStudyStreak());
-                sl<GamificationBloc>().add(const CheckStudyAchievements());
-
-                _showRecommendedTopicNotificationPrompt();
+                // Anything that pops up waits until the user has reached the
+                // bottom of the guide. That includes the streak update: it
+                // checks achievements itself, and its dialog showed mid-read.
+                _achievementCheckDeferred = true;
+                _whenAtBottom(() {
+                  _achievementCheckDeferred = false;
+                  // Start listening before dispatching so the dialog that the
+                  // check produces cannot be missed.
+                  _achievementDialogsSettled = _settleAchievementDialogs();
+                  sl<GamificationBloc>().add(const UpdateStudyStreak());
+                  sl<GamificationBloc>().add(const CheckStudyAchievements());
+                  _completionPopupsDone =
+                      _showRecommendedTopicNotificationPrompt();
+                });
               }
             },
             child: Scaffold(
@@ -3143,12 +3217,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               const SizedBox(height: 24),
 
             // Interpretation Section (index 3)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideInterpretation),
-              icon: Icons.lightbulb_outline,
-              content: _currentStudyGuide!.interpretation,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 3,
+            KeyedSubtree(
+              key: _interpretationKey,
+              child: _StudySection(
+                title: context.tr(TranslationKeys.studyGuideInterpretation),
+                icon: Icons.lightbulb_outline,
+                content: _currentStudyGuide!.interpretation,
+                contentFontSize: _contentFontSize,
+                isBeingRead: isReading && currentSection == 3,
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -3248,12 +3325,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               const SizedBox(height: 24),
 
             // Main Sermon Body (index 3) - from interpretation
-            _StudySection(
-              title: context.tr(TranslationKeys.sermonBody),
-              icon: Icons.menu_book,
-              content: _currentStudyGuide!.interpretation,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 3,
+            KeyedSubtree(
+              key: _interpretationKey,
+              child: _StudySection(
+                title: context.tr(TranslationKeys.sermonBody),
+                icon: Icons.menu_book,
+                content: _currentStudyGuide!.interpretation,
+                contentFontSize: _contentFontSize,
+                isBeingRead: isReading && currentSection == 3,
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -3342,11 +3422,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           const SizedBox(height: 16),
 
         // Key Verse (interpretation)
-        _QuickStudySection(
-          title: context.tr(TranslationKeys.studyGuideKeyVerse),
-          content: _currentStudyGuide!.interpretation,
-          icon: Icons.auto_stories_outlined,
-          contentFontSize: _contentFontSize,
+        KeyedSubtree(
+          key: _interpretationKey,
+          child: _QuickStudySection(
+            title: context.tr(TranslationKeys.studyGuideKeyVerse),
+            content: _currentStudyGuide!.interpretation,
+            icon: Icons.auto_stories_outlined,
+            contentFontSize: _contentFontSize,
+          ),
         ),
 
         const SizedBox(height: 16),
@@ -3484,13 +3567,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               const SizedBox(height: 28),
 
             // In-Depth Interpretation
-            _StudySection(
-              title:
-                  context.tr(TranslationKeys.studyGuideInDepthInterpretation),
-              icon: Icons.lightbulb_outline,
-              content: _currentStudyGuide!.interpretation,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 3,
+            KeyedSubtree(
+              key: _interpretationKey,
+              child: _StudySection(
+                title:
+                    context.tr(TranslationKeys.studyGuideInDepthInterpretation),
+                icon: Icons.lightbulb_outline,
+                content: _currentStudyGuide!.interpretation,
+                contentFontSize: _contentFontSize,
+                isBeingRead: isReading && currentSection == 3,
+              ),
             ),
 
             const SizedBox(height: 28),
@@ -3618,12 +3704,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           const SizedBox(height: 24),
 
         // Lectio & Meditatio
-        _LectioStudySection(
-          title: context.tr(TranslationKeys.lectioLectioMeditatio),
-          subtitle: context.tr(TranslationKeys.lectioReadMeditate),
-          content: _currentStudyGuide!.interpretation,
-          icon: Icons.auto_stories,
-          contentFontSize: _contentFontSize,
+        KeyedSubtree(
+          key: _interpretationKey,
+          child: _LectioStudySection(
+            title: context.tr(TranslationKeys.lectioLectioMeditatio),
+            subtitle: context.tr(TranslationKeys.lectioReadMeditate),
+            content: _currentStudyGuide!.interpretation,
+            icon: Icons.auto_stories,
+            contentFontSize: _contentFontSize,
+          ),
         ),
 
         const SizedBox(height: 24),
@@ -4347,6 +4436,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Delay to show after the completion is processed
     await Future.delayed(const Duration(milliseconds: 1500));
 
+    // Never over an achievement dialog: wait for it to be dismissed first.
+    await _achievementDialogsSettled;
+
     if (!mounted) return;
 
     await showNotificationEnablePrompt(
@@ -4534,6 +4626,8 @@ $appLink
           updateDialog?.call(() {}); // Trigger StatefulBuilder rebuild
         },
       );
+      // Downloading the PDF counts as studying the guide.
+      if (mounted) _markStudyGuideComplete(isManual: true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

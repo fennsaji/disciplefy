@@ -120,16 +120,20 @@ extension StudyModeExtension on StudyMode {
   /// auto-marked complete. Scaled to roughly 50 % of the expected read time.
   int get minCompletionSeconds {
     switch (this) {
+      // Only a guard against flicking straight to the interpretation — the
+      // guide counts as read once the interpretation has been reached, not
+      // after the whole page. Never go below the server floor (30 s) in
+      // mark-study-guide-complete, or auto-completion is rejected.
       case StudyMode.quick:
-        return 90; // 3-min guide  → 1.5 min minimum
+        return 30;
       case StudyMode.standard:
-        return 240; // 8-min guide  → 4 min minimum
+        return 45;
       case StudyMode.deep:
-        return 420; // 12-min guide → 7 min minimum
+        return 60;
       case StudyMode.lectio:
-        return 300; // 9-min guide  → 5 min minimum (meditative)
+        return 60;
       case StudyMode.sermon:
-        return 600; // 55-min guide → 10 min minimum (reference use)
+        return 90;
     }
   }
 
