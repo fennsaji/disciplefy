@@ -112,7 +112,7 @@ async function requireMentor(db: Db, fellowshipId: string, userId: string): Prom
 }
 
 const FELLOWSHIP_COLUMNS = [
-  'id', 'language', 'daily_post_allowed', 'daily_post_on', 'daily_post_frequency_days',
+  'id', 'language', 'is_official', 'daily_post_allowed', 'daily_post_on', 'daily_post_frequency_days',
   'daily_post_auto_advance', 'daily_post_time', 'daily_post_skip_date', 'daily_post_paused_until',
   'daily_post_preview_allowed', 'daily_post_regenerate_allowed', 'daily_post_post_now_allowed',
 ].join(', ')
@@ -333,6 +333,8 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
       preview_allowed: f.daily_post_preview_allowed === true,
       regenerate_allowed: f.daily_post_regenerate_allowed === true,
       post_now_allowed: f.daily_post_post_now_allowed === true,
+      // Official groups have no daily caps and no pause length limit.
+      no_limits: f.is_official === true,
       times: POST_TIMES,
     },
     today,
@@ -394,7 +396,7 @@ export async function handleDailyUpdate(req: Request, services: ServiceContainer
       if (!/^\d{4}-\d{2}-\d{2}$/.test(body.paused_until) || body.paused_until < today) {
         throw new AppError('VALIDATION_ERROR', 'paused_until must be a date from today onwards (YYYY-MM-DD)', 400)
       }
-      if (body.paused_until > addDays(today, 90)) {
+      if (f.is_official !== true && body.paused_until > addDays(today, 90)) {
         throw new AppError('VALIDATION_ERROR', 'Daily posts can be paused for up to 90 days', 400)
       }
       updates.daily_post_paused_until = body.paused_until
@@ -494,7 +496,7 @@ export async function handleDailyRequest(req: Request, services: ServiceContaine
       .select('regenerate_date, regenerate_count').eq('fellowship_id', f.id).maybeSingle()
     if (!p) throw new AppError('VALIDATION_ERROR', 'Preview the next post first', 400)
     const used = p.regenerate_date === today ? p.regenerate_count : 0
-    if (used >= REGENERATE_DAILY_CAP) {
+    if (f.is_official !== true && used >= REGENERATE_DAILY_CAP) {
       throw new AppError('RATE_LIMIT_EXCEEDED', "You have used today's teaser regenerations", 429)
     }
   }
@@ -513,7 +515,7 @@ export async function handleDailyRequest(req: Request, services: ServiceContaine
     const { data: dailyPost } = await db.from('discipler_daily_posts')
       .select('id').eq('id', body.daily_post_id).eq('fellowship_id', f.id).maybeSingle()
     if (!dailyPost) throw new AppError('NOT_FOUND', 'That post is no longer available', 404)
-    if (await repostsToday(db, f.id, today) >= REPOST_DAILY_CAP) {
+    if (f.is_official !== true && await repostsToday(db, f.id, today) >= REPOST_DAILY_CAP) {
       throw new AppError('RATE_LIMIT_EXCEEDED', "You have posted again the most times allowed today", 429)
     }
     targetDailyPostId = dailyPost.id
