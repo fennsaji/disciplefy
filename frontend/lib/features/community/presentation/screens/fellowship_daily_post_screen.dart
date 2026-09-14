@@ -426,8 +426,8 @@ class _PostNowSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_rounded,
-                size: 18, color: AppColors.success),
+            Icon(Icons.check_circle_rounded,
+                size: 18, color: context.appSuccess),
             const SizedBox(width: 8),
             Expanded(
               child: Text(

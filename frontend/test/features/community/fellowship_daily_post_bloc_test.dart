@@ -164,7 +164,8 @@ void main() {
     'a rejected schedule change raises a failure notice with the server message',
     build: () {
       final repo = _FakeRepository([Right(_status())])
-        ..updateResult = const Left(ServerFailure(
+        // The repository maps a server-explained rule to ValidationFailure.
+        ..updateResult = const Left(ValidationFailure(
             message: 'Daily posts can be paused for up to 90 days'));
       return FellowshipDailyPostBloc(repository: repo);
     },

@@ -1254,7 +1254,15 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         final message = error is Map<String, dynamic>
             ? error['message'] as String?
             : error as String?;
-        throw ServerException(message: message ?? failMsg, code: code);
+        // A 4xx with a message is the server explaining a rule to the mentor
+        // ("paused for up to 90 days"); keep it apart from real failures.
+        final userFacing = message != null &&
+            response.statusCode >= 400 &&
+            response.statusCode < 500;
+        throw ServerException(
+          message: message ?? failMsg,
+          code: userFacing ? dailyPostUserErrorCode : code,
+        );
       }
       return (json!['data'] as Map<String, dynamic>?) ?? const {};
     } on ServerException {
@@ -1263,6 +1271,10 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       throw ServerException(message: '$failMsg: $e', code: code);
     }
   }
+
+  /// Exception code for a daily post request the server rejected with a
+  /// message meant for the mentor.
+  static const String dailyPostUserErrorCode = 'DAILY_POST_USER_ERROR';
 
   @override
   Future<Map<String, dynamic>> getDailyPostStatus(String fellowshipId) =>

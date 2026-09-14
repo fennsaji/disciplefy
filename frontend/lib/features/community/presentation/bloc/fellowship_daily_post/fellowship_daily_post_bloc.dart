@@ -89,7 +89,8 @@ class FellowshipDailyPostBloc
     emit(state.copyWith(
       saving: false,
       notice: result.fold(
-        (failure) => _notice('schedule', false, failure.message),
+        (failure) =>
+            _notice('schedule', false, ErrorMessageSanitizer.sanitize(failure)),
         (_) => _notice('schedule', true),
       ),
     ));
@@ -110,7 +111,8 @@ class FellowshipDailyPostBloc
     emit(state.copyWith(
       saving: false,
       notice: result.fold(
-        (failure) => _notice('schedule', false, failure.message),
+        (failure) =>
+            _notice('schedule', false, ErrorMessageSanitizer.sanitize(failure)),
         (_) => _notice('schedule', true),
       ),
     ));
@@ -127,8 +129,9 @@ class FellowshipDailyPostBloc
         dailyPostId: event.dailyPostId);
     emit(state.copyWith(saving: false));
     result.fold(
-      (failure) => emit(
-          state.copyWith(notice: _notice(event.kind, false, failure.message))),
+      (failure) => emit(state.copyWith(
+          notice: _notice(
+              event.kind, false, ErrorMessageSanitizer.sanitize(failure)))),
       // Refresh so the action shows as in progress; polling takes it from there.
       (_) => add(const FellowshipDailyPostRefreshRequested()),
     );

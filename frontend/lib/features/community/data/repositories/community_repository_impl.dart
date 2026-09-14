@@ -388,7 +388,11 @@ class CommunityRepositoryImpl implements CommunityRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message));
+      // A rule the server explained (limits, pause length) is shown as is;
+      // anything else stays a generic server failure.
+      return Left(e.code == CommunityRemoteDatasourceImpl.dailyPostUserErrorCode
+          ? ValidationFailure(message: e.message)
+          : ServerFailure(message: e.message));
     } catch (e) {
       return Left(ServerFailure(message: '$failMsg: $e'));
     }
