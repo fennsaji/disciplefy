@@ -342,10 +342,12 @@ pub async fn replace_daily_post(pool: &PgPool, input: RepostInsert<'_>) -> Resul
     }
 
     sqlx::query(
-        "INSERT INTO discipler_activity (fellowship_id, kind, summary) VALUES ($1, 'daily_post', $2)",
+        // Linked to the new post so the activity row can open, edit or delete it.
+        "INSERT INTO discipler_activity (fellowship_id, kind, summary, post_id) VALUES ($1, 'daily_post', $2, $3)",
     )
     .bind(input.fellowship_id)
     .bind(format!("Posted again at a mentor's request: {}", input.topic_title))
+    .bind(post_id)
     .execute(&mut *tx)
     .await?;
 
