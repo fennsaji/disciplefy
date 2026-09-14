@@ -17,6 +17,7 @@ import '../utils/mention_text.dart';
 import '../utils/share_helpers.dart';
 import '../widgets/block_user_dialog.dart';
 import '../widgets/discipler_badges.dart';
+import '../widgets/discipler_edit_dialog.dart';
 import '../widgets/fellowship_post_card.dart';
 import '../widgets/mention_sheet.dart';
 import '../widgets/study_guide_chip.dart';
@@ -359,6 +360,7 @@ class _CommentTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isSystem = comment.authorIsSystem;
     final canDelete = isMentor || comment.authorUserId == currentUserId;
+    final canEdit = isMentor && isSystem;
     final canReport =
         !isSystem && !isMentor && comment.authorUserId != currentUserId;
     final canBlock = !isSystem && comment.authorUserId != currentUserId;
@@ -521,7 +523,7 @@ class _CommentTile extends StatelessWidget {
               // an X on someone's reply reads as "dismiss" when it
               // actually deletes, and the icons gave no wording for
               // what each one does.
-              if (canDelete || canReport || canBlock)
+              if (canEdit || canDelete || canReport || canBlock)
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert,
                       size: 18, color: context.appTextTertiary),
@@ -529,7 +531,19 @@ class _CommentTile extends StatelessWidget {
                   splashRadius: 18,
                   onSelected: (value) async {
                     final bloc = context.read<FellowshipFeedBloc>();
-                    if (value == 'delete') {
+                    if (value == 'edit') {
+                      final text = await showDisciplerEditDialog(
+                        context,
+                        initialText: comment.content,
+                        maxLength: 2000,
+                      );
+                      if (text != null) {
+                        bloc.add(FellowshipCommentEditRequested(
+                          commentId: comment.id,
+                          content: text,
+                        ));
+                      }
+                    } else if (value == 'delete') {
                       bloc.add(FellowshipCommentDeleteRequested(
                         commentId: comment.id,
                         postId: postId,
@@ -560,6 +574,20 @@ class _CommentTile extends StatelessWidget {
                     }
                   },
                   itemBuilder: (_) => [
+                    if (canEdit)
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined,
+                                color: context.appTextSecondary, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l10n.editAction,
+                                style:
+                                    TextStyle(color: context.appTextPrimary)),
+                          ],
+                        ),
+                      ),
                     if (canDelete)
                       PopupMenuItem<String>(
                         value: 'delete',

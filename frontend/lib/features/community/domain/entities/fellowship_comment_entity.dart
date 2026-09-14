@@ -85,12 +85,12 @@ class FellowshipCommentEntity extends Equatable {
       (guideInputValue != null && guideInputType != null);
 
   /// Returns a copy of this comment with select fields replaced.
-  FellowshipCommentEntity copyWith({bool? isPendingReview}) {
+  FellowshipCommentEntity copyWith({bool? isPendingReview, String? content}) {
     return FellowshipCommentEntity(
       id: id,
       postId: postId,
       authorUserId: authorUserId,
-      content: content,
+      content: content ?? this.content,
       isDeleted: isDeleted,
       createdAt: createdAt,
       authorDisplayName: authorDisplayName,

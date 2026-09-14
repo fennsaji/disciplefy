@@ -227,6 +227,27 @@ class CommunityRepositoryImpl implements CommunityRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> editPost(String postId, String content) =>
+      _edit(() => _datasource.editPost(postId, content));
+
+  @override
+  Future<Either<Failure, void>> editComment(String commentId, String content) =>
+      _edit(() => _datasource.editComment(commentId, content));
+
+  Future<Either<Failure, void>> _edit(Future<void> Function() call) async {
+    try {
+      await call();
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to save changes: $e'));
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Reactions — toggle
   // ---------------------------------------------------------------------------

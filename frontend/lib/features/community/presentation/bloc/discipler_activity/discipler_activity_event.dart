@@ -61,3 +61,21 @@ class DisciplerActivityDeleteRequested extends DisciplerActivityEvent {
   @override
   List<Object?> get props => [activityId, postId, commentId];
 }
+
+/// Replaces the text of the post or reply behind an activity row.
+class DisciplerActivityEditRequested extends DisciplerActivityEvent {
+  final String activityId;
+  final String? postId;
+  final String? commentId;
+  final String content;
+
+  const DisciplerActivityEditRequested({
+    required this.activityId,
+    this.postId,
+    this.commentId,
+    required this.content,
+  });
+
+  @override
+  List<Object?> get props => [activityId, postId, commentId, content];
+}

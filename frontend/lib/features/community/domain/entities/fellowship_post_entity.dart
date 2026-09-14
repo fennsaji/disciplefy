@@ -116,12 +116,13 @@ class FellowshipPostEntity extends Equatable {
     String? userReaction,
     bool clearUserReaction = false,
     int? commentCount,
+    String? content,
   }) {
     return FellowshipPostEntity(
       id: id,
       fellowshipId: fellowshipId,
       authorUserId: authorUserId,
-      content: content,
+      content: content ?? this.content,
       postType: postType,
       reactionCounts: reactionCounts ?? this.reactionCounts,
       isDeleted: isDeleted,

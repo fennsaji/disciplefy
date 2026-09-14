@@ -9,6 +9,7 @@ import '../bloc/discipler_activity/discipler_activity_bloc.dart';
 import '../bloc/discipler_activity/discipler_activity_event.dart';
 import '../bloc/discipler_activity/discipler_activity_state.dart';
 import '../widgets/discipler_badges.dart';
+import '../widgets/discipler_edit_dialog.dart';
 
 /// Mentor-facing screen listing what the Discipler AI helper has done in a
 /// fellowship: drafted/answered replies, reactions, and daily study posts.
@@ -373,6 +374,36 @@ class _ActivityCard extends StatelessWidget {
                     ),
                   ),
                 ] else if (!isReact) ...[
+                  if ((item.commentContent ?? item.postContent)?.isNotEmpty ??
+                      false) ...[
+                    GestureDetector(
+                      onTap: () async {
+                        final bloc = context.read<DisciplerActivityBloc>();
+                        final text = await showDisciplerEditDialog(
+                          context,
+                          initialText: item.commentContent ?? item.postContent!,
+                          maxLength: item.commentId != null ? 2000 : 4000,
+                        );
+                        if (text == null) return;
+                        bloc.add(DisciplerActivityEditRequested(
+                          activityId: item.id,
+                          postId: item.commentId == null ? item.postId : null,
+                          commentId: item.commentId,
+                          content: text,
+                        ));
+                      },
+                      child: Text(
+                        l10n.editAction,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.appPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
                   GestureDetector(
                     onTap: () => context.read<DisciplerActivityBloc>().add(
                           DisciplerActivityDeleteRequested(

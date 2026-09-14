@@ -21,6 +21,53 @@ class DisciplerActivityBloc
     on<DisciplerActivityLoadMoreRequested>(_onLoadMoreRequested);
     on<DisciplerActivityReviewed>(_onReviewed);
     on<DisciplerActivityDeleteRequested>(_onDeleteRequested);
+    on<DisciplerActivityEditRequested>(_onEditRequested);
+  }
+
+  Future<void> _onEditRequested(
+    DisciplerActivityEditRequested event,
+    Emitter<DisciplerActivityState> emit,
+  ) async {
+    final result = event.commentId != null
+        ? await _repository.editComment(event.commentId!, event.content)
+        : event.postId != null
+            ? await _repository.editPost(event.postId!, event.content)
+            : null;
+    if (result == null) return;
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
+      )),
+      (_) => emit(state.copyWith(
+        items: [
+          for (final item in state.items)
+            item.id != event.activityId
+                ? item
+                : DisciplerActivityEntity(
+                    id: item.id,
+                    kind: item.kind,
+                    postId: item.postId,
+                    commentId: item.commentId,
+                    reaction: item.reaction,
+                    language: item.language,
+                    summary: item.summary,
+                    reviewedAt: item.reviewedAt,
+                    createdAt: item.createdAt,
+                    postContent: event.commentId == null
+                        ? event.content
+                        : item.postContent,
+                    postType: item.postType,
+                    topicTitle: item.topicTitle,
+                    commentContent: event.commentId != null
+                        ? event.content
+                        : item.commentContent,
+                    commentPending: item.commentPending,
+                    commentDeleted: item.commentDeleted,
+                  ),
+        ],
+      )),
+    );
   }
 
   Future<void> _onLoadRequested(

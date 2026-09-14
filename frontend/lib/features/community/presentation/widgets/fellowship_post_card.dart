@@ -19,6 +19,7 @@ import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../screens/fellowship_guide_detail_screen.dart';
 import 'daily_post_card.dart';
+import 'discipler_edit_dialog.dart';
 import 'discipler_badges.dart';
 import 'reaction_button.dart';
 import 'member_avatar.dart';
@@ -67,11 +68,27 @@ List<String> postMenuItems(
 }) {
   final items = <String>['share'];
   final own = post.authorUserId == currentUserId;
+  if ((isMentor || isAdmin) && post.authorIsSystem) items.add('edit');
   if (isMentor || isAdmin || own) items.add('delete');
   if (post.authorIsSystem) return items;
   if (!isMentor && !own) items.add('report');
   if (!own) items.add('block');
   return items;
+}
+
+/// Opens the editor for a Discipler post and saves the result through
+/// [FellowshipFeedBloc].
+Future<void> editDisciplerPost(
+    BuildContext context, FellowshipPostEntity post) async {
+  final bloc = context.read<FellowshipFeedBloc>();
+  final text = await showDisciplerEditDialog(
+    context,
+    initialText: post.content,
+    maxLength: 4000,
+  );
+  if (text != null) {
+    bloc.add(FellowshipPostEditRequested(postId: post.id, content: text));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -144,6 +161,7 @@ class FellowshipPostCard extends StatelessWidget {
       return DailyPostCard(
         post: post,
         fellowshipId: fellowshipId,
+        canManage: interactive && (isMentor || isAdmin),
         onCommentTap: onCommentTap,
         onShareTap: onShareTap,
       );
@@ -255,7 +273,9 @@ class FellowshipPostCard extends StatelessWidget {
                       color: context.appTextTertiary,
                     ),
                     onSelected: (value) {
-                      if (value == 'delete') {
+                      if (value == 'edit') {
+                        editDisciplerPost(context, post);
+                      } else if (value == 'delete') {
                         context.read<FellowshipFeedBloc>().add(
                               FellowshipPostDeleteRequested(postId: post.id),
                             );
@@ -283,6 +303,20 @@ class FellowshipPostCard extends StatelessWidget {
                                     color: context.appTextSecondary, size: 20),
                                 const SizedBox(width: 8),
                                 Text(l10n.sharePost,
+                                    style: TextStyle(
+                                        color: context.appTextPrimary)),
+                              ],
+                            ),
+                          )
+                        else if (item == 'edit')
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_outlined,
+                                    color: context.appTextSecondary, size: 20),
+                                const SizedBox(width: 8),
+                                Text(l10n.editAction,
                                     style: TextStyle(
                                         color: context.appTextPrimary)),
                               ],

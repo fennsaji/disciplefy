@@ -108,6 +108,12 @@ abstract class CommunityRepository {
   /// Soft-deletes the comment identified by [commentId].
   Future<Either<Failure, void>> deleteComment(String commentId);
 
+  /// Replaces the text of a Discipler post (mentors only).
+  Future<Either<Failure, void>> editPost(String postId, String content);
+
+  /// Replaces the text of a Discipler reply (mentors only).
+  Future<Either<Failure, void>> editComment(String commentId, String content);
+
   /// Toggles the current user's [reactionType] emoji on the post identified by
   /// [postId].
   ///

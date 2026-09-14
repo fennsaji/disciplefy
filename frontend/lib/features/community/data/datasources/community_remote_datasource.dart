@@ -57,6 +57,9 @@ abstract class CommunityRemoteDatasource {
   /// Soft-deletes the post identified by [postId].
   Future<void> deletePost(String postId);
 
+  /// Replaces the text of a Discipler post (mentors only).
+  Future<void> editPost(String postId, String content);
+
   /// Returns all comments for [postId].
   Future<List<FellowshipCommentModel>> getComments(String postId);
 
@@ -69,6 +72,9 @@ abstract class CommunityRemoteDatasource {
 
   /// Soft-deletes the comment identified by [commentId].
   Future<void> deleteComment(String commentId);
+
+  /// Replaces the text of a Discipler reply (mentors only).
+  Future<void> editComment(String commentId, String content);
 
   /// Toggles the current user's [reactionType] emoji on [postId].
   ///
@@ -914,6 +920,50 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         message: 'Failed to delete comment: $e',
         code: 'FELLOWSHIP_COMMENT_DELETE_ERROR',
       );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Discipler posts and replies — edit
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> editPost(String postId, String content) => _patchContent(
+        '$_baseUrl$_fellowshipPostsDeleteEndpoint',
+        {'post_id': postId, 'content': content},
+        'FELLOWSHIP_POST_EDIT_ERROR',
+      );
+
+  @override
+  Future<void> editComment(String commentId, String content) => _patchContent(
+        '$_baseUrl$_fellowshipCommentsDeleteEndpoint',
+        {'comment_id': commentId, 'content': content},
+        'FELLOWSHIP_COMMENT_EDIT_ERROR',
+      );
+
+  Future<void> _patchContent(
+      String url, Map<String, String> fields, String errorCode) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.patch(url,
+          headers: headers, body: jsonEncode(fields));
+      if (response.statusCode >= 400) {
+        String? message;
+        try {
+          final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+          message = (decoded['error'] as Map<String, dynamic>?)?['message']
+              as String?;
+        } catch (_) {}
+        throw ServerException(
+          message: message ?? 'Failed to save changes: ${response.statusCode}',
+          code: errorCode,
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+          message: 'Failed to save changes: $e', code: errorCode);
     }
   }
 

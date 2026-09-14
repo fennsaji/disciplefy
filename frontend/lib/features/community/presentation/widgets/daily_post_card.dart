@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
+import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
+import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import 'discipler_badges.dart';
 import 'reaction_button.dart';
 import 'study_guide_chip.dart';
@@ -66,11 +69,15 @@ class DailyPostCard extends StatelessWidget {
   final VoidCallback? onCommentTap;
   final VoidCallback? onShareTap;
 
+  /// Shows the Edit/Delete menu (mentors and admins in the live feed).
+  final bool canManage;
+
   const DailyPostCard({
     required this.post,
     required this.fellowshipId,
     this.onCommentTap,
     this.onShareTap,
+    this.canManage = false,
     super.key,
   });
 
@@ -135,6 +142,51 @@ class DailyPostCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (canManage)
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(Icons.more_vert,
+                        size: 18, color: context.appTextTertiary),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        editDisciplerPost(context, post);
+                      } else if (value == 'delete') {
+                        context.read<FellowshipFeedBloc>().add(
+                            FellowshipPostDeleteRequested(postId: post.id));
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined,
+                                color: context.appTextSecondary, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l10n.editAction,
+                                style:
+                                    TextStyle(color: context.appTextPrimary)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline_rounded,
+                                color: context.appError, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l10n.deleteAction,
+                                style: TextStyle(color: context.appError)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 4),

@@ -18,16 +18,16 @@ FellowshipPostEntity post(String author, {String type = 'general'}) =>
 
 void main() {
   test(
-      'Discipler content: mentors and admins delete, nobody reports or blocks, everyone shares',
+      'Discipler content: mentors and admins edit and delete, nobody reports or blocks, everyone shares',
       () {
     expect(
         postMenuItems(post(kDisciplerUserId),
             isMentor: true, isAdmin: false, currentUserId: 'u'),
-        ['share', 'delete']);
+        ['share', 'edit', 'delete']);
     expect(
         postMenuItems(post(kDisciplerUserId),
             isMentor: false, isAdmin: true, currentUserId: 'u'),
-        ['share', 'delete']);
+        ['share', 'edit', 'delete']);
     expect(
         postMenuItems(post(kDisciplerUserId),
             isMentor: false, isAdmin: false, currentUserId: 'u'),
