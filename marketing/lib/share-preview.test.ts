@@ -95,6 +95,13 @@ describe("postBlocks", () => {
     ]);
   });
 
+  it("drops the old reflection question from a daily post", () => {
+    const blocks = postBlocks(post, undefined, "daily");
+
+    expect(blocks.map((b) => b.kind)).toEqual(["topic", "body", "body", "scripture"]);
+    expect(blocks.some((b) => b.text.includes("How does this passage"))).toBe(false);
+  });
+
   it("strips the marker from the text it labels", () => {
     const blocks = postBlocks(post);
 
