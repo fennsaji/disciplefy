@@ -20,6 +20,7 @@ class LearningPathModel extends LearningPath {
     super.progressPercentage,
     super.category,
     super.fellowshipCompleted,
+    super.displayOrder,
   });
 
   factory LearningPathModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +43,7 @@ class LearningPathModel extends LearningPath {
       progressPercentage: json['progress_percentage'] as int? ?? 0,
       category: json['category'] as String? ?? '',
       fellowshipCompleted: json['fellowship_completed'] as bool? ?? false,
+      displayOrder: (json['display_order'] as num?)?.toInt(),
     );
   }
 
@@ -61,6 +63,7 @@ class LearningPathModel extends LearningPath {
       'topics_count': topicsCount,
       'is_enrolled': isEnrolled,
       'progress_percentage': progressPercentage,
+      if (displayOrder != null) 'display_order': displayOrder,
     };
   }
 }
