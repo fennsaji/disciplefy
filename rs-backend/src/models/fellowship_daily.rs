@@ -336,7 +336,9 @@ pub async fn replace_daily_post(pool: &PgPool, input: RepostInsert<'_>) -> Resul
     .await?;
     if updated.rows_affected() == 0 {
         tx.rollback().await?;
-        return Err(AppError::NotFound("That post is no longer available.".into()));
+        return Err(AppError::NotFound(
+            "That post is no longer available.".into(),
+        ));
     }
 
     sqlx::query(
@@ -354,7 +356,10 @@ pub async fn replace_daily_post(pool: &PgPool, input: RepostInsert<'_>) -> Resul
 /// Claims up to `limit` mentor requests, oldest first. `SKIP LOCKED` keeps two
 /// job instances from taking the same request; a request claimed over 15
 /// minutes ago and never finished was abandoned and is claimed again.
-pub async fn claim_pending_requests(pool: &PgPool, limit: i64) -> Result<Vec<DailyRequest>, AppError> {
+pub async fn claim_pending_requests(
+    pool: &PgPool,
+    limit: i64,
+) -> Result<Vec<DailyRequest>, AppError> {
     let rows = sqlx::query_as::<_, DailyRequest>(
         "UPDATE discipler_daily_post_requests
             SET status = 'processing', claimed_at = now()
@@ -500,7 +505,10 @@ const LESSON_SELECT: &str =
 
 /// A lesson by its `learning_path_topics.id`, visible or not: a mentor can
 /// post a past lesson again even if it has since been hidden from the path.
-pub async fn lesson_by_id(pool: &PgPool, learning_path_topic_id: Uuid) -> Result<Option<Lesson>, AppError> {
+pub async fn lesson_by_id(
+    pool: &PgPool,
+    learning_path_topic_id: Uuid,
+) -> Result<Option<Lesson>, AppError> {
     let lesson = sqlx::query_as::<_, Lesson>(&format!("{LESSON_SELECT} WHERE lpt.id = $1"))
         .bind(learning_path_topic_id)
         .fetch_optional(pool)
@@ -1040,7 +1048,9 @@ mod tests {
 
     #[test]
     fn ist_time_is_five_and_a_half_hours_ahead_of_utc() {
-        let utc = DateTime::parse_from_rfc3339("2026-09-14T01:00:00Z").unwrap().with_timezone(&Utc);
+        let utc = DateTime::parse_from_rfc3339("2026-09-14T01:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
         assert_eq!(ist_time(utc), NaiveTime::from_hms_opt(6, 30, 0).unwrap());
     }
 
@@ -1054,7 +1064,10 @@ mod tests {
     #[test]
     fn a_skipped_day_counts_as_a_posting_day_once_it_arrives() {
         let today = d(2026, 9, 14);
-        assert_eq!(effective_last_post(Some(d(2026, 9, 13)), Some(today), today), Some(today));
+        assert_eq!(
+            effective_last_post(Some(d(2026, 9, 13)), Some(today), today),
+            Some(today)
+        );
         // A future skip does not count yet.
         assert_eq!(
             effective_last_post(Some(d(2026, 9, 13)), Some(d(2026, 9, 20)), today),
@@ -1062,22 +1075,41 @@ mod tests {
         );
         assert_eq!(effective_last_post(None, None, today), None);
         // Skipping today blocks today's post through the normal cadence check.
-        assert!(!should_post_today(effective_last_post(Some(d(2026, 9, 13)), Some(today), today), today, 1));
+        assert!(!should_post_today(
+            effective_last_post(Some(d(2026, 9, 13)), Some(today), today),
+            today,
+            1
+        ));
     }
 
     #[test]
     fn next_post_date_applies_cadence_skip_and_pause() {
         let today = d(2026, 9, 14);
         // Daily, posted yesterday: today.
-        assert_eq!(next_post_date(Some(d(2026, 9, 13)), today, 1, None, None), today);
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 13)), today, 1, None, None),
+            today
+        );
         // Daily, posted today: tomorrow.
-        assert_eq!(next_post_date(Some(today), today, 1, None, None), d(2026, 9, 15));
+        assert_eq!(
+            next_post_date(Some(today), today, 1, None, None),
+            d(2026, 9, 15)
+        );
         // Weekly, posted 2 days ago: 5 days out.
-        assert_eq!(next_post_date(Some(d(2026, 9, 12)), today, 7, None, None), d(2026, 9, 19));
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 12)), today, 7, None, None),
+            d(2026, 9, 19)
+        );
         // Skipping the next weekly post moves it a week.
-        assert_eq!(next_post_date(Some(d(2026, 9, 12)), today, 7, Some(d(2026, 9, 19)), None), d(2026, 9, 26));
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 12)), today, 7, Some(d(2026, 9, 19)), None),
+            d(2026, 9, 26)
+        );
         // Paused through the 20th: the 21st.
-        assert_eq!(next_post_date(Some(d(2026, 9, 13)), today, 1, None, Some(d(2026, 9, 20))), d(2026, 9, 21));
+        assert_eq!(
+            next_post_date(Some(d(2026, 9, 13)), today, 1, None, Some(d(2026, 9, 20))),
+            d(2026, 9, 21)
+        );
         // Never posted: today.
         assert_eq!(next_post_date(None, today, 1, None, None), today);
     }
