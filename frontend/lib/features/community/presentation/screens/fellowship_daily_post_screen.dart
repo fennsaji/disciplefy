@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -233,8 +235,59 @@ class _Panel extends StatelessWidget {
   }
 }
 
+/// "Working on it", switching to a "taking longer than usual" note once the
+/// request has waited past [_slowAfter], so a stuck request is not a spinner
+/// with no explanation.
+class _WorkingText extends StatefulWidget {
+  final String? startedAt;
+  final Color color;
+
+  const _WorkingText({required this.startedAt, required this.color});
+
+  @override
+  State<_WorkingText> createState() => _WorkingTextState();
+}
+
+class _WorkingTextState extends State<_WorkingText> {
+  static const _slowAfter = Duration(minutes: 3);
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // The status only changes when the request finishes, so re-check the
+    // elapsed time on a timer of its own.
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  bool get _slow {
+    final started = DateTime.tryParse(widget.startedAt ?? '');
+    return started != null &&
+        DateTime.now().toUtc().difference(started.toUtc()) > _slowAfter;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Text(
+      _slow ? l10n.dailyPostWorkingLong : l10n.dailyPostWorking,
+      style: TextStyle(fontSize: 13, color: widget.color),
+    );
+  }
+}
+
 class _WorkingRow extends StatelessWidget {
-  const _WorkingRow();
+  final String? startedAt;
+
+  const _WorkingRow({this.startedAt});
 
   @override
   Widget build(BuildContext context) {
@@ -256,10 +309,8 @@ class _WorkingRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              AppLocalizations.of(context)!.dailyPostWorking,
-              style: TextStyle(fontSize: 13, color: context.appTextPrimary),
-            ),
+            child: _WorkingText(
+                startedAt: startedAt, color: context.appTextPrimary),
           ),
         ],
       ),
@@ -415,9 +466,10 @@ class _PostNowSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final working = data.request('post_now')?.isOpen ?? false;
+    final request = data.request('post_now');
+    final working = request?.isOpen ?? false;
 
-    if (working) return const _WorkingRow();
+    if (working) return _WorkingRow(startedAt: request?.createdAt);
 
     // Once today's post is out there is nothing to press: say so instead of
     // showing a greyed-out button.
@@ -817,15 +869,21 @@ class _PreviewSection extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final bloc = context.read<FellowshipDailyPostBloc>();
     final preview = data.preview;
-    final working = (data.request('preview')?.isOpen ?? false) ||
-        (data.request('regenerate')?.isOpen ?? false);
+    final previewRequest = data.request('preview');
+    final regenerateRequest = data.request('regenerate');
+    final openRequest = (regenerateRequest?.isOpen ?? false)
+        ? regenerateRequest
+        : (previewRequest?.isOpen ?? false)
+            ? previewRequest
+            : null;
+    final working = openRequest != null;
     final regenerationsLeft = preview?.regenerationsLeft ?? 0;
 
     return _Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (working) const _WorkingRow(),
+          if (working) _WorkingRow(startedAt: openRequest.createdAt),
           if (preview != null) ...[
             if (!preview.isCurrent) ...[
               // A gentle amber note, not an error: the preview is only out of
@@ -1068,9 +1126,9 @@ class _RepostButton extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                l10n.dailyPostWorking,
-                style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+              child: _WorkingText(
+                startedAt: data.request('repost')?.createdAt,
+                color: context.appTextSecondary,
               ),
             ),
           ],

@@ -744,6 +744,8 @@ class AppLocalizations {
       'dailyPostRegenerate': 'New teaser',
       'dailyPostRegenerateLeft': 'New teaser ({count} left today)',
       'dailyPostWorking': 'Working on it. This usually takes under a minute.',
+      'dailyPostWorkingLong':
+          'This is taking longer than usual. It will finish as soon as it can.',
       'dailyPostPostNow': 'Post now',
       'dailyPostPostNowConfirm':
           "Post today's lesson to the group now? The daily post won't go out again today.",
@@ -1511,6 +1513,8 @@ class AppLocalizations {
       'dailyPostRegenerate': 'नया टीज़र',
       'dailyPostRegenerateLeft': 'नया टीज़र (आज {count} बाकी)',
       'dailyPostWorking': 'तैयार हो रहा है। आमतौर पर एक मिनट से कम लगता है।',
+      'dailyPostWorkingLong':
+          'सामान्य से ज़्यादा समय लग रहा है। जैसे ही हो सकेगा, यह पूरा हो जाएगा।',
       'dailyPostPostNow': 'अभी पोस्ट करें',
       'dailyPostPostNowConfirm':
           'आज का पाठ अभी समूह में पोस्ट करें? आज दोबारा दैनिक पोस्ट नहीं जाएगी।',
@@ -2286,6 +2290,8 @@ class AppLocalizations {
           'ഈ പ്രിവ്യൂ മറ്റൊരു പാഠത്തിനോ തീയതിക്കോ ഉള്ളതാണ്. അടുത്ത പോസ്റ്റ് കാണാൻ വീണ്ടും പ്രിവ്യൂ ചെയ്യുക.',
       'dailyPostRegenerate': 'പുതിയ ടീസർ',
       'dailyPostRegenerateLeft': 'പുതിയ ടീസർ (ഇന്ന് {count} ബാക്കി)',
+      'dailyPostWorkingLong':
+          'പതിവിലും കൂടുതൽ സമയമെടുക്കുന്നു. കഴിയുന്നതും വേഗം ഇത് പൂർത്തിയാകും.',
       'dailyPostWorking':
           'തയ്യാറാക്കുന്നു. സാധാരണ ഒരു മിനിറ്റിൽ താഴെ എടുക്കും.',
       'dailyPostPostNow': 'ഇപ്പോൾ പോസ്റ്റ് ചെയ്യുക',
@@ -3346,6 +3352,7 @@ class AppLocalizations {
   String dailyPostRegenerateLeft(int count) =>
       _dailyPost('dailyPostRegenerateLeft').replaceAll('{count}', '$count');
   String get dailyPostWorking => _dailyPost('dailyPostWorking');
+  String get dailyPostWorkingLong => _dailyPost('dailyPostWorkingLong');
   String get dailyPostPostNow => _dailyPost('dailyPostPostNow');
   String get dailyPostPostNowConfirm => _dailyPost('dailyPostPostNowConfirm');
   String get dailyPostCancel => _dailyPost('dailyPostCancel');

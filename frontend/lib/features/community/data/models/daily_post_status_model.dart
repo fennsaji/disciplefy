@@ -76,6 +76,7 @@ class DailyPostStatusModel {
         error: r['error'] as String?,
         processedAt: r['processed_at'] as String?,
         targetDailyPostId: r['target_daily_post_id'] as String?,
+        createdAt: r['created_at'] as String?,
       );
 
   static DailyPostHistoryItemEntity _historyItem(Map<String, dynamic> h) =>
