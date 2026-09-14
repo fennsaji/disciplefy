@@ -65,7 +65,11 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         discipler_react_enabled,
         daily_post_on,
         daily_post_frequency_days,
-        daily_post_auto_advance
+        daily_post_auto_advance,
+        daily_post_time,
+        daily_post_preview_allowed,
+        daily_post_regenerate_allowed,
+        daily_post_post_now_allowed
       )
     `)
     .eq('user_id', user.id)
@@ -203,6 +207,10 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         daily_post_on: fellowship.daily_post_on ?? true,
         daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
         daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+        daily_post_time: fellowship.daily_post_time ?? '06:30',
+        daily_post_preview_allowed: fellowship.daily_post_preview_allowed ?? false,
+        daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
+        daily_post_post_now_allowed: fellowship.daily_post_post_now_allowed ?? false,
         my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
         completed_path_ids: completedPathsByFellowship.get(fellowshipId) ?? [],
         current_study: study
@@ -1153,6 +1161,10 @@ function fellowshipSettingsPayload(fellowship: any) {
     daily_post_on: fellowship.daily_post_on ?? true,
     daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
     daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+    daily_post_time: fellowship.daily_post_time ?? '06:30',
+    daily_post_preview_allowed: fellowship.daily_post_preview_allowed ?? false,
+    daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
+    daily_post_post_now_allowed: fellowship.daily_post_post_now_allowed ?? false,
     updated_at: fellowship.updated_at,
   }
 }

@@ -39,6 +39,9 @@ pub struct TeaserRequest<'a> {
     pub language: &'a str,
     pub summary: &'a str,
     pub verse: Option<&'a str>,
+    /// A mentor asked for a different wording: the edge function bypasses the
+    /// shared teaser cache and does not overwrite it.
+    pub regenerate: bool,
 }
 
 /// JSON body for `fellowship-posts/daily-teaser`. `topic_id` is what the edge
@@ -53,6 +56,7 @@ fn request_body(req: &TeaserRequest<'_>) -> serde_json::Value {
         "language": req.language,
         "summary": req.summary,
         "verse": req.verse,
+        "regenerate": req.regenerate,
     })
 }
 
@@ -132,6 +136,7 @@ mod tests {
             language: "hi",
             summary: "s",
             verse: None,
+            regenerate: false,
         });
         assert_eq!(body["topic_id"], topic_id.to_string());
         assert_eq!(body["language"], "hi");

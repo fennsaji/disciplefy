@@ -24,6 +24,8 @@ interface DailyTeaserRequest {
   summary: string
   verse?: string
   topic_id?: string
+  /** A mentor asked for a different wording: bypass the shared teaser cache. */
+  regenerate?: boolean
 }
 
 const LANGUAGES = new Set(['en', 'hi', 'ml'])
@@ -52,6 +54,7 @@ function validate(body: unknown): DailyTeaserRequest {
     summary: b.summary.trim(),
     verse: b.verse?.trim() || undefined,
     topic_id: typeof b.topic_id === 'string' && b.topic_id.trim() ? b.topic_id.trim() : undefined,
+    regenerate: b.regenerate === true,
   }
 }
 
@@ -79,7 +82,7 @@ export async function handleDailyTeaser(req: Request, services: ServiceContainer
       language: input.language,
       summary: input.summary,
       verse: input.verse,
-    }, input.fellowship_id)
+    }, input.fellowship_id, { fresh: input.regenerate })
 
     console.log('[fellowship-posts/daily-teaser] served', {
       fellowship_id: input.fellowship_id, model: teaser.model, cached: teaser.cached,
