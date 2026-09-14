@@ -123,7 +123,7 @@ export function CreateLearningPathDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="mx-4 max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-900">
         {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
+        <div className="border-b border-gray-200 px-3 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">
               Create Learning Path
@@ -176,7 +176,7 @@ export function CreateLearningPathDialog({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="max-h-[60vh] overflow-y-auto p-6">
+        <form onSubmit={handleSubmit} className="max-h-[60vh] overflow-y-auto p-4 sm:p-6">
           {/* Basic Info Tab */}
           {activeTab === 'basic' && (
             <div className="space-y-4">
@@ -257,7 +257,7 @@ export function CreateLearningPathDialog({
 
           {/* Settings Tab */}
           {activeTab === 'settings' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Estimated Days
@@ -395,7 +395,7 @@ export function CreateLearningPathDialog({
         </form>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+        <div className="border-t border-gray-200 bg-gray-50 px-3 py-3 sm:px-6 sm:py-4">
           <div className="flex justify-end gap-3">
             <button
               type="button"

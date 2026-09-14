@@ -38,25 +38,25 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.08)] dark:bg-gray-900 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.08)] dark:bg-gray-900 px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               User
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Plan
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Daily Tokens
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Purchased
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Used Today
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Last Reset
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Actions
             </th>
           </tr>
@@ -67,7 +67,7 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
 
             return (
               <tr key={balance.id} className="group hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.08)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700 px-6 py-4">
+                <td className="sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.08)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700 px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {balance.user_name || balance.user_email || 'Anonymous'}
@@ -78,13 +78,13 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${getPlanColor(balance.user_plan)}`}>
                     {getPlanIcon(balance.user_plan)}
                     {formatPlanName(balance.user_plan)}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-3 py-3 sm:px-6 sm:py-4 text-right">
                   <div className="flex flex-col items-end">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {balance.daily_limit >= 999999999 ? '∞' : balance.available_tokens.toLocaleString()}
@@ -94,10 +94,10 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-right font-medium text-gray-900 dark:text-gray-100">
+                <td className="px-3 py-3 sm:px-6 sm:py-4 text-right font-medium text-gray-900 dark:text-gray-100">
                   {balance.purchased_tokens.toLocaleString()}
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-3 py-3 sm:px-6 sm:py-4 text-right">
                   <div className="flex flex-col items-end">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {balance.total_consumed_today.toLocaleString()}
@@ -107,14 +107,14 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                <td className="px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-600 dark:text-gray-400">
                   {new Date(balance.last_reset).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
                   })}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex justify-end gap-3">
                     <button
                       onClick={() => router.push(`/token-management/${balance.identifier}`)}

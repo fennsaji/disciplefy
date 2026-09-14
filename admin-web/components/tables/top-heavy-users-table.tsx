@@ -16,7 +16,7 @@ function money(value: number): string {
 export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
   return (
     <div className="rounded-lg bg-white shadow-md dark:bg-gray-800 dark:shadow-gray-900">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-3 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Top 10 Heavy Users</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Sorted by LLM spend (highest first)</p>
       </div>
@@ -37,7 +37,7 @@ export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {data.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={8} className="px-4 py-6 sm:py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   No data for this period
                 </td>
               </tr>

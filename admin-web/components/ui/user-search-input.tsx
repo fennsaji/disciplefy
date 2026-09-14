@@ -39,7 +39,7 @@ export function UserSearchInput({
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
       <div className="flex gap-4">
         <div className="flex-1">
           <input

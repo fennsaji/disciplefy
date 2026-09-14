@@ -267,9 +267,9 @@ export default function SystemConfigPage() {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Token System */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -289,7 +289,7 @@ export default function SystemConfigPage() {
               Edit
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Free Plan (Daily)</div>
               <div className="text-2xl font-bold text-gray-600">{config.token_system.daily_free_tokens} tokens</div>
@@ -312,7 +312,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Voice Features */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -332,7 +332,7 @@ export default function SystemConfigPage() {
               Edit
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Free Plan (Monthly)</div>
               <div className="text-2xl font-bold text-gray-600">{config.voice_features.free_monthly_conversations} conversations</div>
@@ -357,7 +357,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Discipler kill switch */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               🕊️ Discipler (Fellowship)
@@ -395,7 +395,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Maintenance Mode */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -443,7 +443,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Daily spend ceiling */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -493,7 +493,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Purge Cached Bible Content */}
-        <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm dark:border-red-800 dark:bg-gray-800">
+        <div className="rounded-lg border border-red-200 bg-white p-4 sm:p-6 shadow-sm dark:border-red-800 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -530,7 +530,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* App Version Control */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -603,7 +603,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Dynamic Trial Configuration */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -672,7 +672,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Memory Verses Configuration */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -687,7 +687,7 @@ export default function SystemConfigPage() {
           {memoryVerseLoading ? (
             <LoadingState label="Loading memory verse configuration..." />
           ) : memoryVerseData?.data ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Practice Mode Unlock Limits */}
               <UnlockLimitsEditor
                 initialLimits={{
@@ -799,7 +799,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Feature Testers */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
             🧪 Feature Testers
           </h3>
@@ -835,10 +835,10 @@ export default function SystemConfigPage() {
     const stats = subscriptionConfigData?.stats
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Plans"
               value={stats.total_plans}
@@ -894,11 +894,11 @@ export default function SystemConfigPage() {
               }}
             />
           ) : pricingLoading ? (
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <LoadingState label="Loading pricing data..." />
             </div>
           ) : (
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <ErrorState message="Failed to load pricing data" />
             </div>
           )}
@@ -926,10 +926,10 @@ export default function SystemConfigPage() {
     }, {})
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Flags"
               value={stats.total_flags}
@@ -958,9 +958,9 @@ export default function SystemConfigPage() {
         )}
 
         {/* Flags by Category */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {Object.entries(flagsByCategory).map(([category, categoryFlags]: [string, any]) => (
-            <div key={category} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div key={category} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 capitalize">
                 {category.replace('_', ' ')}
               </h3>
@@ -1047,7 +1047,7 @@ export default function SystemConfigPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="System Configuration"
         description="Manage system settings, subscription plans, and feature flags"

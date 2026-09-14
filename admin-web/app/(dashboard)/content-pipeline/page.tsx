@@ -262,7 +262,7 @@ export default function ContentPipelinePage() {
   const lastPost = data?.telegram_history?.[0]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Content Pipeline"
         description="Where the Telegram channel and guide pre-warming are in the learning-path catalogue, and where they go next."
@@ -671,7 +671,7 @@ export default function ContentPipelinePage() {
             <section className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               <p className="border-b border-gray-200 p-4 font-medium text-gray-900 dark:border-gray-700 dark:text-gray-100">Recent posts</p>
               {data.telegram_history.length === 0 ? (
-                <p className="px-4 py-8 text-center text-sm text-gray-500">Nothing posted yet.</p>
+                <p className="px-4 py-6 sm:py-8 text-center text-sm text-gray-500">Nothing posted yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-sm">
@@ -709,7 +709,7 @@ export default function ContentPipelinePage() {
             <section className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               <p className="border-b border-gray-200 p-4 font-medium text-gray-900 dark:border-gray-700 dark:text-gray-100">Recent batch runs</p>
               {data.prewarm_runs.length === 0 ? (
-                <p className="px-4 py-8 text-center text-sm text-gray-500">No batch runs yet.</p>
+                <p className="px-4 py-6 sm:py-8 text-center text-sm text-gray-500">No batch runs yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-sm">

@@ -127,7 +127,7 @@ export function SourceSelector({
   }
 
   return (
-    <div className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+    <div className="space-y-4 sm:space-y-6 rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Study Guide Source</h2>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -239,7 +239,7 @@ export function SourceSelector({
 
               {/* Topics List */}
               {isLoadingTopics ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-6 sm:py-8">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
                 </div>
               ) : (
@@ -422,7 +422,7 @@ export function SourceSelector({
         type="button"
         onClick={validateAndGenerate}
         disabled={disabled}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-primary-700"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 sm:px-6 sm:py-3 text-base font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-primary-700"
       >
         <svg
           className="h-5 w-5"

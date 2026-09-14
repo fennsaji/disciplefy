@@ -12,12 +12,12 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
     <header className="flex flex-col md:flex-row md:items-start justify-between gap-3">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
         {description && (
-          <p className="mt-2 text-gray-600 dark:text-gray-400">{description}</p>
+          <p className="mt-1 text-sm sm:mt-2 sm:text-base text-gray-600 dark:text-gray-400">{description}</p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-3 w-full md:w-auto">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">{actions}</div>}
     </header>
   )
 }

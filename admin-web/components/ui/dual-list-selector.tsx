@@ -194,7 +194,7 @@ export function DualListSelector({
         {/* Available Items List */}
         <div className="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
           {filteredAvailable.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
+            <p className="py-6 sm:py-8 text-center text-sm text-gray-500">
               {searchQuery ? 'No items found' : 'All items selected'}
             </p>
           ) : (
@@ -230,7 +230,7 @@ export function DualListSelector({
         {/* Selected Items List with Drag & Drop */}
         <div className="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
           {selectedItems.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
+            <p className="py-6 sm:py-8 text-center text-sm text-gray-500">
               No items selected
             </p>
           ) : (

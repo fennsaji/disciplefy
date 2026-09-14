@@ -190,12 +190,16 @@ class DailyPostRequestEntity extends Equatable {
   /// For `repost`: the daily post being replaced.
   final String? targetDailyPostId;
 
+  /// When the mentor made the request (ISO-8601).
+  final String? createdAt;
+
   const DailyPostRequestEntity({
     required this.kind,
     required this.status,
     this.error,
     this.processedAt,
     this.targetDailyPostId,
+    this.createdAt,
   });
 
   bool get isOpen => status == 'pending' || status == 'processing';
@@ -203,7 +207,7 @@ class DailyPostRequestEntity extends Equatable {
 
   @override
   List<Object?> get props =>
-      [kind, status, error, processedAt, targetDailyPostId];
+      [kind, status, error, processedAt, targetDailyPostId, createdAt];
 }
 
 class DailyPostHistoryItemEntity extends Equatable {

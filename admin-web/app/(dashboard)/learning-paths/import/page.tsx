@@ -141,7 +141,7 @@ export default function ImportLearningPathsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6">
@@ -174,7 +174,7 @@ export default function ImportLearningPathsPage() {
 
         {/* Upload Stage */}
         {stage === 'upload' && (
-          <div className="rounded-lg bg-white p-8 shadow dark:bg-gray-800 dark:shadow-gray-900">
+          <div className="rounded-lg bg-white p-5 sm:p-8 shadow dark:bg-gray-800 dark:shadow-gray-900">
             <div className="text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
                 <svg
@@ -198,7 +198,7 @@ export default function ImportLearningPathsPage() {
                 Select a JSON file exported from the learning paths export feature
               </p>
               <div className="mt-6">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary-600">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-3 py-2 sm:px-6 sm:py-3 text-sm font-medium text-white hover:bg-primary-600">
                   <svg
                     className="h-5 w-5"
                     fill="none"
@@ -227,9 +227,9 @@ export default function ImportLearningPathsPage() {
 
         {/* Preview Stage */}
         {stage === 'preview' && parsedData && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* File Info */}
-            <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">File Information</h2>
               <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -254,7 +254,7 @@ export default function ImportLearningPathsPage() {
             </div>
 
             {/* Conflict Resolution */}
-            <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Conflict Resolution
               </h2>
@@ -315,7 +315,7 @@ export default function ImportLearningPathsPage() {
 
             {/* Preview List */}
             <div className="rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900">
-              <div className="border-b border-gray-200 p-6 dark:border-gray-700">
+              <div className="border-b border-gray-200 p-4 sm:p-6 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Learning Paths to Import ({parsedData.count})
                 </h2>
@@ -393,9 +393,9 @@ export default function ImportLearningPathsPage() {
 
         {/* Complete Stage */}
         {stage === 'complete' && importResult && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Results Summary */}
-            <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+            <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                   <svg
@@ -438,7 +438,7 @@ export default function ImportLearningPathsPage() {
 
             {/* Errors */}
             {importResult.errors.length > 0 && (
-              <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+              <div className="rounded-lg bg-white p-4 sm:p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">Errors</h3>
                 <div className="mt-4 space-y-2">
                   {importResult.errors.map((error, index) => (

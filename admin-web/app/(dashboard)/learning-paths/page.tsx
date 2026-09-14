@@ -149,7 +149,7 @@ export default function LearningPathsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Learning Paths"
         description="Manage learning paths and organize study topics"

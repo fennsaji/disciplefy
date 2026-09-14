@@ -144,7 +144,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center dark:bg-gray-900">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading learning path...</p>
@@ -155,7 +155,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
 
   if (!path) {
     return (
-      <div className="flex min-h-screen items-center justify-center dark:bg-gray-900">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">Learning path not found</p>
           <button
@@ -170,7 +170,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -234,7 +234,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
             {/* Basic Info Tab */}
             {activeTab === 'basic' && (
               <div className="space-y-4">
@@ -313,7 +313,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
 
             {/* Visual Tab */}
             {activeTab === 'visual' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Icon & Color
@@ -333,7 +333,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
                 </div>
 
                 {/* Preview */}
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-700">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-700">
                   <p className="mb-4 text-sm font-medium text-gray-700 dark:text-gray-300">Preview</p>
                   <div
                     className="inline-flex items-center gap-3 rounded-lg p-4"
@@ -356,7 +356,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
 
             {/* Settings Tab */}
             {activeTab === 'settings' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Estimated Days

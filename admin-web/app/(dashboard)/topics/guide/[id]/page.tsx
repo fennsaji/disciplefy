@@ -222,7 +222,7 @@ export default function StudyGuideViewPage({ params }: PageProps) {
 
   if (error || !guide) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6 dark:border-red-400/20 dark:bg-red-400/10">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 sm:p-6 dark:border-red-400/20 dark:bg-red-400/10">
         <p className="text-sm text-red-800 dark:text-red-300">{error ?? 'Guide not found'}</p>
         <button
           onClick={() => router.back()}
@@ -239,7 +239,7 @@ export default function StudyGuideViewPage({ params }: PageProps) {
   const relatedVerses = (content.relatedVerses ?? content.related_verses ?? []) as any[]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">

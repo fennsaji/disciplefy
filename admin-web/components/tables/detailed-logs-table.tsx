@@ -116,7 +116,7 @@ export function DetailedLogsTable({ dateRange }: DetailedLogsTableProps) {
   const totalPages = data ? Math.ceil(data.total / (data.limit ?? limit)) : 0
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
       <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
         Detailed Generation Logs
       </h2>
@@ -183,7 +183,7 @@ export function DetailedLogsTable({ dateRange }: DetailedLogsTableProps) {
 
       {/* Loading */}
       {isLoading && (
-        <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="py-6 sm:py-8 text-center text-sm text-gray-500 dark:text-gray-400">
           Loading logs...
         </div>
       )}
@@ -197,7 +197,7 @@ export function DetailedLogsTable({ dateRange }: DetailedLogsTableProps) {
 
       {/* Empty */}
       {!isLoading && !error && data?.items.length === 0 && (
-        <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="py-6 sm:py-8 text-center text-sm text-gray-500 dark:text-gray-400">
           No records found for the selected filters.
         </div>
       )}

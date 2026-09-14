@@ -51,7 +51,7 @@ export default function LearningPathDetailPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center dark:bg-gray-900">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading learning path...</p>
@@ -62,8 +62,8 @@ export default function LearningPathDetailPage({ params }: PageProps) {
 
   if (error || !path) {
     return (
-      <div className="flex min-h-screen items-center justify-center dark:bg-gray-900">
-        <div className="rounded-lg bg-red-50 p-6 text-center dark:bg-red-900/20">
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="rounded-lg bg-red-50 p-4 sm:p-6 text-center dark:bg-red-900/20">
           <svg
             className="mx-auto h-12 w-12 text-red-600 dark:text-red-400"
             fill="none"
@@ -92,12 +92,13 @@ export default function LearningPathDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    // The dashboard shell already pads the page, so no padding of its own here.
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="mb-6">
+      <div>
         <button
           onClick={() => router.push('/learning-paths')}
-          className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          className="mb-3 flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
         >
           <svg
             className="h-4 w-4"
@@ -115,28 +116,28 @@ export default function LearningPathDetailPage({ params }: PageProps) {
           Back to Learning Paths
         </button>
 
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-lg text-2xl"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl sm:h-12 sm:w-12 sm:text-2xl"
                 style={{ backgroundColor: `${path.color}20` }}
               >
                 <span>{iconMap[path.icon_name] || '📚'}</span>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{path.title}</h1>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{path.slug}</p>
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold leading-tight text-gray-900 sm:text-2xl dark:text-gray-100">{path.title}</h1>
+                <p className="mt-0.5 truncate text-xs text-gray-500 sm:text-sm dark:text-gray-400">{path.slug}</p>
               </div>
             </div>
             {path.description && (
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{path.description}</p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{path.description}</p>
             )}
           </div>
 
           <button
             onClick={() => router.push(`/learning-paths/${id}/edit`)}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
           >
             <svg
               className="h-4 w-4"
@@ -156,35 +157,30 @@ export default function LearningPathDetailPage({ params }: PageProps) {
         </div>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-4 gap-4">
-          <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 dark:shadow-gray-900">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Topics</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              {path.topics?.length || 0}
-            </p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 dark:shadow-gray-900">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Total XP</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{path.total_xp}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 dark:shadow-gray-900">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Enrolled Users</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              {path.enrolled_count || 0}
-            </p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 dark:shadow-gray-900">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Disciple Level</p>
-            <p className="mt-1 text-lg font-semibold capitalize text-gray-900 dark:text-gray-100">
-              {path.disciple_level}
-            </p>
-          </div>
-        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:grid-cols-4 sm:gap-4">
+          {[
+            { label: 'Topics', value: path.topics?.length || 0 },
+            { label: 'Total XP', value: path.total_xp },
+            { label: 'Enrolled', value: path.enrolled_count || 0 },
+            { label: 'Level', value: path.disciple_level, capitalize: true },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-lg bg-white px-3 py-2 shadow-sm sm:p-4 dark:bg-gray-800 dark:shadow-gray-900"
+            >
+              <dt className="text-xs text-gray-500 sm:text-sm dark:text-gray-400">{stat.label}</dt>
+              <dd
+                className={`mt-0.5 text-lg font-semibold text-gray-900 sm:mt-1 sm:text-2xl dark:text-gray-100 ${stat.capitalize ? 'capitalize' : ''}`}
+              >
+                {stat.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
-      {/* Topics Management */}
-      <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800 dark:shadow-gray-900">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Manage Topics</h2>
+      {/* Topics Management: the organizer carries its own heading */}
+      <div className="rounded-lg bg-white p-3 shadow-sm sm:p-6 dark:bg-gray-800 dark:shadow-gray-900">
         <PathTopicOrganizer pathId={id} />
       </div>
     </div>

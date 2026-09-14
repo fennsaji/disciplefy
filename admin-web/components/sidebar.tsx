@@ -97,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-5">
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {navGroups.map((group) => (
             <div key={group.label}>
               <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-400/70">

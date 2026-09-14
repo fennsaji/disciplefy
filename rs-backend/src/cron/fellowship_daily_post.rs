@@ -3,10 +3,12 @@
 //! study-generate-v2, posted as Discipler. See spec §4 (run order) and §5
 //! (advance/switch rules).
 //!
-//! The job runs every minute. Each run first processes mentor requests
-//! (post now, preview, regenerate teaser — recorded by the `fellowship-study`
-//! Edge Function), then posts for every fellowship whose own IST posting time
-//! has passed, that is due at its cadence, and that is not skipped or paused.
+//! The job runs every minute and posts for every fellowship whose own IST
+//! posting time has passed, that is due at its cadence, and that is not
+//! skipped or paused. Mentor requests (post now, preview, new teaser, post
+//! again — recorded by the `fellowship-study` Edge Function) are handled apart
+//! from it by [run_request_worker], which checks every few seconds, so they
+//! wait neither for this schedule nor for a long posting run.
 //!
 //! The advance/switch decision is resolved by
 //! `fellowship_daily::resolve_post_plan` before any generation happens, and
@@ -17,8 +19,12 @@ use chrono::Utc;
 use reqwest::Client;
 use sqlx::PgPool;
 
+use std::sync::Arc;
+use tokio::sync::Semaphore;
+
 use crate::config::Config;
 use crate::error::AppError;
+use crate::models::cron_config;
 use crate::models::fellowship_daily::{
     self, DailyFellowship, DailyPostInsert, DailyRequest, Lesson, PostPlan, PreviewWrite,
 };
@@ -32,8 +38,11 @@ pub(crate) const REGENERATE_DAILY_CAP: i32 = 3;
 /// every-minute job tries it again.
 const RETRY_AFTER_FAILURE: chrono::Duration = chrono::Duration::hours(1);
 
-/// Mentor requests handled per run; the rest wait for the next minute.
-const REQUESTS_PER_RUN: i64 = 5;
+/// Mentor requests generated at the same time; more wait for a free slot.
+const MAX_CONCURRENT_REQUESTS: usize = 5;
+
+/// How often the request worker looks for new mentor requests.
+const REQUEST_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_secs(5);
 
 pub(crate) struct Localized<'a> {
     pub title: &'a str,
@@ -523,19 +532,54 @@ async fn process_request(
     }
 }
 
-async fn process_requests(pool: &PgPool, config: &Config, http: &Client) -> Result<(), AppError> {
-    let requests = fellowship_daily::claim_pending_requests(pool, REQUESTS_PER_RUN).await?;
-    for r in &requests {
-        let result = process_request(pool, config, http, r).await;
-        if let Err(e) = &result {
-            tracing::warn!(request = %r.id, kind = %r.kind, "Daily post request failed: {}", e);
+/// Runs one claimed request and records how it went.
+async fn handle_request(pool: &PgPool, config: &Config, http: &Client, r: &DailyRequest) {
+    let result = process_request(pool, config, http, r).await;
+    if let Err(e) = &result {
+        tracing::warn!(request = %r.id, kind = %r.kind, "Daily post request failed: {}", e);
+    }
+    let error = result.err().map(|e| request_error_message(&e));
+    if let Err(e) = fellowship_daily::finish_request(pool, r.id, error.as_deref()).await {
+        tracing::error!(request = %r.id, "Could not record request result: {}", e);
+    }
+}
+
+/// Picks up mentor requests within seconds of a tap, independent of the
+/// `fellowship_daily_post` schedule (its enabled switch still applies). Each
+/// request runs on its own task, up to [MAX_CONCURRENT_REQUESTS] at once, so a
+/// slow generation never holds up the next request.
+pub async fn run_request_worker(pool: PgPool, config: Config, http: Client) {
+    let slots = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
+    let mut tick = tokio::time::interval(REQUEST_POLL_INTERVAL);
+    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    tracing::info!("Daily post request worker started");
+
+    loop {
+        tick.tick().await;
+        let free = slots.available_permits();
+        if free == 0 || !cron_config::should_run(&pool, "fellowship_daily_post").await {
+            continue;
         }
-        let error = result.err().map(|e| request_error_message(&e));
-        if let Err(e) = fellowship_daily::finish_request(pool, r.id, error.as_deref()).await {
-            tracing::error!(request = %r.id, "Could not record request result: {}", e);
+        let requests = match fellowship_daily::claim_pending_requests(&pool, free as i64).await {
+            Ok(requests) => requests,
+            Err(e) => {
+                tracing::error!("Could not claim daily post requests: {}", e);
+                continue;
+            }
+        };
+        for r in requests {
+            // Never waits: no more were claimed than there were free slots,
+            // and only this loop takes them.
+            let Ok(slot) = slots.clone().acquire_owned().await else {
+                return;
+            };
+            let (pool, config, http) = (pool.clone(), config.clone(), http.clone());
+            tokio::spawn(async move {
+                let _slot = slot;
+                handle_request(&pool, &config, &http, &r).await;
+            });
         }
     }
-    Ok(())
 }
 
 pub async fn run_fellowship_daily_post(
@@ -543,10 +587,6 @@ pub async fn run_fellowship_daily_post(
     config: &Config,
     http: &Client,
 ) -> Result<(), AppError> {
-    if let Err(e) = process_requests(pool, config, http).await {
-        tracing::error!("Daily post requests failed: {}", e);
-    }
-
     let fellowships = fellowship_daily::list_daily_fellowships(pool).await?;
     let (mut posted, mut skipped, mut failed) = (0usize, 0usize, 0usize);
     for f in &fellowships {

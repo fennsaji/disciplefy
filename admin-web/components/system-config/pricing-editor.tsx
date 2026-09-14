@@ -178,7 +178,7 @@ export default function PricingEditor({
   if (!isEditing) {
     return (
       <>
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -190,7 +190,7 @@ export default function PricingEditor({
             </div>
           </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {Object.entries(groupedPricing).map(([provider, plans]) => (
             <div key={provider} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-3">
@@ -261,7 +261,7 @@ export default function PricingEditor({
 
   // Edit mode
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           💰 Edit Subscription Pricing
@@ -271,7 +271,7 @@ export default function PricingEditor({
         </p>
       </div>
 
-      <div className="space-y-6 mb-6">
+      <div className="space-y-4 sm:space-y-6 mb-6">
         {Object.entries(groupedPricing).map(([provider, plans]) => (
           <div key={provider} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-3">

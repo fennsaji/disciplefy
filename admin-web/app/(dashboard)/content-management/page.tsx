@@ -76,7 +76,7 @@ export default function ContentManagementPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Daily Verses"
         description="Manage daily verses"
@@ -84,7 +84,7 @@ export default function ContentManagementPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatsCard title="Total Verses" value={stats.total} icon="📅" trend={undefined} />
           <StatsCard title="Active Verses" value={stats.active} icon="✅" trend={undefined} />
           <StatsCard title="Upcoming" value={stats.upcoming_count} icon="⏭️" trend={undefined} />

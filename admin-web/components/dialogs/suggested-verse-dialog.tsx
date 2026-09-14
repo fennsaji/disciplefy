@@ -132,7 +132,7 @@ export default function SuggestedVerseDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="mx-4 w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-gray-900">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+        <div className="flex items-center justify-between border-b border-gray-200 px-3 py-3 sm:px-6 sm:py-4 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {verse ? 'Edit Suggested Verse' : 'Add Suggested Verse'}
           </h2>
@@ -149,7 +149,7 @@ export default function SuggestedVerseDialog({
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
+          <div className="max-h-[70vh] overflow-y-auto px-3 py-3 sm:px-6 sm:py-4">
             {error && (
               <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
                 {error}
@@ -240,7 +240,7 @@ export default function SuggestedVerseDialog({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+          <div className="flex justify-end gap-3 border-t border-gray-200 px-3 py-3 sm:px-6 sm:py-4 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}

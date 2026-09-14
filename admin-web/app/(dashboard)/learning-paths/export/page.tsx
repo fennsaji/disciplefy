@@ -116,7 +116,7 @@ export default function ExportLearningPathsPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6">
@@ -196,7 +196,7 @@ export default function ExportLearningPathsPage() {
           ) : (
             <>
               {/* Selection Header */}
-              <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-700">
+              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2 sm:px-6 sm:py-3 dark:border-gray-700 dark:bg-gray-700">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"

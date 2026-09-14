@@ -130,7 +130,7 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Subscription Management"
         description="Manage user subscriptions, update plans, and apply custom discounts"
@@ -210,7 +210,7 @@ export default function SubscriptionsPage() {
 
       {/* Stats cards */}
       {stats && (
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
           <StatsCard
             title="Total Users"
             value={formatCompactNumber(stats.total)}
@@ -239,7 +239,7 @@ export default function SubscriptionsPage() {
       )}
 
       {/* User table */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">User Subscriptions</h2>
 
         {isSearching && <LoadingState label="Loading subscriptions..." />}

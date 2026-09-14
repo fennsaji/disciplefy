@@ -185,7 +185,7 @@ export function AddStudyGuideDialog({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-gray-200 px-3 py-3 sm:px-6 sm:py-4">
             <h2 className="text-xl font-semibold text-gray-900">
               Add New Study Guide
             </h2>
@@ -212,8 +212,8 @@ export function AddStudyGuideDialog({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Error Message */}
               {error && (
                 <div className="rounded-lg bg-red-50 p-4">

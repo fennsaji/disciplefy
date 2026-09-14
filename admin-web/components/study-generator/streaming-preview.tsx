@@ -146,9 +146,9 @@ export function StreamingPreview({
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Progress Header */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -207,7 +207,7 @@ export function StreamingPreview({
       <div className="space-y-4">
         {/* Summary */}
         {content.summary && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xl">📝</span>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Summary</h3>
@@ -223,7 +223,7 @@ export function StreamingPreview({
 
         {/* Context */}
         {content.context && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xl">📖</span>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Context</h3>
@@ -239,7 +239,7 @@ export function StreamingPreview({
 
         {/* Interpretation */}
         {content.interpretation && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xl">💡</span>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Interpretation</h3>
@@ -255,7 +255,7 @@ export function StreamingPreview({
 
         {/* Related Verses */}
         {content.related_verses && content.related_verses.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xl">📜</span>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Related Verses</h3>
@@ -277,7 +277,7 @@ export function StreamingPreview({
         {/* Reflection Questions */}
         {content.reflection_questions &&
           content.reflection_questions.length > 0 && (
-            <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-xl">❓</span>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
@@ -305,7 +305,7 @@ export function StreamingPreview({
 
         {/* Prayer Points */}
         {content.prayer_points && content.prayer_points.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xl">🙏</span>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Prayer Points</h3>
@@ -329,7 +329,7 @@ export function StreamingPreview({
 
         {/* Insights */}
         {content.insights && content.insights.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xl">✨</span>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Insights</h3>

@@ -178,7 +178,7 @@ export default function CronsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Cron Jobs"
         description="Manage scheduled background tasks"

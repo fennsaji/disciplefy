@@ -25,25 +25,25 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.08)] dark:bg-gray-900 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.08)] dark:bg-gray-900 px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               User
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Current Tier
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Plan Details
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Period
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Price
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Actions
             </th>
           </tr>
@@ -57,7 +57,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
 
             return (
               <tr key={user.id} className="group hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.08)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700 px-6 py-4">
+                <td className="sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.08)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700 px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900 dark:text-gray-100">{user.full_name || 'No name'}</span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">{user.email}</span>
@@ -66,7 +66,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   {activeSub ? (
                     <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${getTierColor(activeSub.tier)}`}>
                       {getTierIcon(activeSub.tier)}
@@ -76,7 +76,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                     <span className="text-sm text-gray-500 dark:text-gray-400">No active subscription</span>
                   )}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   {activeSub?.subscription_plans ? (
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -90,7 +90,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                     <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   {activeSub ? (
                     <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(activeSub.status)}`}>
                       {activeSub.status}
@@ -99,7 +99,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                     <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   {activeSub ? (
                     <div className="flex flex-col text-sm">
                       <span className="text-gray-600 dark:text-gray-400">
@@ -113,7 +113,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                     '-'
                   )}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                <td className="px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-600 dark:text-gray-400">
                   {activeSub?.subscription_plans ? (
                     <div className="flex flex-col">
                       <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -124,7 +124,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                     '-'
                   )}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex justify-end gap-3">
                     <button
                       onClick={() => router.push(`/subscriptions/${user.id}`)}

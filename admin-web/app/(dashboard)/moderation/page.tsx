@@ -86,7 +86,7 @@ export default function ModerationPage() {
   const [activeTab, setActiveTab] = useState<TabType>('reports')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="🚫 Moderation"
         description="Review flagged content and user blocks"
@@ -171,7 +171,7 @@ function ReportsTab() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <select
           value={statusFilter}
@@ -187,7 +187,7 @@ function ReportsTab() {
         </select>
       </div>
 
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Reports</h2>
 
         {isLoading ? (
@@ -312,8 +312,8 @@ function BlocksTab() {
   const total = data?.total ?? 0
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Blocks</h2>
 
         {isLoading ? (

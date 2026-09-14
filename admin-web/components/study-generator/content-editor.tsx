@@ -251,9 +251,9 @@ export function ContentEditor({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -272,9 +272,9 @@ export function ContentEditor({
       </div>
 
       {/* All Sections - Ordered as per API response */}
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         {/* 1. Summary Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
             <span>📝</span>
             <span>Summary</span>
@@ -289,7 +289,7 @@ export function ContentEditor({
         </div>
 
         {/* 2. Context Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
             <span>📖</span>
             <span>Context</span>
@@ -304,7 +304,7 @@ export function ContentEditor({
         </div>
 
         {/* 3. Interpretation Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
             <span>💡</span>
             <span>Interpretation</span>
@@ -319,7 +319,7 @@ export function ContentEditor({
         </div>
 
         {/* 4. Related Verses Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>📖</span>
@@ -388,7 +388,7 @@ export function ContentEditor({
             ))}
 
             {relatedVerses.length === 0 && (
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+              <div className="rounded-lg border-2 border-dashed border-gray-300 p-5 sm:p-8 text-center dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No related verses added yet
                 </p>
@@ -405,7 +405,7 @@ export function ContentEditor({
         </div>
 
         {/* 5. Reflection Questions Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❓</span>
@@ -469,7 +469,7 @@ export function ContentEditor({
             ))}
 
             {reflectionQuestions.length === 0 && (
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+              <div className="rounded-lg border-2 border-dashed border-gray-300 p-5 sm:p-8 text-center dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No reflection questions added yet
                 </p>
@@ -486,7 +486,7 @@ export function ContentEditor({
         </div>
 
         {/* 6. Prayer Points Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>🙏</span>
@@ -548,7 +548,7 @@ export function ContentEditor({
             ))}
 
             {prayerPoints.length === 0 && (
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+              <div className="rounded-lg border-2 border-dashed border-gray-300 p-5 sm:p-8 text-center dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No prayer points added yet
                 </p>
@@ -565,7 +565,7 @@ export function ContentEditor({
         </div>
 
         {/* 7. Passage Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
             <span>📜</span>
             <span>Passage</span>
@@ -580,7 +580,7 @@ export function ContentEditor({
         </div>
 
         {/* 8. Interpretation Insights (Key Insights) Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>⭐</span>
@@ -648,7 +648,7 @@ export function ContentEditor({
             ))}
 
             {insights.length === 0 && (
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+              <div className="rounded-lg border-2 border-dashed border-gray-300 p-5 sm:p-8 text-center dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">No insights added yet</p>
                 <button
                   type="button"
@@ -663,7 +663,7 @@ export function ContentEditor({
         </div>
 
         {/* 9. Summary Insights Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                 <span>💭</span>
@@ -732,7 +732,7 @@ export function ContentEditor({
         </div>
 
         {/* 10. Reflection Answers Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                 <span>💬</span>
@@ -803,7 +803,7 @@ export function ContentEditor({
         </div>
 
         {/* 11. Summary Question Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Summary Question</span>
@@ -818,7 +818,7 @@ export function ContentEditor({
         </div>
 
         {/* 12. Related Verses Question Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Related Verses Question</span>
@@ -833,7 +833,7 @@ export function ContentEditor({
         </div>
 
         {/* 13. Reflection Question Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Reflection Question</span>
@@ -848,7 +848,7 @@ export function ContentEditor({
         </div>
 
         {/* 14. Prayer Question Section */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Prayer Question</span>

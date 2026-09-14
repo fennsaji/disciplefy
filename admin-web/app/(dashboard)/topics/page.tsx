@@ -241,7 +241,7 @@ export default function StudyGuidesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Study Guides"
         description="View and manage generated study guides"
@@ -270,16 +270,16 @@ export default function StudyGuidesPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Guides Matching Filters</p>
-              <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Guides Matching Filters</p>
+              <p className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {stats.total}
               </p>
             </div>
-            <div className="rounded-full bg-primary-100 p-3">
+            <div className="hidden rounded-full bg-primary-100 p-3 sm:block">
               <svg
                 className="h-6 w-6 text-primary"
                 fill="none"
@@ -300,12 +300,12 @@ export default function StudyGuidesPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Saves (all guides)</p>
-              <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Saves (all guides)</p>
+              <p className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {stats.totalUsage}
               </p>
             </div>
-            <div className="rounded-full bg-green-100 p-3">
+            <div className="hidden rounded-full bg-green-100 p-3 sm:block">
               <svg
                 className="h-6 w-6 text-green-600"
                 fill="none"
@@ -326,7 +326,7 @@ export default function StudyGuidesPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Most Used Type</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Most Used Type</p>
               <p className="mt-1 text-xs font-medium capitalize text-gray-700 dark:text-gray-300">
                 {Object.entries(stats.byInputType).sort(
                   ([, a], [, b]) => b - a
@@ -339,7 +339,7 @@ export default function StudyGuidesPage() {
                 guides
               </p>
             </div>
-            <div className="rounded-full bg-purple-100 p-3">
+            <div className="hidden rounded-full bg-purple-100 p-3 sm:block">
               <svg
                 className="h-6 w-6 text-purple-600"
                 fill="none"
@@ -360,12 +360,12 @@ export default function StudyGuidesPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Languages</p>
-              <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Languages</p>
+              <p className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {Object.keys(stats.byLanguage).length}
               </p>
             </div>
-            <div className="rounded-full bg-blue-100 p-3">
+            <div className="hidden rounded-full bg-blue-100 p-3 sm:block">
               <svg
                 className="h-6 w-6 text-blue-600"
                 fill="none"
@@ -520,25 +520,25 @@ export default function StudyGuidesPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Content
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Mode
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Language
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Usage
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Created
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Actions
                   </th>
                   {/* spacer keeps col count correct */}
@@ -547,7 +547,7 @@ export default function StudyGuidesPage() {
               <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                 {guides.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center">
+                    <td colSpan={8} className="px-6 py-6 sm:py-8 text-center">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         No study guides found. Try adjusting your filters or generate a new study guide.
                       </p>
@@ -557,7 +557,7 @@ export default function StudyGuidesPage() {
                   guides.map((guide) => (
                     <Fragment key={guide.id}>
                     <tr className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${expandedId === guide.id ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''}`}>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <div className="flex items-center gap-2">
                           {/* Expand toggle */}
                           <button
@@ -584,32 +584,32 @@ export default function StudyGuidesPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium capitalize text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                           {guide.input_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium capitalize text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
                           {getStudyModeLabel(guide.study_mode)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <span className="text-sm text-gray-900 dark:text-gray-100">
                           {getLanguageLabel(guide.language)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
                           {guide.usage_count || 0} users
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(guide.created_at)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
                         <div className="flex items-center gap-2">
                           {/* View / Edit guide content */}
                           <button
@@ -762,7 +762,7 @@ export default function StudyGuidesPage() {
           </div>
 
           {/* Pagination — pages are cut in the database, not in the browser */}
-          <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3 dark:border-gray-700">
+          <div className="flex items-center justify-between border-t border-gray-200 px-3 py-2 sm:px-6 sm:py-3 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Page {page + 1} of {totalPages} ({total} matching guides)
             </p>

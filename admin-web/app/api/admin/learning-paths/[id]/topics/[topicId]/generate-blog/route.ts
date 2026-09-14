@@ -4,12 +4,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const RS_BACKEND_URL = process.env.RS_BACKEND_URL || 'http://localhost:8080'
 
+/**
+ * POST - Start writing the missing blogs for one lesson on a learning path.
+ * Generation runs in the background; poll the blog-status route.
+ */
 export async function POST(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; topicId: string }> },
 ) {
   try {
-    const { id } = await params
+    const { id, topicId } = await params
 
     const supabase = await createClient()
     const {
@@ -38,26 +42,28 @@ export async function POST(
     if (!token)
       return NextResponse.json({ error: 'No session token' }, { status: 401 })
 
+    const body = await request.json().catch(() => ({}))
     const rsResponse = await fetch(
-      `${RS_BACKEND_URL}/api/v1/admin/study-guides/${id}/generate-blog`,
+      `${RS_BACKEND_URL}/api/v1/admin/learning-paths/${id}/topics/${topicId}/generate-blog`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body ?? {}),
       },
     )
-
-    const data = await rsResponse.json().catch(() => ({ error: 'Unknown error' }))
+    const data = await rsResponse.json().catch(() => ({}))
     if (!rsResponse.ok) {
       return NextResponse.json(
-        // rs-backend errors are { success: false, error: { code, message } }
-        { error: data.error?.message || data.message || 'Failed to generate blog' },
+        { error: data.error?.message || 'Failed to start blog generation' },
         { status: rsResponse.status },
       )
     }
-
     return NextResponse.json(data)
   } catch (err) {
-    console.error('generate-blog route error:', err)
+    console.error('topic generate-blog route error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

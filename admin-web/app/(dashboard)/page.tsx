@@ -102,14 +102,14 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">Loading dashboard statistics...</p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-lg bg-white p-6 shadow-md animate-pulse dark:bg-gray-800">
+            <div key={i} className="rounded-lg bg-white p-4 sm:p-6 shadow-md animate-pulse dark:bg-gray-800">
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-4 dark:bg-gray-700"></div>
               <div className="h-8 bg-gray-200 rounded w-1/2 mb-2 dark:bg-gray-700"></div>
               <div className="h-4 bg-gray-200 rounded w-1/3 dark:bg-gray-700"></div>
@@ -122,7 +122,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
           <p className="mt-2 text-red-600 dark:text-red-400">Error: {error}</p>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -141,12 +141,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
         {quickStats.map((stat) => (
           <Link
             key={stat.name}
             href={stat.href}
-            className="rounded-lg bg-white p-6 shadow-md transition-shadow hover:shadow-lg dark:bg-gray-800 dark:shadow-gray-900"
+            className="rounded-lg bg-white p-4 sm:p-6 shadow-md transition-shadow hover:shadow-lg dark:bg-gray-800 dark:shadow-gray-900"
           >
             <div className="flex items-center justify-between">
               <div className="flex-1">
@@ -161,7 +161,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <Link
@@ -203,7 +203,7 @@ export default function DashboardPage() {
       <TokenManagementOverview />
 
       {/* Recent Activity */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h2>
         <div className="mt-4 text-center text-gray-500 dark:text-gray-400">
           <p>Activity feed will be implemented in future updates</p>
@@ -241,7 +241,7 @@ function TokenManagementOverview() {
 
   if (loading) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Token Management Overview</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -257,7 +257,7 @@ function TokenManagementOverview() {
 
   if (error || !tokenStats) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">🪙 Token Management Overview</h2>
         <div className="mt-4 flex flex-col items-start gap-3">
           <p className="text-sm text-red-600 dark:text-red-400">
@@ -281,7 +281,7 @@ function TokenManagementOverview() {
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="rounded-lg bg-white p-4 sm:p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">🪙 Token Management Overview</h2>
         <Link

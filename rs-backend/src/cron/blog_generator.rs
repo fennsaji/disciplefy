@@ -1,3 +1,6 @@
+use std::collections::{HashMap, HashSet};
+use std::sync::{LazyLock, Mutex};
+
 use reqwest::Client;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -7,7 +10,66 @@ use crate::error::AppError;
 use crate::models::post;
 use crate::services::{content_formatter, study_api};
 
-const LOCALES: &[&str] = &["en", "hi", "ml"];
+pub(crate) const LOCALES: &[&str] = &["en", "hi", "ml"];
+
+/// Lessons (recommended_topics id) and languages an admin started generating
+/// that have not finished; shown as "generating" on the learning path page.
+static IN_PROGRESS: LazyLock<Mutex<HashSet<(Uuid, String)>>> = LazyLock::new(Default::default);
+
+/// Why the last admin-started generation for a lesson and language failed,
+/// cleared when it is started again or succeeds.
+static LAST_ERRORS: LazyLock<Mutex<HashMap<(Uuid, String), String>>> =
+    LazyLock::new(Default::default);
+
+pub fn is_generating(topic_id: Uuid, locale: &str) -> bool {
+    IN_PROGRESS
+        .lock()
+        .unwrap()
+        .contains(&(topic_id, locale.to_string()))
+}
+
+pub fn last_error(topic_id: Uuid, locale: &str) -> Option<String> {
+    LAST_ERRORS
+        .lock()
+        .unwrap()
+        .get(&(topic_id, locale.to_string()))
+        .cloned()
+}
+
+/// Generates blogs for one lesson in the given languages, each on its own task.
+/// Returns the languages actually started; ones already running are skipped.
+pub fn spawn_topic_generation(
+    pool: PgPool,
+    config: Config,
+    http: Client,
+    topic: LearningPathTopic,
+    locales: Vec<String>,
+) -> Vec<String> {
+    let started: Vec<String> = {
+        let mut running = IN_PROGRESS.lock().unwrap();
+        locales
+            .into_iter()
+            .filter(|l| running.insert((topic.topic_id, l.clone())))
+            .collect()
+    };
+    for locale in started.clone() {
+        let key = (topic.topic_id, locale.clone());
+        LAST_ERRORS.lock().unwrap().remove(&key);
+        let (pool, config, http, topic) =
+            (pool.clone(), config.clone(), http.clone(), topic.clone());
+        tokio::spawn(async move {
+            if let Err(e) = generate_for_locale(&http, &config, &pool, &topic, &locale).await {
+                tracing::error!(topic = %topic.title, locale, "Admin blog generation failed: {}", e);
+                LAST_ERRORS
+                    .lock()
+                    .unwrap()
+                    .insert(key.clone(), e.to_string());
+            }
+            IN_PROGRESS.lock().unwrap().remove(&key);
+        });
+    }
+    started
+}
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 #[allow(dead_code)]

@@ -26,25 +26,25 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                 Code
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Campaign Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Discount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Usage
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Expiry
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Actions
               </th>
             </tr>
@@ -52,10 +52,10 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
           <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
             {campaigns.map((campaign) => (
               <tr key={campaign.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 group">
-                <td className="px-6 py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
+                <td className="px-3 py-3 sm:px-6 sm:py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                   <span className="font-mono font-bold text-primary">{campaign.code}</span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900 dark:text-gray-100">{campaign.campaign_name}</span>
                     {campaign.description && (
@@ -63,7 +63,7 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <span className="font-medium text-gray-900 dark:text-gray-100">
                     {campaign.discount_type === 'percentage'
                       ? `${campaign.discount_value}%`
@@ -71,7 +71,7 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
                   </span>
                   <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">off</span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {campaign.current_uses}
@@ -82,7 +82,7 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex flex-col gap-1">
                     <span
                       className={`inline-flex w-fit rounded-full px-2 py-1 text-xs font-semibold ${
@@ -100,7 +100,7 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
                     <span>Ends: {format(new Date(campaign.end_date), 'MMM dd, yyyy')}</span>
                     <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -108,7 +108,7 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-3 sm:px-6 sm:py-4">
                   <div className="flex gap-3">
                     <button
                       onClick={() => onViewDetails(campaign)}

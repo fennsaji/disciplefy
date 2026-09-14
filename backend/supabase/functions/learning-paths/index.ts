@@ -83,6 +83,8 @@ interface LearningPath {
   progress_percentage: number;
   topics_completed: number;
   category: string;
+  /** Curated order within a disciple level (admin-set). */
+  display_order?: number;
 }
 
 interface LearningPathDetail extends LearningPath {
@@ -441,6 +443,7 @@ function mapPathRow(row: Record<string, unknown>): LearningPath {
         ? Math.round((row.progress_percentage as number) * (row.total_topics as number) / 100)
         : 0),
     category: row.category as string,
+    display_order: row.display_order as number | undefined,
   };
 }
 

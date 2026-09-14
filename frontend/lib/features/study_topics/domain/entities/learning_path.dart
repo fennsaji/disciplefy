@@ -21,6 +21,10 @@ class LearningPath extends Equatable {
   final String category;
   final bool fellowshipCompleted;
 
+  /// Curated order within a disciple level; `null` when the source did not
+  /// send one.
+  final int? displayOrder;
+
   const LearningPath({
     required this.id,
     required this.slug,
@@ -39,6 +43,7 @@ class LearningPath extends Equatable {
     this.progressPercentage = 0,
     this.category = '',
     this.fellowshipCompleted = false,
+    this.displayOrder,
   });
 
   @override
@@ -60,6 +65,7 @@ class LearningPath extends Equatable {
         progressPercentage,
         category,
         fellowshipCompleted,
+        displayOrder,
       ];
 
   /// Number of topics completed, derived from progress percentage.
@@ -89,6 +95,7 @@ class LearningPath extends Equatable {
       progressPercentage: progressPercentage ?? this.progressPercentage,
       category: category,
       fellowshipCompleted: fellowshipCompleted,
+      displayOrder: displayOrder,
     );
   }
 

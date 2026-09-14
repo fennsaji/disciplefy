@@ -88,7 +88,7 @@ export default function CreatePromoCodePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="w-full">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-6">
@@ -121,7 +121,7 @@ export default function CreatePromoCodePage() {
 
         {/* Form */}
         <div className="rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900">
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
             {/* Error Message */}
             {error && (
               <div className="mb-6 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
@@ -129,7 +129,7 @@ export default function CreatePromoCodePage() {
               </div>
             )}
 
-            <div className="space-y-8">
+            <div className="space-y-5 sm:space-y-8">
               {/* Basic Info */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900 dark:text-gray-100">Basic Information</h3>

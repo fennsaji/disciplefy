@@ -61,7 +61,7 @@ export default function LLMCostsPage() {
     : '-'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="LLM Cost Analytics"
         description="Monitor and analyze LLM API usage and costs across all users and tiers"
@@ -81,7 +81,7 @@ export default function LLMCostsPage() {
       {/* Stats Cards */}
       {data && (
         <>
-          <div className="grid gap-6 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
             <StatsCard
               title="Total Cost"
               value={formatCurrency(data.overview.total_llm_cost_usd)}
@@ -134,13 +134,13 @@ export default function LLMCostsPage() {
           />
 
           {/* Cost by Language & Study Mode */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
             <CostByLanguageTable data={data.by_language ?? {}} />
             <CostByStudyModeTable data={data.by_study_mode ?? {}} />
           </div>
 
           {/* Cross-breakdown + Top Heavy Users — side by side */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
             <CostCrossBreakdownTable data={data.by_language_x_study_mode ?? []} />
             {plData && <TopHeavyUsersTable data={plData.top_heavy_users} />}
           </div>

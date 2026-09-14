@@ -712,8 +712,7 @@ class AppLocalizations {
           'Moves the group to the next lesson after each post',
       'dailyPostScreenTitle': 'Daily post',
       'dailyPostNextTitle': 'Next post',
-      'dailyPostOff':
-          'Daily posts are off. Turn them on in Fellowship Settings.',
+      'dailyPostOff': 'Daily posts are off. Turn on Post a daily study below.',
       'dailyPostPostedToday': "Today's post has gone out",
       'dailyPostLastPost': 'Last post',
       'dailyPostPath': 'Learning path',
@@ -725,7 +724,7 @@ class AppLocalizations {
       'dailyPostTimeLabel': 'Posting time (IST)',
       'dailyPostSkipNext': 'Skip the next post',
       'dailyPostSkipNextSubtitle': 'Only the next post is skipped',
-      'dailyPostSkipped': 'Skipping {date}',
+      'dailyPostSkipped': 'Skipped: {date}',
       'dailyPostPause': 'Pause daily posts till',
       'dailyPostPauseSubtitle': 'Pick the last day with no post',
       'dailyPostPickDate': 'Pick date',
@@ -745,6 +744,8 @@ class AppLocalizations {
       'dailyPostRegenerate': 'New teaser',
       'dailyPostRegenerateLeft': 'New teaser ({count} left today)',
       'dailyPostWorking': 'Working on it. This usually takes under a minute.',
+      'dailyPostWorkingLong':
+          'This is taking longer than usual. It will finish as soon as it can.',
       'dailyPostPostNow': 'Post now',
       'dailyPostPostNowConfirm':
           "Post today's lesson to the group now? The daily post won't go out again today.",
@@ -1480,7 +1481,7 @@ class AppLocalizations {
       'dailyPostScreenTitle': 'दैनिक पोस्ट',
       'dailyPostNextTitle': 'अगली पोस्ट',
       'dailyPostOff':
-          'दैनिक पोस्ट बंद हैं। इन्हें फेलोशिप सेटिंग्स में चालू करें।',
+          'दैनिक पोस्ट बंद हैं। नीचे दैनिक अध्ययन पोस्ट करें चालू करें।',
       'dailyPostPostedToday': 'आज की पोस्ट भेज दी गई है',
       'dailyPostLastPost': 'पिछली पोस्ट',
       'dailyPostPath': 'अध्ययन पथ',
@@ -1512,6 +1513,8 @@ class AppLocalizations {
       'dailyPostRegenerate': 'नया टीज़र',
       'dailyPostRegenerateLeft': 'नया टीज़र (आज {count} बाकी)',
       'dailyPostWorking': 'तैयार हो रहा है। आमतौर पर एक मिनट से कम लगता है।',
+      'dailyPostWorkingLong':
+          'सामान्य से ज़्यादा समय लग रहा है। जैसे ही हो सकेगा, यह पूरा हो जाएगा।',
       'dailyPostPostNow': 'अभी पोस्ट करें',
       'dailyPostPostNowConfirm':
           'आज का पाठ अभी समूह में पोस्ट करें? आज दोबारा दैनिक पोस्ट नहीं जाएगी।',
@@ -2256,7 +2259,7 @@ class AppLocalizations {
       'dailyPostScreenTitle': 'ദിവസേനയുള്ള പോസ്റ്റ്',
       'dailyPostNextTitle': 'അടുത്ത പോസ്റ്റ്',
       'dailyPostOff':
-          'ദിവസേനയുള്ള പോസ്റ്റുകൾ ഓഫാണ്. ഫെലോഷിപ്പ് സെറ്റിംഗ്സിൽ ഓണാക്കുക.',
+          'ദിവസേനയുള്ള പോസ്റ്റുകൾ ഓഫാണ്. താഴെ ദിവസേനയുള്ള പഠനം ഓണാക്കുക.',
       'dailyPostPostedToday': 'ഇന്നത്തെ പോസ്റ്റ് പോയിക്കഴിഞ്ഞു',
       'dailyPostLastPost': 'അവസാന പോസ്റ്റ്',
       'dailyPostPath': 'പഠന പാത',
@@ -2287,6 +2290,8 @@ class AppLocalizations {
           'ഈ പ്രിവ്യൂ മറ്റൊരു പാഠത്തിനോ തീയതിക്കോ ഉള്ളതാണ്. അടുത്ത പോസ്റ്റ് കാണാൻ വീണ്ടും പ്രിവ്യൂ ചെയ്യുക.',
       'dailyPostRegenerate': 'പുതിയ ടീസർ',
       'dailyPostRegenerateLeft': 'പുതിയ ടീസർ (ഇന്ന് {count} ബാക്കി)',
+      'dailyPostWorkingLong':
+          'പതിവിലും കൂടുതൽ സമയമെടുക്കുന്നു. കഴിയുന്നതും വേഗം ഇത് പൂർത്തിയാകും.',
       'dailyPostWorking':
           'തയ്യാറാക്കുന്നു. സാധാരണ ഒരു മിനിറ്റിൽ താഴെ എടുക്കും.',
       'dailyPostPostNow': 'ഇപ്പോൾ പോസ്റ്റ് ചെയ്യുക',
@@ -3347,6 +3352,7 @@ class AppLocalizations {
   String dailyPostRegenerateLeft(int count) =>
       _dailyPost('dailyPostRegenerateLeft').replaceAll('{count}', '$count');
   String get dailyPostWorking => _dailyPost('dailyPostWorking');
+  String get dailyPostWorkingLong => _dailyPost('dailyPostWorkingLong');
   String get dailyPostPostNow => _dailyPost('dailyPostPostNow');
   String get dailyPostPostNowConfirm => _dailyPost('dailyPostPostNowConfirm');
   String get dailyPostCancel => _dailyPost('dailyPostCancel');

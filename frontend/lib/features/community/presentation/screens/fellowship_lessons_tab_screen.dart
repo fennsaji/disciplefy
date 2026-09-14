@@ -1516,18 +1516,24 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
     });
   }
 
-  /// The paths in discipleship order: seeker, follower, disciple, leader.
+  /// The paths in discipleship order: seeker, follower, disciple, leader, and
+  /// within a level the curated display order (New Believer Essentials first).
   ///
-  /// Sorting is stable, so within a level the listing's own ordering — which
-  /// carries the personalisation and the fellowship's progress — is preserved.
+  /// The listing arrives ordered for the mentor personally — their own
+  /// in-progress and enrolled paths, then featured ones — which put a path the
+  /// mentor had started ahead of where a group should begin. A group picks from
+  /// the curriculum as designed, so the personal order is only the tiebreak.
   List<LearningPath> _byDiscipleLevel(List<LearningPath> paths) {
     final sorted = [...paths];
     sorted.sort((a, b) {
       final byLevel = discipleLevelRank(a.discipleLevel)
           .compareTo(discipleLevelRank(b.discipleLevel));
-      return byLevel != 0
-          ? byLevel
-          : paths.indexOf(a).compareTo(paths.indexOf(b));
+      if (byLevel != 0) return byLevel;
+      // Paths without an order (older cached data) go after ordered ones.
+      final byOrder =
+          (a.displayOrder ?? 1 << 30).compareTo(b.displayOrder ?? 1 << 30);
+      if (byOrder != 0) return byOrder;
+      return paths.indexOf(a).compareTo(paths.indexOf(b));
     });
     return sorted;
   }
