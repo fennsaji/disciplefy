@@ -350,8 +350,12 @@ pub async fn generate_blog_from_study_guide(
         .await?
         .ok_or_else(|| AppError::NotFound("Study guide not found".to_string()))?;
 
-    // 2. Check if blog already exists for this guide
-    if let Some((_id, slug)) = post::check_blog_exists_for_guide(&state.pool, guide_id).await? {
+    // 2. Check if a blog already exists for this guide, or for its lesson in
+    //    this language
+    if let Some((_id, slug)) =
+        post::check_blog_exists_for_guide(&state.pool, guide_id, guide.topic_id, &guide.language)
+            .await?
+    {
         return Ok(Json(json!({
             "success": true,
             "already_exists": true,
@@ -382,9 +386,6 @@ pub async fn generate_blog_from_study_guide(
     if let Some(v) = guide.prayer_points {
         sections.insert("prayerPoints".to_string(), v);
     }
-    if let Some(v) = guide.interpretation_insights {
-        sections.insert("interpretationInsights".to_string(), v);
-    }
 
     let guide_result = crate::services::study_api::StudyGuideResult {
         sections,
@@ -403,8 +404,14 @@ pub async fn generate_blog_from_study_guide(
         &guide.language,
     );
 
-    // 5. Build slug from title + locale
+    // 5. Build slug from title + locale; another post with the same title keeps
+    //    its slug, so this one gets the guide id appended
     let slug = format!("{}-{}", slug::slugify(&guide.input_value), guide.language);
+    let slug = if post::slug_exists(&state.pool, &slug).await? {
+        format!("{}-{}", slug, &guide_id.simple().to_string()[..8])
+    } else {
+        slug
+    };
 
     // 6. Persist
     let input = post::CreatePostInput {
@@ -441,6 +448,104 @@ pub async fn generate_blog_from_study_guide(
             "title":  p.title,
             "locale": p.locale
         }
+    })))
+}
+
+// ---------------------------------------------------------------------------
+// Blogs for a learning path's lessons
+// ---------------------------------------------------------------------------
+
+/// Which of a path's lessons have a blog in each language, and which are being
+/// generated or last failed.
+pub async fn learning_path_blog_status(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(path_id): Path<Uuid>,
+) -> Result<Json<Value>, AppError> {
+    use crate::cron::blog_generator::{is_generating, last_error, LOCALES};
+    verify_admin(&headers, &state).await?;
+
+    let rows = post::blog_status_for_path(&state.pool, path_id).await?;
+    let mut topic_ids: Vec<Uuid> = Vec::new();
+    for (topic_id, _, _) in &rows {
+        if !topic_ids.contains(topic_id) {
+            topic_ids.push(*topic_id);
+        }
+    }
+
+    let topics: Vec<Value> = topic_ids
+        .iter()
+        .map(|topic_id| {
+            let locales: serde_json::Map<String, Value> = LOCALES
+                .iter()
+                .map(|locale| {
+                    let slug = rows
+                        .iter()
+                        .find(|(t, l, _)| t == topic_id && l.as_deref() == Some(*locale))
+                        .and_then(|(_, _, s)| s.clone());
+                    (
+                        locale.to_string(),
+                        json!({
+                            "slug": slug,
+                            "generating": is_generating(*topic_id, locale),
+                            "error": last_error(*topic_id, locale),
+                        }),
+                    )
+                })
+                .collect();
+            json!({ "topic_id": topic_id, "locales": locales })
+        })
+        .collect();
+
+    Ok(Json(
+        json!({ "success": true, "data": { "topics": topics } }),
+    ))
+}
+
+#[derive(Deserialize, Default)]
+pub struct GenerateTopicBlogsBody {
+    /// Languages to generate; all missing ones when omitted.
+    pub locales: Option<Vec<String>>,
+}
+
+/// Starts writing the missing blogs for one lesson in the background (a
+/// Malayalam guide can take minutes). Poll `learning_path_blog_status`.
+pub async fn generate_topic_blogs(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path((path_id, topic_id)): Path<(Uuid, Uuid)>,
+    body: Option<Json<GenerateTopicBlogsBody>>,
+) -> Result<Json<Value>, AppError> {
+    use crate::cron::blog_generator::{spawn_topic_generation, LOCALES};
+    verify_admin(&headers, &state).await?;
+
+    let topic = post::find_path_topic(&state.pool, path_id, topic_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("That lesson is not in this learning path".into()))?;
+
+    let requested: Vec<String> = body
+        .and_then(|Json(b)| b.locales)
+        .unwrap_or_else(|| LOCALES.iter().map(|l| l.to_string()).collect());
+    if let Some(bad) = requested.iter().find(|l| !LOCALES.contains(&l.as_str())) {
+        return Err(AppError::BadRequest(format!("Unknown language: {bad}")));
+    }
+
+    let existing = post::blog_locales_for_topic(&state.pool, topic_id).await?;
+    let missing: Vec<String> = requested
+        .into_iter()
+        .filter(|l| !existing.contains(l))
+        .collect();
+    let started = spawn_topic_generation(
+        state.pool.clone(),
+        state.config.clone(),
+        state.http.clone(),
+        topic,
+        missing,
+    );
+
+    Ok(Json(json!({
+        "success": true,
+        "data": { "started": started, "already_exist": existing }
     })))
 }
 

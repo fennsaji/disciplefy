@@ -22,7 +22,6 @@ pub struct StudyGuideForBlog {
     pub related_verses: Option<String>,
     pub reflection_questions: Option<String>,
     pub prayer_points: Option<String>,
-    pub interpretation_insights: Option<String>,
     // Optional context from joins (may be NULL if topic not in a learning path)
     pub topic_id: Option<Uuid>,
     pub category: Option<String>,
@@ -837,10 +836,11 @@ pub async fn fetch_study_guide_for_blog(
             sg.context,
             sg.interpretation,
             sg.passage,
-            sg.related_verses::text        AS related_verses,
-            sg.reflection_questions::text  AS reflection_questions,
-            sg.prayer_points::text         AS prayer_points,
-            sg.interpretation_insights::text AS interpretation_insights,
+            -- JSON arrays: the formatter parses them as JSON, and a plain ::text
+            -- cast of a Postgres array gives {a,b} instead.
+            to_json(sg.related_verses)::text       AS related_verses,
+            to_json(sg.reflection_questions)::text AS reflection_questions,
+            to_json(sg.prayer_points)::text        AS prayer_points,
             sg.topic_id,
             rt.category,
             lp.disciple_level,
@@ -861,16 +861,102 @@ pub async fn fetch_study_guide_for_blog(
 
 /// Returns the existing blog post's (id, slug) if a blog was already generated
 /// from the given study guide. Used to return "already_exists" instead of duplicating.
+///
+/// Also matches a post already written for the guide's lesson in the same
+/// language (e.g. by the blog cron): a lesson gets one blog per language, and
+/// inserting a second breaks the (source_topic_id, locale) unique index.
 pub async fn check_blog_exists_for_guide(
     pool: &PgPool,
     guide_id: Uuid,
+    topic_id: Option<Uuid>,
+    locale: &str,
 ) -> Result<Option<(Uuid, String)>, AppError> {
-    let row: Option<(Uuid, String)> =
-        sqlx::query_as("SELECT id, slug FROM blog_posts WHERE source_guide_id = $1 LIMIT 1")
-            .bind(guide_id)
-            .fetch_optional(pool)
-            .await?;
+    let row: Option<(Uuid, String)> = sqlx::query_as(
+        "SELECT id, slug FROM blog_posts
+          WHERE source_guide_id = $1
+             OR ($2::uuid IS NOT NULL AND source_topic_id = $2 AND locale = $3)
+          ORDER BY (source_guide_id = $1) DESC NULLS LAST
+          LIMIT 1",
+    )
+    .bind(guide_id)
+    .bind(topic_id)
+    .bind(locale)
+    .fetch_optional(pool)
+    .await?;
     Ok(row)
+}
+
+/// One learning-path lesson with everything blog generation needs, whatever
+/// its active flags — an admin can generate for any lesson on the path.
+pub async fn find_path_topic(
+    pool: &PgPool,
+    path_id: Uuid,
+    topic_id: Uuid,
+) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
+    let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
+        "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type,
+                COALESCE(lp.recommended_mode, 'standard') AS study_mode,
+                lp.id AS path_id, lp.title AS path_title, lp.description AS path_description,
+                lp.disciple_level, lp.category,
+                hi_t.title       AS hi_title,
+                ml_t.title       AS ml_title,
+                hi_t.description AS hi_description,
+                ml_t.description AS ml_description,
+                hi_lp.title      AS hi_path_title,
+                ml_lp.title      AS ml_path_title,
+                hi_lp.description AS hi_path_description,
+                ml_lp.description AS ml_path_description
+         FROM learning_path_topics lpt
+         JOIN recommended_topics rt ON lpt.topic_id = rt.id
+         JOIN learning_paths lp ON lpt.learning_path_id = lp.id
+         LEFT JOIN recommended_topics_translations hi_t
+               ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
+         LEFT JOIN recommended_topics_translations ml_t
+               ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
+         LEFT JOIN learning_path_translations hi_lp
+               ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
+         LEFT JOIN learning_path_translations ml_lp
+               ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
+         WHERE lp.id = $1 AND lpt.topic_id = $2
+         LIMIT 1",
+    )
+    .bind(path_id)
+    .bind(topic_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(topic)
+}
+
+/// Every lesson on a path with the blogs it has: (topic_id, locale, slug),
+/// locale and slug `None` for a lesson with no blog yet.
+pub async fn blog_status_for_path(
+    pool: &PgPool,
+    path_id: Uuid,
+) -> Result<Vec<(Uuid, Option<String>, Option<String>)>, AppError> {
+    let rows = sqlx::query_as(
+        "SELECT lpt.topic_id, bp.locale, bp.slug
+           FROM learning_path_topics lpt
+           LEFT JOIN blog_posts bp ON bp.source_topic_id = lpt.topic_id
+          WHERE lpt.learning_path_id = $1
+          ORDER BY lpt.position",
+    )
+    .bind(path_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// Locales that already have a blog for a lesson.
+pub async fn blog_locales_for_topic(
+    pool: &PgPool,
+    topic_id: Uuid,
+) -> Result<Vec<String>, AppError> {
+    let rows: Vec<(String,)> =
+        sqlx::query_as("SELECT DISTINCT locale FROM blog_posts WHERE source_topic_id = $1")
+            .bind(topic_id)
+            .fetch_all(pool)
+            .await?;
+    Ok(rows.into_iter().map(|(l,)| l).collect())
 }
 
 /// Flip all scheduled posts whose time has arrived to published. Set-based and
