@@ -50,6 +50,10 @@ class DisciplerActivityModel {
   /// True when the related comment was deleted (e.g. discarded by a mentor).
   final bool commentDeleted;
 
+  /// True when the related post was deleted (by a mentor, or replaced by
+  /// "Post again").
+  final bool postDeleted;
+
   const DisciplerActivityModel({
     required this.id,
     required this.kind,
@@ -66,6 +70,7 @@ class DisciplerActivityModel {
     this.commentContent,
     this.commentPending = false,
     this.commentDeleted = false,
+    this.postDeleted = false,
   });
 
   /// Creates a [DisciplerActivityModel] from a JSON map (API response).
@@ -89,6 +94,7 @@ class DisciplerActivityModel {
       commentContent: comment?['content'] as String?,
       commentPending: (comment?['is_pending_review'] as bool?) ?? false,
       commentDeleted: (comment?['is_deleted'] as bool?) ?? false,
+      postDeleted: (post?['is_deleted'] as bool?) ?? false,
     );
   }
 
@@ -109,5 +115,6 @@ class DisciplerActivityModel {
         commentContent: commentContent,
         commentPending: commentPending,
         commentDeleted: commentDeleted,
+        postDeleted: postDeleted,
       );
 }

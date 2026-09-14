@@ -64,6 +64,7 @@ class DisciplerActivityBloc
                         : item.commentContent,
                     commentPending: item.commentPending,
                     commentDeleted: item.commentDeleted,
+                    postDeleted: item.postDeleted,
                   ),
         ],
       )),
@@ -160,6 +161,7 @@ class DisciplerActivityBloc
             topicTitle: item.topicTitle,
             commentContent: item.commentContent,
             commentDeleted: event.approve ? item.commentDeleted : true,
+            postDeleted: item.postDeleted,
           );
         }).toList();
         emit(state.copyWith(items: updated));

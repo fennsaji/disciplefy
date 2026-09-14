@@ -236,7 +236,9 @@ class _ActivityCard extends StatelessWidget {
     final isReact = item.kind == 'react';
 
     return GestureDetector(
-      onTap: item.postId != null ? () => _openPost(context) : null,
+      onTap: item.postId != null && !item.postDeleted
+          ? () => _openPost(context)
+          : null,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -373,6 +375,19 @@ class _ActivityCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                ] else if (!isReact && !item.hasLiveContent) ...[
+                  // Nothing left to edit or delete: the post was replaced by
+                  // "Post again" or already removed, or the row never had one.
+                  if (item.postId != null || item.commentId != null)
+                    Text(
+                      l10n.dailyPostPostDeleted,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: context.appTextTertiary,
+                      ),
+                    ),
                 ] else if (!isReact) ...[
                   if ((item.commentContent ?? item.postContent)?.isNotEmpty ??
                       false) ...[

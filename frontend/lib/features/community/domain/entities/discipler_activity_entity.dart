@@ -51,6 +51,10 @@ class DisciplerActivityEntity extends Equatable {
   /// True when the related comment was deleted (e.g. discarded by a mentor).
   final bool commentDeleted;
 
+  /// True when the related post was deleted (by a mentor, or replaced by
+  /// "Post again").
+  final bool postDeleted;
+
   const DisciplerActivityEntity({
     required this.id,
     required this.kind,
@@ -67,7 +71,13 @@ class DisciplerActivityEntity extends Equatable {
     this.commentContent,
     this.commentPending = false,
     this.commentDeleted = false,
+    this.postDeleted = false,
   });
+
+  /// True when the row still points at a post or reply that exists, so it can
+  /// be opened, edited or deleted.
+  bool get hasLiveContent =>
+      commentId != null ? !commentDeleted : postId != null && !postDeleted;
 
   @override
   List<Object?> get props => [
@@ -86,5 +96,6 @@ class DisciplerActivityEntity extends Equatable {
         commentContent,
         commentPending,
         commentDeleted,
+        postDeleted,
       ];
 }
