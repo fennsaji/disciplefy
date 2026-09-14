@@ -54,6 +54,14 @@ async fn main() {
     // Start scheduler — needs pool to read DB configs
     let (scheduler, cron_job_ids) = cron::start_scheduler(&pool, &config, &http).await;
 
+    // Mentor daily post requests: picked up within seconds, apart from the
+    // cron schedule.
+    tokio::spawn(cron::fellowship_daily_post::run_request_worker(
+        pool.clone(),
+        config.clone(),
+        http.clone(),
+    ));
+
     let state = AppState {
         pool: pool.clone(),
         config: config.clone(),
