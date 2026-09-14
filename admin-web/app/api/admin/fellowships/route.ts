@@ -51,20 +51,32 @@ export async function GET(request: NextRequest) {
   }
 
   let q = supabaseAdmin.from('fellowships')
-    .select('id, name, language, is_public, is_active, is_official, discipler_allowed, daily_post_allowed, discipler_reply_mode, discipler_reply_scope, discipler_reply_delay_min, discipler_react_enabled, daily_post_on, daily_post_frequency_days, daily_post_auto_advance, max_members, created_at', { count: 'exact' })
+    .select('id, name, description, language, is_public, is_active, is_official, discipler_allowed, daily_post_allowed, daily_post_preview_allowed, daily_post_regenerate_allowed, daily_post_post_now_allowed, discipler_reply_mode, discipler_reply_scope, discipler_reply_delay_min, discipler_react_enabled, daily_post_on, daily_post_frequency_days, daily_post_auto_advance, daily_post_time, daily_post_skip_date, daily_post_paused_until, max_members, created_at', { count: 'exact' })
     .order('created_at', { ascending: false }).order('id', { ascending: true }).range(offset, offset + limit - 1)
   if (search) q = q.ilike('name', `%${search}%`)
+  // Filters are applied in the query so the total and paging stay correct.
+  switch (p.get('filter')) {
+    case 'official': q = q.eq('is_official', true); break
+    case 'discipler': q = q.eq('discipler_allowed', true); break
+    case 'daily_post': q = q.eq('daily_post_allowed', true); break
+    case 'inactive': q = q.eq('is_active', false); break
+  }
   const { data: rows, count, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const ids = (rows ?? []).map((r) => r.id)
   if (ids.length === 0) return NextResponse.json({ data: [], total: count ?? 0, limit, offset })
 
   const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0)
-  const [members, mentors, replies] = await Promise.all([
+  const [members, mentors, replies, dailyPosts] = await Promise.all([
     supabaseAdmin.from('fellowship_members').select('fellowship_id').in('fellowship_id', ids).eq('is_active', true),
     supabaseAdmin.from('fellowship_members').select('fellowship_id, user_id').in('fellowship_id', ids).eq('is_active', true).eq('role', 'mentor'),
     supabaseAdmin.from('discipler_replies').select('fellowship_id, cost_usd').in('fellowship_id', ids).gte('created_at', dayStart.toISOString()),
+    supabaseAdmin.from('discipler_daily_posts').select('fellowship_id, post_date').in('fellowship_id', ids).order('post_date', { ascending: false }),
   ])
+  const lastDailyPost = new Map<string, string>()
+  for (const d of dailyPosts.data ?? []) {
+    if (!lastDailyPost.has(d.fellowship_id)) lastDailyPost.set(d.fellowship_id, d.post_date)
+  }
   const memberCount = new Map<string, number>()
   for (const m of members.data ?? []) memberCount.set(m.fellowship_id, (memberCount.get(m.fellowship_id) ?? 0) + 1)
   const mentorIds = [...new Set((mentors.data ?? []).map((m) => m.user_id))]
@@ -88,8 +100,24 @@ export async function GET(request: NextRequest) {
     mentors: mentorsBy.get(r.id) ?? [],
     replies_today: repliesBy.get(r.id)?.n ?? 0,
     cost_today_usd: Number((repliesBy.get(r.id)?.cost ?? 0).toFixed(4)),
+    last_daily_post_date: lastDailyPost.get(r.id) ?? null,
   }))
-  return NextResponse.json({ data, total: count ?? 0, limit, offset })
+
+  // Headline counts across all fellowships (not just this page).
+  const [allCount, disciplerCount, dailyCount, todaysReplies] = await Promise.all([
+    supabaseAdmin.from('fellowships').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    supabaseAdmin.from('fellowships').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('discipler_allowed', true),
+    supabaseAdmin.from('fellowships').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('daily_post_allowed', true),
+    supabaseAdmin.from('discipler_replies').select('cost_usd').gte('created_at', dayStart.toISOString()),
+  ])
+  const summary = {
+    active: allCount.count ?? 0,
+    discipler: disciplerCount.count ?? 0,
+    daily_post: dailyCount.count ?? 0,
+    replies_today: todaysReplies.data?.length ?? 0,
+    cost_today_usd: Number((todaysReplies.data ?? []).reduce((sum, r) => sum + Number(r.cost_usd ?? 0), 0).toFixed(4)),
+  }
+  return NextResponse.json({ data, total: count ?? 0, limit, offset, summary })
 }
 
 export async function POST(request: NextRequest) {
@@ -155,7 +183,12 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json().catch(() => null)
   if (!body?.fellowship_id) return NextResponse.json({ error: 'fellowship_id is required' }, { status: 400 })
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  for (const k of ['is_official', 'discipler_allowed', 'daily_post_allowed', 'is_public', 'is_active'] as const) {
+  // The three daily post controls each cost an LLM call, so mentors only see
+  // them where an admin has switched them on.
+  for (const k of [
+    'is_official', 'discipler_allowed', 'daily_post_allowed', 'is_public', 'is_active',
+    'daily_post_preview_allowed', 'daily_post_regenerate_allowed', 'daily_post_post_now_allowed',
+  ] as const) {
     if (typeof body[k] === 'boolean') updates[k] = body[k]
   }
   // Language and member limit are admin-only settings; mentors cannot change
