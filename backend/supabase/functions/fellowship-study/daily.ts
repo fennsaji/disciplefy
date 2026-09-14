@@ -497,13 +497,13 @@ export async function handleDailyRequest(req: Request, services: ServiceContaine
     if (!p) throw new AppError('VALIDATION_ERROR', 'Preview the next post first', 400)
     const used = p.regenerate_date === today ? p.regenerate_count : 0
     if (f.is_official !== true && used >= REGENERATE_DAILY_CAP) {
-      throw new AppError('RATE_LIMIT_EXCEEDED', "You have used today's teaser regenerations", 429)
+      throw new AppError('RATE_LIMIT_EXCEEDED', 'You have used all new teasers for today', 429)
     }
   }
   if (kind === 'post_now') {
     const last = await lastDailyPost(db, f.id)
     if (last?.post_date === today) {
-      throw new AppError('VALIDATION_ERROR', "Today's post has already gone out", 400)
+      throw new AppError('VALIDATION_ERROR', 'The post for today has already gone out', 400)
     }
   }
 
