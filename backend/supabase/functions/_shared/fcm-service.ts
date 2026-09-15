@@ -278,8 +278,11 @@ export class FCMService {
         // FCM v1 returns these as HTTP 404 (UNREGISTERED) or HTTP 400 (INVALID_ARGUMENT).
         const fcmErrorCode: string =
           error?.error?.details?.[0]?.errorCode ?? error?.error?.status ?? '';
+        // SENDER_ID_MISMATCH: the token belongs to another Firebase project and
+        // will never work here.
         const invalidToken =
           fcmErrorCode === 'UNREGISTERED' ||
+          fcmErrorCode === 'SENDER_ID_MISMATCH' ||
           error?.error?.status === 'NOT_FOUND' ||
           (error?.error?.status === 'INVALID_ARGUMENT' &&
             (error?.error?.message as string | undefined)
@@ -487,9 +490,9 @@ export async function getBatchNotificationStatus(
 
   let query = supabase
     .from('notification_logs')
-    .select('user_id')
+    .select('user_id, delivery_status')
     .eq('notification_type', notificationType)
-    .in('delivery_status', ['sent', 'delivered', 'clicked']) // Only count successful notifications
+    .in('delivery_status', ['sent', 'delivered', 'clicked', 'failed'])
     .in('user_id', userIds);
 
   if (lookbackHours !== undefined) {
@@ -511,9 +514,25 @@ export async function getBatchNotificationStatus(
     return new Set(); // Return empty set if error (assume no one received)
   }
 
-  // Return Set of user IDs who already received notification recently
-  return new Set(data?.map(row => row.user_id) || []);
+  // Done for this window: delivered once, or failed MAX_FAILED_ATTEMPTS times.
+  // Without the failure cap a device that always errors is retried on every
+  // run (every 15 minutes) for the whole catch-up window.
+  const failures = new Map<string, number>();
+  const done = new Set<string>();
+  for (const row of (data ?? []) as Array<{ user_id: string; delivery_status: string }>) {
+    if (row.delivery_status !== 'failed') {
+      done.add(row.user_id);
+    } else {
+      const count = (failures.get(row.user_id) ?? 0) + 1;
+      failures.set(row.user_id, count);
+      if (count >= MAX_FAILED_ATTEMPTS) done.add(row.user_id);
+    }
+  }
+  return done;
 }
+
+/** Failed sends of one category after which a user is not retried that window. */
+const MAX_FAILED_ATTEMPTS = 3;
 
 /**
  * Batch check which users received ANY notification within the last

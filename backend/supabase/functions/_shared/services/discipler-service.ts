@@ -73,10 +73,28 @@ export async function pushUsers(db: SupabaseClient, userIds: string[], notificat
     const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', userIds)
     const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
     if (tokens.length === 0) return
-    await new FCMService().sendBatchNotifications(tokens, notification, data)
+    const result = await new FCMService().sendBatchNotifications(tokens, notification, data)
+    await purgeInvalidTokens(db, tokens, result.results)
   } catch (err) {
     console.error('[discipler] push error (non-fatal):', err)
   }
+}
+
+/**
+ * Delete the tokens FCM reported as permanently dead (uninstalled app, token
+ * from another project), so they are never sent to again. `results` is in the
+ * same order as `tokens`, as returned by sendBatchNotifications.
+ */
+async function purgeInvalidTokens(
+  db: SupabaseClient,
+  tokens: string[],
+  results: Array<{ invalidToken?: boolean }>,
+): Promise<void> {
+  const dead = tokens.filter((_, i) => results[i]?.invalidToken)
+  if (dead.length === 0) return
+  const { error } = await db.from('user_notification_tokens').delete().in('fcm_token', dead)
+  if (error) console.error('[discipler] Failed to purge dead tokens (non-fatal):', error.message)
+  else console.log(`[discipler] Purged ${dead.length} dead FCM token(s)`)
 }
 
 export async function pushMentors(db: SupabaseClient, fellowshipId: string, notification: { title: string; body: string }, data: Record<string, string>, opts: { excludeUserId?: string; respectMute?: boolean } = {}): Promise<void> {
@@ -295,6 +313,7 @@ export async function deliverQueuedRow(
     { title: row.title, body: row.body },
     row.data ?? {},
   )
+  await purgeInvalidTokens(db, tokens, result.results)
   if (result.successCount === 0 && result.failureCount > 0) {
     throw new Error(`FCM rejected all ${result.failureCount} token(s)`)
   }
