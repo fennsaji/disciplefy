@@ -1,54 +1,11 @@
 name: Send Push Notifications (Production)
 
 on:
-  schedule:
-    # ============================================================================
-    # Unified Schedule - Each cron appears exactly once
-    # Job-level if-conditions determine which notifications run at each hour
-    # ============================================================================
-    #
-    # Hour mapping (all notifications that run at each UTC hour):
-    # UTC 0:  Daily Verse (6 AM UTC+6), Memory Verse Reminder (9 AM UTC+9)
-    # UTC 2:  Recommended Topic (8 AM UTC+6)
-    # UTC 3:  Daily Verse (6 AM UTC+3), Memory Verse Reminder (9 AM UTC+6)
-    # UTC 5:  Recommended Topic (8 AM UTC+3)
-    # UTC 6:  Daily Verse (6 AM UTC+0), Memory Verse Reminder (9 AM UTC+3)
-    # UTC 8:  Recommended Topic (8 AM UTC+0)
-    # UTC 9:  Daily Verse (6 AM UTC-3), Memory Verse Reminder (9 AM UTC+0)
-    # UTC 11: Recommended Topic (8 AM UTC-3)
-    # UTC 12: Daily Verse (6 AM UTC-6), Memory Verse Reminder (9 AM UTC-3)
-    # UTC 14: Recommended Topic (8 AM UTC-6)
-    # UTC 15: Daily Verse (6 AM UTC-9), Memory Verse Reminder (9 AM UTC-6)
-    # UTC 17: Recommended Topic (8 AM UTC-9)
-    # UTC 18: Daily Verse (6 AM UTC+12), Memory Verse Reminder (9 AM UTC-9)
-    # UTC 20: Recommended Topic (8 AM UTC+12)
-    # UTC 21: Daily Verse (6 AM UTC+9), Memory Verse Reminder (9 AM UTC+12)
-    # UTC 23: Recommended Topic (8 AM UTC+9)
-    #
-    # ============================================================================
+  # No schedule: every push here is triggered by pg_cron inside the database
+  # (migrations 20260915080000, 20260915090000, 20260915100000). GitHub's
+  # hourly schedule dropped most runs, so pushes arrived hours late, and
+  # running both could race and double-send. Manual dispatch stays for testing.
 
-    # Hourly trigger for Streak Reminders (user's preferred time)
-    # Also covers all notification hours - job if-conditions filter appropriately
-    - cron: '0 * * * *'   # Every hour at :00 minutes
-
-    # ============================================================================
-    # Memory Verse Overdue Notifications (6 PM across timezones)
-    # ============================================================================
-    # 6 PM local time converted to UTC for each major timezone band:
-    # UTC  1: 6 PM UTC-5  (US Eastern Standard / Latin America)
-    # UTC  7: 6 PM UTC+1  (Central Europe / West Africa)
-    # UTC 10: 6 PM UTC+4  (Gulf / Mauritius) — also close to UTC+8 East Asia at 10 PM
-    # UTC 12: 6 PM UTC+6  (Bangladesh) / ~5:30 PM UTC+5:30 (IST)
-    # UTC 16: 6 PM UTC+10 (Australia Eastern)
-    # UTC 22: 6 PM UTC-4  (US Eastern Daylight / Atlantic)
-    - cron: '0 1 * * *'   # UTC 01:00 → 6 PM UTC-5
-    - cron: '0 7 * * *'   # UTC 07:00 → 6 PM UTC+1
-    - cron: '0 10 * * *'  # UTC 10:00 → 6 PM UTC+4
-    - cron: '0 12 * * *'  # UTC 12:00 → ~5:30 PM IST / 6 PM UTC+6
-    - cron: '0 16 * * *'  # UTC 16:00 → 6 PM UTC+10
-    - cron: '0 22 * * *'  # UTC 22:00 → 6 PM UTC-4
-
-  # Allow manual triggering for testing
   workflow_dispatch:
     inputs:
       notification_type:
@@ -72,19 +29,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Daily Verse Notifications (Prod)
 
-    # Run on schedule OR manual dispatch
+    # Manual dispatch only. pg_cron triggers this every 15 minutes (migration
+    # 20260915080000): GitHub's hourly schedule dropped most runs, so the 8 AM
+    # verse arrived hours late, and running both could race and double-send.
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'daily_verse' ||
-        github.event.inputs.notification_type == 'all'))
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.notification_type == 'daily_verse' ||
+       github.event.inputs.notification_type == 'all')
 
     steps:
-      # No hour gate: the Edge Function selects users whose local time has
-      # reached 06:00 and stays deliverable for a catch-up window after it, so
-      # every hourly run covers for delayed or dropped scheduled runs. Gating on
-      # an exact UTC hour meant one dropped cron skipped a whole timezone band
-      # for the day.
+      # The Edge Function selects users whose local time has reached 08:00 and
+      # stays deliverable for a catch-up window after it.
       - name: Send Daily Verse Push Notifications (Prod)
         run: |
           echo "Triggering Daily Verse notification Edge Function (Production)..."
@@ -127,7 +82,7 @@ jobs:
           echo "Job Status: ${{ job.status }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
-          echo "Notification Type: Daily Verse (6 AM local, catch-up window)"
+          echo "Notification Type: Daily Verse (8 AM local, catch-up window)"
 
   # ==========================================================================
   # Job 2: Send Recommended Topic Notifications
@@ -140,20 +95,18 @@ jobs:
     needs: [send-daily-verse]
     name: Send Recommended Topic Notifications (Prod)
 
-    # Run on schedule OR manual dispatch
+    # Manual dispatch only: pg_cron triggers this every 15 minutes (migration
+    # 20260915090000), for the same reason as the Daily Verse job above.
     # always() so one category failing or having nothing to send does not
     # break the chain for the categories after it.
     if: |
-      always() && (
-        github.event_name == 'schedule' ||
-        (github.event_name == 'workflow_dispatch' &&
-         (github.event.inputs.notification_type == 'recommended_topic' ||
-          github.event.inputs.notification_type == 'all'))
-      )
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.notification_type == 'recommended_topic' ||
+       github.event.inputs.notification_type == 'all')
 
     steps:
-      # No hour gate — see the Daily Verse job above; the Edge Function owns the
-      # local-time window and every hourly run acts as a catch-up.
+      # The Edge Function owns the 9 AM local-time window and catch-up.
       - name: Send Recommended Topic Push Notifications (Prod)
         run: |
           echo "Triggering Recommended Topic notification Edge Function (Production)..."
@@ -196,7 +149,7 @@ jobs:
           echo "Job Status: ${{ job.status }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
-          echo "Notification Type: Recommended Topic (8 AM local, catch-up window)"
+          echo "Notification Type: Recommended Topic (9 AM local, catch-up window)"
 
   # ==========================================================================
   # Job 3: Send Streak Reminder Notifications

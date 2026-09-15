@@ -188,16 +188,9 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     .from('fellowship_invites')
     .select('*, fellowships(id, name, max_members, mentor_user_id)')
     .eq('token', body.token)
-    .eq('is_revoked', false)
-    .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 
   if (!invite) throw new AppError('NOT_FOUND', 'Invite link is invalid or expired', 404)
-
-  // Reusable link: enforce the optional usage cap (null max_uses = unlimited).
-  if (invite.max_uses !== null && (invite.use_count ?? 0) >= invite.max_uses) {
-    throw new AppError('VALIDATION_ERROR', 'This invite link has reached its usage limit', 400)
-  }
 
   const fellowship = invite.fellowships as any
   if (!fellowship) throw new AppError('NOT_FOUND', 'Fellowship not found', 404)
@@ -209,8 +202,26 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     .eq('user_id', user.id)
     .maybeSingle()
 
+  // Already in the group: succeed so the app opens it. Checked before the
+  // link's validity, so an old or used-up link still takes a member home.
   if (existing?.is_active) {
-    throw new AppError('VALIDATION_ERROR', 'You are already a member of this fellowship', 400)
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: { fellowship_id: fellowship.id, fellowship_name: fellowship.name, already_member: true },
+        message: `You're already in ${fellowship.name}`
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  if (invite.is_revoked || new Date(invite.expires_at).getTime() <= Date.now()) {
+    throw new AppError('NOT_FOUND', 'Invite link is invalid or expired', 404)
+  }
+
+  // Reusable link: enforce the optional usage cap (null max_uses = unlimited).
+  if (invite.max_uses !== null && (invite.use_count ?? 0) >= invite.max_uses) {
+    throw new AppError('VALIDATION_ERROR', 'This invite link has reached its usage limit', 400)
   }
 
   const { count: memberCount, error: countError } = await db

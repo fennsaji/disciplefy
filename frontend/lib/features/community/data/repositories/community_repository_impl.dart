@@ -277,10 +277,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Either<Failure, void>> joinFellowship(String inviteToken) async {
+  Future<Either<Failure, String>> joinFellowship(String inviteToken) async {
     try {
-      await _datasource.joinFellowship(inviteToken);
-      return const Right(null);
+      return Right(await _datasource.joinFellowship(inviteToken));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {

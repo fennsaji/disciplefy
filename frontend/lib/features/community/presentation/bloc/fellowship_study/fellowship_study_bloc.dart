@@ -61,17 +61,23 @@ class FellowshipStudyBloc
       },
       (data) {
         final activeStudy = data['active_study'] as Map<String, dynamic>?;
+        final fellowshipLanguage = data['language'] as String?;
+        final fellowshipName = data['name'] as String?;
         if (activeStudy != null) {
           emit(state.copyWith(
             currentLearningPathId: activeStudy['learning_path_id'] as String?,
             currentPathTitle: activeStudy['learning_path_title'] as String?,
             currentGuideIndex: activeStudy['current_guide_index'] as int?,
             totalGuides: activeStudy['total_guides'] as int?,
+            fellowshipLanguage: fellowshipLanguage,
+            fellowshipName: fellowshipName,
           ));
         } else {
           emit(state.copyWith(
             clearCurrentLearningPathId: true,
             clearCurrentPathTitle: true,
+            fellowshipLanguage: fellowshipLanguage,
+            fellowshipName: fellowshipName,
           ));
         }
       },

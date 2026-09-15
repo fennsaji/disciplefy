@@ -53,6 +53,14 @@ class FellowshipStudyState extends Equatable {
   /// Error message from a failed reset call.
   final String? resetError;
 
+  /// The fellowship's language code (`en`, `hi`, `ml`); lessons open in it
+  /// unless the member picked another. Null until the fellowship has loaded.
+  final String? fellowshipLanguage;
+
+  /// The fellowship's name as loaded from the server, for screens opened
+  /// with only an id (a deep link or invite). Null until loaded.
+  final String? fellowshipName;
+
   const FellowshipStudyState({
     required this.fellowshipId,
     this.isMentor = false,
@@ -67,6 +75,8 @@ class FellowshipStudyState extends Equatable {
     this.totalGuides,
     this.resetStatus = FellowshipStudyResetStatus.idle,
     this.resetError,
+    this.fellowshipLanguage,
+    this.fellowshipName,
   });
 
   factory FellowshipStudyState.initial() => const FellowshipStudyState(
@@ -92,6 +102,8 @@ class FellowshipStudyState extends Equatable {
     FellowshipStudyResetStatus? resetStatus,
     String? resetError,
     bool clearResetError = false,
+    String? fellowshipLanguage,
+    String? fellowshipName,
   }) {
     return FellowshipStudyState(
       fellowshipId: fellowshipId ?? this.fellowshipId,
@@ -112,6 +124,8 @@ class FellowshipStudyState extends Equatable {
       totalGuides: totalGuides ?? this.totalGuides,
       resetStatus: resetStatus ?? this.resetStatus,
       resetError: clearResetError ? null : resetError ?? this.resetError,
+      fellowshipLanguage: fellowshipLanguage ?? this.fellowshipLanguage,
+      fellowshipName: fellowshipName ?? this.fellowshipName,
     );
   }
 
@@ -130,5 +144,7 @@ class FellowshipStudyState extends Equatable {
         totalGuides,
         resetStatus,
         resetError,
+        fellowshipLanguage,
+        fellowshipName,
       ];
 }

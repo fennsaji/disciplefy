@@ -43,7 +43,6 @@ class UpdateNotificationPreferences
       fellowshipMeetingCancelledEnabled:
           params.fellowshipMeetingCancelledEnabled,
       fellowshipMeetingInviteEnabled: params.fellowshipMeetingInviteEnabled,
-      meetingInviteEnabled: params.meetingInviteEnabled,
       fellowshipMentorPromotedEnabled: params.fellowshipMentorPromotedEnabled,
       fellowshipMemberJoinedEnabled: params.fellowshipMemberJoinedEnabled,
       fellowshipMentionEnabled: params.fellowshipMentionEnabled,
@@ -72,7 +71,6 @@ class UpdatePreferencesParams extends Equatable {
   final bool? fellowshipMeetingReminderEnabled;
   final bool? fellowshipMeetingCancelledEnabled;
   final bool? fellowshipMeetingInviteEnabled;
-  final bool? meetingInviteEnabled;
   final bool? fellowshipMentorPromotedEnabled;
   final bool? fellowshipMemberJoinedEnabled;
   final bool? fellowshipMentionEnabled;
@@ -100,7 +98,6 @@ class UpdatePreferencesParams extends Equatable {
     this.fellowshipMeetingReminderEnabled,
     this.fellowshipMeetingCancelledEnabled,
     this.fellowshipMeetingInviteEnabled,
-    this.meetingInviteEnabled,
     this.fellowshipMentorPromotedEnabled,
     this.fellowshipMemberJoinedEnabled,
     this.fellowshipMentionEnabled,
@@ -129,7 +126,6 @@ class UpdatePreferencesParams extends Equatable {
         fellowshipMeetingReminderEnabled,
         fellowshipMeetingCancelledEnabled,
         fellowshipMeetingInviteEnabled,
-        meetingInviteEnabled,
         fellowshipMentorPromotedEnabled,
         fellowshipMemberJoinedEnabled,
         fellowshipMentionEnabled,

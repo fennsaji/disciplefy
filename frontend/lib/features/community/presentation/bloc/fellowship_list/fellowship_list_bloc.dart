@@ -107,8 +107,11 @@ class FellowshipListBloc
         joinStatus: FellowshipJoinStatus.failure,
         joinError: ErrorMessageSanitizer.sanitize(failure),
       )),
-      (_) async {
-        emit(state.copyWith(joinStatus: FellowshipJoinStatus.success));
+      (fellowshipId) async {
+        emit(state.copyWith(
+          joinStatus: FellowshipJoinStatus.success,
+          joinedFellowshipId: fellowshipId,
+        ));
 
         // Reload the fellowship list so the UI reflects the newly joined group.
         add(const FellowshipListLoadRequested());

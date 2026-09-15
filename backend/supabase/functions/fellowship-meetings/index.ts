@@ -425,12 +425,15 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
 
 // ---------------------------------------------------------------------------
 // Meeting reminder cron  POST /fellowship-meetings/reminder
-// Authenticated via X-Cron-Secret header (no user JWT required)
+// Authenticated via X-Cron-Secret header, or the service-role key that pg_cron
+// sends (no user JWT required). Triggered every minute by pg_cron.
 // ---------------------------------------------------------------------------
 
 async function handleReminder(req: Request, services: ServiceContainer): Promise<Response> {
   const cronSecret = Deno.env.get('CRON_SECRET')
-  if (cronSecret) {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const isServiceRole = !!serviceRoleKey && req.headers.get('authorization') === `Bearer ${serviceRoleKey}`
+  if (cronSecret && !isServiceRole) {
     const incoming = req.headers.get('x-cron-secret')
     if (incoming !== cronSecret) {
       return new Response('Unauthorized', { status: 401 })
@@ -461,8 +464,18 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
       fellowship_id: string; title: string; starts_at: string; is_cancelled: boolean
     } | null
 
-    if (!meeting || meeting.is_cancelled) {
-      await db.from('meeting_reminders').update({ sent_at: new Date().toISOString() }).eq('id', reminder.id)
+    // Claim the reminder before sending, so two overlapping runs never both
+    // send it: only the run whose update flips sent_at from null goes on.
+    const { data: claimed } = await db.from('meeting_reminders')
+      .update({ sent_at: new Date().toISOString() })
+      .eq('id', reminder.id)
+      .is('sent_at', null)
+      .select('id')
+    if (!claimed || claimed.length === 0) continue
+
+    // A cancelled meeting, or one that has already started, gets no
+    // "starts in …" push.
+    if (!meeting || meeting.is_cancelled || new Date(meeting.starts_at).getTime() <= Date.now()) {
       continue
     }
 
@@ -490,7 +503,6 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
       }
     }
 
-    await db.from('meeting_reminders').update({ sent_at: new Date().toISOString() }).eq('id', reminder.id)
     sent++
   }
 

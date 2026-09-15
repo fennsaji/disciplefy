@@ -35,7 +35,6 @@ abstract class NotificationRepository {
     bool? fellowshipMeetingReminderEnabled,
     bool? fellowshipMeetingCancelledEnabled,
     bool? fellowshipMeetingInviteEnabled,
-    bool? meetingInviteEnabled,
     bool? fellowshipMentorPromotedEnabled,
     bool? fellowshipMemberJoinedEnabled,
     bool? fellowshipMentionEnabled,

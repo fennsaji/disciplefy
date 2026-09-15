@@ -40,7 +40,6 @@ class UpdateNotificationPreferences extends NotificationEvent {
   final bool? fellowshipMeetingReminderEnabled;
   final bool? fellowshipMeetingCancelledEnabled;
   final bool? fellowshipMeetingInviteEnabled;
-  final bool? meetingInviteEnabled;
   final bool? fellowshipMentorPromotedEnabled;
   final bool? fellowshipMemberJoinedEnabled;
   final bool? fellowshipMentionEnabled;
@@ -67,7 +66,6 @@ class UpdateNotificationPreferences extends NotificationEvent {
     this.fellowshipMeetingReminderEnabled,
     this.fellowshipMeetingCancelledEnabled,
     this.fellowshipMeetingInviteEnabled,
-    this.meetingInviteEnabled,
     this.fellowshipMentorPromotedEnabled,
     this.fellowshipMemberJoinedEnabled,
     this.fellowshipMentionEnabled,
@@ -87,7 +85,6 @@ class UpdateNotificationPreferences extends NotificationEvent {
         fellowshipMeetingReminderEnabled,
         fellowshipMeetingCancelledEnabled,
         fellowshipMeetingInviteEnabled,
-        meetingInviteEnabled,
         fellowshipMentorPromotedEnabled,
         fellowshipMemberJoinedEnabled,
         fellowshipMentionEnabled,

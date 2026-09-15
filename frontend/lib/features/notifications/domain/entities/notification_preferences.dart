@@ -37,7 +37,6 @@ class NotificationPreferences extends Equatable {
   final bool fellowshipMeetingReminderEnabled;
   final bool fellowshipMeetingCancelledEnabled;
   final bool fellowshipMeetingInviteEnabled;
-  final bool meetingInviteEnabled;
   final bool fellowshipMentorPromotedEnabled;
 
   /// Someone joined a fellowship this user mentors.
@@ -72,7 +71,6 @@ class NotificationPreferences extends Equatable {
     this.fellowshipMeetingReminderEnabled = true,
     this.fellowshipMeetingCancelledEnabled = true,
     this.fellowshipMeetingInviteEnabled = true,
-    this.meetingInviteEnabled = true,
     this.fellowshipMentorPromotedEnabled = true,
     this.fellowshipMemberJoinedEnabled = true,
     this.fellowshipMentionEnabled = true,
@@ -103,7 +101,6 @@ class NotificationPreferences extends Equatable {
     bool? fellowshipMeetingReminderEnabled,
     bool? fellowshipMeetingCancelledEnabled,
     bool? fellowshipMeetingInviteEnabled,
-    bool? meetingInviteEnabled,
     bool? fellowshipMentorPromotedEnabled,
     bool? fellowshipMemberJoinedEnabled,
     bool? fellowshipMentionEnabled,
@@ -151,7 +148,6 @@ class NotificationPreferences extends Equatable {
           this.fellowshipMeetingCancelledEnabled,
       fellowshipMeetingInviteEnabled:
           fellowshipMeetingInviteEnabled ?? this.fellowshipMeetingInviteEnabled,
-      meetingInviteEnabled: meetingInviteEnabled ?? this.meetingInviteEnabled,
       fellowshipMentorPromotedEnabled: fellowshipMentorPromotedEnabled ??
           this.fellowshipMentorPromotedEnabled,
       fellowshipMemberJoinedEnabled:
@@ -187,7 +183,6 @@ class NotificationPreferences extends Equatable {
         fellowshipMeetingReminderEnabled,
         fellowshipMeetingCancelledEnabled,
         fellowshipMeetingInviteEnabled,
-        meetingInviteEnabled,
         fellowshipMentorPromotedEnabled,
         createdAt,
         updatedAt,
