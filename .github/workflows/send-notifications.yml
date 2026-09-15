@@ -72,19 +72,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Daily Verse Notifications (Prod)
 
-    # Run on schedule OR manual dispatch
+    # Manual dispatch only. pg_cron triggers this every 15 minutes (migration
+    # 20260915080000): GitHub's hourly schedule dropped most runs, so the 8 AM
+    # verse arrived hours late, and running both could race and double-send.
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'daily_verse' ||
-        github.event.inputs.notification_type == 'all'))
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.notification_type == 'daily_verse' ||
+       github.event.inputs.notification_type == 'all')
 
     steps:
-      # No hour gate: the Edge Function selects users whose local time has
-      # reached 06:00 and stays deliverable for a catch-up window after it, so
-      # every hourly run covers for delayed or dropped scheduled runs. Gating on
-      # an exact UTC hour meant one dropped cron skipped a whole timezone band
-      # for the day.
+      # The Edge Function selects users whose local time has reached 08:00 and
+      # stays deliverable for a catch-up window after it.
       - name: Send Daily Verse Push Notifications (Prod)
         run: |
           echo "Triggering Daily Verse notification Edge Function (Production)..."
@@ -127,7 +125,7 @@ jobs:
           echo "Job Status: ${{ job.status }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
-          echo "Notification Type: Daily Verse (6 AM local, catch-up window)"
+          echo "Notification Type: Daily Verse (8 AM local, catch-up window)"
 
   # ==========================================================================
   # Job 2: Send Recommended Topic Notifications

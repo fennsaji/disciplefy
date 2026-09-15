@@ -118,6 +118,13 @@ export class NotificationHelperService {
     const cronHeader = req.headers.get('X-Cron-Secret')
     const cronSecret = Deno.env.get('CRON_SECRET')
 
+    // pg_cron jobs authenticate with the service-role key from Vault instead.
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const authHeader = req.headers.get('Authorization')
+    if (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) {
+      return
+    }
+
     if (!cronSecret) {
       throw new AppError('CONFIGURATION_ERROR', 'Missing CRON_SECRET environment variable', 500)
     }

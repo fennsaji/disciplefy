@@ -2,7 +2,8 @@
 // Send Daily Verse Notification Edge Function
 // ============================================================================
 // Sends daily Bible verse push notifications to all eligible users
-// Triggered by GitHub Actions workflow at 6 AM across different timezones
+// Delivered at 8 AM in each user's local time. Triggered every 15 minutes by
+// pg_cron, with the hourly GitHub Actions workflow as a backup.
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
@@ -75,15 +76,15 @@ async function handleDailyVerseNotification(
 
   const supabase = services.supabaseServiceClient
 
-  // Step 1: Select users whose local time has reached the 6 AM target.
+  // Step 1: Select users whose local time has reached the 8 AM target.
   // This runs every hour and re-checks the window rather than requiring one
   // exact UTC hour, so a dropped or delayed cron is picked up by the next run
   // instead of skipping that timezone for the whole day. The per-day dedup in
   // Step 4 keeps it to a single send per user.
   const now = new Date()
-  const TARGET_LOCAL_MINUTES = 6 * 60 // 6 AM local
+  const TARGET_LOCAL_MINUTES = 8 * 60 // 8 AM local
 
-  console.log(`[DailyVerse] UTC time: ${now.toISOString()}, target: 06:00 local (+ catch-up window)`)
+  console.log(`[DailyVerse] UTC time: ${now.toISOString()}, target: 08:00 local (+ catch-up window)`)
 
   // Step 2: Fetch eligible users with valid FCM tokens
   const tokens = await fetchAllRows<{ user_id: string; fcm_token: string }>(
