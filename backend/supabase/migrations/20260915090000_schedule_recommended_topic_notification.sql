@@ -21,6 +21,10 @@ BEGIN
     RETURN;
   END IF;
 
+  IF (SELECT count(*) FROM vault.decrypted_secrets WHERE name IN ('project_url', 'service_role_key')) < 2 THEN
+    RAISE WARNING 'Vault secrets project_url and service_role_key are missing: the notification cron jobs will fail until they are added.';
+  END IF;
+
   PERFORM cron.schedule(
     'recommended-topic-notification',
     '7-59/15 * * * *',
