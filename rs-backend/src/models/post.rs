@@ -197,7 +197,11 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
         "SELECT COUNT(*) FROM blog_posts WHERE locale = $1 AND status = 'published'
          AND ($2::text IS NULL OR $2 = ANY(tags))
          AND ($3::bool IS NULL OR featured = $3)
-         AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4))",
+         AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4)
+              OR source_topic_id IN (SELECT lpt.topic_id FROM learning_path_topics lpt
+                                      JOIN learning_paths lp ON lp.id = lpt.learning_path_id WHERE lp.slug = $4)
+              OR source_topic_id IN (SELECT lpt.id FROM learning_path_topics lpt
+                                      JOIN learning_paths lp ON lp.id = lpt.learning_path_id WHERE lp.slug = $4))",
     )
     .bind(&q.locale)
     .bind(&q.tag)
@@ -213,12 +217,24 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
          WHERE locale = $1 AND status = 'published'
            AND ($2::text IS NULL OR $2 = ANY(tags))
            AND ($3::bool IS NULL OR featured = $3)
-           AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4))
+           AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4)
+              OR source_topic_id IN (SELECT lpt.topic_id FROM learning_path_topics lpt
+                                      JOIN learning_paths lp ON lp.id = lpt.learning_path_id WHERE lp.slug = $4)
+              OR source_topic_id IN (SELECT lpt.id FROM learning_path_topics lpt
+                                      JOIN learning_paths lp ON lp.id = lpt.learning_path_id WHERE lp.slug = $4))
          ORDER BY
            -- The blog index is a feed: newest first. A learning path is a
            -- course: oldest first, so the reader meets the guides in the order
            -- they were written.
            CASE WHEN $4::text IS NULL THEN published_at END DESC NULLS LAST,
+           -- In a path, follow the lesson order; a lesson shared with another
+           -- path keeps its place here even though it was written for the other.
+           CASE WHEN $4::text IS NOT NULL THEN (
+             SELECT min(lpt.position) FROM learning_path_topics lpt
+               JOIN learning_paths lp ON lp.id = lpt.learning_path_id
+              WHERE lp.slug = $4
+                AND (lpt.topic_id = blog_posts.source_topic_id OR lpt.id = blog_posts.source_topic_id)
+           ) END ASC NULLS LAST,
            CASE WHEN $4::text IS NOT NULL THEN published_at END ASC NULLS LAST,
            slug ASC
          LIMIT $5 OFFSET $6",
@@ -398,16 +414,20 @@ pub async fn list_learning_paths(
     let paths = sqlx::query_as::<_, LearningPathListItem>(
         "SELECT lp.slug,
                 COALESCE(lpt.title, lp.title) AS title,
-                COUNT(bp.id) AS post_count
+                COUNT(DISTINCT bp.id) AS post_count
          FROM learning_paths lp
          LEFT JOIN learning_path_translations lpt
                ON lpt.learning_path_id = lp.id AND lpt.lang_code = $1
+         -- A lesson can sit in several paths; its blog counts for each of them,
+         -- not only the path it was written for.
          JOIN blog_posts bp
-               ON bp.source_learning_path_id = lp.id
-               AND bp.locale = $1 AND bp.status = 'published'
+               ON bp.locale = $1 AND bp.status = 'published'
+               AND (bp.source_learning_path_id = lp.id
+                    OR bp.source_topic_id IN (SELECT x.topic_id FROM learning_path_topics x WHERE x.learning_path_id = lp.id)
+                    OR bp.source_topic_id IN (SELECT x.id FROM learning_path_topics x WHERE x.learning_path_id = lp.id))
          WHERE lp.is_active = true
          GROUP BY lp.slug, lp.title, lpt.title, lp.display_order
-         HAVING COUNT(bp.id) > 0
+         HAVING COUNT(DISTINCT bp.id) > 0
          ORDER BY lp.display_order",
     )
     .bind(locale)
