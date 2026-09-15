@@ -49,6 +49,8 @@ interface UpdatePreferencesRequest {
   fellowshipMeetingInviteEnabled?: boolean
   meetingInviteEnabled?: boolean
   fellowshipMentorPromotedEnabled?: boolean
+  fellowshipMemberJoinedEnabled?: boolean
+  fellowshipMentionEnabled?: boolean
   timezoneOffsetMinutes?: number
 }
 
@@ -76,8 +78,43 @@ interface PreferencesUpdate {
   fellowship_meeting_invite_enabled?: boolean
   meeting_invite_enabled?: boolean
   fellowship_mentor_promoted_enabled?: boolean
+  fellowship_member_joined_enabled?: boolean
+  fellowship_mention_enabled?: boolean
   timezone_offset_minutes?: number
   updated_at?: string
+}
+
+/** Every preference the app reads, camelCased, from a preferences row. */
+// deno-lint-ignore no-explicit-any
+function toPreferencesResponse(row: Record<string, any>) {
+  return {
+    dailyVerseEnabled: row.daily_verse_enabled,
+    recommendedTopicEnabled: row.recommended_topic_enabled,
+    streakReminderEnabled: row.streak_reminder_enabled,
+    streakMilestoneEnabled: row.streak_milestone_enabled,
+    streakLostEnabled: row.streak_lost_enabled,
+    streakReminderTime: row.streak_reminder_time,
+    memoryVerseReminderEnabled: row.memory_verse_reminder_enabled,
+    memoryVerseReminderTime: row.memory_verse_reminder_time,
+    memoryVerseOverdueEnabled: row.memory_verse_overdue_enabled,
+    continueLearningEnabled: row.continue_learning_enabled,
+    achievementUnlockedEnabled: row.achievement_unlocked_enabled,
+    fellowshipDailyPostEnabled: row.fellowship_daily_post_enabled,
+    fellowshipNewPostEnabled: row.fellowship_new_post_enabled,
+    fellowshipNewCommentEnabled: row.fellowship_new_comment_enabled,
+    fellowshipReactionEnabled: row.fellowship_reaction_enabled,
+    fellowshipDisciplerReplyEnabled: row.fellowship_discipler_reply_enabled,
+    fellowshipDisciplerActivityEnabled: row.fellowship_discipler_activity_enabled,
+    fellowshipMeetingEnabled: row.fellowship_meeting_enabled,
+    fellowshipMeetingReminderEnabled: row.fellowship_meeting_reminder_enabled,
+    fellowshipMeetingCancelledEnabled: row.fellowship_meeting_cancelled_enabled,
+    fellowshipMeetingInviteEnabled: row.fellowship_meeting_invite_enabled,
+    meetingInviteEnabled: row.meeting_invite_enabled,
+    fellowshipMentorPromotedEnabled: row.fellowship_mentor_promoted_enabled,
+    fellowshipMemberJoinedEnabled: row.fellowship_member_joined_enabled,
+    fellowshipMentionEnabled: row.fellowship_mention_enabled,
+    timezoneOffsetMinutes: row.timezone_offset_minutes,
+  }
 }
 
 // ============================================================================
@@ -231,32 +268,7 @@ async function handleRegisterToken(
     JSON.stringify({
       success: true,
       message: 'FCM token registered successfully',
-      preferences: {
-        dailyVerseEnabled: prefsData.daily_verse_enabled,
-        recommendedTopicEnabled: prefsData.recommended_topic_enabled,
-        streakReminderEnabled: prefsData.streak_reminder_enabled,
-        streakMilestoneEnabled: prefsData.streak_milestone_enabled,
-        streakLostEnabled: prefsData.streak_lost_enabled,
-        streakReminderTime: prefsData.streak_reminder_time,
-        memoryVerseReminderEnabled: prefsData.memory_verse_reminder_enabled,
-        memoryVerseReminderTime: prefsData.memory_verse_reminder_time,
-        memoryVerseOverdueEnabled: prefsData.memory_verse_overdue_enabled,
-        continueLearningEnabled: prefsData.continue_learning_enabled,
-        achievementUnlockedEnabled: prefsData.achievement_unlocked_enabled,
-        fellowshipDailyPostEnabled: prefsData.fellowship_daily_post_enabled,
-        fellowshipNewPostEnabled: prefsData.fellowship_new_post_enabled,
-        fellowshipNewCommentEnabled: prefsData.fellowship_new_comment_enabled,
-        fellowshipReactionEnabled: prefsData.fellowship_reaction_enabled,
-        fellowshipDisciplerReplyEnabled: prefsData.fellowship_discipler_reply_enabled,
-        fellowshipDisciplerActivityEnabled: prefsData.fellowship_discipler_activity_enabled,
-        fellowshipMeetingEnabled: prefsData.fellowship_meeting_enabled,
-        fellowshipMeetingReminderEnabled: prefsData.fellowship_meeting_reminder_enabled,
-        fellowshipMeetingCancelledEnabled: prefsData.fellowship_meeting_cancelled_enabled,
-        fellowshipMeetingInviteEnabled: prefsData.fellowship_meeting_invite_enabled,
-        meetingInviteEnabled: prefsData.meeting_invite_enabled,
-        fellowshipMentorPromotedEnabled: prefsData.fellowship_mentor_promoted_enabled,
-        timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
-      },
+      preferences: toPreferencesResponse(prefsData),
     }),
     {
       status: 200,
@@ -347,6 +359,12 @@ async function handleUpdatePreferences(
   if (requestData.fellowshipMentorPromotedEnabled !== undefined) {
     updateData.fellowship_mentor_promoted_enabled = requestData.fellowshipMentorPromotedEnabled
   }
+  if (requestData.fellowshipMemberJoinedEnabled !== undefined) {
+    updateData.fellowship_member_joined_enabled = requestData.fellowshipMemberJoinedEnabled
+  }
+  if (requestData.fellowshipMentionEnabled !== undefined) {
+    updateData.fellowship_mention_enabled = requestData.fellowshipMentionEnabled
+  }
   if (requestData.timezoneOffsetMinutes !== undefined) {
     updateData.timezone_offset_minutes = requestData.timezoneOffsetMinutes
   }
@@ -384,18 +402,7 @@ async function handleUpdatePreferences(
     JSON.stringify({
       success: true,
       message: 'Notification preferences updated successfully',
-      preferences: {
-        dailyVerseEnabled: data.daily_verse_enabled,
-        recommendedTopicEnabled: data.recommended_topic_enabled,
-        streakReminderEnabled: data.streak_reminder_enabled,
-        streakMilestoneEnabled: data.streak_milestone_enabled,
-        streakLostEnabled: data.streak_lost_enabled,
-        streakReminderTime: data.streak_reminder_time,
-        memoryVerseReminderEnabled: data.memory_verse_reminder_enabled,
-        memoryVerseReminderTime: data.memory_verse_reminder_time,
-        memoryVerseOverdueEnabled: data.memory_verse_overdue_enabled,
-        timezoneOffsetMinutes: data.timezone_offset_minutes,
-      },
+      preferences: toPreferencesResponse(data),
     }),
     {
       status: 200,
@@ -458,18 +465,7 @@ async function handleGetPreferences(
     JSON.stringify({
       success: true,
       message: 'Notification preferences retrieved',
-      preferences: {
-        dailyVerseEnabled: prefsData.daily_verse_enabled,
-        recommendedTopicEnabled: prefsData.recommended_topic_enabled,
-        streakReminderEnabled: prefsData.streak_reminder_enabled,
-        streakMilestoneEnabled: prefsData.streak_milestone_enabled,
-        streakLostEnabled: prefsData.streak_lost_enabled,
-        streakReminderTime: prefsData.streak_reminder_time,
-        memoryVerseReminderEnabled: prefsData.memory_verse_reminder_enabled,
-        memoryVerseReminderTime: prefsData.memory_verse_reminder_time,
-        memoryVerseOverdueEnabled: prefsData.memory_verse_overdue_enabled,
-        timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
-      },
+      preferences: toPreferencesResponse(prefsData),
       tokens: tokensData || [], // Array of all registered tokens/devices
     }),
     {
