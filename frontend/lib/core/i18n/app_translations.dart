@@ -983,10 +983,10 @@ class AppTranslations {
         'preferences_title': 'Notification Preferences',
         'daily_verse_title': 'Daily Verse',
         'daily_verse_description':
-            'Receive inspirational Bible verses every morning at 6 AM',
+            'Receive inspirational Bible verses every morning at 8 AM',
         'recommended_topics_title': 'Recommended Topics',
         'recommended_topics_description':
-            'Get personalized study topic suggestions at 8 AM',
+            'Get personalized study topic suggestions at 9 AM',
         'streak_reminder_title': 'Streak Reminder',
         'streak_reminder_description':
             'Get reminded to maintain your daily verse reading streak',
@@ -3165,10 +3165,10 @@ class AppTranslations {
         'preferences_title': 'नोटिफिकेशन प्राथमिकताएं',
         'daily_verse_title': 'दैनिक वचन',
         'daily_verse_description':
-            'प्रतिदिन सुबह 6 बजे प्रेरणादायक बाइबल पद प्राप्त करें',
+            'प्रतिदिन सुबह 8 बजे प्रेरणादायक बाइबल पद प्राप्त करें',
         'recommended_topics_title': 'अनुशंसित विषय',
         'recommended_topics_description':
-            'सुबह 8 बजे व्यक्तिगत अध्ययन विषय सुझाव प्राप्त करें',
+            'सुबह 9 बजे व्यक्तिगत अध्ययन विषय सुझाव प्राप्त करें',
         'streak_reminder_title': 'स्ट्रीक रिमाइंडर',
         'streak_reminder_description':
             'अपनी दैनिक पद पढ़ने की स्ट्रीक बनाए रखने के लिए अनुस्मारक प्राप्त करें',
@@ -5368,10 +5368,10 @@ class AppTranslations {
         'preferences_title': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
         'daily_verse_title': 'ദൈനിക വചനം',
         'daily_verse_description':
-            'രാവിലെ ആറു മണിക്ക് പ്രേരണാദായകമായ ബൈബിള്‍ വചനങ്ങൾ സ്വീകരിക്കുക',
+            'രാവിലെ എട്ട് മണിക്ക് പ്രേരണാദായകമായ ബൈബിള്‍ വചനങ്ങൾ സ്വീകരിക്കുക',
         'recommended_topics_title': 'ശിഫാരസ്സു ചെയ്യുന്ന വിഷയങ്ങൾ',
         'recommended_topics_description':
-            'രാവിലെ എട്ട് മണിക്ക് വ്യക്തിഗത പഠന വിഷയ സൂചനകൾ സ്വീകരിക്കുക',
+            'രാവിലെ ഒമ്പത് മണിക്ക് വ്യക്തിഗത പഠന വിഷയ സൂചനകൾ സ്വീകരിക്കുക',
         'streak_reminder_title': 'സ്ട്രീക് ഓർമ്മപ്പെടുത്തൽ',
         'streak_reminder_description':
             'നിങ്ങളുടെ ദൈനംദിന വചന വായനാ സ്ട്രീക് നിലനിർത്താൻ ഓർമ്മപ്പെടുത്തൽ നേടുക',
