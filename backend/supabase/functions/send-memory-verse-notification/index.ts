@@ -6,7 +6,7 @@
 //   ?type=reminder (default) — verses due today, at the user's preferred time
 //   ?type=overdue            — verses more than a day past due, 6 PM local
 //
-// Both are triggered hourly by the GitHub Actions workflow; the SQL selectors
+// Both are triggered every 15 minutes by pg_cron; the SQL selectors
 // match users on a local-time catch-up window, so a delayed or dropped run is
 // picked up later instead of skipping the day.
 

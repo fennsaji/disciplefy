@@ -7,7 +7,7 @@
 //   ?type=lost               — "Streak Reset Motivation" for users whose streak
 //                              has already broken, ~10 AM local
 //
-// Both are triggered hourly; the SQL selectors match on a local-time catch-up
+// Both are triggered every 15 minutes by pg_cron; the SQL selectors match on a local-time catch-up
 // window so a delayed or dropped run is picked up by a later one.
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'

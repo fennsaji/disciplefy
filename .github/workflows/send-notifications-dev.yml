@@ -1,43 +1,9 @@
 name: Send Push Notifications (Development)
 
 on:
-  schedule:
-    # ============================================================================
-    # Daily Verse Notifications (6 AM across timezones) - Development
-    # ============================================================================
-    # Run less frequently in dev (only 2 times per day for key timezones)
-    - cron: '0 0 * * *'   # UTC 00:00 → 6 AM UTC+6 (South Asia: India, Sri Lanka)
-    - cron: '0 12 * * *'  # UTC 12:00 → 6 AM UTC-6 (Central US, Mexico)
-
-    # ============================================================================
-    # Recommended Topic Notifications (8 AM across timezones) - Development
-    # ============================================================================
-    - cron: '0 2 * * *'   # UTC 02:00 → 8 AM UTC+6 (South Asia)
-    - cron: '0 14 * * *'  # UTC 14:00 → 8 AM UTC-6 (Central US)
-
-    # ============================================================================
-    # Streak Reminder Notifications (user's preferred time, default 8 PM) - Development
-    # ============================================================================
-    # Run every hour to cover all timezones (users set their own reminder time)
-    - cron: '0 * * * *'   # Every hour at :00 minutes
-
-    # ============================================================================
-    # Memory Verse Reminder Notifications (9 AM across timezones) - Development
-    # ============================================================================
-    - cron: '0 3 * * *'   # UTC 03:00 → 9 AM UTC+6 (South Asia)
-    - cron: '0 15 * * *'  # UTC 15:00 → 9 AM UTC-6 (Central US)
-
-    # ============================================================================
-    # Memory Verse Overdue Notifications (6 PM across timezones) - Development
-    # ============================================================================
-    - cron: '0 1 * * *'   # UTC 01:00 → 6 PM UTC-5
-    - cron: '0 7 * * *'   # UTC 07:00 → 6 PM UTC+1
-    - cron: '0 10 * * *'  # UTC 10:00 → 6 PM UTC+4
-    - cron: '0 12 * * *'  # UTC 12:00 → ~5:30 PM IST / 6 PM UTC+6
-    - cron: '0 16 * * *'  # UTC 16:00 → 6 PM UTC+10
-    - cron: '0 22 * * *'  # UTC 22:00 → 6 PM UTC-4
-
-  # Allow manual triggering for testing
+  # No schedule: the same pg_cron migrations run on the dev database, so every
+  # push is triggered there. A GitHub schedule on top could double-send.
+  # Manual dispatch stays for testing.
   workflow_dispatch:
     inputs:
       notification_type:
