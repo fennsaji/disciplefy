@@ -124,7 +124,7 @@ abstract class CommunityRepository {
   });
 
   /// Joins a fellowship using the invite [inviteToken].
-  Future<Either<Failure, void>> joinFellowship(String inviteToken);
+  Future<Either<Failure, String>> joinFellowship(String inviteToken);
 
   /// Creates a new fellowship. The caller automatically becomes the mentor.
   Future<Either<Failure, void>> createFellowship({

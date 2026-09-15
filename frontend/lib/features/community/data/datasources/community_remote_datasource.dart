@@ -85,7 +85,7 @@ abstract class CommunityRemoteDatasource {
   });
 
   /// Joins a fellowship using the invite [token].
-  Future<void> joinFellowship(String inviteToken);
+  Future<String> joinFellowship(String inviteToken);
 
   /// Creates a new fellowship with the given [name], optional [description],
   /// and optional [maxMembers] cap (defaults to 12 on the server).
@@ -1018,7 +1018,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<void> joinFellowship(String inviteToken) async {
+  Future<String> joinFellowship(String inviteToken) async {
     try {
       final url = '$_baseUrl$_fellowshipInvitesJoinEndpoint';
       final body = jsonEncode({'token': inviteToken});
@@ -1045,12 +1045,14 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         );
       }
 
-      // Validate success flag; ignore data payload (void return).
-      _parseResponseBody(
+      // The server also succeeds when the user is already a member, so the
+      // caller can open the group either way.
+      final data = _parseResponseBody(
         response.body,
         'FELLOWSHIP_JOIN_ERROR',
         'Failed to join fellowship',
       );
+      return data['fellowship_id'] as String;
     } on ServerException {
       rethrow;
     } catch (e) {

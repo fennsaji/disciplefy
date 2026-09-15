@@ -121,12 +121,15 @@ class _JoinFellowshipConsumer extends StatelessWidget {
       listener: (context, state) {
         final l10n = AppLocalizations.of(context)!;
         if (state.joinStatus == FellowshipJoinStatus.success) {
-          // Pop with true so the community tab knows to reload its list.
-          // If opened via deep link there is nothing to pop — go directly.
-          if (context.canPop()) {
-            context.pop(true);
+          // Open the group — also when the user was already a member. The
+          // community tab reloads its list when they come back from it.
+          final fellowshipId = state.joinedFellowshipId;
+          if (fellowshipId == null) {
+            context.canPop() ? context.pop(true) : context.go('/community');
+          } else if (context.canPop()) {
+            context.pushReplacement('/community/$fellowshipId');
           } else {
-            context.go('/community');
+            context.go('/community/$fellowshipId');
           }
         } else if (state.joinStatus == FellowshipJoinStatus.failure) {
           final message = state.joinError ?? l10n.communityJoinFailed;

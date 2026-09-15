@@ -31,6 +31,10 @@ class FellowshipListState extends Equatable {
   /// Non-null when [joinStatus] is [FellowshipJoinStatus.failure].
   final String? joinError;
 
+  /// The group joined (or already a member of) when [joinStatus] is
+  /// [FellowshipJoinStatus.success], so the join screen can open it.
+  final String? joinedFellowshipId;
+
   /// Create-flow status, independent of the list status.
   final FellowshipCreateStatus createStatus;
 
@@ -43,6 +47,7 @@ class FellowshipListState extends Equatable {
     this.errorMessage,
     this.joinStatus = FellowshipJoinStatus.idle,
     this.joinError,
+    this.joinedFellowshipId,
     this.createStatus = FellowshipCreateStatus.idle,
     this.createError,
   });
@@ -57,6 +62,7 @@ class FellowshipListState extends Equatable {
         errorMessage,
         joinStatus,
         joinError,
+        joinedFellowshipId,
         createStatus,
         createError,
       ];
@@ -70,6 +76,7 @@ class FellowshipListState extends Equatable {
     FellowshipJoinStatus? joinStatus,
     String? joinError,
     bool clearJoinError = false,
+    String? joinedFellowshipId,
     FellowshipCreateStatus? createStatus,
     String? createError,
     bool clearCreateError = false,
@@ -81,6 +88,7 @@ class FellowshipListState extends Equatable {
           clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       joinStatus: joinStatus ?? this.joinStatus,
       joinError: clearJoinError ? null : (joinError ?? this.joinError),
+      joinedFellowshipId: joinedFellowshipId ?? this.joinedFellowshipId,
       createStatus: createStatus ?? this.createStatus,
       createError: clearCreateError ? null : (createError ?? this.createError),
     );

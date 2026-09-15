@@ -8,19 +8,21 @@ import 'dart:async' as _i4;
 import 'package:dartz/dartz.dart' as _i2;
 import 'package:disciplefy_bible_study/core/error/failures.dart' as _i5;
 import 'package:disciplefy_bible_study/features/community/domain/entities/blocked_user_entity.dart'
+    as _i11;
+import 'package:disciplefy_bible_study/features/community/domain/entities/daily_post_status_entity.dart'
     as _i10;
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_comment_entity.dart'
     as _i9;
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart'
     as _i6;
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_meeting_entity.dart'
-    as _i11;
+    as _i12;
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart'
     as _i7;
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart'
     as _i8;
 import 'package:disciplefy_bible_study/features/community/domain/entities/sync_calendar_result.dart'
-    as _i12;
+    as _i13;
 import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart'
     as _i3;
 import 'package:mockito/mockito.dart' as _i1;
@@ -284,6 +286,58 @@ class MockCommunityRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
 
   @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> editPost(
+    String? postId,
+    String? content,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #editPost,
+          [
+            postId,
+            content,
+          ],
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #editPost,
+            [
+              postId,
+              content,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> editComment(
+    String? commentId,
+    String? content,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #editComment,
+          [
+            commentId,
+            content,
+          ],
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #editComment,
+            [
+              commentId,
+              content,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, Map<String, int>>> toggleReaction({
     required String? postId,
     required String? reactionType,
@@ -313,22 +367,22 @@ class MockCommunityRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, Map<String, int>>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, void>> joinFellowship(
+  _i4.Future<_i2.Either<_i5.Failure, String>> joinFellowship(
           String? inviteToken) =>
       (super.noSuchMethod(
         Invocation.method(
           #joinFellowship,
           [inviteToken],
         ),
-        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
-            _FakeEither_0<_i5.Failure, void>(
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, String>>.value(
+            _FakeEither_0<_i5.Failure, String>(
           this,
           Invocation.method(
             #joinFellowship,
             [inviteToken],
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, String>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, void>> createFellowship({
@@ -442,6 +496,91 @@ class MockCommunityRepository extends _i1.Mock
           Invocation.method(
             #resetStudy,
             [fellowshipId],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i10.DailyPostStatusEntity>>
+      getDailyPostStatus(String? fellowshipId) => (super.noSuchMethod(
+            Invocation.method(
+              #getDailyPostStatus,
+              [fellowshipId],
+            ),
+            returnValue: _i4.Future<
+                    _i2.Either<_i5.Failure, _i10.DailyPostStatusEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i10.DailyPostStatusEntity>(
+              this,
+              Invocation.method(
+                #getDailyPostStatus,
+                [fellowshipId],
+              ),
+            )),
+          ) as _i4.Future<_i2.Either<_i5.Failure, _i10.DailyPostStatusEntity>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> updateDailyPost(
+    String? fellowshipId, {
+    bool? skipNext,
+    String? pausedUntil,
+    bool? clearPause = false,
+    String? time,
+    String? nextLearningPathTopicId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateDailyPost,
+          [fellowshipId],
+          {
+            #skipNext: skipNext,
+            #pausedUntil: pausedUntil,
+            #clearPause: clearPause,
+            #time: time,
+            #nextLearningPathTopicId: nextLearningPathTopicId,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #updateDailyPost,
+            [fellowshipId],
+            {
+              #skipNext: skipNext,
+              #pausedUntil: pausedUntil,
+              #clearPause: clearPause,
+              #time: time,
+              #nextLearningPathTopicId: nextLearningPathTopicId,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> requestDailyPostAction(
+    String? fellowshipId,
+    String? kind, {
+    String? dailyPostId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #requestDailyPostAction,
+          [
+            fellowshipId,
+            kind,
+          ],
+          {#dailyPostId: dailyPostId},
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #requestDailyPostAction,
+            [
+              fellowshipId,
+              kind,
+            ],
+            {#dailyPostId: dailyPostId},
           ),
         )),
       ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
@@ -1007,7 +1146,7 @@ class MockCommunityRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, List<_i10.BlockedUserEntity>>>
+  _i4.Future<_i2.Either<_i5.Failure, List<_i11.BlockedUserEntity>>>
       getBlockedUsers() => (super.noSuchMethod(
             Invocation.method(
               #getBlockedUsers,
@@ -1015,8 +1154,8 @@ class MockCommunityRepository extends _i1.Mock
             ),
             returnValue: _i4.Future<
                     _i2
-                    .Either<_i5.Failure, List<_i10.BlockedUserEntity>>>.value(
-                _FakeEither_0<_i5.Failure, List<_i10.BlockedUserEntity>>(
+                    .Either<_i5.Failure, List<_i11.BlockedUserEntity>>>.value(
+                _FakeEither_0<_i5.Failure, List<_i11.BlockedUserEntity>>(
               this,
               Invocation.method(
                 #getBlockedUsers,
@@ -1024,7 +1163,7 @@ class MockCommunityRepository extends _i1.Mock
               ),
             )),
           ) as _i4
-              .Future<_i2.Either<_i5.Failure, List<_i10.BlockedUserEntity>>>);
+              .Future<_i2.Either<_i5.Failure, List<_i11.BlockedUserEntity>>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, Map<String, int>>> getTopicPostCounts(
@@ -1100,7 +1239,7 @@ class MockCommunityRepository extends _i1.Mock
 
   @override
   _i4.Future<
-      _i2.Either<_i5.Failure, List<_i11.FellowshipMeetingEntity>>> getMeetings(
+      _i2.Either<_i5.Failure, List<_i12.FellowshipMeetingEntity>>> getMeetings(
           String? fellowshipId) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1109,8 +1248,8 @@ class MockCommunityRepository extends _i1.Mock
         ),
         returnValue: _i4.Future<
                 _i2
-                .Either<_i5.Failure, List<_i11.FellowshipMeetingEntity>>>.value(
-            _FakeEither_0<_i5.Failure, List<_i11.FellowshipMeetingEntity>>(
+                .Either<_i5.Failure, List<_i12.FellowshipMeetingEntity>>>.value(
+            _FakeEither_0<_i5.Failure, List<_i12.FellowshipMeetingEntity>>(
           this,
           Invocation.method(
             #getMeetings,
@@ -1118,11 +1257,11 @@ class MockCommunityRepository extends _i1.Mock
           ),
         )),
       ) as _i4
-          .Future<_i2.Either<_i5.Failure, List<_i11.FellowshipMeetingEntity>>>);
+          .Future<_i2.Either<_i5.Failure, List<_i12.FellowshipMeetingEntity>>>);
 
   @override
   _i4.Future<
-      _i2.Either<_i5.Failure, _i11.FellowshipMeetingEntity>> createMeeting({
+      _i2.Either<_i5.Failure, _i12.FellowshipMeetingEntity>> createMeeting({
     required String? fellowshipId,
     required String? title,
     String? description,
@@ -1152,8 +1291,8 @@ class MockCommunityRepository extends _i1.Mock
           },
         ),
         returnValue: _i4.Future<
-                _i2.Either<_i5.Failure, _i11.FellowshipMeetingEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i11.FellowshipMeetingEntity>(
+                _i2.Either<_i5.Failure, _i12.FellowshipMeetingEntity>>.value(
+            _FakeEither_0<_i5.Failure, _i12.FellowshipMeetingEntity>(
           this,
           Invocation.method(
             #createMeeting,
@@ -1172,7 +1311,7 @@ class MockCommunityRepository extends _i1.Mock
             },
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i11.FellowshipMeetingEntity>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i12.FellowshipMeetingEntity>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, void>> cancelMeeting(
@@ -1198,7 +1337,7 @@ class MockCommunityRepository extends _i1.Mock
 
   @override
   _i4.Future<
-      _i2.Either<_i5.Failure, _i12.SyncCalendarResult>> syncFellowshipCalendar(
+      _i2.Either<_i5.Failure, _i13.SyncCalendarResult>> syncFellowshipCalendar(
     String? fellowshipId, {
     String? googleAccessToken,
   }) =>
@@ -1209,8 +1348,8 @@ class MockCommunityRepository extends _i1.Mock
           {#googleAccessToken: googleAccessToken},
         ),
         returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, _i12.SyncCalendarResult>>.value(
-                _FakeEither_0<_i5.Failure, _i12.SyncCalendarResult>(
+            _i4.Future<_i2.Either<_i5.Failure, _i13.SyncCalendarResult>>.value(
+                _FakeEither_0<_i5.Failure, _i13.SyncCalendarResult>(
           this,
           Invocation.method(
             #syncFellowshipCalendar,
@@ -1218,5 +1357,5 @@ class MockCommunityRepository extends _i1.Mock
             {#googleAccessToken: googleAccessToken},
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i12.SyncCalendarResult>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i13.SyncCalendarResult>>);
 }
