@@ -874,7 +874,9 @@ pub async fn check_blog_exists_for_guide(
     let row: Option<(Uuid, String)> = sqlx::query_as(
         "SELECT id, slug FROM blog_posts
           WHERE source_guide_id = $1
-             OR ($2::uuid IS NOT NULL AND source_topic_id = $2 AND locale = $3)
+             OR ($2::uuid IS NOT NULL AND locale = $3
+                 AND (source_topic_id = $2
+                      OR source_topic_id IN (SELECT id FROM learning_path_topics WHERE topic_id = $2)))
           ORDER BY (source_guide_id = $1) DESC NULLS LAST
           LIMIT 1",
     )
@@ -936,7 +938,12 @@ pub async fn blog_status_for_path(
     let rows = sqlx::query_as(
         "SELECT lpt.topic_id, bp.locale, bp.slug
            FROM learning_path_topics lpt
-           LEFT JOIN blog_posts bp ON bp.source_topic_id = lpt.topic_id
+           -- Older posts from the blog cron store a learning_path_topics.id
+           -- (of any path holding this lesson) instead of the topic id.
+           LEFT JOIN blog_posts bp
+                  ON bp.source_topic_id = lpt.topic_id
+                  OR bp.source_topic_id IN (SELECT x.id FROM learning_path_topics x
+                                             WHERE x.topic_id = lpt.topic_id)
           WHERE lpt.learning_path_id = $1
           ORDER BY lpt.position",
     )
@@ -951,11 +958,14 @@ pub async fn blog_locales_for_topic(
     pool: &PgPool,
     topic_id: Uuid,
 ) -> Result<Vec<String>, AppError> {
-    let rows: Vec<(String,)> =
-        sqlx::query_as("SELECT DISTINCT locale FROM blog_posts WHERE source_topic_id = $1")
-            .bind(topic_id)
-            .fetch_all(pool)
-            .await?;
+    let rows: Vec<(String,)> = sqlx::query_as(
+        "SELECT DISTINCT locale FROM blog_posts
+          WHERE source_topic_id = $1
+             OR source_topic_id IN (SELECT id FROM learning_path_topics WHERE topic_id = $1)",
+    )
+    .bind(topic_id)
+    .fetch_all(pool)
+    .await?;
     Ok(rows.into_iter().map(|(l,)| l).collect())
 }
 

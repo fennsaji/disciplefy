@@ -530,7 +530,20 @@ pub async fn generate_topic_blogs(
         return Err(AppError::BadRequest(format!("Unknown language: {bad}")));
     }
 
-    let existing = post::blog_locales_for_topic(&state.pool, topic_id).await?;
+    let mut existing = post::blog_locales_for_topic(&state.pool, topic_id).await?;
+    // A post may already carry this lesson's slug without being linked to it;
+    // link it rather than paying to write the same post again.
+    for locale in LOCALES {
+        if existing.iter().any(|l| l == locale) {
+            continue;
+        }
+        let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+        if post::slug_exists(&state.pool, &slug).await? {
+            post::tag_existing_post_source(&state.pool, &slug, topic.topic_id, topic.path_id)
+                .await?;
+            existing.push(locale.to_string());
+        }
+    }
     let missing: Vec<String> = requested
         .into_iter()
         .filter(|l| !existing.contains(l))
