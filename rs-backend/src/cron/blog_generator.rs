@@ -139,6 +139,13 @@ async fn generate_for_locale(
         _ => &topic.path_description,
     };
 
+    // Never pay for, or insert, a second blog for a lesson that already has one
+    // in this language — whichever id the existing post is linked by.
+    if post::blog_exists_for_topic(pool, topic.topic_id, locale).await? {
+        tracing::info!(topic = %topic.title, locale, "Blog already exists for this lesson, skipping");
+        return Ok(());
+    }
+
     // 'recommended' and 'ask' are interactive modes — fall back to 'standard' for batch generation
     let mode = match topic.study_mode.as_str() {
         "recommended" | "ask" => "standard",
@@ -191,9 +198,17 @@ async fn generate_for_locale(
     match post::create_post_if_not_exists(pool, input).await? {
         Some(p) => tracing::info!(slug = %p.slug, locale, "Blog post created"),
         None => {
-            // Slug conflict — tag existing post so topic is marked done
-            post::tag_existing_post_source(pool, &slug, topic.topic_id, topic.path_id).await?;
-            tracing::info!(locale, slug = %slug, "Slug existed, tagged with source");
+            // Conflict: either the slug is taken (tag that post so the lesson is
+            // marked done) or a blog for this lesson and language was written
+            // meanwhile, which the unique index refused as a duplicate.
+            if post::slug_exists(pool, &slug).await?
+                && !post::blog_exists_for_topic(pool, topic.topic_id, locale).await?
+            {
+                post::tag_existing_post_source(pool, &slug, topic.topic_id, topic.path_id).await?;
+                tracing::info!(locale, slug = %slug, "Slug existed, tagged with source");
+            } else {
+                tracing::info!(locale, slug = %slug, "Blog for this lesson already exists, not duplicated");
+            }
         }
     }
     Ok(())
@@ -220,6 +235,9 @@ pub async fn run_blog_retry(pool: &PgPool, config: &Config, http: &Client) -> Re
         let mut missing_locales: Vec<&str> = Vec::new();
         for locale in LOCALES {
             let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+            if post::blog_exists_for_topic(pool, topic.topic_id, locale).await? {
+                continue;
+            }
             if !post::slug_exists(pool, &slug).await? {
                 missing_locales.push(locale);
             } else {
@@ -326,6 +344,9 @@ pub async fn run_blog_generation(
         let mut missing_locales: Vec<&str> = Vec::new();
         for locale in LOCALES {
             let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+            if post::blog_exists_for_topic(pool, topic.topic_id, locale).await? {
+                continue;
+            }
             if !post::slug_exists(pool, &slug).await? {
                 missing_locales.push(locale);
             } else {
