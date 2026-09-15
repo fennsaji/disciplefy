@@ -7,23 +7,8 @@ on:
     # Job-level if-conditions determine which notifications run at each hour
     # ============================================================================
     #
-    # Hour mapping (all notifications that run at each UTC hour):
-    # UTC 0:  Daily Verse (6 AM UTC+6), Memory Verse Reminder (9 AM UTC+9)
-    # UTC 2:  Recommended Topic (8 AM UTC+6)
-    # UTC 3:  Daily Verse (6 AM UTC+3), Memory Verse Reminder (9 AM UTC+6)
-    # UTC 5:  Recommended Topic (8 AM UTC+3)
-    # UTC 6:  Daily Verse (6 AM UTC+0), Memory Verse Reminder (9 AM UTC+3)
-    # UTC 8:  Recommended Topic (8 AM UTC+0)
-    # UTC 9:  Daily Verse (6 AM UTC-3), Memory Verse Reminder (9 AM UTC+0)
-    # UTC 11: Recommended Topic (8 AM UTC-3)
-    # UTC 12: Daily Verse (6 AM UTC-6), Memory Verse Reminder (9 AM UTC-3)
-    # UTC 14: Recommended Topic (8 AM UTC-6)
-    # UTC 15: Daily Verse (6 AM UTC-9), Memory Verse Reminder (9 AM UTC-6)
-    # UTC 17: Recommended Topic (8 AM UTC-9)
-    # UTC 18: Daily Verse (6 AM UTC+12), Memory Verse Reminder (9 AM UTC-9)
-    # UTC 20: Recommended Topic (8 AM UTC+12)
-    # UTC 21: Daily Verse (6 AM UTC+9), Memory Verse Reminder (9 AM UTC+12)
-    # UTC 23: Recommended Topic (8 AM UTC+9)
+    # Daily Verse (8 AM local) and Recommended Topic (9 AM local) are triggered
+    # by pg_cron every 15 minutes; here they run on manual dispatch only.
     #
     # ============================================================================
 
@@ -138,20 +123,18 @@ jobs:
     needs: [send-daily-verse]
     name: Send Recommended Topic Notifications (Prod)
 
-    # Run on schedule OR manual dispatch
+    # Manual dispatch only: pg_cron triggers this every 15 minutes (migration
+    # 20260915090000), for the same reason as the Daily Verse job above.
     # always() so one category failing or having nothing to send does not
     # break the chain for the categories after it.
     if: |
-      always() && (
-        github.event_name == 'schedule' ||
-        (github.event_name == 'workflow_dispatch' &&
-         (github.event.inputs.notification_type == 'recommended_topic' ||
-          github.event.inputs.notification_type == 'all'))
-      )
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.notification_type == 'recommended_topic' ||
+       github.event.inputs.notification_type == 'all')
 
     steps:
-      # No hour gate — see the Daily Verse job above; the Edge Function owns the
-      # local-time window and every hourly run acts as a catch-up.
+      # The Edge Function owns the 9 AM local-time window and catch-up.
       - name: Send Recommended Topic Push Notifications (Prod)
         run: |
           echo "Triggering Recommended Topic notification Edge Function (Production)..."
@@ -194,7 +177,7 @@ jobs:
           echo "Job Status: ${{ job.status }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
-          echo "Notification Type: Recommended Topic (8 AM local, catch-up window)"
+          echo "Notification Type: Recommended Topic (9 AM local, catch-up window)"
 
   # ==========================================================================
   # Job 3: Send Streak Reminder Notifications

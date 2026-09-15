@@ -2,7 +2,8 @@
 // Send Recommended Topic Notification Edge Function
 // ============================================================================
 // Sends recommended Bible study topic push notifications to all eligible users
-// Triggered by GitHub Actions workflow at 8 AM across different timezones
+// Delivered at 9 AM in each user's local time. Triggered every 15 minutes by
+// pg_cron (migration 20260915090000).
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
@@ -35,8 +36,8 @@ interface RecommendedTopicUser extends NotificationUser {
 // Helper Functions
 // ============================================================================
 
-/** Intended local delivery time: 8 AM. */
-const TARGET_LOCAL_MINUTES = 8 * 60
+/** Intended local delivery time: 9 AM. */
+const TARGET_LOCAL_MINUTES = 9 * 60
 
 async function getAllUserTokens(
   supabase: ServiceContainer['supabaseServiceClient']
@@ -88,7 +89,7 @@ function enrichUsersWithTimezone(
 }
 
 /**
- * Fetches users whose local time has reached the 8 AM target and who have
+ * Fetches users whose local time has reached the 9 AM target and who have
  * recommended topic notifications enabled.
  *
  * Evaluated as a forward-looking catch-up window rather than a single exact UTC
@@ -297,7 +298,7 @@ function isResponse(value: unknown): value is Response {
 // ============================================================================
 
 /**
- * Handles sending recommended topic push notifications to eligible users at 8 AM in their timezone.
+ * Handles sending recommended topic push notifications to eligible users at 9 AM in their timezone.
  * Uses unified notification selector to send either "Continue Learning" or "For You" notifications.
  *
  * @param req - HTTP request with cron secret for authentication
@@ -310,7 +311,7 @@ async function handleRecommendedTopicNotification(req: Request, services: Servic
   console.log('[RecommendedTopic] Starting notification process...')
 
   const now = new Date()
-  console.log(`[RecommendedTopic] UTC time: ${now.toISOString()}, target: 08:00 local (+ catch-up window)`)
+  console.log(`[RecommendedTopic] UTC time: ${now.toISOString()}, target: 09:00 local (+ catch-up window)`)
 
   const result = await prepareUserNotifications(services.supabaseServiceClient, notificationHelper, now)
   if (isResponse(result)) return result
