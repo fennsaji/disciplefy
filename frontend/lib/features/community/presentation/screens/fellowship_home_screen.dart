@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -1328,16 +1329,31 @@ class _FellowshipLessonsPage extends StatefulWidget {
 }
 
 class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
+  /// The language this member picked for this group's lessons; null means
+  /// the group's own language.
   AppLanguage? _selectedLanguage;
+
+  /// Kept per fellowship, and apart from the app-wide study language: reading
+  /// a Hindi group's lessons in English should not change every other study.
+  String get _languagePrefKey =>
+      'fellowship_lessons_language_${widget.fellowshipId}';
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = sl<SharedPreferences>().getString(_languagePrefKey);
+    if (saved != null) _selectedLanguage = AppLanguage.fromCode(saved);
+  }
 
   Future<void> _showLanguageSelector(BuildContext context) async {
     final theme = Theme.of(context);
-    final languageService = sl<LanguagePreferenceService>();
-    final currentLanguage = await languageService.getStudyContentLanguage();
-    final isDefault = await languageService.isStudyContentLanguageDefault();
-    final appLanguage = await languageService.getSelectedLanguage();
-
-    if (!context.mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final prefs = sl<SharedPreferences>();
+    final groupCode =
+        context.read<FellowshipStudyBloc>().state.fellowshipLanguage;
+    final groupLanguage =
+        groupCode == null ? null : AppLanguage.fromCode(groupCode);
+    final isDefault = _selectedLanguage == null;
 
     await showModalBottomSheet(
       context: context,
@@ -1366,33 +1382,34 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
               ),
             ),
             ListTile(
-              title: Text(context
-                  .tr(TranslationKeys.studyTopicsContentLanguageDefault)),
-              subtitle: Text(
-                '${context.tr(TranslationKeys.studyTopicsContentLanguageDefaultDescription)} (${appLanguage.displayName})',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
+              title: Text(l10n.lessonsGroupLanguage),
+              subtitle: groupLanguage == null
+                  ? null
+                  : Text(
+                      groupLanguage.displayName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
               trailing: isDefault
                   ? Icon(Icons.check, color: theme.colorScheme.primary)
                   : null,
               onTap: () async {
-                await languageService.saveStudyContentLanguage(null);
+                await prefs.remove(_languagePrefKey);
                 if (sheetContext.mounted) Navigator.pop(sheetContext);
                 if (mounted) setState(() => _selectedLanguage = null);
               },
             ),
             const Divider(height: 1),
             ...AppLanguage.values.map((language) {
-              final isSelected = !isDefault && language == currentLanguage;
+              final isSelected = !isDefault && language == _selectedLanguage;
               return ListTile(
                 title: Text(language.displayName),
                 trailing: isSelected
                     ? Icon(Icons.check, color: theme.colorScheme.primary)
                     : null,
                 onTap: () async {
-                  await languageService.saveStudyContentLanguage(language);
+                  await prefs.setString(_languagePrefKey, language.code);
                   if (sheetContext.mounted) Navigator.pop(sheetContext);
                   if (mounted) setState(() => _selectedLanguage = language);
                 },
@@ -1794,7 +1811,9 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
       ),
       body: FellowshipLessonsTabScreen(
         fellowshipId: widget.fellowshipId,
-        languageOverride: _selectedLanguage?.code,
+        // The member's pick for this group, else the group's language.
+        languageOverride: _selectedLanguage?.code ??
+            context.watch<FellowshipStudyBloc>().state.fellowshipLanguage,
       ),
     );
   }

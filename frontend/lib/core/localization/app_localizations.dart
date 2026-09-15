@@ -357,6 +357,7 @@ class AppLocalizations {
       'lessonsAdvanceGuide': 'Advance to Next Guide',
       'lessonsFinishPath': 'Finish Path',
       'lessonsResetProgress': 'Reset Progress',
+      'lessonsGroupLanguage': 'Group language',
       'lessonsAdvanceConfirm':
           'Mark current guide complete and advance to the next?',
       'lessonsCompleted': 'Study Completed!',
@@ -1128,6 +1129,7 @@ class AppLocalizations {
       'lessonsAdvanceGuide': 'अगले गाइड पर जाएं',
       'lessonsFinishPath': 'पाठ पूर्ण करें',
       'lessonsResetProgress': 'प्रगति रीसेट करें',
+      'lessonsGroupLanguage': 'समूह की भाषा',
       'lessonsAdvanceConfirm': 'वर्तमान गाइड पूर्ण करें और अगले पर जाएं?',
       'lessonsCompleted': 'अध्ययन पूर्ण!',
       'lessonsGuideProgress': 'गाइड',
@@ -1901,6 +1903,7 @@ class AppLocalizations {
       'lessonsAdvanceGuide': 'അടുത്ത ഗൈഡിലേക്ക് മുന്നേറുക',
       'lessonsFinishPath': 'പഠനം പൂർത്തിയാക്കുക',
       'lessonsResetProgress': 'പുരോഗതി പുനഃക്രമീകരിക്കുക',
+      'lessonsGroupLanguage': 'ഗ്രൂപ്പിന്റെ ഭാഷ',
       'lessonsAdvanceConfirm':
           'നിലവിലെ ഗൈഡ് പൂർത്തിയാക്കി അടുത്തതിലേക്ക് മുന്നേറണോ?',
       'lessonsCompleted': 'പഠനം പൂർത്തിയായി!',
@@ -2758,6 +2761,8 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsFinishPath']!;
   String get lessonsResetProgress =>
       _localizedValues[locale.languageCode]!['lessonsResetProgress']!;
+  String get lessonsGroupLanguage =>
+      _localizedValues[locale.languageCode]!['lessonsGroupLanguage']!;
   String get lessonsAdvanceConfirm =>
       _localizedValues[locale.languageCode]!['lessonsAdvanceConfirm']!;
   String get lessonsCompleted =>
