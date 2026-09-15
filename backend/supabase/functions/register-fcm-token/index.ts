@@ -47,7 +47,6 @@ interface UpdatePreferencesRequest {
   fellowshipMeetingReminderEnabled?: boolean
   fellowshipMeetingCancelledEnabled?: boolean
   fellowshipMeetingInviteEnabled?: boolean
-  meetingInviteEnabled?: boolean
   fellowshipMentorPromotedEnabled?: boolean
   fellowshipMemberJoinedEnabled?: boolean
   fellowshipMentionEnabled?: boolean
@@ -76,7 +75,6 @@ interface PreferencesUpdate {
   fellowship_meeting_reminder_enabled?: boolean
   fellowship_meeting_cancelled_enabled?: boolean
   fellowship_meeting_invite_enabled?: boolean
-  meeting_invite_enabled?: boolean
   fellowship_mentor_promoted_enabled?: boolean
   fellowship_member_joined_enabled?: boolean
   fellowship_mention_enabled?: boolean
@@ -109,7 +107,6 @@ function toPreferencesResponse(row: Record<string, any>) {
     fellowshipMeetingReminderEnabled: row.fellowship_meeting_reminder_enabled,
     fellowshipMeetingCancelledEnabled: row.fellowship_meeting_cancelled_enabled,
     fellowshipMeetingInviteEnabled: row.fellowship_meeting_invite_enabled,
-    meetingInviteEnabled: row.meeting_invite_enabled,
     fellowshipMentorPromotedEnabled: row.fellowship_mentor_promoted_enabled,
     fellowshipMemberJoinedEnabled: row.fellowship_member_joined_enabled,
     fellowshipMentionEnabled: row.fellowship_mention_enabled,
@@ -352,9 +349,6 @@ async function handleUpdatePreferences(
   }
   if (requestData.fellowshipMeetingInviteEnabled !== undefined) {
     updateData.fellowship_meeting_invite_enabled = requestData.fellowshipMeetingInviteEnabled
-  }
-  if (requestData.meetingInviteEnabled !== undefined) {
-    updateData.meeting_invite_enabled = requestData.meetingInviteEnabled
   }
   if (requestData.fellowshipMentorPromotedEnabled !== undefined) {
     updateData.fellowship_mentor_promoted_enabled = requestData.fellowshipMentorPromotedEnabled

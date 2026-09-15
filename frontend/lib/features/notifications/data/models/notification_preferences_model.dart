@@ -30,7 +30,6 @@ class NotificationPreferencesModel extends NotificationPreferences {
     super.fellowshipMeetingReminderEnabled,
     super.fellowshipMeetingCancelledEnabled,
     super.fellowshipMeetingInviteEnabled,
-    super.meetingInviteEnabled,
     super.fellowshipMentorPromotedEnabled,
     super.fellowshipMemberJoinedEnabled,
     super.fellowshipMentionEnabled,
@@ -148,9 +147,6 @@ class NotificationPreferencesModel extends NotificationPreferences {
           json['fellowship_meeting_invite_enabled'] as bool? ??
               json['fellowshipMeetingInviteEnabled'] as bool? ??
               true,
-      meetingInviteEnabled: json['meeting_invite_enabled'] as bool? ??
-          json['meetingInviteEnabled'] as bool? ??
-          true,
       fellowshipMentorPromotedEnabled:
           json['fellowship_mentor_promoted_enabled'] as bool? ??
               json['fellowshipMentorPromotedEnabled'] as bool? ??
@@ -206,7 +202,6 @@ class NotificationPreferencesModel extends NotificationPreferences {
       'fellowship_meeting_reminder_enabled': fellowshipMeetingReminderEnabled,
       'fellowship_meeting_cancelled_enabled': fellowshipMeetingCancelledEnabled,
       'fellowship_meeting_invite_enabled': fellowshipMeetingInviteEnabled,
-      'meeting_invite_enabled': meetingInviteEnabled,
       'fellowship_mentor_promoted_enabled': fellowshipMentorPromotedEnabled,
       'fellowship_member_joined_enabled': fellowshipMemberJoinedEnabled,
       'fellowship_mention_enabled': fellowshipMentionEnabled,
@@ -242,7 +237,6 @@ class NotificationPreferencesModel extends NotificationPreferences {
       fellowshipMeetingCancelledEnabled:
           entity.fellowshipMeetingCancelledEnabled,
       fellowshipMeetingInviteEnabled: entity.fellowshipMeetingInviteEnabled,
-      meetingInviteEnabled: entity.meetingInviteEnabled,
       fellowshipMentorPromotedEnabled: entity.fellowshipMentorPromotedEnabled,
       fellowshipMemberJoinedEnabled: entity.fellowshipMemberJoinedEnabled,
       fellowshipMentionEnabled: entity.fellowshipMentionEnabled,

@@ -128,7 +128,9 @@ const PREFERENCE_COLUMN: Record<string, string> = {
   memory_verse_reminder: 'memory_verse_reminder_enabled',
   memory_verse_overdue: 'memory_verse_overdue_enabled',
   achievement_unlocked: 'achievement_unlocked_enabled',
-  meeting_invite: 'meeting_invite_enabled',
+  // The meeting invite logs as 'meeting_invite' but is governed by the
+  // fellowship meeting invite switch.
+  meeting_invite: 'fellowship_meeting_invite_enabled',
   fellowship_daily_post: 'fellowship_daily_post_enabled',
   fellowship_new_post: 'fellowship_new_post_enabled',
   fellowship_new_comment: 'fellowship_new_comment_enabled',

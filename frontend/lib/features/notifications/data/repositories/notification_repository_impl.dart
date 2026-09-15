@@ -204,7 +204,6 @@ class NotificationRepositoryImpl implements NotificationRepository {
     bool? fellowshipMeetingReminderEnabled,
     bool? fellowshipMeetingCancelledEnabled,
     bool? fellowshipMeetingInviteEnabled,
-    bool? meetingInviteEnabled,
     bool? fellowshipMentorPromotedEnabled,
     bool? fellowshipMemberJoinedEnabled,
     bool? fellowshipMentionEnabled,
@@ -391,8 +390,6 @@ class NotificationRepositoryImpl implements NotificationRepository {
                 fellowshipMeetingCancelledEnabled,
           if (fellowshipMeetingInviteEnabled != null)
             'fellowshipMeetingInviteEnabled': fellowshipMeetingInviteEnabled,
-          if (meetingInviteEnabled != null)
-            'meetingInviteEnabled': meetingInviteEnabled,
           if (fellowshipMentorPromotedEnabled != null)
             'fellowshipMentorPromotedEnabled': fellowshipMentorPromotedEnabled,
           if (fellowshipMemberJoinedEnabled != null)
