@@ -361,9 +361,14 @@ class _FellowshipHomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final title = (fellowshipName != null && fellowshipName!.isNotEmpty)
-        ? fellowshipName!
-        : l10n.fellowshipDefaultTitle;
+    // Opened with only an id (invite or deep link): use the loaded name.
+    final loadedName =
+        context.select((FellowshipStudyBloc b) => b.state.fellowshipName);
+    final name = (fellowshipName != null && fellowshipName!.isNotEmpty)
+        ? fellowshipName
+        : loadedName;
+    final title =
+        (name != null && name.isNotEmpty) ? name : l10n.fellowshipDefaultTitle;
 
     return MultiBlocListener(
       listeners: [
