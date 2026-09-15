@@ -588,7 +588,7 @@ pub async fn create_post_if_not_exists(
                                  source_type, source_topic_id, source_learning_path_id,
                                  source_guide_id, published_at, scheduled_for)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-         ON CONFLICT (slug) DO NOTHING
+         ON CONFLICT DO NOTHING
          RETURNING *",
     )
     .bind(&slug)
@@ -612,6 +612,28 @@ pub async fn create_post_if_not_exists(
 }
 
 /// Returns true if a blog post with the given slug already exists.
+/// Whether the lesson (`topic_id` = recommended_topics.id) already has a blog
+/// in `locale`, however the post was linked: older posts carry the lesson's
+/// learning_path_topics.id instead. Checked before paying for a generation.
+pub async fn blog_exists_for_topic(
+    pool: &PgPool,
+    topic_id: Uuid,
+    locale: &str,
+) -> Result<bool, AppError> {
+    let exists: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM blog_posts
+             WHERE locale = $2
+               AND (source_topic_id = $1
+                    OR source_topic_id IN (SELECT id FROM learning_path_topics WHERE topic_id = $1)))",
+    )
+    .bind(topic_id)
+    .bind(locale)
+    .fetch_one(pool)
+    .await?;
+    Ok(exists)
+}
+
 pub async fn slug_exists(pool: &PgPool, slug: &str) -> Result<bool, AppError> {
     let exists: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM blog_posts WHERE slug = $1)")
