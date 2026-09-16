@@ -113,6 +113,9 @@ class FellowshipEntity extends Equatable {
   /// activity in this fellowship.
   final bool myDisciplerActivityPush;
 
+  /// Whether the current user muted this fellowship's notifications.
+  final bool myNotificationsMuted;
+
   const FellowshipEntity({
     required this.id,
     required this.name,
@@ -138,6 +141,7 @@ class FellowshipEntity extends Equatable {
     this.dailyPostFrequencyDays = 1,
     this.dailyPostAutoAdvance = true,
     this.myDisciplerActivityPush = true,
+    this.myNotificationsMuted = false,
   });
 
   /// True when the current user is allowed to create posts in this fellowship.
@@ -216,5 +220,6 @@ class FellowshipEntity extends Equatable {
         dailyPostFrequencyDays,
         dailyPostAutoAdvance,
         myDisciplerActivityPush,
+        myNotificationsMuted,
       ];
 }

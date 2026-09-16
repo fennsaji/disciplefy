@@ -769,6 +769,7 @@ class MockCommunityRepository extends _i1.Mock
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
+    bool? notificationsMuted,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -791,6 +792,7 @@ class MockCommunityRepository extends _i1.Mock
             #dailyPostFrequencyDays: dailyPostFrequencyDays,
             #dailyPostAutoAdvance: dailyPostAutoAdvance,
             #disciplerActivityPush: disciplerActivityPush,
+            #notificationsMuted: notificationsMuted,
           },
         ),
         returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
@@ -816,6 +818,7 @@ class MockCommunityRepository extends _i1.Mock
               #dailyPostFrequencyDays: dailyPostFrequencyDays,
               #dailyPostAutoAdvance: dailyPostAutoAdvance,
               #disciplerActivityPush: disciplerActivityPush,
+              #notificationsMuted: notificationsMuted,
             },
           ),
         )),

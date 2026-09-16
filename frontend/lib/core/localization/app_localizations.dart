@@ -358,6 +358,10 @@ class AppLocalizations {
       'lessonsFinishPath': 'Finish Path',
       'lessonsResetProgress': 'Reset Progress',
       'lessonsGroupLanguage': 'Group language',
+      'fellowshipMuteNotifications': 'Mute notifications',
+      'fellowshipUnmuteNotifications': 'Unmute notifications',
+      'fellowshipNotificationsMuted': 'Notifications muted for this group',
+      'fellowshipNotificationsUnmuted': 'Notifications on for this group',
       'lessonsAdvanceConfirm':
           'Mark current guide complete and advance to the next?',
       'lessonsCompleted': 'Study Completed!',
@@ -1130,6 +1134,10 @@ class AppLocalizations {
       'lessonsFinishPath': 'पाठ पूर्ण करें',
       'lessonsResetProgress': 'प्रगति रीसेट करें',
       'lessonsGroupLanguage': 'समूह की भाषा',
+      'fellowshipMuteNotifications': 'सूचनाएं म्यूट करें',
+      'fellowshipUnmuteNotifications': 'सूचनाएं चालू करें',
+      'fellowshipNotificationsMuted': 'इस समूह की सूचनाएं म्यूट हैं',
+      'fellowshipNotificationsUnmuted': 'इस समूह की सूचनाएं चालू हैं',
       'lessonsAdvanceConfirm': 'वर्तमान गाइड पूर्ण करें और अगले पर जाएं?',
       'lessonsCompleted': 'अध्ययन पूर्ण!',
       'lessonsGuideProgress': 'गाइड',
@@ -1904,6 +1912,10 @@ class AppLocalizations {
       'lessonsFinishPath': 'പഠനം പൂർത്തിയാക്കുക',
       'lessonsResetProgress': 'പുരോഗതി പുനഃക്രമീകരിക്കുക',
       'lessonsGroupLanguage': 'ഗ്രൂപ്പിന്റെ ഭാഷ',
+      'fellowshipMuteNotifications': 'അറിയിപ്പുകൾ നിശ്ശബ്ദമാക്കുക',
+      'fellowshipUnmuteNotifications': 'അറിയിപ്പുകൾ ഓണാക്കുക',
+      'fellowshipNotificationsMuted': 'ഈ ഗ്രൂപ്പിന്റെ അറിയിപ്പുകൾ നിശ്ശബ്ദമാണ്',
+      'fellowshipNotificationsUnmuted': 'ഈ ഗ്രൂപ്പിന്റെ അറിയിപ്പുകൾ ഓണാണ്',
       'lessonsAdvanceConfirm':
           'നിലവിലെ ഗൈഡ് പൂർത്തിയാക്കി അടുത്തതിലേക്ക് മുന്നേറണോ?',
       'lessonsCompleted': 'പഠനം പൂർത്തിയായി!',
@@ -2763,6 +2775,14 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsResetProgress']!;
   String get lessonsGroupLanguage =>
       _localizedValues[locale.languageCode]!['lessonsGroupLanguage']!;
+  String get fellowshipMuteNotifications =>
+      _localizedValues[locale.languageCode]!['fellowshipMuteNotifications']!;
+  String get fellowshipUnmuteNotifications =>
+      _localizedValues[locale.languageCode]!['fellowshipUnmuteNotifications']!;
+  String get fellowshipNotificationsMuted =>
+      _localizedValues[locale.languageCode]!['fellowshipNotificationsMuted']!;
+  String get fellowshipNotificationsUnmuted =>
+      _localizedValues[locale.languageCode]!['fellowshipNotificationsUnmuted']!;
   String get lessonsAdvanceConfirm =>
       _localizedValues[locale.languageCode]!['lessonsAdvanceConfirm']!;
   String get lessonsCompleted =>

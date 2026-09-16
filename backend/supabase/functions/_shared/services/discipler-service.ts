@@ -201,8 +201,30 @@ export async function deliverOrQueue(
   data: Record<string, string>,
   opts: DeliverOptions,
 ): Promise<DeliverResult> {
-  const recipients = [...new Set(userIds)].filter(Boolean)
+  let recipients = [...new Set(userIds)].filter(Boolean)
   if (recipients.length === 0) return { sentTo: 0, queuedTo: 0 }
+
+  // A member who muted this fellowship gets none of its pushes, urgent ones
+  // included: muting is their own explicit choice about this group. Every
+  // fellowship push carries fellowship_id in its data payload.
+  const fellowshipId = data.fellowship_id
+  if (fellowshipId) {
+    const { data: mutedRows, error: muteError } = await db
+      .from('fellowship_members')
+      .select('user_id')
+      .eq('fellowship_id', fellowshipId)
+      .eq('notifications_muted', true)
+      .in('user_id', recipients)
+    if (muteError) {
+      // Fail open: a missed push is worse than one the user muted.
+      console.error('[deliverOrQueue] Mute lookup failed, sending to all (non-fatal):', muteError.message)
+    } else if (mutedRows && mutedRows.length > 0) {
+      const muted = new Set((mutedRows as { user_id: string }[]).map((r) => r.user_id))
+      recipients = recipients.filter((id) => !muted.has(id))
+      console.log(`[deliverOrQueue] ${muted.size} recipient(s) muted this fellowship`)
+      if (recipients.length === 0) return { sentTo: 0, queuedTo: 0 }
+    }
+  }
 
   const now = new Date()
   let sendNow: string[] = recipients

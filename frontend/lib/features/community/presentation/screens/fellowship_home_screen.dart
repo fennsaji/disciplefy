@@ -525,6 +525,13 @@ class _FellowshipHomeContent extends StatelessWidget {
                 if (value == 'daily_post') {
                   context.push('/community/$fellowshipId/daily-post');
                 }
+                if (value == 'mute_notifications') {
+                  await _toggleMuteNotifications(
+                    context,
+                    fellowshipId,
+                    !(fellowship?.myNotificationsMuted ?? false),
+                  );
+                }
                 if (value == 'delete') _showDeleteConfirm(context);
               },
               itemBuilder: (_) => [
@@ -565,6 +572,25 @@ class _FellowshipHomeContent extends StatelessWidget {
                           style: TextStyle(color: context.appTextPrimary)),
                     ]),
                   ),
+                PopupMenuItem(
+                  value: 'mute_notifications',
+                  child: Row(children: [
+                    Icon(
+                      (fellowship?.myNotificationsMuted ?? false)
+                          ? Icons.notifications_active_outlined
+                          : Icons.notifications_off_outlined,
+                      color: context.appTextPrimary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      (fellowship?.myNotificationsMuted ?? false)
+                          ? l10n.fellowshipUnmuteNotifications
+                          : l10n.fellowshipMuteNotifications,
+                      style: TextStyle(color: context.appTextPrimary),
+                    ),
+                  ]),
+                ),
                 if (isMentor)
                   PopupMenuItem(
                     value: 'delete',
@@ -2142,4 +2168,40 @@ class _NotAMemberCardState extends State<_NotAMemberCard> {
       ),
     );
   }
+}
+
+/// Mutes or unmutes this fellowship's notifications for the current user.
+///
+/// Per group, and only for them: a member in several groups can quieten a busy
+/// one without switching a whole category off everywhere.
+Future<void> _toggleMuteNotifications(
+  BuildContext context,
+  String fellowshipId,
+  bool muted,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+  final result = await sl<CommunityRepository>().updateFellowship(
+    fellowshipId: fellowshipId,
+    notificationsMuted: muted,
+  );
+  if (!context.mounted) return;
+  result.fold(
+    (failure) => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(failure.message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      )),
+    (_) => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(muted
+            ? l10n.fellowshipNotificationsMuted
+            : l10n.fellowshipNotificationsUnmuted),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      )),
+  );
 }
