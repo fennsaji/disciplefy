@@ -132,7 +132,7 @@
         <!-- FCM Default Notification Channel (must match a registered channel) -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="daily_verse" />
+            android:value="general" />
 
         <!-- Background service for learning path downloads -->
         <service
