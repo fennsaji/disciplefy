@@ -2189,7 +2189,7 @@ Future<void> _toggleMuteNotifications(
     (failure) => ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
-        content: Text(failure.message),
+        content: Text(ErrorMessageSanitizer.sanitize(failure)),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
