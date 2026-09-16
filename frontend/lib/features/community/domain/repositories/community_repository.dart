@@ -227,6 +227,7 @@ abstract class CommunityRepository {
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
+    bool? notificationsMuted,
   });
 
   /// Promotes [userId] to mentor in [fellowshipId] (mentor only).

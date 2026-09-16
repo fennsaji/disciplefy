@@ -69,7 +69,9 @@ class NotificationService {
   // One channel per user-visible notification category so that Android shows
   // each as a separate entry under Settings > App > Notifications.
 
-  // These 6 channels map 1-to-1 with the 6 toggles shown in Notification Settings.
+  // One channel per category the user can recognise. Every push type maps to
+  // one of these (see _channelIdForType); the backend stamps the same id on
+  // the message so Android uses it even when the app is closed.
   static const _allAndroidChannels = [
     AndroidNotificationChannel(
       'daily_verse',
@@ -107,9 +109,46 @@ class NotificationService {
       description: 'Get reminded daily when you have verses due for review',
       importance: Importance.high,
     ),
+    AndroidNotificationChannel(
+      'fellowship_posts',
+      'Fellowship Posts',
+      description: 'New posts, comments and reactions in your fellowships',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'fellowship_mentions',
+      'Mentions',
+      description: 'When someone tags you in a post or comment',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'fellowship_discipler',
+      'Discipler',
+      description:
+          "Discipler replies and a summary of the Discipler's activity",
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'fellowship_meetings',
+      'Meetings',
+      description: 'Meeting invites, reminders and cancellations',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'fellowship_updates',
+      'Fellowship Updates',
+      description: 'When someone joins your fellowship or becomes a mentor',
+    ),
+    AndroidNotificationChannel(
+      'general',
+      'Other',
+      description: 'Notifications that do not belong to another category',
+    ),
   ];
 
   /// Returns the Android channel ID for a given FCM notification type.
+  /// Mirrors _shared/utils/notification-channels.ts on the backend; the two are
+  /// kept in step by notification-channel-drift.test.ts.
   static String _channelIdForType(String? type) {
     switch (type) {
       case 'daily_verse':
@@ -121,11 +160,35 @@ class NotificationService {
       case 'streak_reminder':
         return 'streak_reminders';
       case 'streak_milestone':
+      case 'achievement_unlocked':
         return 'streak_milestones';
       case 'streak_lost':
         return 'streak_reset_motivation';
+      case 'memory_verse_reminder':
+      case 'memory_verse_overdue':
+        return 'memory_verse_reminders';
+      case 'fellowship_daily_post':
+      case 'fellowship_new_post':
+      case 'fellowship_new_comment':
+      case 'fellowship_reaction':
+      case 'fellowship_question':
+        return 'fellowship_posts';
+      case 'fellowship_mention':
+        return 'fellowship_mentions';
+      case 'fellowship_discipler_reply':
+      case 'fellowship_discipler_activity':
+        return 'fellowship_discipler';
+      case 'fellowship_meeting':
+      case 'fellowship_meeting_reminder':
+      case 'fellowship_meeting_cancelled':
+      case 'fellowship_meeting_invite':
+      case 'meeting_invite':
+        return 'fellowship_meetings';
+      case 'fellowship_member_joined':
+      case 'fellowship_mentor_promoted':
+        return 'fellowship_updates';
       default:
-        return 'daily_verse'; // fallback
+        return 'general';
     }
   }
 

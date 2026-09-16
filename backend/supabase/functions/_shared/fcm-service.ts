@@ -8,6 +8,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { formatError, formatFCMError } from './utils/error-formatter.ts';
 import { SCHEDULED_NOTIFICATION_TYPES_FOR_SPACING } from './utils/notification-window.ts';
 import type { NotificationType } from './services/notification-helper-service.ts';
+import { channelIdForType } from './utils/notification-channels.ts';
+
 
 // ============================================================================
 // Configuration Constants
@@ -43,6 +45,9 @@ interface FCMMessage {
   data?: Record<string, string>;
   android?: {
     priority: 'high' | 'normal';
+    notification?: {
+      channel_id?: string;
+    };
   };
   apns?: {
     headers: Record<string, string>;
@@ -250,7 +255,22 @@ export class FCMService {
       const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${this.credentials.projectId}/messages:send`;
 
       // Extract validateOnly flag and remove it from message
-      const { validateOnly, ...messageWithoutValidateOnly } = message;
+      const { validateOnly, ...rest } = message;
+
+      // Name the Android channel, so a push that arrives while the app is
+      // closed is shown in its own category instead of the manifest default.
+      const messageWithoutValidateOnly = {
+        ...rest,
+        android: {
+          priority: rest.android?.priority ?? 'high',
+          ...rest.android,
+          notification: {
+            ...rest.android?.notification,
+            channel_id: rest.android?.notification?.channel_id ??
+              channelIdForType(rest.data?.type),
+          },
+        },
+      };
 
       // Build request body with validate_only at top level (FCM v1 API requirement)
       const requestBody: FCMRequestBody = {

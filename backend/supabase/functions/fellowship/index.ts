@@ -47,6 +47,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
       role,
       joined_at,
       discipler_activity_push,
+      notifications_muted,
       fellowships (
         id,
         name,
@@ -212,6 +213,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
         daily_post_post_now_allowed: fellowship.daily_post_post_now_allowed ?? false,
         my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
+        my_notifications_muted: (membership as any).notifications_muted ?? false,
         completed_path_ids: completedPathsByFellowship.get(fellowshipId) ?? [],
         current_study: study
           ? {
@@ -1004,6 +1006,7 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     is_official?: boolean; discipler_allowed?: boolean; daily_post_allowed?: boolean
     discipler_reply_mode?: string; discipler_reply_scope?: string; discipler_reply_delay_min?: number
     discipler_react_enabled?: boolean; daily_post_on?: boolean; discipler_activity_push?: boolean
+    notifications_muted?: boolean
     daily_post_frequency_days?: number; daily_post_auto_advance?: boolean
   }
   try {
@@ -1014,6 +1017,26 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
   if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
 
   const db = services.supabaseServiceClient
+
+  // Muting is the member's own choice about their notifications, so it is
+  // handled before the mentor guard below: every member may set it, and a
+  // request carrying only this field needs no mentor rights.
+  if (typeof body.notifications_muted === 'boolean') {
+    const { error: muteError } = await db.from('fellowship_members')
+      .update({ notifications_muted: body.notifications_muted })
+      .eq('fellowship_id', body.fellowship_id).eq('user_id', user.id)
+    if (muteError) {
+      console.error('[fellowship/update] Mute update error:', muteError)
+      throw new AppError('DATABASE_ERROR', 'Failed to update notification mute', 500)
+    }
+    const onlyMute = Object.keys(body).every((k) => k === 'fellowship_id' || k === 'notifications_muted')
+    if (onlyMute) {
+      return new Response(
+        JSON.stringify({ success: true, data: { notifications_muted: body.notifications_muted } }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
 
   const { data: isMentor, error: rpcError } = await db.rpc('is_fellowship_mentor', {
     p_fellowship_id: body.fellowship_id,

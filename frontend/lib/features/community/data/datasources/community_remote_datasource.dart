@@ -189,6 +189,7 @@ abstract class CommunityRemoteDatasource {
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
+    bool? notificationsMuted,
   });
 
   /// Promotes [userId] to mentor in [fellowshipId] (mentor only).
@@ -1604,6 +1605,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
+    bool? notificationsMuted,
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipUpdateEndpoint';
@@ -1642,6 +1644,9 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       }
       if (disciplerActivityPush != null) {
         bodyMap['discipler_activity_push'] = disciplerActivityPush;
+      }
+      if (notificationsMuted != null) {
+        bodyMap['notifications_muted'] = notificationsMuted;
       }
       final body = jsonEncode(bodyMap);
 

@@ -604,6 +604,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
+    bool? notificationsMuted,
   }) async {
     try {
       await _datasource.updateFellowship(
@@ -623,6 +624,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         dailyPostFrequencyDays: dailyPostFrequencyDays,
         dailyPostAutoAdvance: dailyPostAutoAdvance,
         disciplerActivityPush: disciplerActivityPush,
+        notificationsMuted: notificationsMuted,
       );
       return const Right(null);
     } on NetworkException catch (e) {

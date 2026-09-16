@@ -81,6 +81,9 @@ class FellowshipModel {
   /// activity in this fellowship.
   final bool myDisciplerActivityPush;
 
+  /// Whether the current user muted this fellowship's notifications.
+  final bool myNotificationsMuted;
+
   const FellowshipModel({
     required this.id,
     required this.name,
@@ -106,6 +109,7 @@ class FellowshipModel {
     this.dailyPostFrequencyDays = 1,
     this.dailyPostAutoAdvance = true,
     this.myDisciplerActivityPush = true,
+    this.myNotificationsMuted = false,
   });
 
   /// Creates a [FellowshipModel] from a JSON map (API response).
@@ -150,6 +154,7 @@ class FellowshipModel {
       dailyPostAutoAdvance: json['daily_post_auto_advance'] as bool? ?? true,
       myDisciplerActivityPush:
           json['my_discipler_activity_push'] as bool? ?? true,
+      myNotificationsMuted: json['my_notifications_muted'] as bool? ?? false,
     );
   }
 
@@ -179,5 +184,6 @@ class FellowshipModel {
         dailyPostFrequencyDays: dailyPostFrequencyDays,
         dailyPostAutoAdvance: dailyPostAutoAdvance,
         myDisciplerActivityPush: myDisciplerActivityPush,
+        myNotificationsMuted: myNotificationsMuted,
       );
 }

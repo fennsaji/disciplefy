@@ -54,6 +54,7 @@ class _FakeRepository extends Fake implements CommunityRepository {
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
+    bool? notificationsMuted,
   }) async {
     fellowshipUpdates.add({
       'fellowshipId': fellowshipId,
