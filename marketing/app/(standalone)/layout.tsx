@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description:
     "Study the Bible deeper with study guides in your language. Free to download.",
   metadataBase: new URL("https://www.disciplefy.in"),
+  openGraph: {
+    siteName: "Disciplefy",
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+  },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",

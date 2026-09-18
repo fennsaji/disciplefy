@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   title: "An invitation to a Disciplefy fellowship",
   description: "Open Disciplefy to accept the invitation and join the group.",
   robots: { index: false, follow: false },
+  // Generic brand card only — never the fellowship's own name or content,
+  // which would leak it to every chat the invite link passes through.
+  openGraph: {
+    images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
+  },
   // iOS shows OPEN when the app is installed and VIEW when it is not. No
   // app-argument here: the invite token is a secret and does not belong in a
   // banner other apps can read.

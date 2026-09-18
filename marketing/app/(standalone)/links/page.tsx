@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: "Disciplefy — All Links",
   description: "Download the Disciplefy app, follow along, or get in touch.",
   alternates: { canonical: "https://links.disciplefy.in/" },
+  openGraph: {
+    images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
+  },
 };
 
 const SECTION_LABEL = "mb-2.5 ml-1 mt-5 text-[10px] font-extrabold uppercase tracking-[0.11em] text-[#94A3B8]";

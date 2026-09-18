@@ -17,6 +17,9 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     title: "Cancellation & Refund Policy — Disciplefy",
     description: "Disciplefy's cancellation and refund policy for token purchases.",
     alternates: getAlternates("/refund", params.locale),
+    openGraph: {
+      images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
+    },
   };
 }
 

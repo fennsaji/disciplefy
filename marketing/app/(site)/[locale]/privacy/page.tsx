@@ -17,6 +17,9 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     title: "Privacy Policy — Disciplefy",
     description: "How Disciplefy collects, uses, and protects your personal data.",
     alternates: getAlternates("/privacy", params.locale),
+    openGraph: {
+      images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
+    },
   };
 }
 

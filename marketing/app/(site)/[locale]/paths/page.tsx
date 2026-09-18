@@ -24,6 +24,7 @@ export async function generateMetadata({
       description:
         "Structured Bible study journeys. Browse learning paths and read every article in each, in order.",
       type: "website",
+      images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
     },
   };
 }
