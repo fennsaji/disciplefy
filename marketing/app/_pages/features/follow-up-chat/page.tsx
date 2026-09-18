@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/follow-up-chat"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Follow-Up+Chat&subtitle=Ask+Deeper+Bible+Questions`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Bible Study Follow-Up Chat — Disciplefy",
     }],
   },

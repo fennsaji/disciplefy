@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/fellowship"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Fellowship&subtitle=Group+Bible+Study+with+Google+Meet`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Christian Fellowship Groups — Disciplefy",
     }],
   },

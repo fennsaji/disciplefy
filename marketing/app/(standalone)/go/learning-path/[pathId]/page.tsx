@@ -41,7 +41,7 @@ export async function generateMetadata(
     openGraph: {
       title,
       description,
-      images: [{ url: `/og?title=${encodeURIComponent(title)}` }],
+      images: [{ url: `/og-default.png` }],
     },
     twitter: { card: "summary_large_image", title, description },
     // Carries the deep link, so tapping OPEN lands on this path.

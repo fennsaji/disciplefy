@@ -151,24 +151,68 @@ async function lastDailyPost(db: Db, fellowshipId: string) {
 
 interface LessonRow { id: string; position: number; topic_id: string; title: string }
 
-/** Visible lessons of a path from `fromPosition`, localized to `language`. */
+/**
+ * Visible lessons of a path from `fromPosition`, localized to `language`.
+ *
+ * Fetches in position-ordered batches and keeps requesting more until either
+ * `limit` active lessons are found or the path genuinely has no more —
+ * mirroring rs-backend's `current_lesson`, which searches forward from a
+ * position with no cap. A single fixed-size fetch (this used to be
+ * `limit * 3` rows, filtered afterward) undercounts whenever a long run of
+ * inactive/hidden positions follows the current lesson: the whole window can
+ * fill with inactive rows and the caller sees zero upcoming lessons even
+ * though an active one exists further down. That showed up as "No new lesson
+ * is queued" in the Daily Post screen while the actual posting job — which
+ * has no such cap — found and posted the next lesson normally.
+ */
 async function visibleLessons(
   db: Db, pathId: string, fromPosition: number, language: string, limit: number,
 ): Promise<LessonRow[]> {
-  const { data: rows } = await db.from('learning_path_topics')
-    .select('id, position, topic_id')
-    .eq('learning_path_id', pathId)
-    .eq('is_active', true)
-    .gte('position', fromPosition)
-    .order('position', { ascending: true })
-    .limit(limit * 3)
-  const candidates = (rows ?? []) as { id: string; position: number; topic_id: string }[]
-  if (candidates.length === 0) return []
+  const BATCH = Math.max(limit * 3, 30)
+  const MAX_SCANNED = 2000 // guards a pathological/corrupt path from looping forever
 
-  const topicIds = candidates.map((r) => r.topic_id)
+  const found: { id: string; position: number; topic_id: string }[] = []
+  let cursor = fromPosition
+  let scanned = 0
+
+  while (found.length < limit && scanned < MAX_SCANNED) {
+    const { data: rows } = await db.from('learning_path_topics')
+      .select('id, position, topic_id')
+      .eq('learning_path_id', pathId)
+      .eq('is_active', true)
+      .gte('position', cursor)
+      .order('position', { ascending: true })
+      .limit(BATCH)
+    const candidates = (rows ?? []) as { id: string; position: number; topic_id: string }[]
+    if (candidates.length === 0) break // no more rows at or after cursor: path exhausted
+
+    const topicIds = candidates.map((r) => r.topic_id)
+    const { data: topics } = await db.from('recommended_topics')
+      .select('id, is_active').in('id', topicIds)
+    const activeTopicIds = new Set(
+      ((topics ?? []) as { id: string; is_active: boolean | null }[])
+        .filter((t) => t.is_active === true)
+        .map((t) => t.id)
+    )
+
+    for (const r of candidates) {
+      if (activeTopicIds.has(r.topic_id)) {
+        found.push(r)
+        if (found.length >= limit) break
+      }
+    }
+
+    scanned += candidates.length
+    cursor = candidates[candidates.length - 1].position + 1
+    if (candidates.length < BATCH) break // fewer rows than asked for: reached the end
+  }
+
+  if (found.length === 0) return []
+
+  const topicIds = found.map((r) => r.topic_id)
   const { data: topics } = await db.from('recommended_topics')
-    .select('id, title, is_active').in('id', topicIds)
-  const topicById = new Map((topics ?? []).map((t: { id: string; title: string; is_active: boolean | null }) => [t.id, t]))
+    .select('id, title').in('id', topicIds)
+  const titleById = new Map((topics ?? []).map((t: { id: string; title: string }) => [t.id, t.title]))
 
   const titles = new Map<string, string>()
   if (language !== 'en') {
@@ -179,15 +223,12 @@ async function visibleLessons(
     }
   }
 
-  return candidates
-    .filter((r) => topicById.get(r.topic_id)?.is_active === true)
-    .slice(0, limit)
-    .map((r) => ({
-      id: r.id,
-      position: r.position,
-      topic_id: r.topic_id,
-      title: titles.get(r.topic_id) ?? topicById.get(r.topic_id)!.title,
-    }))
+  return found.map((r) => ({
+    id: r.id,
+    position: r.position,
+    topic_id: r.topic_id,
+    title: titles.get(r.topic_id) ?? titleById.get(r.topic_id)!,
+  }))
 }
 
 // ---------------------------------------------------------------------------

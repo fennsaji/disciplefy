@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/study-guides"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Study+Guides&subtitle=Structured+for+Any+Passage`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Bible Study Guide App — Free | Disciplefy",
     }],
   },

@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/about"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=About+Disciplefy&subtitle=Our+Mission`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "About Disciplefy — Our Mission",
     }],
   },

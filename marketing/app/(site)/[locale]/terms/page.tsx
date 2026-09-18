@@ -17,6 +17,9 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     title: "Terms of Service — Disciplefy",
     description: "Terms and conditions for using Disciplefy.",
     alternates: getAlternates("/terms", params.locale),
+    openGraph: {
+      images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
+    },
   };
 }
 

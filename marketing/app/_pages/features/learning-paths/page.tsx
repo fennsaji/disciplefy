@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/learning-paths"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Learning+Paths&subtitle=Structured+Discipleship+Journeys`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Bible Discipleship Learning Paths — Disciplefy",
     }],
   },

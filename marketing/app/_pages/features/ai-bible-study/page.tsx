@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/ai-bible-study"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Bible+Study&subtitle=Instant+Personalised+Study+Guides`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Bible Study Guide App — Disciplefy",
     }],
   },

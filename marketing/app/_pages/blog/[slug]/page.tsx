@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       authors: [post.author],
       tags: post.tags,
       images: [{
-        url: `https://www.disciplefy.in/og?title=${encodeURIComponent(post.title)}&subtitle=Disciplefy+Blog`,
+        url: `https://www.disciplefy.in/og-default.png`,
         width: 1200,
-        height: 675,
+        height: 630,
         alt: post.title,
       }],
     },

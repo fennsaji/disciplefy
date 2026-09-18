@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/voice-buddy"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Voice+Buddy&subtitle=Talk+to+Your+Bible+Companion`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Voice Bible Study App — Disciplefy",
     }],
   },

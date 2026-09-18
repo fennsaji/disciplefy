@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Get Disciplefy",
     description: "AI-powered Bible study guides — English · हिन्दी · മലയാളം",
-    images: [{ url: "/og?title=Get%20Disciplefy" }],
+    images: [{ url: "/og-default.png" }],
   },
   twitter: { card: "summary_large_image", title: "Get Disciplefy" },
   itunes: { appId: APP_STORE_ID },

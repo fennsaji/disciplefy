@@ -2077,6 +2077,22 @@ class _MemberProgressSection extends StatelessWidget {
             ? pathsState.pathDetail.topics.length
             : fellowshipTotalGuides;
 
+        // The topic at the fellowship's own position — not _findNowTopic,
+        // which factors in the *viewing* member's personal completion and can
+        // return a different (or no) lesson than the "X/Y" count just above
+        // it. Looking up by position keeps this chip always in agreement with
+        // that count.
+        LearningPathTopic? currentTopic;
+        if (pathsState is LearningPathDetailLoaded &&
+            fellowshipGuideIndex != null) {
+          for (final t in pathsState.pathDetail.topics) {
+            if (t.position == fellowshipGuideIndex) {
+              currentTopic = t;
+              break;
+            }
+          }
+        }
+
         return BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
           buildWhen: (prev, curr) =>
               prev.members != curr.members || prev.status != curr.status,
@@ -2202,6 +2218,53 @@ class _MemberProgressSection extends StatelessWidget {
                                   context.appPrimary),
                             ),
                           ),
+                          if (currentTopic != null) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color:
+                                    context.appPrimary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.menu_book_rounded,
+                                    size: 14,
+                                    color: context.appPrimary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: RichText(
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 12,
+                                          color: context.appTextSecondary,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                              text:
+                                                  '${l10n.lessonsCurrentLesson}: '),
+                                          TextSpan(
+                                            text: currentTopic.title,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: context.appPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

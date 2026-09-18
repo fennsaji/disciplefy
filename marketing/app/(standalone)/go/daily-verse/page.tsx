@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: `/og?title=${encodeURIComponent("Today's verse")}` }],
+    images: [{ url: `/og-default.png` }],
   },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
   itunes: { appId: APP_STORE_ID, appArgument: APP_URL },

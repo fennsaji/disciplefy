@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/vs/youversion"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Disciplefy+vs+YouVersion&subtitle=Which+Bible+App+Is+Better?`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Disciplefy vs YouVersion comparison",
     }],
   },

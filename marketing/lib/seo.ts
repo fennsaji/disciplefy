@@ -99,7 +99,7 @@ export function getBlogPostingJsonLd(
     },
     image: {
       "@type": "ImageObject",
-      url: `${BASE}/og?title=${encodeURIComponent(post.title)}&subtitle=Disciplefy+Blog`,
+      url: `${BASE}/og-default.png`,
       width: 1200,
       height: 675,
     },

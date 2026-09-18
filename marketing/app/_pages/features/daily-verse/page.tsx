@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/daily-verse"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Daily+Bible+Verse&subtitle=Fresh+Devotional+Every+Day`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Bible Verse of the Day App — Disciplefy",
     }],
   },

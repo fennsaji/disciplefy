@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "Contact Disciplefy — Get in Touch",
   description: "Reach out for support, feedback, partnerships, or privacy inquiries. We're here to help.",
   alternates: getAlternates("/contact"),
+  openGraph: {
+    images: [{ url: "https://www.disciplefy.in/og-default.png", width: 1200, height: 630 }],
+  },
 };
 
 const contacts = [
