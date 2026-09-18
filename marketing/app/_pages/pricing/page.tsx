@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/pricing"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Pricing&subtitle=Simple%2C+Affordable+Plans`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Disciplefy pricing plans",
     }],
   },

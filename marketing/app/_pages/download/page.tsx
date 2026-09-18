@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   alternates: getAlternates("/download"),
   openGraph: {
     images: [{
-      url: `https://www.disciplefy.in/og?title=Download+Disciplefy&subtitle=Free+Bible+Study+App`,
+      url: `https://www.disciplefy.in/og-default.png`,
       width: 1200,
-      height: 675,
+      height: 630,
       alt: "Download Disciplefy — Free Bible Study App",
     }],
   },

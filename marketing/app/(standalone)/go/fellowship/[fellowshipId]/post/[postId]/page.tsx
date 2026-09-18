@@ -62,7 +62,7 @@ export async function generateMetadata(
       description: snippet,
       type: "article",
       images: [
-        { url: `/og?title=${encodeURIComponent(previewSnippet(preview.content ?? "", 90))}` },
+        { url: `/og-default.png` },
       ],
     },
     twitter: { card: "summary_large_image", title, description: snippet },

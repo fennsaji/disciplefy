@@ -33,7 +33,7 @@ export async function generateMetadata(
     openGraph: {
       title: TITLE,
       description: DESCRIPTION,
-      images: [{ url: `/og?title=${encodeURIComponent("Bible study guide")}` }],
+      images: [{ url: `/og-default.png` }],
     },
     twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
     ...(UUID.test(guideId)

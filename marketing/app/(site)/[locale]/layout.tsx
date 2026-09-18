@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     locale: "en_IN",
     images: [
       {
-        url: "/og?title=Disciplefy&subtitle=Bible Study in Your Language",
+        url: "/og-default.png",
         width: 1200,
-        height: 675,
+        height: 630,
       },
     ],
   },
