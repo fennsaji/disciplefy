@@ -30,6 +30,9 @@ export interface LearningPathMeta {
   slug: string;
   title: string;
   post_count: number;
+  // Optional so the page keeps working against an API that predates them.
+  category?: string;
+  disciple_level?: string;
 }
 
 export interface Post extends PostMeta {
