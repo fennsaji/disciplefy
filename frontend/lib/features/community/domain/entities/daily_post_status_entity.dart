@@ -85,6 +85,11 @@ class DailyPostSettingsEntity extends Equatable {
   final int frequencyDays;
   final bool autoAdvance;
 
+  /// Independent of [autoAdvance]: whether the Discipler picks a new
+  /// learning path on its own once the current one is finished or has
+  /// nothing left to post, rather than waiting for the mentor to assign one.
+  final bool autoAdvancePath;
+
   /// IST posting time, `HH:MM`.
   final String time;
   final String? skipDate;
@@ -104,6 +109,7 @@ class DailyPostSettingsEntity extends Equatable {
     required this.dailyPostOn,
     required this.frequencyDays,
     required this.autoAdvance,
+    this.autoAdvancePath = true,
     required this.time,
     this.skipDate,
     this.pausedUntil,
@@ -119,6 +125,7 @@ class DailyPostSettingsEntity extends Equatable {
         dailyPostOn,
         frequencyDays,
         autoAdvance,
+        autoAdvancePath,
         time,
         skipDate,
         pausedUntil,

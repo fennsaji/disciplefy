@@ -676,6 +676,20 @@ class _ScheduleSection extends StatelessWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
+              l10n.disciplerAdvancesPath,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            subtitle: Text(l10n.disciplerAdvancesPathSubtitle),
+            value: settings.autoAdvancePath,
+            onChanged: saving || !settings.dailyPostOn
+                ? null
+                : (v) => bloc.add(
+                    FellowshipDailyPostSettingsChanged(autoAdvancePath: v)),
+          ),
+          Divider(height: 1, color: scheme.outlineVariant),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
               l10n.dailyPostSkipNext,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),

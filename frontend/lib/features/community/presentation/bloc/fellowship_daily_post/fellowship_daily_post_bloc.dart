@@ -107,6 +107,7 @@ class FellowshipDailyPostBloc
       dailyPostOn: event.dailyPostOn,
       dailyPostFrequencyDays: event.frequencyDays,
       dailyPostAutoAdvance: event.autoAdvance,
+      dailyPostAutoAdvancePath: event.autoAdvancePath,
     );
     emit(state.copyWith(
       saving: false,

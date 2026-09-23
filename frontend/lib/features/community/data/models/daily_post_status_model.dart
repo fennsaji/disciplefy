@@ -19,6 +19,7 @@ class DailyPostStatusModel {
         dailyPostOn: settings['daily_post_on'] as bool? ?? false,
         frequencyDays: (settings['frequency_days'] as num?)?.toInt() ?? 1,
         autoAdvance: settings['auto_advance'] as bool? ?? true,
+        autoAdvancePath: settings['auto_advance_path'] as bool? ?? true,
         time: settings['time'] as String? ?? '06:30',
         skipDate: settings['skip_date'] as String?,
         pausedUntil: settings['paused_until'] as String?,

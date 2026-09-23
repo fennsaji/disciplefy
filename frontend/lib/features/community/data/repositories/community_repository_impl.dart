@@ -603,6 +603,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     bool? dailyPostOn,
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
+    bool? dailyPostAutoAdvancePath,
     bool? disciplerActivityPush,
     bool? notificationsMuted,
   }) async {
@@ -623,6 +624,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         dailyPostOn: dailyPostOn,
         dailyPostFrequencyDays: dailyPostFrequencyDays,
         dailyPostAutoAdvance: dailyPostAutoAdvance,
+        dailyPostAutoAdvancePath: dailyPostAutoAdvancePath,
         disciplerActivityPush: disciplerActivityPush,
         notificationsMuted: notificationsMuted,
       );
