@@ -250,7 +250,9 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
     .eq('fellowship_id', f.id).maybeSingle()
 
   // The lesson the job posts next. Mirrors resolve_post_plan for the common
-  // case; when the path is exhausted the job picks the next path itself.
+  // case; when the path is exhausted the job picks the next path itself, but
+  // only if daily_post_auto_advance_path is on — otherwise it posts nothing
+  // until the mentor assigns a new path from the Lessons tab.
   let upcoming: LessonRow[] = []
   let pathTitle: string | null = null
   let pathTotal = 0
