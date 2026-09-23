@@ -248,7 +248,7 @@ async fn post_for_fellowship(
 
     // Spec §4 step 2 + §5: resolved entirely in memory, nothing written yet.
     let Some(PostPlan { lesson, write }) =
-        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance)
+        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance, f.daily_post_auto_advance_path)
             .await?
     else {
         tracing::debug!(fellowship = %f.name, "No lesson to post today — skipping");
@@ -343,7 +343,7 @@ async fn generate_preview(
     );
 
     let Some(PostPlan { lesson, .. }) =
-        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance)
+        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance, f.daily_post_auto_advance_path)
             .await?
     else {
         return Err(AppError::BadRequest(
@@ -389,7 +389,7 @@ async fn regenerate_preview(
 
     let last = fellowship_daily::last_daily_post(pool, f.id).await?;
     let Some(PostPlan { lesson, .. }) =
-        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance)
+        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance, f.daily_post_auto_advance_path)
             .await?
     else {
         return Err(AppError::BadRequest(
