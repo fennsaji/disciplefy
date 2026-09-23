@@ -67,6 +67,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         daily_post_on,
         daily_post_frequency_days,
         daily_post_auto_advance,
+        daily_post_auto_advance_path,
         daily_post_time,
         daily_post_preview_allowed,
         daily_post_regenerate_allowed,
@@ -208,6 +209,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         daily_post_on: fellowship.daily_post_on ?? true,
         daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
         daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+        daily_post_auto_advance_path: fellowship.daily_post_auto_advance_path ?? true,
         daily_post_time: fellowship.daily_post_time ?? '06:30',
         daily_post_preview_allowed: fellowship.daily_post_preview_allowed ?? false,
         daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
@@ -1007,7 +1009,7 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     discipler_reply_mode?: string; discipler_reply_scope?: string; discipler_reply_delay_min?: number
     discipler_react_enabled?: boolean; daily_post_on?: boolean; discipler_activity_push?: boolean
     notifications_muted?: boolean
-    daily_post_frequency_days?: number; daily_post_auto_advance?: boolean
+    daily_post_frequency_days?: number; daily_post_auto_advance?: boolean; daily_post_auto_advance_path?: boolean
   }
   try {
     body = await req.json()
@@ -1131,6 +1133,7 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     updates.daily_post_frequency_days = body.daily_post_frequency_days
   }
   if (typeof body.daily_post_auto_advance === 'boolean') updates.daily_post_auto_advance = body.daily_post_auto_advance
+  if (typeof body.daily_post_auto_advance_path === 'boolean') updates.daily_post_auto_advance_path = body.daily_post_auto_advance_path
   if (typeof body.discipler_activity_push === 'boolean') {
     await db.from('fellowship_members').update({ discipler_activity_push: body.discipler_activity_push })
       .eq('fellowship_id', body.fellowship_id).eq('user_id', user.id)
@@ -1186,6 +1189,7 @@ function fellowshipSettingsPayload(fellowship: any) {
     daily_post_on: fellowship.daily_post_on ?? true,
     daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
     daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+    daily_post_auto_advance_path: fellowship.daily_post_auto_advance_path ?? true,
     daily_post_time: fellowship.daily_post_time ?? '06:30',
     daily_post_preview_allowed: fellowship.daily_post_preview_allowed ?? false,
     daily_post_regenerate_allowed: fellowship.daily_post_regenerate_allowed ?? false,
