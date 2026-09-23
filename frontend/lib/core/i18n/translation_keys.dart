@@ -22,6 +22,7 @@ class TranslationKeys {
   static const studyGuidePdfWaitMessage =
       'study_guide.actions.pdf_wait_message';
   static const studyGuidePdfFinalizing = 'study_guide.actions.pdf_finalizing';
+  static const studyGuidePdfSavedTo = 'study_guide.actions.pdf_saved_to';
 
   // Study Guide Streaming
   static const studyGuideStreamingLoading = 'study_guide.streaming.loading';

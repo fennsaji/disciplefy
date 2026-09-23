@@ -52,6 +52,7 @@ class AppTranslations {
         'generating_pdf': 'Generating PDF...',
         'pdf_wait_message': 'This may take a few seconds',
         'pdf_finalizing': 'Finalizing download...',
+        'pdf_saved_to': 'Saved to Download/Disciplefy',
       },
       'streaming': {
         'loading': 'Loading study guide...',
@@ -2234,6 +2235,7 @@ class AppTranslations {
         'generating_pdf': 'PDF बना रहे हैं...',
         'pdf_wait_message': 'कुछ सेकंड लग सकते हैं',
         'pdf_finalizing': 'डाउनलोड तैयार हो रहा है...',
+        'pdf_saved_to': 'Download/Disciplefy में सहेजा गया',
       },
       'streaming': {
         'loading': 'स्टडी गाइड लोड हो रही है...',
@@ -4418,6 +4420,7 @@ class AppTranslations {
         'generating_pdf': 'PDF ഉണ്ടാക്കുന്നു...',
         'pdf_wait_message': 'കുറച്ച് സെക്കൻഡ് എടുക്കും',
         'pdf_finalizing': 'ഡൗൺലോഡ് തയ്യാറാകുന്നു...',
+        'pdf_saved_to': 'Download/Disciplefy-ൽ സേവ് ചെയ്തു',
       },
       'streaming': {
         'loading': 'സ്റ്റഡി ഗൈഡ് ലോഡ് ചെയ്യുന്നു...',
