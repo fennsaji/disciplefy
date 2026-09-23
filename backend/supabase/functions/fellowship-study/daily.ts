@@ -113,7 +113,7 @@ async function requireMentor(db: Db, fellowshipId: string, userId: string): Prom
 
 const FELLOWSHIP_COLUMNS = [
   'id', 'language', 'is_official', 'daily_post_allowed', 'daily_post_on', 'daily_post_frequency_days',
-  'daily_post_auto_advance', 'daily_post_time', 'daily_post_skip_date', 'daily_post_paused_until',
+  'daily_post_auto_advance', 'daily_post_auto_advance_path', 'daily_post_time', 'daily_post_skip_date', 'daily_post_paused_until',
   'daily_post_preview_allowed', 'daily_post_regenerate_allowed', 'daily_post_post_now_allowed',
 ].join(', ')
 
@@ -250,7 +250,9 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
     .eq('fellowship_id', f.id).maybeSingle()
 
   // The lesson the job posts next. Mirrors resolve_post_plan for the common
-  // case; when the path is exhausted the job picks the next path itself.
+  // case; when the path is exhausted the job picks the next path itself, but
+  // only if daily_post_auto_advance_path is on — otherwise it posts nothing
+  // until the mentor assigns a new path from the Lessons tab.
   let upcoming: LessonRow[] = []
   let pathTitle: string | null = null
   let pathTotal = 0
@@ -368,6 +370,7 @@ export async function handleDailyStatus(req: Request, services: ServiceContainer
       daily_post_on: scheduleOn,
       frequency_days: f.daily_post_frequency_days ?? 1,
       auto_advance: f.daily_post_auto_advance ?? true,
+      auto_advance_path: f.daily_post_auto_advance_path ?? true,
       time: f.daily_post_time ?? '06:30',
       skip_date: f.daily_post_skip_date,
       paused_until: f.daily_post_paused_until,

@@ -31,6 +31,10 @@ pub struct DailyFellowship {
     pub language: String,
     pub daily_post_frequency_days: i32,
     pub daily_post_auto_advance: bool,
+    /// Independent of `daily_post_auto_advance`: whether the Discipler may
+    /// pick a new learning path on its own once the current one finishes or
+    /// has nothing left to post. See `resolve_post_plan`.
+    pub daily_post_auto_advance_path: bool,
     /// IST posting time, `HH:MM` (see the `fellowships_daily_post_time_check`).
     pub daily_post_time: String,
     pub daily_post_skip_date: Option<NaiveDate>,
@@ -43,6 +47,7 @@ pub struct DailyFellowship {
 
 const DAILY_FELLOWSHIP_COLUMNS: &str =
     "f.id, f.name, f.language, f.daily_post_frequency_days, f.daily_post_auto_advance,
+     f.daily_post_auto_advance_path,
      f.daily_post_time, f.daily_post_skip_date, f.daily_post_paused_until,
      f.daily_post_last_failed_at, f.daily_post_preview_allowed,
      f.daily_post_regenerate_allowed, f.daily_post_post_now_allowed";
@@ -738,29 +743,42 @@ async fn resolve_switch_plan(
 /// bootstraps a brand-new fellowship's first path, which never discards a
 /// pending post).
 ///
-/// A completed study row, or a stored index with no active lesson left at or
-/// after it (position gaps, topics hidden/removed after the fact), both mean
-/// "this path is exhausted" and always resolve to the next path — this must
-/// not depend on `auto_advance`, or a fellowship with auto-advance off would
-/// be stranded on an exhausted path forever. `auto_advance` only gates the
-/// mentor-facing decision in spec §4 step 2: move past a lesson that was
-/// already posted.
+/// Two independent decisions, two independent flags:
+///   - `auto_advance` gates the mentor-facing decision in spec §4 step 2:
+///     move past a lesson that was already posted, to the next one *in the
+///     same path*.
+///   - `auto_advance_path` gates picking a *different* path once the current
+///     one is exhausted — completed, or a stored index with no active lesson
+///     left at or after it (position gaps, topics hidden/removed after the
+///     fact). With it off, an exhausted path returns `Ok(None)` instead of
+///     switching: the mentor assigns the next path themselves (the same
+///     picker `/set` uses), rather than the Discipler choosing on its own.
+///     Default true preserves the old behaviour, where this could never
+///     depend on `auto_advance` alone — a fellowship with only lesson-pacing
+///     off must not be stranded on an exhausted path forever.
 pub async fn resolve_post_plan(
     pool: &PgPool,
     fellowship_id: Uuid,
     last: Option<&LastPost>,
     auto_advance: bool,
+    auto_advance_path: bool,
 ) -> Result<Option<PostPlan>, AppError> {
     let study = ensure_study(pool, fellowship_id).await?;
     let guard = StudyGuard::from_study(&study);
 
     if study.completed_at.is_some() {
+        if !auto_advance_path {
+            return Ok(None);
+        }
         return resolve_switch_plan(pool, &study).await;
     }
 
     let Some(lesson) =
         current_lesson(pool, study.learning_path_id, study.current_guide_index).await?
     else {
+        if !auto_advance_path {
+            return Ok(None);
+        }
         return resolve_switch_plan(pool, &study).await;
     };
 
@@ -798,6 +816,9 @@ pub async fn resolve_post_plan(
     // admin re-gaps positions after the fact.
     let next = current_lesson(pool, study.learning_path_id, lesson.position + 1).await?;
     if is_path_complete(&next) {
+        if !auto_advance_path {
+            return Ok(None);
+        }
         return resolve_switch_plan(pool, &study).await;
     }
     let next_lesson = next.expect("checked by is_path_complete");

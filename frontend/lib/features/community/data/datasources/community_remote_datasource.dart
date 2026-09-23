@@ -188,6 +188,7 @@ abstract class CommunityRemoteDatasource {
     bool? dailyPostOn,
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
+    bool? dailyPostAutoAdvancePath,
     bool? disciplerActivityPush,
     bool? notificationsMuted,
   });
@@ -1604,6 +1605,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     bool? dailyPostOn,
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
+    bool? dailyPostAutoAdvancePath,
     bool? disciplerActivityPush,
     bool? notificationsMuted,
   }) async {
@@ -1641,6 +1643,9 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       }
       if (dailyPostAutoAdvance != null) {
         bodyMap['daily_post_auto_advance'] = dailyPostAutoAdvance;
+      }
+      if (dailyPostAutoAdvancePath != null) {
+        bodyMap['daily_post_auto_advance_path'] = dailyPostAutoAdvancePath;
       }
       if (disciplerActivityPush != null) {
         bodyMap['discipler_activity_push'] = disciplerActivityPush;

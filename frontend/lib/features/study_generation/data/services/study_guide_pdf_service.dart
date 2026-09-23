@@ -40,6 +40,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
+
+import 'pdf_downloads_stub.dart' if (dart.library.io) 'pdf_downloads_io.dart'
+    as pdf_downloads;
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/i18n/app_translations.dart';
@@ -1010,8 +1014,12 @@ class StudyGuidePdfService {
     return pdf.save();
   }
 
-  /// Shares the PDF using the system share sheet.
-  Future<void> sharePdf(
+  /// Saves the PDF to the device's downloads folder, then opens the system
+  /// share sheet for it.
+  ///
+  /// Returns the saved path, or null when the guide could only be shared
+  /// without being kept (web, iOS, or a failed write).
+  Future<String?> sharePdf(
     StudyGuide guide, {
     BuildContext? context,
     void Function(int step, int total)? onProgress,
@@ -1020,10 +1028,22 @@ class StudyGuidePdfService {
         await generatePdf(guide, context: context, onProgress: onProgress);
     final fileName = _generateFileName(guide);
 
-    await Printing.sharePdf(
-      bytes: pdfBytes,
-      filename: fileName,
+    final savedPath =
+        await pdf_downloads.savePdfToDownloads(pdfBytes, fileName);
+    if (savedPath == null) {
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+      return null;
+    }
+
+    // Share the file that was just written rather than a second temporary
+    // copy, so what the user shares is what they downloaded.
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(savedPath, mimeType: 'application/pdf')],
+        subject: guide.input,
+      ),
     );
+    return savedPath;
   }
 
   /// Generates a filename for the PDF based on the study guide.

@@ -109,6 +109,10 @@ class FellowshipEntity extends Equatable {
   /// automatically after each daily post.
   final bool dailyPostAutoAdvance;
 
+  /// Independent of [dailyPostAutoAdvance]: true when the Discipler may pick
+  /// a new learning path on its own once the current one is finished.
+  final bool dailyPostAutoAdvancePath;
+
   /// True when the current user wants push notifications for Discipler
   /// activity in this fellowship.
   final bool myDisciplerActivityPush;
@@ -140,6 +144,7 @@ class FellowshipEntity extends Equatable {
     this.dailyPostOn = true,
     this.dailyPostFrequencyDays = 1,
     this.dailyPostAutoAdvance = true,
+    this.dailyPostAutoAdvancePath = true,
     this.myDisciplerActivityPush = true,
     this.myNotificationsMuted = false,
   });
@@ -161,6 +166,7 @@ class FellowshipEntity extends Equatable {
     bool? dailyPostOn,
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
+    bool? dailyPostAutoAdvancePath,
     bool? myDisciplerActivityPush,
   }) {
     return FellowshipEntity(
@@ -190,6 +196,8 @@ class FellowshipEntity extends Equatable {
       dailyPostFrequencyDays:
           dailyPostFrequencyDays ?? this.dailyPostFrequencyDays,
       dailyPostAutoAdvance: dailyPostAutoAdvance ?? this.dailyPostAutoAdvance,
+      dailyPostAutoAdvancePath:
+          dailyPostAutoAdvancePath ?? this.dailyPostAutoAdvancePath,
       myDisciplerActivityPush:
           myDisciplerActivityPush ?? this.myDisciplerActivityPush,
     );
@@ -219,6 +227,7 @@ class FellowshipEntity extends Equatable {
         dailyPostOn,
         dailyPostFrequencyDays,
         dailyPostAutoAdvance,
+        dailyPostAutoAdvancePath,
         myDisciplerActivityPush,
         myNotificationsMuted,
       ];

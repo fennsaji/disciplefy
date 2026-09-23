@@ -53,6 +53,7 @@ class _FakeRepository extends Fake implements CommunityRepository {
     bool? dailyPostOn,
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
+    bool? dailyPostAutoAdvancePath,
     bool? disciplerActivityPush,
     bool? notificationsMuted,
   }) async {

@@ -768,6 +768,7 @@ class MockCommunityRepository extends _i1.Mock
     bool? dailyPostOn,
     int? dailyPostFrequencyDays,
     bool? dailyPostAutoAdvance,
+    bool? dailyPostAutoAdvancePath,
     bool? disciplerActivityPush,
     bool? notificationsMuted,
   }) =>
@@ -791,6 +792,7 @@ class MockCommunityRepository extends _i1.Mock
             #dailyPostOn: dailyPostOn,
             #dailyPostFrequencyDays: dailyPostFrequencyDays,
             #dailyPostAutoAdvance: dailyPostAutoAdvance,
+            #dailyPostAutoAdvancePath: dailyPostAutoAdvancePath,
             #disciplerActivityPush: disciplerActivityPush,
             #notificationsMuted: notificationsMuted,
           },
@@ -817,6 +819,7 @@ class MockCommunityRepository extends _i1.Mock
               #dailyPostOn: dailyPostOn,
               #dailyPostFrequencyDays: dailyPostFrequencyDays,
               #dailyPostAutoAdvance: dailyPostAutoAdvance,
+              #dailyPostAutoAdvancePath: dailyPostAutoAdvancePath,
               #disciplerActivityPush: disciplerActivityPush,
               #notificationsMuted: notificationsMuted,
             },

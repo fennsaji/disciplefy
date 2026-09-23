@@ -405,6 +405,12 @@ pub struct LearningPathListItem {
     pub slug: String,
     pub title: String,
     pub post_count: i64,
+    /// Editorial grouping ('Foundations', 'Growth', …). Seeded per path and
+    /// defaulted to '' for any path added since, so it can be empty.
+    pub category: String,
+    /// Target spiritual maturity (seeker/follower/disciple/leader). Has a
+    /// default but no NOT NULL on the column, so it can come back null.
+    pub disciple_level: Option<String>,
 }
 
 pub async fn list_learning_paths(
@@ -414,7 +420,9 @@ pub async fn list_learning_paths(
     let paths = sqlx::query_as::<_, LearningPathListItem>(
         "SELECT lp.slug,
                 COALESCE(lpt.title, lp.title) AS title,
-                COUNT(DISTINCT bp.id) AS post_count
+                COUNT(DISTINCT bp.id) AS post_count,
+                lp.category,
+                lp.disciple_level
          FROM learning_paths lp
          LEFT JOIN learning_path_translations lpt
                ON lpt.learning_path_id = lp.id AND lpt.lang_code = $1
@@ -426,7 +434,8 @@ pub async fn list_learning_paths(
                     OR bp.source_topic_id IN (SELECT x.topic_id FROM learning_path_topics x WHERE x.learning_path_id = lp.id)
                     OR bp.source_topic_id IN (SELECT x.id FROM learning_path_topics x WHERE x.learning_path_id = lp.id))
          WHERE lp.is_active = true
-         GROUP BY lp.slug, lp.title, lpt.title, lp.display_order
+         GROUP BY lp.slug, lp.title, lpt.title, lp.display_order,
+                  lp.category, lp.disciple_level
          HAVING COUNT(DISTINCT bp.id) > 0
          ORDER BY lp.display_order",
     )

@@ -715,6 +715,9 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'Discipler advances lessons',
       'disciplerAdvancesLessonsSubtitle':
           'Moves the group to the next lesson after each post',
+      'disciplerAdvancesPath': 'Discipler advances learning path',
+      'disciplerAdvancesPathSubtitle':
+          'Picks a new learning path once the current one is finished. Off leaves that to you.',
       'dailyPostScreenTitle': 'Daily post',
       'dailyPostNextTitle': 'Next post',
       'dailyPostOff': 'Daily posts are off. Turn on Post a daily study below.',
@@ -1488,6 +1491,9 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'डिसाइपलर पाठ आगे बढ़ाए',
       'disciplerAdvancesLessonsSubtitle':
           'हर पोस्ट के बाद समूह को अगले पाठ पर ले जाता है',
+      'disciplerAdvancesPath': 'डिसाइपलर लर्निंग पाथ आगे बढ़ाए',
+      'disciplerAdvancesPathSubtitle':
+          'वर्तमान पाथ पूरा होने पर नया पाथ खुद चुनता है। बंद होने पर यह आप पर छोड़ देता है।',
       'dailyPostScreenTitle': 'दैनिक पोस्ट',
       'dailyPostNextTitle': 'अगली पोस्ट',
       'dailyPostOff':
@@ -2271,6 +2277,9 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'ഡിസൈപ്ലർ പാഠങ്ങൾ മുന്നോട്ട് നീക്കും',
       'disciplerAdvancesLessonsSubtitle':
           'ഓരോ പോസ്റ്റിനു ശേഷവും ഗ്രൂപ്പിനെ അടുത്ത പാഠത്തിലേക്ക് നീക്കുന്നു',
+      'disciplerAdvancesPath': 'ഡിസൈപ്ലർ ലേണിംഗ് പാത്ത് മുന്നോട്ട് നീക്കും',
+      'disciplerAdvancesPathSubtitle':
+          'നിലവിലെ പാത്ത് പൂർത്തിയാകുമ്പോൾ പുതിയത് സ്വയം തിരഞ്ഞെടുക്കുന്നു. ഓഫ് ആണെങ്കിൽ അത് നിങ്ങൾക്ക് വിടുന്നു.',
       'dailyPostScreenTitle': 'ദിവസേനയുള്ള പോസ്റ്റ്',
       'dailyPostNextTitle': 'അടുത്ത പോസ്റ്റ്',
       'dailyPostOff':
@@ -3335,6 +3344,10 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['disciplerAdvancesLessons']!;
   String get disciplerAdvancesLessonsSubtitle => _localizedValues[
       locale.languageCode]!['disciplerAdvancesLessonsSubtitle']!;
+  String get disciplerAdvancesPath =>
+      _localizedValues[locale.languageCode]!['disciplerAdvancesPath']!;
+  String get disciplerAdvancesPathSubtitle =>
+      _localizedValues[locale.languageCode]!['disciplerAdvancesPathSubtitle']!;
   String _dailyPost(String key) =>
       _localizedValues[locale.languageCode]![key] ??
       _localizedValues['en']![key]!;

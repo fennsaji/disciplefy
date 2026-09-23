@@ -4541,6 +4541,7 @@ $appLink
     // Mutable progress state; updated via StatefulBuilder's setState.
     int pdfStep = 0;
     int pdfTotal = 0;
+    String? savedPdfMessage;
     StateSetter? updateDialog;
 
     if (!mounted) return;
@@ -4617,7 +4618,7 @@ $appLink
 
     try {
       final pdfService = StudyGuidePdfService();
-      await pdfService.sharePdf(
+      final savedPath = await pdfService.sharePdf(
         _currentStudyGuide!,
         context: context,
         onProgress: (step, total) {
@@ -4628,6 +4629,11 @@ $appLink
       );
       // Downloading the PDF counts as studying the guide.
       if (mounted) _markStudyGuideComplete(isManual: true);
+      // Only when it was actually kept: elsewhere it was shared and nothing
+      // was written to the device.
+      if (mounted && savedPath != null) {
+        savedPdfMessage = context.tr(TranslationKeys.studyGuidePdfSavedTo);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4641,6 +4647,13 @@ $appLink
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
         setState(() => _isExportingPdf = false);
+        // After the progress dialog is gone, so the snackbar is visible.
+        final message = savedPdfMessage;
+        if (message != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
       }
     }
   }
