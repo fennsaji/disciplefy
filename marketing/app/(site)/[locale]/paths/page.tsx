@@ -4,7 +4,7 @@ import { unstable_setRequestLocale } from "next-intl/server";
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import { PathsList } from "@/components/blog/PathsList";
+import { PathsList, readPathsFilters } from "@/components/blog/PathsList";
 import { getLearningPaths } from "@/lib/blog";
 import { type Locale } from "@/i18n";
 import { getAlternates } from "@/lib/seo";
@@ -31,10 +31,18 @@ export async function generateMetadata({
 
 export default async function LocalePathsPage({
   params,
+  searchParams,
 }: {
   params: { locale: Locale };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   unstable_setRequestLocale(params.locale);
   const paths = await getLearningPaths(params.locale);
-  return <PathsList paths={paths} locale={params.locale} />;
+  return (
+    <PathsList
+      paths={paths}
+      locale={params.locale}
+      filters={readPathsFilters(searchParams)}
+    />
+  );
 }

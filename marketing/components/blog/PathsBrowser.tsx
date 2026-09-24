@@ -3,7 +3,7 @@
 // Search + category/level filters over the learning-path grid. The whole list
 // arrives with the page (a handful of paths), so filtering is done in memory
 // rather than as a server round trip.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/navigation'
 import { FilterDropdown, type DropdownOption } from '@/components/ui/FilterDropdown'
 import type { LearningPathMeta } from '@/lib/blog'
@@ -112,14 +112,42 @@ function normalizeLevel(level?: string): string {
 export function PathsBrowser({
   paths,
   locale,
+  initialQuery = '',
+  initialCategory = '',
+  initialLevel = '',
 }: {
   paths: LearningPathMeta[]
   locale: string
+  initialQuery?: string
+  initialCategory?: string
+  initialLevel?: string
 }) {
   const t = COPY[locale] ?? COPY.en
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('')
-  const [level, setLevel] = useState('')
+  const [query, setQuery] = useState(initialQuery)
+  const [category, setCategory] = useState(initialCategory)
+  const [level, setLevel] = useState(normalizeLevel(initialLevel))
+
+  // Mirror the filters in the address bar so a copied link reopens the same
+  // view. replaceState rather than the router: every path is already on the
+  // page, so there is nothing to re-fetch, and a router push would also reset
+  // the scroll position mid-typing. It replaces rather than pushes so the back
+  // button leaves the page instead of walking back through each keystroke.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const set = (key: string, value: string) => {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    set('q', query.trim())
+    set('category', category)
+    set('level', level)
+    const qs = params.toString()
+    window.history.replaceState(
+      null,
+      '',
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    )
+  }, [query, category, level])
 
   const visible = useMemo(
     () => (paths ?? []).filter((p) => p.post_count > 0),
