@@ -6,6 +6,27 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const BLOG_API_URL = process.env.BLOG_API_URL || "http://localhost:8080";
 
+// Every request below runs inside a page render, and each caller already
+// degrades to an empty result on failure. That safety net only catches
+// *errors* though: a socket that is accepted and then never answered never
+// throws, so without a deadline the page hangs instead of degrading. This
+// exact gap took every blog post down via the affiliate-keyword lookup.
+//
+// Generous against an API that normally answers in well under a second;
+// a timed-out attempt throws, so the retry loops treat it as a failed try.
+const REQUEST_TIMEOUT_MS = 5000;
+const timeout = () => AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+
+// A timeout is not a transient blip: if the API accepted the socket and then
+// said nothing for five seconds, waiting through two more attempts will not
+// change the answer, it just triples what the reader waits for. Measured
+// against a black-hole API, retrying took the blog list to 16s where bailing
+// returns the same degraded page in 5s. Retries still apply to 5xx and to
+// connection-level errors, which genuinely do come and go.
+const isTimeout = (err: unknown) =>
+  err instanceof Error &&
+  (err.name === "TimeoutError" || err.name === "AbortError");
+
 export interface PostMeta {
   slug: string;
   title: string;
@@ -73,7 +94,10 @@ export async function getAllPosts(
       // An hour: this list is how a newly published post gets discovered, and
       // the blog page renders per request, so this is what bounds how stale
       // the listing can be.
-      const res = await fetch(url, { next: { revalidate: 3600 } });
+      const res = await fetch(url, {
+        next: { revalidate: 3600 },
+        signal: timeout(),
+      });
 
       if (!res.ok) {
         if (attempt < 3) { await delay(300 * attempt); continue; }
@@ -83,8 +107,8 @@ export async function getAllPosts(
       const json = await res.json();
       return { posts: json.data ?? [], pagination: json.pagination ?? EMPTY_PAGINATION };
     } catch (err) {
-      if (attempt < 3) { await delay(300 * attempt); continue; }
-      console.error("Failed to fetch posts after retries:", err);
+      if (!isTimeout(err) && attempt < 3) { await delay(300 * attempt); continue; }
+      console.error("Failed to fetch posts:", err);
       return { posts: [], pagination: EMPTY_PAGINATION };
     }
   }
@@ -120,7 +144,11 @@ function stripAppCtaFooter(content: string): string {
   if (!content) return content;
   const trimmed = content.replace(/\s+$/, "");
   const idx = trimmed.lastIndexOf("\n---");
-  if (idx !== -1 && trimmed.slice(idx).includes("app.disciplefy.in")) {
+  // Matches any disciplefy.in host rather than one named subdomain. This
+  // checked for app.disciplefy.in only, and when the backend switched the
+  // footer link to links.disciplefy.in the strip silently stopped firing —
+  // every post then rendered the backend CTA *and* the site's own card.
+  if (idx !== -1 && /disciplefy\.in/i.test(trimmed.slice(idx))) {
     return trimmed.slice(0, idx).replace(/\s+$/, "");
   }
   return content;
@@ -135,7 +163,10 @@ export const getPost = cache(async function getPost(slug: string): Promise<Post 
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       // Cached for 60s (ISR) — the page is no longer force-dynamic.
-      const res = await fetch(url, { next: { revalidate: 60 } });
+      const res = await fetch(url, {
+        next: { revalidate: 60 },
+        signal: timeout(),
+      });
 
       // Post genuinely doesn't exist → stop immediately, let caller notFound()
       if (res.status === 404) return null;
@@ -153,9 +184,9 @@ export const getPost = cache(async function getPost(slug: string): Promise<Post 
       }
       return post;
     } catch (err) {
-      // Network / timeout error → retry
-      if (attempt < 3) { await delay(300 * attempt); continue; }
-      console.error("Failed to fetch post after retries:", err);
+      // Connection-level error → retry; a timeout → give up (see isTimeout).
+      if (!isTimeout(err) && attempt < 3) { await delay(300 * attempt); continue; }
+      console.error("Failed to fetch post:", err);
       return null;
     }
   }
@@ -165,7 +196,9 @@ export const getPost = cache(async function getPost(slug: string): Promise<Post 
 export async function searchPosts(query: string, locale: Locale): Promise<PostMeta[]> {
   const params = new URLSearchParams({ q: query, locale });
   try {
-    const res = await fetch(`${BLOG_API_URL}/api/v1/posts/search?${params}`);
+    const res = await fetch(`${BLOG_API_URL}/api/v1/posts/search?${params}`, {
+      signal: timeout(),
+    });
     if (!res.ok) return [];
     const json = await res.json();
     return json.data ?? [];
@@ -189,7 +222,7 @@ export async function getAdjacentPosts(slug: string): Promise<AdjacentPosts> {
   try {
     const res = await fetch(
       `${BLOG_API_URL}/api/v1/posts/${encodeURIComponent(slug)}/adjacent`,
-      { next: { revalidate: 60 } },
+      { next: { revalidate: 60 }, signal: timeout() },
     );
     if (!res.ok) return { prev: null, next: null };
     const json = await res.json();
@@ -203,6 +236,7 @@ export async function getTags(locale: Locale): Promise<string[]> {
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/posts/tags?locale=${locale}`, {
       next: { revalidate: 60 },
+      signal: timeout(),
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -217,6 +251,7 @@ export async function getLearningPaths(locale: Locale): Promise<LearningPathMeta
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/learning-paths?locale=${locale}`, {
       next: { revalidate: 60 },
+      signal: timeout(),
     });
     if (!res.ok) return [];
     const json = await res.json();
