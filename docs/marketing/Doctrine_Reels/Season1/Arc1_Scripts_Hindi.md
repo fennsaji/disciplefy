@@ -1,6 +1,6 @@
 # Arc 1 — Hindi voiceover scripts (reels 1–4)
 
-Curriculum: [Curriculum.md](./Curriculum.md) · Arc 1 is the on-ramp —
+Curriculum: [Curriculum.md](../Curriculum.md) · Arc 1 is the on-ramp —
 concrete, narrative, person-first, for a viewer who may be very new or not yet
 converted.
 
@@ -209,7 +209,7 @@ Target: 49–50 seconds. Register: आप. Tone: direct, unhurried, no scolding.
 और यही वजह है कि अच्छे काम इसे मिटा नहीं सकते —
 क्योंकि जो टूटा है, वह हिसाब नहीं, रिश्ता है।
 
-इस रिश्ते को परमेश्वर ने कैसे जोड़ा — यह आगे देखेंगे।
+इस रिश्ते को जोड़ने का रास्ता परमेश्वर ने खुद कैसे बनाया — यह आगे देखेंगे।
 
 === END ===
 ```
