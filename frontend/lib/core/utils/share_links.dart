@@ -57,6 +57,24 @@ class ShareLinks {
       '$title — a guided Bible study path on Disciplefy\n\n'
       '${learningPath(pathId)}';
 
+  /// Copy/share text for a Bible verse.
+  ///
+  /// Every exit for verse text goes through here — copy as much as share.
+  /// They used to format their own strings and had drifted apart: copy carried
+  /// the API.Bible attribution but no link, share carried the link but no
+  /// attribution, which the API.Bible licence requires to travel with the text.
+  ///
+  /// [citedReference] already includes the translation, e.g. "Psalm 31:24 (KJV)".
+  static String verseMessage({
+    required String citedReference,
+    required String verseText,
+    required String link,
+  }) =>
+      '$citedReference\n\n$verseText\n\n'
+      'Scripture provided by API.Bible\n\n'
+      '— Shared from Disciplefy: Bible Study App\n'
+      '📱 $link';
+
   /// Link to a fellowship post, for sharing outside the app.
   static String fellowshipPost(String fellowshipId, String postId) {
     final origin = shareOrigin.endsWith('/')

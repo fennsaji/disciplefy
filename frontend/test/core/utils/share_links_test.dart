@@ -71,4 +71,34 @@ void main() {
       expect(message, contains(ShareLinks.learningPath('abc123')));
     });
   });
+
+  group('verseMessage', () {
+    test('carries the attribution and the link together', () {
+      // Copy and share used to build their own strings and had drifted:
+      // copy had the attribution but no link, share had the link but no
+      // attribution. Both are required on every exit.
+      final message = ShareLinks.verseMessage(
+        citedReference: 'Psalm 31:24 (KJV)',
+        verseText: 'Be of good courage, and he shall strengthen your heart.',
+        link: ShareLinks.dailyVerse,
+      );
+
+      expect(message, contains('Psalm 31:24 (KJV)'));
+      expect(message, contains('Be of good courage'));
+      expect(message, contains('Scripture provided by API.Bible'));
+      expect(message, contains('Shared from Disciplefy: Bible Study App'));
+      expect(message, contains(ShareLinks.dailyVerse));
+    });
+
+    test('opens with the reference and ends with the link', () {
+      final message = ShareLinks.verseMessage(
+        citedReference: 'John 3:16 (KJV)',
+        verseText: 'For God so loved the world.',
+        link: ShareLinks.download,
+      );
+
+      expect(message, startsWith('John 3:16 (KJV)'));
+      expect(message, endsWith(ShareLinks.download));
+    });
+  });
 }

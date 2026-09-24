@@ -10,6 +10,7 @@ import '../../core/i18n/translation_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/services/language_preference_service.dart';
 import '../../core/services/system_config_service.dart';
+import '../../core/utils/share_links.dart';
 import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/entities/fetched_verse_entity.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
@@ -207,8 +208,13 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       final abbr = _langCode == null ? '' : bibleTranslationAbbr(_langCode!);
       final cited =
           abbr.isEmpty ? _localizedReference : '$_localizedReference ($abbr)';
-      final textToCopy =
-          '"$_verseText" - $cited\n\nScripture provided by API.Bible';
+      // No per-verse page to link to from here, so this points at the
+      // "get the app" page rather than the daily-verse card.
+      final textToCopy = ShareLinks.verseMessage(
+        citedReference: cited!,
+        verseText: _verseText!,
+        link: ShareLinks.download,
+      );
       Clipboard.setData(ClipboardData(text: textToCopy));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
