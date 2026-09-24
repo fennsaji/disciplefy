@@ -1,8 +1,12 @@
 // marketing/app/[locale]/blog/page.tsx
-// Force SSR so this page is never pre-built with stale API data.
-// (The [locale]/layout has generateStaticParams which would otherwise pre-render
-// this page at build time; if posts didn't exist yet the cache would serve empty.)
-export const dynamic = "force-dynamic";
+// This page reads searchParams (page/tag/q/learning_path), which already keeps
+// it out of static generation — so the old force-dynamic was not what stopped
+// it being pre-built with an empty post list.
+//
+// What force-dynamic *did* do was set fetchCache to force-no-store, which
+// silently overrode the revalidate hints in lib/blog.ts and sent every render
+// to the API. Dropping it lets the post list come from the data cache for an
+// hour while the page still renders per request.
 
 import type { Metadata } from "next";
 import { BlogList } from "@/components/blog/BlogList";
