@@ -93,9 +93,8 @@ second experience, no warfare. Closing carries the conditional *अगर आप
 === DOCTRINE REELS · 12 · पिता, पुत्र, और पवित्र आत्मा ===
 Target: 49–50 seconds. Register: आप. Tone: plain, unhurried; the refusals said calmly, not triumphantly.
 
-"प्रार्थना में आप किससे बात करते हैं?
-पिता से? यीशु से? पवित्र आत्मा से?
-और अगर तीनों से — तो क्या आप तीन को पूजते हैं?"
+"किसी ने कभी पूछा है — 'तुम लोग तो तीन भगवान मानते हो, है ना?'
+और आपने जवाब देने की जगह… बात बदल दी?"
 
 आप तीनों से मिल चुके हैं।
 पिता, जिसने अपने पुत्र को भेजा।
@@ -139,11 +138,12 @@ Target: 49–50 seconds. Register: आप. Tone: plain, unhurried; the refusals 
 | baptism scene | मत्ती 3:16-17 |
 | closing line | मत्ती 28:19 — *एक नाम*, three persons |
 
-**Why the hook works:** it is a question every praying believer has silently
-had — *whom am I addressing?* — and its second half (*क्या आप तीन को पूजते
-हैं?*) is the accusation Indian Christians actually hear from neighbours. The
-viewer stops because the reel has voiced both the private confusion and the
-public charge in one breath, and has not yet answered either.
+**Why the hook works:** *"तीन भगवान मानते हो, है ना?"* is the charge Indian
+Christians actually hear from neighbours and relatives, and the second line
+names the private moment almost every believer has had — changing the subject
+because he had no answer. The viewer stops because his own dodge has been
+said aloud, and the answer is withheld. (Replaced the earlier prayer-based
+hook, which was a near-neighbour of reel 9's.)
 
 **Guardrails held:** this is **naming, not defence** — the three persons are
 introduced as *already met* (sent, died, indwells), exactly as the curriculum
@@ -390,7 +390,7 @@ Target: 49–50 seconds. Register: आप. Tone: even-handed — the two voices 
 दोनों की गलती एक — आज्ञा को विश्वास से अलग कर दिया।
 एक ने फेंक दिया। दूसरे ने नींव बना दिया।
 
-आज्ञा मानना बचने का रास्ता नहीं — बचाए हुए लोगों की चाल है।
+आज्ञा मानना बचने का रास्ता नहीं — बचाए हुए लोगों की पहचान है।
 
 === END ===
 ```
@@ -455,7 +455,7 @@ Target: 49–50 seconds. Register: आप. Tone: matter-of-fact; the thief scene
 उनकी मौत को याद करना, जब तक वे आ न जाएँ।
 और अकेले नहीं — उनके लोगों के साथ, एक मेज़ पर।
 
-दोनों बचाते नहीं। दोनों बताते हैं — खुले में, कि आप बचाए जा चुके हैं।
+दोनों बचाते नहीं। दोनों बताते हैं — खुले में, कि आपने मसीह पर भरोसा किया है।
 
 === END ===
 ```
@@ -667,6 +667,17 @@ and move on.
 line *"इसे बनाने वाले भी यही कहते हैं"* in every cut. If the brand outro
 carries an app download prompt, place it *after* the closing line about
 finding a church, never over it.
+
+**Hand-off to Season 2.** Season 1 ends with the viewer sent to a church
+(reel 18); Season 2 Arc 1 opens on the neighbour's questions. Once Season 2
+reel 1 exists, pin it under reel 18 (and under reel 19 if it runs), and under
+reel 12 — whose hook names the "तीन भगवान" charge that Season 2 reel 1
+answers at length.
+
+**Hand-off to Season 3.** Reels 10 and 15 both touch the believer who keeps
+falling (*"इस हफ़्ते कितना पाप हुआ"*, *"बढ़ना, गिरना, फिर उठना"*) without
+teaching it — that is Season 3 reel 1. Until it exists, the pilot/trailer is
+the pinned destination under both; replace with Season 3 reel 1 when live.
 
 **Reel 19 is optional and can be held.** If it runs, it runs last. It must
 not be published before reel 5 (the cross) exists, since its judgment line

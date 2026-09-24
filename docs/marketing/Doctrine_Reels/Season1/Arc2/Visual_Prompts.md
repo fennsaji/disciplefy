@@ -1,8 +1,8 @@
 # Arc 2 — frames & Google Flow prompts
 
-Scripts: [Arc2_Scripts_Hindi.md](./Scripts_Hindi.md) ·
-Curriculum: [Curriculum.md](../../Curriculum.md) ·
-Concept, workflow, rules and character references: [Arc1_Visual_Prompts.md](../Arc1/Visual_Prompts.md)
+Scripts: [Arc2_Scripts_Hindi.md](./Arc2_Scripts_Hindi.md) ·
+Curriculum: [Curriculum.md](./Curriculum.md) ·
+Concept, workflow, rules and character references: [Arc1_Visual_Prompts.md](./Arc1_Visual_Prompts.md)
 
 Same concept as Arc 1: one person, one real moment, the whole reel inside it.
 Rahul is the thread; Amit and Sunil return. Build the references from the Arc 1
@@ -111,7 +111,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 **Clip 5 · 05 → outro** · 0:40–0:50
 
-*Voiceover:* "क्रूस वह जगह है, जहाँ आपका दण्ड चुकाया गया — और जो रिश्ता टूटा था, उसे परमेश्वर ने खुद जोड़ा।"
+*Voiceover:* "क्रूस वह जगह है, जहाँ पापियों का दण्ड चुकाया गया — और जो उन पर भरोसा करता है, उसका टूटा रिश्ता परमेश्वर ने खुद जोड़ दिया।"
 
 ```
 Hold on the two of them, neither speaking. Slow push in on Rahul watching Amit, then a gentle dissolve into the brand outro.
@@ -315,7 +315,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 5 · 05 → outro** · 0:40–0:50
 
-*Voiceover:* "तो असली सवाल यह नहीं कि कब। सवाल यह है — आज आपका भरोसा किस पर टिका है?"
+*Voiceover:* "तो असली सवाल यह नहीं कि कब। सवाल यह है — क्या आप मुड़े हैं? और आज आपका भरोसा किस पर टिका है?"
 
 ```
 Hold on Rahul facing camera in the pool of lamplight. Slow push in on his face, then a gentle dissolve into the brand outro.
@@ -326,42 +326,42 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 8 — विश्वास से धर्मी ठहराया जाना
-A district court. Amit's family land case, years long, is being decided today. Rahul sits with him in the gallery. The judge does not make Amit anything — he declares. And the declaration is the whole thing.
+A district court. Amit is the defendant in a loan-default case he cannot pay. Rahul sits with him. The judge does not find him innocent — she reads a stamped receipt: the debt has been paid in full, by someone else. Settled. The declaration is the whole thing.
 **Cast:** Rahul, Amit, a judge, court staff and public (background) · **Hook text on frame 01:** "परमेश्वर की नज़र में आप कहाँ खड़े हैं?"
 
 ### Frames
 
 **01 — waiting**
 ```
-A crowded corridor of an Indian district court in the morning: peeling walls, wooden benches, lawyers in black coats passing, stacks of files. Amit, broad-built with a round face and thick mustache in a pressed cream shirt, sitting on a bench with a bundle of documents on his lap, tense, jaw tight. Rahul sitting beside him, a hand on his shoulder. Amit matches his character reference. Medium shot. Rahul matches the character reference exactly.
+A crowded corridor of an Indian district court in the morning: peeling walls, wooden benches, lawyers in black coats passing, stacks of files. Amit, broad-built with a round face and thick mustache in a pressed cream shirt, sitting on a bench with a bundle of documents on his lap, head down, the look of a man who knows he cannot pay. Rahul sitting beside him, a hand on his shoulder. Amit matches his character reference. Medium shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **02 — the courtroom**
 ```
-Inside a wood-panelled Indian courtroom, warm light from tall windows. The judge, an Indian woman in her fifties in a black robe, seated at the high bench reading from a file. Amit standing below with his lawyer, hands clasped in front of him. Rahul in the public gallery behind, leaning forward. Amit matches his character reference. Wide shot from the gallery. Rahul matches the character reference exactly.
+Inside a wood-panelled Indian courtroom, warm light from tall windows. The judge, an Indian woman in her fifties in a black robe, seated at the high bench reading from a file. Amit standing below as the defendant, alone at the rail, hands clasped in front of him, eyes down. Rahul in the public gallery behind, leaning forward. Amit matches his character reference. Wide shot from the gallery. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**03 — the verdict**
+**03 — the receipt**
 ```
-Same courtroom. Close on the judge at the bench, glasses on, looking up from the file and speaking the decision, calm and final, one hand flat on the papers. Warm window light. Shallow depth of field. Rahul matches the character reference exactly.
+Same courtroom. Close on the judge at the bench, glasses on, holding up a single stamped receipt from the file and reading it aloud, calm and final — the text deliberately unreadable, the red seal clear. Warm window light. Shallow depth of field. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**04 — declared**
+**04 — settled**
 ```
-Same courtroom. Close on Amit's face as he hears it — the tension leaving him all at once, eyes closing for a second, a breath let out. His lawyer's hand on his arm. Amit matches his character reference. Shallow depth of field. Rahul matches the character reference exactly.
+Same courtroom. Close on Amit's face as he hears that the debt is paid — disbelief first, then the tension leaving him all at once, eyes closing for a second, a breath let out. A clerk's hand passing him the stamped order. Amit matches his character reference. Shallow depth of field. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — outside**
 ```
-The court building's stone steps outside, late morning sun. Amit and Rahul sitting side by side on the steps, Amit holding the stamped court order in both hands, looking at it, quiet. Rahul beside him looking out at the street. Amit matches his character reference. Medium wide shot. Rahul matches the character reference exactly.
+The court building's stone steps outside, late morning sun. Amit and Rahul sitting side by side on the steps, Amit holding the stamped receipt in both hands, reading it again, quiet, still not quite believing it. Rahul beside him looking out at the street. Amit matches his character reference. Medium wide shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -373,7 +373,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 *Voiceover:* "आपको क्या लगता है — परमेश्वर की नज़र में आप अभी कहाँ खड़े हैं? पास? या अभी और सुधरना बाकी है? बहुत लोग यही मानते हैं कि परमेश्वर हमें धीरे-धीरे धर्मी बनाते हैं।"
 
 ```
-A clerk calls a name; Amit and Rahul stand and go in. The corridor gives way to the courtroom, and the camera settles in the gallery behind Rahul, looking down at Amit before the bench.
+A clerk calls a name; Amit rises like a man going to be sentenced. The corridor gives way to the courtroom, and the camera settles behind Rahul, looking down at Amit alone at the rail.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -385,7 +385,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* रोमियों 8:33 · रोमियों 4:5
 
 ```
-The judge turns a page, then looks up over her glasses. The camera moves slowly in on her as she begins to speak.
+The judge turns a page, stops, and lifts a single stamped receipt from the file. The camera moves slowly in on her as she reads it aloud.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -397,7 +397,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* 2 कुरिन्थियों 5:21 · रोमियों 5:1
 
 ```
-Cut of attention from the judge to Amit: the camera finds his face as the words land, the tension going out of him, his eyes closing for a moment.
+From the judge to Amit: the camera finds his face as the word 'settled' lands — disbelief, then the tension going out of him, his eyes closing for a moment as a clerk hands him the order.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -409,7 +409,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* तीतुस 3:5-8
 
 ```
-The courtroom dissolves to the sunlit steps outside. Amit and Rahul sit down together; Amit looks at the stamped order in his hands.
+The courtroom dissolves to the sunlit steps outside. Amit and Rahul sit down together; Amit reads the stamped receipt again in his hands.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -530,14 +530,14 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 10 — निश्चय
-An evening service. The pastor invites anyone who wants to be sure of salvation to come forward again, and Rahul half rises — then sits back. Walking home he sees a father and a small child cross the road, and understands whose grip is holding.
+An evening service, the closing prayer. Nobody has asked anyone to come forward; the pull to go up again and pray the prayer once more is Rahul's own. He half rises — then sits back. Walking home he sees a father and a small child cross the road, and understands whose grip is holding.
 **Cast:** Rahul, a pastor, congregation (background), a father and child (strangers) · **Hook text on frame 01:** "क्या आपने दोबारा उद्धार की प्रार्थना की?"
 
 ### Frames
 
-**01 — the invitation**
+**01 — the closing prayer**
 ```
-A simple Indian church hall in the evening, plastic chairs in rows, warm tube-light and a few candles at the front, a modest wooden cross on the wall. An Indian pastor in his fifties in a white shirt standing at the front with a hand extended in invitation. The congregation seated, heads bowed. Rahul in a middle row, head up, looking toward the front, uncertain. Wide shot from the back. Rahul matches the character reference exactly.
+A simple Indian church hall in the evening, plastic chairs in rows, warm tube-light and a few candles at the front, a modest wooden cross on the wall. An Indian pastor in his fifties in a white shirt standing at the front, head bowed, hands folded, leading the closing prayer. The congregation seated, heads bowed. Rahul in a middle row, head up, looking toward the front, uncertain, the only face raised. Wide shot from the back. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -577,7 +577,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 *Voiceover:* "क्या कभी ऐसा हुआ कि आपने दोबारा उद्धार की प्रार्थना की — बस इसलिए कि पक्का हो जाए? यह डर हमारी नज़र की दिशा से आता है। अगर मैं अपने अंदर देखूँ — आज विश्वास कितना मज़बूत है, इस हफ़्ते कितना पाप हुआ —"
 
 ```
-The pastor extends his hand and waits. In the middle row Rahul shifts, then starts to rise. The camera moves in on him.
+The pastor prays, head bowed, the room still. In the middle row Rahul shifts, then starts to rise on his own. The camera moves in on him.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```

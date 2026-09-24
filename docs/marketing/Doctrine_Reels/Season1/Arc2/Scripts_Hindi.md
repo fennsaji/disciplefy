@@ -46,8 +46,8 @@ Target: 48–50 seconds. Register: आप. Tone: level and grave at the open, no
 पूरा दण्ड दिया — पर मुझे नहीं, अपने बेटे को।
 
 क्रूस सिर्फ़ यह नहीं दिखाता कि परमेश्वर आपसे कितना प्रेम करते हैं।
-क्रूस वह जगह है, जहाँ आपका दण्ड चुकाया गया —
-और जो रिश्ता टूटा था, उसे परमेश्वर ने खुद जोड़ा।
+क्रूस वह जगह है, जहाँ पापियों का दण्ड चुकाया गया —
+और जो उन पर भरोसा करता है, उसका टूटा रिश्ता परमेश्वर ने खुद जोड़ दिया।
 
 === END ===
 ```
@@ -179,7 +179,7 @@ Target: 48–50 seconds. Register: आप. Tone: direct, searching, no scolding.
 पर जो सचमुच मुड़ा है, वह अब वहाँ खड़ा नहीं, जहाँ पहले था।
 
 तो असली सवाल यह नहीं कि कब।
-सवाल यह है — आज आपका भरोसा किस पर टिका है?
+सवाल यह है — क्या आप मुड़े हैं? और आज आपका भरोसा किस पर टिका है?
 
 === END ===
 ```
@@ -450,8 +450,9 @@ under 8 for playlist continuity only.
 **Reel 5 is the pinned destination for Arc 1 reel 4.** Once reel 5 is live, pin
 it under reel 4 as Arc 1's production notes require. Reel 4's closing line has
 been changed to *"इस रिश्ते को जोड़ने का रास्ता परमेश्वर ने खुद कैसे बनाया — यह
-आगे देखेंगे"*; reel 5's last line (*"जो रिश्ता टूटा था, उसे परमेश्वर ने खुद
-जोड़ा"*) is written to be its answer. **Do not let an editor soften reel 5's
+आगे देखेंगे"*; reel 5's last line (*"जो उन पर भरोसा करता है, उसका टूटा रिश्ता परमेश्वर
+ने खुद जोड़ दिया"*) is written to be its answer — with the condition on the
+face of the line, so served cold it is not a blanket reconciliation. **Do not let an editor soften reel 5's
 judgment sentence** — if *"पाप परमेश्वर के दण्ड के लायक है"* does not survive the
 edit, the curriculum's fallback (a separate judgment reel, never published
 before the cross) comes back into force.

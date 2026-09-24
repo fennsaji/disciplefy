@@ -1,9 +1,9 @@
 # Arc 3 — frames & Google Flow prompts
 
-Scripts: [Arc3_Scripts_Hindi.md](./Scripts_Hindi.md) ·
-Curriculum: [Curriculum.md](../../Curriculum.md) ·
+Scripts: [Arc3_Scripts_Hindi.md](./Arc3_Scripts_Hindi.md) ·
+Curriculum: [Curriculum.md](./Curriculum.md) ·
 Concept, workflow, rules and the Rahul / Amit / Sunil / uncle references:
-[Arc1_Visual_Prompts.md](../Arc1/Visual_Prompts.md)
+[Arc1_Visual_Prompts.md](./Arc1_Visual_Prompts.md)
 
 Same concept: one person, one real moment, the whole reel inside it. Rahul is
 the thread. Amit, Sunil and the uncle from Reel 3 all return; two new faces are
@@ -43,14 +43,14 @@ A prayer meeting where people around Rahul are visibly moved and he feels nothin
 
 **01 — the meeting**
 ```
-A crowded evening prayer meeting in a plain Indian church hall, warm tube-light, people standing with raised hands and closed eyes, some swaying, one woman weeping. Rahul standing among them in a grey t-shirt, hands at his sides, eyes open, looking around at the others. Medium shot from slightly behind him. Rahul matches the character reference exactly.
+A crowded evening prayer meeting in a plain Indian church hall, warm tube-light, people standing with eyes closed and hands raised, visibly moved. Rahul standing among them in a grey t-shirt, hands at his sides, eyes open, looking around at the others. Medium shot from slightly behind him. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **02 — nothing**
 ```
-Same hall, same light. Close on Rahul's face, still and unmoved while blurred raised hands and moving figures surround him, a flicker of worry in his eyes. Shallow depth of field. Rahul matches the character reference exactly.
+Same hall, same light. Close on Rahul's face, eyes open while the raised hands around him are soft, a flicker of worry in his eyes. Shallow depth of field. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -71,7 +71,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **05 — already**
 ```
-Same steps at night. Rahul sitting with the Bible closed on his knee, head up now, looking out into the dark street, the worry gone from his face, quiet and steady. Singing continuing softly behind him. Medium shot. Rahul matches the character reference exactly.
+Back inside the same hall, same warm light. Rahul standing among the others again, hands at his sides, eyes closed now, at peace — no different from them and no longer outside them. Medium shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -83,7 +83,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 *Voiceover:* "क्या आपको कभी लगा है कि कुछ विश्वासियों को परमेश्वर से कुछ ज़्यादा मिला है — और आप अब भी बाहर खड़े हैं? बाइबल यह डर काट देती है। जिस दिन आपने मन फिराकर यीशु पर भरोसा किया, परमेश्वर ने सिर्फ़ आपके पाप माफ़ नहीं किए।"
 
 ```
-Hands rise around Rahul; a woman beside him begins to weep. He looks from face to face. The camera eases in on his own face, unmoved.
+Hands rise around Rahul; the people beside him are visibly moved. He looks from face to face. The camera eases in on his own face, unmoved.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -119,7 +119,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* यूहन्ना 14:26 · इफिसियों 4:30
 
 ```
-Rahul closes the Bible slowly and lifts his head, looking out at the street, the tension leaving his face.
+Rahul closes the Bible, stands, and goes back in through the lit doorway; he takes his place among the others and closes his eyes.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -129,7 +129,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *Voiceover:* "अगर आप मसीह में हैं, तो आत्मा आप में हैं — किसी और अनुभव के इंतज़ार में नहीं। उसी दिन से।"
 
 ```
-Hold on Rahul on the steps, steady. Slow push in, then a gentle dissolve into the brand outro.
+Hold on Rahul among the congregation, at peace. Slow push in, then a gentle dissolve into the brand outro.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -138,7 +138,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 ## REEL 12 — पिता, पुत्र, और पवित्र आत्मा
 Dinner at Rahul's aunt's house. His eight-year-old cousin Priya asks, quite seriously, whether Christians pray to three gods. Rahul opens the Gospels to the Jordan — and the page becomes the moment all three are present at once.
-**Cast:** Rahul, Priya, family (background) · painted scene (Jesus' baptism, seen from behind) · **Hook text on frame 01:** "तो क्या आप तीन को पूजते हैं?"
+**Cast:** Rahul, Priya, family (background) · painted scene (Jesus' baptism, seen from behind) · **Hook text on frame 01:** "तुम लोग तो तीन भगवान मानते हो, है ना?"
 
 ### Frames
 
@@ -470,7 +470,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — hands over hands**
 ```
-Same wheel. Extreme close-up of the old potter's clay-covered hands closed over Rahul's hands on the spinning clay, guiding them, the collapsed lump beginning to rise into a straight-walled pot. Warm light, water and clay glistening. Rahul matches the character reference exactly.
+Same wheel. Extreme close-up of the old potter's clay-covered hands closed over Rahul's hands on the spinning clay — the potter's hands doing the shaping through Rahul's, the rise the potter's — the collapsed lump beginning to rise into a straight-walled pot. Warm light, water and clay glistening. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -667,7 +667,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — up**
 ```
-Same river. Amit coming up out of the water, drenched, water streaming from his hair and beard, eyes open, gasping, the pastor steadying him. Rahul on the bank soft behind, one hand raised. Amit matches his character reference. Medium close shot. Rahul matches the character reference exactly.
+Same river. Amit coming up out of the water, drenched, water streaming from his hair and mustache, eyes open, gasping, the pastor steadying him. Rahul on the bank soft behind, one hand raised. Amit matches his character reference. Medium close shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -749,8 +749,8 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 18 — कलीसिया
-Sunday morning. Rahul is in bed watching a Bible reel and about to skip church. He goes — and the uncle from Reel 3 is in his row. At the shared lunch afterwards, the same man passes him the dal.
-**Cast:** Rahul, the uncle from Reel 3, congregation (background) · **Hook text on frame 01:** "रविवार को उन लोगों के बीच बैठना क्यों?"
+Sunday morning. Rahul is in bed watching a Bible reel and about to skip church. He goes — and in his row sits Sunil, and two seats along, the uncle from Reel 3 who cooled at Sunil's surname. At the shared lunch afterwards, that man holds the dal out to Sunil.
+**Cast:** Rahul, Sunil, the uncle from Reel 3, congregation (background) · **Hook text on frame 01:** "रविवार को उन लोगों के बीच बैठना क्यों?"
 
 ### Frames
 
@@ -770,21 +770,21 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the row**
 ```
-A simple Indian church hall on Sunday morning, plastic chairs in rows, sunlight through open shutters. Rahul sitting in a row, and two seats along, the uncle from Reel 3 — late fifties, greying hair and mustache, spectacles, cream kurta and dark Nehru jacket — also seated, both looking ahead, aware of each other. The uncle matches his character reference. Medium shot from behind and to one side. Rahul matches the character reference exactly.
+A simple Indian church hall on Sunday morning, plastic chairs in rows, sunlight through open shutters. Rahul sitting in a row with Sunil beside him — slight, neatly side-parted hair, light-blue shirt — and two seats along, the uncle from Reel 3 — late fifties, greying hair and mustache, spectacles, cream kurta and dark Nehru jacket — also seated, all looking ahead, Sunil and the uncle aware of each other. Sunil and the uncle match his character reference. Medium shot from behind and to one side. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **04 — one table**
 ```
-A long trestle table in the church courtyard after the service, steel plates, a shared meal, the congregation seated along both sides in dappled shade. The uncle, across the table from Rahul, holding out a steel bowl of dal toward him. Rahul reaching to take it. Both faces neutral, a beginning. The uncle matches his character reference. Medium close shot. Rahul matches the character reference exactly.
+A long trestle table in the church courtyard after the service, steel plates, a shared meal, the congregation seated along both sides in dappled shade. The uncle, across the table, holding out a steel bowl of dal toward Sunil. Sunil, hesitating, reaching to take it, Rahul beside him watching. Sunil and the uncle match their references. Take it. Both faces neutral, a beginning. The uncle matches his character reference. Medium close shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — among them**
 ```
-Same courtyard table. Wide shot down the length of the table, everyone eating and talking, Rahul in the middle of it, the uncle opposite him, both now eating, part of the row. The uncle matches his character reference. Dappled light. Rahul matches the character reference exactly.
+Same courtyard table. Wide shot down the length of the table, everyone eating and talking, Sunil and Rahul side by side in the middle of it, the uncle opposite them, all eating, part of the row. Sunil and the uncle match his character reference. Dappled light. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -808,7 +808,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* मत्ती 16:18 · यूहन्ना 13:34
 
 ```
-The doorway dissolves to the church row. Rahul sits; two seats along, the uncle glances at him and looks ahead. Neither moves. The camera holds behind them.
+The doorway dissolves to the church row. Rahul sits beside Sunil; two seats along, the uncle glances at Sunil and looks ahead. Neither moves. The camera holds behind them.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -820,7 +820,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* इब्रानियों 10:24-25 · गलातियों 3:28
 
 ```
-The hall dissolves to the courtyard table. The uncle lifts a bowl of dal and holds it out across the table; Rahul reaches for it. The camera eases in on the handover.
+The hall dissolves to the courtyard table. The uncle lifts a bowl of dal and holds it out across the table to Sunil, who hesitates, then reaches for it. The camera eases in on the handover.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -830,7 +830,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *Voiceover:* "हाँ — सिर्फ़ जाना विश्वास नहीं। पर जहाँ विश्वास है, वहाँ जाना उसकी शक्ल है। यह जो आप देख रहे हैं — कलीसिया नहीं है। इसे बनाने वाले भी यही कहते हैं।"
 
 ```
-Rahul takes the bowl and serves himself; the uncle goes back to his plate. The camera pulls back down the length of the table, everyone eating together.
+Sunil takes the bowl and serves himself; the uncle goes back to his plate. The camera pulls back down the length of the table, everyone eating together.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -840,7 +840,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *Voiceover:* "ऐसी कलीसिया खोजिए जहाँ वचन खुलकर सिखाया जाता है — और उसका हिस्सा बनिए।"
 
 ```
-Hold on the long table, Rahul among them. Slow push in on Rahul, then a gentle dissolve into the brand outro.
+Hold on the long table, Sunil and Rahul among them. Slow push in on Rahul, then a gentle dissolve into the brand outro.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
