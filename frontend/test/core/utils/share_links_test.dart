@@ -73,10 +73,9 @@ void main() {
   });
 
   group('verseMessage', () {
-    test('carries the attribution and the link together', () {
+    test('carries the reference, the verse and the link', () {
       // Copy and share used to build their own strings and had drifted:
-      // copy had the attribution but no link, share had the link but no
-      // attribution. Both are required on every exit.
+      // copy had no link, share had nothing but the link.
       final message = ShareLinks.verseMessage(
         citedReference: 'Psalm 31:24 (KJV)',
         verseText: 'Be of good courage, and he shall strengthen your heart.',
@@ -85,8 +84,10 @@ void main() {
 
       expect(message, contains('Psalm 31:24 (KJV)'));
       expect(message, contains('Be of good courage'));
-      expect(message, contains('Scripture provided by API.Bible'));
       expect(message, contains('Shared from Disciplefy: Bible Study App'));
+      // The source citation lives on the attribution screen, not in the
+      // pasted text.
+      expect(message, isNot(contains('API.Bible')));
       expect(message, contains(ShareLinks.dailyVerse));
     });
 

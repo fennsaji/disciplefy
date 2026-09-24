@@ -59,19 +59,19 @@ class ShareLinks {
 
   /// Copy/share text for a Bible verse.
   ///
-  /// Every exit for verse text goes through here — copy as much as share.
-  /// They used to format their own strings and had drifted apart: copy carried
-  /// the API.Bible attribution but no link, share carried the link but no
-  /// attribution, which the API.Bible licence requires to travel with the text.
+  /// Every exit for verse text goes through here — copy as much as share —
+  /// so the two cannot drift apart the way they had: copy was missing the
+  /// link, share was missing everything but the link.
   ///
-  /// [citedReference] already includes the translation, e.g. "Psalm 31:24 (KJV)".
+  /// The translation is named inline via [citedReference] (e.g.
+  /// "Psalm 31:24 (KJV)"); the source citation itself lives on the in-app
+  /// attribution screen rather than riding along on every pasted verse.
   static String verseMessage({
     required String citedReference,
     required String verseText,
     required String link,
   }) =>
       '$citedReference\n\n$verseText\n\n'
-      'Scripture provided by API.Bible\n\n'
       '— Shared from Disciplefy: Bible Study App\n'
       '📱 $link';
 
