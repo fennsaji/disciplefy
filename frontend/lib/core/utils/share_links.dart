@@ -57,6 +57,24 @@ class ShareLinks {
       '$title — a guided Bible study path on Disciplefy\n\n'
       '${learningPath(pathId)}';
 
+  /// Copy/share text for a Bible verse.
+  ///
+  /// Every exit for verse text goes through here — copy as much as share —
+  /// so the two cannot drift apart the way they had: copy was missing the
+  /// link, share was missing everything but the link.
+  ///
+  /// The translation is named inline via [citedReference] (e.g.
+  /// "Psalm 31:24 (KJV)"); the source citation itself lives on the in-app
+  /// attribution screen rather than riding along on every pasted verse.
+  static String verseMessage({
+    required String citedReference,
+    required String verseText,
+    required String link,
+  }) =>
+      '$citedReference\n\n$verseText\n\n'
+      '— Shared from Disciplefy: Bible Study App\n'
+      '📱 $link';
+
   /// Link to a fellowship post, for sharing outside the app.
   static String fellowshipPost(String fellowshipId, String postId) {
     final origin = shareOrigin.endsWith('/')

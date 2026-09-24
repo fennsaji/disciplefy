@@ -1,8 +1,26 @@
 // marketing/app/[locale]/blog/[slug]/page.tsx
 import { unstable_setRequestLocale } from "next-intl/server";
-// ISR: page is cached at the edge and revalidated in the background every 60s
-// (see lib/blog.ts fetch revalidate), so newly published posts show up within
-// a minute without every visitor paying a live API round-trip.
+
+// ISR. Without this the route rendered on every request — three API round-trips
+// per view (post, adjacent, related) — which is what the Vercel Functions panel
+// was showing as the site's single biggest CPU consumer.
+//
+// Two exports are needed, not one. `revalidate` alone left the route classified
+// dynamic; a dynamic segment only becomes cacheable once generateStaticParams
+// exists. It returns [] on purpose: nothing is prerendered at build time (so
+// builds don't walk the whole post list as the blog grows), and dynamicParams
+// renders each slug on first request and caches it from then on.
+//
+// A day rather than an hour: this window only governs how long an *edit* to an
+// existing post takes to appear. A newly published post has no cache entry, so
+// it is never served stale — discovery is the blog list's job, which stays on a
+// shorter window.
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";

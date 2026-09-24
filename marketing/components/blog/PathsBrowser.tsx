@@ -3,7 +3,7 @@
 // Search + category/level filters over the learning-path grid. The whole list
 // arrives with the page (a handful of paths), so filtering is done in memory
 // rather than as a server round trip.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@/lib/navigation'
 import { FilterDropdown, type DropdownOption } from '@/components/ui/FilterDropdown'
 import type { LearningPathMeta } from '@/lib/blog'
@@ -52,7 +52,7 @@ const COPY: Record<string, Copy> = {
     empty: 'अभी कोई अध्ययन पथ नहीं। जल्द वापस देखें।',
     noMatches: 'इस खोज से कोई पथ मेल नहीं खाता।',
     clear: 'फ़िल्टर हटाएँ',
-    levels: { seeker: 'जिज्ञासु', follower: 'अनुयायी', disciple: 'शिष्य', leader: 'अगुवा' },
+    levels: { seeker: 'खोजी', follower: 'अनुयायी', disciple: 'शिष्य', leader: 'नेता' },
     categories: {
       Foundations: 'नींव',
       Growth: 'वृद्धि',
@@ -102,17 +102,52 @@ const LevelIcon = (
 // Ranked, so the dropdown reads seeker → leader rather than alphabetically.
 const LEVEL_ORDER = ['seeker', 'follower', 'disciple', 'leader']
 
+// 'believer' is an older synonym for 'follower' still present on some rows.
+// Folding it in keeps one level from showing up as two filter entries.
+function normalizeLevel(level?: string): string {
+  const l = (level ?? '').trim().toLowerCase()
+  return l === 'believer' ? 'follower' : l
+}
+
 export function PathsBrowser({
   paths,
   locale,
+  initialQuery = '',
+  initialCategory = '',
+  initialLevel = '',
 }: {
   paths: LearningPathMeta[]
   locale: string
+  initialQuery?: string
+  initialCategory?: string
+  initialLevel?: string
 }) {
   const t = COPY[locale] ?? COPY.en
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('')
-  const [level, setLevel] = useState('')
+  const [query, setQuery] = useState(initialQuery)
+  const [category, setCategory] = useState(initialCategory)
+  const [level, setLevel] = useState(normalizeLevel(initialLevel))
+
+  // Mirror the filters in the address bar so a copied link reopens the same
+  // view. replaceState rather than the router: every path is already on the
+  // page, so there is nothing to re-fetch, and a router push would also reset
+  // the scroll position mid-typing. It replaces rather than pushes so the back
+  // button leaves the page instead of walking back through each keystroke.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const set = (key: string, value: string) => {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    set('q', query.trim())
+    set('category', category)
+    set('level', level)
+    const qs = params.toString()
+    window.history.replaceState(
+      null,
+      '',
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    )
+  }, [query, category, level])
 
   const visible = useMemo(
     () => (paths ?? []).filter((p) => p.post_count > 0),
@@ -131,7 +166,7 @@ export function PathsBrowser({
 
   const levelOptions: DropdownOption[] = useMemo(() => {
     const found = Array.from(
-      new Set(visible.map((p) => p.disciple_level?.trim()).filter((l): l is string => !!l)),
+      new Set(visible.map((p) => normalizeLevel(p.disciple_level)).filter((l) => !!l)),
     ).sort((a, b) => {
       const ai = LEVEL_ORDER.indexOf(a)
       const bi = LEVEL_ORDER.indexOf(b)
@@ -152,7 +187,7 @@ export function PathsBrowser({
     return visible.filter((p) => {
       if (q && !p.title.toLowerCase().includes(q)) return false
       if (category && p.category?.trim() !== category) return false
-      if (level && p.disciple_level?.trim() !== level) return false
+      if (level && normalizeLevel(p.disciple_level) !== level) return false
       return true
     })
   }, [visible, query, category, level])
@@ -248,16 +283,17 @@ export function PathsBrowser({
                 <h2 className="font-display font-bold text-xl mb-3 text-[var(--text)] group-hover:text-primary transition-colors">
                   {path.title}
                 </h2>
-                {(path.category?.trim() || path.disciple_level?.trim()) && (
+                {(path.category?.trim() || normalizeLevel(path.disciple_level)) && (
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {path.category?.trim() && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 dark:bg-indigo-500/15 text-primary dark:text-indigo-300 font-medium">
                         {t.categories[path.category.trim()] ?? path.category.trim()}
                       </span>
                     )}
-                    {path.disciple_level?.trim() && (
+                    {normalizeLevel(path.disciple_level) && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--border)]/60 dark:bg-white/5 text-[var(--muted)] font-medium">
-                        {t.levels[path.disciple_level.trim()] ?? path.disciple_level.trim()}
+                        {t.levels[normalizeLevel(path.disciple_level)] ??
+                          normalizeLevel(path.disciple_level)}
                       </span>
                     )}
                   </div>

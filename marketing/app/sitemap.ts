@@ -3,6 +3,10 @@ import type { MetadataRoute } from "next";
 import { locales, type Locale } from "@/i18n";
 import { getAllPosts } from "@/lib/blog";
 
+// Walking every post is the expensive part, and crawlers do not need
+// minute-level freshness — a new post is discoverable within the hour.
+export const revalidate = 3600;
+
 const BASE = "https://www.disciplefy.in";
 
 const staticPages = [

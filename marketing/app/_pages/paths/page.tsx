@@ -3,7 +3,7 @@
 // Must wrap with NextIntlClientProvider so Navbar/Footer useTranslations works.
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { PathsList } from "@/components/blog/PathsList";
+import { PathsList, readPathsFilters } from "@/components/blog/PathsList";
 import { getLearningPaths } from "@/lib/blog";
 import { getAlternates } from "@/lib/seo";
 import messages from "@/messages/en.json";
@@ -23,7 +23,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function PathsPage() {
+export default async function PathsPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
   const paths = await getLearningPaths("en");
 
   return (
@@ -31,7 +35,11 @@ export default async function PathsPage() {
       locale="en"
       messages={messages as unknown as import("next-intl").AbstractIntlMessages}
     >
-      <PathsList paths={paths} locale="en" />
+      <PathsList
+        paths={paths}
+        locale="en"
+        filters={readPathsFilters(searchParams)}
+      />
     </NextIntlClientProvider>
   );
 }

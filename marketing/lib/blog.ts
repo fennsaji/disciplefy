@@ -70,7 +70,10 @@ export async function getAllPosts(
   const url = `${BLOG_API_URL}/api/v1/posts?${params}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(url, { next: { revalidate: 60 } });
+      // An hour: this list is how a newly published post gets discovered, and
+      // the blog page renders per request, so this is what bounds how stale
+      // the listing can be.
+      const res = await fetch(url, { next: { revalidate: 3600 } });
 
       if (!res.ok) {
         if (attempt < 3) { await delay(300 * attempt); continue; }

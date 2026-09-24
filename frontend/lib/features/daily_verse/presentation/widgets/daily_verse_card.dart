@@ -633,8 +633,11 @@ class DailyVerseCard extends StatelessWidget {
   void _copyVerseToClipboard(BuildContext context, DailyVerseLoaded state) {
     final ref = state.verse.getReferenceText(state.currentLanguage);
     final abbr = _translationAbbr(state.currentLanguage);
-    final text =
-        '$ref ($abbr)\n\n${state.currentVerseText}\n\nScripture provided by API.Bible';
+    final text = ShareLinks.verseMessage(
+      citedReference: '$ref ($abbr)',
+      verseText: state.currentVerseText,
+      link: ShareLinks.dailyVerse,
+    );
     Clipboard.setData(ClipboardData(text: text));
 
     final theme = Theme.of(context);
@@ -655,12 +658,13 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _shareVerse(DailyVerseLoaded state) {
-    final appLink = '📱 ${ShareLinks.dailyVerse}';
     final ref = state.verse.getReferenceText(state.currentLanguage);
     final abbr = _translationAbbr(state.currentLanguage);
-    final text =
-        '$ref ($abbr)\n\n${state.currentVerseText}\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
-    Share.share(text);
+    Share.share(ShareLinks.verseMessage(
+      citedReference: '$ref ($abbr)',
+      verseText: state.currentVerseText,
+      link: ShareLinks.dailyVerse,
+    ));
   }
 }
 

@@ -26,12 +26,35 @@ const PATHS_HERO: Record<string, {
   },
 };
 
+// Filter values carried in the URL, so a shared link opens the same view.
+export type PathsFilters = {
+  query?: string;
+  category?: string;
+  level?: string;
+};
+
+// Reads the filter query params. A repeated param arrives as an array; only
+// the first value is used, since each filter holds one value.
+export function readPathsFilters(searchParams?: {
+  [key: string]: string | string[] | undefined;
+}): PathsFilters {
+  const first = (value: string | string[] | undefined) =>
+    (Array.isArray(value) ? value[0] : value) ?? "";
+  return {
+    query: first(searchParams?.q),
+    category: first(searchParams?.category),
+    level: first(searchParams?.level),
+  };
+}
+
 export function PathsList({
   paths,
   locale,
+  filters,
 }: {
   paths: LearningPathMeta[];
   locale: string;
+  filters?: PathsFilters;
 }) {
   const t = PATHS_HERO[locale] ?? PATHS_HERO.en;
 
@@ -57,7 +80,13 @@ export function PathsList({
 
         {/* Search, filters and the paths grid */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <PathsBrowser paths={paths} locale={locale} />
+          <PathsBrowser
+            paths={paths}
+            locale={locale}
+            initialQuery={filters?.query ?? ""}
+            initialCategory={filters?.category ?? ""}
+            initialLevel={filters?.level ?? ""}
+          />
         </section>
       </main>
       <Footer />
