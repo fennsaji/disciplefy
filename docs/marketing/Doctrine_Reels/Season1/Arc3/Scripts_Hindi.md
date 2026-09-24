@@ -1,6 +1,6 @@
 # Arc 3 — Hindi voiceover scripts (reels 11–18, plus finale 19)
 
-Curriculum: [Curriculum.md](../Curriculum.md) · Arc 3 is *life in Christ* —
+Curriculum: [Curriculum.md](../../Curriculum.md) · Arc 3 is *life in Christ* —
 the viewer is a disciple, so this is the arc that spends the abstraction
 budget. Even so, every reel opens on a question the viewer has actually asked
 in private, not on a doctrine's name.

@@ -1,6 +1,6 @@
 # Arc 1 — Hindi voiceover scripts (reels 1–4)
 
-Curriculum: [Curriculum.md](../Curriculum.md) · Arc 1 is the on-ramp —
+Curriculum: [Curriculum.md](../../Curriculum.md) · Arc 1 is the on-ramp —
 concrete, narrative, person-first, for a viewer who may be very new or not yet
 converted.
 

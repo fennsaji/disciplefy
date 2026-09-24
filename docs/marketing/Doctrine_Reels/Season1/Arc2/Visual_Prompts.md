@@ -1,8 +1,8 @@
 # Arc 2 — frames & Google Flow prompts
 
-Scripts: [Arc2_Scripts_Hindi.md](./Arc2_Scripts_Hindi.md) ·
-Curriculum: [Curriculum.md](../Curriculum.md) ·
-Concept, workflow, rules and character references: [Arc1_Visual_Prompts.md](./Arc1_Visual_Prompts.md)
+Scripts: [Arc2_Scripts_Hindi.md](./Scripts_Hindi.md) ·
+Curriculum: [Curriculum.md](../../Curriculum.md) ·
+Concept, workflow, rules and character references: [Arc1_Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
 Same concept as Arc 1: one person, one real moment, the whole reel inside it.
 Rahul is the thread; Amit and Sunil return. Build the references from the Arc 1

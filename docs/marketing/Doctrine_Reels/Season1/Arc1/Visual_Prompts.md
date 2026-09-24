@@ -1,8 +1,8 @@
 # Arc 1 — frames & Google Flow prompts
 
-Scripts: [Arc1_Scripts_Hindi.md](./Arc1_Scripts_Hindi.md) ·
-Curriculum: [Curriculum.md](../Curriculum.md) ·
-Brand: [../Disciplefy_Brand_Visual_System.md](../../Disciplefy_Brand_Visual_System.md)
+Scripts: [Arc1_Scripts_Hindi.md](./Scripts_Hindi.md) ·
+Curriculum: [Curriculum.md](../../Curriculum.md) ·
+Brand: [../Disciplefy_Brand_Visual_System.md](../../../Disciplefy_Brand_Visual_System.md)
 
 ---
 

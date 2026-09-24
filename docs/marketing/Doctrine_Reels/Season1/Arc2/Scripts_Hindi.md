@@ -1,6 +1,6 @@
 # Arc 2 — Hindi voiceover scripts (reels 5–10)
 
-Curriculum: [Curriculum.md](../Curriculum.md) · Arc 2 is the gospel — what
+Curriculum: [Curriculum.md](../../Curriculum.md) · Arc 2 is the gospel — what
 Christ did, and what it means for the one who trusts him. This is the spine of
 the series; its internal order (cross → resurrection → repentance and faith →
 justification → adoption → assurance) is the one place the curriculum does not

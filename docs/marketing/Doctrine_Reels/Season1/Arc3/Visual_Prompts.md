@@ -1,9 +1,9 @@
 # Arc 3 — frames & Google Flow prompts
 
-Scripts: [Arc3_Scripts_Hindi.md](./Arc3_Scripts_Hindi.md) ·
-Curriculum: [Curriculum.md](../Curriculum.md) ·
+Scripts: [Arc3_Scripts_Hindi.md](./Scripts_Hindi.md) ·
+Curriculum: [Curriculum.md](../../Curriculum.md) ·
 Concept, workflow, rules and the Rahul / Amit / Sunil / uncle references:
-[Arc1_Visual_Prompts.md](./Arc1_Visual_Prompts.md)
+[Arc1_Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
 Same concept: one person, one real moment, the whole reel inside it. Rahul is
 the thread. Amit, Sunil and the uncle from Reel 3 all return; two new faces are
