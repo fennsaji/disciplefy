@@ -1,31 +1,48 @@
-# Season 2 — Hindi voiceover scripts (reels S2·1–7)
+# Season 2 · Arc 1 — पड़ोस के सवाल · Hindi voiceover scripts (reels 1·1–1·5)
 
-Curriculum: [../Curriculum.md](../Curriculum.md) · Season 2 is the *Indian context*
-season — the viewer is assumed to be a disciple who has finished Season 1, so
-every reel spends the abstraction budget and takes on a question with a
-neighbour, a relative, a preacher or a threat behind it. Even so, each opens on
-a question the viewer has actually asked in private, not on a doctrine's name.
+Curriculum: [../Curriculum.md](../Curriculum.md) · Arc 1 is *questions from
+outside* — the viewer's neighbours and relatives ask, and he answers. What the
+arc must establish: the disciple can answer the hardest questions without
+contempt and without flinching. Every reel here has a Hindu, Muslim or Sikh
+listener over the viewer's shoulder, and none may hear mockery. Arc 3's
+persecution reel assumes this posture is already in place toward the people
+who may become the hostile party.
 
-All seven hold आप register, no English loanwords, same voice as Season 1.
+Five reels in the curriculum's arc order. Two are already produced (S2·01,
+S2·04) and are copied here **verbatim, content frozen** — production IDs are
+never renumbered; the arc position is a separate field. Three are new
+(S2·08, S2·09, S2·10).
+
+All five hold आप register, no English loanwords, same voice as Season 1.
 Honorifics follow Arc 3: यीशु and पवित्र आत्मा take **वे**; the Father and
 परमेश्वर in general take **वह/उसने**. Scripture is paraphrased in indirect
 speech; nothing is placed in quotation marks unless the wording is certain.
+तू/तुम inside Scripture's reported speech is not a register slip.
 
 Every reel must stand alone — the algorithm serves any one of them cold to a
-stranger — and Season 2 has no playlist dependencies that a reel may lean on:
-where a reel needs Season 1 material (the cross, the Spirit as person,
-Scripture as the test, the local church), it restates it in one line. The
-final sentence of each script begins at roughly 0:40 and lands over the brand
-outro, so each is written to close on its own.
+stranger — and where a reel needs Season 1 material (the cross, the Spirit as
+person, Scripture as the test, the local church), it restates it in one line.
+The final sentence of each script begins at roughly 0:40 and lands over the
+brand outro, so each is written to close on its own.
 
-Two reels carry hard constraints beyond the format: **S2·5 is written so that
-the only thing a viewer can do on the strength of it is nothing rash**, and
-**S2·4 contains no line that a Hindu relative watching over the viewer's
-shoulder would hear as mockery.**
+The arc's risk register is binding on all five: **no other faith, deity,
+scripture, festival or practice is named or described in script, caption or
+visual**; the only religion any reel disqualifies by name is *हमारा*; S2·08
+treats India and the West with equal respect and the Thomas tradition as
+tradition; S2·09 names no denomination and ranks none; S2·10 gives Paul's own
+distinctions from 1 कुरिन्थियों 8–10 and no rule beyond them.
+
+| Arc · pos | ID | Reel | Status |
+|---|---|---|---|
+| 1·1 | S2·01 | तीन भगवान? | ✓ produced — content frozen |
+| 1·2 | S2·08 | क्या बाइबल विदेशी किताब है? | new |
+| 1·3 | S2·04 | क्या सच में एक ही रास्ता है? | ✓ produced — content frozen |
+| 1·4 | S2·09 | इतनी कलीसियाएँ क्यों? | new |
+| 1·5 | S2·10 | त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर | new |
 
 ---
 
-## REEL S2·1 — तीन भगवान?
+## REEL 1·1 — तीन भगवान? · S2·01 · ✓ produced — content frozen
 
 ```
 === DOCTRINE REELS · S2·01 · तीन भगवान? ===
@@ -98,150 +115,80 @@ the *man* Christ Jesus, now). No religion, deity or text is named. *घबरा
 
 ---
 
-## REEL S2·2 — उसने रोका क्यों नहीं?
+## REEL 1·2 — क्या बाइबल विदेशी किताब है? · S2·08
 
 ```
-=== DOCTRINE REELS · S2·02 · उसने रोका क्यों नहीं? ===
-Target: 49–50 seconds. Register: आप. Tone: low and level throughout; the cross section slower, no swell.
+=== DOCTRINE REELS · S2·08 · क्या बाइबल विदेशी किताब है? ===
+Target: 48–50 seconds. Register: आप. Tone: unhurried, almost amused at the geography; warm at the Thomas line; settled at the close. No edge toward anyone.
 
-"अगर परमेश्वर सब कुछ कर सकता है — तो उसने रोका क्यों नहीं?
-आपने पूछा है। शायद किसी से कहा नहीं।"
+"किसी ने कहा — यह बाहर वालों की किताब है।
+आपने बहस नहीं की। क्योंकि कहीं भीतर आपको भी यही लगा था।"
 
-दो जवाब मिलते हैं। दोनों झूठे।
+यीशु एशिया में पैदा हुए, एशिया में जिए, वहीं मरे और जी उठे।
+जिस दिन पवित्र आत्मा उतरे, सुननेवालों में सबसे पहले पूरब के लोग गिने गए — पारथी, मादी, एलामी।
+और सुसमाचार यूरोप से पहले अफ़्रीका पहुँचा — कूश देश का अधिकारी, यशायाह पढ़ता हुआ, रास्ते में ही बपतिस्मा लेकर लौटा।
 
-पहला — ज़रूर कोई पाप होगा; यह सज़ा है।
-जन्म के अंधे पर यीशु से यही पूछा गया।
-यीशु ने कहा — न इसने पाप किया, न माँ-बाप ने।
+भारत? पुरानी परंपरा कहती है, थोमा यहाँ आए। परंपरा कीमती है — पर वचन नहीं।
 
-दूसरा — परमेश्वर का हाथ नहीं, बस हो गया।
-पर यीशु ने कहा — गौरैया भी पिता की मरज़ी बिना नहीं गिरती।
+असली बात — यह किताब किसी देश की है ही नहीं।
+वचन कहता है, हर पवित्र शास्त्र परमेश्वर की प्रेरणा से रचा गया।
+अधिकार इस पर नहीं कि इसे कौन लाया — इस पर कि किसने कहा।
 
-बाइबल जवाब में क्रूस दिखाती है।
-इतिहास की सबसे बड़ी बुराई — निर्दोष की हत्या —
-पतरस कहते हैं, परमेश्वर की ठहराई योजना से हुई।
-इंसानों ने पाप किया — परमेश्वर ने उसी से उद्धार निकाला।
+जो इसे यहाँ लाए, उनका आदर। पर डाकिया चिट्ठी का लेखक नहीं होता।
 
-इसीलिए लिखा है — जो उससे प्रेम रखते हैं, उनके लिए सब बातें मिलकर भलाई करती हैं।
-सब भला नहीं होता। पर उसके हाथ में बेकार नहीं जाता।
-
-परमेश्वर ने हर 'क्यों' का जवाब नहीं दिया।
-उसने अपना पुत्र दिया — जो खुद उसी दुख से गुज़रे।
+यह किताब न पूरब की, न पश्चिम की। यह उसकी है जिसने पूरब, पश्चिम — और आपको — बनाया।
 
 === END ===
 ```
 
-**Length:** ~152 words · 49–50 seconds. If the artist runs long, cut
-*"शायद किसी से कहा नहीं।"* — **not** the गौरैया line, **not** the पतरस line,
-and **not** *"सब भला नहीं होता"*.
+**Length:** ~149 words · 48–50 seconds. If the artist runs long, cut
+*"यशायाह पढ़ता हुआ,"* — **not** the थोमा line, **not** *"जो इसे यहाँ लाए,
+उनका आदर"*, and **not** *"इस पर कि किसने कहा"*.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "न इसने पाप किया, न माँ-बाप ने" | यूहन्ना 9:2-3 |
-| "गौरैया भी…" | मत्ती 10:29 |
-| "परमेश्वर की ठहराई योजना" | प्रेरितों के काम 2:23 · 4:27-28 |
-| "उसी से उद्धार निकाला" | उत्पत्ति 50:20 |
-| "जो उससे प्रेम रखते हैं… भलाई" | रोमियों 8:28 |
-| "उसने अपना पुत्र दिया" | रोमियों 8:32 |
-| closing line | इब्रानियों 4:15 · यशायाह 53:3 |
+| "एशिया में पैदा हुए" | मत्ती 2:1 · लूका 2:4-7 |
+| "पारथी, मादी, एलामी" | प्रेरितों के काम 2:9-11 |
+| "यूरोप से पहले" | प्रेरितों के काम 16:9-10 — shown, not read |
+| "कूश देश का अधिकारी… बपतिस्मा" | प्रेरितों के काम 8:27-38 |
+| "परमेश्वर की प्रेरणा से रचा गया" | 2 तीमुथियुस 3:16 |
+| "इस पर कि किसने कहा" | 2 पतरस 1:21 |
+| "डाकिया चिट्ठी का लेखक नहीं" | 1 थिस्सलुनीकियों 2:13 |
+| closing line | प्रेरितों के काम 17:24-26 · भजन संहिता 24:1 |
 
-**Why the hook works:** *if he could, why didn't he?* is the sentence a
-believer says in the hospital corridor and nowhere else. The second line
-(*शायद किसी से कहा नहीं*) tells the viewer the reel knows it is a private
-question, which is why he stays — a reel that treats the question as an
-attack loses him in the first second.
+**Why the hook works:** it does not open on the objection; it opens on the
+viewer's silence when the objection came — and then names the reason for the
+silence, which he has not admitted to anyone: *he half agreed.* A believer who
+has never felt the Bible to be foreign has no such moment; the one this reel
+is for has had several. The relative over the shoulder hears their own remark
+quoted without heat and their own child described as unsure, not as
+defiant.
 
-**Guardrails held:** the karma reading (*किसी पाप की सज़ा*) is refused from
-Jesus's own mouth (यूहन्ना 9:3), so it is dismantled as a mechanism with no
-religion named — the Season 1 reel 4 discipline. The deist reading (*बस हो
-गया*) is refused by मत्ती 10:29. **Sovereignty is taught from the cross, not
-from an attribute list**: प्रेरितों 2:23 puts the worst evil inside God's
-determined plan while keeping the guilt on human hands — the reel's own
-sentence pair *इंसानों ने पाप किया / परमेश्वर ने उसी से निकाला* holds both,
-so God is never made the author of sin. **रोमियों 8:28 keeps its condition**
-(*जो उससे प्रेम रखते हैं*) — the same discipline as *अगर आप मसीह में हैं* —
-and is immediately guarded against sentiment: *सब भला नहीं होता*. No
-promise of relief in this life, no prosperity turn, no *everything happens for
-a reason* served without the cross. The closing answers the question with a
-person rather than an explanation, which is what Job received.
-
----
-
-## REEL S2·3 — दूसरा सुसमाचार
-
-```
-=== DOCTRINE REELS · S2·03 · दूसरा सुसमाचार ===
-Target: 49–50 seconds. Register: आप. Tone: firm and unhurried; nothing sneering — the viewer may have believed this for years.
-
-"आपने बीज बोया। दावा किया। विश्वास किया। हुआ नहीं।
-तो कसूर किसका — आपका? या उस बात का जो सिखाई गई?"
-
-एक सिखावन हर जगह है —
-विश्वास वह तरीका है जिससे परमेश्वर से सेहत और दौलत निकलती है। दो, ताकि मिले।
-
-बाइबल इसे दूसरा सुसमाचार कहती है।
-
-यीशु के पास सिर रखने की जगह नहीं थी।
-पौलुस ने अपने काँटे के लिए तीन बार माँगा — जवाब था, अनुग्रह ही काफ़ी है। काँटा रहा।
-क्या इन सबका विश्वास कम था?
-
-जो भक्ति को कमाई का ज़रिया समझते हैं — बाइबल कहती है, वे सत्य से खाली हैं।
-
-हाँ — परमेश्वर देता है, चंगा भी करता है। पिता की तरह, मुफ़्त।
-पर वह आपका देनदार नहीं। बीज से खरीदा नहीं जाता।
-
-सबसे बुरी बात — यह सिखावन दबे हुए को ही दोष देती है: विश्वास कम था।
-
-सुसमाचार वादा नहीं करता कि आप अमीर होंगे।
-वादा यह है — मसीह आपके होंगे। बीमारी में भी, क़ब्र के पार भी।
-
-=== END ===
-```
-
-**Length:** ~152 words · 49–50 seconds. If the artist runs long, cut
-*"दो, ताकि मिले।"* — **not** *"हाँ — परमेश्वर देता है"* and **not** the
-*"दबे हुए को ही दोष देती है"* line.
-
-**On-screen Scripture**
-
-| Line | Reference |
-|---|---|
-| "दूसरा सुसमाचार" | गलातियों 1:6-8 |
-| "सिर रखने की जगह नहीं" | लूका 9:58 |
-| "तीन बार माँगा… काँटा रहा" | 2 कुरिन्थियों 12:7-9 |
-| "क्या इन सबका विश्वास कम था?" | 2 तीमुथियुस 4:20 · 1 तीमुथियुस 5:23 — shown, not read |
-| "भक्ति को कमाई का ज़रिया… सत्य से खाली" | 1 तीमुथियुस 6:5 |
-| "पिता की तरह, मुफ़्त" | मत्ती 7:11 · याकूब 1:17 |
-| "देनदार नहीं" | रोमियों 11:35 |
-| closing line | रोमियों 8:35-39 |
-
-**Why the hook works:** it opens on the viewer's own failed transaction —
-*बीज, दावा, विश्वास* are the three verbs of the teaching in the order it
-teaches them — and then asks the question the teaching never lets him ask:
-*whose fault?* Most viewers who have sat under this have only ever been
-offered the first answer. The reel has not yet said which it will give.
-
-**Guardrails held:** **the teaching is named; no teacher, church, channel or
-city is.** Every reference is to *एक सिखावन* or *यह सिखावन*, and the
-description is of its mechanism (*दो ताकि मिले*), which cannot be read as a
-portrait of an individual. The refutation is **from Scripture's own
-casualties** — Jesus without a pillow, Paul with his thorn, and (on screen)
-Trophimus left sick and Timothy's stomach — so the reel does not argue, it
-lists. 1 तीमुथियुस 6:5 is rendered as the OV renders it (*deprived of the
-truth*), not sharpened to *liars*. **The over-correction is closed on the face
-of the reel**: God does give and does heal, as Father, freely — so a viewer
-cannot leave thinking the reel denies healing or provision, and poverty is
-nowhere made holy. रोमियों 11:35 (*देनदार नहीं*) is the doctrinal hinge:
-entitlement is the error, not asking. The pastoral line (*दबे हुए को ही दोष
-देती है*) names the teaching's real victim without naming its beneficiaries.
-गलातियों 1 is used for the *another gospel* verdict — the strongest textual
-warrant — and the closing restates what the gospel does promise, so the reel
-ends on Christ rather than on the error.
+**Guardrails held:** the answer is **geography before theology**, and the
+geography is Scripture's own: Jesus born, living, dying and rising in West
+Asia; the first named hearers at Pentecost from the east (प्रेरितों 2:9 lists
+Parthians, Medes and Elamites before anyone from the west); the gospel in
+Africa (प्रेरितों 8) before Paul's first crossing to Europe (प्रेरितों 16:9,
+on screen only — read aloud it would need a map). **The Thomas tradition is
+named as tradition and honoured as such** — *कीमती, पर वचन नहीं* — so the
+reel neither leans on it for authority nor treats it with the contempt a
+Sola Scriptura point can slide into. **No nationalist framing in either
+direction**: the reel never says *this book is ours*; it says the book is
+*no country's* (2 तीमुथियुस 3:16, 2 पतरस 1:21 — its authority rests on who
+spoke it), and those who carried it here are given honour in a full clause
+before the postman line distinguishes carrier from author (1 थिस्सलुनीकियों
+2:13 — *not the word of men*). The West is neither blamed nor credited;
+India is neither flattered nor slighted. The closing rests the book's
+ownership on the Creator of both hemispheres and of the viewer, which is
+प्रेरितों 17:24-26 — the same text Season 1 reel 3 showed on screen against
+caste — now doing its other work. No religion, community, nation or empire is
+named; *बाहर वाले* is the viewer's relative's phrase, quoted, not the reel's.
 
 ---
 
-## REEL S2·4 — क्या सच में एक ही रास्ता है?
+## REEL 1·3 — क्या सच में एक ही रास्ता है? · S2·04 · ✓ produced — content frozen
 
 ```
 === DOCTRINE REELS · S2·04 · क्या सच में एक ही रास्ता है? ===
@@ -311,281 +258,236 @@ must-land — without giving the viewer an assignment to confront anyone.
 
 ---
 
-## REEL S2·5 — कीमत
+## REEL 1·4 — इतनी कलीसियाएँ क्यों? · S2·09
 
 ```
-=== DOCTRINE REELS · S2·05 · कीमत ===
-Target: 49–50 seconds. Register: आप. Tone: quiet, unhurried, no heat anywhere; the last three lines almost spoken to one person.
+=== DOCTRINE REELS · S2·09 · इतनी कलीसियाएँ क्यों? ===
+Target: 49–50 seconds. Register: आप. Tone: candid, a little rueful at the open; plain in the middle; the closing said as a confession, not a defence.
 
-"यीशु ने कहा था — दुनिया तुमसे बैर रखेगी।
-जब वह सच हो जाए — क्या यह सबूत है कि आप सही हैं?
-या कि आपने ग़लत किया?"
+"एक सड़क, तीन कलीसियाएँ, तीन नाम।
+पड़ोसी ने पूछा — परमेश्वर एक है, तो तुम एक क्यों नहीं?
+आपके पास जवाब नहीं था।"
 
-यीशु ने कीमत छिपाई नहीं।
-कहा — पीछे आना है, तो पहले बैठकर हिसाब लगाओ।
-शांत मन से — तूफ़ान के बीच नहीं।
+सवाल सही है।
+वचन कहता है — एक देह, एक प्रभु, एक विश्वास, एक परमेश्वर।
+कुरिन्थुस में भी — मैं पौलुस का, मैं अपुल्लोस का। पौलुस ने पूछा: क्या मसीह बँट गया?
+बाइबल इस पर दुखी है।
 
-और — मैं तुम्हें भेड़ियों के बीच भेजता हूँ, भेड़ों की तरह।
-साँप जैसे चतुर बनो, कबूतर जैसे भोले।
+वजहें दो।
 
-चतुराई पाप नहीं है।
-यीशु ने कहा — एक जगह सताएँ, तो दूसरी जगह चले जाओ।
-चुप रहना भी इनकार नहीं — यीशु खुद कई बार भीड़ से हटे।
+पहली — सच्चे विश्वासी छोटी बातों पर अलग हो जाते हैं। बपतिस्मा कब, आराधना कैसे।
+छोटी नहीं — पर सुसमाचार नहीं।
 
-बदला — कभी नहीं। जहाँ तक हो सके, सबसे मेल रखो।
+दूसरी — कुछ जगहें, जिन पर कलीसिया लिखा है, सुसमाचार ही छोड़ चुकी हैं।
+नाम कुछ भी हो — वह कलीसिया नहीं।
 
-पतरस कहते हैं — अपनी ग़लती से दुख मत उठाओ;
-पर मसीही होने के कारण उठे, तो शर्मिंदा मत हो।
+कसौटी दरवाज़े का नाम नहीं:
+क्या वहाँ यीशु परमेश्वर हैं, जो पापों का दाम चुकाकर मरे और जी उठे?
+उद्धार अनुग्रह से, विश्वास से — कमाई से नहीं?
+जहाँ यह है, वहाँ आपके भाई हैं।
 
-कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।
-
-कीमत सच्ची है। पर इस रास्ते पर आप पहले नहीं — यीशु आगे चले हैं, साथ चलते हैं।
+हाँ, हम बँटे हैं — यह हमारा दुख है। पर प्रभु एक है — और क्रूस पर उसने हमें एक किया।
 
 === END ===
 ```
 
-**Length:** ~152 words · 49–50 seconds. If the artist runs long, cut
-*"शांत मन से — तूफ़ान के बीच नहीं।"* — **never** cut *"चतुराई पाप नहीं है"*,
-**never** *"चुप रहना भी इनकार नहीं"*, and **never** *"कोई बड़ा कदम अकेले मत
-उठाइए"*.
+**Length:** ~150 words · 49–50 seconds. If the artist runs long, cut
+*"बपतिस्मा कब, आराधना कैसे।"* — **not** *"छोटी नहीं — पर सुसमाचार नहीं"*,
+**not** *"नाम कुछ भी हो — वह कलीसिया नहीं"*, and **not** *"यह हमारा दुख है"*.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "दुनिया तुमसे बैर रखेगी" | यूहन्ना 15:18-19 |
-| "पहले बैठकर हिसाब लगाओ" | लूका 14:27-28 |
-| "भेड़ियों के बीच… चतुर… भोले" | मत्ती 10:16 |
-| "एक जगह सताएँ, तो दूसरी जगह" | मत्ती 10:23 · प्रेरितों के काम 9:25 |
-| "भीड़ से हटे" | यूहन्ना 7:1 · यूहन्ना 11:54 |
-| "बदला — कभी नहीं… सबसे मेल रखो" | रोमियों 12:14, 17-18 |
-| "अपनी ग़लती से… शर्मिंदा मत हो" | 1 पतरस 4:15-16 |
-| "अकेले मत उठाइए" | नीतिवचन 15:22 · इब्रानियों 13:17 |
-| closing line | इब्रानियों 12:2-3 · मत्ती 28:20 |
+| "एक देह, एक प्रभु, एक विश्वास, एक परमेश्वर" | इफिसियों 4:4-6 |
+| "मैं पौलुस का, मैं अपुल्लोस का… क्या मसीह बँट गया?" | 1 कुरिन्थियों 1:12-13 |
+| "बाइबल इस पर दुखी है" | यूहन्ना 17:21 · 1 कुरिन्थियों 1:10 |
+| "छोटी बातों पर अलग" | रोमियों 14:1, 5 |
+| "सुसमाचार ही छोड़ चुकी हैं" | गलातियों 1:6-9 |
+| "यीशु परमेश्वर हैं… मरे और जी उठे" | कुलुस्सियों 2:9 · 1 कुरिन्थियों 15:3-4 |
+| "अनुग्रह से, विश्वास से — कमाई से नहीं" | इफिसियों 2:8-9 |
+| "आपके भाई हैं" | 1 यूहन्ना 5:1 |
+| closing line | इफिसियों 2:14-16 |
 
-**Why the hook works:** it takes a promise the viewer already knows (यूहन्ना
-15:18) and asks what it proves when it comes true — and offers both readings
-he has heard, *this means I am right* and *this means I did something wrong*.
-He stays because he has held both at once and neither has been answered.
-Neither is confirmed: the reel's answer is that hostility by itself proves
-nothing in either direction (1 पतरस 4:15-16), which is the brake on
-triumphalism in the hook itself.
+**Why the hook works:** the first line is a street the viewer can name, and
+the second is the question he has actually been asked on it — by a neighbour
+who was not being hostile, only observant. The third line is the reel's
+honesty: *you had no answer.* The viewer stays because the reel has admitted
+his embarrassment before offering to remove it, and the relative over the
+shoulder hears their question called fair (*सवाल सही है*) in the first breath
+of the answer.
 
-**Guardrails held:** **read back as a 19-year-old in a hostile village who
-will act on it tonight.** Every action the reel licenses is a restraint or a
-retreat: count the cost *calmly, not in the storm*; be shrewd; leave a place
-if it turns (मत्ती 10:23, with Paul's basket on screen as the apostolic
-precedent); stay silent when silence is wise (Jesus's own withdrawals —
-यूहन्ना 7:1, 11:54 — so silence is distinguished from denial on the face of
-the reel); never retaliate; keep the peace as far as it depends on you; and
-**take no large step alone**, stated as a separate instruction and named
-uncuttable. Nothing in the script counsels declaration, testimony to family,
-public witness, boldness, or endurance-as-heroism; *शर्मिंदा मत हो* is 1
-पतरस 4:16's own word and is conditional on suffering that has *already* come
-for being a Christian, not an instruction to invite it. **No triumphalism**:
-no crown, no reward language, no martyr; the closing gives the viewer company,
-not victory. **Nothing political**: no state, law, party, group, community or
-faith is named or described; the hostile party is *दुनिया* (यूहन्ना 15) and
-*कोई* throughout. The 1 पतरस 4:15 line stops persecution from being used as
-proof of righteousness, which is the reel's must-avoid. Season 1 reel 18's
-*church, not alone* is restated in one line so the brake does not depend on
-the viewer having seen it.
+**Guardrails held:** the reel **concedes the charge before answering it** —
+the unity texts (इफिसियों 4:4-6, यूहन्ना 17:21) and Paul's grief at Corinth
+(1 कुरिन्थियों 1:12-13) are on the face of the reel, so division is named as
+the church's sorrow, not defended as variety. **No denomination is named or
+ranked, and no polity is touched**: the examples of secondary difference are
+*when* to baptise and *how* to worship — both real, neither a church-government
+question — and the reel says in one line that they are *not small* (रोमियों
+14 takes them seriously) *and not the gospel*. **"All churches are equally
+fine" is refused without a name**: the second reason is places that have left
+the gospel itself (गलातियों 1:6-9 on screen for the verdict), and the reel says
+plainly that such a place is not a church whatever its sign says — but names
+no body, no movement and no doctrine beyond the gospel's absence, so no
+viewer hears his own church accused. **The test is the gospel, stated
+whole** in two questions: Christ's deity, substitutionary death and
+resurrection (कुलुस्सियों 2:9, 1 कुरिन्थियों 15:3-4) and salvation by grace
+through faith apart from works (इफिसियों 2:8-9) — the four Season 1 reels
+compressed to one breath so the stranger has the criterion. The
+recognition line (*जहाँ यह है, वहाँ आपके भाई हैं*, 1 यूहन्ना 5:1) makes the
+gospel, not the name over the door, the ground of fellowship. The closing
+gives the viewer his answer to the neighbour in the form of a confession —
+*हम बँटे हैं, यह हमारा दुख है* — and rests unity on the cross (इफिसियों
+2:14-16), so the reel ends on Christ and not on a defence of Christians.
+Nothing counsels leaving or joining any church.
 
 ---
 
-## REEL S2·6 — बाकी नब्बे
+## REEL 1·5 — त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर · S2·10
 
 ```
-=== DOCTRINE REELS · S2·06 · बाकी नब्बे ===
-Target: 49–50 seconds. Register: आप. Tone: light at the open, warm in the middle, plain at the self-limiting line.
+=== DOCTRINE REELS · S2·10 · त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर ===
+Target: 49–50 seconds. Register: आप. Tone: even and unhurried throughout; the three points said as a teacher reading a letter, not as a judge; the माँ-बाप line warm; the closing quiet.
 
-"आपके पैसों में परमेश्वर का हिस्सा कितना है? दस प्रतिशत?
-और बाकी नब्बे — किसका है?"
+"घर में त्योहार है। थाली आगे बढ़ी — किसी और को चढ़ाई हुई।
+सवाल आएगा — खाओगे?
+और जवाब आपके पास नहीं।"
 
-भजन संहिता यह सवाल बदल देती है —
-पृथ्वी और जो कुछ उसमें है, सब यहोवा का है।
-आप मालिक नहीं — भंडारी हैं।
+कुरिन्थुस की कलीसिया ने यही पूछा था।
+पौलुस ने नियम नहीं दिया — तीन बातें दीं।
 
-पर बाइबल में देने की वजह डर नहीं, सौदा नहीं।
-पौलुस लिखते हैं — यीशु धनी थे, आपके लिए कंगाल बने।
-जिसने आपके लिए सब दिया — उसके सामने मुट्ठी अपने आप खुलती है।
+पहली — परमेश्वर एक है; पृथ्वी और उसकी भरपूरी उसी की।
+चढ़ाने से भोजन बदलता नहीं। बाज़ार से लो, खाओ, पूछो मत।
 
-बाइबल कहती है — हर एक जैसा मन में ठाने, वैसा दे। दबाव से नहीं, कुढ़कर नहीं।
-परमेश्वर हर्ष से देने वाले से प्रेम रखता है।
+दूसरी — जो आराधना किसी और की है, उसमें शिष्य साझी नहीं होता।
+प्रभु की मेज़ और किसी और की मेज़ — दोनों नहीं।
+भोजन एक बात है, आराधना दूसरी।
 
-साफ़ सुनिए — देना परमेश्वर से कुछ खरीदता नहीं। न आशीष, न फसल।
-जो मुफ़्त मिला है, उसका जवाब भी मुफ़्त होता है।
+तीसरी — अगर कोई कहे, यह चढ़ाया हुआ है, तो उसके विवेक के कारण मत खाओ।
+फ़ैसला डर से नहीं — विवेक से; आपके और सामने वाले के।
 
-पैसा बुरा नहीं। उसका प्रेम — बाइबल उसे हर बुराई की जड़ कहती है।
-दवा — संतोष।
+और हर हाल में — माँ-बाप का आदर। घर में साथ बैठना पाप नहीं, आज्ञा है।
 
-यीशु ने कहा — लेने से देना धन्य है।
-जिसका सब है, उसे देने में आप ग़रीब नहीं होते — आज़ाद होते हैं।
+पौलुस ने फ़ैसला नहीं दिया — कसौटी दी। खाओ या न खाओ, सब परमेश्वर की महिमा के लिए — और किसी के लिए ठोकर मत बनो।
 
 === END ===
 ```
 
-**Length:** ~152 words · 49–50 seconds. If the artist runs long, cut
-*"दवा — संतोष।"* — **never** cut *"देना परमेश्वर से कुछ खरीदता नहीं"*.
+**Length:** ~150 words · 49–50 seconds. If the artist runs long, cut
+*"भोजन एक बात है, आराधना दूसरी।"* (it restates the two lines before it) —
+**never** cut the conscience line (*उसके विवेक के कारण मत खाओ*), **never**
+*"माँ-बाप का आदर… आज्ञा है"*, and **never** *"पौलुस ने फ़ैसला नहीं दिया —
+कसौटी दी"*.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "पृथ्वी और जो कुछ उसमें है" | भजन संहिता 24:1 |
-| "भंडारी" | लूका 16:1-2 · 1 कुरिन्थियों 4:2 |
-| "धनी थे… कंगाल बने" | 2 कुरिन्थियों 8:9 |
-| "जैसा मन में ठाने… हर्ष से देने वाले" | 2 कुरिन्थियों 9:7 |
-| "कुछ खरीदता नहीं" | रोमियों 11:35 · मत्ती 10:8 |
-| "हर बुराई की जड़" | 1 तीमुथियुस 6:10 |
-| "संतोष" | 1 तीमुथियुस 6:6-8 |
-| "लेने से देना धन्य है" | प्रेरितों के काम 20:35 |
-| closing line | मत्ती 6:19-21 |
+| "कुरिन्थुस की कलीसिया ने यही पूछा था" | 1 कुरिन्थियों 8:1 |
+| "परमेश्वर एक है" | 1 कुरिन्थियों 8:4-6 |
+| "पृथ्वी और उसकी भरपूरी" | 1 कुरिन्थियों 10:26 · भजन संहिता 24:1 |
+| "बाज़ार से लो, खाओ, पूछो मत" | 1 कुरिन्थियों 10:25 |
+| "साझी नहीं होता… प्रभु की मेज़" | 1 कुरिन्थियों 10:20-21 — reference shown; not read beyond the script's words |
+| "उसके विवेक के कारण मत खाओ" | 1 कुरिन्थियों 10:28-29 |
+| "माँ-बाप का आदर" | इफिसियों 6:2 · निर्गमन 20:12 |
+| "घर में साथ बैठना" | 1 कुरिन्थियों 10:27 · लूका 5:29-30 |
+| closing line | 1 कुरिन्थियों 10:31-33 |
 
-**Why the hook works:** it starts from the number the viewer has in his head
-— ten — and asks the question the number was hiding: *and the rest?* The
-viewer who tithes stops because he has never been asked about the ninety; the
-viewer who does not stops because he expected to be told to.
+**Why the hook works:** three sentences put the viewer at a table he has sat
+at, with a plate in front of him and a question coming — and the third
+sentence names what he has never told anyone: he has no answer ready for
+that moment, and has been improvising for years. Nothing in the hook is
+about the festival; it is about the second before the question. The relative
+over the shoulder hears their own table described with affection and their
+own child described as unsure what to do, not as disapproving.
 
-**Guardrails held:** **seed-faith is closed on the face of the reel, by name
-of the mechanism** (*न आशीष, न फसल*), in a sentence marked uncuttable —
-because a generosity reel served cold to someone who has only heard
-prosperity teaching will otherwise be heard as *give to get*. Giving is
-grounded in **Christ's self-giving** (2 कुरिन्थियों 8:9) and taught as
-**voluntary and glad** (2 कुरिन्थियों 9:7), never under compulsion or curse:
-the tithe is raised as the viewer's number and neither commanded nor
-forbidden, and मलाकी 3 is deliberately not used, since served cold it becomes
-a threat. **Asceticism is refused** (*पैसा बुरा नहीं*) before greed is named,
-and greed is answered with contentment (1 तीमुथियुस 6) rather than guilt.
-Stewardship is stated without reintroducing the ledger frame Season 1 reel 4
-refused for sin. **Disciplefy solicits nothing**: no destination for giving is
-named, not the app and not a ministry; the New Testament's own context (the
-local church) is left to Season 1 reel 18 and the in-app study.
-
----
-
-## REEL S2·7 — परमेश्वर चुप रहा
-
-```
-=== DOCTRINE REELS · S2·07 · परमेश्वर चुप रहा ===
-Target: 49–50 seconds. Register: आप. Tone: matter-of-fact, lightly amused at योना, settled at the close.
-
-"कौन सी नौकरी? किससे शादी?
-आपने पूछा। परमेश्वर चुप रहा।
-तो अब कैसे जानेंगे कि उसकी मरज़ी क्या है?"
-
-पहले देखिए — बाइबल 'परमेश्वर की इच्छा' कहकर ज़्यादातर क्या कहती है।
-तुम्हारा पवित्र होना। हर बात में धन्यवाद। न्याय, दया, नम्रता।
-यह लिखा है। आवाज़ का इंतज़ार नहीं।
-
-और जो लिखा नहीं?
-वहाँ बाइबल आवाज़ का नहीं, बुद्धि का वादा करती है — माँगो, मिलेगी।
-बदला हुआ मन, जो परखता है। और सलाह — बहुत सलाहकारों से।
-
-शादी पर वचन कहता है — जिससे चाहे, केवल प्रभु में।
-जहाँ आज्ञा नहीं, वहाँ आज़ादी है।
-
-खुला दरवाज़ा? योना को भी तरशीश का जहाज़ तैयार मिला।
-मन की शांति? उसी जहाज़ में योना गहरी नींद सोए थे।
-ये निशान नहीं हैं।
-
-कोई कहे — परमेश्वर ने मुझे बताया, तुम यह करो — वह आपको बाँधता नहीं। उसे वचन से परखिए।
-
-परमेश्वर ने मरज़ी छिपाई नहीं — लिखी है।
-उसके भीतर रहिए। जो चुनना बाकी है, बुद्धि से चुनिए — डर से नहीं।
-
-=== END ===
-```
-
-**Length:** ~152 words · 49–50 seconds. If the artist runs long, cut
-*"मन की शांति? उसी जहाज़ में योना गहरी नींद सोए थे।"* — **not** the
-*"जो लिखा नहीं"* section and **not** *"उसे वचन से परखिए"*.
-
-**On-screen Scripture**
-
-| Line | Reference |
-|---|---|
-| "तुम्हारा पवित्र होना" | 1 थिस्सलुनीकियों 4:3 |
-| "हर बात में धन्यवाद" | 1 थिस्सलुनीकियों 5:18 |
-| "न्याय, दया, नम्रता" | मीका 6:8 |
-| "बुद्धि… माँगो, मिलेगी" | याकूब 1:5 |
-| "बदला हुआ मन, जो परखता है" | रोमियों 12:2 |
-| "बहुत सलाहकारों से" | नीतिवचन 15:22 |
-| "जिससे चाहे, केवल प्रभु में" | 1 कुरिन्थियों 7:39 |
-| "तरशीश का जहाज़" | योना 1:3 |
-| "गहरी नींद" | योना 1:5 |
-| "वचन से परखिए" | 1 थिस्सलुनीकियों 5:21 · यशायाह 8:20 |
-| closing line | भजन संहिता 119:105 · नीतिवचन 3:5-6 |
-
-**Why the hook works:** two nouns — नौकरी, शादी — are the two decisions this
-audience actually prays over, and *परमेश्वर चुप रहा* is the experience nobody
-admits in a prayer meeting. The reel does not soften the silence or promise
-a voice; it asks how the viewer will proceed, which is the question he came
-with.
-
-**Guardrails held:** God's will is first located **where Scripture locates
-it** — the revealed will, three texts, *यह लिखा है* — before any decision
-method is discussed, so the reel is about the word before it is about
-guidance. For the unwritten, the promised means are **all textual and none
-subjective**: wisdom (याकूब 1:5), a renewed mind that *tests* (रोमियों
-12:2), counsel (नीतिवचन 15:22), and Christian liberty (1 कुरिन्थियों 7:39 —
-*जहाँ आज्ञा नहीं, वहाँ आज़ादी है*), which is the anti-mysticism must-land.
-The two folk methods most common here — the open door and inner peace — are
-**refused from one narrative** (योना 1:3, 1:5): the ship was ready and the
-prophet slept soundly, both while running from God; no living person is
-mocked, and dreams are not raised at all, so no one's testimony is ridiculed.
-The *God told me you should* claim is closed as **non-binding on another
-person** and sent to the Season 1 reel 13 test (वचन से परखिए), restated here
-so the reel stands alone. Providence is not denied — the closing sends the
-viewer to the written word and to wisdom, *डर से नहीं*, which is the pastoral
-target: paralysis waiting for a sign is the injury this teaching leaves.
+**Guardrails held:** **the reel gives Paul's distinctions and no rule beyond
+them** — the curriculum's binding constraint. It says on its face that Paul
+*did not give a rule* (*नियम नहीं दिया*) and repeats it at the close (*फ़ैसला
+नहीं दिया — कसौटी दी*), so the viewer cannot leave with a ban or a permission
+the text lacks. The three points are 1 कुरिन्थियों 8–10 in Paul's own
+order: (1) one God, the earth is his, food is food — bought and eaten without
+inquiry (8:4-6, 10:25-26); (2) the disciple does not share in worship
+offered to another (10:20-21) — stated **without adjectives**: the verse's
+own word for the recipients of that worship is left to the on-screen
+reference and never spoken, because a relative hearing it would hear their
+worship described, and the doctrine is carried whole by *साझी नहीं होता*;
+(3) the conscience clause (10:28-29) — if someone names the food as
+offered, abstain for *his* sake — kept in full and marked uncuttable, so the
+plate is decided by conscience, the viewer's and the other person's, and not
+by the reel. **8:4's *an idol is nothing* is not read aloud**: the substance
+(the offering changes nothing about the food, because God is one and the
+earth is his) is stated positively, and the sentence a relative would hear as
+*your god is nothing* is not given a voice. **Neither the festival nor the
+practice is named**; the script speaks as 1 कुरिन्थियों 8 does — *किसी और को
+चढ़ाई हुई* — and the only nouns are घर, त्योहार, थाली. **Attendance out of
+honour is affirmed** (*घर में साथ बैठना पाप नहीं, आज्ञा है* — 10:27 has the
+believer accepting an unbeliever's invitation; लूका 5:29 has Jesus at a table
+the religious disapproved of) and honour to parents is stated as the command
+it is (इफिसियों 6:2), so the disciple is never a separatist. **Participation
+in worship is declined without contempt** — no word of the reel describes
+what the other worship is or is worth. The closing (10:31-33) sends the
+viewer to God's glory and the neighbour's good, which is where Paul ends the
+argument, and gives no assignment. Nothing here governs sorcery or the
+horoscope; S2·10 governs attendance and the plate only.
 
 ---
 
 ## Production notes
 
-**S2·5 has three uncuttable lines and no substitutions.** *चतुराई पाप नहीं
-है*, *चुप रहना भी इनकार नहीं*, and *कोई बड़ा कदम अकेले मत उठाइए* survive every
-edit, every caption, every subtitle. If an editor proposes a bolder closing or
-a testimony clip, the answer is no: the curriculum's risk register on
-persecution governs this reel, and the reel's purpose is that a viewer whose
-situation we cannot assess does nothing rash on the strength of it. Do not
-add a call to action that involves the viewer's family. **Comments on S2·5
-must not be answered with counsel** — moderation points to the reel's own
-line (*कलीसिया के परिपक्व लोगों से बात कीजिए*) and nothing else. Do not pin
-news, cases, or any organisation.
+**S2·01 and S2·04 are frozen.** Their script blocks and notes above are
+copied from the produced versions without change; visuals and captions for
+both already exist in this folder under their production IDs. Do not
+re-record, re-caption or renumber them for the arc placement. The arc
+position (1·1, 1·3) is a playlist field only.
 
-**S2·4 captions and thumbnail must pass the same test as the script.** No
-symbol, image or word of another faith in the visual; no *vs.*; no
-before/after framing. The thumbnail is the viewer's own family table, not a
-comparison. Comments will bring hostile lines from both directions — reply
-with the reel's own sentence (*नम्रता और आदर से*) or not at all.
+**S2·10 will be asked "so can I or not?"** — in the comments, under the
+caption, and by the artist. The answer is the reel's own text and a pointer
+to the viewer's pastor: *पौलुस ने फ़ैसला नहीं दिया — कसौटी दी*. Moderation
+never issues a ruling in either direction; a comment that demands one is
+answered with the three points or not at all. The pinned comment is the
+reel's own conscience line. No caption, thumbnail or visual may show a
+festival, a shrine, an image or a specific dish; the visual is a family
+table and a plate. Do not pin an in-app study — the curriculum records that
+none touches 1 कुरिन्थियों 8–10 as a lived question.
 
-**S2·3 will be asked "which preacher?"** The reel names none and moderation
-names none. Any comment naming an individual is left unanswered; any comment
-that is defamatory is removed. The reel's line is the reply: *यह सिखावन*.
+**S2·10 has three uncuttable lines.** The conscience clause, the
+माँ-बाप line, and *फ़ैसला नहीं दिया — कसौटी दी* survive every edit, caption
+and subtitle. If either of the first two is lost, the reel becomes a rule.
 
-**S2·1 comments will offer illustrations again** — the same ones as Season 1
-reel 12, plus the avatar comparison at length. Reply with यशायाह 40:18, which
-the reel already carries, and do not argue the Trinity in a thread.
+**S2·09 will be asked "which church is right?"** The reel names none and
+moderation names none. Comments that name a denomination, a movement or a
+pastor are left unanswered; the reply, where one is given, is the reel's
+own test (the two questions) and *जहाँ यह है, वहाँ आपके भाई हैं*. Do not
+answer questions about baptism mode, church government or worship style —
+the reel calls them *छोटी नहीं — पर सुसमाचार नहीं* and stops there. Pin the
+in-app destination 'The Local Church' (the curriculum's nearest); do not pin
+'Church Leadership and Authority'.
 
-**S2·6 must never carry a giving link, app-purchase prompt or donation
-handle** in the outro, caption or pinned comment. A generosity reel that ends
-on a payment prompt has become the thing S2·3 refutes. If the brand outro
-includes a subscription prompt by default, remove it for this reel.
+**S2·08 will be asked about Thomas.** The reel's line is the reply: *परंपरा
+कीमती है — पर वचन नहीं*. Do not argue the tradition's historicity in a
+thread in either direction. Comments blaming or crediting any nation or
+empire for the Bible are left unanswered. Visuals may show a map of the
+eastern Mediterranean and West Asia, the Pentecost list and the Gaza road —
+never a flag, a national symbol, or a colonial image. Before recording,
+confirm the OV spelling of the three peoples in प्रेरितों 2:9 (the script
+has *पारथी, मादी, एलामी*; if the OV reads *मेदी*, use the OV form).
 
-**S2·3 should be live before S2·6.** This is the one release-order dependency
-Season 2 has (see the curriculum's ordering rules). S2·6 carries its own
-self-limiting clause, so the order protects the *playlist* viewer; the clause
-protects the stranger.
+**The arc's over-the-shoulder test applies to captions and thumbnails as it
+does to scripts.** For all five reels: no symbol, image or word of another
+faith; no *vs.*; no before/after framing. The thumbnail is the viewer's own
+street, table or bookshelf — never a comparison.
 
-**S2·2 should be live before S2·5, and be pinned under it.** Not a doctrinal
-dependency — S2·5 stands alone — but sovereignty in suffering is the ground
-that keeps a persecution reel from becoming heroism, and a frightened viewer
-should be handed the quieter reel next.
+**Release order inside the arc is the curriculum's**: S2·01, S2·08, S2·04,
+S2·09, S2·10. S2·04 must be live before S2·09 (only-one-way settled before
+*then why so many of you?*), and S2·04 and S2·10 both before Arc 3's S2·05
+and S2·14 — the posture toward neighbours and family is fixed here before a
+later reel says the same people may turn hostile. Every reel still stands
+alone; the order protects only the playlist viewer.
 
-**No reel in Season 2 ends open.** Unlike Season 1 reels 2 and 4, none of
-these names a problem and defers the answer; nothing needs a forward pointer
-pinned. Pin the in-app destination from the curriculum's CTA table instead,
-except under S2·5, where the pinned comment is S2·2 and the reel's own
-*कलीसिया* line.
+**No reel in this arc ends open.** Each closes on its own; nothing needs a
+forward pointer pinned. Pin the in-app destination from the curriculum's CTA
+table (S2·01 → One God, Three Persons; S2·08 → Historical Reliability of the
+Bible; S2·04 → Is Jesus the Only Way to Salvation?; S2·09 → The Local
+Church), except under S2·10, where the pinned comment is the reel's own
+conscience line.
