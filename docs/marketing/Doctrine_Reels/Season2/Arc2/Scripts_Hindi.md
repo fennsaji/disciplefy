@@ -63,7 +63,7 @@ Target: 49–50 seconds. Register: आप. Tone: gentle at the open, plain in th
 अगर हाँ — आप मसीह में हैं। नाम से नहीं, भरोसे से।
 और अगर आप मसीह में हैं — निश्चय घर के नाम पर नहीं, मसीह के पूरे किए काम पर टिका है।
 
-और अगर अभी नहीं — जो घर ने बताया, आज खुद मान लीजिए।
+और अगर अभी नहीं — जो घर ने बताया, आज मन फिराकर खुद यीशु पर भरोसा कीजिए।
 
 === END ===
 ```
@@ -297,7 +297,7 @@ Target: 49–50 seconds. Register: आप. Tone: steady and respectful throughou
 पर आपके और परमेश्वर के बीच कोई इंसान खड़ा नहीं हो सकता।
 पौलुस लिखते हैं — परमेश्वर और मनुष्यों के बीच मध्यस्थ एक ही है — मसीह यीशु।
 
-यीशु ने कहा — तुम गुरु मत कहलाना; तुम्हारा गुरु एक है, तुम सब भाई हो।
+यीशु ने कहा — तुम रब्बी न कहलाना; तुम्हारा गुरु एक ही है, तुम सब भाई हो।
 शब्द नहीं रोका — वह जगह रोकी, जहाँ एक इंसान दूसरे का स्वामी बन जाए।
 
 बिरीया के लोगों ने पौलुस तक को पवित्रशास्त्र से जाँचा।
@@ -324,8 +324,8 @@ Target: 49–50 seconds. Register: आप. Tone: steady and respectful throughou
 | "अपने अगुवों की मानो… आत्माओं के लिए जागते हैं" | इब्रानियों 13:17 |
 | "कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं" | इब्रानियों 10:24-25 · इफिसियों 4:11-12 |
 | "मध्यस्थ एक ही है — मसीह यीशु" | 1 तीमुथियुस 2:5 |
-| "तुम गुरु मत कहलाना… तुम सब भाई हो" | मत्ती 23:8-10 |
-| "वचन खुद कलीसिया को शिक्षक देता है" | इफिसियों 4:11 · याकूब 3:1 — shown, not read |
+| "तुम रब्बी न कहलाना… तुम सब भाई हो" | मत्ती 23:8-10 |
+| "शब्द नहीं रोका…" | इफिसियों 4:11 · याकूब 3:1 — shown, not read |
 | "पौलुस तक को पवित्रशास्त्र से जाँचा" | प्रेरितों के काम 17:11 |
 | "जाँचना पाप नहीं" | 1 थिस्सलुनीकियों 5:21 · गलातियों 1:8 |
 | "ठहरिए। आदर कीजिए।" | 1 थिस्सलुनीकियों 5:12-13 · 1 तीमुथियुस 5:17 |
@@ -348,7 +348,7 @@ is the mediator role, not the office**: the doctrinal hinge is 1 तीमुथ
 leadership. मत्ती 23:8 is read in Jesus's sense on the face of the reel —
 *शब्द नहीं रोका, वह जगह रोकी* — so the viewer is not told to stop using a
 title (which would contradict इफिसियों 4:11's gift of teachers, shown on
-screen) but that no man may become another's स्वामी; *गुरु* is the OV's word
+screen) but that no man may become another's स्वामी; *रब्बी* is the OV's forbidden title and *गुरु* its word for the one Teacher
 in the verse, which is also why the reel's title-word is the text's and not
 a caricature. **Testing is grounded in the Bereans** (प्रेरितों 17:11), who
 tested an apostle and were commended — the strongest possible textual

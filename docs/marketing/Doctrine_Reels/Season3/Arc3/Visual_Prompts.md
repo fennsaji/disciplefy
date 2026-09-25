@@ -108,7 +108,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 3 · 03 → 04** · 0:20–0:30
 
-*Voiceover:* "माफ़ी — बदला अपने हाथ से परमेश्वर के हाथ में देना। यह अकेले होती है। मेल — दो का काम है। वचन कहता है — जहाँ तक हो सके।"
+*Voiceover:* "माफ़ी — बदला अपने हाथ से परमेश्वर के हाथ में देना। मेल — दो का काम है। वचन कहता है — जहाँ तक हो सके।"
 
 *On screen:* रोमियों 12:19 · रोमियों 12:18
 
@@ -120,7 +120,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 **Clip 4 · 04 → 05** · 0:30–0:40
 
-*Voiceover:* "जिसने चोट दी, और फिर दे सकता है — माफ़ी का मतलब लौटना नहीं। दूरी पाप नहीं। कोई बड़ा कदम अकेले मत उठाइए। पर कड़वाहट आपके भीतर उगती है — और पहले आपको ही खाती है। वचन आपको बचाना चाहता है; जिसने चोट दी, उसे नहीं।"
+*Voiceover:* "जिसने चोट दी, और फिर दे सकता है — माफ़ी का मतलब लौटना नहीं। दूरी पाप नहीं। सुरक्षित रहिए — पहले। कोई बड़ा कदम अकेले मत उठाइए। पर कड़वाहट आपके भीतर उगती है — और पहले आपको ही खाती है। यह आज्ञा आपको बचाने के लिए है — जिसने चोट दी, उसे छूट देने के लिए नहीं।"
 
 *On screen:* मत्ती 10:23 · नीतिवचन 22:3 · नीतिवचन 15:22 · इब्रानियों 13:17 · इब्रानियों 12:15
 
@@ -318,9 +318,9 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 3 · 03 → 04** · 0:20–0:30
 
-*Voiceover:* "जो सच को झुकाए, या जो हक़ नहीं वह दिलाए — वही घूस है। तोहफ़ा अलग है; फ़र्क दिल जानता है। पौलुस कहते हैं — बाहर वालों में भी सुनाम हो। वह मंच पर नहीं — खिड़की पर बनता है।"
+*Voiceover:* "जो सच को झुकाए, या जो हक़ नहीं वह दिलाए — वही घूस है। तोहफ़ा अलग है; फ़र्क दिल जानता है। पौलुस लिखते हैं — बाहर वालों के सामने सभ्यता से चलो। वह मंच पर नहीं — खिड़की पर बनता है।"
 
-*On screen:* निर्गमन 23:8 · व्यवस्थाविवरण 16:19 · नीतिवचन 18:16 · 1 तीमुथियुस 3:7
+*On screen:* निर्गमन 23:8 · व्यवस्थाविवरण 16:19 · नीतिवचन 18:16 · 1 थिस्सलुनीकियों 4:12 · कुलुस्सियों 4:5
 
 ```
 Rahul picks up the file and turns away. The window dissolves to the steps outside in hard sun; he walks down them into the light with the file under his arm.
@@ -413,7 +413,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "यीशु ने कहा — भोज दो, तो मित्रों और अमीर पड़ोसियों को नहीं; उन्हें बुलाओ, जो बदले में कुछ नहीं दे सकते। तो यह सजावट नहीं है। यह दरवाज़ा है। दाल-चावल काफ़ी है।"
 
-*On screen:* लूका 14:12-14 · 1 तीमुथियुस 3:2 · तीतुस 1:8
+*On screen:* लूका 14:12-14 · 1 पतरस 4:9 · रोमियों 12:13
 
 ```
 They sit on the mat. Rahul ladles dal onto the old man's rice; the old man watches the plate with his hands on his knees. The camera settles close.
@@ -423,7 +423,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 3 · 03 → 04** · 0:20–0:30
 
-*Voiceover:* "पहली कलीसिया घरों में ही थी — वे घर-घर रोटी तोड़ते थे। जितनी आज्ञाएँ 'एक-दूसरे' से शुरू होती हैं — वे मेज़ पर ही पूरी होती हैं। सभा में हाथ मिलता है; मेज़ पर ज़िंदगी।"
+*Voiceover:* "पहली कलीसिया घरों में ही थी — वे घर-घर रोटी तोड़ते थे। जितनी आज्ञाएँ 'एक-दूसरे' से शुरू होती हैं — उनमें से बहुत-सी मेज़ पर पूरी होती हैं। सभा में हाथ मिलता है; मेज़ पर ज़िंदगी।"
 
 *On screen:* प्रेरितों के काम 2:46 · यूहन्ना 13:34 · गलातियों 6:2
 
@@ -437,7 +437,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "और वह, जिसे आपके घर में खाने की उम्मीद ही नहीं थी — उसी की थाली में सुसमाचार सबसे साफ़ दिखता है।"
 
-*On screen:* लूका 15:2 · गलातियों 2:12
+*On screen:* लूका 15:2 — shown, not read
 
 ```
 The painting fades back into the rented room on another evening: the mat laid, one plate full, one plate empty and waiting, the door open. The camera closes on the empty plate.
@@ -750,7 +750,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 **Clip 4 · 04 → 05** · 0:30–0:40
 
-*Voiceover:* "पत्नी — अधीनता प्रभु के लिए, डर से नहीं; दासी नहीं, साथी। माँ-बाप — बच्चों को चिढ़ाओ मत; प्रभु की शिक्षा में पालो। घर सँभालना — अगुवे की पहचान, हर विश्वासी की बढ़ती।"
+*Voiceover:* "पत्नी — अधीनता प्रभु के लिए, डर से नहीं; दासी नहीं, साथी। माँ-बाप — बच्चों को चिढ़ाओ मत; प्रभु की शिक्षा में पालो। "
 
 *On screen:* इफिसियों 5:22 · 1 पतरस 3:7 · इफिसियों 6:4 · 1 तीमुथियुस 3:4
 
@@ -831,7 +831,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 2 · 02 → 03** · 0:10–0:20
 
-*Voiceover:* "भजन में सब्त का गीत है — यहोवा का धन्यवाद करना भला है। इब्रानियों — इकट्ठा होना मत छोड़ो, जैसे कुछ लोग करते हैं। पर विश्राम आलस नहीं — सातवाँ दिन भी आराधना का है।"
+*Voiceover:* "भजन में सब्त का गीत है — यहोवा का धन्यवाद करना भला है। इब्रानियों — इकट्ठा होना मत छोड़ो, जैसे कुछ लोग करते हैं। पर विश्राम आलस नहीं — वह दिन आराधना का है।"
 
 *On screen:* भजन संहिता 92:1 · इब्रानियों 10:25 · नीतिवचन 6:9-11
 
@@ -867,7 +867,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 5 · 05 → outro** · 0:40–0:50
 
-*Voiceover:* "हफ़्ते का एक आकार है। उसका केंद्र एक भीड़ है — परमेश्वर के लोग; यह हाथ नहीं।"
+*Voiceover:* "हफ़्ते का एक आकार है। उसका केंद्र आराधना है — परमेश्वर के लोगों की सभा में; यह हाथ नहीं।"
 
 *On screen:* भजन संहिता 92 · प्रेरितों के काम 20:7
 
