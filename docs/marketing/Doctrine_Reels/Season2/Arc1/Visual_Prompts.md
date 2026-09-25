@@ -7,8 +7,8 @@ Concept, workflow, rules and the Rahul / Sunil references:
 Vikram and Deepak references: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
 Same concept, a year on: one person, one real moment, the whole reel inside it.
-Reels marked ✓ were produced before the season was re-cut; their content is
-frozen and only their arc number changed. Generate each frame with the previous
+Seven reels predate the season's re-cut; only their arc number changed and
+nothing is recorded. Generate each frame with the previous
 frame attached. Five clips of 10s, the last carrying frame 05 into your outro.
 
 **Safety rules that override composition** (from the curriculum's risk
@@ -21,7 +21,7 @@ The painting appears once, in Reel 1·2 — the Ethiopian official reading Isaia
 
 ---
 
-## REEL 1·1 — तीन भगवान? · S2·01 · ✓ produced — content frozen
+## REEL 1·1 — तीन भगवान? · S2·01
 Evening chai on the rooftop of Rahul's building. Vikram, the neighbour from the floor below, asks the question he has been sitting on for months — three gods? Rahul answers without a diagram, and the chai does not go cold.
 **Cast:** Rahul, Vikram · **Hook text on frame 01:** "तो क्या वे खुद से बात कर रहे थे?"
 
@@ -229,7 +229,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 ---
 
-## REEL 1·3 — क्या सच में एक ही रास्ता है? · S2·04 · ✓ produced — content frozen
+## REEL 1·3 — क्या सच में एक ही रास्ता है? · S2·04
 Dinner at Vikram's home. His mother feeds Rahul like a son. On the bus home the question sits in Rahul's face. A week later he is back at her door carrying her groceries up the stairs. The doctrine is in the voiceover; the picture is only love.
 **Cast:** Rahul, Vikram, Vikram's mother · **Hook text on frame 01:** "उनकी आँखों में देखकर कह पाएँगे?"
 
@@ -296,7 +296,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 3 · 03 → 04** · 0:20–0:30
 
-*Voiceover:* "समस्या पाप है — और उसके लिए एक ही मरा और जी उठा। रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है। घमंड की जगह नहीं — यह रास्ता आपने ढूँढा नहीं, आपको मिला, दान में।"
+*Voiceover:* "समस्या पाप है — और उसके लिए एक ही मरे और जी उठे। रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है। घमंड की जगह नहीं — यह रास्ता आपने ढूँढा नहीं, आपको मिला, दान में।"
 
 *On screen:* प्रेरितों के काम 4:12 · इफिसियों 2:8-9
 

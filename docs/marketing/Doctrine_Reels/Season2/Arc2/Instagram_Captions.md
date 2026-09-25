@@ -2,7 +2,7 @@
 
 Short by design: hook, one line, verse, CTA, five hashtags (Instagram's cap).
 Hook and closing line are lifted from the reviewed scripts. Reels 2·2 and 2·5
-were produced under S2·03 / S2·07; their captions are unchanged. Pins from the
+predate the re-cut (S2·03 / S2·07). Pins from the
 production notes: S2·06 (बाकी नब्बे) pinned under 2·3; Season 1 reel 18
 (कलीसिया) pinned under 2·4 — never a leadership study. No comment prompt on
 2·3 or 2·4; moderation gives only the reel's own lines. Comments that name a
@@ -26,7 +26,7 @@ preacher, church or ministry are left unanswered.
 ```
 आपने बीज बोया। दावा किया। विश्वास किया। हुआ नहीं। तो कसूर किसका?
 
-सुसमाचार वादा नहीं करता कि आप अमीर होंगे। वादा यह है — मसीह आपके होंगे। बीमारी में भी, क़ब्र के पार भी।
+सुसमाचार वादा नहीं करता कि आप अमीर होंगे। वादा यह है — अगर आप मसीह में हैं, मसीह आपके हैं। बीमारी में भी, क़ब्र के पार भी।
 
 📖 2 कुरिन्थियों 12:9
 🔖 सेव कर लीजिए।

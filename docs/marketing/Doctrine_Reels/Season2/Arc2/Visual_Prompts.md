@@ -7,8 +7,8 @@ Concept, workflow, rules and the Rahul / Sunil references:
 Vikram and Deepak references: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
 Same concept, a year on: one person, one real moment, the whole reel inside it.
-Reels marked ✓ were produced before the season was re-cut; their content is
-frozen and only their arc number changed. Generate each frame with the previous
+Seven reels predate the season's re-cut; only their arc number changed and
+nothing is recorded. Generate each frame with the previous
 frame attached. Five clips of 10s, the last carrying frame 05 into your outro.
 
 **Safety rules that override composition** (from the curriculum's risk
@@ -135,7 +135,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 ---
 
-## REEL 2·2 — दूसरा सुसमाचार · S2·03 · ✓ produced — content frozen
+## REEL 2·2 — दूसरा सुसमाचार · S2·03
 Sunil's mother is ill and has been sending 'seed' money for a year. Now she has been told her faith was too small. Sunil lays the envelopes on the table in front of Rahul. No teacher is named, no screen is shown.
 **Cast:** Rahul, Sunil, Sunil's mother · **Hook text on frame 01:** "हुआ नहीं। तो कसूर किसका?"
 
@@ -224,7 +224,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 5 · 05 → outro** · 0:40–0:50
 
-*Voiceover:* "वादा यह है — मसीह आपके होंगे। बीमारी में भी, क़ब्र के पार भी।"
+*Voiceover:* "वादा यह है — अगर आप मसीह में हैं, मसीह आपके हैं। बीमारी में भी, क़ब्र के पार भी।"
 
 ```
 Hold on the two hands. Slow push in, then a gentle dissolve into the brand outro.
@@ -444,7 +444,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 ---
 
-## REEL 2·5 — परमेश्वर चुप रहा · S2·07 · ✓ produced — content frozen
+## REEL 2·5 — परमेश्वर चुप रहा · S2·07
 Two job offer letters on the desk and a marriage proposal from the family. Rahul has been waiting a month for a sign. His Bible falls open at Jonah — the page becomes the ship — and the next morning he is at a table with the people who know him.
 **Cast:** Rahul, Dada, his mother, the pastor · painted scene (Jonah asleep in the ship) · **Hook text on frame 01:** "आपने पूछा। परमेश्वर चुप रहा।"
 

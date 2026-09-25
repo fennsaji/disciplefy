@@ -6,10 +6,9 @@ God's hand in the places pressure actually arrives — a hospital, a father, a
 marriage, a threat, a salary, a Monday. It ends on ordinary work, never on
 persecution.
 
-Three of the six reels are already produced (S2·02, S2·05, S2·06). Their
-script blocks and per-reel notes are copied here **verbatim** from
-[../_produced_scripts_S2.md](../_produced_scripts_S2.md) and are frozen;
-production IDs are never renumbered — only the arc position is new. Three
+Three of the six reels (S2·02, S2·05, S2·06) predate the season's re-cut;
+production IDs are never renumbered — only the arc position is new. Nothing is
+recorded; every script here is open to correction. Three
 reels are new here: S2·14, S2·15, S2·16.
 
 All six hold आप register, no English loanwords, same voice as Season 1.
@@ -30,7 +29,7 @@ addresses the already-married before the unmarried**, so that 1 कुरिन�
 
 ---
 
-## REEL 3·1 — S2·02 · उसने रोका क्यों नहीं? ✓ produced — content frozen
+## REEL 3·1 — S2·02 · उसने रोका क्यों नहीं?
 
 ```
 === DOCTRINE REELS · S2·02 · उसने रोका क्यों नहीं? ===
@@ -286,7 +285,7 @@ disciple's marriage is *in the Lord* in the first place.
 
 ---
 
-## REEL 3·4 — S2·05 · कीमत ✓ produced — content frozen
+## REEL 3·4 — S2·05 · कीमत
 
 ```
 === DOCTRINE REELS · S2·05 · कीमत ===
@@ -368,7 +367,7 @@ the viewer having seen it.
 
 ---
 
-## REEL 3·5 — S2·06 · बाकी नब्बे ✓ produced — content frozen
+## REEL 3·5 — S2·06 · बाकी नब्बे
 
 ```
 === DOCTRINE REELS · S2·06 · बाकी नब्बे ===

@@ -2,7 +2,7 @@
 
 Short by design: hook, one line, verse, CTA, five hashtags (Instagram's cap).
 Hook and closing line are lifted from the reviewed scripts. Reels 1·1 and 1·3
-were produced under S2·01 / S2·04; their captions are unchanged. Pins from the
+predate the re-cut (S2·01 / S2·04). Pins from the
 production notes: 1·4 pins the in-app *स्थानीय कलीसिया* path; 1·5 pins the
 reel's own conscience line and no in-app study; 1·2 never engages the Thomas
 tradition in a thread; 1·5 never rules *खाओ / मत खाओ*.

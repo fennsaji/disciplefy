@@ -8,10 +8,10 @@ listener over the viewer's shoulder, and none may hear mockery. Arc 3's
 persecution reel assumes this posture is already in place toward the people
 who may become the hostile party.
 
-Five reels in the curriculum's arc order. Two are already produced (S2·01,
-S2·04) and are copied here **verbatim, content frozen** — production IDs are
-never renumbered; the arc position is a separate field. Three are new
-(S2·08, S2·09, S2·10).
+Five reels in the curriculum's arc order. Two (S2·01, S2·04) were written
+before the season was re-cut; production IDs are never renumbered — the arc
+position is a separate field. Three are new (S2·08, S2·09, S2·10). Nothing in
+this season has been recorded yet; every script is open to correction.
 
 All five hold आप register, no English loanwords, same voice as Season 1.
 Honorifics follow Arc 3: यीशु and पवित्र आत्मा take **वे**; the Father and
@@ -34,15 +34,15 @@ distinctions from 1 कुरिन्थियों 8–10 and no rule beyond 
 
 | Arc · pos | ID | Reel | Status |
 |---|---|---|---|
-| 1·1 | S2·01 | तीन भगवान? | ✓ produced — content frozen |
+| 1·1 | S2·01 | तीन भगवान? | |
 | 1·2 | S2·08 | क्या बाइबल विदेशी किताब है? | new |
-| 1·3 | S2·04 | क्या सच में एक ही रास्ता है? | ✓ produced — content frozen |
+| 1·3 | S2·04 | क्या सच में एक ही रास्ता है? | |
 | 1·4 | S2·09 | इतनी कलीसियाएँ क्यों? | new |
 | 1·5 | S2·10 | त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर | new |
 
 ---
 
-## REEL 1·1 — तीन भगवान? · S2·01 · ✓ produced — content frozen
+## REEL 1·1 — तीन भगवान? · S2·01
 
 ```
 === DOCTRINE REELS · S2·01 · तीन भगवान? ===
@@ -188,7 +188,7 @@ named; *बाहर वाले* is the viewer's relative's phrase, quoted, no
 
 ---
 
-## REEL 1·3 — क्या सच में एक ही रास्ता है? · S2·04 · ✓ produced — content frozen
+## REEL 1·3 — क्या सच में एक ही रास्ता है? · S2·04
 
 ```
 === DOCTRINE REELS · S2·04 · क्या सच में एक ही रास्ता है? ===
@@ -202,7 +202,7 @@ Target: 49–50 seconds. Register: आप. Tone: tender at the open, steady in t
 मार्ग, सत्य, जीवन मैं ही हूँ; मेरे बिना कोई पिता तक नहीं पहुँचता।
 
 पर वे ही क्यों? सवाल यह नहीं कि कौन सा धर्म बेहतर।
-समस्या पाप है — और उसके लिए एक ही मरा और जी उठा।
+समस्या पाप है — और उसके लिए एक ही मरे और जी उठे।
 रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है।
 
 घमंड की जगह नहीं — यह रास्ता आपने ढूँढा नहीं, आपको मिला, दान में।
@@ -225,7 +225,7 @@ Target: 49–50 seconds. Register: आप. Tone: tender at the open, steady in t
 | Line | Reference |
 |---|---|
 | "मार्ग, सत्य, जीवन मैं ही हूँ" | यूहन्ना 14:6 |
-| "एक ही मरा और जी उठा" | प्रेरितों के काम 4:12 · 1 तीमुथियुस 2:5 |
+| "एक ही मरे और जी उठे" | प्रेरितों के काम 4:12 · 1 तीमुथियुस 2:5 |
 | "रास्ता एक व्यक्ति है" | यूहन्ना 14:6 — hold |
 | "आपको मिला, दान में" | इफिसियों 2:8-9 |
 | "नम्रता और आदर से" | 1 पतरस 3:15 |
@@ -435,11 +435,9 @@ horoscope; S2·10 governs attendance and the plate only.
 
 ## Production notes
 
-**S2·01 and S2·04 are frozen.** Their script blocks and notes above are
-copied from the produced versions without change; visuals and captions for
-both already exist in this folder under their production IDs. Do not
-re-record, re-caption or renumber them for the arc placement. The arc
-position (1·1, 1·3) is a playlist field only.
+**S2·01 and S2·04 predate the re-cut.** Their production IDs stay; the arc
+position (1·1, 1·3) is a playlist field only. They are not recorded, and the
+series review pass has already corrected S2·04's honorific.
 
 **S2·10 will be asked "so can I or not?"** — in the comments, under the
 caption, and by the artist. The answer is the reel's own text and a pointer

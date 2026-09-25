@@ -7,8 +7,8 @@ Concept, workflow, rules and the Rahul / Sunil references:
 Vikram and Deepak references: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
 Same concept, a year on: one person, one real moment, the whole reel inside it.
-Reels marked ✓ were produced before the season was re-cut; their content is
-frozen and only their arc number changed. Generate each frame with the previous
+Seven reels predate the season's re-cut; only their arc number changed and
+nothing is recorded. Generate each frame with the previous
 frame attached. Five clips of 10s, the last carrying frame 05 into your outro.
 
 **Safety rules that override composition** (from the curriculum's risk
@@ -21,7 +21,7 @@ No painting in this arc. Reel 3·2 is Deepak's — the only reel in the series l
 
 ---
 
-## REEL 3·1 — उसने रोका क्यों नहीं? · S2·02 · ✓ produced — content frozen
+## REEL 3·1 — उसने रोका क्यों नहीं? · S2·02
 A hospital at night. A neighbour's small son has been hit by a scooter, and his mother asks Rahul the question straight. Rahul has no answer that fixes it. His Bible opens at John 9 — the page becomes the man born blind — and then he just stays. Frame 04 must land on the voiceover's "यीशु ने कहा — न इसने पाप किया", never on "ज़रूर कोई पाप होगा": the painting is the refutation only if it arrives with Jesus's answer.
 **Cast:** Rahul, a mother, a boy of about seven (asleep), hospital staff (background) · painted scene (Jesus and the blind man, Jesus from behind) · **Hook text on frame 01:** "उसने रोका क्यों नहीं?"
 
@@ -334,7 +334,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 ---
 
-## REEL 3·4 — कीमत · S2·05 · ✓ produced — content frozen
+## REEL 3·4 — कीमत · S2·05
 A voice note from Deepak, nineteen, a new believer in a village where his faith has become a problem. He wants to do something. Rahul takes the morning bus, meets him at a highway dhaba, and the something they do is walk together to the pastor.
 **Cast:** Rahul, Deepak, a pastor (last frame only). No antagonist, no crowd, no confrontation — anywhere. · **Hook text on frame 01:** "क्या यह सबूत है कि आप सही हैं?"
 
@@ -437,7 +437,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 ---
 
-## REEL 3·5 — बाकी नब्बे · S2·06 · ✓ produced — content frozen
+## REEL 3·5 — बाकी नब्बे · S2·06
 Salary day. Rahul sits at his desk dividing cash into envelopes and stops at the one for the offering. On Sunday an old widow from his church is on the steps, and the envelope goes into the box with a lighter hand than it left the desk. No amount is ever shown.
 **Cast:** Rahul, an elderly widow, congregation (background) · **Hook text on frame 01:** "और बाकी नब्बे — किसका है?"
 

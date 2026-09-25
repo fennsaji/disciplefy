@@ -2,7 +2,7 @@
 
 Short by design: hook, one line, verse, CTA, five hashtags (Instagram's cap).
 Hook and closing line are lifted from the reviewed scripts. Reels 3·1, 3·4 and
-3·5 were produced under S2·02 / S2·05 / S2·06; their captions are unchanged.
+3·5 predate the re-cut (S2·02 / S2·05 / S2·06).
 Pins from the production notes: 3·2 pins the in-app *विश्वास और परिवार* path
 and, beneath it, S2·02; 3·3 pins *जीवनसाथी का बुद्धिमानी से चुनाव* and,
 beneath it, *जब विवाह कठिन हो जाए* — both, always. Comments on 3·2 are never

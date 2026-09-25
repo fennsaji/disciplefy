@@ -8,11 +8,10 @@ must do so without a single line a viewer in a healthy church could hear as
 an attack on his own leader.
 
 Two of the five reels are already produced (S2·03, S2·07). Their script
-blocks and notes below are copied verbatim from
-[../_produced_scripts_S2.md](../_produced_scripts_S2.md) and are marked
-**✓ produced — content frozen**; the production IDs `S2·03` and `S2·07`
-are kept as they are and must not be renumbered — arc position is a separate
-field. The three new reels take `S2·11`, `S2·12`, `S2·13`.
+blocks and notes below predate the season's re-cut; the production IDs
+`S2·03` and `S2·07` are kept as they are and must not be renumbered — arc
+position is a separate field. Nothing is recorded; both are open to
+correction, and the series review pass has already added S2·03's conditional. The three new reels take `S2·11`, `S2·12`, `S2·13`.
 
 All five hold आप register, no English loanwords, same voice as Season 1.
 Honorifics follow Season 1 Arc 3: यीशु and पवित्र आत्मा take **वे**; the
@@ -123,9 +122,9 @@ family's faith.
 
 ---
 
-## REEL 2·2 — S2·03 · दूसरा सुसमाचार · ✓ produced — content frozen
+## REEL 2·2 — S2·03 · दूसरा सुसमाचार
 
-Copied verbatim from `../_produced_scripts_S2.md`. Production ID `S2·03` is
+Predates the re-cut. Production ID `S2·03` is
 unchanged; only the arc position is new.
 
 ```
@@ -152,7 +151,7 @@ Target: 49–50 seconds. Register: आप. Tone: firm and unhurried; nothing sne
 सबसे बुरी बात — यह सिखावन दबे हुए को ही दोष देती है: विश्वास कम था।
 
 सुसमाचार वादा नहीं करता कि आप अमीर होंगे।
-वादा यह है — मसीह आपके होंगे। बीमारी में भी, क़ब्र के पार भी।
+वादा यह है — अगर आप मसीह में हैं, मसीह आपके हैं। बीमारी में भी, क़ब्र के पार भी।
 
 === END ===
 ```
@@ -366,9 +365,9 @@ because it is the OV's generic word. The closing keeps both halves — *अग�
 
 ---
 
-## REEL 2·5 — S2·07 · परमेश्वर चुप रहा · ✓ produced — content frozen
+## REEL 2·5 — S2·07 · परमेश्वर चुप रहा
 
-Copied verbatim from `../_produced_scripts_S2.md`. Production ID `S2·07` is
+Predates the re-cut. Production ID `S2·07` is
 unchanged; only the arc position is new.
 
 ```
@@ -457,9 +456,8 @@ both because it asks the viewer to test the very person who may have taught
 him the previous two; S2·07 closes the arc by sending the viewer, having
 tested what others say God said, to the written word for himself.
 
-**S2·03 and S2·07 are frozen.** Their blocks here are copies. If a
-correction is ever needed, it is made in `../_produced_scripts_S2.md` and
-re-copied — never edited here alone. Their existing production notes
+**S2·03 and S2·07 predate the re-cut.** This file is now their only source;
+corrections are made here. Their existing production notes
 (comments asking *which preacher?* left unanswered; defamatory comments
 removed; the reply is *यह सिखावन*) apply unchanged.
 
