@@ -1,8 +1,8 @@
 # Arc 2 — frames & Google Flow prompts
 
-Scripts: [Arc2_Scripts_Hindi.md](./Arc2_Scripts_Hindi.md) ·
-Curriculum: [Curriculum.md](./Curriculum.md) ·
-Concept, workflow, rules and character references: [Arc1_Visual_Prompts.md](./Arc1_Visual_Prompts.md)
+Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) ·
+Curriculum: [Curriculum.md](../../Curriculum.md) ·
+Concept, workflow, rules and character references: [Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
 Same concept as Arc 1: one person, one real moment, the whole reel inside it.
 Rahul is the thread; Amit and Sunil return. Build the references from the Arc 1
@@ -40,7 +40,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the page**
 ```
-Same desk under the warm lamp. Close over-the-shoulder shot of Rahul opening the Hindi Bible to a page near the end of the Gospels, his finger on the passage, the Devanagari deliberately unreadable. Amit leaning in from the edge of frame, soft. The page glowing warm. Rahul matches the character reference exactly.
+Same desk under the warm lamp. Close over-the-shoulder shot of Rahul opening the Hindi Bible to a page near the end of the Gospels, his finger on the passage, the Devanagari deliberately unreadable. Amit leaning in from the edge of frame, soft. The page glowing warm. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -89,7 +89,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "बाइबल कहती है — हम सब भटक गए थे, और परमेश्वर ने हम सबका अधर्म यीशु पर लाद दिया। जो दण्ड मेरा था, वह उन पर पड़ा।"
 
-*On screen:* यशायाह 53:6 · 1 पतरस 2:24
+*On screen:* यशायाह 53:6 · 1 पतरस 2:24 · 2 कुरिन्थियों 5:21
 
 ```
 The lamplight on the page deepens and the page blooms into the painting of the hill and the three crosses, filling the frame.
@@ -101,7 +101,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "परमेश्वर ने पाप को जाने नहीं दिया। पूरा दण्ड दिया — पर मुझे नहीं, अपने बेटे को। क्रूस सिर्फ़ यह नहीं दिखाता कि परमेश्वर आपसे कितना प्रेम करते हैं।"
 
-*On screen:* 2 कुरिन्थियों 5:21 · रोमियों 5:8
+*On screen:* रोमियों 5:8
 
 ```
 A slow push toward the middle cross as the sky darkens further, then the painting fades back into the lamplit room, Amit sitting very still on the bed.
@@ -112,6 +112,8 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 **Clip 5 · 05 → outro** · 0:40–0:50
 
 *Voiceover:* "क्रूस वह जगह है, जहाँ पापियों का दण्ड चुकाया गया — और जो उन पर भरोसा करता है, उसका टूटा रिश्ता परमेश्वर ने खुद जोड़ दिया।"
+
+*On screen:* रोमियों 5:10
 
 ```
 Hold on the two of them, neither speaking. Slow push in on Rahul watching Amit, then a gentle dissolve into the brand outro.
@@ -143,7 +145,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the pocket Bible**
 ```
-Same cemetery. Rahul now sitting on a low stone kerb at the edge of the graves, a small pocket New Testament open in his hands, his thumb holding the page, the Devanagari deliberately unreadable. Warm low light across the page. Over-the-shoulder close shot. Rahul matches the character reference exactly.
+Same cemetery. Rahul now sitting on a low stone kerb at the edge of the graves, a small pocket New Testament open in his hands, his thumb holding the page, the Devanagari deliberately unreadable. Warm low light across the page. Over-the-shoulder close shot. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -202,7 +204,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "और यह घटना दो बातें तय करती है। पहली — क्रूस पर जो दण्ड चुकाया गया, परमेश्वर ने उसे स्वीकार किया। खाली कब्र उसकी रसीद है। दूसरी — जो यीशु के हैं, उनकी कब्र भी आख़िरी बात नहीं होगी।"
 
-*On screen:* रोमियों 4:25 · 1 कुरिन्थियों 15:20-22
+*On screen:* रोमियों 4:25 · 1 कुरिन्थियों 15:20-22 · रोमियों 8:11
 
 ```
 A slow push toward the open, empty doorway of the tomb as the dawn light grows, then the painting fades back into the cemetery and Rahul standing at the grave.
@@ -281,7 +283,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "मन फिराव अपने पाप की सज़ा खुद भुगतना नहीं है। वह सज़ा क्रूस पर चुकाई जा चुकी। मन फिराव यह है — जिस ज़िद ने कहा था 'मेरी ज़िंदगी, मेरी मरज़ी', वह ज़िद पीछे मुड़ जाए।"
 
-*On screen:* 1 पतरस 3:18 · प्रेरितों के काम 3:19
+*On screen:* 1 पतरस 3:18 · प्रेरितों के काम 3:19 · 1 थिस्सलुनीकियों 1:9
 
 ```
 The living room dissolves to the night lane. Rahul walks slowly away from camera under the streetlamps, head down, thinking.
@@ -347,14 +349,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the receipt**
 ```
-Same courtroom. Close on the judge at the bench, glasses on, holding up a single stamped receipt from the file and reading it aloud, calm and final — the text deliberately unreadable, the red seal clear. Warm window light. Shallow depth of field. Rahul matches the character reference exactly.
+Same courtroom. Close on the judge at the bench, glasses on, holding up a single stamped receipt from the file and reading it aloud, calm and final — the text deliberately unreadable, the red seal clear. Warm window light. Shallow depth of field.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **04 — settled**
 ```
-Same courtroom. Close on Amit's face as he hears that the debt is paid — disbelief first, then the tension leaving him all at once, eyes closing for a second, a breath let out. A clerk's hand passing him the stamped order. Amit matches his character reference. Shallow depth of field. Rahul matches the character reference exactly.
+Same courtroom. Close on Amit's face as he hears that the debt is paid — disbelief first, then the tension leaving him all at once, eyes closing for a second, a breath let out. A clerk's hand passing him the stamped order. Amit matches his character reference. Shallow depth of field.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -394,10 +396,10 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "क्योंकि क्रूस पर एक अदला-बदली हुई। मेरा पाप यीशु पर गिना गया — और विश्वास करते ही उनकी धार्मिकता मुझ पर। यह मेरे भीतर की कोई बढ़त नहीं है। यह एक घोषणा है — आज, पूरी, और सिर्फ़ विश्वास से।"
 
-*On screen:* 2 कुरिन्थियों 5:21 · रोमियों 5:1
+*On screen:* 2 कुरिन्थियों 5:21 · रोमियों 5:1 · रोमियों 4:22-24 · रोमियों 3:28
 
 ```
-From the judge to Amit: the camera finds his face as the word 'settled' lands — disbelief, then the tension going out of him, his eyes closing for a moment as a clerk hands him the order.
+From the judge to Amit: the camera finds his face as the judge's declaration lands — disbelief, then the tension going out of him, his eyes closing for a moment as a clerk hands him the order.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -418,6 +420,8 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "अगर आपने मन फिराकर यीशु पर भरोसा किया है, तो परमेश्वर की अदालत का फ़ैसला आ चुका है — और वह आपके पक्ष में है।"
 
+*On screen:* रोमियों 8:1
+
 ```
 Hold on the two of them on the steps. Slow push in on Rahul, then a gentle dissolve into the brand outro.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
@@ -427,35 +431,35 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 9 — परमेश्वर की सन्तान
-Rahul's neighbours bring home a little girl they have adopted. There is a paper with her name on it, and a father who does not need her to smile yet. That night Rahul says 'पिता' in prayer and means it.
-**Cast:** Rahul, a neighbour couple, a girl of about five, relatives (background) · **Hook text on frame 01:** "क्या आप सचमुच उनके बच्चे हैं?"
+Rahul's neighbours bring home a little boy they have adopted. There is a paper with his name on it, and a father who does not need him to smile yet. That night Rahul says 'पिता' in prayer and means it.
+**Cast:** Rahul, a neighbour couple, a boy of about five, relatives (background) · **Hook text on frame 01:** "क्या आप सचमुच उनके बच्चे हैं?"
 
 ### Frames
 
-**01 — bringing her home**
+**01 — bringing him home**
 ```
-The doorway of a modest Indian home in the afternoon, a small welcome of marigold garlands and a few relatives. A young Indian couple in their thirties stepping in, the father carrying a girl of about five in a new yellow frock, the girl solemn and unsure, not smiling, clinging to his shirt. Rahul standing among the relatives, watching with a quiet smile. Medium wide shot, warm doorway light. Rahul matches the character reference exactly.
+The doorway of a modest Indian home in the afternoon, a small welcome of marigold garlands and a few relatives. A young Indian couple in their thirties stepping in, the father carrying a boy of about five in a new kurta-pyjama, the boy solemn and unsure, not smiling, clinging to his shirt. Rahul standing among the relatives, watching with a quiet smile. Medium wide shot, warm doorway light. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **02 — the paper**
 ```
-Inside the same home. Close on the father's hands holding an official adoption certificate with a government seal, the text deliberately unreadable, the mother's hand resting on it too. The little girl soft in the background on the mother's lap. Warm window light. Rahul matches the character reference exactly.
+Inside the same home. Close on the father's hands holding an official adoption certificate with a government seal, the text deliberately unreadable, the mother's hand resting on it too. The little boy soft in the background on the mother's lap. Warm window light. Hands only, no faces.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**03 — she does not smile yet**
+**03 — he does not smile yet**
 ```
-Same home. The little girl sitting on the father's lap on a sofa, still solemn, looking away, one hand gripping his sleeve. The father looking down at her with unhurried patience, completely at ease. Rahul soft in the background. Medium close shot. Rahul matches the character reference exactly.
+Same home. The little boy sitting on the father's lap on a sofa, still solemn, looking away, one hand gripping his father's sleeve. The father looking down at him with unhurried patience, completely at ease. Rahul soft in the background. Medium close shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**04 — his hand on her head**
+**04 — his hand on the boy's head**
 ```
-Same sofa. Close on the father's hand resting gently on the little girl's head as she leans, still unsure, against his chest. Her face half hidden. Warm light. Shallow depth of field. Rahul matches the character reference exactly.
+Same sofa. Close on the father's hand resting gently on the little boy's head as he leans, still unsure, against his father's chest. His face half hidden. Warm light. Shallow depth of field. Hands only, no faces.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -476,7 +480,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 *On screen:* रोमियों 5:1
 
 ```
-The father steps inside with the girl; relatives make way. The camera moves past them to the mother opening a folder, settling on the certificate in the father's hands.
+The father steps inside with the boy; relatives make way. The camera moves past them to the mother opening a folder, settling on the certificate in the father's hands.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -488,7 +492,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* यूहन्ना 1:12
 
 ```
-The camera lifts from the certificate to the sofa, where the father settles the little girl on his lap. She looks away; he waits.
+The camera lifts from the certificate to the sofa, where the father settles the little boy on his lap. The boy looks away; the father waits.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -497,10 +501,10 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "गोद लिया हुआ बच्चा किसी दिन कुछ महसूस न करे — उसका बेटा होना नहीं बदलता। कागज़ पर उसका नाम है। वैसे ही, यह आपकी हैसियत है।"
 
-*On screen:* गलातियों 4:4-5 · 1 यूहन्ना 3:1
+*On screen:* गलातियों 4:4-5 · 1 यूहन्ना 3:1 · इफिसियों 1:5
 
 ```
-The girl leans against the father's chest, still unsure. His hand comes to rest on her head. The camera eases in close on the hand.
+The boy leans against the father's chest, still unsure. The father's hand comes to rest on his head. The camera eases in close on the hand.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -509,7 +513,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "कुछ दिन आप पिता को पास महसूस करेंगे, कुछ दिन नहीं। हैसियत वही रहती है — और पौलुस कहते हैं, आप वारिस भी हैं।"
 
-*On screen:* रोमियों 8:15-17
+*On screen:* रोमियों 8:15-17 · गलातियों 4:7
 
 ```
 The afternoon room dissolves to Rahul's room at night. Rahul kneels at his bedside and bows his head.
@@ -520,6 +524,8 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 **Clip 5 · 05 → outro** · 0:40–0:50
 
 *Voiceover:* "इसलिए अगर आप मसीह में हैं, तो 'पिता' सिखाया हुआ शब्द नहीं है। यह आपका हक़ है — जो आपने कमाया नहीं, और जो आपसे छीना भी नहीं जा सकता।"
+
+*On screen:* यूहन्ना 10:28-29
 
 ```
 Hold on Rahul kneeling, at rest. Slow push in, then a gentle dissolve into the brand outro.
@@ -565,7 +571,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **05 — the grip**
 ```
-Same crossing at night. Extreme close-up of the father's hand holding the small boy's hand — the boy's fingers loose and barely holding on, the father's hand closed firmly around them. Warm streetlamp light, everything else in soft shadow. Rahul matches the character reference exactly.
+Same crossing at night. Extreme close-up of the father's hand holding the small boy's hand — the boy's fingers loose and barely holding on, the father's hand closed firmly around them. Warm streetlamp light, everything else in soft shadow. Hands only, no faces.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -622,7 +628,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "आपकी पकड़ ढीली पड़ सकती है। उनकी नहीं पड़ती।"
 
-*On screen:* यूहन्ना 10:28-29
+*On screen:* यूहन्ना 10:28-29 · 1 यूहन्ना 5:13 — hold over outro
 
 ```
 Hold on the two hands, the boy's slack and the father's firm. A slow push in, then a gentle dissolve into the brand outro.

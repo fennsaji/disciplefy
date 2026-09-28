@@ -367,7 +367,7 @@ Target: 49–50 seconds. Register: आप. Tone: tender at the open — the hook
 **Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
 *"बहस जीतना लक्ष्य नहीं।"* (2 तीमुथियुस 2:24 carries it) — **never** cut *"पर
 नम्रता और आदर से"*, **never** *"भलाई की बात हर घर में सिखाई जाती है — वह
-अच्छी है। उसे मानिए।"*, **never** *"आप इसलिए नहीं मानते कि हमारा धर्म बेहतर
+अच्छी है। यह खुलकर मानिए।"*, **never** *"आप इसलिए नहीं मानते कि हमारा धर्म बेहतर
 है — इसलिए कि वे जी उठे"*, and **never** the *बात गरम हो जाए* line.
 
 **On-screen Scripture**
@@ -376,7 +376,7 @@ Target: 49–50 seconds. Register: आप. Tone: tender at the open — the hook
 |---|---|
 | "आशा का कारण… नम्रता और आदर से" | 1 पतरस 3:15-16 |
 | "सुनने को तैयार, बोलने में धीमे" | याकूब 1:19 |
-| "भलाई की बात… उसे मानिए" | रोमियों 2:14-15 |
+| "भलाई की बात… यह खुलकर मानिए" | रोमियों 2:14-15 |
 | "सलाह नहीं — एक ख़बर" | 1 कुरिन्थियों 15:3-4 · लूका 2:10-11 |
 | "इसलिए कि वे जी उठे" | 1 कुरिन्थियों 15:14, 17 · प्रेरितों के काम 17:31 |
 | "हमारा धर्म बेहतर" — नहीं | फिलिप्पियों 3:7-9 · इफिसियों 2:8-9 |
@@ -400,7 +400,7 @@ named or described; the only religion the reel disqualifies is *हमारा*
 इसलिए नहीं मानते कि हमारा धर्म बेहतर है*, uncuttable), restating S2·04's
 *हमारा भी नहीं* so exclusivity cannot read as tribal. **Respect is given
 content, not just tone**: listen first (याकूब 1:19), and honour what is
-true in what the elder taught — *भलाई की बात… वह अच्छी है। उसे मानिए* —
+true in what the elder taught — *भलाई की बात… वह अच्छी है। यह खुलकर मानिए* —
 grounded in the conscience God gives every person (रोमियों 2:14-15, on screen
 only). The claim that answers the sentence is made about **the gospel, not
 about other faiths**: *सुसमाचार भला बनने की सलाह नहीं — एक ख़बर है*. The

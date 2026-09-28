@@ -5,7 +5,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 Concept, workflow, rules and the Rahul / Amit / Sunil / uncle references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
 Dada: [../../Season1/Arc3/Visual_Prompts.md](../../Season1/Arc3/Visual_Prompts.md) ·
-Vikram, Deepak: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram, Deepak: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md)
 
 Same concept, some years on. Rahul is a disciple now — the reels of this
@@ -26,7 +26,7 @@ the grief and joy reels. Nothing in the bribe reel names an office, uniform,
 document or scheme — a plain counter and a hand. Never Jesus' face; where a
 painting shows him at all it shows hands, a back, a basin.
 
-Two paintings: Jesus at the temple tables seen from behind (2·2) and Asaph climbing to the sanctuary (2·6), plus the Ephesian bonfire (2·7). 2·3 has no person in any frame, by rule — water and a page. 2·5 never shows alcohol; the whole reel is an evening, a window and a chair.
+Three paintings: Jesus at the temple tables seen from behind (2·2), Asaph climbing to the sanctuary (2·6), and the Ephesian believers' bonfire (2·7). 2·3 has no person in any frame, by rule — water and a page. 2·5 never shows alcohol; the whole reel is an evening, a window and a chair.
 
 ## References — build these first
 
@@ -68,7 +68,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — James 3**
 ```
-Inside a city bus at night, window lights streaking past. Rahul in a window seat with the small Hindi Bible open on his knee at James, his finger on a line, the Devanagari deliberately unreadable. Close over-the-shoulder shot. Rahul matches the character reference exactly.
+Inside a city bus at night, window lights streaking past. Rahul in a window seat with the small Hindi Bible open on his knee at James, his finger on a line, the Devanagari deliberately unreadable. Close over-the-shoulder shot. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -308,7 +308,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "पाप काम से पहले मन में होता है — पवित्रता भी वहीं से। पौलुस लिखते हैं — परमेश्वर की इच्छा है कि तुम पवित्र बनो; व्यभिचार से बचे रहो। आपकी देह पवित्र आत्मा का मंदिर है। आप अपने नहीं — दाम देकर मोल लिए गए हैं। नियम से पहले — एक दाम।"
 
-*On screen:* मरकुस 7:21-23 · 1 थिस्सलुनीकियों 4:3-5 · 1 कुरिन्थियों 6:19-20
+*On screen:* मरकुस 7:21-23 · 1 थिस्सलुनीकियों 4:3-5 · 1 कुरिन्थियों 6:19-20 · याकूब 1:14-15
 
 ```
 The lamplight on the page and the tumbler dissolves to water pouring from a brass lota into a basin, ripples spreading.
@@ -376,7 +376,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — 1 Corinthians 7**
 ```
-Same room. Close over-the-shoulder shot of the Hindi Bible open on the desk at 1 Corinthians 7, Rahul's finger on a line, the Devanagari deliberately unreadable, lamplight. Rahul matches the character reference exactly.
+Same room. Close over-the-shoulder shot of the Hindi Bible open on the desk at 1 Corinthians 7, Rahul's finger on a line, the Devanagari deliberately unreadable, lamplight. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -481,7 +481,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — Ephesians 5**
 ```
-Sunil's home at the same hour, a lamp on. Sunil — lean, greying at the temples, plain shirt — and Rahul side by side at a table with a Hindi Bible open at Ephesians 5 between them, Sunil's finger on a line, Rahul listening. Sunil matches his character reference. Close over-the-shoulder shot, the Devanagari deliberately unreadable. Rahul matches the character reference exactly.
+Sunil's home at the same hour, a lamp on. Sunil — lean, greying at the temples, plain shirt — and Rahul side by side at a table with a Hindi Bible open at Ephesians 5 between them, Sunil's finger on a line, Rahul listening. Sunil matches his character reference. Close over-the-shoulder shot, the Devanagari deliberately unreadable. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -518,7 +518,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "बिल्कुल न पीना — बहुतों का अच्छा चुनाव है। पर वचन उसे सब पर नियम नहीं बनाता। और पौलुस लिखते हैं — मैं किसी भी चीज़ के वश में नहीं होऊँगा। जो आपको चलाने लगे, वह मालिक बन बैठा। मालिक एक ही है।"
 
-*On screen:* रोमियों 14:3, 21 · भजन संहिता 104:15 · 1 कुरिन्थियों 6:12 · मत्ती 6:24 · रोमियों 6:16
+*On screen:* रोमियों 14:3, 21 · भजन संहिता 104:15 — shown, not read · 1 कुरिन्थियों 6:12 · मत्ती 6:24 · रोमियों 6:16
 
 ```
 The empty chair dissolves to Sunil's table: the Bible open at Ephesians 5, Sunil's finger on the line, Rahul listening.
@@ -600,7 +600,7 @@ Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cart
 
 **05 — the open door**
 ```
-The small Indian church on a quiet weekday evening, its door open and a single light on inside, the pews empty. Rahul stepping across the threshold, seen from behind, going in. Medium wide shot from the courtyard. Rahul matches the character reference exactly.
+The small Indian church on a quiet weekday evening, its door open and a single light on inside, the pews empty. Rahul stepping across the threshold, seen from behind, going in. Medium wide shot from the courtyard. Rahul seen from behind; build, hair and clothing match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -684,14 +684,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **02 — the table**
 ```
-The dining table of the same home. Joseph — an Indian man of 25, neatly combed hair, clean-shaven, a small steel cross on a chain, white shirt — seated across from his mother, a warm woman in her fifties in a cotton sari, who is speaking to him gently with one hand open. Joseph listening respectfully. Nothing else on the table but two tea glasses. Joseph matches his character reference. Medium shot.
+The dining table of the same home. Joseph — an Indian man of 25, neatly combed hair, clean-shaven, white shirt buttoned to the collar, no pendant or chain visible — seated across from his mother, a warm woman in her fifties in a cotton sari, who is speaking to him gently with one hand open. Joseph listening respectfully. Nothing else on the table but two tea glasses. Joseph matches his character reference. Medium shot.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **03 — Deuteronomy**
 ```
-Joseph's room that night. Close over-the-shoulder shot of a Hindi Bible open at Deuteronomy 18 on his desk under a lamp, his finger on a line, the Devanagari deliberately unreadable.
+Joseph's room that night. Close over-the-shoulder shot of a Hindi Bible open at Deuteronomy 18 on his desk under a lamp, his finger on a line, the Devanagari deliberately unreadable. Joseph's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -738,7 +738,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "क्यों? डराने को नहीं। यह वह जानना चाहना है, जो परमेश्वर ने नहीं दिया। उसने सितारों से पूछने को नहीं कहा — वचन दिया, और वादा किया हुआ नबी — यीशु। इफिसुस में जिन्होंने विश्वास किया, वे अपनी जादू की किताबें लाए और जला दीं। अपनी — पड़ोसियों की नहीं।"
 
-*On screen:* व्यवस्थाविवरण 29:29 · यशायाह 8:19 · यशायाह 47:13-14 · यिर्मयाह 10:2 · व्यवस्थाविवरण 18:15 · प्रेरितों के काम 3:22 · प्रेरितों के काम 19:18-19
+*On screen:* व्यवस्थाविवरण 29:29 · यशायाह 8:19 · यशायाह 47:13-14 — shown, not read · यिर्मयाह 10:2 · व्यवस्थाविवरण 18:15 · प्रेरितों के काम 3:22 · प्रेरितों के काम 19:18-19
 
 ```
 The lamplight on the page warms into firelight and the page becomes the square in Ephesus: people laying their own scrolls on the fire.

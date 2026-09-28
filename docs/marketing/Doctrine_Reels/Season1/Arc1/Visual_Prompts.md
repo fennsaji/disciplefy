@@ -122,7 +122,7 @@ Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cart
 ---
 
 ## REEL 1 — यीशु कौन है?
-A chai stall at dusk. Rahul's friend Amit calls Jesus "a good guru" and laughs it off. Rahul doesn't laugh. He shows Amit what Jesus actually said, and by nightfall nobody is laughing.
+A chai stall at dusk. Rahul's friend Amit calls Jesus "a good guru" and laughs it off. Rahul laughs along — then stops. He shows Amit what Jesus actually said, and by nightfall nobody is laughing.
 **Cast:** Rahul, Amit, a third friend (background only) · **Hook text on frame 01:** "वे एक अच्छे गुरु थे।"
 
 ### Frames
@@ -143,7 +143,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the phone**
 ```
-Same chai stall at dusk. Over-the-shoulder close shot of Rahul holding his phone, a Bible app open showing Hindi Devanagari text that is deliberately unreadable, his thumb resting just below one verse. His glass of chai set down on the counter. Amit soft and out of focus in the background. Rahul matches the character reference exactly.
+Same chai stall at dusk. Over-the-shoulder close shot of Rahul holding his phone, a Bible app open showing Hindi Devanagari text that is deliberately unreadable, his thumb resting just below one verse. His glass of chai set down on the counter. Amit soft and out of focus in the background. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -157,16 +157,16 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **05 — nobody laughing**
 ```
-Same chai stall, now night: the single bulb above the counter is lit, warm light pooling on the three young Indian men. Amit holding Rahul's phone in both hands, still reading, quiet. Rahul watching him without a word. The third friend looking at the ground. Behind the counter, a small shelf of framed pictures, soft and completely unreadable. Amit matches his character reference. Slightly wider shot. Rahul matches the character reference exactly.
+Same chai stall, now night: the single bulb above the counter is lit, warm light pooling on the three young Indian men. Amit holding Rahul's phone in both hands, still reading, quiet. Rahul watching him without a word. The third friend looking at the ground. Behind the counter, a small shelf of framed family photographs, soft and completely unreadable, no religious images of any kind. Amit matches his character reference. Slightly wider shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition, deity images, religious posters, shrine, idols.
 ```
 
 ### Clips — Frames to Video
 
 **Clip 1 · 01 → 02** · 0:00–0:10
 
-*Voiceover:* "यीशु के बारे में सबसे आदर की बात लोग यही कहते हैं — 'वे एक अच्छे गुरु थे।' पर यह एक ही बात है जो यीशु नहीं हो सकते।"
+*Voiceover:* "यीशु के बारे में सबसे आदर की बात लोग यही कहते हैं — 'वे एक अच्छे गुरु थे।' पर अगर यही एक बात हो, जो यीशु हो ही नहीं सकते — तो?"
 
 ```
 Amit finishes his joke and keeps laughing; the third friend laughs with him. Rahul's laugh fades and he lowers his glass, eyes on Amit.
@@ -212,7 +212,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 5 · 05 → outro** · 0:40–0:50
 
-*Voiceover:* "यीशु आदर नहीं माँगते। वे आपका पूरा भरोसा माँगते हैं।"
+*Voiceover:* "यीशु सिर्फ़ आदर नहीं माँगते। वे आपका पूरा भरोसा माँगते हैं।"
 
 ```
 Hold on the three men under the lit bulb, nobody speaking. Slow push in on Rahul watching Amit read, then a gentle dissolve into the brand outro.
@@ -244,7 +244,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the page**
 ```
-Same desk at night. Close over-the-shoulder shot of the open Hindi Bible under warm lamplight, Rahul's finger resting on a passage in the Gospels, the Devanagari text deliberately unreadable. The page glows warm, the edges of the frame falling into shadow. Rahul matches the character reference exactly.
+Same desk at night. Close over-the-shoulder shot of the open Hindi Bible under warm lamplight, Rahul's finger resting on a passage in the Gospels, the Devanagari text deliberately unreadable. The page glows warm, the edges of the frame falling into shadow. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -287,9 +287,9 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 **Clip 3 · 03 → 04** · 0:20–0:30
 
-*Voiceover:* "और उसने अपने बारे में हमारा अंदाज़ा नहीं छोड़ा — उसने यीशु को भेजा। यीशु ने कहा, 'जिसने मुझे देखा, उसने पिता को देखा।' तो देखिए यीशु कैसे थे।"
+*Voiceover:* "और उसने अपने बारे में हमारा अंदाज़ा नहीं छोड़ा — उसने यीशु को भेजा। यीशु ने साफ़ कहा — जिसने उन्हें देखा, उसने पिता को देखा। तो देखिए यीशु कैसे थे।"
 
-*On screen:* यूहन्ना 14:9
+*On screen:* यूहन्ना 14:9 — hold through "तो देखिए यीशु कैसे थे"
 
 ```
 The lamplight on the page grows warmer and brighter until the page itself blooms into the painting, filling the frame.
@@ -444,7 +444,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the page**
 ```
-Same bedroom at night. The small bedside lamp is now switched on, casting a warm pool of light. Close shot of the open Hindi Bible on the bedside table, Rahul's hand holding the page flat, the Devanagari text deliberately unreadable. The rest of the room in deep shadow. Rahul matches the character reference exactly.
+Same bedroom at night. The small bedside lamp is now switched on, casting a warm pool of light. Close shot of the open Hindi Bible on the bedside table, Rahul's hand holding the page flat, the Devanagari text deliberately unreadable. The rest of the room in deep shadow. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -452,7 +452,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 **04 — David**
 ```
 A painting of King David alone at night in his palace chamber, lying face-down on a woven mat on a stone floor in grief, his crown set aside on the floor beside him, a single oil lamp burning, deep indigo shadows on the walls. His face hidden against the floor.
-Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
+Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly. Setting: the palace of ancient Israel in King David's time, not first-century — no Roman or Herodian details.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
@@ -499,7 +499,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 **Clip 4 · 04 → 05** · 0:30–0:40
 
-*Voiceover:* "जिसने आपको साँस दी, उससे यह कहना कि मुझे आपकी ज़रूरत नहीं। इसलिए दाऊद ने अपने सबसे बुरे दिन में कहा था — 'मैंने तेरे ही विरुद्ध पाप किया है।'"
+*Voiceover:* "जिसने आपको साँस दी, उससे यह कहना कि मुझे आपकी ज़रूरत नहीं। इसलिए दाऊद ने अपने सबसे बुरे दिन में माना — उसका पाप सबसे पहले परमेश्वर के ही विरुद्ध था।"
 
 *On screen:* भजन संहिता 51:4
 

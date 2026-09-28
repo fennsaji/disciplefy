@@ -5,7 +5,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 Concept, workflow, rules and the Rahul / Amit / Sunil / uncle references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
 Dada: [../../Season1/Arc3/Visual_Prompts.md](../../Season1/Arc3/Visual_Prompts.md) ·
-Vikram, Deepak: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram, Deepak: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md)
 
 Same concept, some years on. Rahul is a disciple now — the reels of this
@@ -40,7 +40,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 ---
 
 ## REEL 3·1 — माफ़ किया — पर लौटूँ? · S3·14
-A market street. Rahul stops because someone is across the road — the reel never shows who, only a back in the crowd — and his hand tightens on his bag strap. Matthew 18 at a chai stall; the king and the servant in the painting; and Rahul walking away down a different lane, calm, the debt released from a distance. No reunion, no embrace, no call.
+A market street. Rahul stops because someone is across the road — the reel never shows who, only a back in the crowd — and his hand tightens on his bag strap. the king and the servant in the painting; Matthew 18 at a chai stall; and Rahul walking away down a different lane, calm, the debt released from a distance. No reunion, no embrace, no call.
 **Cast:** Rahul alone. The person is never shown — a back among backs, out of focus, once. · painted scene (the servant before the king) · **Hook text on frame 01:** "आपने माफ़ कर दिया है। पर वह इंसान सामने आए, तो हाथ काँपते हैं।"
 
 ### Frames
@@ -59,23 +59,23 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**03 — Matthew 18**
-```
-A chai stall at the edge of the same market, a bench, a glass of tea untouched. Rahul sitting with a small Hindi Bible open on his knee at Matthew 18, the Devanagari deliberately unreadable, his other hand still holding the strap. Close over-the-shoulder shot. Rahul matches the character reference exactly.
-Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
-```
-
-**04 — the king and the servant**
+**03 — the king and the servant**
 ```
 A painting of a throne room in an ancient palace: a servant on his knees on the floor with his forehead nearly to the stone, hands open and empty; the king seated above him, one hand extended in release, a ledger cast aside on the steps; attendants distant along the walls. Deep reds and gold, light from high windows.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
+**04 — Matthew 18**
+```
+A chai stall at the edge of the same market, a bench, a glass of tea untouched. Rahul sitting with a small Hindi Bible open on his knee at Matthew 18, the Devanagari deliberately unreadable, his other hand still holding the strap. Close over-the-shoulder shot. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
+```
+
 **05 — from a distance**
 ```
-A narrower lane leading away from the market, late afternoon light at its end. Rahul walking down it away from the camera, unhurried, his hand loose at his side now, the bag strap easy on his shoulder; the market noise behind him. Medium wide shot from behind. Rahul matches the character reference exactly.
+A narrower lane leading away from the market, late afternoon light at its end. Rahul walking down it away from the camera, unhurried, his hand loose at his side now, the bag strap easy on his shoulder; the market noise behind him. Medium wide shot from behind. Rahul seen from behind; build, hair and clothing match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -101,9 +101,9 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* मत्ती 18:32-33 — hold · इफिसियों 4:32 · कुलुस्सियों 3:13 · रोमियों 8:1
 
 ```
-Rahul turns away to the chai stall and sits, opening the small Bible on his knee at Matthew 18, the tea untouched. The camera settles on the page.
-Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
-Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
+Rahul's grip eases on the strap; the market light warms into painted red and gold and becomes the throne room: the servant on his knees, the king's hand extended, the ledger cast aside.
+Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
+Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
 
 **Clip 3 · 03 → 04** · 0:20–0:30
@@ -113,7 +113,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* रोमियों 12:19 · रोमियों 12:18
 
 ```
-The page warms into painted red and gold and becomes the throne room: the servant on his knees, the king's hand extended, the ledger cast aside on the steps.
+The painting fades to a chai stall at the edge of the market: Rahul on the bench with the small Bible open on his knee at Matthew 18, the tea untouched. The camera settles on the page.
 Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
 Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
@@ -122,12 +122,12 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "जिसने चोट दी, और फिर दे सकता है — माफ़ी का मतलब लौटना नहीं। दूरी पाप नहीं। सुरक्षित रहिए — पहले। कोई बड़ा कदम अकेले मत उठाइए। पर कड़वाहट आपके भीतर उगती है — और पहले आपको ही खाती है। यह आज्ञा आपको बचाने के लिए है — जिसने चोट दी, उसे छूट देने के लिए नहीं।"
 
-*On screen:* मत्ती 10:23 · नीतिवचन 22:3 · नीतिवचन 15:22 · इब्रानियों 13:17 · इब्रानियों 12:15
+*On screen:* मत्ती 10:23 · नीतिवचन 22:3 — shown, not read · नीतिवचन 15:22 · इब्रानियों 13:17 · इब्रानियों 12:15
 
 ```
-The painting fades into the narrow lane: Rahul walking away from the market, his hand loose at his side. The camera follows from behind, slowly.
-Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
-Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
+The stall dissolves to the narrow lane: Rahul walking away from the market, his hand loose at his side. The camera follows from behind, slowly.
+Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
+Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
 
 **Clip 5 · 05 → outro** · 0:40–0:50
@@ -173,7 +173,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — past verse one**
 ```
-Rahul's desk, morning light. Close over-the-shoulder shot of the Hindi Bible open at Matthew 7, Rahul's finger moving down the page past the first line and resting further on, the Devanagari deliberately unreadable. Rahul matches the character reference exactly.
+Rahul's desk, morning light. Close over-the-shoulder shot of the Hindi Bible open at Matthew 7, Rahul's finger moving down the page past the first line and resting further on, the Devanagari deliberately unreadable. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -227,7 +227,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "और मक़सद — तिनका निकालना, गिराना नहीं। पौलुस लिखते हैं — कोई पकड़ा जाए, तो नम्रता से सुधारो; अपने को भी देखते रहो।"
 
-*On screen:* गलातियों 6:1 · मत्ती 18:15
+*On screen:* गलातियों 6:1
 
 ```
 The desk dissolves to the park bench in the evening. Rahul turns to Sunil and speaks gently, one hand open; Sunil listens with his head bowed. The camera holds.
@@ -239,7 +239,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "आँकना ही था, तो पहले ख़ुद को — पर वहीं रुक मत जाइए। आईना देखकर भाई तक जाइए — नम्रता के साथ।"
 
-*On screen:* गलातियों 6:1 · याकूब 5:19-20
+*On screen:* गलातियों 6:1 · याकूब 5:19-20 · मत्ती 18:15 — shown, not read
 
 ```
 Hold on the two men on the bench. Slow push in on Rahul, then a gentle dissolve into the brand outro.
@@ -250,14 +250,14 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 3·3 — थोड़ा-सा दे दीजिए · S3·16
-A plain counter window somewhere — no signboard, no uniform, no document readable. A bored hand taps the counter; the offer is made in the usual three beats. Rahul's wallet stays in his pocket; the file stays unfinished; he walks out into the sun having lost the day. The reel ends with him at a table alone, writing a true figure in a notebook nobody will check.
+A plain counter window somewhere — no signboard, no uniform, no document readable. A bored hand taps the counter; the offer is made in the usual three beats. Rahul's wallet stays in his pocket; the work stays undone; he walks out into the sun having lost the day. The reel ends with him at a table alone, writing a true figure in a notebook nobody will check.
 **Cast:** Rahul, a clerk (hands and a shoulder only — never a face, never a uniform) · **Hook text on frame 01:** "काम अटका है। सामने वाला कहता है — थोड़ा-सा दे दीजिए, आज ही हो जाएगा।"
 
 ### Frames
 
 **01 — the window**
 ```
-A plain counter window in an anonymous office — a slab of laminate, a grille, a ceiling fan, no signboard, no logo, no readable paper anywhere. From inside the window, only a man's forearm in a plain shirt sleeve, fingers tapping the counter beside a closed cardboard file. Rahul on the outside, the file's owner, waiting. Medium shot from Rahul's side, the clerk's face out of frame. Rahul matches the character reference exactly.
+A plain counter window — a slab of laminate, a grille, a ceiling fan, no signboard, no logo, no paper of any kind. From inside the window, only a man's forearm in a plain shirt sleeve, fingers tapping the bare counter. Rahul on the outside, waiting. Medium shot from Rahul's side, the clerk's face out of frame. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -271,21 +271,21 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the pocket**
 ```
-Same window. Close on Rahul's hands resting flat on the closed file on the counter, the clerk's fingers still at the edge of frame; Rahul's wallet visible as a shape in his trouser pocket, untouched. Warm indoor light. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
+Same window. Close on Rahul's hands resting flat on the bare counter, the clerk's fingers still at the edge of frame; Rahul's wallet visible as a shape in his trouser pocket, untouched. Warm indoor light. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **04 — the cost**
 ```
-The steps outside the same anonymous building in hard afternoon sun, the doorway dark behind. Rahul walking down the steps with the closed file under his arm, squinting into the light, a day lost and his face plain about it. Medium wide shot. Rahul matches the character reference exactly.
+The steps outside the same anonymous building in hard afternoon sun, the doorway dark behind. Rahul walking down the steps empty-handed, squinting into the light, a day lost and his face plain about it. Medium wide shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — where no one is watching**
 ```
-Rahul's desk at night under the lamp. Close over-the-shoulder shot of a plain ruled notebook open on the desk, Rahul's hand writing a figure in a column with a ballpoint, the numbers deliberately unreadable, no one else in the room, the file beside it. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
+Rahul's desk at night under the lamp. Close over-the-shoulder shot of a plain ruled notebook open on the desk, Rahul's hand writing a figure in a column with a ballpoint, the numbers deliberately unreadable, no one else in the room. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -299,7 +299,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 *On screen:* मत्ती 5:37
 
 ```
-The clerk's fingers tap the counter beside the file; a small tilt of the hand. The camera closes in on Rahul's face as he is the only one deciding.
+The clerk's fingers tap the bare counter; a small tilt of the hand. The camera closes in on Rahul's face as he is the only one deciding.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -311,7 +311,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* मत्ती 5:33-36 · लूका 16:10 · इफिसियों 4:25 · नीतिवचन 17:23
 
 ```
-From his face down to his hands, resting flat on the file, the wallet untouched in his pocket. The camera holds on the hands.
+From his face down to his hands, resting flat on the bare counter, the wallet untouched in his pocket. The camera holds on the hands.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -320,10 +320,10 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "जो सच को झुकाए, या जो हक़ नहीं वह दिलाए — वही घूस है। तोहफ़ा अलग है; फ़र्क दिल जानता है। पौलुस लिखते हैं — बाहर वालों के सामने सभ्यता से चलो। वह मंच पर नहीं — खिड़की पर बनता है।"
 
-*On screen:* निर्गमन 23:8 · व्यवस्थाविवरण 16:19 · नीतिवचन 18:16 · 1 थिस्सलुनीकियों 4:12 · कुलुस्सियों 4:5
+*On screen:* निर्गमन 23:8 · व्यवस्थाविवरण 16:19 · नीतिवचन 18:16 — shown, not read · 1 थिस्सलुनीकियों 4:12 · कुलुस्सियों 4:5
 
 ```
-Rahul picks up the file and turns away. The window dissolves to the steps outside in hard sun; he walks down them into the light with the file under his arm.
+Rahul lifts his hands from the counter and turns away. The window dissolves to the steps outside in hard sun; he walks down them into the light, empty-handed.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -460,14 +460,14 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 3·5 — अच्छी कुर्सी किसे? · S3·18
-Sunday, from the back of the church. Full rows at the front, well-dressed; a man in a worn shirt standing by the door because no one made room. Rahul, mid-row, turns and sees it. James 2 on his knee; James's own scene in the painting; and the smallest obedience — Rahul on the back bench beside the man by the door.
+Sunday, from the back of the church. Full rows at the front, well-dressed; a man in a worn shirt standing by the door because no one made room. Rahul, mid-row, turns and sees it. James's own scene in the painting; James 2 on his knee; and the smallest obedience — Rahul on the back bench beside the man by the door.
 **Cast:** Rahul, a man in worn clothes (one-off — no community, caste or custom marked), congregation · **Hook text on frame 01:** "आपकी कलीसिया में सबसे अच्छी जगह किसे मिलती है — और दरवाज़े के पास कौन बैठता है?"
 
 ### Frames
 
 **01 — from the back**
 ```
-Inside a simple Indian church during the Sunday service, seen from the back: the front rows full of neatly dressed families, the rear rows thinner. By the open door at the back, a thin man in a worn, clean shirt and rubber sandals standing against the wall, not seated. Rahul seated in a middle row, facing forward, seen from behind. Wide shot down the aisle. Rahul matches the character reference exactly.
+Inside a simple Indian church during the Sunday service, seen from the back: the front rows full of neatly dressed families, the rear rows thinner. By the open door at the back, a thin man in a worn, clean shirt and rubber sandals standing against the wall, not seated. Rahul seated in a middle row, facing forward, seen from behind. Wide shot down the aisle. Rahul seen from behind; build, hair and clothing match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -479,18 +479,18 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**03 — James 2**
-```
-Same row. Close over-the-shoulder shot of Rahul's Hindi Bible open at James 2, his finger on the passage, the Devanagari deliberately unreadable, the congregation soft beyond. Rahul matches the character reference exactly.
-Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
-```
-
-**04 — James's scene**
+**03 — James's scene**
 ```
 A painting of a first-century meeting room: a man in a fine robe and gold ring being shown to a cushioned bench near the front by an usher's outstretched hand, while a man in a threadbare tunic stands by the wall at the back, ignored; oil lamps, plaster walls, a low ceiling. Muted ochre and blue, lamplight.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
+```
+
+**04 — James 2**
+```
+Rahul's row in the same church. Close over-the-shoulder shot of Rahul's Hindi Bible open at James 2, his finger on the passage, the Devanagari deliberately unreadable, the congregation soft beyond. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — by the door**
@@ -521,9 +521,9 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* याकूब 2:9 · याकूब 2:5-6
 
 ```
-Rahul turns back and looks down at the Bible on his knee, open at James 2. The camera settles on the page.
-Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
-Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
+Rahul turns back to face the front; the church light dims into painted lamplight and becomes the meeting room: the fine robe shown to the front bench, the threadbare tunic left standing at the back.
+Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
+Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
 
 **Clip 3 · 03 → 04** · 0:20–0:30
@@ -533,7 +533,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* यशायाह 1:17 · मीका 6:8 · तीतुस 2:11-14 · इफिसियों 2:8-10
 
 ```
-The page dims into painted lamplight and becomes the meeting room: the fine robe shown to the front bench, the threadbare tunic left standing at the back.
+The painting fades back to Rahul's row: his Bible open on his knee at James 2, his finger on the passage. The camera settles on the page.
 Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
 Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
@@ -545,9 +545,9 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 *On screen:* गलातियों 3:28 · प्रेरितों के काम 10:34
 
 ```
-The painting fades back into the church: Rahul now on the last bench by the door with the man beside him, both facing forward. The camera holds from the aisle.
-Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
-Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
+Rahul closes the Bible, rises and walks back down the aisle; he sits on the last bench by the door beside the man. The camera holds from the aisle.
+Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
+Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
 
 **Clip 5 · 05 → outro** · 0:40–0:50
@@ -579,7 +579,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **02 — सच में?**
 ```
-Same courtyard. Close on Rahul's hand landing gently on Amit's shoulder, stopping the turn; Amit's face in profile, the smile faltering. Shallow depth of field. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
+Same courtyard. Close on Rahul's hand landing gently on Amit's shoulder, stopping the turn; Amit's face in profile, the smile faltering. Shallow depth of field. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference. Amit matches his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -593,14 +593,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — listening**
 ```
-Same steps. Close on the two of them from the front — Amit mid-sentence, eyes down, Rahul's hand still resting on his shoulder, Rahul's face wholly on him. Warm light. Shallow depth of field. Rahul matches the character reference exactly.
+Same steps. Close on the two of them from the front — Amit mid-sentence, eyes down, Rahul's hand still resting on his shoulder, Rahul's face wholly on him. Warm light. Shallow depth of field. Amit matches his character reference. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — the phone**
 ```
-Same steps. Close on the stone step beside Rahul — his phone lying face-down on it, screen to the stone, his hand nowhere near it; beyond, out of focus, the two men still talking. Late-morning light. Rahul matches the character reference exactly.
+Same steps. Close on the stone step beside Rahul — his phone lying face-down on it, screen to the stone, his hand nowhere near it; beyond, out of focus, the two men still talking. Late-morning light. The two men out of focus beyond; build and clothing match their character references.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -635,7 +635,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "तीन लोग, तीन काम — पौलुस बताते हैं। जो भटक रहा है — समझाओ। जो डरा है — ढाढ़स। जो कमज़ोर है — सँभालो। इसके लिए पढ़ाई नहीं चाहिए। पूछना और सुनना चाहिए। जहाँ बीमारी है — वहाँ मदद भी लीजिए; यह उसकी जगह नहीं लेता।"
 
-*On screen:* 1 थिस्सलुनीकियों 5:14 · याकूब 1:19 · 1 थिस्सलुनीकियों 5:11 · लूका 5:31 · 1 राजा 19:5-8
+*On screen:* 1 थिस्सलुनीकियों 5:14 · याकूब 1:19 · 1 थिस्सलुनीकियों 5:11 · लूका 5:31 · 1 राजा 19:5-8 — shown, not read
 
 ```
 The camera moves round to the front: Amit mid-sentence, eyes down; Rahul's hand still on his shoulder, his whole attention on him.
@@ -684,14 +684,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **02 — the verse before**
 ```
-The veranda of the same house after dinner, a tube light, plastic chairs. The uncle and Rahul side by side, a Hindi Bible open on the uncle's knee at Ephesians 5, his finger resting on the line *above* the one everyone knows, Rahul leaning in. The uncle matches his character reference. Close over-the-shoulder shot, the Devanagari deliberately unreadable. Rahul matches the character reference exactly.
+The veranda of the same house after dinner, a tube light, plastic chairs. The uncle and Rahul side by side, a Hindi Bible open on the uncle's knee at Ephesians 5, his finger resting on the line *above* the one everyone knows, Rahul leaning in. The uncle matches his character reference. Close over-the-shoulder shot, the Devanagari deliberately unreadable. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **03 — nine verses**
 ```
-Same veranda. Close on the uncle's face as he talks, unhurried, weighty, both hands resting on the open Bible on his knee — a man explaining the longest command is his. Rahul soft at the edge of frame. Shallow depth of field. Rahul matches the character reference exactly.
+Same veranda. Close on the uncle's face as he talks, unhurried, weighty, both hands resting on the open Bible on his knee — a man explaining the longest command is his. Rahul soft at the edge of frame. Shallow depth of field. The uncle matches his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -716,7 +716,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 *Voiceover:* "पत्नियो, अधीन रहो — यह आयत हर शादी में पढ़ी जाती है। उससे ठीक पहले वाली — क्या कभी सुनी है? मसीह के भय से एक-दूसरे के अधीन रहो। एक-दूसरे। पहले यह — फिर पति, पत्नी, बच्चे।"
 
-*On screen:* इफिसियों 5:22 · इफिसियों 5:21 — hold
+*On screen:* इफिसियों 5:22 · इफिसियों 5:21 — hold through the next line
 
 ```
 The uncle serves his wife's plate first, then sits. Dinner dissolves to the veranda: the Bible open on the uncle's knee, his finger on the verse above the famous one, Rahul leaning in.
@@ -740,7 +740,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "और सुनिए। जहाँ हाथ उठता है — वहाँ अधीनता का सवाल ही नहीं। वह पाप है। अपराध है। परमेश्वर उसे नहीं माँगता। सुरक्षित रहिए — पहले। चुप मत रहिए। कलीसिया के परिपक्व लोगों को बताइए।"
 
-*On screen:* इफिसियों 5:28-29 · 1 पतरस 3:7 · भजन संहिता 11:5 · नीतिवचन 22:3 · 1 शमूएल 19:10-12 · नीतिवचन 15:22 · इब्रानियों 13:17
+*On screen:* इफिसियों 5:28-29 · 1 पतरस 3:7 · भजन संहिता 11:5 · नीतिवचन 22:3 · 1 शमूएल 19:10-12 — shown, not read · नीतिवचन 15:22 · इब्रानियों 13:17
 
 ```
 The tube light warms into painted lamplight and the veranda becomes the upper room: the kneeling figure from behind, the towel, the foot lowered into the basin.
@@ -750,9 +750,9 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 **Clip 4 · 04 → 05** · 0:30–0:40
 
-*Voiceover:* "पत्नी — अधीनता प्रभु के लिए, डर से नहीं; दासी नहीं, साथी। माँ-बाप — बच्चों को चिढ़ाओ मत; प्रभु की शिक्षा में पालो। "
+*Voiceover:* "पत्नी — अधीनता प्रभु के लिए, डर से नहीं; दासी नहीं, साथी। माँ-बाप — बच्चों को चिढ़ाओ मत; प्रभु की शिक्षा में पालो।"
 
-*On screen:* इफिसियों 5:22 · 1 पतरस 3:7 · इफिसियों 6:4 · 1 तीमुथियुस 3:4
+*On screen:* इफिसियों 5:22 · 1 पतरस 3:7 · इफिसियों 6:4
 
 ```
 The painting fades back to the cleared dining table: the uncle beside his daughter's notebook, his wife folding clothes, the boy asleep against her arm. The camera holds.
@@ -803,7 +803,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — the lane**
 ```
-A residential lane on Sunday morning, the small church visible at its end with its door open. Rahul walking toward it with a Bible under his arm; ahead of him and behind him, other people walking the same way — a family, two old women, a boy running. Medium wide shot from behind Rahul. Rahul matches the character reference exactly.
+A residential lane on Sunday morning, the small church visible at its end with its door open. Rahul walking toward it with a Bible under his arm; ahead of him and behind him, other people walking the same way — a family, two old women, a boy running. Medium wide shot from behind Rahul. Rahul seen from behind; build, hair and clothing match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -833,7 +833,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "भजन में सब्त का गीत है — यहोवा का धन्यवाद करना भला है। इब्रानियों — इकट्ठा होना मत छोड़ो, जैसे कुछ लोग करते हैं। पर विश्राम आलस नहीं — वह दिन आराधना का है।"
 
-*On screen:* भजन संहिता 92:1 · इब्रानियों 10:25 · नीतिवचन 6:9-11
+*On screen:* भजन संहिता 92:1 (शीर्षक) · इब्रानियों 10:25 · नीतिवचन 6:9-11 — shown, not read
 
 ```
 Rahul gets up. At the desk his hand sets the phone screen-down in the drawer and slides it shut. The camera holds on the drawer.

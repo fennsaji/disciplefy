@@ -19,6 +19,22 @@ tells the viewer to go to.
 
 The painting appears once, in Reel 1·2 — the Ethiopian official reading Isaiah, the one Bible event this arc narrates. Vikram carries three of the five reels.
 
+### Character references
+
+**Vikram — the neighbour (Arc 1; later seasons)**
+```
+Character reference sheet on a plain warm grey background. Vikram: an Indian man of about 30, medium build, neat short black hair, a trimmed beard, a friendly, curious expression. Three views side by side: front, three-quarter and profile. Wearing a navy polo shirt. Even soft studio light.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
+```
+
+**Deepak — the village believer (Arc 3; later seasons)**
+```
+Character reference sheet on a plain warm grey background. Deepak: a thin Indian man of 19, close-cropped black hair, a small scar on his chin, an earnest, slightly anxious expression. Three views side by side: front, three-quarter and profile. Wearing a faded checked shirt. Even soft studio light.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
+```
+
 ---
 
 ## REEL 1·1 — तीन भगवान? · S2·01
@@ -57,7 +73,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **05 — chai still warm**
 ```
-Same rooftop at night. Vikram and Rahul leaning on the parapet side by side, both looking out at the city lights, glasses in hand, Vikram nodding slowly to himself, the conversation settled and easy. Vikram matches his character reference. Medium wide shot from behind. Rahul matches the character reference exactly.
+Same rooftop at night. Vikram and Rahul leaning on the parapet side by side, both looking out at the city lights, glasses in hand, Vikram nodding slowly to himself, the conversation settled and easy. Medium wide shot from behind, faces not visible.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -80,7 +96,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "बाइबल पिता को परमेश्वर कहती है। पुत्र को भी। आत्मा को भी। और उसी साँस में कहती है — परमेश्वर एक है। तीन नहीं — वचन कहता है, एक। एक के तीन रूप भी नहीं — पुत्र पिता से बात करते हैं; पिता पुत्र को भेजता है।"
 
-*On screen:* व्यवस्थाविवरण 6:4 · यूहन्ना 3:17
+*On screen:* व्यवस्थाविवरण 6:4 · यूहन्ना 3:17 · यूहन्ना 6:27 · यूहन्ना 1:1 · प्रेरितों के काम 5:3-4 · मरकुस 12:29
 
 ```
 Rahul sets his glass on the parapet and talks plainly, one hand resting on the wall, no gesture. Vikram listens.
@@ -92,7 +108,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "और अवतार भी नहीं। अवतार में ईश्वर कुछ समय रूप लेता है, फिर छोड़ देता है। पुत्र हमेशा से पुत्र थे। वे एक ही बार इंसान बने — और आज भी इंसान हैं। वचन देहधारी हुआ — और देह उतारी नहीं।"
 
-*On screen:* यूहन्ना 1:14 · इब्रानियों 9:26 · 1 तीमुथियुस 2:5
+*On screen:* यूहन्ना 1:14 · इब्रानियों 9:26 · 1 तीमुथियुस 2:5 · यूहन्ना 1:1-2 · यूहन्ना 17:5 · प्रेरितों के काम 1:11
 
 ```
 Dusk turns to night and the stairwell bulb comes on. Rahul takes out his phone, finds a verse and holds it between them; Vikram leans in to read.
@@ -115,6 +131,8 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 **Clip 5 · 05 → outro** · 0:40–0:50
 
 *Voiceover:* "एक परमेश्वर। जिसने भेजा, जो आए, और जो भीतर रहते हैं — तीनों एक ही परमेश्वर हैं।"
+
+*On screen:* मत्ती 28:19
 
 ```
 Hold on the two men at the parapet against the city lights. Slow push in on Rahul, then a gentle dissolve into the brand outro.
@@ -144,23 +162,23 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**03 — the page**
-```
-Same stall. Rahul has taken the Bible back and opened it on top of a stack of books to the book of Acts, the classmate leaning in from the side. Close over-the-shoulder shot of the page, Devanagari deliberately unreadable, afternoon light across the paper. Rahul matches the character reference exactly.
-Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
-```
-
-**04 — the chariot**
+**03 — the chariot**
 ```
 A painting of a desert road at midday: an African official in rich robes seated in an open chariot with a scroll unrolled across his knees, reading; Philip, a plainly dressed man, standing beside the chariot wheel with one hand on it, looking up at him; a pool of water a little way off the road. Ochre sand, gold light, deep shadow under the chariot.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
+**04 — the page**
+```
+Same stall. Rahul has the Bible open on top of a stack of books, the classmate leaning in from the side. Close over-the-shoulder shot of the page, Devanagari deliberately unreadable, afternoon light across the paper. Rahul matches the character reference exactly.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
+```
+
 **05 — not east, not west**
 ```
-Back at the book stall, late afternoon. Rahul holding the closed Bible easily in one hand at his side, the classmate beside him now looking at it with curiosity rather than dismissal, the two of them turning to walk off together along the pavement. Medium wide shot from behind. Rahul matches the character reference exactly.
+Back at the book stall, late afternoon. Rahul holding the closed Bible easily in one hand at his side, the classmate beside him now looking at it with curiosity rather than dismissal, the two of them turning to walk off together along the pavement. Medium wide shot from behind, faces not visible.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -171,7 +189,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 *Voiceover:* "किसी ने कहा — यह बाहर वालों की किताब है। आपने बहस नहीं की। क्योंकि कहीं भीतर आपको भी यही लगा था। यीशु एशिया में पैदा हुए, एशिया में जिए, वहीं मरे और जी उठे।"
 
-*On screen:* लूका 2:4-7
+*On screen:* लूका 2:4-7 · मत्ती 2:1
 
 ```
 The classmate turns the Bible over and says his line with a grin. Rahul does not answer; the camera eases in on his face and the private admission in it.
@@ -183,12 +201,12 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "जिस दिन पवित्र आत्मा उतरे, सुननेवालों में सबसे पहले पूरब के लोग गिने गए — पारथी, मादी, एलामी। और सुसमाचार यूरोप से पहले अफ़्रीका पहुँचा — कूश देश का अधिकारी, यशायाह पढ़ता हुआ, रास्ते में ही बपतिस्मा लेकर लौटा।"
 
-*On screen:* प्रेरितों के काम 2:9-11 · प्रेरितों के काम 8:27-38 · प्रेरितों के काम 16:9-10
+*On screen:* प्रेरितों के काम 2:9-11 · प्रेरितों के काम 8:27-38 · प्रेरितों के काम 16:9-10 — shown, not read
 
 ```
-Rahul takes the Bible back gently, opens it on a stack of books and finds a page in Acts. The classmate leans in. The camera settles on the page.
-Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
-Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
+Rahul takes the Bible back gently and opens it on a stack of books; the afternoon light on the page hardens into desert sun and the page blooms into the painting of the chariot on the road, filling the frame.
+Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
+Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
 
 **Clip 3 · 03 → 04** · 0:20–0:30
@@ -198,7 +216,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* 2 तीमुथियुस 3:16
 
 ```
-The afternoon light on the page hardens into desert sun and the page blooms into the painting of the chariot on the road, filling the frame.
+A slow push toward the unrolled scroll on the official's knees, then the painting fades back into the book stall — the Bible open on the stack, the classmate leaning in.
 Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
 Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
@@ -210,9 +228,9 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 *On screen:* 2 पतरस 1:21 · 1 थिस्सलुनीकियों 2:13
 
 ```
-A slow push toward the unrolled scroll on the official's knees, then the painting fades back into the book stall — Rahul with the Bible at his side, the classmate looking at it differently.
-Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
-Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
+Rahul closes the Bible and holds it at his side; the classmate looks at it differently.
+Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
+Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
 
 **Clip 5 · 05 → outro** · 0:40–0:50
@@ -237,7 +255,7 @@ Dinner at Vikram's home. His mother feeds Rahul like a son. On the bus home the 
 
 **01 — fed like a son**
 ```
-A warm, ordinary Indian home at dinner: Vikram's mother, a woman in her late fifties in a printed sari, leaning over to put another roti on Rahul's steel plate with a scolding smile, Rahul protesting with a laugh and a raised hand, Vikram beside him grinning. Brass lamp on a shelf, family photos, marigolds. Vikram matches his character reference. Medium shot. A loving home, nothing framed for contrast. No shrine, deity image or puja corner anywhere in frame. Rahul matches the character reference exactly.
+A warm, ordinary Indian home at dinner: Vikram's mother, a woman in her late fifties in a printed sari, leaning over to put another roti on Rahul's steel plate with a scolding smile, Rahul protesting with a laugh and a raised hand, Vikram beside him grinning. A steel water jug on a shelf, family photos, a potted plant. Vikram matches his character reference. Medium shot. A loving home, nothing framed for contrast. No shrine, deity image or puja corner anywhere in frame. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -298,7 +316,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "समस्या पाप है — और उसके लिए एक ही मरे और जी उठे। रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है। घमंड की जगह नहीं — यह रास्ता आपने ढूँढा नहीं, आपको मिला, दान में।"
 
-*On screen:* प्रेरितों के काम 4:12 · इफिसियों 2:8-9
+*On screen:* प्रेरितों के काम 4:12 · 1 तीमुथियुस 2:5 · यूहन्ना 14:6 — hold · इफिसियों 2:8-9
 
 ```
 The bus dissolves to daylight in the stairwell. Rahul climbs with the heavy bags; Vikram's mother, a step ahead, looks back and scolds him fondly.
@@ -322,7 +340,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "यीशु ही रास्ता हैं — और उसी यीशु ने कहा, पड़ोसी से अपने जैसा प्रेम रखो। घर में दोनों साथ चलती हैं। एक के बिना दूसरी सुनी नहीं जाएगी।"
 
-*On screen:* मरकुस 12:31
+*On screen:* मरकुस 12:31 · कुलुस्सियों 4:5-6
 
 ```
 Hold on the doorway, her hand on his cheek. Slow push in on Rahul, then a gentle dissolve into the brand outro.
@@ -333,7 +351,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 1·4 — इतनी कलीसियाएँ क्यों? · S2·09
-One street, three church signboards. Vikram, walking it with Rahul, asks the obvious thing: if God is one, why aren't you? Rahul has no answer that day. The reel ends as a confession, not a defence — the two of them at a church gate, Rahul's hand on the bars.
+One street, three church signboards. Vikram, walking it with Rahul, asks the obvious thing: if God is one, why aren't you? Rahul has no answer at first; at the chai stall that night he gives the only one he has. The reel ends as a confession, not a defence — the two of them at a church gate, Rahul's hand on the bars.
 **Cast:** Rahul, Vikram · **Hook text on frame 01:** "परमेश्वर एक है, तो तुम एक क्यों नहीं?"
 
 ### Frames
@@ -391,7 +409,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "कुरिन्थुस में भी — मैं पौलुस का, मैं अपुल्लोस का। पौलुस ने पूछा: क्या मसीह बँट गया? बाइबल इस पर दुखी है। वजहें दो। पहली — सच्चे विश्वासी उन बातों पर अलग हो जाते हैं जो सुसमाचार नहीं। बपतिस्मा कब, आराधना कैसे। छोटी नहीं — पर सुसमाचार नहीं।"
 
-*On screen:* 1 कुरिन्थियों 1:12-13 · रोमियों 14:5
+*On screen:* 1 कुरिन्थियों 1:12-13 · यूहन्ना 17:21 · 1 कुरिन्थियों 1:10 · रोमियों 14:1, 5
 
 ```
 Evening becomes night; they sit at the chai stall. Rahul opens the Bible app and talks, hands open. The camera settles on the two of them.
@@ -403,7 +421,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "दूसरी — कुछ जगहें, जिन पर कलीसिया लिखा है, सुसमाचार ही छोड़ चुकी हैं। नाम कुछ भी हो — वह कलीसिया नहीं। कसौटी दरवाज़े का नाम नहीं: क्या वहाँ यीशु परमेश्वर हैं, जो पापों का दाम चुकाकर मरे और जी उठे?"
 
-*On screen:* गलातियों 1:6-9 · कुलुस्सियों 2:9
+*On screen:* गलातियों 1:6-9 · कुलुस्सियों 2:9 · 1 कुरिन्थियों 15:3-4
 
 ```
 Rahul sets the phone down and raises two fingers, plainly — two questions. The camera closes in on his hand and face.
@@ -452,7 +470,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **02 — the plate**
 ```
-Same room. Close on the steel steel plate of food held out toward Rahul, the mother's hands holding it, Rahul's hands not yet raised to take it. Warm household light on the steel. Shallow depth of field. Rahul matches the character reference exactly.
+Same room. Hands only: close on the steel plate of food held out toward Rahul in the mother's hands, Rahul's hands not yet raised to take it. Warm household light on the steel. Shallow depth of field. Hands only, no faces.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -496,7 +514,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "पहली — परमेश्वर एक है; पृथ्वी और उसकी भरपूरी उसी की। चढ़ाने से भोजन बदलता नहीं। बाज़ार से लो, खाओ, पूछो मत। दूसरी — जो आराधना किसी और की है, उसमें शिष्य साझी नहीं होता।"
 
-*On screen:* 1 कुरिन्थियों 8:4-6 · 1 कुरिन्थियों 10:25 · 1 कुरिन्थियों 10:20-21
+*On screen:* 1 कुरिन्थियों 8:4-6 · 1 कुरिन्थियों 10:26 · भजन संहिता 24:1 · 1 कुरिन्थियों 10:25 · 1 कुरिन्थियों 10:20-21 — reference shown; not read beyond the script's words
 
 ```
 From the plate up to Rahul's face: an honest pause, nothing in it but the question. The camera holds.
@@ -520,7 +538,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "और हर हाल में — माँ-बाप का आदर। घर में साथ बैठना पाप नहीं; आदर आज्ञा है।"
 
-*On screen:* इफिसियों 6:2 · 1 कुरिन्थियों 10:27
+*On screen:* इफिसियों 6:2 · 1 कुरिन्थियों 10:27 · निर्गमन 20:12 · लूका 5:29-30
 
 ```
 The camera pulls back to the whole family in the warm household light, Rahul in easy conversation with Vikram's mother, his plate before him, nothing shown decided.

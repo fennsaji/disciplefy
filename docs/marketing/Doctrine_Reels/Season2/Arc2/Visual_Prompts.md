@@ -4,7 +4,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Curriculum: [../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram and Deepak references: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
+Vikram and Deepak references: [../Arc1/Visual_Prompts.md#character-references](../Arc1/Visual_Prompts.md#character-references)
 
 Same concept, a year on: one person, one real moment, the whole reel inside it.
 Seven reels predate the season's re-cut; only their arc number changed and
@@ -17,13 +17,20 @@ for contrast with another faith; no antagonist, crowd or confrontation in any
 reel about pressure at home — the only people on screen are the ones the reel
 tells the viewer to go to.
 
-No painting in this arc — no reel narrates a Bible event. Reel 2·3 returns to the desk from the money reel; reel 2·4 returns to the living-room study from Season 1 reel 7, with the same leader.
+The painting appears once, in Reel 2·5 — Jonah asleep in the ship. Reel 2·3 returns to the desk from the money reel; reel 2·4 returns to the living-room study from Season 1 reel 7, with the same leader.
 
 ## References — build these first
 
 **Joseph — a friend from a Christian family (Reel 2·1)**
 ```
 Character reference sheet on a plain warm grey background. Joseph: an Indian man of 25, medium build, clean-shaven, neatly combed black hair, a thoughtful, slightly anxious expression, a small steel cross on a chain. Three views side by side: front, three-quarter and profile. Wearing a plain white shirt. Even soft studio light.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
+```
+
+**The study leader — from Season 1 reel 7 (Reel 2·4)**
+```
+Character reference sheet on a plain warm grey background. The study leader: an Indian man in his forties, medium build, short greying black hair, clean-shaven, a kind, attentive expression. Three views side by side: front, three-quarter and profile. Wearing a plain collared shirt, no clerical dress. Even soft studio light.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -52,7 +59,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — the photo**
 ```
-Same steps. Close on Joseph's phone held between them: an old family photograph, soft and slightly faded, of a baby in a white gown in a woman's arms at a font, faces gentle and unreadable. Joseph's thumb at the edge of the screen. Warm morning light. Rahul matches the character reference exactly.
+Same steps. Close on Joseph's phone held between them: an old family photograph, soft and slightly faded, of a baby in a white gown in a woman's arms at a font, faces gentle and unreadable. Joseph's thumb at the edge of the screen. Warm morning light. Hands only, no faces.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -89,7 +96,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "पैदाइशी मसीही कोई नहीं होता। नीकुदेमुस धर्म का गुरु था — यीशु ने कहा, नया जन्म लेना होगा। नाम, बपतिस्मा — बुरे नहीं। जन्म इनसे नहीं होता।"
 
-*On screen:* यूहन्ना 3:3, 7 · 1 पतरस 1:23
+*On screen:* यूहन्ना 3:3, 7 · 1 पतरस 1:23 · तीतुस 3:5
 
 ```
 Rahul sits; Joseph turns his phone to show him an old photograph. The camera closes in on the faded picture of the baby at the font.
@@ -101,7 +108,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "पर मसीही घर बाहर भी नहीं करता। तीमुथियुस का विश्वास नानी में था, माँ में — फिर उसमें। घर से सुना, खुद माना। सवाल कब का नहीं — तारीख नहीं पूछी जा रही। सवाल यह है — क्या आपने मन फिराकर यीशु पर भरोसा किया है?"
 
-*On screen:* 2 तीमुथियुस 1:5 · प्रेरितों के काम 20:21
+*On screen:* 2 तीमुथियुस 1:5 · प्रेरितों के काम 20:21 · 2 तीमुथियुस 3:15
 
 ```
 Joseph puts the phone face-down. Rahul opens the small Bible on his knee and turns it toward him; Joseph leans in to read.
@@ -113,7 +120,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "अगर हाँ — आप मसीह में हैं। नाम से नहीं, भरोसे से। और अगर आप मसीह में हैं — निश्चय घर के नाम पर नहीं, मसीह के पूरे किए काम पर टिका है।"
 
-*On screen:* रोमियों 8:1 · इब्रानियों 10:14
+*On screen:* रोमियों 8:1 · इब्रानियों 10:14 · यूहन्ना 1:12 · रोमियों 10:9-10
 
 ```
 Joseph sits back, then bows his head and closes his eyes, hands together. Rahul looks away to the street to give him the moment.
@@ -143,21 +150,21 @@ Sunil's mother is ill and has been sending 'seed' money for a year. Now she has 
 
 **01 — the envelopes**
 ```
-A small Indian living room in the afternoon, a steel cupboard, a calendar with a Bible verse. Sunil, slight with neatly side-parted hair in a light-blue collared shirt, laying a thick stack of used money-order receipts and printed envelopes on the table in front of Rahul, the printing deliberately unreadable. Rahul looking at the stack, then at Sunil. Sunil matches his character reference. Medium shot from above the table. Rahul matches the character reference exactly.
+A small Indian living room in the afternoon, a steel cupboard, a calendar, its text deliberately unreadable. Sunil, slight with neatly side-parted hair in a light-blue collared shirt, laying a thick stack of used money-order receipts and printed envelopes on the table in front of Rahul, the printing deliberately unreadable. Rahul looking at the stack, then at Sunil. Sunil matches his character reference. Medium shot from above the table. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **02 — the mother**
 ```
-An adjoining room, curtain half drawn. Sunil's mother, an Indian woman in her sixties in a plain sari, lying propped on pillows on a bed, thin and tired, a steel tumbler beside her, looking at the ceiling. Warm afternoon light through a window. Medium shot. Rahul matches the character reference exactly.
+An adjoining room, curtain half drawn. Sunil's mother, an Indian woman in her sixties in a plain sari, lying propped on pillows on a bed, thin and tired, a steel tumbler beside her, looking at the ceiling. Warm afternoon light through a window. Medium shot.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **03 — she blames herself**
 ```
-Same bedroom. Close on the mother's face as Rahul, seen from behind at the edge of frame, sits at her bedside; her eyes are wet and she is shaking her head slightly at herself. Shallow depth of field. Rahul matches the character reference exactly.
+Same bedroom. Close on the mother's face as Rahul, seen from behind at the edge of frame, sits at her bedside; her eyes are wet and she is shaking her head slightly at herself. Shallow depth of field. Rahul seen from behind, face not visible.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -171,7 +178,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **05 — her hand**
 ```
-Same bedroom, softer light. Close on Rahul's hand holding the mother's thin hand on the blanket, the Bible closed beside them, the stack of envelopes pushed to the far edge of the bedside table. Shallow depth of field. Rahul matches the character reference exactly.
+Same bedroom, softer light. Close on Rahul's hand holding the mother's thin hand on the blanket, the Bible closed beside them, the stack of envelopes pushed to the far edge of the bedside table. Shallow depth of field. Hands only, no faces.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -192,7 +199,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "बाइबल इसे दूसरा सुसमाचार कहती है। यीशु के पास सिर रखने की जगह नहीं थी। पौलुस ने अपने काँटे के लिए तीन बार माँगा — जवाब था, अनुग्रह ही काफ़ी है। काँटा रहा। क्या इन सबका विश्वास कम था?"
 
-*On screen:* गलातियों 1:6-8 · 2 कुरिन्थियों 12:7-9
+*On screen:* गलातियों 1:6-8 · 2 कुरिन्थियों 12:7-9 · लूका 9:58 · 2 तीमुथियुस 4:20 · 1 तीमुथियुस 5:23 — shown, not read
 
 ```
 Rahul sits at the bedside. The mother turns her head to him and shakes it at herself, eyes wet. The camera eases in on her face.
@@ -204,7 +211,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "जो भक्ति को कमाई का ज़रिया समझते हैं — बाइबल कहती है, वे सत्य से खाली हैं। हाँ — परमेश्वर देता है, चंगा भी करता है। पिता की तरह, मुफ़्त। पर वह आपका देनदार नहीं। बीज से खरीदा नहीं जाता।"
 
-*On screen:* 1 तीमुथियुस 6:5 · रोमियों 11:35
+*On screen:* 1 तीमुथियुस 6:5 · रोमियों 11:35 · मत्ती 7:11 · याकूब 1:17
 
 ```
 Rahul opens the small Bible and turns it so she can see, his other hand resting near hers on the blanket. Sunil appears in the doorway behind.
@@ -225,6 +232,8 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 **Clip 5 · 05 → outro** · 0:40–0:50
 
 *Voiceover:* "वादा यह है — अगर आप मसीह में हैं, मसीह आपके हैं। बीमारी में भी, क़ब्र के पार भी।"
+
+*On screen:* रोमियों 8:35-39
 
 ```
 Hold on the two hands. Slow push in, then a gentle dissolve into the brand outro.
@@ -293,7 +302,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "परमेश्वर इस्राएल से बोल रहा है — अपनी वाचा की प्रजा से। भण्डार मन्दिर का था। दशमांश लेवियों का भोजन था। उस वाचा में आशीष और शाप, दोनों लिखे थे।"
 
-*On screen:* मलाकी 3:6-7 · गिनती 18:21 · व्यवस्थाविवरण 28:1-2, 15
+*On screen:* मलाकी 3:6-7 · गिनती 18:21 · व्यवस्थाविवरण 28:1-2, 15 · मलाकी 1:1 · नहेम्याह 10:37-38
 
 ```
 Rahul pushes the empty envelope aside, pulls the Bible into the lamplight and opens it to Galatians. The camera settles on the page.
@@ -305,7 +314,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "पौलुस लिखते हैं — मसीह हमारे लिए शाप बने, और हमें व्यवस्था के शाप से छुड़ा लिया। अगर आप मसीह में हैं — वह शाप क्रूस पर उतर चुका है। पैसे से न लौटता, न टलता।"
 
-*On screen:* गलातियों 3:13 · रोमियों 8:1
+*On screen:* गलातियों 3:13 · रोमियों 8:1 · रोमियों 11:35 · प्रेरितों के काम 8:20 — shown, not read
 
 ```
 The desk dissolves to the church door on Sunday. Rahul slips a small envelope into the offering box, unhurried, and walks on.
@@ -329,7 +338,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "मलाकी पढ़िए — उसकी वाचा में। आप नई वाचा में हैं — जिसकी कीमत यीशु ने चुकाई।"
 
-*On screen:* लूका 22:20
+*On screen:* लूका 22:20 · इब्रानियों 8:6, 9:15
 
 ```
 Hold on Rahul at rest in the row. Slow push in, then a gentle dissolve into the brand outro.
@@ -347,7 +356,7 @@ At the living-room Bible study, the leader says something Rahul is not sure is i
 
 **01 — the line**
 ```
-The same evening Bible study in an Indian living room as Season 1 reel 7: six young adults on a sofa and floor cushions, open Bibles, a steel tray of tea glasses, warm lamplight. The study leader, an Indian man in his forties in a plain shirt, mid-sentence with a hand raised, confident. Rahul on a floor cushion, Bible open on his knee, his brow just slightly drawn. Medium wide shot. Rahul matches the character reference exactly.
+The same evening Bible study in an Indian living room as Season 1 reel 7: six young adults on a sofa and floor cushions, open Bibles, a steel tray of tea glasses, warm lamplight. The study leader, an Indian man in his forties in a plain shirt, mid-sentence with a hand raised, confident. The study leader matches his character reference. Rahul on a floor cushion, Bible open on his knee, his brow just slightly drawn. Medium wide shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -368,14 +377,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — bringing it**
 ```
-The same living room a week later, before the study begins, the others not yet seated. Rahul standing beside the leader with his Bible open, pointing at a line, respectful, a little nervous. The leader looking down at the page, listening. Medium shot. Rahul matches the character reference exactly.
+The same living room a week later, before the study begins, the others not yet seated. Rahul standing beside the leader with his Bible open, pointing at a line, respectful, a little nervous. The leader looking down at the page, listening. The study leader matches his character reference. Medium shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — both open**
 ```
-Same room. The leader now seated beside Rahul on the sofa, his own Bible open on his knee next to Rahul's, both men bent over the two pages together, the leader nodding, a small pleased smile. Medium close shot. Rahul matches the character reference exactly.
+Same room. The leader now seated beside Rahul on the sofa, his own Bible open on his knee next to Rahul's, both men bent over the two pages together, the leader nodding, a small pleased smile. The study leader matches his character reference. Medium close shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -386,7 +395,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 *Voiceover:* "जो आपको वचन सिखाता है, उसकी एक बात पर शक हुआ। फिर शक पर ही डर लगा — क्या यह पाप है? बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारी आत्माओं के लिए जागते हैं। कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं।"
 
-*On screen:* इब्रानियों 13:17
+*On screen:* इब्रानियों 13:17 · इब्रानियों 10:24-25 · इफिसियों 4:11-12
 
 ```
 The leader makes his point with a raised hand; the group nods. Rahul looks down at his Bible, then up. The camera eases in on his unease.
@@ -410,7 +419,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "शब्द नहीं रोका — वह जगह रोकी, जहाँ एक इंसान दूसरे का स्वामी बन जाए। बिरीया के लोगों ने पौलुस तक को पवित्रशास्त्र से जाँचा। बाइबल उन्हें सराहती है।"
 
-*On screen:* प्रेरितों के काम 17:11
+*On screen:* प्रेरितों के काम 17:11 · इफिसियों 4:11 · याकूब 3:1 — shown, not read
 
 ```
 The desk dissolves to the living room a week later. Rahul stands beside the leader with his Bible open and points at the line, respectful; the leader bends to look.
@@ -422,7 +431,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "जाँचना पाप नहीं। सच्चा अगुवा जाँच से डरता नहीं — खुद वचन खोलकर दिखाता है। यह कलीसिया छोड़ने की बात नहीं। ठहरिए। आदर कीजिए। बाइबल खोलिए।"
 
-*On screen:* 1 थिस्सलुनीकियों 5:21 · 1 थिस्सलुनीकियों 5:12-13
+*On screen:* 1 थिस्सलुनीकियों 5:21 · 1 थिस्सलुनीकियों 5:12-13 · गलातियों 1:8 · 1 तीमुथियुस 5:17
 
 ```
 The leader sits down beside Rahul, opens his own Bible next to Rahul's, and the two of them bend over the pages together; the leader nods and smiles.
@@ -474,7 +483,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 **04 — Jonah**
 ```
 A painting of the hold of a wooden ship in a storm at night: Jonah curled asleep on coiled rope in the foreground, oblivious, a lantern swinging, water sloshing across the boards, and through the open hatch above, sailors hauling ropes against a black sky and a wave. Deep indigo and lamp gold.
-Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
+Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, ancient Near Eastern setting, a Phoenician-style merchant ship. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
@@ -501,7 +510,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "तुम्हारा पवित्र होना। हर बात में धन्यवाद। न्याय, दया, नम्रता। यह लिखा है। आवाज़ का इंतज़ार नहीं। और जो लिखा नहीं? वहाँ बाइबल आवाज़ का नहीं, बुद्धि का वादा करती है — माँगो, मिलेगी। बदला हुआ मन, जो परखता है। और सलाह — बहुत सलाहकारों से।"
 
-*On screen:* 1 थिस्सलुनीकियों 4:3 · मीका 6:8 · याकूब 1:5
+*On screen:* 1 थिस्सलुनीकियों 4:3 · मीका 6:8 · याकूब 1:5 · 1 थिस्सलुनीकियों 5:18 · रोमियों 12:2 · नीतिवचन 15:22
 
 ```
 Rahul sits up, goes back to the desk and opens the Bible, turning pages until he stops at Jonah. The camera settles over his shoulder.
@@ -525,7 +534,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "कोई कहे — परमेश्वर ने मुझे बताया, तुम यह करो — वह आपको बाँधता नहीं। उसे वचन से परखिए।"
 
-*On screen:* 1 थिस्सलुनीकियों 5:21
+*On screen:* 1 थिस्सलुनीकियों 5:21 · यशायाह 8:20
 
 ```
 The lantern swings over the sleeping Jonah, then the painting fades into the bright morning table — Dada, mother and pastor leaning in over the letters, Rahul with a pen in hand.
@@ -536,6 +545,8 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 **Clip 5 · 05 → outro** · 0:40–0:50
 
 *Voiceover:* "परमेश्वर ने मरज़ी छिपाई नहीं — लिखी है। उसके भीतर रहिए। जो चुनना बाकी है, बुद्धि से चुनिए — डर से नहीं।"
+
+*On screen:* भजन संहिता 119:105 · नीतिवचन 3:5-6
 
 ```
 Hold on the table, Dada mid-sentence, Rahul listening with the pen. Slow push in on Rahul, then a gentle dissolve into the brand outro.
