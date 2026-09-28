@@ -4,7 +4,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Amit / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
 Arjun and Rahul's uncle: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
@@ -23,12 +23,12 @@ reel; no stones or sling in the David reel. No count of anything. The app,
 its discipler feature and its groups never appear. Never Jesus' face; where
 he is in a painting he is a distant figure from behind.
 
-Paintings: the eleven on the mountain (3·1, Jesus a distant figure from behind), Philip beside the official in the chariot (3·2), David over the scroll (3·3), the nets being mended (3·4), the father running (3·5). Arjun enters in 3·1, reads in 3·2 and is absent in 3·5 — and is never shown leaving.
+Paintings: the eleven on the mountain (3·1, Jesus a distant figure from behind), Philip running up to the chariot (3·2), David over the scroll (3·3), the nets being mended (3·4), the father running (3·5). Arjun enters in 3·1, reads in 3·2 and is absent in 3·5 — and is never shown leaving.
 
 ---
 
 ## REEL 3·1 — कुछ को शक था · S4·11
-The eleven on the mountain in Galilee — some kneeling, some hanging back. Then Sunday: Rahul notices Arjun, new, alone on the back bench. He sits beside him with two teas. Weeks later they walk a lane together; and the reel ends in Rahul's room with one printed Bible between them.
+The eleven on the mountain in Galilee — some kneeling, some hanging back. Then Sunday: Rahul notices Arjun, new, alone on the back bench. He sits beside him with two teas. Weeks later they walk the church courtyard together; and the reel ends in Rahul's room with one printed Bible between them.
 **Cast:** Rahul, Arjun · painted scene (the eleven on the mountain — Jesus a distant figure from behind) · **Hook text on frame 01:** "यीशु की आख़िरी आज्ञा — जाओ, चेले बनाओ।"
 
 ### Frames
@@ -56,7 +56,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — walking together**
 ```
-A residential lane in the evening, weeks later. Rahul and Arjun walking side by side, talking, Arjun animated with a question, Rahul listening with his hands in his pockets. Arjun matches his character reference. Medium wide shot from behind and to the side. Rahul matches the character reference exactly.
+The church compound's quiet courtyard in the evening, weeks later. Rahul and Arjun walking side by side, talking, Arjun animated with a question, Rahul listening with his hands in his pockets. Arjun matches his character reference. Medium wide shot from behind and to the side. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -77,7 +77,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 *On screen:* मत्ती 28:19 · मत्ती 28:16-17 · मत्ती 4:18-22 · मत्ती 9:9 · प्रेरितों के काम 4:13 — shown, not read
 
 ```
-The painted mountainside fades into the church after the service: Arjun alone on the back bench, Rahul noticing him from the aisle.
+Hold on the painted mountainside — the eleven, some kneeling, some hanging back — through the whole question; only in the last seconds does it fade into the church after the service: Arjun alone on the back bench, Rahul noticing him from the aisle.
 Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
 Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
@@ -101,7 +101,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* मरकुस 3:14 · 1 कुरिन्थियों 11:1
 
 ```
-The bench dissolves to the lane weeks later: the two walking side by side, Arjun asking, Rahul listening.
+The bench dissolves to the church courtyard weeks later: the two walking side by side, Arjun asking, Rahul listening.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -113,7 +113,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* इफिसियों 2:8-10 · यूहन्ना 15:5 · मत्ती 28:20
 
 ```
-The lane dissolves to Rahul's room at night: the two on the floor with one Bible open across their knees.
+The courtyard dissolves to Rahul's room at night: the two on the floor with one Bible open across their knees.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -133,14 +133,14 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 3·2 — रथ पर एक सवाल · S4·12
-Philip seated in the chariot beside the official, both bent over the scroll. Then Rahul's room: Arjun puzzled over a page, Rahul asking a question instead of preaching; two pairs of hands on one printed Bible; Arjun explaining it back. The last frame is Arjun on his own doorstep, reading with his younger brother. Never a phone as the place the reading happens.
-**Cast:** Rahul, Arjun, Arjun's younger brother (14) · painted scene (Philip beside the official in the chariot) · **Hook text on frame 01:** "जो दौड़कर उसके पास गया, उसने उपदेश नहीं दिया। एक सवाल पूछा।"
+Philip running up beside the official's chariot, calling a question up to him. Then Rahul's room: Arjun puzzled over a page, Rahul asking a question instead of preaching; two pairs of hands on one printed Bible; Arjun explaining it back. The last frame is Arjun on his own doorstep, reading with his younger brother. Never a phone as the place the reading happens.
+**Cast:** Rahul, Arjun, Arjun's younger brother (14) · painted scene (Philip running up to the official's chariot) · **Hook text on frame 01:** "जो दौड़कर उसके पास गया, उसने उपदेश नहीं दिया। एक सवाल पूछा।"
 
 ### Frames
 
 **01 — in the chariot**
 ```
-A painting of a covered chariot halted on a desert road: an African official in rich robes and Philip, a plainly dressed man, seated side by side on the chariot bench, both bent over a scroll unrolled across their knees, Philip's finger on a line; the driver resting, the horses standing. Midday ochre, deep shade under the canopy.
+A painting of a covered chariot moving at a walk along a desert road: an African official in rich robes seated under the canopy, a scroll unrolled across his knees, puzzled; Philip, a plainly dressed man, running up alongside the chariot, one hand lifted as he calls a question up to him; the driver, the horses at a walk. Midday ochre, deep shade under the canopy.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
@@ -154,7 +154,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — two pairs of hands**
 ```
-Same desk. Close on one printed Bible with two pairs of hands on it — Rahul's finger resting on a line, Arjun's finger following it along — the Devanagari deliberately unreadable. Lamplight. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
+Same desk. Close on one printed Bible with two pairs of hands on it — Rahul's finger resting on a line, Arjun's finger following it along — the Devanagari deliberately unreadable. Lamplight. Rahul's and Arjun's hands only, no faces; skin tones and sleeves match their character references (Arjun's maroon t-shirt and overshirt).
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -260,7 +260,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 **03 — while I kept silent**
 ```
 A painting of a man in a plain robe alone in a dim stone room at night, bowed low over a scroll on a low table with a reed pen in his hand, a harp set aside against the wall, a single oil lamp. Deep blue shadow, one pool of warm light.
-Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
+Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, ancient Israelite setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 

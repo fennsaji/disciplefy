@@ -4,9 +4,9 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Amit / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
-Arjun and Rahul's uncle: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
+Arjun and Rahul's uncle: (reference sheets below)
 
 Same concept. Rahul now reads the Bible for himself, speaks when asked, and
 walks with one younger believer — Arjun. One real moment per reel, five
@@ -34,7 +34,7 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**Rahul's uncle (mama-ji) — Reel 2·4**
+**Rahul's uncle (mama-ji) — Season 4 Arc 2, Reel 2·4**
 ```
 Character reference sheet on a plain warm grey background. An Indian man in his mid-sixties, white hair combed back, reading glasses on a cord, a gentle round face and an easy smile. Three views side by side: front, three-quarter and profile. Wearing a plain cream half-sleeve shirt and grey trousers, nothing that marks any community or faith. Even soft studio light.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
@@ -59,7 +59,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 **02 — the trembling ranks**
 ```
 A painting of a hillside above a valley: the ranks of an ancient army crowded together, shields lowered, men shrinking back, faces afraid; below them a single young man in a plain tunic walking out alone into the valley, seen from behind, small against the far slope. No weapon visible in his hands. Dusty gold light, long shadows.
-Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
+Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, ancient Israelite setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
@@ -72,7 +72,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — Luke 24**
 ```
-Same desk. Close over-the-shoulder shot of the Bible open at Luke 24, Rahul's finger resting on a line near the chapter's end, the Devanagari deliberately unreadable. Rahul matches the character reference exactly.
+Same desk. Close over-the-shoulder shot of the Bible open at Luke 24, Rahul's finger resting on a line near the chapter's end, the Devanagari deliberately unreadable. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -210,7 +210,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* नीतिवचन 1:1-6 · नीतिवचन 26:4-5 — hold both
 
 ```
-Rahul lifts an old letter and a hymnbook from the shelf and holds them side by side over the table. The camera closes on the two.
+Rahul's finger moves down from one Proverbs line to the next, Sunil's eyes following; only in the last seconds does Rahul lift an old letter and a hymnbook from the shelf and hold them side by side.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -268,7 +268,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **02 — read upward**
 ```
-Same desk. Close over-the-shoulder shot of a printed Bible open at Jeremiah 29, Rahul's finger moving up the page from a line near the middle toward the top of the chapter, the Devanagari deliberately unreadable. Rahul matches the character reference exactly.
+Same desk. Close over-the-shoulder shot of a printed Bible open at Jeremiah 29, Rahul's finger moving up the page from a line near the middle toward the top of the chapter, the Devanagari deliberately unreadable. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -276,7 +276,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 **03 — build houses**
 ```
 A painting of exiles in Babylon: families by a broad river under palm trees, men laying mud bricks for a small house, a woman planting a garden row, children carrying water, the great city walls hazy in the distance. Warm evening light, earth and river tones.
-Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
+Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, ancient Babylonian setting, sixth century BC. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
@@ -377,7 +377,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 **03 — the land across the river**
 ```
 A painting of a man in a plain robe standing on a hilltop seen from behind, looking out over a green river valley toward distant hills, the tents of a great camp spread on the plain below him. Morning haze, soft blue and gold.
-Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
+Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, ancient Israelite setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
 
@@ -460,7 +460,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 1·5 — व्यवस्था और मसीही · S4·05
-A tailor's shop. Rahul fingers his own shirt cuff — cotton and something else — and grins at the verse someone threw at him. Two spools winding; Leviticus and then Matthew on his desk; a loom finishing a length of cloth; Rahul walking out in the new shirt. Thread and cloth only — no food, anywhere.
+A tailor's shop. Rahul fingers his own shirt cuff — cotton and something else — and grins at the verse someone threw at him. Two spools winding; Leviticus and then Matthew on his desk; a loom finishing a length of cloth; Rahul stepping out of the shop in the new shirt. Thread and cloth only — no food, anywhere.
 **Cast:** Rahul, a tailor (one-off). No food in any frame. · **Hook text on frame 01:** "दो तरह के धागे से बना कपड़ा मत पहनो।"
 
 ### Frames
@@ -481,7 +481,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — Leviticus, then Matthew**
 ```
-Rahul's desk at night. Close over-the-shoulder shot of his printed Bible with his thumb holding a place far back in Leviticus while his other hand turns the pages forward toward Matthew, the Devanagari deliberately unreadable. Lamplight. Rahul matches the character reference exactly.
+Rahul's desk at night. Close over-the-shoulder shot of his printed Bible with his thumb holding a place far back in Leviticus while his other hand turns the pages forward toward Matthew, the Devanagari deliberately unreadable. Lamplight. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -495,7 +495,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **05 — walking out**
 ```
-The doorway of the tailor's shop in afternoon light. Rahul stepping out into the lane in a new shirt, a printed Bible under his arm, easy and unbothered, the tailor waving from inside. Medium wide shot from the lane. Rahul matches the character reference exactly.
+The tailor's shop seen from inside toward its bright doorway in afternoon light. Rahul stepping over the threshold in a new shirt, a printed Bible under his arm, easy and unbothered, the tailor waving him off from the counter; beyond the door only soft light. Medium wide shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -545,7 +545,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* रोमियों 6:14-15 · गलातियों 3:24-25 · यिर्मयाह 31:33 · इब्रानियों 8:10 · रोमियों 13:8-10
 
 ```
-The loom dissolves to the tailor's doorway: Rahul stepping out into the lane in the new shirt, the Bible under his arm.
+The loom dissolves to the tailor's doorway: Rahul stepping out through the doorway in the new shirt, the Bible under his arm.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -557,7 +557,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* रोमियों 8:3-4 · इफिसियों 2:8-10 · मत्ती 5:17 · 2 कुरिन्थियों 3:14
 
 ```
-Hold on Rahul walking down the lane. Slow push in from behind, then a gentle dissolve into the brand outro.
+Hold on Rahul in the bright doorway. Slow push in, then a gentle dissolve into the brand outro.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```

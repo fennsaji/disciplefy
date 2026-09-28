@@ -4,7 +4,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Amit / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
 Arjun and Rahul's uncle: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md)
 
@@ -63,7 +63,7 @@ Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cart
 
 **05 — quiet**
 ```
-The same terrace at night, the city lights below. Rahul and Vikram sitting side by side in the two chairs, both quiet, Vikram looking out and thinking, Rahul not pressing. Vikram matches his character reference. Wide shot from behind. Rahul matches the character reference exactly.
+The same terrace at night, the city lights below. Rahul and Vikram sitting side by side in the two chairs, both quiet, Vikram looking out and thinking, Rahul not pressing. Wide shot from behind. Both seen from behind, faces not visible; build, hair and clothing match Rahul's and Vikram's character references.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -154,14 +154,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — fear and trembling**
 ```
-Rahul's desk that night. Close over-the-shoulder shot of the printed Bible open at 1 Corinthians 2, Rahul's finger on a line, the Devanagari deliberately unreadable. Lamplight. Rahul matches the character reference exactly.
+Rahul's desk that night. Close over-the-shoulder shot of the printed Bible open at 1 Corinthians 2, Rahul's finger on a line, the Devanagari deliberately unreadable. Lamplight. Rahul's hands only, no face; skin tone and shirt sleeve match his character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **04 — they prayed**
 ```
-A painting of a lamp-lit upper room: a dozen plainly dressed men and women kneeling and standing together with hands raised and heads bowed in prayer, the oil lamps swaying, the room seeming to tremble. Warm ochre and deep shadow.
+A painting of a lamp-lit room in a house in Jerusalem: a dozen plainly dressed men and women kneeling and standing together with hands raised and heads bowed in prayer, the oil lamps swaying, the room seeming to tremble. Warm ochre and deep shadow.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
@@ -206,7 +206,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* प्रेरितों के काम 4:29 · प्रेरितों के काम 4:31 · इफिसियों 6:19-20
 
 ```
-The lamplight on the page swells into painted lamplight and becomes the upper room: the apostles praying together, the lamps swaying.
+The lamplight on the page swells into painted lamplight and becomes the room: the apostles praying together, the lamps swaying.
 Slow, calm transformation between photoreal and warm painterly illustration, like a painting blooming out of the page. Warm golden grade, no cuts, no text.
 Negative: face of Jesus shown, depiction of God the Father, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, extra fingers, deformed hands, anime, cartoon.
 ```
@@ -238,7 +238,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 2·3 — कसूर किसका? · S4·08
-The same terrace a week later. Vikram listened; now he smiles, pats Rahul's shoulder and goes down — conversation over. Rahul alone with the wind in the clothesline; watering a seedling in a clay pot; another easy evening with Vikram later, nothing pressed; and Rahul praying at night, Vikram's lit window across the lane.
+The same terrace a week later. Vikram listened; now he smiles, pats Rahul's shoulder and goes down — conversation over. Rahul alone with the wind in the clothesline; watering a seedling in a clay pot; another evening with Vikram, the word spoken gently, nothing pressed; and Rahul praying at night, Vikram's lit window across the lane.
 **Cast:** Rahul, Vikram · **Hook text on frame 01:** "फिर मुस्कुराए — और बात वहीं ख़त्म।"
 
 ### Frames
@@ -252,7 +252,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **02 — the wind**
 ```
-Same terrace, Rahul alone now, standing at the parapet. The evening wind lifting the clothes on the line beside him and stirring the leaves of a neem tree beyond; Rahul watching it move. Medium shot from behind. Rahul matches the character reference exactly.
+Same terrace, Rahul alone now, standing at the parapet. The evening wind lifting the clothes on the line beside him and stirring the leaves of a neem tree beyond; Rahul watching it move. Medium shot from behind. Seen from behind, face not visible; build, hair and shirt match Rahul's character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -266,14 +266,14 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **04 — no hurry**
 ```
-The same terrace on another evening. Rahul and Vikram sitting with tea, laughing easily at something, no Bible on the table, nothing being pressed. Vikram matches his character reference. Medium shot. Rahul matches the character reference exactly.
+The same terrace on another evening. Rahul and Vikram sitting with tea, Rahul saying something quietly and unhurriedly, Vikram listening relaxed and half smiling; a printed Bible closed on Rahul's knee, nothing pushed across, nothing pressed. Vikram matches his character reference. Medium shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
 **05 — he hears**
 ```
-Rahul's rented room at night, Rahul kneeling by the window in prayer, hands folded on the sill; across the lane, one window lit warm in Vikram's house. Medium shot from behind Rahul. Rahul matches the character reference exactly.
+Rahul's rented room at night, Rahul kneeling by the window in prayer, hands folded on the sill; across the lane, one window lit warm in Vikram's house. Medium shot from behind Rahul. Seen from behind, face not visible; build, hair and shirt match Rahul's character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -311,7 +311,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* 1 कुरिन्थियों 4:2 · 2 कुरिन्थियों 4:2 · 1 थिस्सलुनीकियों 2:3-5 · यहेजकेल 36:26
 
 ```
-The seedling dissolves to another evening on the terrace: Rahul and Vikram laughing over tea.
+The seedling dissolves to another evening on the terrace: Rahul and Vikram talking easily over tea.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```

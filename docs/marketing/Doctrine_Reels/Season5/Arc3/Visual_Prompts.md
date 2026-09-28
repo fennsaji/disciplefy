@@ -4,7 +4,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
 Arjun: [../../Season4/Arc1/Visual_Prompts.md](../../Season4/Arc1/Visual_Prompts.md)
 

@@ -4,7 +4,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
 Arjun: [../../Season4/Arc1/Visual_Prompts.md](../../Season4/Arc1/Visual_Prompts.md)
 
@@ -318,7 +318,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 
 *Voiceover:* "साफ़ आयतों की रोशनी में कठिन को पढ़िए — वचन अपने को नहीं काटता। और 'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए। पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की। जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं।"
 
-*On screen:* भजन संहिता 119:130 · यूहन्ना 10:35 · 1 यूहन्ना 4:1 · 1 कुरिन्थियों 2:12-13 · यूहन्ना 16:13-14 · 1 कुरिन्थियों 15:3-4
+*On screen:* भजन संहिता 119:130 · यूहन्ना 10:35 · 1 यूहन्ना 4:1 · 1 कुरिन्थियों 2:12-13 · यूहन्ना 16:13-14 · 1 कुरिन्थियों 15:3-4 · 2 तीमुथियुस 3:15
 
 ```
 The hands draw back; the camera settles on one Bible left open in the middle of the mat.
@@ -341,7 +341,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 ---
 
 ## REEL 1·4 — सौंपी हुई अमानत · S5·04
-The old apostle's last letter, folded and tied, in the painting. A page with a line being written onto it in a second hand — the Galatian addition. Rahul alone at his desk with three questions; Rahul teaching the Thursday group plainly; and a cloth-wrapped Bible passed from his hands into Arjun's. No gold, no building, no knife or ritual, no warning signs or wanted-poster imagery.
+The old apostle's last letter, folded and tied, in the painting. A page with a line being written onto it in a second hand — the Galatian addition. Rahul teaching the Thursday group plainly; Rahul alone at his desk, his own teaching first; and a cloth-wrapped Bible passed from his hands into Arjun's. No gold, no building, no knife or ritual, no warning signs or wanted-poster imagery.
 **Cast:** Rahul, Arjun (hands), the Thursday group · painted scene (Paul's last letter, folded and tied) · **Hook text on frame 01:** "कौन-सी अमानत? सोना नहीं। इमारत नहीं।"
 
 ### Frames
@@ -360,16 +360,16 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**03 — three questions**
+**03 — teaching it plainly**
 ```
-Rahul's desk at night. Rahul alone, reading a printed Bible, a notebook beside it with three short lines written and numbered, the writing deliberately unreadable. Lamplight. Medium close shot. Rahul matches the character reference exactly.
+Rahul's room on a Thursday evening, the group on floor mats. Rahul reading aloud from his open printed Bible, plain and unhurried, the group following in their own Bibles. Medium wide shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**04 — teaching it plainly**
+**04 — his own teaching first**
 ```
-Rahul's room on a Thursday evening, the group on floor mats. Rahul reading aloud from his open printed Bible, plain and unhurried, the group following in their own Bibles. Medium wide shot. Rahul matches the character reference exactly.
+Rahul's desk at night. Rahul alone, reading a printed Bible, a notebook beside it with three short lines written and numbered, the writing deliberately unreadable. Lamplight. Medium close shot. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
@@ -399,10 +399,10 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "गलातिया में कोई यीशु को नकार नहीं रहा था। बस जोड़ रहे थे — मसीह, और व्यवस्था के काम। पौलुस ने कहा — यह कोई सुसमाचार नहीं; बिगाड़ है। परख आदमी से नहीं, बात से — चाहे हम ही क्यों न हों।"
 
-*On screen:* गलातियों 2:16 · गलातियों 5:2-4 · प्रेरितों के काम 15:1 · गलातियों 1:6-8
+*On screen:* गलातियों 2:16 · गलातियों 5:2-4 · प्रेरितों के काम 15:1 · गलातियों 1:6-7 · गलातियों 1:8
 
 ```
-The pen lifts from the page. The page dissolves to Rahul's desk: Rahul reading, the three short lines in his notebook.
+The pen lifts from the page. The page dissolves to Thursday: Rahul reading aloud, the group following in their Bibles.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -414,7 +414,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* यूहन्ना 1:1, 14 · 1 यूहन्ना 4:2-3 · 1 कुरिन्थियों 15:3-4, 14 · इफिसियों 2:8-9 · गलातियों 2:21 · रोमियों 14:1, 5
 
 ```
-The desk dissolves to Thursday: Rahul reading aloud, the group following in their Bibles.
+The group dissolves to Rahul's desk at night: Rahul alone, reading, the three short lines in his notebook.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```
@@ -426,7 +426,7 @@ Negative: faces changing identity, morphing faces, extra fingers, deformed hands
 *On screen:* 1 तीमुथियुस 4:16 · तीतुस 1:9 · 2 तीमुथियुस 2:24-25 · 2 तीमुथियुस 1:14 — hold
 
 ```
-The group dissolves to two pairs of hands: Rahul's passing the cloth-wrapped Bible into Arjun's.
+The desk dissolves to two pairs of hands: Rahul's passing the cloth-wrapped Bible into Arjun's.
 Cinematic, warm golden grade, natural realistic movement, steady camera, shallow depth of field, subtle film grain, no cuts, no text, photoreal.
 Negative: faces changing identity, morphing faces, extra fingers, deformed hands, jittery motion, camera shake, fast cuts, cold blue lighting, text, watermark, cartoon.
 ```

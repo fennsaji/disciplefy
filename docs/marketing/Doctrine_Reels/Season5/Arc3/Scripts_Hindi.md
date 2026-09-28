@@ -184,7 +184,7 @@ Target: 49–50 seconds. Register: आप. Tone: calm and matter-of-fact through
 दोष का लेख — वहीं कीलों से जड़ दिया गया।"*, and only if *"सुसमाचार ही है,
 पहना हुआ"* stays. **Never** cut *"शैतान है। पर हारा हुआ है"* (never either
 half alone), *"कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं"*, *"नया हथियार
-नहीं — सुसमाचार ही है, पहना हुआ"*, *"हर मुसीबत में आत्मा ढूँढना वचन नहीं
+नहीं — सुसमाचार ही है, पहना हुआ"*, *"हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं
 सिखाता"*, *"सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है"*, the याकूब line, or
 the closing with its *अगर आप मसीह में हैं*.
 
@@ -229,7 +229,7 @@ as कुलुस्सियों 2:15 names them, disarmed. **6:12 is turned
 Indian viewer.** *कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं* is uncuttable.
 It closes the use of warfare language against the family or community that
 opposes a believer, which is the most dangerous misuse of this passage in the
-series' setting. **No demon behind everything.** *हर मुसीबत में आत्मा ढूँढना
+series' setting. **No demon behind everything.** *हर मुसीबत के पीछे दुष्टात्मा ढूँढना
 वचन नहीं सिखाता* is uncuttable. No illness, loss, quarrel or place is named,
 and no spirit is named. **Deliverance is never substituted for
 sanctification.** Resisting the devil is याकूब 4:7's order: submit to God
@@ -378,7 +378,7 @@ clause, the प्रधान चरवाहा line, *"मुकुट पद
 | "सिंहासन के आगे डाल देते हैं" | प्रकाशितवाक्य 4:10-11 |
 | "वह दिन कोई नहीं जानता" | मत्ती 24:36 |
 | "तब तक — भेड़ों के पास" | लूका 12:42-43 |
-| "विश्वासी से चेले तक, चेले से चरवाहे तक" | मत्ती 28:19 · 2 तीमुथियुस 2:2 |
+| "विश्वासी से चेले तक; और कुछ के लिए, चरवाहे तक" | मत्ती 28:19 · 2 तीमुथियुस 2:2 |
 | closing line | प्रेरितों के काम 1:11 · तीतुस 2:13 |
 
 **Why the hook works:** every leader knows the day is coming, and almost none
@@ -404,7 +404,7 @@ interval is given one duty only, *तब तक — भेड़ों के �
 the faithful steward found at his work). There is no rapture, sequence, sign or
 date. **The series is closed.** The two series lines name the journey in the
 tagline's words (*विश्वासी से चेले तक*) and extend it to the ladder's last
-rung (*चेले से चरवाहे तक*). *बात यहाँ पूरी होती है। चरवाहे का काम नहीं*
+rung (*और कुछ के लिए, चरवाहे तक*). *बात यहाँ पूरी होती है। चरवाहे का काम नहीं*
 refuses to let the end of a video series be heard as the end of the work.
 **It ends where Season 1 ended.** The closing (*उनका है, जो लौट रहे हैं*)
 answers Season 1 reel 19's last line (*अंत वे हैं — जो लौट रहे हैं*), so
@@ -455,7 +455,7 @@ Every reel still stands alone; the order protects only the playlist viewer.
   - *शैतान है। पर हारा हुआ है*, as a pair
   - *कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं*
   - *नया हथियार नहीं — सुसमाचार ही है, पहना हुआ*
-  - *हर मुसीबत में आत्मा ढूँढना वचन नहीं सिखाता*
+  - *हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं सिखाता*
   - *सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है*
   - the closing with *अगर आप मसीह में हैं*
 - **S5·11:**

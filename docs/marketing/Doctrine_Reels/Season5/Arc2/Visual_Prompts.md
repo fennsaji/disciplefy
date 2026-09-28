@@ -4,7 +4,7 @@ Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md
 
 Concept, workflow, rules and the Rahul / Sunil references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
-Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md) ·
+Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
 Arjun: [../../Season4/Arc1/Visual_Prompts.md](../../Season4/Arc1/Visual_Prompts.md)
 
@@ -40,7 +40,7 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, crowded composition.
 ```
 
-**02 — a letter to a church**
+**02 — Paul's list, dictated**
 ```
 A painting of a dim room with a small window: an older man in a plain robe seen from behind and to the side, pacing as he speaks, one hand raised; a young scribe seated at a low table writing on a scroll by lamplight. Warm ochre and deep shadow.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
@@ -364,7 +364,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **03 — Paul and Peter**
 ```
-A painting of a shaded courtyard in an ancient city: two older men in plain robes standing close, one speaking earnestly with an open hand, the other listening with his head lowered; a low table and a doorway behind; no crowd. Warm stone and shadow.
+A painting of a shaded courtyard in an ancient city: two older men in plain robes standing close, one speaking earnestly with an open hand, the other listening with his head lowered; a bare low table with no food, bread, dishes or cups on it, and a doorway behind; no crowd. Warm stone and shadow.
 Warm painterly illustration in the tradition of Indian Christian art: gouache texture, soft visible brushwork, rich ochre, deep indigo and gold, gently stylised figures, first-century Judean setting. Vertical 9:16. Match the painting style reference exactly.
 Negative: photograph, photoreal, 3D render, CGI, glossy digital art, anime, cartoon, face of Jesus shown, depiction of God the Father, halo glow effect, text, watermark, extra fingers, deformed hands, busy background.
 ```
@@ -413,7 +413,7 @@ Negative: face of Jesus shown, depiction of God the Father, jittery motion, came
 
 *Voiceover:* "पर रोम की कलीसिया में झगड़ा था — कौन क्या खाए, कौन सा दिन माने। पौलुस ने कहा — हर एक अपने मन में निश्चय कर ले; एक-दूसरे पर दोष मत लगाओ। छोटी नहीं — पर सुसमाचार नहीं। जहाँ वचन ने सब पर नियम नहीं बनाया, वहाँ अगुवा भी नहीं बनाता।"
 
-*On screen:* रोमियों 14:2-3, 5-6 · रोमियों 14:1, 13 · रोमियों 14:17
+*On screen:* रोमियों 14:2-3, 5-6 · रोमियों 14:5 · रोमियों 14:1, 13 · रोमियों 14:17
 
 ```
 The painting fades back to the room: Rahul's hands holding the Bible open at Romans 14.

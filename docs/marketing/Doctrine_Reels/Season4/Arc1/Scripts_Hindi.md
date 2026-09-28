@@ -568,7 +568,7 @@ all** (political engagement is permanently excluded). Pin *Purpose of the
 Law* and, beneath it, *Not Under Law But Under Grace*.
 
 **Honorific and terminology checks before recording.** यीशु takes वे
-(*वे एक ही बार अपने को चढ़ा चुके*, *कहानी उन्हीं तक जाती है*); परमेश्वर takes
+(*मसीह एक ही बार अपने को चढ़ा चुके*, *कहानी उन्हीं तक जाती है*); परमेश्वर takes
 वह; पौलुस *लिखते हैं*. The OV's *जातियों* is not used for "nations" (caste
 homonym) — *दूसरे राष्ट्रों*. Hindi OV wording voiced in indirect speech and
 believed close — **verify against the OV before on-screen text is set**:
