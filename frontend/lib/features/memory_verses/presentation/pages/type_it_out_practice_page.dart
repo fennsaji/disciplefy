@@ -6,25 +6,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/router/app_router.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../data/services/transliteration_service.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/timer_badge.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/data/services/transliteration_service.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/quality_calculator.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Helper class to store word alignment results
 class _WordMatch {
@@ -85,6 +86,8 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
   @override
   void initState() {
     super.initState();
+    // Repaint the answer card border when focus moves in or out.
+    _focusNode.addListener(_onFocusChanged);
     _startTimer();
     _loadVerse();
     _triggerWalkthroughIfNeeded();
@@ -103,9 +106,14 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
     });
   }
 
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     practiceTimer?.cancel();
+    _focusNode.removeListener(_onFocusChanged);
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -381,7 +389,6 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     return ShowCaseWidget(
@@ -389,6 +396,7 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
           .markSeen(WalkthroughScreen.practiceTypeItOut),
       builder: (showcaseCtx) {
         _showcaseContext = showcaseCtx;
+        final verse = currentVerse;
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -401,81 +409,48 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _handleBackNavigation,
-                ),
-                title: Text(context.tr(TranslationKeys.practiceModeTypeItOut)),
-                actions: [
-                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              body: currentVerse == null
+            child: MemoryPracticeScaffold(
+              title: context.tr(TranslationKeys.practiceModeTypeItOut),
+              subtitle: verse == null
+                  ? null
+                  : '${verse.verseReference} · '
+                      '${context.tr(TranslationKeys.difficultyHard)}',
+              elapsedSeconds: elapsedSeconds,
+              onClose: _handleBackNavigation,
+              scrollable: verse != null,
+              body: verse == null
                   ? const Center(child: CircularProgressIndicator())
-                  : SafeArea(
-                      child: Column(
-                        children: [
-                          // Verse Reference Header
-                          _buildVerseReferenceHeader(theme),
-
-                          // Language hint for non-English
-                          if (detectedLanguage != 'en')
-                            _buildLanguageHint(theme),
-
-                          // Text Input Area
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: WalkthroughTooltip(
-                                showcaseKey: ShowcaseKeys.practiceTypeItOut,
-                                title: l10n.walkthroughPracticeTypeItOutTitle,
-                                description:
-                                    l10n.walkthroughPracticeTypeItOutDesc,
-                                screen: WalkthroughScreen.practiceTypeItOut,
-                                stepNumber: 1,
-                                totalSteps: 1,
-                                onNext: _onNext,
-                                child: TextField(
-                                  controller: _textController,
-                                  focusNode: _focusNode,
-                                  maxLines: null,
-                                  expands: true,
-                                  textAlignVertical: TextAlignVertical.top,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    height: 1.6,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: context.tr(
-                                        TranslationKeys.typeItOutPlaceholder),
-                                    hintStyle: TextStyle(
-                                      color: theme.colorScheme.onSurfaceVariant
-                                          .withOpacity(0.5),
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    filled: true,
-                                    fillColor: theme
-                                        .colorScheme.surfaceContainerHighest
-                                        .withOpacity(0.3),
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                            ),
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.typeItOutInstruction),
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            height: 1.45,
+                            color: ReaderPalette.of(context).muted,
                           ),
-
-                          // Word count row
-                          _buildWordCountRow(theme),
-
-                          // Action buttons
-                          _buildActionButtons(theme),
+                        ),
+                        const SizedBox(height: 10),
+                        if (detectedLanguage != 'en') ...[
+                          _buildLanguageHint(),
+                          const SizedBox(height: 10),
                         ],
-                      ),
+                        WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.practiceTypeItOut,
+                          title: l10n.walkthroughPracticeTypeItOutTitle,
+                          description: l10n.walkthroughPracticeTypeItOutDesc,
+                          screen: WalkthroughScreen.practiceTypeItOut,
+                          stepNumber: 1,
+                          totalSteps: 1,
+                          onNext: _onNext,
+                          tooltipPosition: TooltipPosition.bottom,
+                          highlightBorderRadius: 20,
+                          child: _buildAnswerCard(),
+                        ),
+                      ],
                     ),
+              bottomBar: verse == null ? null : _buildActionBar(),
             ),
           ),
         ).withAuthProtection();
@@ -483,135 +458,108 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
     );
   }
 
-  Widget _buildVerseReferenceHeader(ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      color: theme.colorScheme.primaryContainer,
+  Widget _buildAnswerCard() {
+    final palette = ReaderPalette.of(context);
+    return MemoryAnswerCard(
+      state: _focusNode.hasFocus
+          ? MemoryCardState.focused
+          : MemoryCardState.normal,
+      minHeight: 210,
+      onTap: _focusNode.requestFocus,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            currentVerse!.verseReference,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.bold,
+          TextField(
+            controller: _textController,
+            focusNode: _focusNode,
+            minLines: 6,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
+            textCapitalization: TextCapitalization.sentences,
+            cursorColor: palette.accentIcon,
+            style: AppFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              height: 1.55,
+              color: palette.text,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.tr(TranslationKeys.typeItOutInstruction),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageHint(ThemeData theme) {
-    final langName =
-        detectedLanguage == 'hi' ? 'Hindi (Hinglish)' : 'Malayalam (Manglish)';
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: theme.colorScheme.secondaryContainer,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.keyboard,
-            size: 18,
-            color: theme.colorScheme.onSecondaryContainer,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Type in romanized $langName',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSecondaryContainer,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWordCountRow(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Words: $currentWordCount / $expectedWordCount',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          TextButton.icon(
-            onPressed: _clearInput,
-            icon: const Icon(Icons.clear, size: 18),
-            label: Text(context.tr(TranslationKeys.practiceClear)),
-            style: TextButton.styleFrom(
-              foregroundColor: theme.colorScheme.error,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            // Show Answer button
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _showAnswer,
-                icon: const Icon(Icons.visibility),
-                label: Text(context.tr(TranslationKeys.practiceShowAnswer)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  foregroundColor: theme.colorScheme.error,
-                  side: BorderSide(color: theme.colorScheme.error),
-                ),
+            decoration: InputDecoration(
+              isCollapsed: true,
+              // The app theme sets a 16/12 content padding that isCollapsed
+              // does not override; the card already pads the field.
+              contentPadding: EdgeInsets.zero,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              hintText: context.tr(TranslationKeys.typeItOutPlaceholder),
+              hintStyle: AppFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+                height: 1.55,
+                color: palette.dim,
               ),
             ),
-            const SizedBox(width: 12),
-            // Submit button
-            Expanded(
-              flex: 2,
-              child: FilledButton.icon(
-                onPressed: _textController.text.trim().isNotEmpty
-                    ? _checkAnswer
-                    : null,
-                icon: const Icon(Icons.check),
-                label: Text(context.tr(TranslationKeys.practiceSubmit)),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: context.appInteractive,
-                  foregroundColor: Colors.white,
-                ),
-              ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.tr(TranslationKeys.memoryRecallTypeWordCount, {
+              'current': currentWordCount,
+              'total': expectedWordCount,
+            }),
+            style: AppFonts.inter(
+              fontSize: 13.5,
+              color: palette.muted,
+              fontFeatures: kMemoryTabular,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageHint() {
+    final palette = ReaderPalette.of(context);
+    final langName = context.tr(detectedLanguage == 'hi'
+        ? TranslationKeys.memoryRecallTypeHinglish
+        : TranslationKeys.memoryRecallTypeManglish);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(Icons.keyboard_outlined, size: 18, color: palette.gold),
         ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            context.tr(TranslationKeys.memoryRecallTypeRomanizedHint,
+                {'lang': langName}),
+            style: AppFonts.inter(fontSize: 13.5, color: palette.muted),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionBar() {
+    return MemoryActionBar(
+      secondary: [
+        MemoryActionPill(
+          label: context.tr(TranslationKeys.practiceClear),
+          icon: Icons.backspace_outlined,
+          onPressed: _clearInput,
+        ),
+        MemoryActionPill(
+          label: context.tr(TranslationKeys.memoryRecallTypeAnswer),
+          icon: Icons.visibility_outlined,
+          onPressed: _showAnswer,
+        ),
+      ],
+      primary: MemoryPrimaryPill(
+        label: context.tr(TranslationKeys.practiceSubmit),
+        onPressed: _textController.text.trim().isNotEmpty ? _checkAnswer : null,
       ),
     );
   }

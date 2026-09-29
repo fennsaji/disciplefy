@@ -4,16 +4,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection_container.dart';
-import '../bloc/notification_bloc.dart';
-import '../bloc/notification_event.dart';
-import '../bloc/notification_state.dart';
-import '../utils/time_of_day_extensions.dart';
-import '../widgets/notification_preference_card.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/services/notification_service.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/notification_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_bloc.dart';
+import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_event.dart';
+import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_state.dart';
+import 'package:disciplefy_bible_study/features/notifications/presentation/utils/time_of_day_extensions.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
@@ -65,7 +68,7 @@ class _NotificationSettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
 
     return PopScope(
       canPop: false,
@@ -74,32 +77,11 @@ class _NotificationSettingsView extends StatelessWidget {
         Navigator.of(context).pop();
       },
       child: Scaffold(
-        backgroundColor:
-            isDark ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: AppBar(
-          backgroundColor:
-              isDark ? AppColors.darkBackground : AppColors.lightBackground,
-          elevation: 0,
-          centerTitle: false,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            context.tr(TranslationKeys.notificationsSettingsTitle),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-            ),
-          ),
+        backgroundColor: palette.page,
+        appBar: SettingsTopBar(
+          title: context.tr(TranslationKeys.notificationsSettingsTitle),
+          subtitle: context.tr(TranslationKeys.notificationsSettingsSubtitle),
+          onBack: () => Navigator.of(context).pop(),
         ),
         body: BlocConsumer<NotificationBloc, NotificationState>(
           listener: (context, state) {
@@ -151,10 +133,8 @@ class _NotificationSettingsView extends StatelessWidget {
           },
           builder: (context, state) {
             if (state is NotificationLoading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              return const Center(
+                child: CircularProgressIndicator(color: settingsPrimaryFill),
               );
             }
             if (state is NotificationPreferencesLoaded) {
@@ -166,7 +146,9 @@ class _NotificationSettingsView extends StatelessWidget {
             }
             return Center(
               child: Text(
-                  context.tr(TranslationKeys.notificationsSettingsLoading)),
+                context.tr(TranslationKeys.notificationsSettingsLoading),
+                style: AppFonts.inter(fontSize: 14, color: palette.muted),
+              ),
             );
           },
         ),
@@ -178,688 +160,426 @@ class _NotificationSettingsView extends StatelessWidget {
     BuildContext context,
     NotificationPreferencesLoaded state,
   ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Permission Status Card
-          _buildPermissionCard(context, state.permissionsGranted),
+    final prefs = state.preferences;
+    void update(UpdateNotificationPreferences event) =>
+        context.read<NotificationBloc>().add(event);
 
-          const SizedBox(height: 28),
+    Widget toggle({
+      required IconData icon,
+      required SettingsTone tone,
+      required String titleKey,
+      required String descriptionKey,
+      required bool enabled,
+      required ValueChanged<bool> onChanged,
+    }) =>
+        _NotificationToggleRow(
+          icon: icon,
+          tone: tone,
+          title: context.tr(titleKey),
+          description: context.tr(descriptionKey),
+          enabled: enabled,
+          onChanged: onChanged,
+        );
 
-          // Notification Preferences Section
-          _buildSectionHeader(
-            context,
-            context.tr(TranslationKeys.notificationsSettingsPreferencesTitle),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+      children: [
+        // Permission status: an action card while missing, a quiet status
+        // row once granted.
+        const SizedBox(height: 8),
+        if (state.permissionsGranted)
+          SettingsGroup(children: [
+            SettingsRow(
+              icon: Icons.check_circle_outline_rounded,
+              tone: SettingsTone.green,
+              title: context
+                  .tr(TranslationKeys.notificationsSettingsPermissionTitle),
+              subtitle: context
+                  .tr(TranslationKeys.notificationsSettingsPermissionEnabled),
+            ),
+          ])
+        else
+          _buildPermissionCard(context),
+
+        SettingsSectionLabel(
+            context.tr(TranslationKeys.notificationsSettingsDailySectionTitle)),
+        SettingsGroup(children: [
+          toggle(
+            icon: Icons.wb_sunny_outlined,
+            tone: SettingsTone.gold,
+            titleKey: TranslationKeys.notificationsSettingsDailyVerseTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsDailyVerseDescription,
+            enabled: prefs.dailyVerseEnabled,
+            onChanged: (v) =>
+                update(UpdateNotificationPreferences(dailyVerseEnabled: v)),
           ),
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsDailyVerseTitle),
-            description: context
-                .tr(TranslationKeys.notificationsSettingsDailyVerseDescription),
-            icon: Icons.book_rounded,
-            enabled: state.preferences.dailyVerseEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(dailyVerseEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.auto_awesome_outlined,
+            tone: SettingsTone.indigo,
+            titleKey:
+                TranslationKeys.notificationsSettingsRecommendedTopicsTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsRecommendedTopicsDescription,
+            enabled: prefs.recommendedTopicEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(recommendedTopicEnabled: v)),
           ),
-          const SizedBox(height: 10),
+        ]),
 
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsRecommendedTopicsTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsRecommendedTopicsDescription),
-            icon: Icons.lightbulb_rounded,
-            enabled: state.preferences.recommendedTopicEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        recommendedTopicEnabled: value),
-                  );
-            },
+        SettingsSectionLabel(context
+            .tr(TranslationKeys.notificationsSettingsStreakSectionTitle)),
+        SettingsGroup(children: [
+          toggle(
+            icon: Icons.local_fire_department_outlined,
+            tone: SettingsTone.gold,
+            titleKey: TranslationKeys.notificationsSettingsStreakReminderTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsStreakReminderDescription,
+            enabled: prefs.streakReminderEnabled,
+            onChanged: (v) =>
+                update(UpdateNotificationPreferences(streakReminderEnabled: v)),
           ),
-          const SizedBox(height: 10),
-
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsStreakReminderTitle),
-            description: context.tr(
-                TranslationKeys.notificationsSettingsStreakReminderDescription),
-            icon: Icons.bolt_rounded,
-            enabled: state.preferences.streakReminderEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(streakReminderEnabled: value),
-                  );
-            },
-            trailing: state.preferences.streakReminderEnabled
-                ? _buildTimePicker(
-                    context,
-                    state.preferences.streakReminderTime.toFlutterTimeOfDay(),
-                    (picked) {
-                      context.read<NotificationBloc>().add(
-                            UpdateNotificationPreferences(
-                                streakReminderTime: picked),
-                          );
-                    },
-                  )
-                : null,
+          if (prefs.streakReminderEnabled)
+            _ReminderTimeRow(
+              label: context
+                  .tr(TranslationKeys.notificationsSettingsReminderTimeLabel),
+              time: prefs.streakReminderTime.toFlutterTimeOfDay(),
+              onPicked: (picked) => update(
+                  UpdateNotificationPreferences(streakReminderTime: picked)),
+            ),
+          toggle(
+            icon: Icons.emoji_events_outlined,
+            tone: SettingsTone.gold,
+            titleKey: TranslationKeys.notificationsSettingsStreakMilestoneTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsStreakMilestoneDescription,
+            enabled: prefs.streakMilestoneEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(streakMilestoneEnabled: v)),
           ),
-          const SizedBox(height: 10),
-
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsStreakMilestoneTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsStreakMilestoneDescription),
-            icon: Icons.emoji_events_rounded,
-            enabled: state.preferences.streakMilestoneEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        streakMilestoneEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.wb_twilight_outlined,
+            tone: SettingsTone.green,
+            titleKey: TranslationKeys.notificationsSettingsStreakLostTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsStreakLostDescription,
+            enabled: prefs.streakLostEnabled,
+            onChanged: (v) =>
+                update(UpdateNotificationPreferences(streakLostEnabled: v)),
           ),
-          const SizedBox(height: 10),
+        ]),
 
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsStreakLostTitle),
-            description: context
-                .tr(TranslationKeys.notificationsSettingsStreakLostDescription),
-            icon: Icons.refresh_rounded,
-            enabled: state.preferences.streakLostEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(streakLostEnabled: value),
-                  );
-            },
+        SettingsSectionLabel(context
+            .tr(TranslationKeys.notificationsSettingsMemoryVerseSectionTitle)),
+        SettingsGroup(children: [
+          toggle(
+            icon: Icons.psychology_outlined,
+            tone: SettingsTone.pink,
+            titleKey:
+                TranslationKeys.notificationsSettingsMemoryVerseReminderTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsMemoryVerseReminderDescription,
+            enabled: prefs.memoryVerseReminderEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(memoryVerseReminderEnabled: v)),
           ),
-
-          const SizedBox(height: 28),
-
-          // Memory Verse Section
-          _buildSectionHeader(
-            context,
-            context.tr(
-                TranslationKeys.notificationsSettingsMemoryVerseSectionTitle),
-          ),
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsMemoryVerseReminderTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsMemoryVerseReminderDescription),
-            icon: Icons.psychology_rounded,
-            enabled: state.preferences.memoryVerseReminderEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        memoryVerseReminderEnabled: value),
-                  );
-            },
-            trailing: state.preferences.memoryVerseReminderEnabled
-                ? _buildTimePicker(
-                    context,
-                    state.preferences.memoryVerseReminderTime
-                        .toFlutterTimeOfDay(),
-                    (picked) {
-                      context.read<NotificationBloc>().add(
-                            UpdateNotificationPreferences(
-                                memoryVerseReminderTime: picked),
-                          );
-                    },
-                  )
-                : null,
-          ),
-
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsMemoryVerseOverdueTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsMemoryVerseOverdueDescription),
+          if (prefs.memoryVerseReminderEnabled)
+            _ReminderTimeRow(
+              label: context.tr(TranslationKeys
+                  .notificationsSettingsMemoryVerseReminderTimeLabel),
+              time: prefs.memoryVerseReminderTime.toFlutterTimeOfDay(),
+              onPicked: (picked) => update(UpdateNotificationPreferences(
+                  memoryVerseReminderTime: picked)),
+            ),
+          toggle(
             icon: Icons.warning_amber_rounded,
-            enabled: state.preferences.memoryVerseOverdueEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        memoryVerseOverdueEnabled: value),
-                  );
-            },
+            tone: SettingsTone.amber,
+            titleKey:
+                TranslationKeys.notificationsSettingsMemoryVerseOverdueTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsMemoryVerseOverdueDescription,
+            enabled: prefs.memoryVerseOverdueEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(memoryVerseOverdueEnabled: v)),
           ),
+        ]),
 
-          const SizedBox(height: 28),
-
-          // Study Section
-          _buildSectionHeader(
-              context,
-              context
-                  .tr(TranslationKeys.notificationsSettingsStudySectionTitle)),
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsContinueLearningTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsContinueLearningDescription),
-            icon: Icons.play_lesson_rounded,
-            enabled: state.preferences.continueLearningEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        continueLearningEnabled: value),
-                  );
-            },
+        SettingsSectionLabel(
+            context.tr(TranslationKeys.notificationsSettingsStudySectionTitle)),
+        SettingsGroup(children: [
+          toggle(
+            icon: Icons.play_lesson_outlined,
+            tone: SettingsTone.indigo,
+            titleKey:
+                TranslationKeys.notificationsSettingsContinueLearningTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsContinueLearningDescription,
+            enabled: prefs.continueLearningEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(continueLearningEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsAchievementTitle),
-            description: context.tr(
-                TranslationKeys.notificationsSettingsAchievementDescription),
-            icon: Icons.emoji_events_rounded,
-            enabled: state.preferences.achievementUnlockedEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        achievementUnlockedEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.military_tech_outlined,
+            tone: SettingsTone.gold,
+            titleKey: TranslationKeys.notificationsSettingsAchievementTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsAchievementDescription,
+            enabled: prefs.achievementUnlockedEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(achievementUnlockedEnabled: v)),
           ),
+        ]),
 
-          const SizedBox(height: 12),
-          const SizedBox(height: 28),
-
-          // Community Section
-          _buildSectionHeader(
-              context,
-              context.tr(
-                  TranslationKeys.notificationsSettingsCommunitySectionTitle)),
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsFellowshipDailyPostTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsFellowshipDailyPostDescription),
-            icon: Icons.auto_stories_rounded,
-            enabled: state.preferences.fellowshipDailyPostEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipDailyPostEnabled: value),
-                  );
-            },
+        SettingsSectionLabel(context
+            .tr(TranslationKeys.notificationsSettingsCommunitySectionTitle)),
+        SettingsGroup(children: [
+          toggle(
+            icon: Icons.auto_stories_outlined,
+            tone: SettingsTone.sky,
+            titleKey:
+                TranslationKeys.notificationsSettingsFellowshipDailyPostTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsFellowshipDailyPostDescription,
+            enabled: prefs.fellowshipDailyPostEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(fellowshipDailyPostEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsFellowshipNewPostTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsFellowshipNewPostDescription),
-            icon: Icons.forum_rounded,
-            enabled: state.preferences.fellowshipNewPostEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipNewPostEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.forum_outlined,
+            tone: SettingsTone.sky,
+            titleKey:
+                TranslationKeys.notificationsSettingsFellowshipNewPostTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsFellowshipNewPostDescription,
+            enabled: prefs.fellowshipNewPostEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(fellowshipNewPostEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsFellowshipCommentTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsFellowshipCommentDescription),
+          toggle(
             icon: Icons.mode_comment_outlined,
-            enabled: state.preferences.fellowshipNewCommentEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipNewCommentEnabled: value),
-                  );
-            },
+            tone: SettingsTone.sky,
+            titleKey:
+                TranslationKeys.notificationsSettingsFellowshipCommentTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsFellowshipCommentDescription,
+            enabled: prefs.fellowshipNewCommentEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(fellowshipNewCommentEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsFellowshipReactionTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsFellowshipReactionDescription),
+          toggle(
             icon: Icons.favorite_outline_rounded,
-            enabled: state.preferences.fellowshipReactionEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipReactionEnabled: value),
-                  );
-            },
+            tone: SettingsTone.pink,
+            titleKey:
+                TranslationKeys.notificationsSettingsFellowshipReactionTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsFellowshipReactionDescription,
+            enabled: prefs.fellowshipReactionEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(fellowshipReactionEnabled: v)),
           ),
+        ]),
 
-          const SizedBox(height: 12),
-          const SizedBox(height: 28),
-
-          // Discipler Section
-          _buildSectionHeader(
-              context,
-              context.tr(
-                  TranslationKeys.notificationsSettingsDisciplerSectionTitle)),
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsDisciplerReplyTitle),
-            description: context.tr(
-                TranslationKeys.notificationsSettingsDisciplerReplyDescription),
+        SettingsSectionLabel(context
+            .tr(TranslationKeys.notificationsSettingsDisciplerSectionTitle)),
+        SettingsGroup(children: [
+          toggle(
             icon: Icons.chat_bubble_outline_rounded,
-            enabled: state.preferences.fellowshipDisciplerReplyEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipDisciplerReplyEnabled: value),
-                  );
-            },
+            tone: SettingsTone.indigo,
+            titleKey: TranslationKeys.notificationsSettingsDisciplerReplyTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsDisciplerReplyDescription,
+            enabled: prefs.fellowshipDisciplerReplyEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipDisciplerReplyEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsDisciplerActivityTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsDisciplerActivityDescription),
-            icon: Icons.insights_rounded,
-            enabled: state.preferences.fellowshipDisciplerActivityEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipDisciplerActivityEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.insights_outlined,
+            tone: SettingsTone.indigo,
+            titleKey:
+                TranslationKeys.notificationsSettingsDisciplerActivityTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsDisciplerActivityDescription,
+            enabled: prefs.fellowshipDisciplerActivityEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipDisciplerActivityEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsMentorPromotedTitle),
-            description: context.tr(
-                TranslationKeys.notificationsSettingsMentorPromotedDescription),
-            icon: Icons.workspace_premium_rounded,
-            enabled: state.preferences.fellowshipMentorPromotedEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMentorPromotedEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.workspace_premium_outlined,
+            tone: SettingsTone.gold,
+            titleKey: TranslationKeys.notificationsSettingsMentorPromotedTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsMentorPromotedDescription,
+            enabled: prefs.fellowshipMentorPromotedEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipMentorPromotedEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsMemberJoinedTitle),
-            description: context.tr(
-                TranslationKeys.notificationsSettingsMemberJoinedDescription),
-            icon: Icons.person_add_alt_1_rounded,
-            enabled: state.preferences.fellowshipMemberJoinedEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMemberJoinedEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.person_add_alt_1_outlined,
+            tone: SettingsTone.green,
+            titleKey: TranslationKeys.notificationsSettingsMemberJoinedTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsMemberJoinedDescription,
+            enabled: prefs.fellowshipMemberJoinedEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipMemberJoinedEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title:
-                context.tr(TranslationKeys.notificationsSettingsMentionTitle),
-            description: context
-                .tr(TranslationKeys.notificationsSettingsMentionDescription),
+          toggle(
             icon: Icons.alternate_email_rounded,
-            enabled: state.preferences.fellowshipMentionEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMentionEnabled: value),
-                  );
-            },
+            tone: SettingsTone.sky,
+            titleKey: TranslationKeys.notificationsSettingsMentionTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsMentionDescription,
+            enabled: prefs.fellowshipMentionEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(fellowshipMentionEnabled: v)),
           ),
+        ]),
 
-          const SizedBox(height: 28),
-
-          // Meetings Section
-          _buildSectionHeader(
-              context,
-              context.tr(
-                  TranslationKeys.notificationsSettingsMeetingsSectionTitle)),
-          const SizedBox(height: 12),
-
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsMeetingNewTitle),
-            description: context
-                .tr(TranslationKeys.notificationsSettingsMeetingNewDescription),
-            icon: Icons.event_available_rounded,
-            enabled: state.preferences.fellowshipMeetingEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMeetingEnabled: value),
-                  );
-            },
+        SettingsSectionLabel(context
+            .tr(TranslationKeys.notificationsSettingsMeetingsSectionTitle)),
+        SettingsGroup(children: [
+          toggle(
+            icon: Icons.event_available_outlined,
+            tone: SettingsTone.green,
+            titleKey: TranslationKeys.notificationsSettingsMeetingNewTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsMeetingNewDescription,
+            enabled: prefs.fellowshipMeetingEnabled,
+            onChanged: (v) => update(
+                UpdateNotificationPreferences(fellowshipMeetingEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsMeetingInviteTitle),
-            description: context.tr(
-                TranslationKeys.notificationsSettingsMeetingInviteDescription),
+          toggle(
             icon: Icons.mail_outline_rounded,
-            enabled: state.preferences.fellowshipMeetingInviteEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMeetingInviteEnabled: value),
-                  );
-            },
+            tone: SettingsTone.sky,
+            titleKey: TranslationKeys.notificationsSettingsMeetingInviteTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsMeetingInviteDescription,
+            enabled: prefs.fellowshipMeetingInviteEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipMeetingInviteEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsMeetingReminderTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsMeetingReminderDescription),
-            icon: Icons.alarm_rounded,
-            enabled: state.preferences.fellowshipMeetingReminderEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMeetingReminderEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.alarm_outlined,
+            tone: SettingsTone.indigo,
+            titleKey: TranslationKeys.notificationsSettingsMeetingReminderTitle,
+            descriptionKey:
+                TranslationKeys.notificationsSettingsMeetingReminderDescription,
+            enabled: prefs.fellowshipMeetingReminderEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipMeetingReminderEnabled: v)),
           ),
-
-          const SizedBox(height: 12),
-          NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationsSettingsMeetingCancelledTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsMeetingCancelledDescription),
-            icon: Icons.event_busy_rounded,
-            enabled: state.preferences.fellowshipMeetingCancelledEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                        fellowshipMeetingCancelledEnabled: value),
-                  );
-            },
+          toggle(
+            icon: Icons.event_busy_outlined,
+            tone: SettingsTone.red,
+            titleKey:
+                TranslationKeys.notificationsSettingsMeetingCancelledTitle,
+            descriptionKey: TranslationKeys
+                .notificationsSettingsMeetingCancelledDescription,
+            enabled: prefs.fellowshipMeetingCancelledEnabled,
+            onChanged: (v) => update(UpdateNotificationPreferences(
+                fellowshipMeetingCancelledEnabled: v)),
           ),
+        ]),
 
+        const SizedBox(height: 20),
+        _buildInfoSection(context),
+      ],
+    );
+  }
+
+  /// Shown while permission is missing: explains and offers the prompt.
+  Widget _buildPermissionCard(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final amber = SettingsToneColors.of(context, SettingsTone.amber);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.isDark
+            ? amber.foreground.withValues(alpha: 0.12)
+            : amber.fill,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.notifications_off_outlined,
+                  size: 20, color: amber.foreground),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(
+                          TranslationKeys.notificationsSettingsPermissionTitle),
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.tr(TranslationKeys
+                          .notificationsSettingsPermissionDisabled),
+                      style: AppFonts.inter(
+                        fontSize: 12.5,
+                        color: palette.muted,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
-          const SizedBox(height: 28),
-          _buildInfoSection(context),
+          SettingsButton(
+            label:
+                context.tr(TranslationKeys.notificationsSettingsEnableButton),
+            icon: Icons.notifications_active_outlined,
+            height: 44,
+            onPressed: () => context
+                .read<NotificationBloc>()
+                .add(const RequestNotificationPermissions()),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Row(
-      children: [
-        Container(
-          width: 3,
-          height: 18,
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color:
-                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-            letterSpacing: 0.1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimePicker(
-    BuildContext context,
-    TimeOfDay time,
-    ValueChanged<TimeOfDay> onPicked,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return GestureDetector(
-      onTap: () async {
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: time,
-          builder: (ctx, child) => Theme(
-            data: Theme.of(ctx).copyWith(
-              colorScheme: Theme.of(ctx).colorScheme.copyWith(
-                    primary: primary,
-                    onPrimary: Colors.white,
-                  ),
-            ),
-            child: child!,
-          ),
-        );
-        if (picked != null && picked != time) onPicked(picked);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isDark
-              ? primary.withOpacity(0.15)
-              : AppColors.lightSurfaceVariant,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: primary.withOpacity(isDark ? 0.35 : 0.3),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.access_time_rounded,
-              size: 14,
-              color: isDark ? AppColors.brandPrimaryLight : primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              time.format(context),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.brandPrimaryLight : primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPermissionCard(BuildContext context, bool permissionsGranted) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    final bgColor = permissionsGranted
-        ? (isDark ? primary.withOpacity(0.12) : const Color(0xFFEEF2FF))
-        : (isDark
-            ? AppColors.warning.withOpacity(0.12)
-            : AppColors.warningLight);
-
-    final borderColor = permissionsGranted
-        ? primary.withOpacity(isDark ? 0.35 : 0.3)
-        : AppColors.warning.withOpacity(isDark ? 0.4 : 0.5);
-
-    final iconColor =
-        permissionsGranted ? AppColors.success : AppColors.warning;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    permissionsGranted
-                        ? Icons.check_circle_rounded
-                        : Icons.notifications_off_rounded,
-                    color: iconColor,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr(TranslationKeys
-                            .notificationsSettingsPermissionTitle),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? AppColors.darkTextPrimary
-                              : AppColors.lightTextPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        permissionsGranted
-                            ? context.tr(TranslationKeys
-                                .notificationsSettingsPermissionEnabled)
-                            : context.tr(TranslationKeys
-                                .notificationsSettingsPermissionDisabled),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (!permissionsGranted) ...[
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<NotificationBloc>().add(
-                          const RequestNotificationPermissions(),
-                        );
-                  },
-                  icon:
-                      const Icon(Icons.notifications_active_rounded, size: 18),
-                  label: Text(context
-                      .tr(TranslationKeys.notificationsSettingsEnableButton)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoSection(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? primary.withOpacity(0.08) : const Color(0xFFEEF2FF),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: primary.withOpacity(isDark ? 0.2 : 0.2),
-        ),
-      ),
+    final palette = ReaderPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_rounded,
-            color: isDark ? AppColors.brandPrimaryLight : primary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
+          Icon(Icons.info_outline_rounded, size: 16, color: palette.dim),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   context.tr(TranslationKeys.notificationsSettingsAboutTitle),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.brandPrimaryLight : primary,
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: palette.muted,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   context.tr(TranslationKeys.notificationsSettingsAboutInfo),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    color: palette.muted,
                     height: 1.5,
                   ),
                 ),
@@ -872,65 +592,114 @@ class _NotificationSettingsView extends StatelessWidget {
   }
 
   Widget _buildErrorView(BuildContext context, String message) {
+    final palette = ReaderPalette.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                size: 36,
-                color: context.appError,
-              ),
+            const SettingsIconTile(
+              icon: Icons.error_outline_rounded,
+              tone: SettingsTone.red,
+              size: 64,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
             Text(
               context.tr(TranslationKeys.notificationsSettingsErrorTitle),
-              style: const TextStyle(
+              textAlign: TextAlign.center,
+              style: AppFonts.poppins(
                 fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
+              style: AppFonts.inter(fontSize: 14, color: palette.muted),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                context.read<NotificationBloc>().add(
-                      const LoadNotificationPreferences(),
-                    );
-              },
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label:
-                  Text(context.tr(TranslationKeys.notificationsSettingsRetry)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.appInteractive,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
+            const SizedBox(height: 22),
+            SettingsButton(
+              label: context.tr(TranslationKeys.notificationsSettingsRetry),
+              icon: Icons.refresh_rounded,
+              height: 46,
+              onPressed: () => context
+                  .read<NotificationBloc>()
+                  .add(const LoadNotificationPreferences()),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+/// A notification type: icon, title, description and a switch. Tapping the
+/// row flips the switch too.
+class _NotificationToggleRow extends StatelessWidget {
+  final IconData icon;
+  final SettingsTone tone;
+  final String title;
+  final String description;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  const _NotificationToggleRow({
+    required this.icon,
+    required this.tone,
+    required this.title,
+    required this.description,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) => MergeSemantics(
+        child: SettingsRow(
+          icon: icon,
+          tone: tone,
+          title: title,
+          subtitle: description,
+          onTap: () => onChanged(!enabled),
+          trailing: SettingsSwitch(value: enabled, onChanged: onChanged),
+        ),
+      );
+}
+
+/// "Reminder time" row showing the time; opens the time picker.
+class _ReminderTimeRow extends StatelessWidget {
+  final String label;
+  final TimeOfDay time;
+  final ValueChanged<TimeOfDay> onPicked;
+
+  const _ReminderTimeRow({
+    required this.label,
+    required this.time,
+    required this.onPicked,
+  });
+
+  @override
+  Widget build(BuildContext context) => SettingsRow(
+        icon: Icons.timer_outlined,
+        title: label,
+        value: time.format(context),
+        onTap: () async {
+          final picked = await showTimePicker(
+            context: context,
+            initialTime: time,
+            builder: (ctx, child) => Theme(
+              data: Theme.of(ctx).copyWith(
+                colorScheme: Theme.of(ctx).colorScheme.copyWith(
+                      primary: settingsPrimaryFill,
+                      onPrimary: Colors.white,
+                    ),
+              ),
+              child: child!,
+            ),
+          );
+          if (picked != null && picked != time) onPicked(picked);
+        },
+      );
 }

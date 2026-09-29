@@ -1,23 +1,27 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../data/services/transliteration_service.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../../../gamification/presentation/bloc/gamification_bloc.dart';
-import '../../../gamification/presentation/bloc/gamification_event.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/tier_locked_mode_dialog.dart';
-import '../widgets/unlock_limit_exceeded_dialog.dart';
-import '../widgets/verse_limit_exceeded_dialog.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/data/services/transliteration_service.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/tier_locked_mode_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/unlock_limit_exceeded_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/verse_limit_exceeded_dialog.dart';
 
 /// Unified Practice Results Page for all memory verse practice modes.
 ///
@@ -44,6 +48,12 @@ class PracticeResultsPage extends StatefulWidget {
 }
 
 class _PracticeResultsPageState extends State<PracticeResultsPage> {
+  /// When the verse is due next, taken from the [PracticeSessionSubmitted]
+  /// that answers this page's own submission. Held here rather than read
+  /// from the bloc's current state, which later events replace and which may
+  /// still hold a previous session's result when the page opens.
+  DateTime? _nextReviewDate;
+
   @override
   void initState() {
     super.initState();
@@ -111,12 +121,8 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final params = widget.params;
-    final qualityColor =
-        QualityCalculator.getQualityColor(params.qualityRating);
-    final accuracyColor =
-        QualityCalculator.getAccuracyColor(params.accuracyPercentage);
+    final palette = ReaderPalette.of(context);
 
     return BlocListener<MemoryVerseBloc, MemoryVerseState>(
       listener: (context, state) {
@@ -128,6 +134,13 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             state.newAchievements.isNotEmpty) {
           sl<GamificationBloc>()
               .add(QueueAchievementNotifications(state.newAchievements));
+        }
+
+        if (state is PracticeSessionSubmitted) {
+          final verse = state.verse;
+          if (verse != null && verse.id == params.verseId) {
+            setState(() => _nextReviewDate = verse.nextReviewDate);
+          }
         }
 
         // Handle tier-locked error
@@ -177,46 +190,60 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
           _handleDone();
         },
         child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _handleDone,
-            ),
-            title: Text(context.tr(TranslationKeys.practiceResultsTitle)),
-            centerTitle: true,
+          backgroundColor: palette.page,
+          appBar: MemoryTopBar(
+            title: context.tr(TranslationKeys.practiceComplete),
+            subtitle:
+                '${_getTranslatedModeName(context, params.practiceMode)} · ${params.verseReference}',
+            useCloseIcon: true,
+            onBack: _handleDone,
           ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-              child: Column(
-                children: [
-                  // Accuracy Circle
-                  _buildAccuracyCircle(theme, accuracyColor),
-                  const SizedBox(height: 24),
-
-                  // Quality Rating
-                  _buildQualityRating(theme, qualityColor),
-                  const SizedBox(height: 32),
-
-                  // Verse Reference
-                  _buildVerseReference(theme),
-                  const SizedBox(height: 24),
-
-                  // Stats Card
-                  _buildStatsCard(theme),
-                  const SizedBox(height: 24),
-
-                  // Blank Comparisons (Fill in the Blanks mode only)
-                  if (params.blankComparisons != null &&
-                      params.blankComparisons!.isNotEmpty) ...[
-                    _buildBlankComparisonsCard(theme),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Action Buttons
-                  _buildActionButtons(theme),
+          body: SingleChildScrollView(
+            padding:
+                const EdgeInsets.fromLTRB(kMemoryGutter, 8, kMemoryGutter, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(child: _buildAccuracyRing()),
+                const SizedBox(height: 16),
+                _buildQualityStars(params.qualityRating),
+                const SizedBox(height: 8),
+                Text(
+                  _qualityLabel(context, params.qualityRating),
+                  textAlign: TextAlign.center,
+                  style: AppFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: palette.text,
+                  ),
+                ),
+                _buildNextReview(),
+                const SizedBox(height: 14),
+                _buildVerseExcerpt(),
+                const SizedBox(height: 18),
+                _buildStatTiles(),
+                if (params.showedAnswer) ...[
+                  const SizedBox(height: 10),
+                  _buildPenaltyNote(),
                 ],
+                if (params.blankComparisons != null &&
+                    params.blankComparisons!.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  _buildAnswerCard(params.blankComparisons!),
+                ],
+              ],
+            ),
+          ),
+          bottomNavigationBar: MemoryActionBar(
+            secondary: [
+              MemoryActionPill(
+                label: context.tr(TranslationKeys.practiceResultsPracticeAgain),
+                onPressed: _handlePracticeAgain,
               ),
+            ],
+            primary: MemoryPrimaryPill(
+              label: context.tr(TranslationKeys.practiceResultsDone),
+              onPressed: _handleDone,
             ),
           ),
         ),
@@ -224,458 +251,311 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
     ).withAuthProtection();
   }
 
-  Widget _buildAccuracyCircle(ThemeData theme, Color accuracyColor) {
+  MemoryTone get _accuracyTone {
     final accuracy = widget.params.accuracyPercentage;
+    if (accuracy >= 80) return MemoryTone.success;
+    if (accuracy >= 50) return MemoryTone.gold;
+    return MemoryTone.error;
+  }
 
-    return Container(
-      width: 160,
-      height: 160,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: accuracyColor,
-          width: 8,
-        ),
-        color: accuracyColor.withAlpha(25),
-      ),
-      child: Column(
+  /// Five stars for the recall quality (1-5), filled up to the rating.
+  Widget _buildQualityStars(int rating) {
+    final palette = ReaderPalette.of(context);
+    final safe = rating.clamp(0, 5);
+    return Semantics(
+      label: '$safe / 5',
+      excludeSemantics: true,
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            '${accuracy.round()}%',
-            style: theme.textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: accuracyColor,
+          for (var i = 0; i < 5; i++)
+            Icon(
+              i < safe ? Icons.star_rounded : Icons.star_outline_rounded,
+              size: 26,
+              color: i < safe ? palette.gold : palette.dim,
             ),
-          ),
-          Text(
-            context.tr(TranslationKeys.practiceResultsAccuracy),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildQualityRating(ThemeData theme, Color qualityColor) {
-    final rating = widget.params.qualityRating;
-    final label = widget.params.qualityLabel;
-
-    return Column(
-      children: [
-        // Stars
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(5, (index) {
-            final isFilled = index < rating;
-            return Icon(
-              isFilled ? Icons.star : Icons.star_border,
-              color: isFilled ? qualityColor : AppColors.lightBorder,
-              size: 32,
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-        // Label
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: qualityColor.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: qualityColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVerseReference(ThemeData theme) {
+  /// The practised verse: reference and the start of its text.
+  Widget _buildVerseExcerpt() {
+    final palette = ReaderPalette.of(context);
     final params = widget.params;
-
     return Column(
       children: [
         Text(
           params.verseReference,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
           textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          params.verseText.length > 100
-              ? '${params.verseText.substring(0, 100)}...'
-              : params.verseText,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontStyle: FontStyle.italic,
+          style: AppFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: palette.text,
           ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          params.verseText,
           textAlign: TextAlign.center,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
+          style: AppFonts.inter(
+            fontSize: 14,
+            fontStyle: FontStyle.italic,
+            color: palette.muted,
+            height: 1.45,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStatsCard(ThemeData theme) {
-    final params = widget.params;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildStatRow(
-              theme,
-              Icons.timer_outlined,
-              context.tr(TranslationKeys.practiceResultsTime),
-              params.formattedTime,
-            ),
-            const Divider(height: 24),
-            _buildStatRow(
-              theme,
-              Icons.lightbulb_outline,
-              context.tr(TranslationKeys.practiceResultsHintsUsed),
-              params.hintsUsed.toString(),
-            ),
-            const Divider(height: 24),
-            _buildStatRow(
-              theme,
-              QualityCalculator.getModeIcon(params.practiceMode),
-              context.tr(TranslationKeys.practiceResultsMode),
-              _getTranslatedModeName(context, params.practiceMode),
-            ),
-            if (params.showedAnswer) ...[
-              const Divider(height: 24),
-              _buildStatRow(
-                theme,
-                Icons.visibility,
-                context.tr(TranslationKeys.practiceResultsAnswerShown),
-                context.tr(TranslationKeys.practiceResultsPenaltyApplied),
-                valueColor: AppColors.warning,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatRow(
-    ThemeData theme,
-    IconData icon,
-    String label,
-    String value, {
-    Color? valueColor,
-  }) {
+  /// "Answer Shown: Yes (penalty applied)" under the tiles.
+  Widget _buildPenaltyNote() {
+    final warning = MemoryToneColors.of(context, MemoryTone.warning);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 24,
-          color: theme.colorScheme.primary,
-        ),
-        const SizedBox(width: 12),
+        Icon(Icons.visibility_outlined, size: 17, color: warning.foreground),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
-            label,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            '${context.tr(TranslationKeys.practiceResultsAnswerShown)}: '
+            '${context.tr(TranslationKeys.practiceResultsPenaltyApplied)}',
+            style: AppFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: warning.foreground,
             ),
-          ),
-        ),
-        Text(
-          value,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: valueColor,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBlankComparisonsCard(ThemeData theme) {
-    final comparisons = widget.params.blankComparisons!;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildAccuracyRing() {
+    final palette = ReaderPalette.of(context);
+    final tone = MemoryToneColors.of(context, _accuracyTone);
+    final accuracy = widget.params.accuracyPercentage.clamp(0.0, 100.0);
+    final sweepIn = !MediaQuery.disableAnimationsOf(context);
+    return Semantics(
+      label:
+          '${accuracy.round()}% ${context.tr(TranslationKeys.practiceResultsAccuracy)}',
+      excludeSemantics: true,
+      child: SizedBox(
+        width: 150,
+        height: 150,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            // Header
-            Row(
-              children: [
-                Icon(
-                  Icons.compare_arrows,
-                  color: theme.colorScheme.primary,
-                  size: 24,
+            // One short sweep-in on first build, then static.
+            TweenAnimationBuilder<double>(
+              tween: Tween(
+                  begin: sweepIn ? 0 : accuracy / 100, end: accuracy / 100),
+              duration:
+                  sweepIn ? const Duration(milliseconds: 700) : Duration.zero,
+              curve: Curves.easeOutCubic,
+              builder: (context, progress, _) => CustomPaint(
+                key: const Key('practice_results_accuracy_arc'),
+                size: const Size.square(150),
+                painter: AccuracyArcPainter(
+                  progress: progress,
+                  trackColor: palette.raised,
+                  arcColor: tone.foreground,
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  context.tr(TranslationKeys.practiceResultsAnswerComparison),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 16),
-
-            // Comparisons list
-            ...comparisons.asMap().entries.map((entry) {
-              final index = entry.key;
-              final comparison = entry.value;
-              final isLast = index == comparisons.length - 1;
-
-              return Column(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildComparisonRow(theme, comparison, index + 1),
-                  if (!isLast) const Divider(height: 24),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '${accuracy.round()}%',
+                      style: AppFonts.poppins(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w700,
+                        color: palette.text,
+                        fontFeatures: kMemoryTabular,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    context.tr(TranslationKeys.practiceResultsAccuracy),
+                    textAlign: TextAlign.center,
+                    style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                  ),
                 ],
-              );
-            }),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildComparisonRow(
-    ThemeData theme,
-    BlankComparison comparison,
-    int blankNumber,
-  ) {
-    final isCorrect = comparison.isCorrect;
-    final isClose = comparison.matchType == MatchType.close;
+  /// Gold "Next review in N days / tomorrow / today", shown once the
+  /// submission returns the rescheduled verse.
+  Widget _buildNextReview() {
+    final palette = ReaderPalette.of(context);
+    final next = _nextReviewDate;
+    if (next == null) return const SizedBox(height: 8);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final local = next.toLocal();
+    final days =
+        DateTime(local.year, local.month, local.day).difference(today).inDays;
+    final String text;
+    if (days <= 0) {
+      text = context.tr(TranslationKeys.memoryScreensNextReviewToday);
+    } else if (days == 1) {
+      text = context.tr(TranslationKeys.memoryScreensNextReviewTomorrow);
+    } else {
+      text = context.tr(TranslationKeys.memoryScreensNextReviewInDays,
+          {'count': days.toString()});
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Text(
+        text,
+        key: const Key('practice_results_next_review'),
+        textAlign: TextAlign.center,
+        style: AppFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: palette.gold,
+        ),
+      ),
+    );
+  }
 
-    final statusColor = isClose
-        ? AppColors.warning
-        : isCorrect
-            ? AppColors.success
-            : AppColors.error;
-    final statusIcon = isClose
-        ? Icons.check_circle_outline
-        : isCorrect
-            ? Icons.check_circle
-            : Icons.cancel;
+  Widget _buildStatTiles() {
+    final params = widget.params;
+    return MemoryStatRow(
+      tiles: [
+        MemoryStatTile(
+          value: formatPracticeDuration(params.timeSpentSeconds),
+          label: context.tr(TranslationKeys.memoryScreensStatTime),
+        ),
+        MemoryStatTile(
+          value: params.hintsUsed.toString(),
+          label: context.tr(params.hintsUsed == 1
+              ? TranslationKeys.memoryScreensStatHint
+              : TranslationKeys.memoryScreensStatHints),
+        ),
+        MemoryStatTile(
+          value: context.tr(params.showedAnswer
+              ? TranslationKeys.memoryScreensYes
+              : TranslationKeys.memoryScreensNo),
+          valueColor: params.showedAnswer ? context.appWarning : null,
+          label: context.tr(TranslationKeys.memoryScreensStatAnswerShown),
+        ),
+      ],
+    );
+  }
 
-    // Detect language and transliterate correct answer for Fill-in-the-Blanks only
-    // Fill-in-the-Blanks: Users type romanized text, so show romanized correct answers
-    // Word Bank/Phrase Scramble: Users see original script, so show original script
+  /// The typed / placed answer as a green-and-red word diff, then the words
+  /// that were missed or misspelled.
+  Widget _buildAnswerCard(List<BlankComparison> comparisons) {
+    final palette = ReaderPalette.of(context);
     final params = widget.params;
     final detectedLanguage =
         TransliterationService.detectLanguage(params.verseText);
 
-    String correctAnswerDisplay;
-    if (params.practiceMode == 'cloze' && detectedLanguage != 'en') {
-      // Fill-in-the-Blanks: Show romanized text for non-English verses
-      correctAnswerDisplay = TransliterationService.transliterate(
-            comparison.expected,
-            detectedLanguage,
-          ) ??
-          comparison.expected;
-    } else {
-      // All other modes: Show original script
-      correctAnswerDisplay = comparison.expected;
+    // One flowing paragraph: each placed word or phrase is trimmed, inner
+    // whitespace collapsed, and joined to the next by a single space, so
+    // multi-word phrases wrap like prose instead of as separate blocks.
+    final spans = <TextSpan>[];
+    final missed = <String>[];
+    for (final comparison in comparisons) {
+      final isExtraWord = comparison.expected == '(extra)';
+      final isClose = comparison.matchType == MatchType.close;
+      // Unfilled blanks/slots are marked '(missing)' or '(empty)'; they show
+      // under "Missed", not as typed words.
+      final isMissing = comparison.userInput == '(missing)' ||
+          comparison.userInput == '(empty)';
+      final input = comparison.userInput.trim().replaceAll(RegExp(r'\s+'), ' ');
+      if (!isMissing && input.isNotEmpty) {
+        final color = isExtraWord || !comparison.isCorrect
+            ? context.appError
+            : isClose
+                ? palette.gold
+                : context.appSuccess;
+        if (spans.isNotEmpty) spans.add(const TextSpan(text: ' '));
+        spans.add(TextSpan(
+          text: input,
+          style: TextStyle(
+            color: color,
+            decoration: isExtraWord ? TextDecoration.lineThrough : null,
+            decorationColor: color,
+          ),
+        ));
+      }
+      if (!isExtraWord && (!comparison.isCorrect || isClose)) {
+        // Fill-in-the-blanks is typed in Roman script, so show the expected
+        // word romanized for Hindi/Malayalam verses; other modes place the
+        // original words, so keep the original script.
+        final expected =
+            params.practiceMode == 'cloze' && detectedLanguage != 'en'
+                ? (TransliterationService.transliterate(
+                        comparison.expected, detectedLanguage) ??
+                    comparison.expected)
+                : comparison.expected;
+        missed.add(expected.trim().replaceAll(RegExp(r'\s+'), ' '));
+      }
     }
 
-    // Check if this is an extra word typed by user
-    final isExtraWord = comparison.expected == '(extra)';
-
-    // Use appropriate label based on practice mode
-    final labelKey = params.practiceMode == 'word_bank'
-        ? TranslationKeys.practiceResultsWord
-        : params.practiceMode == 'word_scramble'
-            ? TranslationKeys.practiceResultsPhrase
-            : params.practiceMode == 'type_it_out'
-                ? TranslationKeys.practiceResultsWord
-                : TranslationKeys.practiceResultsBlank;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Blank/Word number and status
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isExtraWord
-                    ? AppColors.warning.withAlpha((0.2 * 255).round())
-                    : theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                isExtraWord
-                    ? context.tr(TranslationKeys.practiceResultsExtraWord)
-                    : '${context.tr(labelKey)} $blankNumber',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: isExtraWord
-                      ? AppColors.warningDark
-                      : theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
+    return MemoryAnswerCard(
+      label: context.tr(TranslationKeys.practiceResultsYourAnswer),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (spans.isEmpty)
+            Text('—', style: AppFonts.inter(fontSize: 16, color: palette.muted))
+          else
+            Text.rich(
+              TextSpan(children: spans),
+              key: const Key('practice_results_answer'),
+              style: AppFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+                color: palette.text,
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(
-              statusIcon,
-              size: 20,
-              color: statusColor,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        // User's answer
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 80,
-              child: Text(
-                context.tr(TranslationKeys.practiceResultsYourAnswer),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isClose
-                      ? AppColors.warning.withAlpha((0.1 * 255).round())
-                      : isCorrect
-                          ? AppColors.success.withAlpha((0.1 * 255).round())
-                          : AppColors.error.withAlpha((0.1 * 255).round()),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isClose
-                        ? AppColors.warning.withAlpha((0.3 * 255).round())
-                        : isCorrect
-                            ? AppColors.success.withAlpha((0.3 * 255).round())
-                            : AppColors.error.withAlpha((0.3 * 255).round()),
-                  ),
-                ),
-                child: Text(
-                  comparison.userInput,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: isClose
-                        ? AppColors.warningDark
-                        : isCorrect
-                            ? AppColors.successDark
-                            : AppColors.errorDark,
-                    fontWeight: FontWeight.w600,
-                    fontStyle: comparison.userInput == '(missing)'
-                        ? FontStyle.italic
-                        : null,
-                  ),
-                ),
+          if (missed.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              context.tr(TranslationKeys.memoryScreensMissed,
+                  {'words': '“${missed.join(' ')}”'}),
+              style: AppFonts.inter(
+                fontSize: 13.5,
+                color: palette.muted,
+                height: 1.45,
               ),
             ),
           ],
-        ),
-
-        // Expected answer (show if wrong or only close — so user can see correct spelling)
-        if (!isCorrect || isClose) ...[
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 80,
-                child: Text(
-                  isExtraWord
-                      ? context.tr(TranslationKeys.practiceResultsNote)
-                      : context
-                          .tr(TranslationKeys.practiceResultsCorrectAnswer),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isExtraWord
-                        ? AppColors.warning.withAlpha((0.1 * 255).round())
-                        : AppColors.success.withAlpha((0.1 * 255).round()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isExtraWord
-                          ? AppColors.warning.withAlpha((0.3 * 255).round())
-                          : AppColors.success.withAlpha((0.3 * 255).round()),
-                    ),
-                  ),
-                  child: Text(
-                    isExtraWord
-                        ? context.tr(TranslationKeys.practiceResultsNotInVerse)
-                        : correctAnswerDisplay,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: isExtraWord
-                          ? AppColors.warningDark
-                          : AppColors.successDark,
-                      fontWeight: FontWeight.w600,
-                      fontStyle: isExtraWord ? FontStyle.italic : null,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
-      ],
+      ),
     );
   }
 
-  Widget _buildActionButtons(ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _handleDone,
-            icon: const Icon(Icons.check),
-            label: Text(context.tr(TranslationKeys.practiceResultsDone)),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: _handlePracticeAgain,
-            icon: const Icon(Icons.refresh),
-            label:
-                Text(context.tr(TranslationKeys.practiceResultsPracticeAgain)),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-        ),
-      ],
-    );
+  String _qualityLabel(BuildContext context, int rating) {
+    switch (rating) {
+      case 5:
+        return context.tr(TranslationKeys.memoryScreensQualityPerfect);
+      case 4:
+        return context.tr(TranslationKeys.memoryScreensQualityGood);
+      case 3:
+        return context.tr(TranslationKeys.memoryScreensQualityOk);
+      case 2:
+        return context.tr(TranslationKeys.memoryScreensQualityNeedsWork);
+      default:
+        return context.tr(TranslationKeys.memoryScreensQualityTryAgain);
+    }
   }
 
   /// Get translated practice mode name
@@ -701,4 +581,60 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
         return mode;
     }
   }
+}
+
+/// Accuracy ring: a full track circle and, over it, a round-capped arc that
+/// starts at 12 o'clock and sweeps clockwise for [progress] (0..1).
+class AccuracyArcPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color arcColor;
+  final double strokeWidth;
+
+  const AccuracyArcPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.arcColor,
+    this.strokeWidth = 10,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(
+      strokeWidth / 2,
+      strokeWidth / 2,
+      size.width - strokeWidth,
+      size.height - strokeWidth,
+    );
+    canvas.drawArc(
+      rect,
+      0,
+      2 * math.pi,
+      false,
+      Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+    final value = progress.isNaN ? 0.0 : progress.clamp(0.0, 1.0);
+    if (value <= 0) return;
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      2 * math.pi * value,
+      false,
+      Paint()
+        ..color = arcColor
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = strokeWidth,
+    );
+  }
+
+  @override
+  bool shouldRepaint(AccuracyArcPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.arcColor != arcColor ||
+      oldDelegate.strokeWidth != strokeWidth;
 }

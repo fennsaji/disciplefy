@@ -6,26 +6,25 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../widgets/self_assessment_bottom_sheet.dart';
-import '../widgets/timer_badge.dart';
-import '../widgets/verse_flip_card.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
-import '../../../../core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/self_assessment_bottom_sheet.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/verse_flip_card.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 class VerseReviewPage extends StatefulWidget {
   final String verseId;
@@ -117,13 +116,13 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     return ShowCaseWidget(
       onFinish: () => sl<WalkthroughRepository>()
           .markSeen(WalkthroughScreen.practiceFlipCard),
       builder: (showcaseCtx) {
         _showcaseContext = showcaseCtx;
+        final verse = currentVerse;
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -136,99 +135,79 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _handleBackNavigation,
-                ),
-                title: Text(context.tr(TranslationKeys.reviewVerseTitle)),
-                actions: [
-                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              body: BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
-                builder: (context, state) {
-                  if (currentVerse == null) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  return SafeArea(
-                    child: Stack(
-                      children: [
-                        Column(
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: VerseFlipCard(
-                                  verse: currentVerse!,
-                                  isFlipped: isFlipped,
-                                  onFlip: () =>
-                                      setState(() => isFlipped = !isFlipped),
-                                ),
-                              ),
-                            ),
-                            if (!isFlipped)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16.0),
-                                child: WalkthroughTooltip(
-                                  showcaseKey: ShowcaseKeys.practiceFlipCard,
-                                  title: l10n.walkthroughPracticeFlipCardTitle,
-                                  description:
-                                      l10n.walkthroughPracticeFlipCardDesc,
-                                  screen: WalkthroughScreen.practiceFlipCard,
-                                  stepNumber: 1,
-                                  totalSteps: 1,
-                                  onNext: _onNext,
-                                  highlightBorderRadius: 20,
-                                  child: Text(
-                                    context
-                                        .tr(TranslationKeys.reviewTapToReveal),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (isFlipped) const SizedBox(height: 80),
-                          ],
-                        ),
-                        if (isFlipped)
-                          Positioned(
-                            bottom: 16,
-                            left: 16,
-                            right: 16,
-                            child: ElevatedButton.icon(
-                              onPressed: _submitPractice,
-                              icon: const Icon(Icons.check),
-                              label: Text(
-                                  context.tr(TranslationKeys.practiceSubmit)),
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                backgroundColor: context.appInteractive,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 4,
+            child: MemoryPracticeScaffold(
+              title: context.tr(TranslationKeys.practiceModeFlipCard),
+              subtitle: verse == null
+                  ? null
+                  : '${verse.verseReference} · '
+                      '${context.tr(TranslationKeys.difficultyEasy)}',
+              elapsedSeconds: elapsedSeconds,
+              onClose: _handleBackNavigation,
+              scrollable: false,
+              body: verse == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Both faces fill the space, so flipping never
+                        // changes the card's size.
+                        final height = constraints.maxHeight;
+                        return Align(
+                          alignment: Alignment.topCenter,
+                          child: SizedBox(
+                            height: height,
+                            child: WalkthroughTooltip(
+                              showcaseKey: ShowcaseKeys.practiceFlipCard,
+                              title: l10n.walkthroughPracticeFlipCardTitle,
+                              description: l10n.walkthroughPracticeFlipCardDesc,
+                              screen: WalkthroughScreen.practiceFlipCard,
+                              stepNumber: 1,
+                              totalSteps: 1,
+                              onNext: _onNext,
+                              tooltipPosition: TooltipPosition.bottom,
+                              highlightBorderRadius: 22,
+                              child: VerseFlipCard(
+                                verse: verse,
+                                isFlipped: isFlipped,
+                                onFlip: _toggleFlip,
                               ),
                             ),
                           ),
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+              bottomBar: verse == null
+                  ? null
+                  : MemoryActionBar(
+                      secondary: [
+                        if (isFlipped)
+                          MemoryActionPill(
+                            label: context
+                                .tr(TranslationKeys.memoryRecallFlipAction),
+                            icon: Icons.flip_camera_android_rounded,
+                            onPressed: _toggleFlip,
+                          ),
+                      ],
+                      primary: isFlipped
+                          ? MemoryPrimaryPill(
+                              label: context.tr(TranslationKeys.practiceSubmit),
+                              icon: Icons.check_rounded,
+                              onPressed: _submitPractice,
+                            )
+                          : MemoryPrimaryPill(
+                              label: context
+                                  .tr(TranslationKeys.memoryRecallFlipAction),
+                              icon: Icons.flip_camera_android_rounded,
+                              onPressed: _toggleFlip,
+                            ),
+                    ),
             ),
           ),
         ).withAuthProtection();
       },
     );
   }
+
+  void _toggleFlip() => setState(() => isFlipped = !isFlipped);
 
   Future<void> _submitPractice() async {
     if (currentVerse == null) return;

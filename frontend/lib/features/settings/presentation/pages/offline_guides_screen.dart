@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../study_generation/data/datasources/study_local_data_source.dart';
-import '../../../study_generation/domain/entities/study_guide.dart';
-import '../../../study_topics/data/models/learning_path_download_model.dart';
-import '../../../study_topics/data/services/learning_path_download_service.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/features/study_generation/data/datasources/study_local_data_source.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_guide.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
 
 class OfflineGuidesScreen extends StatefulWidget {
   const OfflineGuidesScreen({super.key});
@@ -55,6 +58,46 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
     await _loadData();
   }
 
+  /// Removes every downloaded path (the per-path delete, for each), after
+  /// confirming.
+  Future<void> _confirmClearAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => SettingsDialog(
+        title: dialogContext.tr(TranslationKeys.settingsOfflineClearAllTitle),
+        content: Text(
+            dialogContext.tr(TranslationKeys.settingsOfflineClearAllMessage)),
+        actions: [
+          SettingsButton(
+            label: dialogContext.tr(TranslationKeys.commonCancel),
+            kind: SettingsButtonKind.neutral,
+            height: 46,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          SettingsButton(
+            label: dialogContext.tr(TranslationKeys.settingsOfflineClearAll),
+            kind: SettingsButtonKind.destructive,
+            height: 46,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final service = sl<LearningPathDownloadService>();
+    for (final path in List.of(_paths)) {
+      await service.deleteDownload(path.learningPathId);
+    }
+    await _loadData();
+  }
+
+  List<LearningPathTopicDownload> _completedTopics(
+          LearningPathDownloadModel path) =>
+      path.topics
+          .where((t) =>
+              t.status == TopicDownloadStatus.done && t.cachedGuideId != null)
+          .toList();
+
   void _openGuide(StudyGuide guide) {
     context.go('/study-guide', extra: {
       'study_guide': {
@@ -76,69 +119,52 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Offline Guides',
-          style: AppFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
-        foregroundColor: isDark ? Colors.white : const Color(0xFF1F2937),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => context.pop(),
-        ),
+      backgroundColor: palette.page,
+      appBar: SettingsTopBar(
+        title: context.tr(TranslationKeys.settingsOfflineGuides),
+        subtitle: context.tr(TranslationKeys.settingsOfflineGuidesSubtitle),
+        onBack: () => context.pop(),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: settingsPrimaryFill))
           : _paths.isEmpty
-              ? _buildEmptyState(isDark)
-              : _buildPathList(isDark),
+              ? _buildEmptyState()
+              : _buildPathList(),
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
+  Widget _buildEmptyState() {
+    final palette = ReaderPalette.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.wifi_off_outlined,
+            const SettingsIconTile(
+              icon: Icons.wifi_off_outlined,
+              tone: SettingsTone.green,
               size: 64,
-              color: isDark
-                  ? Colors.white.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.4),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Text(
-              'No offline guides downloaded yet',
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: isDark
-                    ? Colors.white.withOpacity(0.6)
-                    : const Color(0xFF6B7280),
-              ),
+              context.tr(TranslationKeys.settingsOfflineEmptyTitle),
               textAlign: TextAlign.center,
+              style: AppFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Download a learning path to access it offline',
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: isDark
-                    ? Colors.white.withOpacity(0.4)
-                    : const Color(0xFF9CA3AF),
-              ),
+              context.tr(TranslationKeys.settingsOfflineEmptySubtitle),
               textAlign: TextAlign.center,
+              style: AppFonts.inter(fontSize: 14, color: palette.muted),
             ),
           ],
         ),
@@ -146,195 +172,154 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
     );
   }
 
-  Widget _buildPathList(bool isDark) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      itemCount: _paths.length,
-      itemBuilder: (context, index) => _buildPathSection(_paths[index], isDark),
+  Widget _buildPathList() {
+    final guideCount =
+        _paths.fold<int>(0, (sum, p) => sum + _completedTopics(p).length);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+      children: [
+        _StorageCard(
+          label: context.tr(TranslationKeys.settingsOfflineGuidesCount,
+              {'count': '$guideCount'}),
+          clearLabel: context.tr(TranslationKeys.settingsOfflineClearAll),
+          onClearAll: _confirmClearAll,
+        ),
+        for (final path in _paths) ..._buildPathSection(path),
+      ],
     );
   }
 
-  Widget _buildPathSection(LearningPathDownloadModel path, bool isDark) {
-    final completedTopics = path.topics
-        .where((t) =>
-            t.status == TopicDownloadStatus.done && t.cachedGuideId != null)
-        .toList();
+  List<Widget> _buildPathSection(LearningPathDownloadModel path) {
+    final palette = ReaderPalette.of(context);
+    final completedTopics = _completedTopics(path);
+    final removeLabel = context.tr(TranslationKeys.settingsOfflineRemove);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8, top: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      path.learningPathTitle,
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: context.appBrandAccent,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${path.completedCount} of ${path.totalCount} guides downloaded',
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.5)
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: isDark ? Colors.white.withOpacity(0.5) : Colors.grey,
-                  size: 20,
-                ),
-                tooltip: 'Delete all guides for this path',
-                onPressed: () => _deletePath(path.learningPathId),
-              ),
-            ],
+    return [
+      SettingsSectionLabel(
+        path.learningPathTitle,
+        trailing: Semantics(
+          button: true,
+          label: '$removeLabel ${path.learningPathTitle}',
+          excludeSemantics: true,
+          child: IconButton(
+            tooltip: '$removeLabel ${path.learningPathTitle}',
+            visualDensity: VisualDensity.compact,
+            icon: Icon(Icons.delete_outline, size: 18, color: palette.dim),
+            onPressed: () => _deletePath(path.learningPathId),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : context.appBrandAccent.withOpacity(0.1),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: context.appBrandAccent.withOpacity(isDark ? 0.1 : 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: completedTopics.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(20),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(2, 0, 2, 8),
+        child: Text(
+          context.tr(TranslationKeys.settingsOfflinePathProgress, {
+            'done': '${path.completedCount}',
+            'total': '${path.totalCount}',
+          }),
+          style: AppFonts.inter(fontSize: 12, color: palette.muted),
+        ),
+      ),
+      SettingsGroup(
+        children: completedTopics.isEmpty
+            ? [
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
-                    'No completed guides in this path',
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.4)
-                          : const Color(0xFF9CA3AF),
-                    ),
+                    context.tr(TranslationKeys.settingsOfflinePathEmpty),
+                    style: AppFonts.inter(fontSize: 14, color: palette.muted),
                   ),
-                )
-              : Column(
-                  children: [
-                    for (int i = 0; i < completedTopics.length; i++) ...[
-                      if (i > 0)
-                        Divider(
-                          height: 1,
-                          indent: 20,
-                          endIndent: 20,
-                          color: isDark
-                              ? Colors.white.withOpacity(0.08)
-                              : context.appBrandAccent.withOpacity(0.08),
-                        ),
-                      _buildGuideTile(
-                          completedTopics[i], path.learningPathId, isDark),
-                    ],
-                  ],
                 ),
-        ),
-      ],
-    );
+              ]
+            : [
+                for (final topic in completedTopics)
+                  _buildGuideTile(topic, path.learningPathId, removeLabel),
+              ],
+      ),
+    ];
   }
 
   Widget _buildGuideTile(
     LearningPathTopicDownload topic,
     String pathId,
-    bool isDark,
+    String removeLabel,
   ) {
     final guide = _guidesById[topic.cachedGuideId];
+    final palette = ReaderPalette.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: guide != null ? () => _openGuide(guide) : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.8),
-                      AppTheme.primaryColor,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.book_outlined,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      topic.topicTitle,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      topic.studyMode,
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.5)
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: isDark ? Colors.white.withOpacity(0.4) : Colors.grey,
-                  size: 20,
-                ),
-                tooltip: 'Delete this guide',
-                onPressed: topic.cachedGuideId != null
-                    ? () => _deleteGuide(pathId, topic.cachedGuideId!)
-                    : null,
-              ),
-            ],
-          ),
+    return SettingsRow(
+      icon: Icons.file_download_done_outlined,
+      tone: SettingsTone.green,
+      title: topic.topicTitle,
+      subtitle: topic.studyMode,
+      showChevron: false,
+      onTap: guide != null ? () => _openGuide(guide) : null,
+      trailing: TextButton(
+        onPressed: topic.cachedGuideId != null
+            ? () => _deleteGuide(pathId, topic.cachedGuideId!)
+            : null,
+        style: TextButton.styleFrom(
+          foregroundColor: palette.muted,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          minimumSize: const Size(48, 40),
         ),
+        child: Text(
+          removeLabel,
+          style: AppFonts.inter(fontSize: 13.5, color: palette.muted),
+        ),
+      ),
+    );
+  }
+}
+
+/// "N guides" with a red "Clear all" action.
+class _StorageCard extends StatelessWidget {
+  final String label;
+  final String clearLabel;
+  final VoidCallback onClearAll;
+
+  const _StorageCard({
+    required this.label,
+    required this.clearLabel,
+    required this.onClearAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final red = SettingsToneColors.of(context, SettingsTone.red);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 6, 8),
+      constraints: const BoxConstraints(minHeight: 56),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onClearAll,
+            style: TextButton.styleFrom(foregroundColor: red.foreground),
+            child: Text(
+              clearLabel,
+              style: AppFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: red.foreground,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

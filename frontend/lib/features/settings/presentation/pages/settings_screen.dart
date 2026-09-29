@@ -1,56 +1,56 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/constants/app_fonts.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
-import '../../../../core/constants/study_mode_preferences.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/services/theme_service.dart';
-import '../../../../core/services/font_scale_service.dart';
-import '../../../../core/services/auth_state_provider.dart';
-import '../../../../core/widgets/locked_feature_wrapper.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_event.dart';
-import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
-import '../../../feedback/presentation/widgets/feedback_bottom_sheet.dart';
-import '../../domain/entities/theme_mode_entity.dart';
-import '../bloc/settings_bloc.dart';
-import '../bloc/settings_event.dart';
-import '../bloc/settings_state.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../home/presentation/bloc/home_bloc.dart';
-import '../../../home/presentation/bloc/home_event.dart';
-import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
-import '../../../study_topics/data/models/learning_path_download_model.dart';
-import '../../../study_topics/data/services/learning_path_download_service.dart';
-import '../../../study_generation/domain/entities/study_mode.dart';
-import '../../../user_profile/data/services/user_profile_service.dart';
-import '../../../user_profile/data/models/user_profile_model.dart';
-import '../../../tokens/presentation/bloc/token_bloc.dart';
-import '../../../tokens/presentation/bloc/token_state.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-
-import '../../../../core/services/apple_consumable_purchase_service.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../../core/utils/platform_utils.dart';
-import '../../../../shared/widgets/sheet_scroll_view.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/core/constants/study_mode_preferences.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
+import 'package:disciplefy_bible_study/core/services/font_scale_service.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/platform_utils.dart';
+import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
+import 'package:disciplefy_bible_study/features/auth/domain/utils/auth_validator.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
+    as auth_states;
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
-import '../../../auth/domain/utils/auth_validator.dart';
-import '../../../user_profile/data/services/user_profile_api_service.dart';
+import 'package:disciplefy_bible_study/features/feedback/presentation/widgets/feedback_bottom_sheet.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_bloc.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_profile_card.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_api_service.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
-/// Settings Screen with proper AuthBloc integration
-/// Handles both authenticated and unauthenticated users
-/// Features proper logout logic following SOLID principles
-/// Updated: Uses global SettingsBloc to avoid recreation on theme changes
+/// Settings in the grouped-cards design.
+///
+/// Handles both authenticated and anonymous users. Uses the global
+/// [SettingsBloc] so a theme change does not recreate the screen.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -89,856 +89,489 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) => PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) return;
+  void _goBack() {
+    // Check if we can pop, otherwise navigate to home.
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  }
 
-          // Handle Android back button - navigate to home
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/');
-          }
-        },
-        child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 0,
-            leading: IconButton(
-              onPressed: () {
-                // Check if we can pop, otherwise navigate to home
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/');
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Android back button: pop, or go home.
+        _goBack();
+      },
+      child: Scaffold(
+        backgroundColor: palette.page,
+        appBar: SettingsTopBar(
+          title: context.tr(TranslationKeys.settingsTitle),
+          onBack: _goBack,
+        ),
+        body: Stack(
+          children: [
+            BlocListener<AuthBloc, auth_states.AuthState>(
+              listener: (context, authState) {
+                if (authState is auth_states.UnauthenticatedState) {
+                  if (_isDeletingAccount) {
+                    // Account just deleted — go straight to login.
+                    context.go(AppRoutes.login);
+                  } else if (Supabase.instance.client.auth.currentUser ==
+                      null) {
+                    // Regular sign-out — wait for session to be fully cleared.
+                    context.go(AppRoutes.login);
+                  }
+                } else if (authState is auth_states.AuthErrorState) {
+                  // Reset deleting flag so the overlay is dismissed.
+                  if (_isDeletingAccount) {
+                    setState(() => _isDeletingAccount = false);
+                  }
+                  showSettingsSnackBar(
+                    context,
+                    context.tr(TranslationKeys.commonErrorTryAgain),
+                    Theme.of(context).colorScheme.error,
+                  );
                 }
               },
-              icon: Builder(
-                builder: (ctx) {
-                  final primary = Theme.of(ctx).colorScheme.primary;
-                  return Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primary.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: primary,
-                      size: 18,
+              child: BlocConsumer<SettingsBloc, SettingsState>(
+                listener: (context, state) {
+                  if (state is SettingsError) {
+                    showSettingsSnackBar(
+                      context,
+                      context.tr(TranslationKeys.commonErrorTryAgain),
+                      Theme.of(context).colorScheme.error,
+                    );
+                  } else if (state is SettingsUpdateSuccess) {
+                    showSettingsSnackBar(
+                        context, state.message, AppColors.success);
+                  }
+                },
+                builder: (context, state) {
+                  if (state is SettingsLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                        strokeWidth: 3,
+                      ),
+                    );
+                  }
+                  if (state is SettingsLoaded) {
+                    return ListenableBuilder(
+                      listenable: sl<AuthStateProvider>(),
+                      builder: (context, _) =>
+                          _buildSettingsList(context, state),
+                    );
+                  }
+                  return Center(
+                    child: Text(
+                      context.tr(TranslationKeys.settingsFailedToLoad),
+                      style: AppFonts.inter(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   );
                 },
               ),
             ),
-            title: Text(
-              context.tr(TranslationKeys.settingsTitle),
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onBackground,
+            // Loading overlay while delete-account API is in-flight.
+            if (_isDeletingAccount)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                ),
               ),
-            ),
-            centerTitle: true,
-          ),
-          body: Stack(
-            children: [
-              BlocListener<AuthBloc, auth_states.AuthState>(
-                listener: (context, authState) {
-                  if (authState is auth_states.UnauthenticatedState) {
-                    if (_isDeletingAccount) {
-                      // Account just deleted — go straight to login, no guard needed
-                      context.go(AppRoutes.login);
-                    } else if (Supabase.instance.client.auth.currentUser ==
-                        null) {
-                      // Regular sign-out — wait for session to be fully cleared
-                      context.go(AppRoutes.login);
-                    }
-                  } else if (authState is auth_states.AuthErrorState) {
-                    // Reset deleting flag so the overlay is dismissed
-                    if (_isDeletingAccount) {
-                      setState(() => _isDeletingAccount = false);
-                    }
-                    _showSnackBar(
-                        context,
-                        context.tr(TranslationKeys.commonErrorTryAgain),
-                        Theme.of(context).colorScheme.error);
-                  }
-                },
-                child: BlocConsumer<SettingsBloc, SettingsState>(
-                  listener: (context, state) {
-                    if (state is SettingsError) {
-                      _showSnackBar(
-                          context,
-                          context.tr(TranslationKeys.commonErrorTryAgain),
-                          Theme.of(context).colorScheme.error);
-                    } else if (state is SettingsUpdateSuccess) {
-                      _showSnackBar(context, state.message, AppColors.success);
-                    }
-                  },
-                  builder: (context, state) {
-                    if (state is SettingsLoading) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.primary),
-                          strokeWidth: 3,
-                        ),
-                      );
-                    }
-
-                    if (state is SettingsLoaded) {
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // User Profile Section (only for authenticated users)
-                            _buildUserProfileSection(context),
-
-                            // Theme & Language Section
-                            _buildThemeLanguageSection(context, state),
-                            const SizedBox(height: 24),
-
-                            // Notification Section
-                            _buildNotificationSection(context, state),
-                            const SizedBox(height: 24),
-
-                            // Personalization Section (only for authenticated users)
-                            _buildPersonalizationSection(context),
-
-                            // Help & Support Section
-                            _buildHelpSupportSection(context),
-                            const SizedBox(height: 24),
-
-                            // Account Section
-                            _buildAccountSection(context),
-                            const SizedBox(height: 24),
-
-                            // Offline Content Section
-                            _buildOfflineContentSection(),
-                            const Divider(height: 1),
-                            const SizedBox(height: 24),
-
-                            // About Section
-                            _buildAboutSection(context, state),
-                            const SizedBox(height: 40),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return Center(
-                      child: Text(
-                        context.tr(TranslationKeys.settingsFailedToLoad),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ), // BlocListener
-              // Loading overlay while delete-account API is in-flight
-              if (_isDeletingAccount)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.5),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                  ),
-                ),
-            ],
-          ), // Stack
-        ), // Scaffold
-      ); // PopScope
-
-  /// User Profile Section - shows different content based on auth state
-  Widget _buildUserProfileSection(BuildContext context) => ListenableBuilder(
-        listenable: sl<AuthStateProvider>(),
-        builder: (context, _) {
-          final authProvider = sl<AuthStateProvider>();
-
-          if (authProvider.isAuthenticated) {
-            return Column(
-              children: [
-                _buildSection(
-                  title: context.tr(TranslationKeys.settingsAccount),
-                  children: [
-                    _buildUserProfileTile(context, authProvider),
-                    // Email verification lives here rather than on Home: it is
-                    // rarely relevant, but it is the only way to resend the
-                    // link, so it must stay reachable somewhere.
-                    BlocProvider.value(
-                      value: context.read<AuthBloc>(),
-                      child: const EmailVerificationBanner(),
-                    ),
-                    ...[
-                      _buildDivider(),
-                      // My Progress - gamification stats dashboard
-                      LockedFeatureWrapper(
-                        featureKey: 'leaderboard',
-                        child: _buildSettingsTile(
-                          context: context,
-                          icon: Icons.emoji_events_outlined,
-                          title: context.tr(TranslationKeys.gamificationTitle),
-                          subtitle:
-                              context.tr(TranslationKeys.gamificationSubtitle),
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
-                          ),
-                          onTap: () => context.push(AppRoutes.statsDashboard),
-                        ),
-                      ),
-                      // Reflection Journal - view past reflections (feature flag controlled)
-                      Builder(builder: (builderContext) {
-                        // Get user plan from TokenBloc
-                        final tokenBloc = sl<TokenBloc>();
-                        final tokenState = tokenBloc.state;
-                        String userPlan = 'free';
-                        if (tokenState is TokenLoaded) {
-                          userPlan = tokenState.tokenStatus.userPlan.name;
-                        }
-
-                        // Check if reflections feature should be shown (respects display_mode)
-                        final systemConfigService = sl<SystemConfigService>();
-                        final showReflections = !systemConfigService
-                            .shouldHideFeature('reflections', userPlan);
-
-                        if (!showReflections) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return Column(
-                          children: [
-                            _buildDivider(),
-                            LockedFeatureWrapper(
-                              featureKey: 'reflections',
-                              child: _buildSettingsTile(
-                                context: builderContext,
-                                icon: Icons.edit_note_outlined,
-                                title: builderContext.tr(
-                                    TranslationKeys.settingsReflectionJournal),
-                                subtitle: builderContext.tr(TranslationKeys
-                                    .settingsReflectionJournalSubtitle),
-                                trailing: Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Theme.of(builderContext)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.6),
-                                ),
-                                onTap: () => builderContext
-                                    .push(AppRoutes.reflectionJournal),
-                              ),
-                            ),
-                          ],
-                        );
-                      }),
-                      _buildDivider(),
-                      // My Plan - unified plan and subscription management
-                      _buildSettingsTile(
-                        context: context,
-                        icon: Icons.card_membership_outlined,
-                        title: context.tr(TranslationKeys.settingsMyPlan),
-                        subtitle:
-                            context.tr(TranslationKeys.settingsMyPlanSubtitle),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                        ),
-                        onTap: () => context.push(AppRoutes.myPlan),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      );
-
-  /// Build profile avatar with network image support
-  Widget _buildProfileAvatar(
-      BuildContext context, AuthStateProvider authProvider) {
-    final profilePictureUrl = authProvider.profilePictureUrl;
-
-    // Show network image if available
-    if (profilePictureUrl != null) {
-      return CircleAvatar(
-        radius: 25,
-        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-        child: ClipOval(
-          child: Image.network(
-            profilePictureUrl,
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              Logger.error(
-                  '🖼️ [SETTINGS] Failed to load profile picture: $error');
-              // Return icon fallback on error
-              return Icon(
-                Icons.person,
-                size: 25,
-                color: Theme.of(context).colorScheme.primary,
-              );
-            },
-          ),
+          ],
         ),
-      );
-    }
-
-    // Fallback to icon (no profile picture available)
-    return CircleAvatar(
-      radius: 25,
-      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-      child: Icon(
-        Icons.person,
-        size: 25,
-        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }
 
-  /// Lets the user set or correct their display name.
-  ///
-  /// Writes to two places, both needed: the Supabase auth metadata
-  /// (`full_name`/`name`) that fellowship member lists and post authors read
-  /// directly, and `user_profiles.first_name`/`last_name`, which is what
-  /// Settings itself and the rest of the app read first. Writing only one
-  /// would leave the other showing the old name.
-  Future<void> _showEditNameDialog(
-    BuildContext context,
-    AuthStateProvider authProvider,
-  ) async {
-    final controller = TextEditingController(
-      text: authProvider.profileBasedDisplayNameOrEmpty,
-    );
-    final formKey = GlobalKey<FormState>();
+  Widget _buildSettingsList(BuildContext context, SettingsLoaded state) {
+    final authProvider = sl<AuthStateProvider>();
+    final isAuthenticated = authProvider.isAuthenticated;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.tr(TranslationKeys.settingsEditNameTitle)),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              hintText: dialogContext.tr(TranslationKeys.settingsEditNameHint),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+      children: [
+        if (isAuthenticated) ...[
+          SettingsProfileCard(
+            name: authProvider.profileBasedDisplayName,
+            email: authProvider.userEmail ??
+                context.tr(TranslationKeys.settingsNoEmail),
+            photoUrl: authProvider.profilePictureUrl,
+            editTooltip: context.tr(TranslationKeys.settingsEditNameTitle),
+            onEditName: () => _showEditNameDialog(context, authProvider),
+          ),
+          // Email verification lives here rather than on Home: it is rarely
+          // relevant, but it is the only way to resend the link, so it must
+          // stay reachable somewhere.
+          BlocProvider.value(
+            value: context.read<AuthBloc>(),
+            child: const EmailVerificationBanner(),
+          ),
+          ..._youSection(context),
+        ],
+        ..._preferencesSection(context, state),
+        if (isAuthenticated) ..._studySection(context, authProvider),
+        ..._helpSection(context),
+        ..._aboutSection(context, state),
+        ..._accountSection(context, isAuthenticated),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Sections
+  // -------------------------------------------------------------------------
+
+  String _userPlan() {
+    final tokenState = sl<TokenBloc>().state;
+    return tokenState is TokenLoaded
+        ? tokenState.tokenStatus.userPlan.name
+        : 'free';
+  }
+
+  List<Widget> _youSection(BuildContext context) {
+    final userPlan = _userPlan();
+    // Respects the feature's display_mode (hidden vs locked).
+    final config = sl<SystemConfigService>();
+    final showProgress = !config.shouldHideFeature('leaderboard', userPlan);
+    final showReflections = !config.shouldHideFeature('reflections', userPlan);
+
+    return [
+      SettingsSectionLabel(context.tr(TranslationKeys.settingsSectionYou)),
+      SettingsGroup(
+        children: [
+          // My Progress — gamification stats dashboard.
+          if (showProgress)
+            LockedFeatureWrapper(
+              featureKey: 'leaderboard',
+              child: SettingsRow(
+                icon: Icons.emoji_events_outlined,
+                tone: SettingsTone.gold,
+                title: context.tr(TranslationKeys.gamificationTitle),
+                subtitle: context.tr(TranslationKeys.gamificationSubtitle),
+                onTap: () => context.push(AppRoutes.statsDashboard),
+              ),
             ),
-            validator: (value) => AuthValidator.isValidFullName(value ?? '')
-                ? null
-                : dialogContext.tr(TranslationKeys.settingsEditNameInvalid),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(dialogContext.tr(TranslationKeys.commonCancel)),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.of(dialogContext).pop(true);
-              }
-            },
-            child: Text(dialogContext.tr(TranslationKeys.settingsEditNameSave)),
+          if (showReflections)
+            LockedFeatureWrapper(
+              featureKey: 'reflections',
+              child: SettingsRow(
+                icon: Icons.edit_note_outlined,
+                tone: SettingsTone.pink,
+                title: context.tr(TranslationKeys.settingsReflectionJournal),
+                subtitle: context
+                    .tr(TranslationKeys.settingsReflectionJournalSubtitle),
+                onTap: () => context.push(AppRoutes.reflectionJournal),
+              ),
+            ),
+          // My Plan — unified plan and subscription management.
+          SettingsRow(
+            icon: Icons.workspace_premium_outlined,
+            tone: SettingsTone.gold,
+            title: context.tr(TranslationKeys.settingsMyPlan),
+            subtitle: context.tr(TranslationKeys.settingsMyPlanSubtitle),
+            onTap: () => context.push(AppRoutes.myPlan),
           ),
         ],
       ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    final fullName = controller.text.trim();
-    final nameParts = fullName.split(RegExp(r'\s+'));
-    final firstName = nameParts.first;
-    final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : null;
-
-    try {
-      // Auth metadata first: it's what fellowship reads, and it's the part a
-      // user actually opened this dialog to fix.
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(data: {'full_name': fullName, 'name': fullName}),
-      );
-
-      final profileResult = await UserProfileApiService().syncOAuthProfile({
-        'firstName': firstName,
-        if (lastName != null) 'lastName': lastName,
-      });
-
-      if (!context.mounted) return;
-
-      if (profileResult.isLeft()) {
-        // The part that matters (fellowship display) is already saved; only
-        // the local profile mirror failed. Still tell the user, since Settings
-        // itself won't reflect the change until this succeeds.
-        Logger.warning(
-            'Name saved to auth but user_profiles sync failed: $profileResult');
-      }
-
-      context.read<AuthBloc>().add(const RefreshUserProfileRequested());
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsEditNameSuccess)),
-      ));
-    } catch (e) {
-      Logger.error('Failed to update display name', error: e);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsEditNameFailed)),
-        backgroundColor: AppColors.error,
-      ));
-    }
+    ];
   }
 
-  /// User Profile Tile showing user info
-  Widget _buildUserProfileTile(
-          BuildContext context, AuthStateProvider authProvider) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
+  List<Widget> _preferencesSection(BuildContext context, SettingsLoaded state) {
+    final offlineCount = _downloadedPaths.fold<int>(
+      0,
+      (sum, path) => sum + path.completedCount,
+    );
+    return [
+      SettingsSectionLabel(
+          context.tr(TranslationKeys.settingsSectionPreferences)),
+      SettingsGroup(
+        children: [
+          SettingsRow(
+            icon: Icons.palette_outlined,
+            title: context.tr(TranslationKeys.settingsTheme),
+            value: themeModeLabel(context, state.settings.themeMode.mode),
+            onTap: () {
+              Logger.debug('Theme tile onTap triggered - opening bottom sheet');
+              showThemeSheet(context, state.settings.themeMode);
+            },
+          ),
+          SettingsRow(
+            icon: Icons.translate,
+            title: context.tr(TranslationKeys.settingsAppLanguage),
+            value: AppLanguage.fromCode(state.settings.language).displayName,
+            onTap: () => showAppLanguageSheet(context, state.settings.language),
+          ),
+          // Separate from the app language: which language study guides,
+          // learning paths and daily verses are generated in. Same sheet as
+          // the Topics screen's menu.
+          _ContentLanguageSubtitle(
+            appLanguageCode: state.settings.language,
+            builder: (subtitle) => SettingsRow(
+              icon: Icons.menu_book_outlined,
+              title: context.tr(TranslationKeys.settingsContentLanguage),
+              subtitle: subtitle,
+              onTap: () => showContentLanguageSheet(context),
+            ),
+          ),
+          ListenableBuilder(
+            listenable: sl<FontScaleService>(),
+            builder: (context, _) => SettingsRow(
+              icon: Icons.text_fields,
+              title: context.tr(TranslationKeys.settingsTextSize),
+              value: fontScaleLevelLabel(context, sl<FontScaleService>().level),
+              onTap: () => showTextSizeSheet(context),
+            ),
+          ),
+          SettingsRow(
+            icon: Icons.notifications_none_outlined,
+            tone: SettingsTone.sky,
+            title: context.tr(TranslationKeys.settingsNotifications),
+            subtitle: context.tr(TranslationKeys.settingsNotificationSubtitle),
+            onTap: () => context.push('/notification-settings'),
+          ),
+          SettingsRow(
+            icon: Icons.download_outlined,
+            tone: SettingsTone.green,
+            title: context.tr(TranslationKeys.settingsOfflineGuides),
+            // Each downloaded path with its progress, or how to get one.
+            subtitle: _downloadedPaths.isEmpty
+                ? context.tr(TranslationKeys.settingsOfflineEmptySubtitle)
+                : _downloadedPaths
+                    .map((path) =>
+                        '${path.learningPathTitle} · ${context.tr(TranslationKeys.settingsOfflinePathProgress, {
+                              'done': '${path.completedCount}',
+                              'total': '${path.totalCount}',
+                            })}')
+                    .join('\n'),
+            value: offlineCount > 0 ? '$offlineCount' : null,
+            // Deleting happens on that screen; refresh the count on return.
+            onTap: () => context
+                .push('/offline-guides')
+                .then((_) => _loadDownloadedPaths()),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _studySection(
+      BuildContext context, AuthStateProvider authProvider) {
+    final defaultMode =
+        authProvider.userProfile?['default_study_mode'] as String?;
+    final learningPathMode =
+        authProvider.userProfile?['learning_path_study_mode'] as String?;
+
+    final String studyModeSubtitle;
+    if (StudyModePreferences.isGeneralAskEveryTime(defaultMode)) {
+      studyModeSubtitle = context.tr(TranslationKeys.settingsAskEveryTime);
+    } else if (StudyModePreferences.isRecommended(defaultMode)) {
+      studyModeSubtitle = context.tr(TranslationKeys.settingsUseRecommended);
+    } else {
+      studyModeSubtitle = context
+          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
+          .replaceAll('{mode}', studyModeNameForValue(context, defaultMode!));
+    }
+
+    final String learningPathSubtitle;
+    if (StudyModePreferences.isLearningPathAskEveryTime(learningPathMode)) {
+      learningPathSubtitle = context.tr(TranslationKeys.settingsAskEveryTime);
+    } else if (StudyModePreferences.isRecommended(learningPathMode)) {
+      learningPathSubtitle = context.tr(TranslationKeys.settingsUseRecommended);
+    } else {
+      learningPathSubtitle = context
+          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
+          .replaceAll(
+              '{mode}', studyModeNameForValue(context, learningPathMode!));
+    }
+
+    return [
+      SettingsSectionLabel(context.tr(TranslationKeys.settingsSectionStudy)),
+      SettingsGroup(
+        children: [
+          SettingsRow(
+            icon: Icons.auto_awesome_outlined,
+            title: context.tr(TranslationKeys.settingsRetakeQuestionnaire),
+            subtitle:
+                context.tr(TranslationKeys.settingsRetakeQuestionnaireSubtitle),
+            onTap: () => _navigateToQuestionnaire(context),
+          ),
+          SettingsRow(
+            icon: Icons.school_outlined,
+            title: context.tr(TranslationKeys.settingsStudyModePreference),
+            subtitle: studyModeSubtitle,
+            onTap: () => showStudyModeSheet(context, defaultMode),
+          ),
+          SettingsRow(
+            icon: Icons.route_outlined,
+            title: context
+                .tr(TranslationKeys.settingsLearningPathStudyModePreference),
+            subtitle: learningPathSubtitle,
+            onTap: () =>
+                showLearningPathStudyModeSheet(context, learningPathMode),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _helpSection(BuildContext context) => [
+        SettingsSectionLabel(context.tr(TranslationKeys.settingsHelpSupport)),
+        SettingsGroup(
           children: [
-            // Profile Picture with cached data support
-            _buildProfileAvatar(context, authProvider),
-
-            const SizedBox(width: 16),
-
-            // User Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          authProvider.profileBasedDisplayName,
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onBackground,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      // Nothing else in the app lets a user set their name: an
-                      // email/password signup that skipped the name field, or
-                      // an account created before this screen existed, is
-                      // stuck showing its raw email — in fellowship member
-                      // lists too, since those read the same auth metadata
-                      // this dialog writes.
-                      InkWell(
-                        onTap: () => _showEditNameDialog(context, authProvider),
-                        borderRadius: BorderRadius.circular(14),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.edit_outlined,
-                            size: 16,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.5),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    authProvider.userEmail ??
-                        context.tr(TranslationKeys.settingsNoEmail),
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
+            SettingsRow(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: context.tr(TranslationKeys.settingsFeedback),
+              subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
+              onTap: () => showFeedbackBottomSheet(context),
+            ),
+            SettingsRow(
+              icon: Icons.receipt_long_outlined,
+              tone: SettingsTone.gold,
+              title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
+              subtitle: context
+                  .tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
+              onTap: () => context.push(AppRoutes.purchaseHistory),
+            ),
+            SettingsRow(
+              icon: Icons.mail_outline_rounded,
+              tone: SettingsTone.sky,
+              title: context.tr(TranslationKeys.settingsContactUs),
+              subtitle: context.tr(TranslationKeys.settingsContactUsSubtitle),
+              onTap: () => showContactSheet(context),
+            ),
+            SettingsRow(
+              icon: Icons.replay_rounded,
+              title: context.tr(TranslationKeys.settingsReplayWalkthrough),
+              subtitle:
+                  context.tr(TranslationKeys.settingsReplayWalkthroughSubtitle),
+              onTap: () => _replayWalkthrough(context),
             ),
           ],
         ),
-      );
+      ];
 
-  /// Theme & Language Section
-  Widget _buildThemeLanguageSection(
-          BuildContext context, SettingsLoaded state) =>
-      _buildSection(
-        title: context.tr(TranslationKeys.settingsAppearance),
-        children: [
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.palette_outlined,
-            title: context.tr(TranslationKeys.settingsTheme),
-            subtitle: _getThemeDisplayName(state.settings.themeMode),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+  List<Widget> _aboutSection(BuildContext context, SettingsLoaded state) => [
+        SettingsSectionLabel(context.tr(TranslationKeys.settingsAbout)),
+        SettingsGroup(
+          children: [
+            SettingsRow(
+              icon: Icons.favorite_outline,
+              tone: SettingsTone.pink,
+              title: context.tr(TranslationKeys.settingsSupportDeveloper),
+              subtitle:
+                  context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
+              // iOS: tips must go through In-App Purchase (guideline 3.1.1);
+              // Android/web keep the external Buy Me a Coffee link.
+              onTap: () => PlatformUtils.isIOS
+                  ? showTipSheet(context)
+                  : showSupportSheet(context),
             ),
-            onTap: () {
-              Logger.debug('Theme tile onTap triggered - opening bottom sheet');
-              _showThemeBottomSheet(context, state.settings.themeMode);
-            },
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.language_outlined,
-            title: context.tr(TranslationKeys.settingsContentLanguage),
-            subtitle: _getLanguageDisplayName(state.settings.language),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            SettingsRow(
+              icon: Icons.book_outlined,
+              tone: SettingsTone.gold,
+              title: context.tr(TranslationKeys.settingsBibleAttribution),
+              subtitle:
+                  context.tr(TranslationKeys.settingsBibleAttributionSubtitle),
+              onTap: () => context.push(AppRoutes.bibleAttribution),
             ),
-            onTap: () =>
-                _showLanguageBottomSheet(context, state.settings.language),
-          ),
-          _buildDivider(),
-          ListenableBuilder(
-            listenable: sl<FontScaleService>(),
-            builder: (context, _) {
-              final fontScaleService = sl<FontScaleService>();
-              return _buildSettingsTile(
-                context: context,
-                icon: Icons.text_fields_outlined,
-                title: context.tr(TranslationKeys.settingsTextSize),
-                subtitle:
-                    _getFontScaleLevelLabel(context, fontScaleService.level),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                onTap: () => _showTextSizeBottomSheet(context),
-              );
-            },
-          ),
-        ],
-      );
-
-  /// Notification Section
-  Widget _buildNotificationSection(
-          BuildContext context, SettingsLoaded state) =>
-      _buildSection(
-        title: context.tr(TranslationKeys.settingsNotifications),
-        children: [
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.notifications_outlined,
-            title: context.tr(TranslationKeys.settingsNotificationPreferences),
-            subtitle: context.tr(TranslationKeys.settingsNotificationSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            SettingsRow(
+              icon: Icons.verified_user_outlined,
+              title: context.tr(TranslationKeys.settingsPrivacyPolicy),
+              subtitle:
+                  context.tr(TranslationKeys.settingsPrivacyPolicySubtitle),
+              onTap: () => _launchExternal(LegalUrls.privacy),
             ),
-            onTap: () => context.push('/notification-settings'),
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.block,
-            title: context.tr(TranslationKeys.settingsBlockedUsers),
-            subtitle: context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            SettingsRow(
+              icon: Icons.description_outlined,
+              title: context.tr(TranslationKeys.settingsTermsOfService),
+              subtitle:
+                  context.tr(TranslationKeys.settingsTermsOfServiceSubtitle),
+              onTap: () => _launchExternal(LegalUrls.terms),
             ),
-            onTap: () => context.push(AppRoutes.blockedUsers),
-          ),
-        ],
-      );
+            SettingsRow(
+              icon: Icons.receipt_outlined,
+              title: context.tr(TranslationKeys.settingsRefundPolicy),
+              subtitle:
+                  context.tr(TranslationKeys.settingsRefundPolicySubtitle),
+              onTap: () => _launchExternal('https://www.disciplefy.in/refund'),
+            ),
+            SettingsRow(
+              icon: Icons.info_outline,
+              title: context.tr(TranslationKeys.settingsAppVersion),
+              value: state.settings.appVersion,
+            ),
+          ],
+        ),
+      ];
 
-  /// Personalization Section - allows users to retake the questionnaire
-  Widget _buildPersonalizationSection(BuildContext context) =>
-      ListenableBuilder(
-        listenable: sl<AuthStateProvider>(),
-        builder: (context, _) {
-          final authProvider = sl<AuthStateProvider>();
-
-          // Only show for authenticated users
-          if (!authProvider.isAuthenticated) {
-            return const SizedBox.shrink();
-          }
-
-          return Column(
-            children: [
-              _buildSection(
-                title: context.tr(TranslationKeys.settingsPersonalization),
-                children: [
-                  _buildSettingsTile(
-                    context: context,
-                    icon: Icons.auto_awesome,
-                    title:
-                        context.tr(TranslationKeys.settingsRetakeQuestionnaire),
-                    subtitle: context.tr(
-                        TranslationKeys.settingsRetakeQuestionnaireSubtitle),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                    ),
-                    onTap: () => _navigateToQuestionnaire(context),
-                  ),
-                  _buildDivider(),
-                  _buildStudyModePreferenceTile(context, authProvider),
-                  _buildDivider(),
-                  _buildLearningPathStudyModePreferenceTile(
-                      context, authProvider),
-                ],
+  List<Widget> _accountSection(BuildContext context, bool isAuthenticated) => [
+        SettingsSectionLabel(context.tr(TranslationKeys.settingsAccount)),
+        SettingsGroup(
+          children: [
+            SettingsRow(
+              icon: Icons.block,
+              title: context.tr(TranslationKeys.settingsBlockedUsers),
+              subtitle:
+                  context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
+              onTap: () => context.push(AppRoutes.blockedUsers),
+            ),
+            if (isAuthenticated) ...[
+              SettingsRow(
+                icon: Icons.logout_rounded,
+                title: context.tr(TranslationKeys.settingsSignOut),
+                subtitle: context.tr(TranslationKeys.settingsSignOutOfAccount),
+                destructive: true,
+                onTap: () => _showLogoutDialog(context),
               ),
-              const SizedBox(height: 24),
-            ],
-          );
-        },
-      );
+              SettingsRow(
+                icon: Icons.delete_outline_rounded,
+                title: context.tr(TranslationKeys.settingsDeleteAccount),
+                subtitle:
+                    context.tr(TranslationKeys.settingsDeleteAccountSubtitle),
+                destructive: true,
+                onTap: () => _showDeleteAccountDialog(context),
+              ),
+            ] else
+              SettingsRow(
+                icon: Icons.login_rounded,
+                title: context.tr(TranslationKeys.settingsSignIn),
+                subtitle: context.tr(TranslationKeys.settingsSignInToSync),
+                onTap: () => context.go('/login'),
+              ),
+          ],
+        ),
+      ];
 
-  /// Navigate to the personalization questionnaire
+  // -------------------------------------------------------------------------
+  // Actions
+  // -------------------------------------------------------------------------
+
+  /// Navigate to the personalization questionnaire.
   void _navigateToQuestionnaire(BuildContext context) {
     context.push('/personalization-questionnaire').then((_) {
-      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      // Clear LearningPaths repository cache so Study Topics gets fresh data.
       sl<LearningPathsRepository>().clearCache();
-      // Refresh all personalization-dependent data after questionnaire completion
+      // Refresh all personalization-dependent data.
       sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
       sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
     });
   }
 
-  /// Build study mode preference tile
-  Widget _buildStudyModePreferenceTile(
-      BuildContext context, AuthStateProvider authProvider) {
-    final defaultMode =
-        authProvider.userProfile?['default_study_mode'] as String?;
-
-    // Handle different mode values for subtitle
-    String subtitle;
-    if (StudyModePreferences.isGeneralAskEveryTime(defaultMode)) {
-      subtitle = context.tr(TranslationKeys.settingsAskEveryTime);
-    } else if (StudyModePreferences.isRecommended(defaultMode)) {
-      subtitle = context.tr(TranslationKeys.settingsUseRecommended);
-    } else {
-      subtitle = context
-          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
-          .replaceAll(
-              '{mode}', _getStudyModeDisplayName(defaultMode!, context));
-    }
-
-    return _buildSettingsTile(
-      context: context,
-      icon: Icons.school_outlined,
-      title: context.tr(TranslationKeys.settingsStudyModePreference),
-      subtitle: subtitle,
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-      ),
-      onTap: () => _showStudyModeBottomSheet(context, defaultMode),
-    );
-  }
-
-  /// Build learning path study mode preference tile
-  Widget _buildLearningPathStudyModePreferenceTile(
-      BuildContext context, AuthStateProvider authProvider) {
-    final learningPathMode =
-        authProvider.userProfile?['learning_path_study_mode'] as String?;
-
-    String subtitle;
-    if (StudyModePreferences.isLearningPathAskEveryTime(learningPathMode)) {
-      subtitle = context.tr(TranslationKeys.settingsAskEveryTime);
-    } else if (StudyModePreferences.isRecommended(learningPathMode)) {
-      subtitle = context.tr(TranslationKeys.settingsUseRecommended);
-    } else {
-      subtitle = context
-          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
-          .replaceAll(
-              '{mode}', _getStudyModeDisplayName(learningPathMode!, context));
-    }
-
-    return _buildSettingsTile(
-      context: context,
-      icon: Icons.route_outlined,
-      title:
-          context.tr(TranslationKeys.settingsLearningPathStudyModePreference),
-      subtitle: subtitle,
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-      ),
-      onTap: () =>
-          _showLearningPathStudyModeBottomSheet(context, learningPathMode),
-    );
-  }
-
-  /// Get display name for study mode
-  String _getStudyModeDisplayName(String modeString, BuildContext context) {
-    try {
-      final mode = StudyMode.values.firstWhere(
-        (m) => m.value == modeString,
-        orElse: () => StudyMode.standard,
-      );
-
-      switch (mode) {
-        case StudyMode.quick:
-          return context.tr(TranslationKeys.studyModeQuickName);
-        case StudyMode.standard:
-          return context.tr(TranslationKeys.studyModeStandardName);
-        case StudyMode.deep:
-          return context.tr(TranslationKeys.studyModeDeepName);
-        case StudyMode.lectio:
-          return context.tr(TranslationKeys.studyModeLectioName);
-        case StudyMode.sermon:
-          return context.tr(TranslationKeys.studyModeSermonName);
-      }
-    } catch (e) {
-      return context.tr(TranslationKeys.studyModeStandardName);
-    }
-  }
-
-  /// Get translated display name for study mode enum
-  String _getStudyModeTranslatedName(StudyMode mode, BuildContext context) {
-    switch (mode) {
-      case StudyMode.quick:
-        return context.tr(TranslationKeys.studyModeQuickName);
-      case StudyMode.standard:
-        return context.tr(TranslationKeys.studyModeStandardName);
-      case StudyMode.deep:
-        return context.tr(TranslationKeys.studyModeDeepName);
-      case StudyMode.lectio:
-        return context.tr(TranslationKeys.studyModeLectioName);
-      case StudyMode.sermon:
-        return context.tr(TranslationKeys.studyModeSermonName);
-    }
-  }
-
-  /// Get translated description for study mode enum
-  String _getStudyModeTranslatedDescription(
-      StudyMode mode, BuildContext context) {
-    switch (mode) {
-      case StudyMode.quick:
-        return context.tr(TranslationKeys.studyModeQuickDescription);
-      case StudyMode.standard:
-        return context.tr(TranslationKeys.studyModeStandardDescription);
-      case StudyMode.deep:
-        return context.tr(TranslationKeys.studyModeDeepDescription);
-      case StudyMode.lectio:
-        return context.tr(TranslationKeys.studyModeLectioDescription);
-      case StudyMode.sermon:
-        return context.tr(TranslationKeys.studyModeSermonDescription);
-    }
-  }
-
-  /// Help & Support Section
-  Widget _buildHelpSupportSection(BuildContext context) => _buildSection(
-        title: context.tr(TranslationKeys.settingsHelpSupport),
-        children: [
-          // Send Feedback tile
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.feedback_outlined,
-            title: context.tr(TranslationKeys.settingsFeedback),
-            subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => _showFeedbackBottomSheet(context),
-          ),
-          _buildDivider(),
-          // Report Purchase Issue tile
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.receipt_long_outlined,
-            title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
-            subtitle:
-                context.tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => context.push(AppRoutes.purchaseHistory),
-          ),
-          _buildDivider(),
-          // Contact Us tile
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.email_outlined,
-            title: context.tr(TranslationKeys.settingsContactUs),
-            subtitle: context.tr(TranslationKeys.settingsContactUsSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => _showContactSheet(context),
-          ),
-          _buildDivider(),
-          // Replay App Walkthrough tile
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.replay_rounded,
-            title: context.tr(TranslationKeys.settingsReplayWalkthrough),
-            subtitle:
-                context.tr(TranslationKeys.settingsReplayWalkthroughSubtitle),
-            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () => _replayWalkthrough(context),
-          ),
-        ],
-      );
-
-  /// Replay app walkthrough by resetting all walkthrough seen states
+  /// Replay app walkthrough by resetting all walkthrough seen states.
   Future<void> _replayWalkthrough(BuildContext context) async {
     showDialog(
       context: context,
@@ -972,2309 +605,350 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     }
   }
 
-  /// Show contact options (email, Instagram, Facebook) in a bottom sheet
-  void _showContactSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              context.tr(TranslationKeys.settingsContactUs),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(builderContext).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildContactOption(
-              builderContext,
-              icon: Icons.email_outlined,
-              title: context.tr(TranslationKeys.settingsContactEmail),
-              subtitle: 'contact@disciplefy.in',
-              // Use the page context: the sheet context is deactivated after pop.
-              onTap: () => _launchContactEmail(context),
-            ),
-            _buildContactOption(
-              builderContext,
-              icon: Icons.camera_alt_outlined,
-              title: 'Instagram',
-              subtitle: '@disciplefy.in',
-              onTap: () => _launchContactUrl(
-                  context, 'https://www.instagram.com/disciplefy.in'),
-            ),
-            _buildContactOption(
-              builderContext,
-              icon: Icons.facebook,
-              title: 'Facebook',
-              subtitle: 'facebook.com/disciplefy',
-              onTap: () => _launchContactUrl(
-                  context, 'https://www.facebook.com/disciplefy'),
-            ),
-            const SizedBox(height: 8),
-          ],
-        )),
-      ),
-    );
-  }
-
-  Widget _buildContactOption(
-    BuildContext sheetContext, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) =>
-      ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: context.appBrandAccent.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: context.appBrandAccent, size: 22),
-        ),
-        title: Text(
-          title,
-          style: AppFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(sheetContext).colorScheme.onBackground,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: AppFonts.inter(
-            fontSize: 13,
-            color:
-                Theme.of(sheetContext).colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-        onTap: () {
-          Navigator.of(sheetContext).pop();
-          onTap();
-        },
-      );
-
-  /// Launch contact email
-  Future<void> _launchContactEmail(BuildContext context) async {
-    final uri = Uri.parse(
-        'mailto:contact@disciplefy.in?subject=Disciplefy Support Request');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else if (context.mounted) {
-      _showSnackBar(context, context.tr(TranslationKeys.settingsContactError),
-          Colors.red);
-    }
-  }
-
-  /// Launch a social/contact URL in the external app or browser
-  Future<void> _launchContactUrl(BuildContext context, String url) async {
+  Future<void> _launchExternal(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else if (context.mounted) {
-      _showSnackBar(context, context.tr(TranslationKeys.settingsContactError),
-          Colors.red);
     }
   }
 
-  /// Account Section with AuthStateProvider integration
-  Widget _buildAccountSection(BuildContext context) => ListenableBuilder(
-        listenable: sl<AuthStateProvider>(),
-        builder: (context, _) {
-          final authProvider = sl<AuthStateProvider>();
-
-          if (authProvider.isAuthenticated) {
-            return _buildSection(
-              title: context.tr(TranslationKeys.settingsAccountActions),
-              children: [
-                _buildSettingsTile(
-                  context: context,
-                  icon: Icons.logout_outlined,
-                  title: context.tr(TranslationKeys.settingsSignOut),
-                  subtitle:
-                      context.tr(TranslationKeys.settingsSignOutOfAccount),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
-                  ),
-                  onTap: () => _showLogoutDialog(context),
-                  iconColor: Theme.of(context).colorScheme.error,
-                ),
-                _buildDivider(),
-                _buildSettingsTile(
-                  context: context,
-                  icon: Icons.delete_forever_outlined,
-                  title: context.tr(TranslationKeys.settingsDeleteAccount),
-                  subtitle:
-                      context.tr(TranslationKeys.settingsDeleteAccountSubtitle),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
-                  ),
-                  onTap: () => _showDeleteAccountDialog(context),
-                  iconColor: Theme.of(context).colorScheme.error,
-                ),
-              ],
-            );
-          }
-
-          // For unauthenticated users, show sign in option
-          return _buildSection(
-            title: context.tr(TranslationKeys.settingsAccount),
-            children: [
-              _buildSettingsTile(
-                context: context,
-                icon: Icons.login_outlined,
-                title: context.tr(TranslationKeys.settingsSignIn),
-                subtitle: context.tr(TranslationKeys.settingsSignInToSync),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                onTap: () => context.go('/login'),
-                iconColor: Theme.of(context).colorScheme.primary,
-              ),
-            ],
-          );
-        },
-      );
-
-  /// Offline Content Section - shows downloaded learning paths
-  Widget _buildOfflineContentSection() {
-    final tileChildren = <Widget>[];
-
-    if (_downloadedPaths.isEmpty) {
-      tileChildren.add(
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.wifi_off_outlined,
-          title: 'No offline guides',
-          subtitle: 'Download a learning path to access it offline',
-          trailing: null,
-          onTap: null,
-        ),
-      );
-    } else {
-      for (int i = 0; i < _downloadedPaths.length; i++) {
-        if (i > 0) tileChildren.add(_buildDivider());
-        final path = _downloadedPaths[i];
-        tileChildren.add(
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.download_done_outlined,
-            title: path.learningPathTitle,
-            subtitle:
-                '${path.completedCount} of ${path.totalCount} guides available offline',
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    size: 20,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.5),
-                  ),
-                  tooltip: 'Delete offline content',
-                  onPressed: () async {
-                    await sl<LearningPathDownloadService>()
-                        .deleteDownload(path.learningPathId);
-                    await _loadDownloadedPaths();
-                  },
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ],
-            ),
-            onTap: () => context.push('/offline-guides'),
-          ),
-        );
-      }
-    }
-
-    return _buildSection(
-      title: 'Offline Content',
-      children: tileChildren,
+  /// Lets the user set or correct their display name.
+  ///
+  /// Writes to two places, both needed: the Supabase auth metadata
+  /// (`full_name`/`name`) that fellowship member lists and post authors read
+  /// directly, and `user_profiles.first_name`/`last_name`, which is what
+  /// Settings itself and the rest of the app read first. Writing only one
+  /// would leave the other showing the old name.
+  Future<void> _showEditNameDialog(
+    BuildContext context,
+    AuthStateProvider authProvider,
+  ) async {
+    final controller = TextEditingController(
+      text: authProvider.profileBasedDisplayNameOrEmpty,
     );
-  }
+    final formKey = GlobalKey<FormState>();
 
-  /// About Section
-  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) =>
-      _buildSection(
-        title: context.tr(TranslationKeys.settingsAbout),
-        children: [
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.info_outline,
-            title: context.tr(TranslationKeys.settingsAppVersion),
-            subtitle: state.settings.appVersion,
-            trailing: null,
-            onTap: null,
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.favorite_outline,
-            title: context.tr(TranslationKeys.settingsSupportDeveloper),
-            subtitle:
-                context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            // iOS: tips must go through In-App Purchase (guideline 3.1.1);
-            // Android/web keep the external Buy Me a Coffee link.
-            onTap: () => PlatformUtils.isIOS
-                ? _showTipSheet(context)
-                : _showSupportBottomSheet(context),
-            iconColor: AppTheme.accentColor,
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.menu_book_outlined,
-            title: 'Bible Copyright & Attribution',
-            subtitle: 'Scripture provided by API.Bible',
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => context.push(AppRoutes.bibleAttribution),
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.privacy_tip_outlined,
-            title: context.tr(TranslationKeys.settingsPrivacyPolicy),
-            subtitle: context.tr(TranslationKeys.settingsPrivacyPolicySubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => _launchPrivacyPolicy(),
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.gavel_outlined,
-            title: context.tr(TranslationKeys.settingsTermsOfService),
-            subtitle:
-                context.tr(TranslationKeys.settingsTermsOfServiceSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => _launchTermsOfService(),
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.receipt_long_outlined,
-            title: context.tr(TranslationKeys.settingsRefundPolicy),
-            subtitle: context.tr(TranslationKeys.settingsRefundPolicySubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => _launchRefundPolicy(),
-          ),
-        ],
-      );
-
-  /// Account Settings Bottom Sheet
-  void _showAccountSettingsBottomSheet(
-      BuildContext context, AuthStateProvider authProvider) {
-    showModalBottomSheet(
+    final confirmed = await showDialog<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
+      builder: (dialogContext) {
+        final palette = ReaderPalette.of(dialogContext);
+        return SettingsDialog(
+          title: dialogContext.tr(TranslationKeys.settingsEditNameTitle),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              style: AppFonts.inter(fontSize: 15, color: palette.text),
+              decoration: InputDecoration(
+                hintText:
+                    dialogContext.tr(TranslationKeys.settingsEditNameHint),
+                filled: true,
+                fillColor: palette.raised,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: palette.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: palette.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: palette.accentIcon, width: 1.5),
                 ),
               ),
+              validator: (value) => AuthValidator.isValidFullName(value ?? '')
+                  ? null
+                  : dialogContext.tr(TranslationKeys.settingsEditNameInvalid),
             ),
-            const SizedBox(height: 24),
-
-            Text(
-              'Account Settings',
-              style: AppFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+          ),
+          actions: [
+            SettingsButton(
+              label: dialogContext.tr(TranslationKeys.commonCancel),
+              kind: SettingsButtonKind.neutral,
+              height: 46,
+              onPressed: () => Navigator.of(dialogContext).pop(false),
             ),
-            const SizedBox(height: 24),
-
-            // Language Preference
-            _buildAccountSettingItem(
-              icon: Icons.language_outlined,
-              title: 'Language Preference',
-              subtitle:
-                  'English', // Default since AuthStateProvider doesn't expose language preference
-              onTap: () {
-                Navigator.pop(context);
-                _showLanguageBottomSheet(context, 'en'); // Default to English
+            SettingsButton(
+              label: dialogContext.tr(TranslationKeys.settingsEditNameSave),
+              height: 46,
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) {
+                  Navigator.of(dialogContext).pop(true);
+                }
               },
             ),
-
-            const SizedBox(height: 16),
-
-            // Theme Preference
-            _buildAccountSettingItem(
-              icon: Icons.palette_outlined,
-              title: 'Theme Preference',
-              subtitle:
-                  'System Default', // Default since AuthStateProvider doesn't expose theme preference
-              onTap: () {
-                Navigator.pop(context);
-                // Toggle to light theme as default
-                final newTheme = ThemeModeEntity.light();
-                context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
-              },
-            ),
-
-            const SizedBox(height: 24),
           ],
-        )),
-      ),
+        );
+      },
     );
-  }
 
-  Widget _buildAccountSettingItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) =>
-      Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: context.appBrandAccent,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          color: AppTheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ),
+    if (confirmed != true || !context.mounted) return;
+
+    final fullName = controller.text.trim();
+    final nameParts = fullName.split(RegExp(r'\s+'));
+    final firstName = nameParts.first;
+    final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : null;
+
+    try {
+      // Auth metadata first: it's what fellowship reads, and it's the part a
+      // user actually opened this dialog to fix.
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(data: {'full_name': fullName, 'name': fullName}),
       );
 
-  /// Logout confirmation dialog with AuthBloc integration
+      final profileResult = await UserProfileApiService().syncOAuthProfile({
+        'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+      });
+
+      if (!context.mounted) return;
+
+      if (profileResult.isLeft()) {
+        // The part that matters (fellowship display) is already saved; only
+        // the local profile mirror failed.
+        Logger.warning(
+            'Name saved to auth but user_profiles sync failed: $profileResult');
+      }
+
+      context.read<AuthBloc>().add(const RefreshUserProfileRequested());
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr(TranslationKeys.settingsEditNameSuccess)),
+      ));
+    } catch (e) {
+      Logger.error('Failed to update display name', error: e);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr(TranslationKeys.settingsEditNameFailed)),
+        backgroundColor: AppColors.error,
+      ));
+    }
+  }
+
+  /// Sign-out confirmation; dispatches [SignOutRequested].
   void _showLogoutDialog(BuildContext context) {
+    final authBloc = context.read<AuthBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.1),
-        title: Text(
-          context.tr(TranslationKeys.settingsSignOutTitle),
-          style: AppFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        content: Text(
-          context.tr(TranslationKeys.settingsSignOutMessage),
-          style: AppFonts.inter(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
-            height: 1.5,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      builder: (dialogContext) => SettingsDialog(
+        title: dialogContext.tr(TranslationKeys.settingsSignOutTitle),
+        content: Text(dialogContext.tr(TranslationKeys.settingsSignOutMessage)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.commonCancel),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
+          SettingsButton(
+            label: dialogContext.tr(TranslationKeys.commonCancel),
+            kind: SettingsButtonKind.neutral,
+            height: 46,
+            onPressed: () => Navigator.of(dialogContext).pop(),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(
+          SettingsButton(
+            label: dialogContext.tr(TranslationKeys.settingsSignOut),
+            height: 46,
             onPressed: () {
-              Navigator.of(context).pop();
-              context.read<AuthBloc>().add(const SignOutRequested());
+              Navigator.of(dialogContext).pop();
+              authBloc.add(const SignOutRequested());
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.appInteractive,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.settingsSignOut),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),
     );
   }
 
-  /// Delete account confirmation dialog
+  /// Delete-account confirmation; dispatches [DeleteAccountRequested].
   void _showDeleteAccountDialog(BuildContext context) {
+    final authBloc = context.read<AuthBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.1),
-        title: Text(
-          context.tr(TranslationKeys.settingsDeleteAccountTitle),
-          style: AppFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.error,
-          ),
-        ),
-        content: Text(
-          context.tr(TranslationKeys.settingsDeleteAccountMessage),
-          style: AppFonts.inter(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
-            height: 1.5,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      builder: (dialogContext) {
+        final red = SettingsToneColors.of(dialogContext, SettingsTone.red);
+        return SettingsDialog(
+          title: dialogContext.tr(TranslationKeys.settingsDeleteAccountTitle),
+          titleColor: red.foreground,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DeleteAccountWarningBox(
+                title: dialogContext
+                    .tr(TranslationKeys.settingsDeleteAccountLoseTitle),
+                items: [
+                  dialogContext
+                      .tr(TranslationKeys.settingsDeleteAccountLoseGuides),
+                  dialogContext
+                      .tr(TranslationKeys.settingsDeleteAccountLoseVerses),
+                  dialogContext
+                      .tr(TranslationKeys.settingsDeleteAccountLoseProgress),
+                  dialogContext
+                      .tr(TranslationKeys.settingsDeleteAccountLosePlan),
+                ],
               ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.commonCancel),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
+              const SizedBox(height: 14),
+              Text(dialogContext
+                  .tr(TranslationKeys.settingsDeleteAccountMessage)),
+            ],
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() => _isDeletingAccount = true);
-              context.read<AuthBloc>().add(const DeleteAccountRequested());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+          actions: [
+            SettingsButton(
+              label: dialogContext.tr(TranslationKeys.commonCancel),
+              kind: SettingsButtonKind.neutral,
+              height: 46,
+              onPressed: () => Navigator.of(dialogContext).pop(),
             ),
-            child: Text(
-              context.tr(TranslationKeys.settingsDeleteAccountConfirm),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+            SettingsButton(
+              label: dialogContext
+                  .tr(TranslationKeys.settingsDeleteAccountConfirm),
+              kind: SettingsButtonKind.destructive,
+              height: 46,
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                setState(() => _isDeletingAccount = true);
+                authBloc.add(const DeleteAccountRequested());
+              },
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
+}
 
-  // Include all the helper methods from the original settings screen
-  Widget _buildSection({
-    required String title,
-    required List<Widget> children,
-  }) =>
-      Builder(
-        builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+/// Red-tinted box listing what deleting the account removes.
+class DeleteAccountWarningBox extends StatelessWidget {
+  final String title;
+  final List<String> items;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  const DeleteAccountWarningBox({
+    super.key,
+    required this.title,
+    required this.items,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final red = SettingsToneColors.of(context, SettingsTone.red);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      decoration: BoxDecoration(
+        color: palette.isDark
+            ? red.foreground.withValues(alpha: 0.08)
+            : const Color(0xFFFEF1F1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: red.foreground.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 12),
+              Icon(Icons.warning_amber_rounded,
+                  size: 20, color: red.foreground),
+              const SizedBox(width: 8),
+              Expanded(
                 child: Text(
                   title,
                   style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: context.appBrandAccent,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : context.appBrandAccent.withOpacity(0.1),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.appBrandAccent
-                          .withOpacity(isDark ? 0.1 : 0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(children: children),
-              ),
-            ],
-          );
-        },
-      );
-
-  Widget _buildSettingsTile({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Widget? trailing,
-    required VoidCallback? onTap,
-    Color? iconColor,
-  }) {
-    final themeColor = Theme.of(context).colorScheme.primary;
-    final effectiveColor = iconColor ?? themeColor;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          Logger.debug('Settings tile tapped: $title');
-          if (onTap != null) {
-            onTap();
-          }
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: iconColor == null
-                      ? LinearGradient(
-                          colors: [
-                            themeColor.withOpacity(0.2),
-                            AppColors.brandSecondary.withOpacity(0.15),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: iconColor != null
-                      ? effectiveColor.withOpacity(0.15)
-                      : null,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: effectiveColor,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onBackground,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.85),
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                trailing,
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() => Builder(
-        builder: (context) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          height: 1,
-          color: context.appBrandAccent.withOpacity(0.08),
-        ),
-      );
-
-  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) =>
-      Switch(
-        value: state.settings.themeMode.isDarkMode,
-        onChanged: (value) {
-          final newTheme =
-              value ? ThemeModeEntity.dark() : ThemeModeEntity.light();
-          context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
-        },
-        activeColor: Theme.of(context).colorScheme.primary,
-        activeTrackColor:
-            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-        inactiveThumbColor:
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        inactiveTrackColor:
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-      );
-
-  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) =>
-      Switch(
-        value: state.settings.notificationsEnabled,
-        onChanged: (value) {
-          context.read<SettingsBloc>().add(ToggleNotifications(value));
-        },
-        activeColor: Theme.of(context).colorScheme.primary,
-        activeTrackColor:
-            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-        inactiveThumbColor:
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        inactiveTrackColor:
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-      );
-
-  void _showTextSizeBottomSheet(BuildContext context) {
-    final fontScaleService = sl<FontScaleService>();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (builderContext) => StatefulBuilder(
-        builder: (sheetContext, setState) => Container(
-          decoration: BoxDecoration(
-            color: Theme.of(builderContext).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(24),
-          // Scrollable: the mode list is taller than a short
-          // screen, and isScrollControlled alone does not scroll.
-          child: SheetScrollView(
-              child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                context.tr(TranslationKeys.settingsTextSize),
-                style: AppFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(builderContext).colorScheme.onBackground,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr(TranslationKeys.settingsTextSizeSubtitle),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: Theme.of(builderContext)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Preview text
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(builderContext)
-                      .colorScheme
-                      .surfaceContainerHighest
-                      .withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: context.appBrandAccent.withOpacity(0.2),
-                  ),
-                ),
-                child: ListenableBuilder(
-                  listenable: fontScaleService,
-                  builder: (ctx, _) => Text(
-                    'For God so loved the world... (John 3:16)',
-                    style: AppFonts.inter(
-                      fontSize: 15 * fontScaleService.scaleFactor,
-                      color: Theme.of(builderContext).colorScheme.onBackground,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ...FontScaleLevel.values.map(
-                (level) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _buildTextSizeOption(
-                    builderContext,
-                    fontScaleService,
-                    level,
-                    setState,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          )),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextSizeOption(
-    BuildContext context,
-    FontScaleService fontScaleService,
-    FontScaleLevel level,
-    void Function(void Function()) setState,
-  ) {
-    final isSelected = fontScaleService.level == level;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          await fontScaleService.updateScale(level);
-          setState(() {});
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? context.appBrandAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  color: isSelected
-                      ? null
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.text_fields,
-                  size: 20,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _getFontScaleLevelLabel(context, level),
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected
-                            ? context.appBrandAccent
-                            : Theme.of(context).colorScheme.onBackground,
-                      ),
-                    ),
-                    Text(
-                      context.tr(TranslationKeys.settingsTextSizePercentage, {
-                        'percent': (level.scaleFactor * 100).round().toString()
-                      }),
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.85),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: context.appBrandAccent,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showThemeBottomSheet(
-      BuildContext context, ThemeModeEntity currentTheme) {
-    Logger.debug(
-        'Opening theme bottom sheet - Current theme: ${currentTheme.mode}');
-    final settingsBloc = BlocProvider.of<SettingsBloc>(context);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              context.tr(TranslationKeys.settingsSelectTheme),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(builderContext).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildThemeOption(
-              builderContext,
-              settingsBloc,
-              ThemeModeEntity.system(
-                  isDarkMode: currentTheme
-                      .isDarkMode), // Match current system state for proper selection
-              context.tr(TranslationKeys.settingsSystemDefault),
-              Icons.brightness_auto,
-              context.tr(TranslationKeys.settingsSystemDefaultSubtitle),
-              currentTheme,
-            ),
-            _buildThemeOption(
-              builderContext,
-              settingsBloc,
-              ThemeModeEntity.light(),
-              context.tr(TranslationKeys.settingsLightMode),
-              Icons.light_mode,
-              context.tr(TranslationKeys.settingsLightModeSubtitle),
-              currentTheme,
-            ),
-            _buildThemeOption(
-              builderContext,
-              settingsBloc,
-              ThemeModeEntity.dark(),
-              context.tr(TranslationKeys.settingsDarkMode),
-              Icons.dark_mode,
-              context.tr(TranslationKeys.settingsDarkModeSubtitle),
-              currentTheme,
-            ),
-            const SizedBox(height: 24),
-          ],
-        )),
-      ),
-    );
-  }
-
-  void _showLanguageBottomSheet(BuildContext context, String currentLanguage) {
-    final settingsBloc = BlocProvider.of<SettingsBloc>(context);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              context.tr(TranslationKeys.settingsSelectLanguage),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(builderContext).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildLanguageOption(
-                builderContext, settingsBloc, 'en', 'English', currentLanguage),
-            _buildLanguageOption(
-                builderContext, settingsBloc, 'hi', 'हिन्दी', currentLanguage),
-            _buildLanguageOption(
-                builderContext, settingsBloc, 'ml', 'മലയാളം', currentLanguage),
-            const SizedBox(height: 24),
-          ],
-        )),
-      ),
-    );
-  }
-
-  /// Show study mode preference bottom sheet
-  void _showStudyModeBottomSheet(BuildContext context, String? currentMode) {
-    // Capture parent context for snackbars after sheet closes
-    final parentContext = context;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              context.tr(TranslationKeys.settingsStudyModePreference),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(builderContext).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.modeSelectionSubtitle),
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: Theme.of(builderContext)
-                    .colorScheme
-                    .onSurface
-                    .withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Option: Use Recommended
-            _buildStudyModeOption(
-              builderContext,
-              parentContext,
-              StudyModePreferences.recommended,
-              context.tr(TranslationKeys.settingsUseRecommended),
-              Icons.stars,
-              context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
-              currentMode,
-            ),
-            const SizedBox(height: 12),
-            // Ask every time option
-            _buildStudyModeOption(
-              builderContext,
-              parentContext,
-              null,
-              context.tr(TranslationKeys.settingsAskEveryTime),
-              Icons.help_outline,
-              context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
-              currentMode,
-            ),
-            const SizedBox(height: 12),
-            // Divider
-            Divider(color: context.appBrandAccent.withOpacity(0.2), height: 24),
-            // Study mode options
-            ...StudyMode.values.map((mode) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildStudyModeOption(
-                    builderContext,
-                    parentContext,
-                    mode.value,
-                    _getStudyModeTranslatedName(mode, context),
-                    mode.iconData,
-                    '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
-                    currentMode,
-                  ),
-                )),
-            const SizedBox(height: 24),
-          ],
-        )),
-      ),
-    );
-  }
-
-  /// Show learning path study mode preference bottom sheet
-  void _showLearningPathStudyModeBottomSheet(
-      BuildContext context, String? currentMode) {
-    // Capture parent context for snackbars after sheet closes
-    final parentContext = context;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Title
-            Text(
-              context
-                  .tr(TranslationKeys.settingsLearningPathStudyModePreference),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(builderContext).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context
-                  .tr(TranslationKeys.settingsLearningPathStudyModeDescription),
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: Theme.of(builderContext)
-                    .colorScheme
-                    .onSurface
-                    .withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Option: Use Recommended
-            _buildLearningPathModeOption(
-              builderContext,
-              parentContext,
-              StudyModePreferences.recommended,
-              context.tr(TranslationKeys.settingsUseRecommended),
-              Icons.stars,
-              context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
-              currentMode,
-            ),
-            const SizedBox(height: 12),
-
-            // Option: Always Ask
-            _buildLearningPathModeOption(
-              builderContext,
-              parentContext,
-              StudyModePreferences.learningPathDefault,
-              context.tr(TranslationKeys.settingsAskEveryTime),
-              Icons.help_outline,
-              context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
-              currentMode,
-            ),
-            const SizedBox(height: 12),
-
-            // Divider
-            Divider(color: context.appBrandAccent.withOpacity(0.2), height: 24),
-
-            // Specific modes (Quick, Standard, Deep, Lectio)
-            ...StudyMode.values.map((mode) => Column(
-                  children: [
-                    _buildLearningPathModeOption(
-                      builderContext,
-                      parentContext,
-                      mode.value,
-                      _getStudyModeTranslatedName(mode, context),
-                      mode.iconData,
-                      '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
-                      currentMode,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                )),
-          ],
-        )),
-      ),
-    );
-  }
-
-  Widget _buildThemeOption(
-    BuildContext context,
-    SettingsBloc settingsBloc,
-    ThemeModeEntity themeOption,
-    String title,
-    IconData icon,
-    String subtitle,
-    ThemeModeEntity currentTheme,
-  ) {
-    final isSelected = themeOption.mode == currentTheme.mode;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          Logger.debug('Theme option selected: ${themeOption.mode}');
-          settingsBloc.add(ThemeModeChanged(themeOption));
-          Navigator.of(context).pop();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? context.appBrandAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  color: isSelected
-                      ? null
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected
-                            ? context.appBrandAccent
-                            : Theme.of(context).colorScheme.onBackground,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.85),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: context.appBrandAccent,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(
-    BuildContext context,
-    SettingsBloc settingsBloc,
-    String value,
-    String label,
-    String currentLanguage,
-  ) {
-    final isSelected = value == currentLanguage;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          settingsBloc.add(UpdateLanguage(value));
-          Navigator.of(context).pop();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? context.appBrandAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  color: isSelected
-                      ? null
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.language,
-                  size: 18,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 15,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? context.appBrandAccent
-                        : Theme.of(context).colorScheme.onBackground,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: context.appBrandAccent,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build study mode option tile
-  Widget _buildStudyModeOption(
-    BuildContext sheetContext, // Sheet context for Navigator.pop() and Theme
-    BuildContext
-        parentContext, // Parent context for snackbars after sheet closes
-    String? value,
-    String label,
-    IconData icon,
-    String subtitle,
-    String? currentMode,
-  ) {
-    final isSelected = value == currentMode;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          // Update user profile with new study mode preference
-          try {
-            final userProfileService = sl<UserProfileService>();
-            final authProvider = sl<AuthStateProvider>();
-            final languageService = sl<LanguagePreferenceService>();
-
-            final result =
-                await userProfileService.updateStudyModePreference(value);
-
-            // Use parent context for result handling
-            if (parentContext.mounted) {
-              result.fold(
-                (failure) {
-                  // Close sheet on failure
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-                  _showSnackBar(
-                    parentContext,
-                    parentContext.tr(TranslationKeys.commonErrorTryAgain),
-                    Theme.of(parentContext).colorScheme.error,
-                  );
-                },
-                (profile) async {
-                  // ✅ FIX: Update auth provider cache with new profile
-                  if (authProvider.userId != null) {
-                    final profileMap =
-                        UserProfileModel.fromEntity(profile).toJson();
-                    authProvider.cacheProfile(authProvider.userId!, profileMap);
-                  }
-
-                  // ✅ FIX: Sync local storage immediately (save or clear based on value)
-                  if (value != null) {
-                    await languageService.saveStudyModePreferenceRaw(value);
-                  } else {
-                    // Clear local storage when set to "Ask Every Time"
-                    await languageService.clearStudyModePreference();
-                  }
-
-                  // ✅ FIX: Close sheet AFTER cache is updated
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-
-                  _showSnackBar(
-                    parentContext,
-                    value == null
-                        ? 'Study mode preference cleared'
-                        : 'Default study mode set to $label',
-                    AppColors.success,
-                  );
-                },
-              );
-            }
-          } catch (e) {
-            // Close sheet even on error
-            if (sheetContext.mounted) {
-              Navigator.of(sheetContext).pop();
-            }
-
-            // Use parent context for error snackbars
-            if (parentContext.mounted) {
-              _showSnackBar(
-                parentContext,
-                'Failed to update study mode preference: $e',
-                Theme.of(parentContext).colorScheme.error,
-              );
-            }
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? context.appBrandAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  color: isSelected
-                      ? null
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected
-                            ? context.appBrandAccent
-                            : Theme.of(sheetContext).colorScheme.onBackground,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: context.appBrandAccent,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build learning path mode option tile
-  Widget _buildLearningPathModeOption(
-    BuildContext sheetContext,
-    BuildContext parentContext,
-    String value,
-    String label,
-    IconData icon,
-    String subtitle,
-    String? currentMode,
-  ) {
-    final isSelected = value == currentMode;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          // Update user profile with learning path study mode preference
-          try {
-            final userProfileService = sl<UserProfileService>();
-            final authProvider = sl<AuthStateProvider>();
-
-            final result = await userProfileService
-                .updateLearningPathStudyModePreference(value);
-
-            if (parentContext.mounted) {
-              result.fold(
-                (failure) {
-                  // Close sheet on failure
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-                  _showSnackBar(
-                    parentContext,
-                    parentContext.tr(TranslationKeys.errorUpdatingPreference),
-                    Theme.of(parentContext).colorScheme.error,
-                  );
-                },
-                (profile) {
-                  // ✅ FIX: Update AuthStateProvider with new profile
-                  final userId = authProvider.userId;
-                  if (userId != null) {
-                    final profileMap =
-                        UserProfileModel.fromEntity(profile).toJson();
-                    authProvider.cacheProfile(userId, profileMap);
-                  }
-
-                  // ✅ FIX: Close sheet AFTER cache is updated
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-
-                  _showSnackBar(
-                    parentContext,
-                    parentContext
-                        .tr(TranslationKeys.preferenceUpdatedSuccessfully),
-                    AppColors.success,
-                  );
-                },
-              );
-            }
-          } catch (e) {
-            // Close sheet even on error
-            if (sheetContext.mounted) {
-              Navigator.of(sheetContext).pop();
-            }
-
-            if (parentContext.mounted) {
-              _showSnackBar(
-                parentContext,
-                parentContext.tr(TranslationKeys.errorUpdatingPreference),
-                Theme.of(parentContext).colorScheme.error,
-              );
-            }
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? context.appBrandAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  color: isSelected
-                      ? null
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected
-                            ? context.appBrandAccent
-                            : Theme.of(sheetContext).colorScheme.onBackground,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: context.appBrandAccent,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// iOS tip jar: one-time consumable In-App Purchases (guideline 3.1.1).
-  void _showTipSheet(BuildContext context) {
-    final service = sl<AppleConsumablePurchaseService>();
-    service.bind();
-
-    // Load products once — creating the future inside the FutureBuilder's build
-    // would re-query the store on every rebuild (e.g. when the sheet scrolls).
-    final tipProductsFuture = service.loadTipProducts();
-
-    // Full-screen loader shown between tapping a tip and the StoreKit payment
-    // sheet appearing / backend confirmation completing.
-    bool loaderOpen = false;
-    void showLoader() {
-      if (loaderOpen || !context.mounted) return;
-      loaderOpen = true;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    void dismissLoader() {
-      if (!loaderOpen || !context.mounted) return;
-      loaderOpen = false;
-      Navigator.of(context, rootNavigator: true).pop();
-    }
-
-    // Only react to the tip the user actively bought (loader was open). These
-    // callbacks also fire for background sandbox replays — ignore those so we
-    // don't show a stray "thanks"/error or pop an unrelated route.
-    service.onSuccess = (result) {
-      final wasInFlight = loaderOpen;
-      dismissLoader();
-      if (!wasInFlight ||
-          result.kind != ConsumableKind.tip ||
-          !context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.settingsTipThanks)),
-          backgroundColor: AppTheme.primaryColor,
-        ),
-      );
-    };
-    service.onError = (message) {
-      final wasInFlight = loaderOpen;
-      dismissLoader();
-      if (!wasInFlight || !context.mounted) return;
-      _showSnackBar(context, message, Colors.red);
-    };
-    service.onCancelled = () {
-      final wasInFlight = loaderOpen;
-      dismissLoader();
-      if (!wasInFlight || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.commonPurchaseCancelled)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    };
-
-    const tipEmojis = {49: '☕', 199: '🙌', 499: '💛', 999: '🌟'};
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: FutureBuilder<Map<int, ProductDetails>>(
-          future: tipProductsFuture,
-          builder: (sheetContext, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const SizedBox(
-                height: 200,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            final products = snapshot.data ?? {};
-            final amounts = products.keys.toList()..sort();
-
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.appBrandAccent.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  context.tr(TranslationKeys.settingsSupportTitle),
-                  style: AppFonts.inter(
-                    fontSize: 20,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
-                    color: Theme.of(builderContext).colorScheme.onBackground,
+                    color: red.foreground,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  context.tr(TranslationKeys.settingsSupportMessage),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: Theme.of(builderContext)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (amounts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      context.tr(TranslationKeys.settingsTipUnavailable),
-                      style: AppFonts.inter(fontSize: 14, color: Colors.grey),
-                    ),
-                  )
-                else
-                  ...amounts.map((amount) {
-                    final product = products[amount]!;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Text(
-                        tipEmojis[amount] ?? '💝',
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                      title: Text(
-                        product.title.isNotEmpty
-                            ? product.title
-                            : context.tr(TranslationKeys.settingsSupport),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              Theme.of(builderContext).colorScheme.onBackground,
-                        ),
-                      ),
-                      trailing: Text(
-                        product.price,
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: context.appBrandAccent,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.of(builderContext).pop();
-                        showLoader();
-                        service.purchase(product);
-                      },
-                    );
-                  }),
-                const SizedBox(height: 8),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showSupportBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.appBrandAccent.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
               ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(Icons.close, size: 14, color: red.foreground),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: AppFonts.inter(
+                        fontSize: 13.5,
+                        color: palette.text,
+                        height: 1.35,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.favorite,
-                size: 40,
-                color: Colors.white,
-              ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              context.tr(TranslationKeys.settingsSupportTitle),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              context.tr(TranslationKeys.settingsSupportMessage),
-              style: AppFonts.inter(
-                fontSize: 15,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: context.appBrandAccent),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      context.tr(TranslationKeys.settingsClose),
-                      style: AppFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        color: context.appBrandAccent,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _launchBuyMeCoffee();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(
-                        context.tr(TranslationKeys.settingsSupport),
-                        style: AppFonts.inter(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-        )),
+        ],
       ),
     );
   }
+}
 
-  void _showFeedbackBottomSheet(BuildContext context) {
-    // Use the existing feedback bottom sheet from the feedback feature
-    showFeedbackBottomSheet(context);
+/// Resolves the Content Language row's subtitle: the chosen language, or
+/// "Same as app language (X)". Rebuilds when either language changes, since
+/// "Default" follows the app language.
+class _ContentLanguageSubtitle extends StatefulWidget {
+  final String appLanguageCode;
+  final Widget Function(String subtitle) builder;
+
+  const _ContentLanguageSubtitle({
+    required this.appLanguageCode,
+    required this.builder,
+  });
+
+  @override
+  State<_ContentLanguageSubtitle> createState() =>
+      _ContentLanguageSubtitleState();
+}
+
+class _ContentLanguageSubtitleState extends State<_ContentLanguageSubtitle> {
+  final _languageService = sl<LanguagePreferenceService>();
+  StreamSubscription<AppLanguage>? _subscription;
+  bool _isDefault = true;
+  AppLanguage? _language;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscription =
+        _languageService.studyContentLanguageChanges.listen((_) => _load());
+    _load();
   }
 
-  void _showSnackBar(
-      BuildContext context, String message, Color backgroundColor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: AppFonts.inter(
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+  @override
+  void didUpdateWidget(covariant _ContentLanguageSubtitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.appLanguageCode != widget.appLanguageCode) _load();
   }
 
-  String _getFontScaleLevelLabel(BuildContext context, FontScaleLevel level) {
-    switch (level) {
-      case FontScaleLevel.small:
-        return context.tr(TranslationKeys.settingsTextSizeSmall);
-      case FontScaleLevel.normal:
-        return context.tr(TranslationKeys.settingsTextSizeNormal);
-      case FontScaleLevel.large:
-        return context.tr(TranslationKeys.settingsTextSizeLarge);
-      case FontScaleLevel.extraLarge:
-        return context.tr(TranslationKeys.settingsTextSizeExtraLarge);
-    }
+  Future<void> _load() async {
+    final isDefault = await _languageService.isStudyContentLanguageDefault();
+    final language = await _languageService.getStudyContentLanguage();
+    if (!mounted) return;
+    setState(() {
+      _isDefault = isDefault;
+      _language = language;
+    });
   }
 
-  String _getThemeDisplayName(ThemeModeEntity themeMode) {
-    switch (themeMode.mode) {
-      case AppThemeMode.light:
-        return 'Light Mode';
-      case AppThemeMode.dark:
-        return 'Dark Mode';
-      case AppThemeMode.system:
-        return 'System Default';
-    }
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
-  String _getLanguageDisplayName(String languageCode) {
-    switch (languageCode) {
-      case 'en':
-        return 'English';
-      case 'hi':
-        return 'हिन्दी';
-      case 'ml':
-        return 'മലയാളം';
-      default:
-        return 'English';
-    }
-  }
-
-  Future<void> _launchPrivacyPolicy() async {
-    final uri = Uri.parse(LegalUrls.privacy);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _launchTermsOfService() async {
-    final uri = Uri.parse(LegalUrls.terms);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _launchRefundPolicy() async {
-    final uri = Uri.parse('https://www.disciplefy.in/refund');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _launchFeedback() async {
-    final uri =
-        Uri.parse('mailto:feedback@disciplefy.in?subject=Disciplefy Feedback');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  Future<void> _launchBuyMeCoffee() async {
-    final uri = Uri.parse('https://buymeacoffee.com/fennsaji');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  @override
+  Widget build(BuildContext context) {
+    final appLanguage = AppLanguage.fromCode(widget.appLanguageCode);
+    final subtitle = _isDefault || _language == null
+        ? context.tr(TranslationKeys.settingsContentLanguageFollowsApp,
+            {'language': appLanguage.displayName})
+        : _language!.displayName;
+    return widget.builder(subtitle);
   }
 }

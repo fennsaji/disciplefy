@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/services/pricing_service.dart';
-import '../../models/memory_verse_config.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/models/memory_verse_config.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/practice_limit_popup_parts.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Dialog shown when user has reached their daily verse review limit for their plan.
 ///
@@ -42,105 +43,43 @@ class DailyReviewLimitDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final currentTierName = _getTierDisplayName(currentTier);
     final currentReviewLimit = _getDailyReviewLimitText(context, currentTier);
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: theme.colorScheme.surface,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.schedule,
-              color: theme.colorScheme.error,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              context.tr(TranslationKeys.dailyReviewLimitTitle),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.tr(TranslationKeys.dailyReviewLimitMessage, {
-                'plan': currentTierName,
-              }),
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-            ),
-            const SizedBox(height: 16),
-
-            // Current plan info box
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: theme.colorScheme.primary,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      context.tr(TranslationKeys.dailyReviewLimitCurrentPlan, {
-                        'plan': currentTierName,
-                        'limit': currentReviewLimit,
-                      }),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            Text(
-              context.tr(TranslationKeys.dailyReviewLimitGetMore),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ..._buildUpgradePlanOptions(context),
-          ],
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PopupHeader(
+          icon: const PopupIconCircle(icon: Icons.schedule_rounded),
+          title: context.tr(TranslationKeys.dailyReviewLimitTitle),
+          body: context.tr(TranslationKeys.dailyReviewLimitMessage, {
+            'plan': currentTierName,
+          }),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            context.tr(TranslationKeys.dailyReviewLimitMaybeLater),
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(height: 18),
+        PopupPanel(
+          child: PracticePopupNote(
+            context.tr(TranslationKeys.dailyReviewLimitCurrentPlan, {
+              'plan': currentTierName,
+              'limit': currentReviewLimit,
+            }),
           ),
         ),
-        ElevatedButton(
+        const SizedBox(height: 16),
+        PracticePopupSubheading(
+          context.tr(TranslationKeys.dailyReviewLimitGetMore),
+        ),
+        const SizedBox(height: 10),
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: practicePopupSpaced(_buildUpgradePlanOptions(context)),
+          ),
+        ),
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          key: const Key('daily_review_limit_upgrade'),
+          label: context.tr(TranslationKeys.dailyReviewLimitUpgradeNow),
           onPressed: () {
             final router = GoRouter.of(context);
             Navigator.of(context).pop();
@@ -149,12 +88,12 @@ class DailyReviewLimitDialog extends StatelessWidget {
             router.push(AppRoutes.pricing,
                 extra: const {'preselectedPlan': 'standard'});
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: theme.colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: Text(context.tr(TranslationKeys.dailyReviewLimitUpgradeNow)),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('daily_review_limit_later'),
+          label: context.tr(TranslationKeys.dailyReviewLimitMaybeLater),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
@@ -165,7 +104,8 @@ class DailyReviewLimitDialog extends StatelessWidget {
       final systemConfig = sl<SystemConfigService>();
       final memoryConfig = systemConfig.config?.memoryVerseConfig;
       if (memoryConfig != null) {
-        return memoryConfig.getVerseLimitText(tier);
+        return dailyReviewLimitLabel(
+            context, memoryConfig.getVerseLimitForTier(tier));
       }
     } catch (_) {}
     // Fallback defaults
@@ -206,7 +146,7 @@ class DailyReviewLimitDialog extends StatelessWidget {
         return _buildPlanOption(
           context,
           tier.tierName,
-          tier.verseLimitText,
+          dailyReviewLimitLabel(context, tier.verseLimit),
           pricingService.getFormattedPricePerMonth(tier.tier),
         );
       }).toList();
@@ -242,44 +182,10 @@ class DailyReviewLimitDialog extends StatelessWidget {
     String verseLimitText,
     String price,
   ) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.upgrade,
-              color: theme.colorScheme.primary,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodySmall,
-                children: [
-                  TextSpan(
-                    text: '$name: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: '$verseLimitText '),
-                  if (price.isNotEmpty)
-                    TextSpan(
-                      text: '($price)',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    return PracticePlanRow(
+      name: name,
+      description: verseLimitText,
+      price: price,
     );
   }
 }

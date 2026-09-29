@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../router/app_routes.dart';
-import '../theme/app_colors.dart';
-import '../theme/plan_colors.dart';
+
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/theme/plan_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Upgrade dialog shown when users tap locked features
 ///
@@ -23,300 +28,106 @@ class UpgradeDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final featureInfo = _getFeatureInfo(featureKey);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+    return PopupSheet(
+      children: [
+        PopupHeader(
+          icon: PopupIconCircle(icon: featureInfo.icon),
+          eyebrow: context.tr(TranslationKeys.popupUpgradeEyebrow),
+          title: featureInfo.name,
+          body: featureInfo.description,
+        ),
+        const SizedBox(height: 20),
+        PopupPanel(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Feature icon
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    featureInfo.icon,
-                    size: 48,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Feature name
-              Text(
-                featureInfo.name,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-
-              // Feature description
-              Text(
-                featureInfo.description,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-
-              // Lock status message
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.warning.withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.lock_rounded,
-                      color: context.appWarning,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        'Locked on your plan',
-                        style: TextStyle(
-                          color: AppColors.warningDark,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Current plan badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.account_circle_outlined,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Your Plan: ',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      _formatPlanName(currentPlan),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Required plan info
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: theme.brightness == Brightness.dark
-                        ? [
-                            theme.colorScheme.primary.withOpacity(0.15),
-                            theme.colorScheme.primary.withOpacity(0.08),
-                          ]
-                        : [
-                            theme.colorScheme.primary.withOpacity(0.1),
-                            theme.colorScheme.primary.withOpacity(0.05),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.brightness == Brightness.dark
-                        ? theme.colorScheme.primary.withOpacity(0.4)
-                        : theme.colorScheme.primary.withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.workspace_premium_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Available on:',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: requiredPlans.map((plan) {
-                        final planColor = planAccentFromName(context, plan);
-                        final isDark = theme.brightness == Brightness.dark;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? planColor.withOpacity(0.15)
-                                : planColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isDark
-                                  ? planColor.withOpacity(0.6)
-                                  : planColor.withOpacity(0.8),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Text(
-                            _formatPlanName(plan),
-                            style: TextStyle(
-                              color: isDark
-                                  ? planColor.withOpacity(0.9)
-                                  : planColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Action buttons
               Row(
                 children: [
-                  // Maybe Later button
+                  Icon(Icons.lock_outline_rounded,
+                      size: 16, color: palette.muted),
+                  const SizedBox(width: 8),
                   Expanded(
-                    flex: 2,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Maybe Later'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Upgrade Now button
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // Fall back to the cheapest qualifying plan when the
-                        // caller didn't name one, so the pricing page always
-                        // has something to scroll to.
-                        _navigateToSubscription(
-                          context,
-                          upgradePlan ??
-                              (requiredPlans.isNotEmpty
-                                  ? requiredPlans.first
-                                  : null),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.appInteractive,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Upgrade Now',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward, size: 18),
-                        ],
+                    child: Text(
+                      context.tr(TranslationKeys.popupYourPlan,
+                          {'plan': _formatPlanName(currentPlan)}),
+                      style: AppFonts.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: palette.text,
                       ),
                     ),
                   ),
                 ],
               ),
+              if (requiredPlans.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(height: 1, color: palette.hairline),
+                const SizedBox(height: 12),
+                Text(
+                  context.tr(TranslationKeys.popupAvailableOn),
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    color: palette.muted,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: requiredPlans.map((plan) {
+                    final planColor = planAccentFromName(context, plan);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: planColor.withValues(
+                            alpha: palette.isDark ? 0.16 : 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _formatPlanName(plan),
+                        style: AppFonts.inter(
+                          color: planColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          key: const Key('upgrade_dialog_upgrade'),
+          label: context.tr(TranslationKeys.popupUpgradeNow),
+          icon: Icons.arrow_forward_rounded,
+          onPressed: () {
+            Navigator.pop(context);
+            // Fall back to the cheapest qualifying plan when the caller
+            // didn't name one, so the pricing page always has something to
+            // scroll to.
+            _navigateToSubscription(
+              context,
+              upgradePlan ??
+                  (requiredPlans.isNotEmpty ? requiredPlans.first : null),
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('upgrade_dialog_later'),
+          label: context.tr(TranslationKeys.popupMaybeLater),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 
@@ -326,6 +137,7 @@ class UpgradeDialog extends StatelessWidget {
   }
 
   String _formatPlanName(String plan) {
+    if (plan.isEmpty) return plan;
     return plan[0].toUpperCase() + plan.substring(1);
   }
 

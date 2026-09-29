@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/services/pricing_service.dart';
-import '../../models/memory_verse_config.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/models/memory_verse_config.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/practice_limit_popup_parts.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Dialog shown when user attempts to use a practice mode not available in their tier.
 /// Displays tier restriction info and upgrade options.
@@ -48,163 +51,94 @@ class TierLockedModeDialog extends StatelessWidget {
     );
   }
 
-  /// Get user-friendly mode names
-  String _getModeName(String modeSlug) {
-    const modeNames = {
-      'flip_card': 'Flip Card',
-      'type_it_out': 'Type It Out',
-      'cloze': 'Cloze Practice',
-      'first_letter': 'First Letter',
-      'progressive': 'Progressive Reveal',
-      'word_scramble': 'Word Scramble',
-      'word_bank': 'Word Bank',
-      'audio': 'Audio Practice',
-    };
-    return modeNames[modeSlug] ?? modeSlug;
-  }
-
   String _getTierDisplayName(String tier) {
+    if (tier.isEmpty) return tier;
     return tier.substring(0, 1).toUpperCase() + tier.substring(1);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final modeName = _getModeName(mode);
     final currentTierName = _getTierDisplayName(currentTier);
     final availableModeNames =
-        availableModes.map((m) => _getModeName(m)).toList();
+        availableModes.map((m) => practiceModeLabel(context, m)).toList();
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: theme.colorScheme.surface,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.lock,
-              color: theme.colorScheme.error,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Upgrade Required',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PopupHeader(
+          icon: const PopupIconCircle(icon: Icons.lock_outline_rounded),
+          eyebrow: practiceModeLabel(context, mode),
+          title: context.tr(TranslationKeys.practiceTierLockedTitle),
+          body: message,
+        ),
+        const SizedBox(height: 18),
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PracticePopupSubheading(
+                context.tr(TranslationKeys.practiceTierLockedPlanIncludes,
+                    {'plan': currentTierName}),
               ),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message,
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-            ),
-            const SizedBox(height: 16),
-
-            // Current plan includes box
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant,
+              if (availableModeNames.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                ...practicePopupSpaced(
+                  [
+                    for (final name in availableModeNames)
+                      PracticeCheckRow(name)
+                  ],
+                  gap: 6,
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: theme.colorScheme.primary,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Your $currentTierName Plan Includes:',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ...availableModeNames.map((name) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: theme.colorScheme.tertiary,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              name,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      )),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            Text(
-              'Unlock advanced practice modes with:',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ..._buildDynamicPlanOptions(context),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Maybe Later',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ],
+            ],
           ),
         ),
-        ElevatedButton(
+        const SizedBox(height: 16),
+        PracticePopupSubheading(
+          context.tr(TranslationKeys.practiceTierLockedUnlockWith),
+        ),
+        const SizedBox(height: 10),
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: practicePopupSpaced(_buildDynamicPlanOptions(context)),
+          ),
+        ),
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          key: const Key('tier_locked_upgrade'),
+          label: context.tr(TranslationKeys.practiceTierLockedUpgradeNow),
           onPressed: () {
+            final router = GoRouter.of(context);
             Navigator.of(context).pop();
-            // go_router owns navigation here; Navigator.pushNamed has no
-            // named-route table to resolve against, so this CTA did nothing.
             // Standard is the cheapest tier that unlocks the locked modes.
-            context.push(
+            router.push(
               AppRoutes.pricing,
               extra: {'preselectedPlan': 'standard'},
             );
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: theme.colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: const Text('Upgrade Now'),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('tier_locked_later'),
+          label: context.tr(TranslationKeys.practiceTierLockedMaybeLater),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
+  }
+
+  /// "All 8 practice modes + 2 modes per verse per day", or "+ unlimited
+  /// practice" when [unlockLimit] is -1.
+  String _plansLine(BuildContext context, int modeCount, int unlockLimit) {
+    if (unlockLimit < 0) {
+      return context.tr(TranslationKeys.practiceTierLockedAllModesUnlimited,
+          {'count': '$modeCount'});
+    }
+    return context.tr(TranslationKeys.practiceTierLockedAllModesPlus, {
+      'count': '$modeCount',
+      'limit': unlockLimitLabel(context, unlockLimit),
+    });
   }
 
   /// Build plan options dynamically from system config (DB-driven)
@@ -219,19 +153,19 @@ class TierLockedModeDialog extends StatelessWidget {
           _buildPlanOption(
             context,
             'Standard',
-            'All 8 practice modes + 2 unlocks per verse per day',
+            _plansLine(context, 8, 2),
             pricingService.getFormattedPricePerMonth('standard'),
           ),
           _buildPlanOption(
             context,
             'Plus',
-            'All 8 practice modes + 3 unlocks per verse per day',
+            _plansLine(context, 8, 3),
             pricingService.getFormattedPricePerMonth('plus'),
           ),
           _buildPlanOption(
             context,
             'Premium',
-            'All 8 practice modes + unlimited practice',
+            _plansLine(context, 8, -1),
             pricingService.getFormattedPricePerMonth('premium'),
           ),
         ];
@@ -247,7 +181,7 @@ class TierLockedModeDialog extends StatelessWidget {
         return _buildPlanOption(
           context,
           tier.tierName,
-          'All ${tier.modeCount} practice modes + ${tier.unlockLimitText}',
+          _plansLine(context, tier.modeCount, tier.unlockLimit),
           pricingService.getFormattedPricePerMonth(tier.tier),
         );
       }).toList();
@@ -257,7 +191,7 @@ class TierLockedModeDialog extends StatelessWidget {
         _buildPlanOption(
           context,
           'Standard',
-          'All 8 practice modes + 2 unlocks per verse per day',
+          _plansLine(context, 8, 2),
           pricingService.getFormattedPricePerMonth('standard'),
         ),
       ];
@@ -270,43 +204,6 @@ class TierLockedModeDialog extends StatelessWidget {
     String description,
     String price,
   ) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.upgrade,
-              color: theme.colorScheme.primary,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodySmall,
-                children: [
-                  TextSpan(
-                    text: '$name: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: '$description '),
-                  TextSpan(
-                    text: '($price)',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return PracticePlanRow(name: name, description: description, price: price);
   }
 }

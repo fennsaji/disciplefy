@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/numbered_section_header.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -14,6 +17,7 @@ import '../bloc/follow_up_chat_state.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../community/presentation/widgets/discipler_badges.dart';
 import 'chat_bubble.dart';
 import 'chat_input.dart';
 
@@ -25,6 +29,10 @@ class FollowUpChatWidget extends StatefulWidget {
   final VoidCallback? onToggleExpanded;
   final bool enableVoiceInput;
 
+  /// Position of this block in the guide, shown as a gold `08` before the
+  /// heading so numbering runs on from the guide's sections. Null hides it.
+  final int? sectionNumber;
+
   const FollowUpChatWidget({
     super.key,
     required this.studyGuideId,
@@ -32,6 +40,7 @@ class FollowUpChatWidget extends StatefulWidget {
     this.isExpanded = false,
     this.onToggleExpanded,
     this.enableVoiceInput = true,
+    this.sectionNumber,
   });
 
   @override
@@ -41,6 +50,7 @@ class FollowUpChatWidget extends StatefulWidget {
 class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _inputController = TextEditingController();
   late AnimationController _expandController;
   late Animation<double> _expandAnimation;
   bool _hasInitialized = false;
@@ -117,6 +127,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   @override
   void dispose() {
     _scrollController.dispose();
+    _inputController.dispose();
     _expandController.dispose();
     super.dispose();
   }
@@ -164,116 +175,60 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   Widget _buildChatInterface() {
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.zero,
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(theme),
-          SizeTransition(
-            sizeFactor: _expandAnimation,
-            child: _buildChatContent(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(ThemeData theme) {
-    return Material(
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.zero,
-      child: Semantics(
-        button: true,
-        label:
-            '${context.tr(TranslationKeys.followUpChatTitle)}. ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatExpanded) : context.tr(TranslationKeys.followUpChatCollapsed)}. ${context.tr(TranslationKeys.followUpChatDoubleTapTo)} ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatCollapse) : context.tr(TranslationKeys.followUpChatExpand)}',
-        onTap: widget.onToggleExpanded,
-        child: InkWell(
-          onTap: widget.onToggleExpanded,
-          borderRadius: BorderRadius.zero,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.DEFAULT_PADDING,
-              vertical: AppConstants.SMALL_PADDING,
-            ),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: theme.colorScheme.outline.withOpacity(0.2),
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                _buildHeaderIcon(theme),
-                const SizedBox(width: AppConstants.SMALL_PADDING),
-                Expanded(child: _buildHeaderTexts(theme)),
-                _buildHeaderIndicator(theme),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderIcon(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
-      ),
-      child: Icon(
-        Icons.chat_bubble_outline,
-        size: AppConstants.ICON_SIZE_16,
-        color: theme.colorScheme.primary,
-      ),
-    );
-  }
-
-  Widget _buildHeaderTexts(ThemeData theme) {
+    // Flat on the page, like the guide's sections: numbered heading, credit
+    // caption, then the conversation. The caller supplies side padding.
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          context.tr(TranslationKeys.followUpChatTitle),
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          widget.studyGuideTitle,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        _buildHeader(theme),
+        SizeTransition(
+          sizeFactor: _expandAnimation,
+          child: _buildChatContent(),
         ),
       ],
     );
   }
 
-  Widget _buildHeaderIndicator(ThemeData theme) {
+  Widget _buildHeader(ThemeData theme) {
+    final palette = ReaderPalette.of(context);
+    return Semantics(
+      button: true,
+      label:
+          '${context.tr(TranslationKeys.followUpChatTitle)}. ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatExpanded) : context.tr(TranslationKeys.followUpChatCollapsed)}. ${context.tr(TranslationKeys.followUpChatDoubleTapTo)} ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatCollapse) : context.tr(TranslationKeys.followUpChatExpand)}',
+      onTap: widget.onToggleExpanded,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: widget.onToggleExpanded,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              NumberedSectionHeader(
+                number: widget.sectionNumber,
+                title: context.tr(TranslationKeys.followUpChatTitle),
+                trailing: [_buildHeaderIndicator(palette)],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                context.tr(TranslationKeys.followUpChatTokenCost),
+                style: AppFonts.inter(fontSize: 13, color: palette.muted),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderIndicator(ReaderPalette palette) {
     return AnimatedRotation(
       turns: widget.isExpanded ? 0.5 : 0,
       duration: const Duration(
           milliseconds: AppConstants.DEFAULT_ANIMATION_DURATION_MS),
-      child: Icon(
-        Icons.expand_more,
-        color: theme.colorScheme.onSurface,
-      ),
+      child: Icon(Icons.expand_more_rounded, color: palette.muted),
     );
   }
 
@@ -311,8 +266,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     final theme = Theme.of(context);
 
     return Container(
-      height: 300,
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -338,8 +292,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     final theme = Theme.of(context);
 
     return Container(
-      height: 300,
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -387,8 +340,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     final theme = Theme.of(context);
 
     return Container(
-      height: 300,
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -419,8 +371,12 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            // Wrap, not Row: the two buttons overflow a 320pt phone in the
+            // longer languages.
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppConstants.SMALL_PADDING,
+              runSpacing: AppConstants.SMALL_PADDING,
               children: [
                 OutlinedButton(
                   onPressed: () {
@@ -434,7 +390,6 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                   },
                   child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
                 ),
-                const SizedBox(width: AppConstants.SMALL_PADDING),
                 ElevatedButton(
                   onPressed: () {
                     context.push(AppRoutes.tokenManagement);
@@ -454,8 +409,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     final theme = Theme.of(context);
 
     return Container(
-      height: 300,
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -492,8 +446,12 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            // Wrap, not Row: the two buttons overflow a 320pt phone in the
+            // longer languages.
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppConstants.SMALL_PADDING,
+              runSpacing: AppConstants.SMALL_PADDING,
               children: [
                 OutlinedButton(
                   onPressed: () {
@@ -507,7 +465,6 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                   },
                   child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
                 ),
-                const SizedBox(width: AppConstants.SMALL_PADDING),
                 ElevatedButton(
                   onPressed: () {
                     // Navigate to token management page for upgrade
@@ -528,8 +485,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     final theme = Theme.of(context);
 
     return Container(
-      height: 300,
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -565,8 +521,12 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            // Wrap, not Row: the two buttons overflow a 320pt phone in the
+            // longer languages.
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppConstants.SMALL_PADDING,
+              runSpacing: AppConstants.SMALL_PADDING,
               children: [
                 OutlinedButton(
                   onPressed: () {
@@ -580,7 +540,6 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                   },
                   child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
                 ),
-                const SizedBox(width: AppConstants.SMALL_PADDING),
                 ElevatedButton(
                   onPressed: () {
                     // Navigate to generate study guide page
@@ -601,8 +560,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     final theme = Theme.of(context);
 
     return Container(
-      height: 300,
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -635,34 +593,74 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   }
 
   Widget _buildLoadedState(FollowUpChatLoaded state) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final preferredHeight = screenHeight * 0.6; // Use 60% of screen height
-    const minHeight = 300.0; // Minimum height for readability on small screens
-    const maxHeight =
-        600.0; // Maximum height to prevent excessive space on large screens
-    final chatHeight = preferredHeight.clamp(minHeight, maxHeight);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    // The conversation grows with its messages up to 60% of the screen
+    // (300–600pt), then scrolls inside itself.
+    final maxChatHeight = (screenHeight * 0.6).clamp(300.0, 600.0);
+    final suggestions = _nextSuggestions(state);
 
-    return SizedBox(
-      height: chatHeight,
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: _buildMessagesList(state),
-          ),
+          if (state.messages.isEmpty)
+            _buildEmptyMessages()
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxChatHeight),
+              child: _buildMessagesList(state),
+            ),
+          if (suggestions.isNotEmpty && !state.isProcessing) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final suggestion in suggestions)
+                  _SuggestionChip(
+                    text: suggestion,
+                    onTap: () {
+                      _inputController.text = suggestion;
+                      _inputController.selection = TextSelection.collapsed(
+                        offset: suggestion.length,
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ],
           _buildChatInput(state),
         ],
       ),
     );
   }
 
-  Widget _buildMessagesList(FollowUpChatLoaded state) {
-    if (state.messages.isEmpty) {
-      return _buildEmptyMessages();
-    }
+  /// Questions the reader might ask Discipler, minus ones already asked.
+  /// Shown only before the conversation gets going.
+  List<String> _nextSuggestions(FollowUpChatLoaded state) {
+    if (state.messages.where((m) => m.isUser).length >= 2) return const [];
+    final asked = state.messages
+        .where((m) => m.isUser)
+        .map((m) => m.content.trim().toLowerCase())
+        .toSet();
+    final prompts = [
+      context.tr(TranslationKeys.followUpChatPromptExplain),
+      context.tr(TranslationKeys.followUpChatPromptApply),
+      context.tr(TranslationKeys.followUpChatPromptVerses),
+    ];
+    return prompts
+        .map((q) => q.trim())
+        .where((q) => q.isNotEmpty && !asked.contains(q.toLowerCase()))
+        .toList();
+  }
 
+  Widget _buildMessagesList(FollowUpChatLoaded state) {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: AppConstants.SMALL_PADDING),
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
       itemCount: state.messages.length,
       itemBuilder: (context, index) {
         final message = state.messages[index];
@@ -679,43 +677,62 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     );
   }
 
+  /// Discipler's greeting, drawn like one of its replies so the empty
+  /// conversation already reads as a chat.
   Widget _buildEmptyMessages() {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.question_answer_outlined,
-              size: AppConstants.ICON_SIZE_40,
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const r = Radius.circular(20);
+    const tail = Radius.circular(6);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipOval(
+            child: Image.asset(
+              ChatBubble.avatarAsset,
+              width: 32,
+              height: 32,
+              cacheWidth: 96,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const DisciplerAvatar(radius: 16),
             ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatNoMessagesYet),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1A1A21) : Colors.white,
+                borderRadius: const BorderRadius.only(
+                    topLeft: tail, topRight: r, bottomLeft: r, bottomRight: r),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.06)
+                      : const Color(0xFF16161D).withOpacity(0.08),
+                ),
+              ),
+              child: Text(
+                context.tr(TranslationKeys.followUpChatGreeting),
+                style: AppFonts.inter(
+                  fontSize: 15,
+                  height: 1.5,
+                  color: isDark
+                      ? const Color(0xFFF2F2F4)
+                      : const Color(0xFF16161D),
+                ),
               ),
             ),
-            const SizedBox(height: AppConstants.SMALL_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatStartByAsking),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 24),
+        ],
       ),
     );
   }
 
   Widget _buildChatInput(FollowUpChatLoaded state) {
     return ChatInput(
+      controller: _inputController,
       onSendMessage: (message) {
         context.read<FollowUpChatBloc>().add(
               SendQuestionEvent(
@@ -732,6 +749,48 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
           : null,
       enableVoiceInput: widget.enableVoiceInput,
       onNext: _showcaseContext != null ? _onNext : null,
+    );
+  }
+}
+
+/// Outlined pill offering a suggested follow-up question.
+class _SuggestionChip extends StatelessWidget {
+  final String text;
+  final VoidCallback onTap;
+
+  const _SuggestionChip({required this.text, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Material(
+      color: Colors.transparent,
+      shape: StadiumBorder(side: BorderSide(color: palette.outline)),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome_outlined,
+                  size: 16, color: palette.accentIcon),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  text,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

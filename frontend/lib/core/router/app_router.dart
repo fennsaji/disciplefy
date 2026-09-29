@@ -415,6 +415,20 @@ class AppRouter {
               ),
             ],
           ),
+          // Discipler Branch (index 4). Appended rather than inserted so the
+          // existing branch indices (0 Home, 1 Generate, 2 Topics,
+          // 3 Community) stay stable; AppShell maps the visual order.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.discipler,
+                name: 'discipler_tab',
+                builder: (context, state) => const MaxWidthWrapper(
+                  child: VoiceConversationPage(asTab: true),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
 

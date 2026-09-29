@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart';
 
 /// A persistent banner prompting users to verify their email address.
 ///
@@ -57,83 +59,85 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
           return const SizedBox.shrink();
         }
 
+        final palette = ReaderPalette.of(context);
+        final amber = SettingsToneColors.of(context, SettingsTone.amber);
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.fromLTRB(14, 12, 8, 6),
           decoration: BoxDecoration(
-            color: AppTheme.warningColor.withAlpha(25),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.warningColor.withAlpha(77),
-            ),
+            color: palette.isDark
+                ? amber.foreground.withValues(alpha: 0.12)
+                : amber.fill,
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.email_outlined,
-                    color: context.appWarning,
-                    size: 24,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Icon(Icons.mail_outline_rounded,
+                        size: 18, color: amber.foreground),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           context.tr(TranslationKeys.emailVerificationTitle),
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: context.appWarning,
-                                  ),
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           context
                               .tr(TranslationKeys.emailVerificationDescription),
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    // Theme-aware, not AppTheme.textSecondary:
-                                    // that constant is lightTextSecondary
-                                    // (#4B5563) regardless of theme, which on
-                                    // this dark amber banner measured 2.13:1.
-                                    // The dark-theme value gives 7.42:1.
-                                    color: context.appTextSecondary,
-                                  ),
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            color: palette.muted,
+                            height: 1.4,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              // Resend verification email button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
+              // Full "Resend verification email" label on its own line, so
+              // long hi/ml copy wraps instead of being cut.
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
                   onPressed: _isResending ? null : _onResendVerification,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.warningColor,
-                    side: BorderSide(color: AppTheme.warningColor),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  style: TextButton.styleFrom(
+                    foregroundColor: amber.foreground,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(48, 40),
                   ),
                   child: _isResending
                       ? SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 18,
+                          height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppTheme.warningColor,
-                            ),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(amber.foreground),
                           ),
                         )
                       : Text(
                           context.tr(TranslationKeys.emailVerificationResend),
+                          textAlign: TextAlign.end,
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: amber.foreground,
+                          ),
                         ),
                 ),
               ),

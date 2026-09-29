@@ -2,31 +2,31 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../data/services/transliteration_service.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/timer_badge.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/data/services/transliteration_service.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/quality_calculator.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Word item representing a word in the word bank.
 class WordItem {
@@ -78,13 +78,6 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   // Track which slots were filled by hints (shouldn't count for accuracy)
   Set<int> hintFilledSlots = {};
 
-  // Scroll controllers and scroll indicator state
-  final ScrollController _wordBankScrollController = ScrollController();
-  bool _wordBankHasMoreBelow = false;
-
-  final ScrollController _answerScrollController = ScrollController();
-  bool _answerHasMoreBelow = false;
-
   BuildContext? _showcaseContext;
   VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
 
@@ -93,8 +86,6 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     super.initState();
     _startTimer();
     _loadVerse();
-    _wordBankScrollController.addListener(_checkWordBankScroll);
-    _answerScrollController.addListener(_checkAnswerScroll);
     _triggerWalkthroughIfNeeded();
   }
 
@@ -114,48 +105,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   @override
   void dispose() {
     practiceTimer?.cancel();
-    _wordBankScrollController.removeListener(_checkWordBankScroll);
-    _wordBankScrollController.dispose();
-    _answerScrollController.removeListener(_checkAnswerScroll);
-    _answerScrollController.dispose();
     super.dispose();
-  }
-
-  /// Called from scroll-controller listeners (fires after layout — safe to
-  /// access position directly).
-  void _checkWordBankScroll() {
-    if (!mounted || !_wordBankScrollController.hasClients) return;
-    final pos = _wordBankScrollController.position;
-    _updateScrollIndicator(
-      pos,
-      current: _wordBankHasMoreBelow,
-      onChanged: (v) => setState(() => _wordBankHasMoreBelow = v),
-    );
-  }
-
-  void _checkAnswerScroll() {
-    if (!mounted || !_answerScrollController.hasClients) return;
-    final pos = _answerScrollController.position;
-    _updateScrollIndicator(
-      pos,
-      current: _answerHasMoreBelow,
-      onChanged: (v) => setState(() => _answerHasMoreBelow = v),
-    );
-  }
-
-  /// Reads scroll metrics and fires [onChanged] if the "has more below" state
-  /// changed. Safe for both controller-listener and NotificationListener
-  /// contexts because it only reads from the already-computed [metrics] object
-  /// — never accesses RenderBox.size.
-  void _updateScrollIndicator(
-    ScrollMetrics metrics, {
-    required bool current,
-    required void Function(bool) onChanged,
-  }) {
-    if (!mounted) return;
-    final hasMore = metrics.maxScrollExtent > 0 &&
-        metrics.pixels < metrics.maxScrollExtent - 1;
-    if (hasMore != current) onChanged(hasMore);
   }
 
   void _startTimer() {
@@ -234,9 +184,6 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
       // Place word in the slot
       placedWords[emptySlotIndex] = wordItem.original;
       wordItem.isUsed = true;
-
-      // Check completion
-      _checkCompletion();
     });
   }
 
@@ -260,20 +207,6 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
       // Remove from hint-filled slots if it was placed by hint
       hintFilledSlots.remove(slotIndex);
     });
-  }
-
-  void _checkCompletion() {
-    // No auto-submit - users must click Submit button
-    // This method is kept for potential future use (e.g., visual feedback)
-  }
-
-  bool _isCorrectOrder() {
-    for (int i = 0; i < correctWords.length; i++) {
-      if (placedWords[i] != correctWords[i]) {
-        return false;
-      }
-    }
-    return true;
   }
 
   void _useHint() {
@@ -301,9 +234,6 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
           }
         }
       }
-
-      // Check completion
-      _checkCompletion();
     });
   }
 
@@ -342,25 +272,6 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
       // Clear hint tracking
       hintFilledSlots.clear();
     });
-  }
-
-  void _reset() {
-    if (currentVerse != null) {
-      setState(() {
-        // Include reference at the end of verse text for memorization
-        final fullText =
-            '${currentVerse!.verseText} ${currentVerse!.verseReference}';
-        _initializeWordBank(fullText);
-        hintsUsed = 0;
-        isCompleted = false;
-        showedAnswer = false;
-        elapsedSeconds = 0;
-        showingTransliteration.clear();
-        hintFilledSlots.clear();
-      });
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _checkWordBankScroll());
-    }
   }
 
   void _toggleTransliteration(int index) {
@@ -455,10 +366,17 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     return (totalScore / manuallyPlaced) * 100;
   }
 
+  bool get _canSubmit => !isCompleted && placedWords.every((w) => w != null);
+
+  void _onSubmitPressed() {
+    // Allow submission once all words are placed, regardless of correctness
+    setState(() => isCompleted = true);
+    _submitPractice();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final title = context.tr(TranslationKeys.practiceModeWordBank);
 
     return ShowCaseWidget(
       onFinish: () => sl<WalkthroughRepository>()
@@ -473,14 +391,21 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                  title:
-                      Text(context.tr(TranslationKeys.practiceModeWordBank))),
+            child: MemoryPracticeScaffold(
+              title: title,
+              onClose: _handleBackNavigation,
+              scrollable: false,
               body: const Center(child: CircularProgressIndicator()),
             ).withAuthProtection(),
           );
         }
+
+        final l10n = AppLocalizations.of(context)!;
+        final palette = ReaderPalette.of(context);
+        final hintLabel = hintsUsed > 0
+            ? context.tr(
+                TranslationKeys.memoryPracticeHintCount, {'count': hintsUsed})
+            : context.tr(TranslationKeys.memoryPracticeHint);
 
         return PopScope(
           canPop: false,
@@ -488,278 +413,110 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
             if (didPop) return;
             _handleBackNavigation();
           },
-          child: Scaffold(
-            appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _handleBackNavigation,
+          child: MemoryPracticeScaffold(
+            title: title,
+            subtitle: '${currentVerse!.verseReference} · '
+                '${context.tr(TranslationKeys.difficultyMedium)}',
+            elapsedSeconds: elapsedSeconds,
+            onClose: _handleBackNavigation,
+            actions: [
+              MemoryBarAction(
+                icon: Icons.visibility_outlined,
+                tooltip: context.tr(TranslationKeys.practiceShowAnswer),
+                onPressed: !isCompleted ? _showAnswer : null,
               ),
-              title: Text(context.tr(TranslationKeys.practiceModeWordBank)),
-              actions: [
-                TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-                const SizedBox(width: 8),
-              ],
-            ),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  // Verse Reference Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: theme.colorScheme.primaryContainer,
-                    child: Column(
-                      children: [
-                        Text(
-                          currentVerse!.verseReference,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          context
-                              .tr(TranslationKeys.wordBankTapWordsInstruction),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withAlpha((0.7 * 255).round()),
-                          ),
-                        ),
-                        if (detectedLanguage != 'en') ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            context.tr(TranslationKeys.wordBankLongPressHint),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer
-                                  .withAlpha((0.5 * 255).round()),
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+            ],
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  context.tr(TranslationKeys.wordBankTapWordsInstruction),
+                  style: AppFonts.inter(
+                    fontSize: 13.5,
+                    height: 1.45,
+                    color: palette.muted,
                   ),
-
-                  // Hints counter
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
+                ),
+                const SizedBox(height: 12),
+                MemoryAnswerCard(
+                  label: context.tr(TranslationKeys.wordBankYourAnswer),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _buildAnswerSlots(),
+                  ),
+                ),
+                WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.practiceWordBank,
+                  title: l10n.walkthroughPracticeWordBankTitle,
+                  description: l10n.walkthroughPracticeWordBankDesc,
+                  screen: WalkthroughScreen.practiceWordBank,
+                  stepNumber: 1,
+                  totalSteps: 1,
+                  onNext: _onNext,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      MemorySectionLabel.muted(
+                        context,
+                        context.tr(TranslationKeys.practiceModeWordBank),
+                        padding: const EdgeInsets.only(top: 24, bottom: 12),
+                      ),
+                      if (availableWords.isNotEmpty &&
+                          availableWords.every((w) => w.isUsed))
+                        // Every word is in the answer: say so instead of
+                        // leaving the label over an empty area. Placed words
+                        // go back to the bank on tap until the answer is
+                        // checked.
+                        Text(
+                          context.tr(isCompleted
+                              ? TranslationKeys.wordBankAllPlacedDone
+                              : TranslationKeys.wordBankAllPlaced),
+                          key: const Key('word_bank_all_placed'),
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            height: 1.45,
+                            color: palette.muted,
+                          ),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            Icon(Icons.help,
-                                size: 20, color: context.appWarning),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
-                              style: theme.textTheme.bodyMedium,
-                            ),
+                            for (var i = 0; i < availableWords.length; i++)
+                              if (!availableWords[i].isUsed) _buildWordChip(i),
                           ],
                         ),
-                        TextButton.icon(
-                          onPressed: !isCompleted ? _useHint : null,
-                          icon: const Icon(Icons.lightbulb, size: 18),
-                          label:
-                              Text(context.tr(TranslationKeys.practiceUseHint)),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-
-                  // Answer area (placed words) - 50% of available space
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.tr(TranslationKeys.wordBankYourAnswer),
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Expanded(
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surface,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: theme.colorScheme.outline
-                                      .withAlpha((0.3 * 255).round()),
-                                ),
-                              ),
-                              child: Stack(
-                                children: [
-                                  NotificationListener<
-                                      ScrollMetricsNotification>(
-                                    onNotification: (n) {
-                                      // Use notification metrics directly — avoids
-                                      // accessing RenderBox.size during layout.
-                                      _updateScrollIndicator(
-                                        n.metrics,
-                                        current: _answerHasMoreBelow,
-                                        onChanged: (v) => setState(
-                                            () => _answerHasMoreBelow = v),
-                                      );
-                                      return false;
-                                    },
-                                    child: SingleChildScrollView(
-                                      controller: _answerScrollController,
-                                      child: Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: List.generate(
-                                          correctWords.length,
-                                          (index) => _buildAnswerSlot(index),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  if (_answerHasMoreBelow)
-                                    Positioned(
-                                      right: 0,
-                                      bottom: 8,
-                                      child: _buildScrollDownIndicator(
-                                          _answerScrollController),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const Divider(height: 1),
-
-                  // Word Bank area - 50% of available space
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withAlpha((0.3 * 255).round()),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '${context.tr(TranslationKeys.practiceModeWordBank)} (${availableWords.where((w) => !w.isUsed).length})',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              TextButton.icon(
-                                onPressed: !isCompleted ? _clearAll : null,
-                                icon: const Icon(Icons.clear_all, size: 18),
-                                label: Text(
-                                    context.tr(TranslationKeys.practiceClear)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                NotificationListener<ScrollMetricsNotification>(
-                                  onNotification: (n) {
-                                    _updateScrollIndicator(
-                                      n.metrics,
-                                      current: _wordBankHasMoreBelow,
-                                      onChanged: (v) => setState(
-                                          () => _wordBankHasMoreBelow = v),
-                                    );
-                                    return false;
-                                  },
-                                  child: WalkthroughTooltip(
-                                    showcaseKey: ShowcaseKeys.practiceWordBank,
-                                    title:
-                                        l10n.walkthroughPracticeWordBankTitle,
-                                    description:
-                                        l10n.walkthroughPracticeWordBankDesc,
-                                    screen: WalkthroughScreen.practiceWordBank,
-                                    stepNumber: 1,
-                                    totalSteps: 1,
-                                    onNext: _onNext,
-                                    child: SingleChildScrollView(
-                                      controller: _wordBankScrollController,
-                                      child: Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: List.generate(
-                                          availableWords.length,
-                                          (index) => _buildWordChip(index),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                if (_wordBankHasMoreBelow)
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 8,
-                                    child: _buildScrollDownIndicator(
-                                        _wordBankScrollController),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Action buttons
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: !isCompleted ? _showAnswer : null,
-                            icon: const Icon(Icons.visibility),
-                            label: Text(
-                                context.tr(TranslationKeys.practiceShowAnswer)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            // Allow submission once all words are placed, regardless of correctness
-                            onPressed: !isCompleted &&
-                                    placedWords.every((w) => w != null)
-                                ? () {
-                                    setState(() => isCompleted = true);
-                                    _submitPractice();
-                                  }
-                                : null,
-                            icon: const Icon(Icons.check),
-                            label: Text(
-                                context.tr(TranslationKeys.practiceSubmit)),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: context.appInteractive,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+                if (detectedLanguage != 'en') ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    context.tr(TranslationKeys.wordBankLongPressHint),
+                    style: AppFonts.inter(fontSize: 12.5, color: palette.dim),
                   ),
                 ],
+              ],
+            ),
+            bottomBar: MemoryActionBar(
+              secondary: [
+                MemoryActionPill(
+                  label: context.tr(TranslationKeys.practiceClear),
+                  icon: Icons.backspace_outlined,
+                  onPressed: !isCompleted ? _clearAll : null,
+                ),
+                MemoryActionPill(
+                  label: hintLabel,
+                  icon: Icons.lightbulb_outline_rounded,
+                  badge: hintsUsed > 0 ? '$hintsUsed' : null,
+                  onPressed: !isCompleted ? _useHint : null,
+                ),
+              ],
+              primary: MemoryPrimaryPill(
+                label: context.tr(TranslationKeys.practiceSubmit),
+                onPressed: _canSubmit ? _onSubmitPressed : null,
               ),
             ),
           ),
@@ -768,166 +525,57 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     );
   }
 
-  Widget _buildAnswerSlot(int index) {
-    final theme = Theme.of(context);
-    final word = placedWords[index];
-    final isCorrect =
-        isCompleted && word != null && word == correctWords[index];
-    final isWrong = isCompleted && word != null && word != correctWords[index];
-
-    return GestureDetector(
-      onTap: word != null && !isCompleted ? () => _removeWord(index) : null,
-      child: Container(
-        constraints: const BoxConstraints(
-          minWidth: 50,
-          minHeight: 40,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: word == null
-              ? theme.colorScheme.surfaceContainerHighest
-                  .withAlpha((0.5 * 255).round())
-              : (isCorrect
-                  ? AppColors.success.withAlpha((0.15 * 255).round())
-                  : (isWrong
-                      ? AppColors.error.withAlpha((0.15 * 255).round())
-                      : theme.colorScheme.primaryContainer)),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: word == null
-                ? theme.colorScheme.outline.withAlpha((0.3 * 255).round())
-                : (isCorrect
-                    ? AppColors.success
-                    : (isWrong ? AppColors.error : theme.colorScheme.primary)),
-            width: word == null ? 1 : 2,
-            style: word == null ? BorderStyle.solid : BorderStyle.solid,
-          ),
-        ),
-        child: word != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    word,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isCorrect
-                          ? AppColors.successDark
-                          : (isWrong
-                              ? AppColors.errorDark
-                              : theme.colorScheme.onPrimaryContainer),
-                    ),
-                  ),
-                  if (!isCompleted) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.close,
-                      size: 14,
-                      color: theme.colorScheme.onPrimaryContainer
-                          .withAlpha((0.6 * 255).round()),
-                    ),
-                  ],
-                ],
-              )
-            : Text(
-                '${index + 1}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant
-                      .withAlpha((0.5 * 255).round()),
-                ),
-              ),
-      ),
-    );
+  /// Placed words in slot order, then one placeholder for the next slot.
+  /// Gaps left by removing a word show as placeholders in place.
+  List<Widget> _buildAnswerSlots() {
+    final lastFilled = placedWords.lastIndexWhere((w) => w != null);
+    final slots = <Widget>[];
+    for (var i = 0; i < placedWords.length; i++) {
+      final word = placedWords[i];
+      if (word == null && i > lastFilled + 1) continue;
+      slots.add(_buildAnswerSlot(i));
+    }
+    return slots;
   }
 
-  Widget _buildScrollDownIndicator(ScrollController controller) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        controller.animateTo(
-          (controller.offset + 100).clamp(
-            0.0,
-            controller.position.maxScrollExtent,
-          ),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      },
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: context.appInteractive,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha((0.2 * 255).round()),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.keyboard_arrow_down,
-          color: Colors.white,
-          size: 18,
-        ),
-      ),
+  Widget _buildAnswerSlot(int index) {
+    final word = placedWords[index];
+    if (word == null) {
+      return MemoryTokenChip(
+        key: ValueKey('answer_slot_$index'),
+        label: '',
+        state: MemoryTokenState.placeholder,
+        minWidth: 70,
+      );
+    }
+    final state = !isCompleted
+        ? MemoryTokenState.selected
+        : word == correctWords[index]
+            ? MemoryTokenState.correct
+            : MemoryTokenState.wrong;
+    return MemoryTokenChip(
+      key: ValueKey('answer_slot_$index'),
+      label: word,
+      state: state,
+      onTap: !isCompleted ? () => _removeWord(index) : null,
     );
   }
 
   Widget _buildWordChip(int index) {
-    final theme = Theme.of(context);
     final wordItem = availableWords[index];
-    final isUsed = wordItem.isUsed;
-    final showTranslit = showingTransliteration.contains(index);
+    final showTranslit = showingTransliteration.contains(index) &&
+        wordItem.transliteration != null;
 
     return GestureDetector(
-      onTap: !isUsed && !isCompleted ? () => _selectWord(index) : null,
+      key: ValueKey('bank_word_$index'),
       onLongPress: wordItem.transliteration != null && !isCompleted
           ? () => _toggleTransliteration(index)
           : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isUsed
-              ? theme.colorScheme.surfaceContainerHighest
-                  .withAlpha((0.3 * 255).round())
-              : theme.colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isUsed
-                ? theme.colorScheme.outline.withAlpha((0.2 * 255).round())
-                : theme.colorScheme.secondary,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              wordItem.original,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isUsed
-                    ? theme.colorScheme.onSurface.withAlpha((0.3 * 255).round())
-                    : theme.colorScheme.onSecondaryContainer,
-                decoration: isUsed ? TextDecoration.lineThrough : null,
-              ),
-            ),
-            if (showTranslit && wordItem.transliteration != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                wordItem.transliteration!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontStyle: FontStyle.italic,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ],
-        ),
+      child: MemoryTokenChip(
+        label: showTranslit
+            ? '${wordItem.original}\n${wordItem.transliteration}'
+            : wordItem.original,
+        onTap: !isCompleted ? () => _selectWord(index) : null,
       ),
     );
   }

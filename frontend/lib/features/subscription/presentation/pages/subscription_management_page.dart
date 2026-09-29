@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/pricing_service.dart';
-import '../../../../core/di/injection_container.dart';
-import '../bloc/subscription_bloc.dart';
-import '../bloc/subscription_event.dart';
-import '../bloc/subscription_state.dart';
-import '../../domain/entities/subscription.dart';
-import '../../../tokens/presentation/bloc/token_bloc.dart';
-import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../tokens/domain/entities/token_status.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/entities/subscription.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/cancel_subscription_sheet.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-/// Subscription Management Page
+/// Subscription Management Page (quiet ledger)
 ///
-/// Allows users to view and manage their premium subscription including:
+/// Allows users to view and manage their subscription including:
 /// - Current subscription status
 /// - Next billing date and amount
 /// - Cancel subscription (immediate or at cycle end)
@@ -46,25 +49,18 @@ class _SubscriptionManagementPageState
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.tr(TranslationKeys.subscriptionTitle),
-          style: AppFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: context.appBrandAccent,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      backgroundColor: palette.page,
+      appBar: LedgerTopBar(
+        title: context.tr(TranslationKeys.subscriptionTitle),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+          LedgerBarAction(
+            icon: Icons.refresh_rounded,
+            tooltip: context.tr(TranslationKeys.subscriptionRefresh),
             onPressed: () {
               context.read<SubscriptionBloc>().add(const RefreshSubscription());
             },
-            tooltip: context.tr(TranslationKeys.subscriptionRefresh),
           ),
         ],
       ),
@@ -124,7 +120,7 @@ class _SubscriptionManagementPageState
                   (state.operation == 'fetching' ||
                       state.operation == 'cancelling' ||
                       state.operation == 'resuming')) {
-                return const Center(child: CircularProgressIndicator());
+                return const LedgerLoading();
               }
 
               if (state is SubscriptionLoaded) {
@@ -158,55 +154,23 @@ class _SubscriptionManagementPageState
 
   Widget _buildNoSubscriptionView() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.workspace_premium_outlined,
-              size: 80,
-              color: context.appBrandAccent.withOpacity(0.5),
+            LedgerMessage(
+              icon: Icons.workspace_premium_outlined,
+              title: context.tr(TranslationKeys.subscriptionNoActive),
+              body: context.tr(TranslationKeys.subscriptionUpgradePrompt),
             ),
-            const SizedBox(height: 24),
-            Text(
-              context.tr(TranslationKeys.subscriptionNoActive),
-              style: AppFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              context.tr(TranslationKeys.subscriptionUpgradePrompt),
-              style: AppFonts.inter(
-                fontSize: 14,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.subscriptionUpgradeButton),
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+            SizedBox(
+              width: double.infinity,
+              child: LedgerPrimaryButton(
+                label: context.tr(TranslationKeys.subscriptionUpgradeButton),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
               ),
             ),
           ],
@@ -217,19 +181,8 @@ class _SubscriptionManagementPageState
 
   /// Build view for Standard plan users in trial period (no subscription yet)
   Widget _buildStandardTrialView(DateTime? trialEndDate) {
-    final standardColor = Theme.of(context).colorScheme.primary;
-    const standardColorLight =
-        Color(0xFFB794F4); // Lighter purple for dark mode
+    final palette = ReaderPalette.of(context);
     final daysRemaining = trialEndDate?.difference(DateTime.now()).inDays ?? 0;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Theme-aware colors
-    final iconColor = isDark ? standardColorLight : standardColor;
-    final textColor = isDark ? standardColorLight : standardColor;
-    final bannerBgColor =
-        isDark ? standardColor.withOpacity(0.15) : const Color(0xFFF3E8FF);
-    final bannerBorderColor =
-        isDark ? standardColor.withOpacity(0.4) : const Color(0xFFD8B4FE);
 
     // Get Standard plan features
     final features = [
@@ -240,245 +193,48 @@ class _SubscriptionManagementPageState
       context.tr(TranslationKeys.pricingStandardFeature5),
     ];
 
-    return SingleChildScrollView(
+    return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Trial Status Card
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  colors: [
-                    standardColor.withOpacity(0.15),
-                    standardColor.withOpacity(0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: standardColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.auto_awesome,
-                          color: iconColor,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Standard Plan',
-                              style: AppFonts.poppins(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Free Trial Active',
-                              style: AppFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: textColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Trial info banner
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: bannerBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: bannerBorderColor),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          color: iconColor,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Free until ${_formatTrialDate(trialEndDate)}',
-                                style: AppFonts.inter(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '$daysRemaining days remaining',
-                                style: AppFonts.inter(
-                                  fontSize: 13,
-                                  color: textColor.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      children: [
+        _PlanHeader(
+          planName: 'Standard Plan',
+          status: 'Free Trial Active',
+          tone: LedgerTone.accent,
+        ),
+        const SizedBox(height: 10),
+        LedgerNotice(
+          icon: Icons.calendar_today_outlined,
+          text: 'Free until ${_formatTrialDate(trialEndDate)}',
+          detail: '$daysRemaining days remaining',
+        ),
+        LedgerSectionLabel(context.tr(TranslationKeys.subscriptionPlanDetails)),
+        Text(
+          context.tr(TranslationKeys.subscriptionIncludedFeatures),
+          style: AppFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: palette.muted,
           ),
-          const SizedBox(height: 20),
-
-          // Plan Details Card
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        color: iconColor,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.tr(TranslationKeys.subscriptionPlanDetails),
-                        style: AppFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  Text(
-                    context.tr(TranslationKeys.subscriptionIncludedFeatures),
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...features
-                      .map((feature) => _buildFeatureItem(feature, iconColor)),
-                ],
-              ),
-            ),
+        ),
+        const SizedBox(height: 6),
+        for (final feature in features) LedgerCheckRow(feature),
+        const LedgerSectionLabel('After Trial Period'),
+        Text(
+          'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ${sl<PricingService>().getFormattedPricePerMonth('standard')}. We\'ll remind you before the trial ends.',
+          style: AppFonts.inter(
+            fontSize: 14,
+            color: palette.muted,
+            height: 1.5,
           ),
-          const SizedBox(height: 20),
-
-          // After Trial Info Card
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.7),
-                        size: 22,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'After Trial Period',
-                        style: AppFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ${sl<PricingService>().getFormattedPricePerMonth('standard')}. We\'ll remind you before the trial ends.',
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   String _formatTrialDate(DateTime? date) {
     if (date == null) return 'the trial end date';
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    return DateFormat('MMMM d, y').format(date);
   }
 
   Widget _buildSubscriptionView(
@@ -488,211 +244,100 @@ class _SubscriptionManagementPageState
         context.read<SubscriptionBloc>().add(const RefreshSubscription());
         await Future.delayed(const Duration(seconds: 1));
       },
-      child: SingleChildScrollView(
+      child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status Card
-            _buildStatusCard(subscription),
-            const SizedBox(height: 20),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          // Status
+          _buildStatusCard(subscription),
 
-            // Billing Information
-            _buildBillingInfo(subscription),
-            const SizedBox(height: 16),
+          // Billing Information
+          _buildBillingInfo(subscription),
 
-            // Payment History Button
-            _buildPaymentHistoryButton(),
-            const SizedBox(height: 20),
+          // Payment History link
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: LedgerLink(
+              label: context.tr(TranslationKeys.myPlanViewPaymentHistory),
+              leadingIcon: Icons.receipt_long_outlined,
+              onTap: () => context.push(AppRoutes.subscriptionPaymentHistory),
+            ),
+          ),
 
-            // Plan Details
-            _buildPlanDetails(subscription),
-            const SizedBox(height: 20),
+          // Plan Details
+          _buildPlanDetails(subscription),
 
-            // Action Buttons
-            _buildActionButtons(subscription, state),
-            const SizedBox(height: 24),
-          ],
-        ),
+          const LedgerHairline(verticalMargin: 18),
+
+          // Action Buttons
+          _buildActionButtons(subscription, state),
+        ],
       ),
     );
   }
 
   Widget _buildStatusCard(Subscription subscription) {
     final isActive = subscription.isActive;
-    final statusColor =
-        isActive ? AppTheme.successColor : AppTheme.warningColor;
-    final statusIcon =
-        isActive ? Icons.check_circle_rounded : Icons.info_outline_rounded;
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              statusColor.withOpacity(0.1),
-              statusColor.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PlanHeader(
+          planName: _formattedPlanType(subscription),
+          status: subscription.status.displayName,
+          detail: subscription.status.description,
+          tone: isActive ? LedgerTone.success : LedgerTone.warning,
+        ),
+        if (subscription.isEndingSoon) ...[
+          const SizedBox(height: 10),
+          LedgerNotice(
+            icon: Icons.warning_amber_rounded,
+            tone: LedgerTone.warning,
+            text: context.tr(TranslationKeys.subscriptionEndsIn).replaceAll(
+                '{days}', subscription.daysRemainingInPeriod.toString()),
           ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    statusIcon,
-                    color: statusColor,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        subscription.status.displayName,
-                        style: AppFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onBackground,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subscription.status.description,
-                        style: AppFonts.inter(
-                          fontSize: 13,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onBackground
-                              .withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (subscription.isEndingSoon) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.warningColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppTheme.warningColor.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: context.appWarning,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        context
-                            .tr(TranslationKeys.subscriptionEndsIn)
-                            .replaceAll('{days}',
-                                subscription.daysRemainingInPeriod.toString()),
-                        style: AppFonts.inter(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onBackground,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+        ],
+      ],
     );
   }
 
   Widget _buildBillingInfo(Subscription subscription) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
+    final dateFormat = DateFormat('MMM d, y');
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.tr(TranslationKeys.subscriptionBillingInfo),
-              style: AppFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: context.appBrandAccent,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildInfoRow(
-              context.tr(TranslationKeys.subscriptionAmount),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LedgerSectionLabel(context.tr(TranslationKeys.subscriptionBillingInfo)),
+        LedgerRow(
+          label: context.tr(TranslationKeys.subscriptionAmount),
+          value:
               '₹${subscription.amountRupees.toStringAsFixed(0)}${context.tr(TranslationKeys.subscriptionPerMonth)}',
-              Icons.currency_rupee_rounded,
-            ),
-            if (subscription.nextBillingAt != null) ...[
-              const Divider(height: 24),
-              _buildInfoRow(
-                context.tr(TranslationKeys.subscriptionNextBilling),
-                dateFormat.format(subscription.nextBillingAt!),
-                Icons.calendar_today_rounded,
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                context.tr(TranslationKeys.subscriptionDaysUntilBilling),
-                '${subscription.daysUntilNextBilling ?? '-'} ${context.tr(TranslationKeys.subscriptionDays)}',
-                Icons.access_time_rounded,
-              ),
-            ],
-            if (subscription.currentPeriodEnd != null) ...[
-              const Divider(height: 24),
-              _buildInfoRow(
-                context.tr(TranslationKeys.subscriptionCurrentPeriodEnds),
-                dateFormat.format(subscription.currentPeriodEnd!),
-                Icons.event_rounded,
-              ),
-            ],
-          ],
         ),
-      ),
+        if (subscription.nextBillingAt != null) ...[
+          LedgerRow(
+            label: context.tr(TranslationKeys.subscriptionNextBilling),
+            value: dateFormat.format(subscription.nextBillingAt!),
+          ),
+          LedgerRow(
+            label: context.tr(TranslationKeys.subscriptionDaysUntilBilling),
+            value:
+                '${subscription.daysUntilNextBilling ?? '-'} ${context.tr(TranslationKeys.subscriptionDays)}',
+          ),
+        ],
+        if (subscription.currentPeriodEnd != null)
+          LedgerRow(
+            label: context.tr(TranslationKeys.subscriptionCurrentPeriodEnds),
+            value: dateFormat.format(subscription.currentPeriodEnd!),
+          ),
+      ],
     );
   }
 
-  Widget _buildPlanDetails(Subscription subscription) {
-    // Format plan type nicely (premium_monthly -> Premium, standard -> Standard, plus -> Plus)
-    // Defensive validation: handle null, empty, or malformed planType
+  /// Format plan type nicely (premium_monthly -> Premium, standard -> Standard,
+  /// plus -> Plus). Defensive: handles empty or malformed planType.
+  String _formattedPlanType(Subscription subscription) {
     String formattedPlanType = 'Premium';
     final planType = subscription.planType.toLowerCase();
-    final isStandardPlan = planType.contains('standard');
-    final isPlusPlan = planType.contains('plus');
-
     if (planType.isNotEmpty) {
       final parts = planType.split('_');
       final firstPart = parts.first;
@@ -700,6 +345,14 @@ class _SubscriptionManagementPageState
         formattedPlanType = firstPart[0].toUpperCase() + firstPart.substring(1);
       }
     }
+    return formattedPlanType;
+  }
+
+  Widget _buildPlanDetails(Subscription subscription) {
+    final planType = subscription.planType.toLowerCase();
+    final isStandardPlan = planType.contains('standard');
+    final isPlusPlan = planType.contains('plus');
+    final palette = ReaderPalette.of(context);
 
     // Get features based on plan type
     final features = isStandardPlan
@@ -727,155 +380,21 @@ class _SubscriptionManagementPageState
                 context.tr(TranslationKeys.pricingPremiumFeature5),
               ];
 
-    // Plan icon and color based on type
-    const plusColor = AppColors.warning; // Orange/amber for Plus
-    final planIcon = isStandardPlan
-        ? Icons.auto_awesome
-        : isPlusPlan
-            ? Icons.star_rounded
-            : Icons.workspace_premium_rounded;
-    final planColor = isStandardPlan
-        ? Theme.of(context).colorScheme.primary
-        : isPlusPlan
-            ? plusColor
-            : context.appBrandAccent;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  planIcon,
-                  color: planColor,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  context.tr(TranslationKeys.subscriptionPlanDetails),
-                  style: AppFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: planColor,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              formattedPlanType,
-              style: AppFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 12),
-            Text(
-              context.tr(TranslationKeys.subscriptionIncludedFeatures),
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...features.map((feature) => _buildFeatureItem(feature, planColor)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(String feature, [Color? checkColor]) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.check_circle_rounded,
-            size: 18,
-            color: checkColor ?? AppTheme.successColor,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              feature,
-              style: AppFonts.inter(
-                fontSize: 14,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, IconData icon) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: context.appBrandAccent.withOpacity(0.7),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: AppFonts.inter(
-              fontSize: 14,
-              color:
-                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-            ),
-          ),
-        ),
+        LedgerSectionLabel(context.tr(TranslationKeys.subscriptionPlanDetails)),
         Text(
-          value,
+          context.tr(TranslationKeys.subscriptionIncludedFeatures),
           style: AppFonts.inter(
-            fontSize: 14,
+            fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onBackground,
+            color: palette.muted,
           ),
         ),
+        const SizedBox(height: 6),
+        for (final feature in features) LedgerCheckRow(feature),
       ],
-    );
-  }
-
-  Widget _buildPaymentHistoryButton() {
-    return OutlinedButton.icon(
-      onPressed: () {
-        context.push(AppRoutes.subscriptionPaymentHistory);
-      },
-      icon: const Icon(Icons.receipt_long_outlined, size: 20),
-      label: Text(
-        'Payment History',
-        style: AppFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: context.appBrandAccent,
-        side: BorderSide(color: context.appBrandAccent.withOpacity(0.5)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
     );
   }
 
@@ -903,44 +422,13 @@ class _SubscriptionManagementPageState
 
     if (isCancelledButActive) {
       // Show "Continue Subscription" button for cancelled-but-active subscriptions
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ElevatedButton.icon(
-            onPressed: isLoading
-                ? null
-                : () {
-                    context
-                        .read<SubscriptionBloc>()
-                        .add(const ResumeSubscription());
-                  },
-            icon: isLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.restart_alt_rounded),
-            label: Text(
-              context.tr(TranslationKeys.subscriptionContinueButton),
-              style: AppFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.successColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
+      return LedgerPrimaryButton(
+        label: context.tr(TranslationKeys.subscriptionContinueButton),
+        icon: Icons.restart_alt_rounded,
+        loading: isLoading,
+        onPressed: () {
+          context.read<SubscriptionBloc>().add(const ResumeSubscription());
+        },
       );
     }
 
@@ -951,84 +439,30 @@ class _SubscriptionManagementPageState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton(
-          onPressed:
-              isLoading ? null : () => _showCancelDialog(subscription, false),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppTheme.errorColor,
-            side: BorderSide(color: AppTheme.errorColor),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: isLoading
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppTheme.errorColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.tr(TranslationKeys.subscriptionCancelAtEnd),
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                )
-              : Text(
-                  context.tr(TranslationKeys.subscriptionCancelAtEnd),
-                  style: AppFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+        LedgerSecondaryButton(
+          key: const Key('subscription_cancel_at_end'),
+          label: context.tr(TranslationKeys.subscriptionCancelAtEnd),
+          destructive: true,
+          loading: isLoading,
+          onPressed: () => _showCancelDialog(subscription, false),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         TextButton(
+          key: const Key('subscription_cancel_now'),
           onPressed:
               isLoading ? null : () => _showCancelDialog(subscription, true),
           style: TextButton.styleFrom(
-            foregroundColor: AppTheme.errorColor,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            foregroundColor: context.appError,
+            minimumSize: const Size.fromHeight(44),
           ),
-          child: isLoading
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppTheme.errorColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.tr(TranslationKeys.subscriptionCancelImmediately),
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                )
-              : Text(
-                  context.tr(TranslationKeys.subscriptionCancelImmediately),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+          child: Text(
+            context.tr(TranslationKeys.subscriptionCancelImmediately),
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: context.appError,
+            ),
+          ),
         ),
       ],
     );
@@ -1046,44 +480,17 @@ class _SubscriptionManagementPageState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color:
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-            ),
-          ),
-          child: Text(
-            'To cancel or modify your subscription, please manage it through ${isAndroid ? 'Google Play' : 'the App Store'}.',
-            style: AppFonts.inter(
-              fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
+        LedgerNotice(
+          icon: Icons.info_outline_rounded,
+          tone: LedgerTone.neutral,
+          text:
+              'To cancel or modify your subscription, please manage it through ${isAndroid ? 'Google Play' : 'the App Store'}.',
         ),
         const SizedBox(height: 12),
-        ElevatedButton.icon(
+        LedgerPrimaryButton(
+          label: storeLabel,
+          icon: storeIcon,
           onPressed: () => _openStoreSubscriptions(isAndroid),
-          icon: Icon(storeIcon, size: 20),
-          label: Text(
-            storeLabel,
-            style: AppFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
         ),
       ],
     );
@@ -1097,60 +504,17 @@ class _SubscriptionManagementPageState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.warningColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.warningColor.withOpacity(0.4),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.pause_circle_outline_rounded,
-                color: context.appWarning,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Your subscription is paused. Manage it in ${isAndroid ? 'Google Play' : 'the App Store'} to resume.',
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.8),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        LedgerNotice(
+          icon: Icons.pause_circle_outline_rounded,
+          tone: LedgerTone.warning,
+          text:
+              'Your subscription is paused. Manage it in ${isAndroid ? 'Google Play' : 'the App Store'} to resume.',
         ),
         const SizedBox(height: 12),
-        ElevatedButton.icon(
+        LedgerPrimaryButton(
+          label: isAndroid ? 'Resume in Google Play' : 'Resume in App Store',
+          icon: isAndroid ? Icons.shop_rounded : Icons.apple_rounded,
           onPressed: () => _openStoreSubscriptions(isAndroid),
-          icon: Icon(
-            isAndroid ? Icons.shop_rounded : Icons.apple_rounded,
-            size: 20,
-          ),
-          label: Text(
-            isAndroid ? 'Resume in Google Play' : 'Resume in App Store',
-            style: AppFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
         ),
       ],
     );
@@ -1179,53 +543,24 @@ class _SubscriptionManagementPageState
     }
   }
 
-  void _showCancelDialog(Subscription subscription, bool immediate) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          immediate
-              ? context.tr(TranslationKeys.subscriptionCancelImmediateTitle)
-              : context.tr(TranslationKeys.subscriptionCancelEndTitle),
-          style: AppFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: context.appBrandAccent,
-          ),
-        ),
-        content: Text(
-          immediate
-              ? context.tr(TranslationKeys.subscriptionCancelImmediateMessage)
-              : context
-                  .tr(TranslationKeys.subscriptionCancelEndMessage)
-                  .replaceAll(
-                    '{date}',
-                    DateFormat('MMM dd, yyyy').format(
-                      subscription.currentPeriodEnd ??
-                          subscription.nextBillingAt ??
-                          DateTime.now().add(const Duration(days: 30)),
-                    ),
-                  ),
-          style: AppFonts.inter(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(context.tr(TranslationKeys.subscriptionKeep)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              _cancelSubscription(!immediate);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(context.tr(TranslationKeys.subscriptionConfirmCancel)),
-          ),
-        ],
+  /// Confirms the cancellation in the cancel sheet; [immediate] picks the
+  /// option pre-selected from the button the user tapped.
+  Future<void> _showCancelDialog(
+      Subscription subscription, bool immediate) async {
+    final choice = await CancelSubscriptionSheet.show(
+      context,
+      planName: _formattedPlanType(subscription),
+      accessUntil: DateFormat('MMM d').format(
+        subscription.currentPeriodEnd ??
+            subscription.nextBillingAt ??
+            DateTime.now().add(const Duration(days: 30)),
       ),
+      allowImmediate: true,
+      initialChoice:
+          immediate ? CancelChoice.immediately : CancelChoice.endOfCycle,
     );
+    if (choice == null || !mounted) return;
+    _cancelSubscription(choice == CancelChoice.endOfCycle);
   }
 
   void _cancelSubscription(bool cancelAtCycleEnd) {
@@ -1237,5 +572,73 @@ class _SubscriptionManagementPageState
                 : 'User requested immediate cancellation',
           ),
         );
+  }
+}
+
+/// Plan name with a status pill and an optional muted description, on the
+/// card fill — the one raised block of the page.
+class _PlanHeader extends StatelessWidget {
+  final String planName;
+  final String status;
+  final String? detail;
+  final LedgerTone tone;
+
+  const _PlanHeader({
+    required this.planName,
+    required this.status,
+    required this.tone,
+    this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: palette.gold.withValues(alpha: palette.isDark ? 0.32 : 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.workspace_premium_outlined,
+                  size: 24, color: palette.gold),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  planName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(child: LedgerStatusPill(label: status, tone: tone)),
+            ],
+          ),
+          if (detail != null && detail!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              detail!,
+              style: AppFonts.inter(
+                fontSize: 13.5,
+                color: palette.muted,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

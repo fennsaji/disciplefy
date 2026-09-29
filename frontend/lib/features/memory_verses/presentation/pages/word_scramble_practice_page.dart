@@ -2,36 +2,37 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/timer_badge.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/quality_calculator.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Phrase scramble practice mode for memory verses.
 ///
 /// Users drag and drop scrambled PHRASES (not individual words) to reconstruct
 /// the verse in the correct order. Tests understanding of verse structure
-/// at a higher level than Word Bank mode.
+/// at a higher level than Word Bank mode. A phrase can also be tapped to drop
+/// it into the next empty slot.
 class WordScramblePracticePage extends StatefulWidget {
   final String verseId;
 
@@ -145,7 +146,10 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   /// or every 4-5 words for natural chunking.
   List<String> _splitIntoPhrases(String text) {
     final phrases = <String>[];
-    final words = text.split(' ').where((w) => w.trim().isNotEmpty).toList();
+    // Split on any whitespace (verse text can contain line breaks or double
+    // spaces) so phrases never carry stray newlines into the chips or results.
+    final words =
+        text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     final buffer = StringBuffer();
     int wordCount = 0;
 
@@ -200,6 +204,14 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
     });
   }
 
+  /// Tap-to-place: drops [phrase] into the first empty slot.
+  void _placeInNextSlot(String phrase) {
+    if (showCorrectAnswer) return;
+    final emptyIndex = placedPhrases.indexWhere((p) => p == null);
+    if (emptyIndex == -1) return;
+    _placePhrase(emptyIndex, phrase);
+  }
+
   void _removePhrase(int index) {
     setState(() {
       if (placedPhrases[index] != null) {
@@ -219,15 +231,6 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
     setState(() {
       isCompleted = allFilled;
     });
-  }
-
-  bool _isCorrectOrder() {
-    for (int i = 0; i < correctPhrases.length; i++) {
-      if (placedPhrases[i] != correctPhrases[i]) {
-        return false;
-      }
-    }
-    return true;
   }
 
   void _useHint() {
@@ -352,9 +355,14 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
     GoRouter.of(context).goToPracticeResults(params);
   }
 
+  String _hintLabel(BuildContext context) => hintsUsed > 0
+      ? context
+          .tr(TranslationKeys.memoryPracticeHintCount, {'count': hintsUsed})
+      : context.tr(TranslationKeys.memoryPracticeHint);
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final title = context.tr(TranslationKeys.practiceModeWordScramble);
 
     return ShowCaseWidget(
       onFinish: () => sl<WalkthroughRepository>()
@@ -369,287 +377,137 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                  title: Text(
-                      context.tr(TranslationKeys.practiceModeWordScramble))),
+            child: MemoryPracticeScaffold(
+              title: title,
+              onClose: _handleBackNavigation,
+              scrollable: false,
               body: const Center(child: CircularProgressIndicator()),
             ).withAuthProtection(),
           );
         }
 
+        final l10n = AppLocalizations.of(context)!;
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) return;
             _handleBackNavigation();
           },
-          child: Scaffold(
-            appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _handleBackNavigation,
+          child: MemoryPracticeScaffold(
+            title: title,
+            subtitle: '${currentVerse!.verseReference} · '
+                '${context.tr(TranslationKeys.difficultyMedium)}',
+            elapsedSeconds: elapsedSeconds,
+            onClose: _handleBackNavigation,
+            actions: [
+              WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.practiceWordScrambleShowAnswer,
+                title: l10n.walkthroughPracticeWordScrambleShowAnswerTitle,
+                description: l10n.walkthroughPracticeWordScrambleShowAnswerDesc,
+                screen: WalkthroughScreen.practiceWordScramble,
+                stepNumber: 2,
+                totalSteps: 4,
+                onNext: _onNext,
+                tooltipPosition: TooltipPosition.bottom,
+                highlightBorderRadius: 24,
+                child: MemoryBarAction(
+                  icon: Icons.visibility_outlined,
+                  tooltip: context.tr(TranslationKeys.practiceShowAnswer),
+                  onPressed: !isCompleted ? _showAnswer : null,
+                ),
               ),
-              title: Text(context.tr(TranslationKeys.practiceModeWordScramble)),
-              actions: [
-                TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-                const SizedBox(width: 8),
+            ],
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  context.tr(TranslationKeys.wordScrambleInstruction),
+                  style: AppFonts.inter(
+                    fontSize: 13.5,
+                    height: 1.45,
+                    color: ReaderPalette.of(context).muted,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                MemoryAnswerCard(
+                  radius: 22,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _buildAnswerSlots(context),
+                  ),
+                ),
+                if (availablePhrases.isNotEmpty)
+                  WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.practiceWordScramble,
+                    title: l10n.walkthroughPracticeWordScrambleTitle,
+                    description: l10n.walkthroughPracticeWordScrambleDesc,
+                    screen: WalkthroughScreen.practiceWordScramble,
+                    stepNumber: 1,
+                    totalSteps: 4,
+                    onNext: _onNext,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MemorySectionLabel.muted(
+                          context,
+                          '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)}'
+                          ' (${availablePhrases.length})',
+                          padding: const EdgeInsets.only(top: 24, bottom: 12),
+                        ),
+                        for (var i = 0; i < availablePhrases.length; i++)
+                          Padding(
+                            key: ValueKey(
+                                'available_${i}_${availablePhrases[i]}'),
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _buildDraggablePhrase(availablePhrases[i]),
+                          ),
+                      ],
+                    ),
+                  ),
               ],
             ),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  // Verse Reference Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: theme.colorScheme.primaryContainer,
-                    child: Column(
-                      children: [
-                        Text(
-                          currentVerse!.verseReference,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          context.tr(TranslationKeys.wordScrambleInstruction),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withAlpha((0.7 * 255).round()),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Hints counter
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.help,
-                                size: 20, color: context.appWarning),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                        TextButton.icon(
-                          onPressed:
-                              availablePhrases.isNotEmpty && !showCorrectAnswer
-                                  ? _useHint
-                                  : null,
-                          icon: const Icon(Icons.lightbulb, size: 18),
-                          label:
-                              Text(context.tr(TranslationKeys.practiceUseHint)),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Divider(height: 1),
-
-                  // Verse construction area (drop targets)
-                  // Gets all remaining space - main work area
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16.0),
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: List.generate(
-                            correctPhrases.length,
-                            (index) => Padding(
-                              key: ValueKey('drop_target_$index'),
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: _buildDropTarget(index),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const Divider(height: 1),
-
-                  // Available phrases area (drag sources)
-                  if (availablePhrases.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 12.0),
-                      color: theme.colorScheme.surfaceVariant
-                          .withAlpha((0.3 * 255).round()),
-                      child: Center(
-                        child: Text(
-                          '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (0)',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withAlpha((0.6 * 255).round()),
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: WalkthroughTooltip(
-                        showcaseKey: ShowcaseKeys.practiceWordScramble,
-                        title: AppLocalizations.of(context)!
-                            .walkthroughPracticeWordScrambleTitle,
-                        description: AppLocalizations.of(context)!
-                            .walkthroughPracticeWordScrambleDesc,
-                        screen: WalkthroughScreen.practiceWordScramble,
-                        stepNumber: 1,
-                        totalSteps: 4,
-                        onNext: _onNext,
-                        child: Container(
-                          padding: const EdgeInsets.all(16.0),
-                          color: theme.colorScheme.surfaceVariant
-                              .withAlpha((0.3 * 255).round()),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (${availablePhrases.length})',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: availablePhrases
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                      final phrase = entry.value;
-                                      return Padding(
-                                        key: ValueKey(
-                                            'available_${entry.key}_$phrase'),
-                                        padding:
-                                            const EdgeInsets.only(bottom: 8.0),
-                                        child: _buildDraggablePhrase(phrase),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Action buttons
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: WalkthroughTooltip(
-                                showcaseKey:
-                                    ShowcaseKeys.practiceWordScrambleShowAnswer,
-                                title: AppLocalizations.of(context)!
-                                    .walkthroughPracticeWordScrambleShowAnswerTitle,
-                                description: AppLocalizations.of(context)!
-                                    .walkthroughPracticeWordScrambleShowAnswerDesc,
-                                screen: WalkthroughScreen.practiceWordScramble,
-                                stepNumber: 2,
-                                totalSteps: 4,
-                                onNext: _onNext,
-                                child: OutlinedButton.icon(
-                                  onPressed: !isCompleted ? _showAnswer : null,
-                                  icon: const Icon(Icons.visibility),
-                                  label: Text(context
-                                      .tr(TranslationKeys.practiceShowAnswer)),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: WalkthroughTooltip(
-                                showcaseKey:
-                                    ShowcaseKeys.practiceWordScrambleReset,
-                                title: AppLocalizations.of(context)!
-                                    .walkthroughPracticeWordScrambleResetTitle,
-                                description: AppLocalizations.of(context)!
-                                    .walkthroughPracticeWordScrambleResetDesc,
-                                screen: WalkthroughScreen.practiceWordScramble,
-                                stepNumber: 3,
-                                totalSteps: 4,
-                                onNext: _onNext,
-                                child: OutlinedButton.icon(
-                                  onPressed: !isCompleted ? _reset : null,
-                                  icon: const Icon(Icons.refresh),
-                                  label: Text(context
-                                      .tr(TranslationKeys.practiceReset)),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: WalkthroughTooltip(
-                            showcaseKey:
-                                ShowcaseKeys.practiceWordScrambleSubmit,
-                            title: AppLocalizations.of(context)!
-                                .walkthroughPracticeWordScrambleSubmitTitle,
-                            description: AppLocalizations.of(context)!
-                                .walkthroughPracticeWordScrambleSubmitDesc,
-                            screen: WalkthroughScreen.practiceWordScramble,
-                            stepNumber: 4,
-                            totalSteps: 4,
-                            onNext: _onNext,
-                            child: ElevatedButton.icon(
-                              onPressed: isCompleted || showCorrectAnswer
-                                  ? _submitPractice
-                                  : null,
-                              icon: const Icon(Icons.check),
-                              label: Text(
-                                  context.tr(TranslationKeys.practiceSubmit)),
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                backgroundColor: context.appInteractive,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            bottomBar: _ScrambleActionBar(
+              hint: MemoryActionPill(
+                label: _hintLabel(context),
+                icon: Icons.lightbulb_outline_rounded,
+                badge: hintsUsed > 0 ? '$hintsUsed' : null,
+                onPressed: availablePhrases.isNotEmpty && !showCorrectAnswer
+                    ? _useHint
+                    : null,
+              ),
+              reset: _WrappedPill(
+                build: (pill) => WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.practiceWordScrambleReset,
+                  title: l10n.walkthroughPracticeWordScrambleResetTitle,
+                  description: l10n.walkthroughPracticeWordScrambleResetDesc,
+                  screen: WalkthroughScreen.practiceWordScramble,
+                  stepNumber: 3,
+                  totalSteps: 4,
+                  onNext: _onNext,
+                  highlightBorderRadius: 26,
+                  child: pill,
+                ),
+                pill: MemoryActionPill(
+                  label: context.tr(TranslationKeys.practiceReset),
+                  icon: Icons.refresh_rounded,
+                  onPressed: !isCompleted ? _reset : null,
+                ),
+              ),
+              submit: WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.practiceWordScrambleSubmit,
+                title: l10n.walkthroughPracticeWordScrambleSubmitTitle,
+                description: l10n.walkthroughPracticeWordScrambleSubmitDesc,
+                screen: WalkthroughScreen.practiceWordScramble,
+                stepNumber: 4,
+                totalSteps: 4,
+                onNext: _onNext,
+                highlightBorderRadius: 26,
+                child: MemoryPrimaryPill(
+                  label: context.tr(TranslationKeys.practiceSubmit),
+                  onPressed:
+                      isCompleted || showCorrectAnswer ? _submitPractice : null,
+                ),
               ),
             ),
           ),
@@ -658,176 +516,139 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
     );
   }
 
-  Widget _buildDropTarget(int index) {
-    final theme = Theme.of(context);
-    final placedPhrase = placedPhrases[index];
-
-    return DragTarget<String>(
-      onWillAccept: (phrase) => placedPhrase == null,
-      onAccept: (phrase) => _placePhrase(index, phrase),
-      builder: (context, candidateData, rejectedData) {
-        final isHovered = candidateData.isNotEmpty;
-
-        return Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isHovered
-                ? theme.colorScheme.primary.withAlpha((0.1 * 255).round())
-                : (placedPhrase != null
-                    ? theme.colorScheme.surfaceContainerHighest
-                    : theme.colorScheme.surfaceVariant
-                        .withAlpha((0.5 * 255).round())),
-            border: Border.all(
-              color: isHovered
-                  ? theme.colorScheme.primary
-                  : (placedPhrase != null
-                      ? theme.colorScheme.outline
-                      : AppColors.lightBorder),
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: placedPhrase != null
-              ? GestureDetector(
-                  onTap: () => _removePhrase(index),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          placedPhrase,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.close,
-                        size: 18,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                )
-              : Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: AppColors.lightBorder,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.lightTextSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      context.tr(TranslationKeys.wordScrambleDropHere),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.lightTextSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
+  /// Placed phrases in slot order. Empty slots in the middle (left by
+  /// removing a phrase) each get their own drop zone; the trailing run of
+  /// empty slots collapses into a single "Drop here" zone for the first one.
+  List<Widget> _buildAnswerSlots(BuildContext context) {
+    final lastFilled = placedPhrases.lastIndexWhere((p) => p != null);
+    final children = <Widget>[];
+    for (var i = 0; i < placedPhrases.length; i++) {
+      final phrase = placedPhrases[i];
+      if (phrase == null && i > lastFilled + 1) continue;
+      if (children.isNotEmpty) children.add(const SizedBox(height: 10));
+      children.add(KeyedSubtree(
+        key: ValueKey('drop_target_$i'),
+        child: phrase != null
+            ? Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: MemoryTokenChip(
+                  label: phrase,
+                  state: showCorrectAnswer
+                      ? MemoryTokenState.correct
+                      : MemoryTokenState.selected,
+                  fontSize: 16,
+                  onTap: showCorrectAnswer ? null : () => _removePhrase(i),
                 ),
-        );
-      },
+              )
+            : _buildDropTarget(i),
+      ));
+    }
+    return children;
+  }
+
+  Widget _buildDropTarget(int index) {
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (_) => placedPhrases[index] == null,
+      onAcceptWithDetails: (details) => _placePhrase(index, details.data),
+      builder: (context, candidateData, rejectedData) => MemoryDropZone(
+        label: context.tr(TranslationKeys.wordScrambleDropHere),
+        active: candidateData.isNotEmpty,
+        minHeight: 44,
+      ),
     );
   }
 
   Widget _buildDraggablePhrase(String phrase) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final handle = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Icon(Icons.drag_indicator_rounded, size: 20, color: palette.dim),
+    );
 
-    // Make only the drag handle draggable, rest of the chip is scrollable
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.secondary,
+    // Only the handle is draggable, so the list itself stays scrollable;
+    // tapping the row places the phrase in the next empty slot.
+    return MemoryTokenChip(
+      label: phrase,
+      expand: true,
+      fontSize: 16,
+      onTap: () => _placeInNextSlot(phrase),
+      leading: Draggable<String>(
+        key: ValueKey('draggable_$phrase'),
+        data: phrase,
+        feedback: Material(
+          color: Colors.transparent,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: MemoryTokenChip(
+              label: phrase,
+              state: MemoryTokenState.selected,
+              fontSize: 16,
+            ),
+          ),
         ),
+        childWhenDragging: Opacity(opacity: 0.3, child: handle),
+        child: handle,
       ),
-      child: Row(
-        children: [
-          // Only the drag handle is draggable
-          Draggable<String>(
-            key: ValueKey('draggable_$phrase'),
-            data: phrase,
-            feedback: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 300),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: context.appInteractive,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  phrase,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-            childWhenDragging: Opacity(
-              opacity: 0.3,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                child: Icon(
-                  Icons.drag_indicator,
-                  size: 24,
-                  color: theme.colorScheme.onSecondaryContainer.withAlpha(
-                    (0.5 * 255).round(),
-                  ),
-                ),
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color:
-                    theme.colorScheme.secondary.withAlpha((0.1 * 255).round()),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-              ),
-              child: Icon(
-                Icons.drag_indicator,
-                size: 24,
-                color: theme.colorScheme.onSecondaryContainer,
-              ),
-            ),
+    );
+  }
+}
+
+/// Wraps an action pill in a walkthrough target while still exposing the
+/// pill so the bar can collapse it to an icon on narrow screens.
+class _WrappedPill {
+  final MemoryActionPill pill;
+  final Widget Function(Widget pill) build;
+
+  const _WrappedPill({required this.pill, required this.build});
+}
+
+/// Bottom bar of the phrase scramble: Hint + Reset (secondary) and Submit.
+///
+/// Mirrors the shared practice action bar layout but lets the Reset pill
+/// and Submit carry their walkthrough targets.
+class _ScrambleActionBar extends StatelessWidget {
+  final MemoryActionPill hint;
+  final _WrappedPill reset;
+  final Widget submit;
+
+  const _ScrambleActionBar({
+    required this.hint,
+    required this.reset,
+    required this.submit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Material(
+      color: palette.page,
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding:
+              const EdgeInsets.fromLTRB(kMemoryGutter, 8, kMemoryGutter, 4),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Same rule as the shared action bar: whole labels or icons.
+              final compact = !MemoryActionBar.labelsFit(
+                context,
+                constraints.maxWidth,
+                [hint, reset.pill],
+                submit,
+              );
+              return Row(
+                children: [
+                  hint.withIconOnly(compact),
+                  const SizedBox(width: 10),
+                  reset.build(reset.pill.withIconOnly(compact)),
+                  const SizedBox(width: 10),
+                  Expanded(child: submit),
+                ],
+              );
+            },
           ),
-          // The text area is not draggable - allows scrolling
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(
-                phrase,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

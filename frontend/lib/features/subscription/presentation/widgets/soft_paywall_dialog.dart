@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../tokens/presentation/bloc/token_bloc.dart';
-import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../../core/theme/app_colors.dart';
 
-/// Soft paywall dialog shown at usage thresholds (80%, 100%)
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
+
+/// Soft paywall dialog shown at usage thresholds (80%, 100%), in the popup
+/// popup style shared with the insufficient-credits dialog.
 class SoftPaywallDialog extends StatelessWidget {
   final int percentage;
   final int tokensRemaining;
@@ -63,16 +65,11 @@ class SoftPaywallDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? Colors.white.withOpacity(0.9) : Colors.black87;
-    final textSecondary =
-        isDark ? Colors.white.withOpacity(0.65) : Colors.black54;
     final resetTime = _resetKey(context);
 
     final String title;
     final String message;
     final IconData titleIcon;
-    final Color iconColor;
 
     if (percentage >= 100) {
       title = context.tr(TranslationKeys.tokenSoftPaywallUsedTitle);
@@ -81,7 +78,6 @@ class SoftPaywallDialog extends StatelessWidget {
         {'resetTime': resetTime},
       );
       titleIcon = Icons.nightlight_round;
-      iconColor = const Color(0xFF6366F1); // indigo
     } else {
       title = context.tr(TranslationKeys.tokenSoftPaywallLowTitle);
       message = context.tr(
@@ -92,107 +88,71 @@ class SoftPaywallDialog extends StatelessWidget {
         },
       );
       titleIcon = Icons.battery_2_bar_rounded;
-      iconColor = const Color(0xFFF59E0B); // amber
     }
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
-      title: Row(
-        children: [
-          Icon(titleIcon, color: iconColor, size: 26),
-          const SizedBox(width: 10),
-          Expanded(
+    final palette = ReaderPalette.of(context);
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PopupHeader(
+          icon: PopupIconCircle(
+            icon: titleIcon,
+            tone: percentage >= 100 ? PopupTone.indigo : PopupTone.gold,
+          ),
+          eyebrow: context.tr(TranslationKeys.popupCreditsEyebrow),
+          title: title,
+          body: message,
+        ),
+        const SizedBox(height: 22),
+        PopupPrimaryButton(
+          key: const Key('soft_paywall_see_plans'),
+          label: context.tr(TranslationKeys.tokenSoftPaywallSeePlans),
+          onPressed: () {
+            final router = GoRouter.of(context);
+            Navigator.of(context).pop();
+            // Land on the cheapest plan that lifts this limit, not the top of the
+            // page where Free — the plan they already have — sits.
+            router.push(AppRoutes.pricing,
+                extra: const {'preselectedPlan': 'standard'});
+          },
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            key: const Key('soft_paywall_purchase'),
+            onPressed: () {
+              final router = GoRouter.of(context);
+              final tokenState = context.read<TokenBloc>().state;
+              final tokenStatus =
+                  tokenState is TokenLoaded ? tokenState.tokenStatus : null;
+              Navigator.of(context).pop();
+              router.push(AppRoutes.tokenPurchase, extra: tokenStatus);
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: palette.text,
+              side: BorderSide(color: palette.outline),
+              minimumSize: const Size.fromHeight(48),
+              shape: const StadiumBorder(),
+            ),
             child: Text(
-              title,
+              context.tr(TranslationKeys.tokenSoftPaywallPurchase),
+              textAlign: TextAlign.center,
               style: AppFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
               ),
             ),
           ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            message,
-            style: AppFonts.inter(fontSize: 14, color: textSecondary),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                final router = GoRouter.of(context);
-                Navigator.of(context).pop();
-                // Land on the cheapest plan that lifts this limit, not the top of the
-                // page where Free — the plan they already have — sits.
-                router.push(AppRoutes.pricing,
-                    extra: const {'preselectedPlan': 'standard'});
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.tokenSoftPaywallSeePlans),
-                style: AppFonts.inter(
-                    color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {
-                final router = GoRouter.of(context);
-                final tokenState = context.read<TokenBloc>().state;
-                final tokenStatus =
-                    tokenState is TokenLoaded ? tokenState.tokenStatus : null;
-                Navigator.of(context).pop();
-                router.push(AppRoutes.tokenPurchase, extra: tokenStatus);
-              },
-              style: OutlinedButton.styleFrom(
-                // AppTheme.primaryColor is a hardcoded brandPrimary and does
-                // not follow the theme: on the dark dialog it measured 2.33:1,
-                // failing for both the label and this border.
-                side: BorderSide(color: context.appBrandAccent),
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.tokenSoftPaywallPurchase),
-                style: AppFonts.inter(
-                    color: context.appBrandAccent, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.tokenSoftPaywallMaybeLater),
-                style: AppFonts.inter(color: textSecondary),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('soft_paywall_later'),
+          label: context.tr(TranslationKeys.tokenSoftPaywallMaybeLater),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ],
     );
   }
 }

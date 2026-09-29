@@ -253,17 +253,23 @@ class _TooltipContent extends StatelessWidget {
     Widget positionedArrow(Widget a) =>
         Align(alignment: arrowAlignment, child: a);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: arrowAtBottom
-          ? [
-              bubble,
-              positionedArrow(arrowShape),
-            ]
-          : [
-              positionedArrow(RotatedBox(quarterTurns: 2, child: arrowShape)),
-              bubble,
-            ],
+    // IntrinsicWidth + stretch give the arrow row the bubble's width. Without
+    // them the Align was only as wide as the arrow, so arrowAlignment had no
+    // effect and the arrow always sat in the middle of the bubble.
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: arrowAtBottom
+            ? [
+                bubble,
+                positionedArrow(arrowShape),
+              ]
+            : [
+                positionedArrow(RotatedBox(quarterTurns: 2, child: arrowShape)),
+                bubble,
+              ],
+      ),
     );
   }
 }

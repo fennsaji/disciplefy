@@ -2,14 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../domain/entities/memory_champion_entry.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_champion_entry.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+
+/// Leaderboard period shown by [MemoryChampionsPage]; [apiValue] is what the
+/// leaderboard event expects.
+enum ChampionsPeriod {
+  weekly('weekly'),
+  monthly('monthly'),
+  allTime('all_time');
+
+  final String apiValue;
+  const ChampionsPeriod(this.apiValue);
+}
 
 /// Memory Champions Leaderboard Page.
 ///
@@ -18,12 +32,8 @@ import '../bloc/memory_verse_state.dart';
 /// - Tiebreaker 1: Longest practice streak
 /// - Tiebreaker 2: Total practice days
 ///
-/// Features:
-/// - Top 100 users shown
-/// - User's rank always visible (even if not top 100)
-/// - Weekly/Monthly/All-time tabs
-/// - Profile badges for top 10
-/// - Achievement badges displayed
+/// Weekly / Monthly / All time switch, the user's own rank card, then the
+/// ranked rows with medals for the top three.
 class MemoryChampionsPage extends StatefulWidget {
   const MemoryChampionsPage({super.key});
 
@@ -31,46 +41,34 @@ class MemoryChampionsPage extends StatefulWidget {
   State<MemoryChampionsPage> createState() => _MemoryChampionsPageState();
 }
 
-class _MemoryChampionsPageState extends State<MemoryChampionsPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _MemoryChampionsPageState extends State<MemoryChampionsPage> {
   late MemoryVerseBloc _bloc;
 
-  String get _currentPeriod {
-    switch (_tabController.index) {
-      case 0:
-        return 'weekly';
-      case 1:
-        return 'monthly';
-      case 2:
-        return 'all_time';
-      default:
-        return 'all_time';
-    }
-  }
+  /// All time is loaded first, so the switch starts there (the old tab bar
+  /// showed Weekly selected while listing all-time data).
+  ChampionsPeriod _period = ChampionsPeriod.allTime;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _bloc = sl<MemoryVerseBloc>();
-
-    // Load initial leaderboard (all-time by default)
-    _bloc.add(const LoadMemoryChampionsLeaderboardEvent(period: 'all_time'));
-
-    // Listen for tab changes and reload leaderboard
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        _bloc.add(LoadMemoryChampionsLeaderboardEvent(period: _currentPeriod));
-      }
-    });
+    _loadLeaderboard();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _bloc.close();
     super.dispose();
+  }
+
+  void _loadLeaderboard() {
+    _bloc.add(LoadMemoryChampionsLeaderboardEvent(period: _period.apiValue));
+  }
+
+  void _onPeriodChanged(ChampionsPeriod period) {
+    if (period == _period) return;
+    setState(() => _period = period);
+    _loadLeaderboard();
   }
 
   /// Handle back navigation - go to memory verses home when can't pop
@@ -85,6 +83,7 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return BlocProvider.value(
       value: _bloc,
       child: PopScope(
@@ -94,404 +93,309 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
           _handleBackNavigation();
         },
         child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _handleBackNavigation,
-            ),
-            title: Text(context.tr(TranslationKeys.memoryChampions)),
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: [
-                Tab(text: context.tr(TranslationKeys.weekly)),
-                Tab(text: context.tr(TranslationKeys.monthly)),
-                Tab(text: context.tr(TranslationKeys.allTime)),
-              ],
-            ),
+          backgroundColor: palette.page,
+          appBar: MemoryTopBar(
+            title: context.tr(TranslationKeys.memoryChampions),
+            subtitle:
+                context.tr(TranslationKeys.memoryScreensChampionsSubtitle),
+            onBack: _handleBackNavigation,
           ),
-          body: BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
-            builder: (context, state) {
-              if (state is MemoryVerseLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (state is MemoryVerseError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline,
-                          size: 64, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to load leaderboard',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton.icon(
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                        onPressed: () {
-                          _bloc.add(
-                            LoadMemoryChampionsLeaderboardEvent(
-                              period: _currentPeriod,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              if (state is MemoryChampionsLeaderboardLoaded) {
-                return Column(
-                  children: [
-                    // User's current rank card
-                    _buildUserRankCard(state.userStats),
-
-                    // Leaderboard
-                    Expanded(
-                      child: _buildLeaderboard(state.leaderboard),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    kMemoryGutter, 4, kMemoryGutter, 12),
+                child: MemorySegmentedControl<ChampionsPeriod>(
+                  segments: [
+                    MemorySegment(
+                      value: ChampionsPeriod.weekly,
+                      label: context.tr(TranslationKeys.weekly),
+                    ),
+                    MemorySegment(
+                      value: ChampionsPeriod.monthly,
+                      label: context.tr(TranslationKeys.monthly),
+                    ),
+                    MemorySegment(
+                      value: ChampionsPeriod.allTime,
+                      label: context.tr(TranslationKeys.allTime),
                     ),
                   ],
-                );
-              }
+                  selected: _period,
+                  onChanged: _onPeriodChanged,
+                ),
+              ),
+              Expanded(
+                child: BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+                  builder: (context, state) {
+                    if (state is MemoryVerseLoading) {
+                      return const LedgerLoading();
+                    }
 
-              // Default empty state
-              return const Center(
-                child: Text('No leaderboard data available'),
-              );
-            },
+                    if (state is MemoryVerseError) {
+                      return LedgerMessage(
+                        icon: Icons.error_outline_rounded,
+                        title: context
+                            .tr(TranslationKeys.memoryChampionsLoadFailed),
+                        actionLabel: context.tr(TranslationKeys.commonRetry),
+                        onAction: _loadLeaderboard,
+                        isError: true,
+                      );
+                    }
+
+                    if (state is MemoryChampionsLeaderboardLoaded) {
+                      return _buildLeaderboard(
+                          state.userStats, state.leaderboard);
+                    }
+
+                    return LedgerMessage(
+                      icon: Icons.emoji_events_outlined,
+                      title: context.tr(TranslationKeys.memoryChampionsNoData),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildUserRankCard(UserMemoryStats userStats) {
-    final userRank = userStats.rank;
-    final userMasterVerses = userStats.masterVerses;
-    final userStreak = userStats.longestStreak;
+  Widget _buildLeaderboard(
+    UserMemoryStats userStats,
+    List<MemoryChampionEntry> entries,
+  ) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(kMemoryGutter, 0, kMemoryGutter, 24),
+      itemCount: entries.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _YourRankCard(userStats: userStats),
+          );
+        }
+        return _ChampionRow(entry: entries[index - 1]);
+      },
+    );
+  }
+}
 
+/// Indigo card with the user's rank, mastered verses and longest streak.
+class _YourRankCard extends StatelessWidget {
+  final UserMemoryStats userStats;
+
+  const _YourRankCard({required this.userStats});
+
+  @override
+  Widget build(BuildContext context) {
+    const ink = Colors.white;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryPurple,
-            AppColors.primaryPurple.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryPurple.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: ReaderPalette.selectedFill,
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Rank badge
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '#$userRank',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    context.tr(TranslationKeys.memoryChampionsRank),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Stats
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.tr(TranslationKeys.memoryChampionsYourProgress),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  context
+                      .tr(TranslationKeys.memoryScreensYourRank)
+                      .toUpperCase(),
+                  style: AppFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                    color: ink.withValues(alpha: 0.8),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildStatBadge(
-                      icon: Icons.emoji_events,
-                      label: context.tr(TranslationKeys.memoryChampionsMaster),
-                      value: '$userMasterVerses',
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    userStats.rank > 0 ? '#${userStats.rank}' : '—',
+                    style: AppFonts.poppins(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w700,
+                      color: ink,
+                      fontFeatures: kMemoryTabular,
                     ),
-                    const SizedBox(width: 12),
-                    _buildStatBadge(
-                      icon: Icons.local_fire_department,
-                      label: context.tr(TranslationKeys.memoryChampionsStreak),
-                      value: '$userStreak',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _RankStat(
+            value: '${userStats.masterVerses}',
+            label: context.tr(TranslationKeys.memoryScreensStatMastered),
+          ),
+          const SizedBox(width: 18),
+          _RankStat(
+            value: '${userStats.longestStreak}',
+            label: context.tr(TranslationKeys.memoryScreensStatDayStreak),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RankStat extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _RankStat({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 90),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: AppFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              fontFeatures: kMemoryTabular,
+            ),
+          ),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppFonts.inter(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A leaderboard line: medal (top 3) or rank number, name, gold
+/// "N mastered" and the longest streak, plus a marker for ranks 4-10.
+/// The current user's row is tinted.
+class _ChampionRow extends StatelessWidget {
+  final MemoryChampionEntry entry;
+
+  const _ChampionRow({required this.entry});
+
+  static const _silver = Color(0xFFB8BCC6);
+  static const _bronze = Color(0xFFD08A4A);
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final medal = switch (entry.rank) {
+      1 => palette.gold,
+      2 => palette.isDark ? _silver : const Color(0xFF7C818C),
+      3 => palette.isDark ? _bronze : const Color(0xFFA0602A),
+      _ => null,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      decoration: BoxDecoration(
+        color: entry.isCurrentUser
+            ? ReaderPalette.selectedFill
+                .withValues(alpha: palette.isDark ? 0.14 : 0.06)
+            : null,
+        border: Border(bottom: BorderSide(color: palette.hairline)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 34,
+            child: medal != null
+                ? Semantics(
+                    label: '#${entry.rank}',
+                    child: Icon(Icons.workspace_premium_outlined,
+                        size: 24, color: medal),
+                  )
+                : Text(
+                    '${entry.rank}',
+                    style: AppFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: palette.muted,
+                      fontFeatures: kMemoryTabular,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // User names may ellipsize; the stats below never do.
+                Text(
+                  entry.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        entry.isCurrentUser ? palette.accentIcon : palette.text,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 2,
+                  children: [
+                    Text(
+                      context.tr(TranslationKeys.memoryScreensMasteredCount,
+                          {'count': entry.masterVerses.toString()}),
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: palette.gold,
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.local_fire_department_outlined,
+                            size: 14, color: palette.muted),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            context.tr(TranslationKeys.heatMapDayStreak,
+                                {'count': entry.longestStreak.toString()}),
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              color: palette.muted,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
           ),
+          // Top-ten marker (the top three already carry medals).
+          if (entry.rank > 3 && entry.rank <= 10) ...[
+            const SizedBox(width: 10),
+            Tooltip(
+              message: context.tr(TranslationKeys.memoryScreensTopTen),
+              child: Icon(Icons.military_tech_outlined,
+                  size: 22, color: palette.accentIcon),
+            ),
+          ],
         ],
       ),
     );
-  }
-
-  Widget _buildStatBadge({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 16),
-          const SizedBox(width: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 9,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeaderboard(List<MemoryChampionEntry> entries) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return _buildLeaderboardCard(entry);
-      },
-    );
-  }
-
-  Widget _buildLeaderboardCard(MemoryChampionEntry entry) {
-    final isCurrentUser = entry.isCurrentUser;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: isCurrentUser ? 4 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isCurrentUser
-            ? BorderSide(color: AppColors.primaryPurple, width: 2)
-            : BorderSide.none,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Rank with medal for top 3
-            _buildRankBadge(entry.rank),
-            const SizedBox(width: 16),
-
-            // Avatar
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
-              child: Text(
-                entry.displayName[0].toUpperCase(),
-                style: TextStyle(
-                  color: AppColors.primaryPurple,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Name and stats
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.displayName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: isCurrentUser ? AppColors.primaryPurple : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.emoji_events,
-                        size: 14,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${entry.masterVerses} Master',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.local_fire_department,
-                        size: 14,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${entry.longestStreak} days',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Trophy icon for top 10
-            if (entry.rank <= 10)
-              Icon(
-                Icons.military_tech,
-                color: _getTrophyColor(entry.rank),
-                size: 24,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRankBadge(int rank) {
-    if (rank <= 3) {
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _getMedalGradient(rank),
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: _getMedalGradient(rank)[0].withOpacity(0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Icon(
-            _getMedalIcon(rank),
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
-      );
-    } else {
-      return SizedBox(
-        width: 40,
-        child: Text(
-          '#$rank',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[600],
-          ),
-        ),
-      );
-    }
-  }
-
-  List<Color> _getMedalGradient(int rank) {
-    switch (rank) {
-      case 1:
-        return [const Color(0xFFFFD700), const Color(0xFFFFA500)]; // Gold
-      case 2:
-        return [const Color(0xFFC0C0C0), const Color(0xFF808080)]; // Silver
-      case 3:
-        return [const Color(0xFFCD7F32), const Color(0xFF8B4513)]; // Bronze
-      default:
-        return [Colors.grey, Colors.grey];
-    }
-  }
-
-  IconData _getMedalIcon(int rank) {
-    switch (rank) {
-      case 1:
-        return Icons.looks_one;
-      case 2:
-        return Icons.looks_two;
-      case 3:
-        return Icons.looks_3;
-      default:
-        return Icons.star;
-    }
-  }
-
-  Color _getTrophyColor(int rank) {
-    if (rank <= 3) {
-      return const Color(0xFFFFD700); // Gold
-    } else if (rank <= 10) {
-      return AppColors.primaryPurple;
-    }
-    return Colors.grey;
   }
 }

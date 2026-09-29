@@ -2,19 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/error/failures.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../domain/entities/token_usage_history.dart';
-import '../bloc/token_bloc.dart';
-import '../bloc/token_event.dart';
-import '../bloc/token_state.dart';
-import '../widgets/usage_history_list_item.dart';
-import '../widgets/usage_statistics_card.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/error/failures.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/usage_history_list_item.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/usage_statistics_card.dart';
 
+/// Usage history in the quiet-ledger design: a usage summary, then every
+/// spend as a ledger line, paginated on scroll.
 class TokenUsageHistoryPage extends StatefulWidget {
   const TokenUsageHistoryPage({super.key});
 
@@ -30,6 +33,9 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
   bool _hasTriggeredStatistics = false;
   StreamSubscription<TokenState>? _usageHistorySubscription;
   Timer? _usageHistoryTimeoutTimer;
+
+  /// First usage date, kept once known so the subtitle survives state changes.
+  DateTime? _since;
 
   @override
   void initState() {
@@ -161,10 +167,10 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
   }
 
   /// Build statistics section sliver
-  Widget _buildStatsSection(ThemeData theme) {
+  Widget _buildStatsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         child: BlocBuilder<TokenBloc, TokenState>(
           buildWhen: (previous, current) =>
               current is UsageStatisticsLoading ||
@@ -182,40 +188,12 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
                 statistics: state.statistics!,
               );
             } else if (state is UsageStatisticsLoading) {
-              return const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: LedgerLoading(),
               );
             } else if (state is UsageHistoryError) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: theme.colorScheme.error,
-                        size: 32,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.tr('tokens.stats.failed_to_load'),
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.tr(TranslationKeys.commonErrorTryAgain),
-                        style: theme.textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              return const UsageStatisticsError();
             }
             return const SizedBox.shrink();
           },
@@ -225,23 +203,26 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
   }
 
   /// Build section header sliver
-  Widget _buildSectionHeader(ThemeData theme) {
+  Widget _buildSectionHeader() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Text(
-          context.tr('tokens.usage.recent_activity'),
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onBackground,
-          ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const LedgerHairline(),
+            LedgerSectionLabel(
+              context.tr('tokens.usage.recent_activity'),
+              padding: const EdgeInsets.only(top: 18, bottom: 2),
+            ),
+          ],
         ),
       ),
     );
   }
 
   /// Build usage history list sliver
-  Widget _buildHistoryList(ThemeData theme) {
+  Widget _buildHistoryList() {
     return BlocConsumer<TokenBloc, TokenState>(
       listenWhen: (previous, current) =>
           (current is UsageHistoryLoaded || current is UsageHistoryError) &&
@@ -273,44 +254,43 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
       builder: (context, state) {
         if (state is UsageHistoryLoaded) {
           if (state.isEmpty) {
-            return _buildEmptyState(theme);
+            return _buildEmptyState();
           }
 
-          return SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index < state.usageHistory.length) {
-                  final usage = state.usageHistory[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 4.0,
-                    ),
-                    child: UsageHistoryListItem(
-                      usage: usage,
-                    ),
-                  );
-                } else if (_isLoadingMore) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-                return null;
-              },
-              childCount: state.usageHistory.length + (_isLoadingMore ? 1 : 0),
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  if (index < state.usageHistory.length) {
+                    final usage = state.usageHistory[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        UsageHistoryListItem(usage: usage),
+                        const LedgerHairline(),
+                      ],
+                    );
+                  } else if (_isLoadingMore) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: LedgerLoading(),
+                    );
+                  }
+                  return null;
+                },
+                childCount:
+                    state.usageHistory.length + (_isLoadingMore ? 1 : 0),
+              ),
             ),
           );
         } else if (state is UsageHistoryLoading) {
           return const SliverFillRemaining(
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
+            hasScrollBody: false,
+            child: LedgerLoading(),
           );
         } else if (state is UsageHistoryError) {
-          return _buildErrorState(theme, state);
+          return _buildErrorState(state);
         }
 
         return const SliverToBoxAdapter(
@@ -321,80 +301,35 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
   }
 
   /// Build empty state sliver
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState() {
     return SliverFillRemaining(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.history,
-              size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              context.tr('tokens.usage.empty'),
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr('tokens.usage.empty_message'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      hasScrollBody: false,
+      child: LedgerMessage(
+        icon: Icons.history_rounded,
+        title: context.tr('tokens.usage.empty'),
+        body: context.tr('tokens.usage.empty_message'),
       ),
     );
   }
 
   /// Build error state sliver
-  Widget _buildErrorState(ThemeData theme, UsageHistoryError state) {
+  Widget _buildErrorState(UsageHistoryError state) {
     return SliverFillRemaining(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                context.tr('tokens.usage.failed'),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr(TranslationKeys.commonErrorTryAgain),
-                style: theme.textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _onRefresh,
-                child: Text(context.tr('tokens.usage.retry')),
-              ),
-            ],
-          ),
-        ),
+      hasScrollBody: false,
+      child: LedgerMessage(
+        icon: Icons.error_outline_rounded,
+        isError: true,
+        title: context.tr('tokens.usage.failed'),
+        body: context.tr(TranslationKeys.commonErrorTryAgain),
+        actionLabel: context.tr('tokens.usage.retry'),
+        onAction: _onRefresh,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return PopScope(
       canPop: false,
@@ -405,22 +340,38 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
         Navigator.of(context).pop();
       },
       child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: Text(context.tr('tokens.usage.title')),
-          backgroundColor: theme.scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+        backgroundColor: palette.page,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(72),
+          child: BlocBuilder<TokenBloc, TokenState>(
+            buildWhen: (previous, current) =>
+                current is UsageStatisticsLoaded ||
+                current is UsageHistoryLoaded,
+            builder: (context, state) {
+              final stats = state is UsageStatisticsLoaded
+                  ? state.statistics
+                  : state is UsageHistoryLoaded
+                      ? state.statistics
+                      : null;
+              final since = stats?.firstUsageDate;
+              if (since != null) _since = since;
+              return LedgerTopBar(
+                title: context.tr('tokens.usage.title'),
+                subtitle: _since == null
+                    ? null
+                    : context.tr(TranslationKeys.ledgerSince,
+                        {'date': DateFormat('MMM d').format(_since!)}),
+                onBack: () => Navigator.of(context).pop(),
+                actions: [
+                  LedgerBarAction(
+                    icon: Icons.sync_rounded,
+                    tooltip: context.tr('tokens.balance.refresh'),
+                    onPressed: _onRefresh,
+                  ),
+                ],
+              );
+            },
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _onRefresh,
-              tooltip: context.tr('tokens.balance.refresh'),
-            ),
-          ],
         ),
         body: RefreshIndicator(
           onRefresh: () async {
@@ -430,12 +381,12 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
           },
           child: CustomScrollView(
             controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              _buildStatsSection(theme),
-              _buildSectionHeader(theme),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              _buildHistoryList(theme),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              _buildStatsSection(),
+              _buildSectionHeader(),
+              _buildHistoryList(),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
         ),

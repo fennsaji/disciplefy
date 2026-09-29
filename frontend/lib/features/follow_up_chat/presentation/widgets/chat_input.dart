@@ -3,6 +3,8 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/reader_palette.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
@@ -25,6 +27,10 @@ class ChatInput extends StatefulWidget {
   /// this input widget. Pass null to skip walkthrough entirely.
   final VoidCallback? onNext;
 
+  /// Optional external controller, so a parent can prefill a question (e.g.
+  /// from a suggestion chip). Owned and disposed by the caller.
+  final TextEditingController? controller;
+
   const ChatInput({
     super.key,
     required this.onSendMessage,
@@ -33,6 +39,7 @@ class ChatInput extends StatefulWidget {
     this.onCancel,
     this.enableVoiceInput = false,
     this.onNext,
+    this.controller,
   });
 
   @override
@@ -41,7 +48,8 @@ class ChatInput extends StatefulWidget {
 
 class _ChatInputState extends State<ChatInput>
     with SingleTickerProviderStateMixin {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller =
+      widget.controller ?? TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
 
@@ -113,7 +121,7 @@ class _ChatInputState extends State<ChatInput>
   void dispose() {
     _focusNode.removeListener(_onFocusChange);
     _controller.removeListener(_onTextChange);
-    _controller.dispose();
+    if (widget.controller == null) _controller.dispose();
     _focusNode.dispose();
     _pulseController.dispose();
     if (widget.enableVoiceInput && _isListening) {
@@ -282,28 +290,18 @@ class _ChatInputState extends State<ChatInput>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      // Tighter horizontal padding so the text field gets more width (the mic +
-      // send buttons already eat ~112px of the row).
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.isProcessing) _buildProcessingIndicator(theme),
-            if (_isListening) _buildListeningIndicator(theme),
-            _buildInputRow(theme),
-            _buildHelpText(theme),
-          ],
-        ),
+    // Sits inside the page's scroll view, so no bar chrome or safe-area inset:
+    // just the indicators above one pill-shaped field. The credit cost is shown
+    // once, under the section heading.
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.isProcessing) _buildProcessingIndicator(theme),
+          if (_isListening) _buildListeningIndicator(theme),
+          _buildInputRow(theme),
+        ],
       ),
     );
   }
@@ -478,228 +476,119 @@ class _ChatInputState extends State<ChatInput>
     );
   }
 
-  /// Builds the main input row
+  /// Builds the main input row: one pill holding the field, the mic and a
+  /// round send button.
   Widget _buildInputRow(ThemeData theme) {
-    // Text field takes the full width; the mic + send buttons are grouped
-    // together on the trailing side and vertically centred against the
-    // (multi-line) field for a balanced look.
-    return Row(
-      children: [
-        Expanded(
-          child: _buildTextField(theme),
+    final palette = ReaderPalette.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
+      decoration: BoxDecoration(
+        color: palette.isDark ? palette.card : palette.raised,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: _isFocused ? palette.accentIcon : palette.outline,
+          width: _isFocused ? 1.5 : 1,
         ),
-        const SizedBox(width: AppConstants.SMALL_PADDING),
-        if (widget.enableVoiceInput) ...[
-          _buildVoiceButton(theme),
-          const SizedBox(width: 8),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _buildTextField(theme)),
+          if (widget.enableVoiceInput) _buildVoiceButton(theme),
+          const SizedBox(width: 4),
+          _buildSendButton(theme),
         ],
-        _buildSendButton(theme),
-      ],
+      ),
     );
   }
 
   /// Builds the voice/mic button for inline speech-to-text
   Widget _buildVoiceButton(ThemeData theme) {
+    final palette = ReaderPalette.of(context);
     final isEnabled = widget.isEnabled && !widget.isProcessing;
     final isActive = _isListening;
 
-    return GestureDetector(
-      onTap: isEnabled ? _toggleListening : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          gradient: isEnabled
-              ? LinearGradient(
-                  colors: isActive
-                      ? [AppColors.error, AppColors.errorDark]
-                      : [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color:
-              isEnabled ? null : theme.colorScheme.onSurface.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: isEnabled
-              ? [
-                  BoxShadow(
-                    color:
-                        (isActive ? AppColors.error : theme.colorScheme.primary)
-                            .withOpacity(0.3),
-                    blurRadius: isActive ? 12 : 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: isEnabled ? _toggleListening : null,
-            borderRadius: BorderRadius.circular(24),
-            child: Tooltip(
-              message: isActive
-                  ? context.tr(TranslationKeys.followUpChatStopListening)
-                  : context.tr(TranslationKeys.followUpChatTapToSpeak),
-              child: Icon(
-                isActive ? Icons.stop_rounded : Icons.mic_rounded,
-                color: isEnabled
-                    ? Colors.white
-                    : theme.colorScheme.onSurface.withOpacity(0.4),
-                size: 22,
-              ),
-            ),
-          ),
-        ),
+    return IconButton(
+      onPressed: isEnabled ? _toggleListening : null,
+      tooltip: isActive
+          ? context.tr(TranslationKeys.followUpChatStopListening)
+          : context.tr(TranslationKeys.followUpChatTapToSpeak),
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      icon: Icon(
+        isActive ? Icons.stop_rounded : Icons.mic_none_rounded,
+        color: isActive
+            ? AppColors.error
+            : (isEnabled ? palette.muted : palette.dim.withValues(alpha: 0.5)),
+        size: 22,
       ),
     );
   }
 
   /// Builds the text input field
   Widget _buildTextField(ThemeData theme) {
-    return Container(
-      constraints: const BoxConstraints(
-        minHeight: 68,
-        maxHeight: 160,
+    final palette = ReaderPalette.of(context);
+    return TextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      enabled: widget.isEnabled && !widget.isProcessing && !_isListening,
+      minLines: 1,
+      maxLines: 5,
+      textAlignVertical: TextAlignVertical.center,
+      keyboardType: TextInputType.multiline,
+      textInputAction: TextInputAction.send,
+      onSubmitted: (_) => _sendMessage(),
+      decoration: InputDecoration(
+        // Override the global inputDecorationTheme (filled: true): the pill
+        // around the row is the field.
+        filled: false,
+        isDense: true,
+        hintText: _isListening
+            ? context.tr(TranslationKeys.followUpChatListening)
+            : context.tr(TranslationKeys.followUpChatInputHint),
+        hintMaxLines: 1,
+        hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        disabledBorder: InputBorder.none,
       ),
-      decoration: BoxDecoration(
-        // Transparent fill so the field blends with the input bar instead of
-        // reading as a distinct grey box; the border defines it.
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppConstants.LARGE_BORDER_RADIUS),
-        border: Border.all(
-          color: _isFocused
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outline.withOpacity(0.3),
-          width: _isFocused ? 2 : 1,
-        ),
-      ),
-      child: TextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        enabled: widget.isEnabled && !widget.isProcessing && !_isListening,
-        minLines: 2,
-        maxLines: 6,
-        textAlignVertical: TextAlignVertical.center,
-        keyboardType: TextInputType.multiline,
-        textInputAction: TextInputAction.send,
-        onSubmitted: (_) => _sendMessage(),
-        decoration: InputDecoration(
-          // Override the global inputDecorationTheme (filled: true) so the field
-          // has no grey fill of its own — it blends with the panel.
-          filled: false,
-          hintText: _isListening
-              ? context.tr(TranslationKeys.followUpChatListening)
-              : context.tr(TranslationKeys.followUpChatInputHint),
-          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.DEFAULT_PADDING,
-            vertical: AppConstants.SMALL_PADDING,
-          ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-        ),
-        style: theme.textTheme.bodyMedium,
-      ),
+      style: AppFonts.inter(fontSize: 15, color: palette.text, height: 1.4),
     );
   }
 
-  /// Builds the send button
+  /// Builds the round send button (white on dark, indigo on light).
   Widget _buildSendButton(ThemeData theme) {
+    final palette = ReaderPalette.of(context);
     final canSend = _controller.text.trim().isNotEmpty &&
         widget.isEnabled &&
         !widget.isProcessing &&
         !_isListening;
 
-    final sendButtonChild = Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: canSend
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurface.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return Semantics(
+      button: true,
+      enabled: canSend,
+      label: context.tr(TranslationKeys.followUpChatSend),
       child: Material(
-        color: Colors.transparent,
+        color: canSend
+            ? palette.ctaFill
+            : palette.ctaFill.withValues(alpha: palette.isDark ? 0.35 : 0.4),
+        shape: const CircleBorder(),
         child: InkWell(
           onTap: canSend ? _sendMessage : null,
-          borderRadius: BorderRadius.circular(24),
-          child: Icon(
-            Icons.send_rounded,
-            color: canSend
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurface.withOpacity(0.4),
-            size: 20,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              Icons.arrow_upward_rounded,
+              color: palette.ctaInk,
+              size: 22,
+            ),
           ),
         ),
-      ),
-    );
-
-    return sendButtonChild;
-  }
-
-  /// Builds help text below the input
-  Widget _buildHelpText(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppConstants.SMALL_PADDING),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 14,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
-          const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
-          Expanded(
-            child: Text(
-              context.tr(TranslationKeys.followUpChatTokenCost),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                fontSize: AppConstants.FONT_SIZE_14,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.SMALL_PADDING,
-              vertical: 2,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: theme.colorScheme.secondary.withOpacity(0.3),
-                width: 0.5,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.token,
-                  size: 12,
-                  color: theme.colorScheme.secondary,
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  '5',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.secondary,
-                    fontSize: AppConstants.FONT_SIZE_14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

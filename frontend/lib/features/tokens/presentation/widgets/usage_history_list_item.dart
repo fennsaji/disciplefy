@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../domain/entities/token_usage_history.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_usage_history.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
+/// One usage entry as a ledger line: icon tile, "Study guide · Standard · EN",
+/// the content and when/where the credits came from, and the amount spent.
 class UsageHistoryListItem extends StatelessWidget {
   final TokenUsageHistory usage;
 
@@ -14,260 +18,119 @@ class UsageHistoryListItem extends StatelessWidget {
     required this.usage,
   });
 
+  bool get _isFollowUp =>
+      usage.operationType == 'follow_up_question' ||
+      usage.featureName == 'study_followup';
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row - Content Title + Token Cost Badge
-            Row(
+    final kind = _isFollowUp
+        ? context.tr(TranslationKeys.ledgerFollowUp)
+        : usage.operationType == 'study_generation' ||
+                usage.featureName == 'study_generate'
+            ? context.tr(TranslationKeys.ledgerStudyGuide)
+            : usage.featureDisplayName;
+    final title = [
+      kind,
+      if (usage.studyMode != null) usage.studyModeDisplay,
+      if (usage.language.isNotEmpty) usage.languageDisplay,
+    ].join(' · ');
+
+    final String source;
+    if (usage.usedDailyTokens && usage.usedPurchasedTokens) {
+      source = context.tr(TranslationKeys.ledgerDailyPlusPurchased,
+          {'count': usage.purchasedTokensUsed});
+    } else if (usage.usedPurchasedTokens) {
+      source = context.tr(TranslationKeys.ledgerFromPurchased);
+    } else {
+      source = context.tr(TranslationKeys.ledgerFromDaily);
+    }
+
+    final hasContent = (usage.contentTitle?.isNotEmpty ?? false) ||
+        (usage.contentReference?.isNotEmpty ?? false);
+    final subtitle = [
+      if (hasContent) usage.displayTitle,
+      _formatTimestamp(context, usage.createdAt),
+      source,
+    ].join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LedgerIconTile(
+            icon: _isFollowUp
+                ? Icons.chat_bubble_outline_rounded
+                : Icons.menu_book_outlined,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    usage.displayTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.token,
-                        size: 14,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${usage.tokenCost}',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // Subtitle - Operation Type
-            Text(
-              _getOperationTypeLabel(usage.operationType),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-
-            // Details Row - Study Mode + Language Chips
-            if (usage.studyMode != null || usage.language.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  if (usage.studyMode != null)
-                    _DetailChip(
-                      icon: Icons.book,
-                      label: _getStudyModeLabel(usage.studyMode!),
-                      color: AppColors.info,
-                    ),
-                  if (usage.language.isNotEmpty)
-                    _DetailChip(
-                      icon: Icons.language,
-                      label: _getLanguageLabel(usage.language),
-                      color: Colors.teal,
-                    ),
-                ],
-              ),
-            ],
-
-            const SizedBox(height: 8),
-
-            // Token Source Row - Daily vs Purchased
-            Row(
-              children: [
-                Icon(
-                  Icons.donut_small,
-                  size: 14,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                ),
-                const SizedBox(width: 4),
                 Text(
-                  '${context.tr('tokens.usage.daily')}: ${usage.dailyTokensUsed} | ${context.tr('tokens.usage.purchased')}: ${usage.purchasedTokensUsed}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12,
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.inter(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.3,
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // Footer - Timestamp
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 12,
-                  color: theme.colorScheme.onSurface.withOpacity(0.4),
-                ),
-                const SizedBox(width: 4),
+                const SizedBox(height: 2),
                 Text(
-                  _formatTimestamp(usage.createdAt),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: 11,
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    color: palette.muted,
+                    height: 1.35,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Format timestamp as relative if < 24h, otherwise absolute
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inHours < 24) {
-      // Relative time for recent entries
-      if (difference.inMinutes < 1) {
-        return 'Just now';
-      } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes}m ago';
-      } else {
-        return '${difference.inHours}h ago';
-      }
-    } else {
-      // Absolute time for older entries
-      final dateFormatter = DateFormat('MMM dd, yyyy • hh:mm a');
-      return dateFormatter.format(timestamp);
-    }
-  }
-
-  /// Map operation type to user-friendly label
-  String _getOperationTypeLabel(String operationType) {
-    switch (operationType) {
-      case 'study_generation':
-        return 'Study Generation';
-      case 'follow_up_question':
-        return 'Follow-up Question';
-      case 'token_consumption':
-        return 'Token Usage';
-      default:
-        return operationType
-            .split('_')
-            .map((word) => word[0].toUpperCase() + word.substring(1))
-            .join(' ');
-    }
-  }
-
-  /// Map study mode to user-friendly label
-  String _getStudyModeLabel(String studyMode) {
-    switch (studyMode) {
-      case 'quick':
-        return 'Quick';
-      case 'standard':
-        return 'Standard';
-      case 'deep':
-        return 'Deep';
-      case 'lectio':
-        return 'Lectio';
-      case 'sermon':
-        return 'Sermon';
-      default:
-        return studyMode[0].toUpperCase() + studyMode.substring(1);
-    }
-  }
-
-  /// Map language code to display label
-  String _getLanguageLabel(String languageCode) {
-    switch (languageCode) {
-      case 'en':
-        return 'English';
-      case 'hi':
-        return 'हिन्दी';
-      case 'ml':
-        return 'മലയാളം';
-      default:
-        return languageCode.toUpperCase();
-    }
-  }
-}
-
-class _DetailChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _DetailChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 12,
-            color: color,
           ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: color,
+          const SizedBox(width: 10),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              '−${usage.tokenCost}',
+              style: AppFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+                fontFeatures: kLedgerTabular,
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// "Today · 9:14 AM", "Yesterday · …" or "Sep 27 · …".
+  String _formatTimestamp(BuildContext context, DateTime timestamp) {
+    final local = timestamp.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(local.year, local.month, local.day);
+    final time = DateFormat.jm().format(local);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) {
+      return '${context.tr(TranslationKeys.ledgerToday)} · $time';
+    }
+    if (diff == 1) {
+      return '${context.tr(TranslationKeys.ledgerYesterday)} · $time';
+    }
+    final date = local.year == now.year
+        ? DateFormat('MMM d').format(local)
+        : DateFormat('MMM d, y').format(local);
+    return '$date · $time';
   }
 }

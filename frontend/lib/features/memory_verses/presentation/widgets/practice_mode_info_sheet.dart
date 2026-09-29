@@ -7,7 +7,7 @@ import '../../domain/entities/practice_mode_entity.dart';
 /// Bottom sheet showing step-by-step "How it works" instructions
 /// for a specific practice mode.
 ///
-/// Triggered by the (i) button on each PracticeModeCard.
+/// Triggered by the (i) button on each PracticeModeRow.
 class PracticeModeInfoSheet extends StatelessWidget {
   final PracticeModeType modeType;
 

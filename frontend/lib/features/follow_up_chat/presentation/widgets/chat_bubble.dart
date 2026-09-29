@@ -5,6 +5,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
 import '../bloc/follow_up_chat_state.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
 
@@ -19,52 +21,55 @@ class ChatBubble extends StatelessWidget {
     this.onRetry,
   });
 
+  /// Asset for the assistant avatar: the white Discipler mark on a gold disc.
+  static const String avatarAsset = 'assets/brand/discipler-mark-on-gold.png';
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isUser = message.isUser;
 
+    // User questions sit on the right as a pill; Discipler replies on the
+    // left beside its mark. Timestamp, credits and actions go under the
+    // bubble rather than inside it.
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.DEFAULT_PADDING,
-        vertical: AppConstants.EXTRA_SMALL_PADDING,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) _buildAvatar(theme),
-          if (!isUser) const SizedBox(width: AppConstants.SMALL_PADDING),
+          if (!isUser) ...[
+            _buildAvatar(theme),
+            const SizedBox(width: 10),
+          ],
           Flexible(
-            child: _buildMessageContainer(context, theme, isUser),
+            child: Column(
+              crossAxisAlignment:
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                _buildMessageContainer(context, theme, isUser),
+                _buildMessageFooter(context, theme, isUser),
+              ],
+            ),
           ),
-          if (isUser) const SizedBox(width: AppConstants.SMALL_PADDING),
-          if (isUser) _buildUserAvatar(theme),
+          // Keeps a reply from running under the right edge's pill column.
+          if (!isUser) const SizedBox(width: 24),
         ],
       ),
     );
   }
 
-  /// Builds the assistant avatar — the Discipler brand mark, matching the
-  /// avatar used on Discipler posts and replies in fellowships.
+  /// The assistant avatar — the Discipler mark on gold.
   Widget _buildAvatar(ThemeData theme) {
-    return const DisciplerAvatar(radius: 16);
-  }
-
-  /// Builds the user avatar
-  Widget _buildUserAvatar(ThemeData theme) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondary,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Icon(
-        Icons.person,
-        color: theme.colorScheme.onSecondary,
-        size: 18,
+    return ClipOval(
+      child: Image.asset(
+        avatarAsset,
+        width: 32,
+        height: 32,
+        cacheWidth: 96,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const DisciplerAvatar(radius: 16),
       ),
     );
   }
@@ -72,33 +77,24 @@ class ChatBubble extends StatelessWidget {
   /// Builds the main message container
   Widget _buildMessageContainer(
       BuildContext context, ThemeData theme, bool isUser) {
+    const r = Radius.circular(20);
+    const tail = Radius.circular(6);
     return Container(
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.75,
+        maxWidth: MediaQuery.sizeOf(context).width * (isUser ? 0.8 : 0.72),
       ),
       decoration: BoxDecoration(
         color: _getBackgroundColor(theme, isUser),
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(AppConstants.BORDER_RADIUS),
-          topRight: const Radius.circular(AppConstants.BORDER_RADIUS),
-          bottomLeft: Radius.circular(isUser
-              ? AppConstants.BORDER_RADIUS
-              : AppConstants.EXTRA_SMALL_PADDING),
-          bottomRight: Radius.circular(isUser
-              ? AppConstants.EXTRA_SMALL_PADDING
-              : AppConstants.BORDER_RADIUS),
-        ),
-        border: Border.all(
-          color: _getBorderColor(theme, isUser),
-        ),
+        borderRadius: isUser
+            ? const BorderRadius.only(
+                topLeft: r, topRight: r, bottomLeft: r, bottomRight: tail)
+            : const BorderRadius.only(
+                topLeft: tail, topRight: r, bottomLeft: r, bottomRight: r),
+        border: _getBorderColor(theme, isUser) == null
+            ? null
+            : Border.all(color: _getBorderColor(theme, isUser)!),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildMessageContent(context, theme, isUser),
-          _buildMessageFooter(context, theme, isUser),
-        ],
-      ),
+      child: _buildMessageContent(context, theme, isUser),
     );
   }
 
@@ -106,12 +102,9 @@ class ChatBubble extends StatelessWidget {
   Widget _buildMessageContent(
       BuildContext context, ThemeData theme, bool isUser) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppConstants.DEFAULT_PADDING,
-        AppConstants.SMALL_PADDING,
-        AppConstants.DEFAULT_PADDING,
-        AppConstants.EXTRA_SMALL_PADDING,
-      ),
+      padding: isUser
+          ? const EdgeInsets.symmetric(horizontal: 18, vertical: 11)
+          : const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -319,7 +312,7 @@ class ChatBubble extends StatelessWidget {
             Text(
               context.tr(TranslationKeys.followUpChatResponding),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: _getTextColor(theme, message.isUser).withOpacity(0.7),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -361,7 +354,7 @@ class ChatBubble extends StatelessWidget {
             Text(
               context.tr(TranslationKeys.followUpChatSending),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: _getTextColor(theme, message.isUser).withOpacity(0.7),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -372,20 +365,15 @@ class ChatBubble extends StatelessWidget {
     }
   }
 
-  /// Builds the message footer with timestamp and actions
+  /// Builds the footer under the bubble: timestamp, credits and actions.
   Widget _buildMessageFooter(
       BuildContext context, ThemeData theme, bool isUser) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppConstants.DEFAULT_PADDING,
-        0,
-        AppConstants.DEFAULT_PADDING,
-        AppConstants.SMALL_PADDING,
-      ),
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTimestamp(theme),
+          Flexible(child: _buildTimestamp(theme)),
           _buildActions(context, theme, isUser),
         ],
       ),
@@ -404,8 +392,8 @@ class ChatBubble extends StatelessWidget {
             Text(
               timeString,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                fontSize: AppConstants.FONT_SIZE_14,
+                color: theme.colorScheme.onSurface.withOpacity(0.55),
+                fontSize: 12,
               ),
             ),
             if (message.tokensConsumed != null &&
@@ -428,7 +416,7 @@ class ChatBubble extends StatelessWidget {
                   '${message.tokensConsumed} ${context.tr(TranslationKeys.followUpChatTokens)}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.primary,
-                    fontSize: AppConstants.FONT_SIZE_14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -488,30 +476,28 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  /// Gets the background color based on message type and status
+  /// Gets the background color based on message type and status.
+  /// User: white pill on dark, indigo pill on light. Reply: a card.
   Color _getBackgroundColor(ThemeData theme, bool isUser) {
     if (message.status == ChatMessageStatus.failed) {
       return theme.colorScheme.error.withOpacity(0.1);
     }
-
+    final isDark = theme.brightness == Brightness.dark;
     if (isUser) {
-      return theme.colorScheme.primary.withOpacity(0.1);
-    } else {
-      return theme.colorScheme.surface;
+      return isDark ? Colors.white : ReaderPalette.selectedFill;
     }
+    return isDark ? const Color(0xFF1A1A21) : Colors.white;
   }
 
-  /// Gets the border color based on message type and status
-  Color _getBorderColor(ThemeData theme, bool isUser) {
+  /// Border only where a fill alone would not separate from the page.
+  Color? _getBorderColor(ThemeData theme, bool isUser) {
     if (message.status == ChatMessageStatus.failed) {
       return theme.colorScheme.error.withOpacity(0.3);
     }
-
-    if (isUser) {
-      return theme.colorScheme.primary.withOpacity(0.3);
-    } else {
-      return theme.colorScheme.outline.withOpacity(0.2);
-    }
+    if (isUser) return null;
+    return theme.brightness == Brightness.dark
+        ? Colors.white.withOpacity(0.06)
+        : const Color(0xFF16161D).withOpacity(0.08);
   }
 
   /// Gets the text color based on message type
@@ -519,8 +505,9 @@ class ChatBubble extends StatelessWidget {
     if (message.status == ChatMessageStatus.failed) {
       return theme.colorScheme.error;
     }
-
-    return theme.colorScheme.onSurface;
+    final isDark = theme.brightness == Brightness.dark;
+    if (isUser) return isDark ? AppColors.brandPrimaryInk : Colors.white;
+    return isDark ? const Color(0xFFF2F2F4) : const Color(0xFF16161D);
   }
 
   /// Determines whether to show status indicator

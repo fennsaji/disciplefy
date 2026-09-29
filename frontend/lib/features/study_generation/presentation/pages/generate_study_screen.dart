@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
@@ -50,7 +51,11 @@ import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
-import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -127,8 +132,13 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   String?
       _savedStudyModePreference; // null (ask every time), 'recommended', or specific mode
 
-  // Store the computed token cost for display (null = hide badge)
-  int? _displayTokenCost;
+  // Depth chosen inline on the page (ruling: the Generate button uses it
+  // directly). Seeded from the saved preference until the user picks one.
+  StudyMode _selectedStudyMode = recommendedStudyMode;
+  bool _userPickedStudyMode = false;
+
+  // Credit cost per mode for the selected language (null entry = unknown).
+  final Map<StudyMode, int> _modeCosts = {};
 
   bool _isInputFocused = false;
 
@@ -211,7 +221,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         }
 
         // Update token cost display after preferences are loaded
-        _updateTokenCostDisplay();
+        _loadModeCosts();
       }
     });
   }
@@ -280,11 +290,16 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       if (mounted) {
         setState(() {
           _savedStudyModePreference = savedMode;
+          if (!_userPickedStudyMode) {
+            _selectedStudyMode = resolveInitialStudyMode(
+              savedMode,
+              available: _visibleStudyModes,
+              locked: _lockedStudyModes,
+            );
+          }
         });
-        Logger.error(
+        Logger.debug(
             '✅ [GENERATE STUDY] Loaded saved study mode preference: $savedMode');
-        // Refresh the token cost badge now that the preference is known.
-        _updateTokenCostDisplay();
       }
     } catch (e) {
       Logger.debug(
@@ -458,63 +473,114 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     return scripturePattern.hasMatch(text);
   }
 
-  /// Get token cost based on saved study mode preference
-  /// Returns tuple: (tokenCost or null if hidden, always null for modeName)
-  Future<(int?, String?)> _getTokenCostForDisplay() async {
-    Logger.debug(
-        '🔍 [TOKEN_COST] _savedStudyModePreference: $_savedStudyModePreference');
-
-    // CRITICAL: If no preference (ask every time), HIDE token cost badge
-    if (StudyModePreferences.isGeneralAskEveryTime(_savedStudyModePreference)) {
-      Logger.debug(
-          '🔍 [TOKEN_COST] No default mode (ask every time) → hiding token badge');
-      return (null, null); // Hide badge entirely
+  /// Fetch the credit cost of every mode for the selected language (shown on
+  /// the depth cards and the Generate button). The repository caches and
+  /// falls back internally; a failed mode simply shows no cost.
+  Future<void> _loadModeCosts() async {
+    final language = _selectedLanguage.code;
+    final costs = <StudyMode, int>{};
+    for (final mode in StudyMode.values) {
+      try {
+        final result =
+            await _tokenCostRepository.getTokenCost(language, mode.value);
+        result.fold(
+          (failure) => Logger.warning(
+              '⚠️ [TOKEN_COST] No cost for ${mode.name}: ${ErrorMessageSanitizer.sanitize(failure)}'),
+          (cost) => costs[mode] = cost,
+        );
+      } catch (e) {
+        Logger.error('❌ [TOKEN_COST] Error for ${mode.name}: $e');
+      }
     }
-
-    String modeForCost;
-
-    // If "recommended", determine recommended mode based on input type
-    if (StudyModePreferences.isRecommended(_savedStudyModePreference)) {
-      // Standard is the recommended default for all input types.
-      modeForCost = StudyMode.standard.value;
-    } else {
-      // Use the specific saved mode
-      modeForCost = _savedStudyModePreference!;
-    }
-
-    // Fetch token cost from backend repository
-    try {
-      final result = await _tokenCostRepository.getTokenCost(
-        _selectedLanguage.code,
-        modeForCost,
-      );
-
-      return result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [TOKEN_COST] Failed to fetch cost: ${ErrorMessageSanitizer.sanitize(failure)}');
-          // Fallback already handled by repository
-          return (null, null); // Hide on error
-        },
-        (cost) {
-          Logger.debug('✅ [TOKEN_COST] Fetched cost: $cost for $modeForCost');
-          // NEVER return mode name - user doesn't want it
-          return (cost, null);
-        },
-      );
-    } catch (e) {
-      Logger.error('❌ [TOKEN_COST] Error: $e');
-      return (null, null);
-    }
+    // Ignore a stale response if the language changed meanwhile.
+    if (!mounted || language != _selectedLanguage.code) return;
+    setState(() {
+      _modeCosts
+        ..clear()
+        ..addAll(costs);
+    });
   }
 
-  /// Update the displayed token cost (called when language or mode preference changes)
-  Future<void> _updateTokenCostDisplay() async {
-    final (cost, _) = await _getTokenCostForDisplay();
-    if (mounted) {
-      setState(() {
-        _displayTokenCost = cost;
-      });
+  String get _userPlan => _currentTokenStatus?.userPlan.name ?? 'free';
+
+  /// Modes the user's plan can see (display_mode 'hide' removes a mode).
+  List<StudyMode> get _visibleStudyModes {
+    final visible = StudyMode.values
+        .where((m) =>
+            !_systemConfigService.shouldHideFeature(m.featureKey, _userPlan))
+        .toList();
+    // Fail open: never leave the page without a depth to pick.
+    return visible.isEmpty ? StudyMode.values : visible;
+  }
+
+  /// Visible modes that are locked for the user's plan.
+  Set<StudyMode> get _lockedStudyModes => StudyMode.values
+      .where(
+          (m) => _systemConfigService.isFeatureLocked(m.featureKey, _userPlan))
+      .toSet();
+
+  void _selectStudyMode(StudyMode mode) {
+    setState(() {
+      _selectedStudyMode = mode;
+      _userPickedStudyMode = true;
+    });
+  }
+
+  void _showUpgradeDialogForMode(StudyMode mode) {
+    final featureKey = mode.featureKey;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => UpgradeDialog(
+        featureKey: featureKey,
+        currentPlan: _userPlan,
+        requiredPlans: _systemConfigService.getRequiredPlans(featureKey),
+        upgradePlan: _systemConfigService.getUpgradePlan(featureKey, _userPlan),
+      ),
+    );
+  }
+
+  /// "All 5": the full-height depth chooser. Its choice becomes the inline
+  /// selection (and is remembered if asked); "Start" then generates straight
+  /// away when the input is ready.
+  Future<void> _openDepthChooser() async {
+    final input = _inputController.text.trim();
+    final result = await ModeSelectionSheet.show(
+      context: context,
+      languageCode: _selectedLanguage.code,
+      recommendedMode: recommendedStudyMode,
+      preselectedMode: _selectedStudyMode,
+      eyebrow: input.isEmpty ? null : input,
+    );
+    if (result == null || !mounted) return;
+
+    final mode = result['mode'] as StudyMode;
+    final remember = (result['rememberChoice'] as bool? ?? false) ||
+        (result['alwaysUseRecommended'] as bool? ?? false);
+    _selectStudyMode(mode);
+
+    if (remember) {
+      // Same mapping as before: the recommended mode is stored as
+      // 'recommended' so it follows future recommendation changes.
+      final raw = mode == recommendedStudyMode
+          ? StudyModePreferences.recommended
+          : mode.value;
+      try {
+        await _languagePreferenceService.saveStudyModePreferenceRaw(raw);
+        if (mounted) setState(() => _savedStudyModePreference = raw);
+      } catch (e) {
+        Logger.error('❌ [GENERATE_STUDY] Failed to save mode preference: $e');
+      }
+    }
+
+    if (!mounted) return;
+    final isOffline =
+        context.read<ConnectivityBloc>().state is ConnectivityOffline;
+    final isBusy = _isGeneratingStudyGuide ||
+        context.read<StudyBloc>().state is StudyGenerationInProgress;
+    if (_isInputValid && !isOffline && !isBusy) {
+      await _generateStudyGuide();
     }
   }
 
@@ -682,6 +748,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
@@ -710,112 +777,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       Logger.debug(
           '🔧 [GENERATE STUDY] Using KeyboardAwareScaffold for: ${DeviceKeyboardHandler.deviceManufacturer}');
     }
-
-    final appBar = AppBar(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      title: Text(
-        context.tr(TranslationKeys.generateStudyTitle),
-        style: AppFonts.inter(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onBackground,
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        // Compact token balance display
-        BlocBuilder<TokenBloc, TokenState>(
-          builder: (context, tokenState) {
-            if (tokenState is TokenLoaded) {
-              return GestureDetector(
-                onTap: _navigateToTokenManagement,
-                child: Container(
-                  margin: const EdgeInsets.only(right: 18, top: 8, bottom: 8),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    // Gold: tokens are a balance you spend and earn, the same
-                    // family as XP and streaks.
-                    color: context.appGoldMark.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: context.appGoldMark.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.token,
-                        size: 16,
-                        color: context.appGoldMark,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        tokenState.tokenStatus.isPremium
-                            ? '∞'
-                            : '${tokenState.tokenStatus.totalTokens}',
-                        style: AppFonts.inter(
-                          fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
-                          fontWeight: FontWeight.w600,
-                          // Gold on a gold wash tops out at 4.08:1 on the light
-                          // page, so the count itself stays in body colour and
-                          // the gold icon and border carry the meaning.
-                          color: context.appTextPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            } else if (tokenState is TokenError &&
-                tokenState.previousTokenStatus != null) {
-              return GestureDetector(
-                onTap: _navigateToTokenManagement,
-                child: Container(
-                  margin: const EdgeInsets.only(right: 18, top: 8, bottom: 8),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.warning.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        size: 16,
-                        color: AppColors.warningDark,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        tokenState.previousTokenStatus!.isPremium
-                            ? '∞'
-                            : '${tokenState.previousTokenStatus!.totalTokens}',
-                        style: AppFonts.inter(
-                          fontSize: tokenState.previousTokenStatus!.isPremium
-                              ? 18
-                              : 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.warningDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ],
-    );
 
     final body = MultiBlocListener(
       listeners: [
@@ -893,6 +854,15 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                 _currentTokenStatus = state.tokenStatus;
                 _isRefreshingTokens =
                     false; // Reset refresh flag when tokens load
+                // The plan decides which depths are hidden/locked; re-seed
+                // the default depth until the user picks one.
+                if (!_userPickedStudyMode) {
+                  _selectedStudyMode = resolveInitialStudyMode(
+                    _savedStudyModePreference,
+                    available: _visibleStudyModes,
+                    locked: _lockedStudyModes,
+                  );
+                }
               });
             } else if (state is TokenLoading) {
               Logger.error('⏳ [GENERATE_STUDY] Token loading...');
@@ -912,115 +882,98 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
           },
         ),
       ],
-      child: SafeArea(
-        child: Column(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom +
+              (isKeyboardVisible ? 20 : 32),
+        ),
+        child: Stack(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  bottom:
-                      isKeyboardVisible ? 20 : 0, // 🔧 FIX: Keyboard padding
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top spacing
-                    const SizedBox(height: 20),
+            // Photo header behind the top of the page; it fades into the
+            // page background around the depth cards.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: topInset + _heroHeight,
+              child: const GenerateHeroBackdrop(),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: topInset + 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _padded(_buildHeader()),
+                  SizedBox(height: isLargeScreen ? 28 : 20),
 
-                    // Mode Toggle - Compact design
-                    WalkthroughTooltip(
-                      showcaseKey: ShowcaseKeys.generateModeToggle,
-                      title: AppLocalizations.of(context)!
-                          .walkthroughGenerateModeTitle,
-                      description: AppLocalizations.of(context)!
-                          .walkthroughGenerateModeDesc,
-                      screen: WalkthroughScreen.generate,
-                      stepNumber: 1,
-                      totalSteps: _totalWalkthroughSteps,
-                      tooltipPosition: TooltipPosition.bottom,
-                      onNext: _onNext,
-                      child: _buildCompactModeToggle(),
+                  // Input type tabs (Scripture / Topic / Question)
+                  _padded(WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.generateModeToggle,
+                    title: AppLocalizations.of(context)!
+                        .walkthroughGenerateModeTitle,
+                    description: AppLocalizations.of(context)!
+                        .walkthroughGenerateModeDesc,
+                    screen: WalkthroughScreen.generate,
+                    stepNumber: 1,
+                    totalSteps: _totalWalkthroughSteps,
+                    tooltipPosition: TooltipPosition.bottom,
+                    onNext: _onNext,
+                    child: _buildInputTypeTabs(),
+                  )),
+                  const SizedBox(height: 20),
+
+                  // Search field with the language pill
+                  _padded(WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.generateInput,
+                    title: AppLocalizations.of(context)!
+                        .walkthroughGenerateInputTitle,
+                    description: AppLocalizations.of(context)!
+                        .walkthroughGenerateInputDesc,
+                    screen: WalkthroughScreen.generate,
+                    stepNumber: 2,
+                    totalSteps: _totalWalkthroughSteps,
+                    tooltipPosition: TooltipPosition.bottom,
+                    onNext: _onNext,
+                    child: _buildInputSection(),
+                  )),
+                  const SizedBox(height: 14),
+                  _padded(_buildSuggestions()),
+                  const SizedBox(height: 28),
+
+                  _buildDepthSection(),
+                  const SizedBox(height: 28),
+
+                  // Generate button
+                  _padded(WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.generateButton,
+                    title: AppLocalizations.of(context)!
+                        .walkthroughGenerateButtonTitle,
+                    description: AppLocalizations.of(context)!
+                        .walkthroughGenerateButtonDesc,
+                    screen: WalkthroughScreen.generate,
+                    stepNumber: 3,
+                    totalSteps: _totalWalkthroughSteps,
+                    onNext: _onNext,
+                    child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
+                      builder: (context, connectivityState) {
+                        final isOffline =
+                            connectivityState is ConnectivityOffline;
+                        return BlocBuilder<StudyBloc, StudyState>(
+                          builder: (context, state) =>
+                              _buildGenerateButton(state, isOffline: isOffline),
+                        );
+                      },
                     ),
+                  )),
 
+                  // Only show additional sections when keyboard is hidden
+                  if (!isKeyboardVisible) ...[
                     const SizedBox(height: 32),
 
-                    // Input Section with inline language selector
-                    WalkthroughTooltip(
-                      showcaseKey: ShowcaseKeys.generateInput,
-                      title: AppLocalizations.of(context)!
-                          .walkthroughGenerateInputTitle,
-                      description: AppLocalizations.of(context)!
-                          .walkthroughGenerateInputDesc,
-                      screen: WalkthroughScreen.generate,
-                      stepNumber: 2,
-                      totalSteps: _totalWalkthroughSteps,
-                      tooltipPosition: TooltipPosition.bottom,
-                      onNext: _onNext,
-                      child: _buildInputSection(),
-                    ),
-
-                    // Show 2-3 suggestions per category
-                    const SizedBox(height: 16),
-                    _buildSuggestions(),
-
-                    const SizedBox(height: 32),
-
-                    // Generate Button and Status
-                    WalkthroughTooltip(
-                      showcaseKey: ShowcaseKeys.generateButton,
-                      title: AppLocalizations.of(context)!
-                          .walkthroughGenerateButtonTitle,
-                      description: AppLocalizations.of(context)!
-                          .walkthroughGenerateButtonDesc,
-                      screen: WalkthroughScreen.generate,
-                      stepNumber: 3,
-                      totalSteps: _totalWalkthroughSteps,
-                      onNext: _onNext,
-                      child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
-                        builder: (context, connectivityState) {
-                          final isOffline =
-                              connectivityState is ConnectivityOffline;
-                          return BlocBuilder<StudyBloc, StudyState>(
-                            builder: (context, state) => _buildGenerateButton(
-                                state,
-                                isOffline: isOffline),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // 🔧 FIX: Only show additional sections when keyboard is hidden
-                    if (!isKeyboardVisible) ...[
-                      const SizedBox(height: 24),
-
-                      // Compact Talk to Discipler option - only show if ai_discipler feature is visible (respects display_mode)
-                      if (_isAiDisciplerFeatureEnabled()) ...[
-                        WalkthroughTooltip(
-                          showcaseKey: ShowcaseKeys.disciplerHint,
-                          title: AppLocalizations.of(context)!
-                              .walkthroughDisciplerTitle,
-                          description: AppLocalizations.of(context)!
-                              .walkthroughDisciplerDesc,
-                          screen: WalkthroughScreen.disciplerHint,
-                          stepNumber: 4,
-                          totalSteps: 4,
-                          onNext: _onNext,
-                          child: LockedFeatureWrapper(
-                            featureKey: 'ai_discipler',
-                            child: _buildCompactAiDisciplerButton(context),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-
-                      // Recent Studies (has "View All" link built-in)
-                      const RecentGuidesSection(),
-                      const SizedBox(height: 32),
-                    ],
+                    // Continue reading (its "See all" opens the library)
+                    _padded(const RecentGuidesSection()),
                   ],
-                ),
+                ],
               ),
             ),
           ],
@@ -1028,180 +981,177 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       ),
     );
 
-    // 🔧 Phase 2: Choose appropriate scaffold based on device requirements
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overlayStyle =
+        isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
+
+    // Choose appropriate scaffold based on device requirements
     if (useAdvancedKeyboardHandling) {
-      return KeyboardAwareScaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: appBar,
-        child: body,
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: overlayStyle,
+        child: KeyboardAwareScaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          child: body,
+        ),
       );
     } else {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        resizeToAvoidBottomInset: true, // 🔧 FIX: Explicitly handle keyboard
-        appBar: appBar,
-        body: body,
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: overlayStyle,
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          resizeToAvoidBottomInset: true,
+          body: body,
+        ),
       );
     }
   }
 
-  /// Compact mode toggle with minimal design
-  Widget _buildCompactModeToggle() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  /// Height of the photo header below the status bar.
+  static const double _heroHeight = 430;
 
-    return Row(
-      children: [
-        _buildCompactModeChip(
-          label: 'Scripture',
-          icon: Icons.menu_book_rounded,
-          isSelected: _selectedMode == StudyInputMode.scripture,
-          onTap: () => _switchMode(StudyInputMode.scripture),
-        ),
-        const SizedBox(width: 8),
-        _buildCompactModeChip(
-          label: 'Topic',
-          icon: Icons.lightbulb_outline_rounded,
-          isSelected: _selectedMode == StudyInputMode.topic,
-          onTap: () => _switchMode(StudyInputMode.topic),
-        ),
-        const SizedBox(width: 8),
-        _buildCompactModeChip(
-          label: 'Question',
-          icon: Icons.help_outline_rounded,
-          isSelected: _selectedMode == StudyInputMode.question,
-          onTap: () => _switchMode(StudyInputMode.question),
-        ),
-      ],
-    );
-  }
+  /// Horizontal page gutter.
+  static const double _gutter = 20;
 
-  Widget _buildCompactModeChip({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
+  Widget _padded(Widget child) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: _gutter),
+        child: child,
+      );
 
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? primary.withOpacity(0.15)
-                  : (isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.grey.withOpacity(0.1)),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color:
-                    isSelected ? primary.withOpacity(0.5) : Colors.transparent,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isSelected
-                      ? primary
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected
-                          ? primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeToggle() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  /// Gold eyebrow + credit pill, then the Poppins headline.
+  Widget _buildHeader() {
+    final palette = ReaderPalette.of(context);
+    final ink = GenerateHeroInk.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : const Color(0xFFF3F0FF),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                context.tr(TranslationKeys.generateStudyEyebrow).toUpperCase(),
+                style: AppFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.6,
+                  color: palette.gold,
+                ),
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _ModeToggleButton(
-                  label: context.tr(TranslationKeys.generateStudyScriptureMode),
-                  isSelected: _selectedMode == StudyInputMode.scripture,
-                  onTap: () => _switchMode(StudyInputMode.scripture),
-                ),
-              ),
-              Expanded(
-                child: _ModeToggleButton(
-                  label: context.tr(TranslationKeys.generateStudyTopicMode),
-                  isSelected: _selectedMode == StudyInputMode.topic,
-                  onTap: () => _switchMode(StudyInputMode.topic),
-                ),
-              ),
-              Expanded(
-                child: _ModeToggleButton(
-                  label: context.tr(TranslationKeys.generateStudyQuestionMode),
-                  isSelected: _selectedMode == StudyInputMode.question,
-                  onTap: () => _switchMode(StudyInputMode.question),
-                ),
-              ),
-            ],
+            const SizedBox(width: 12),
+            BlocBuilder<TokenBloc, TokenState>(
+              builder: (context, tokenState) {
+                final TokenStatus? status;
+                final bool isStale;
+                if (tokenState is TokenLoaded) {
+                  status = tokenState.tokenStatus;
+                  isStale = false;
+                } else if (tokenState is TokenError &&
+                    tokenState.previousTokenStatus != null) {
+                  status = tokenState.previousTokenStatus;
+                  isStale = true;
+                } else {
+                  return const SizedBox(height: 36);
+                }
+                return TokenBalancePill(
+                  label: status!.isPremium ? '∞' : '${status.totalTokens}',
+                  isStale: isStale,
+                  onTap: _navigateToTokenManagement,
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr(TranslationKeys.generateStudyHeadline),
+          style: AppFonts.poppins(
+            fontSize: 30,
+            fontWeight: FontWeight.w600,
+            height: 1.18,
+            color: ink.text,
           ),
         ),
       ],
     );
   }
 
-  /// Compact language selector as dropdown/chip
-  Widget _buildCompactLanguageSelector() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  /// "Choose depth" + "All N", then the horizontal row of depth cards.
+  Widget _buildDepthSection() {
+    final palette = ReaderPalette.of(context);
+    final modes = _visibleStudyModes;
+    final locked = _lockedStudyModes;
+    // A saved/selected mode can become hidden after the plan loads.
+    final selected = modes.contains(_selectedStudyMode)
+        ? _selectedStudyMode
+        : resolveInitialStudyMode(_savedStudyModePreference,
+            available: modes, locked: locked);
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _padded(Row(
+          children: [
+            Expanded(
+              child: Text(
+                context.tr(TranslationKeys.generateStudyChooseDepth),
+                style: AppFonts.poppins(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
+              ),
+            ),
+            TextButton(
+              key: const Key('generate_depth_all'),
+              onPressed: _openDepthChooser,
+              style: TextButton.styleFrom(
+                foregroundColor: palette.muted,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(44, 36),
+              ),
+              child: Text(
+                context.tr(TranslationKeys.generateStudyAllModes,
+                    {'count': '${modes.length}'}),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: palette.muted,
+                ),
+              ),
+            ),
+          ],
+        )),
+        const SizedBox(height: 10),
+        DepthModeCardRow(
+          modes: modes,
+          selected: selected,
+          costs: _modeCosts,
+          locked: locked,
+          onSelected: _selectStudyMode,
+          onLockedTap: _showUpgradeDialogForMode,
+        ),
+      ],
+    );
+  }
+
+  /// Underlined Scripture / Topic / Question tabs.
+  Widget _buildInputTypeTabs() {
+    const modes = StudyInputMode.values;
+    return InputTypeTabs(
+      labels: [
+        context.tr(TranslationKeys.generateStudyScriptureTab),
+        context.tr(TranslationKeys.generateStudyTopicMode),
+        context.tr(TranslationKeys.generateStudyQuestionMode),
+      ],
+      selectedIndex: modes.indexOf(_selectedMode),
+      onChanged: (i) {
+        if (modes[i] != _selectedMode) _switchMode(modes[i]);
+      },
+    );
+  }
+
+  /// Language pill inside the search field (EN / हिं / മ, or "Default").
+  Widget _buildCompactLanguageSelector() {
     String getLanguageLabel() {
       if (_isLanguageDefault) {
         return context.tr(TranslationKeys.generateStudyDefaultLanguage);
@@ -1216,55 +1166,67 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       }
     }
 
-    final primary = Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color:
-            isDark ? Colors.white.withOpacity(0.1) : primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: primary.withOpacity(0.3),
-        ),
+    return PopupMenuButton<StudyLanguage?>(
+      key: const Key('generate_language_pill'),
+      initialValue: _isLanguageDefault ? null : _selectedLanguage,
+      onSelected: _switchLanguage,
+      offset: const Offset(0, 44),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      tooltip: context.tr(TranslationKeys.generateStudyLanguage),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: PopupMenuButton<StudyLanguage?>(
-        initialValue: _isLanguageDefault ? null : _selectedLanguage,
-        onSelected: _switchLanguage,
-        offset: const Offset(0, 40),
-        color: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+      itemBuilder: (context) => [
+        _buildLanguageMenuItem(null,
+            context.tr(TranslationKeys.generateStudyDefaultLanguageOption)),
+        const PopupMenuDivider(),
+        _buildLanguageMenuItem(StudyLanguage.english, 'English'),
+        _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
+        _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
+      ],
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 96),
+        padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
+        decoration: BoxDecoration(
+          color: _searchPillFill,
+          borderRadius: BorderRadius.circular(20),
         ),
-        itemBuilder: (context) => [
-          _buildLanguageMenuItem(null,
-              context.tr(TranslationKeys.generateStudyDefaultLanguageOption)),
-          const PopupMenuDivider(),
-          _buildLanguageMenuItem(StudyLanguage.english, 'English'),
-          _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
-          _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
-        ],
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              getLanguageLabel(),
-              style: AppFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: primary,
+            // "Default" in Hindi/Malayalam shrinks to fit the pill.
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  getLanguageLabel(),
+                  maxLines: 1,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _searchInk,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
+            const SizedBox(width: 2),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
               size: 18,
-              color: primary,
+              color: _searchMuted,
             ),
           ],
         ),
       ),
     );
   }
+
+  // The search field is white in both themes (design), so its contents use
+  // fixed light-surface colours rather than the theme's.
+  static const Color _searchInk = Color(0xFF16161D);
+  static const Color _searchMuted = Color(0xFF5B6070);
+  static const Color _searchHint = Color(0xFF8A8F9C);
+  static const Color _searchPillFill = Color(0xFFF0EEEA);
 
   PopupMenuItem<StudyLanguage?> _buildLanguageMenuItem(
     StudyLanguage? language,
@@ -1297,52 +1259,40 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Compact Talk to Discipler button
+  /// Compact "Talk to Discipler" (voice) row. The dock's Discipler tab is
+  /// the text chat; this keeps the voice conversation entry and its
+  /// walkthrough step on the Generate tab.
   Widget _buildCompactAiDisciplerButton(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
+    final radius = BorderRadius.circular(16);
 
     return Material(
-      color: Colors.transparent,
+      color: palette.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: palette.hairline),
+      ),
       child: InkWell(
-        onTap: () {
-          _handleAiDisciplerTap(context);
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color:
-                context.appInteractive.withValues(alpha: isDark ? 0.12 : 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color:
-                  context.appInteractive.withValues(alpha: isDark ? 0.5 : 0.3),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: context.appInteractive.withValues(alpha: 0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+        onTap: () => _handleAiDisciplerTap(context),
+        borderRadius: radius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: context.appInteractive
-                      .withValues(alpha: isDark ? 0.25 : 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  color: palette.accentIcon.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.mic_rounded,
-                  color: isDark ? Colors.white : context.appInteractive,
-                  size: 24,
+                  Icons.mic_none_rounded,
+                  size: 20,
+                  color: palette.accentIcon,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1353,12 +1303,10 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                           child: Text(
                             context
                                 .tr(TranslationKeys.generateStudyTalkToAiBuddy),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                             style: AppFonts.inter(
-                              fontSize: 15,
+                              fontSize: 14.5,
                               fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onBackground,
+                              color: palette.text,
                             ),
                           ),
                         ),
@@ -1369,8 +1317,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: context.appInteractive,
-                            borderRadius: BorderRadius.circular(4),
+                            color: ReaderPalette.selectedFill,
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             context.tr(TranslationKeys
@@ -1384,26 +1332,16 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       context.tr(
                           TranslationKeys.generateStudyTalkToAiBuddySubtitle),
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onBackground
-                            .withOpacity(0.6),
-                      ),
+                      style: AppFonts.inter(fontSize: 12, color: palette.muted),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: context.appInteractive.withValues(alpha: 0.6),
-              ),
+              Icon(Icons.chevron_right_rounded, size: 20, color: palette.dim),
             ],
           ),
         ),
@@ -1411,225 +1349,120 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  Widget _buildLanguageSelection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.tr(TranslationKeys.generateStudyLanguage),
-          style: AppFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: isDark
-                ? Colors.white.withOpacity(0.9)
-                : const Color(0xFF374151),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : const Color(0xFFF3F0FF),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            children: [
-              // Default option (full width)
-              _LanguageToggleButton(
-                label: context
-                    .tr(TranslationKeys.generateStudyDefaultLanguageOption),
-                isSelected: _isLanguageDefault,
-                onTap: () async => await _switchLanguage(null),
-              ),
-              const SizedBox(height: 4),
-              // Specific languages row
-              Row(
-                children: [
-                  Expanded(
-                    child: _LanguageToggleButton(
-                      label: context.tr(TranslationKeys.generateStudyEnglish),
-                      isSelected: !_isLanguageDefault &&
-                          _selectedLanguage == StudyLanguage.english,
-                      onTap: () async =>
-                          await _switchLanguage(StudyLanguage.english),
-                    ),
-                  ),
-                  Expanded(
-                    child: _LanguageToggleButton(
-                      label: context.tr(TranslationKeys.generateStudyHindi),
-                      isSelected: !_isLanguageDefault &&
-                          _selectedLanguage == StudyLanguage.hindi,
-                      onTap: () async =>
-                          await _switchLanguage(StudyLanguage.hindi),
-                    ),
-                  ),
-                  Expanded(
-                    child: _LanguageToggleButton(
-                      label: context.tr(TranslationKeys.generateStudyMalayalam),
-                      isSelected: !_isLanguageDefault &&
-                          _selectedLanguage == StudyLanguage.malayalam,
-                      onTap: () async =>
-                          await _switchLanguage(StudyLanguage.malayalam),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInputSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isQuestion = _selectedMode == StudyInputMode.question;
+    final radius = BorderRadius.circular(isQuestion ? 22 : 30);
+    final errorColor = Theme.of(context).colorScheme.error;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header with inline language selector
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                _selectedMode == StudyInputMode.scripture
-                    ? context.tr(TranslationKeys.generateStudyEnterScripture)
-                    : _selectedMode == StudyInputMode.topic
-                        ? context.tr(TranslationKeys.generateStudyEnterTopic)
-                        : context.tr(TranslationKeys.generateStudyAskQuestion),
-                style: AppFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.9)
-                      : const Color(0xFF374151),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            _buildCompactLanguageSelector(),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.fromLTRB(18, isQuestion ? 12 : 6, 8, 6),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            borderRadius: radius,
+            border: Border.all(
+              color: _validationError != null
+                  ? errorColor
+                  : _inputFocusNode.hasFocus
+                      ? ReaderPalette.selectedFill
+                      : Colors.transparent,
+              width: 1.5,
+            ),
             boxShadow: [
-              if (_inputFocusNode.hasFocus)
-                BoxShadow(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
-          child: TextField(
-            controller: _inputController,
-            focusNode: _inputFocusNode,
-            maxLines: _selectedMode == StudyInputMode.question ? 4 : 1,
-            minLines: _selectedMode == StudyInputMode.question ? 3 : 1,
-            textInputAction: _selectedMode == StudyInputMode.question
-                ? TextInputAction.newline
-                : TextInputAction.done,
-            style: AppFonts.inter(
-              fontSize: 16,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
-            ),
-            decoration: InputDecoration(
-              hintText: _selectedMode == StudyInputMode.scripture
-                  ? context.tr(TranslationKeys.generateStudyScriptureHint)
-                  : _selectedMode == StudyInputMode.topic
-                      ? context.tr(TranslationKeys.generateStudyTopicHint)
-                      : context.tr(TranslationKeys.generateStudyQuestionHint),
-              hintStyle: AppFonts.inter(
-                color: isDark
-                    ? Colors.white.withOpacity(0.4)
-                    : const Color(0xFF9CA3AF),
-              ),
-              filled: true,
-              fillColor: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : const Color(0xFFF9FAFB),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.2),
+          child: Row(
+            crossAxisAlignment: isQuestion
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: isQuestion ? 2 : 0),
+                child: const Icon(
+                  Icons.search_rounded,
+                  size: 24,
+                  color: _searchMuted,
                 ),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.2),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _inputController,
+                  focusNode: _inputFocusNode,
+                  maxLines: isQuestion ? 4 : 1,
+                  minLines: isQuestion ? 3 : 1,
+                  textInputAction: isQuestion
+                      ? TextInputAction.newline
+                      : TextInputAction.done,
+                  cursorColor: ReaderPalette.selectedFill,
+                  style: AppFonts.inter(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                    color: _searchInk,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: _selectedMode == StudyInputMode.scripture
+                        ? context.tr(TranslationKeys.generateStudyScriptureHint)
+                        : _selectedMode == StudyInputMode.topic
+                            ? context.tr(TranslationKeys.generateStudyTopicHint)
+                            : context
+                                .tr(TranslationKeys.generateStudyQuestionHint),
+                    // Long hints wrap instead of being cut on narrow phones.
+                    hintMaxLines: isQuestion ? 4 : 3,
+                    hintStyle: AppFonts.inter(
+                      fontSize: 15,
+                      color: _searchHint,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                 ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 2,
+              if (_inputController.text.isNotEmpty)
+                IconButton(
+                  onPressed: () {
+                    _inputController.clear();
+                    _inputFocusNode.requestFocus();
+                  },
+                  tooltip:
+                      MaterialLocalizations.of(context).deleteButtonTooltip,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: _searchHint,
+                  ),
                 ),
+              Padding(
+                padding: EdgeInsets.only(top: isQuestion ? 4 : 0),
+                child: _buildCompactLanguageSelector(),
               ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error,
-                  width: 2,
-                ),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error,
-                  width: 2,
-                ),
-              ),
-              errorText: _validationError,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: _selectedMode == StudyInputMode.question ? 20 : 18,
-              ),
-              suffixIcon: _inputController.text.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        _inputController.clear();
-                        _inputFocusNode.requestFocus();
-                      },
-                      icon: Icon(
-                        Icons.clear_rounded,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.5)
-                            : const Color(0xFF9CA3AF),
-                      ),
-                    )
-                  : null,
-            ),
+            ],
           ),
         ),
+        if (_validationError != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+            child: Text(
+              _validationError!,
+              style: AppFonts.inter(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: errorColor,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -1639,7 +1472,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       return _buildQuestionDropdown();
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = GenerateHeroInk.of(context);
 
     // Show book name autocomplete when user is typing a book name in scripture mode
     if (_selectedMode == StudyInputMode.scripture) {
@@ -1657,33 +1490,26 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withOpacity(isDark ? 0.18 : 0.10),
+                    color: ReaderPalette.selectedFill.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.30),
-                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.touch_app_rounded,
                         size: 14,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Colors.white,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        'Tap the book name below to select it',
-                        style: AppFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).colorScheme.primary,
+                      Flexible(
+                        child: Text(
+                          'Tap the book name below to select it',
+                          style: AppFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -1695,9 +1521,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: isDark
-                    ? Colors.white.withOpacity(0.5)
-                    : const Color(0xFF6B7280),
+                color: ink.muted,
               ),
             ),
             const SizedBox(height: 12),
@@ -1734,34 +1558,22 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.tr(TranslationKeys.generateStudySuggestions),
-          style: AppFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark
-                ? Colors.white.withOpacity(0.5)
-                : const Color(0xFF6B7280),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: suggestions
-              .map((suggestion) => _SuggestionChip(
-                    label: suggestion,
-                    onTap: () {
-                      _inputController.text = suggestion;
-                      _inputFocusNode.unfocus();
-                    },
-                  ))
-              .toList(),
-        ),
-      ],
+    return Semantics(
+      label: context.tr(TranslationKeys.generateStudySuggestions),
+      container: true,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: suggestions
+            .map((suggestion) => _SuggestionChip(
+                  label: suggestion,
+                  onTap: () {
+                    _inputController.text = suggestion;
+                    _inputFocusNode.unfocus();
+                  },
+                ))
+            .toList(),
+      ),
     );
   }
 
@@ -1774,18 +1586,15 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     final suggestions = _getFilteredSuggestions();
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
+    final isDark = palette.isDark;
 
     return Container(
       constraints: const BoxConstraints(maxHeight: 260),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: palette.hairline),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
@@ -1807,7 +1616,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   Icon(
                     Icons.lightbulb_outline_rounded,
                     size: 14,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: palette.accentIcon,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -1815,18 +1624,13 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                     style: AppFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: palette.accentIcon,
                     ),
                   ),
                 ],
               ),
             ),
-            Divider(
-              height: 1,
-              color: isDark
-                  ? Colors.white.withOpacity(0.08)
-                  : const Color(0xFFE5E7EB),
-            ),
+            Divider(height: 1, color: palette.hairline),
             Flexible(
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1836,9 +1640,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   height: 1,
                   indent: 16,
                   endIndent: 16,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : const Color(0xFFF3F4F6),
+                  color: palette.hairline,
                 ),
                 itemBuilder: (context, index) {
                   final question = suggestions[index];
@@ -1855,9 +1657,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                           Icon(
                             Icons.help_outline_rounded,
                             size: 16,
-                            color: isDark
-                                ? Colors.white.withOpacity(0.35)
-                                : const Color(0xFF9CA3AF),
+                            color: palette.dim,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1865,9 +1665,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                               question,
                               style: AppFonts.inter(
                                 fontSize: 14,
-                                color: isDark
-                                    ? Colors.white.withOpacity(0.85)
-                                    : const Color(0xFF1F2937),
+                                color: palette.text,
                               ),
                             ),
                           ),
@@ -1884,118 +1682,14 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Builds the Talk to Discipler button - a premium feature highlight
-  Widget _buildAiStudyBuddyButton(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: -4,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _handleAiDisciplerTap(context),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Animated microphone icon with glow
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.mic_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                // Text content
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              context.tr(
-                                  TranslationKeys.generateStudyTalkToAiBuddy),
-                              style: AppFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.tr(
-                            TranslationKeys.generateStudyTalkToAiBuddySubtitle),
-                        style: AppFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white.withOpacity(0.85),
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 14),
-                // Arrow with circle background
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   // ---------------------------------------------------------------------------
   // Walkthrough helpers
   // ---------------------------------------------------------------------------
 
   VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
 
-  int get _totalWalkthroughSteps => _isAiDisciplerFeatureEnabled() ? 4 : 3;
+  // Talk to Discipler lives in its own dock tab, not on Generate.
+  int get _totalWalkthroughSteps => 3;
 
   Future<void> _triggerWalkthroughIfNeeded() async {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -2007,7 +1701,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         ShowcaseKeys.generateModeToggle,
         ShowcaseKeys.generateInput,
         ShowcaseKeys.generateButton,
-        if (_isAiDisciplerFeatureEnabled()) ShowcaseKeys.disciplerHint,
       ];
       if (keys.isNotEmpty && mounted) {
         // Wait for a full frame after the async gap to ensure all Showcase
@@ -2048,93 +1741,23 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     GoRouter.of(context).goToVoiceConversation();
   }
 
-  /// Builds the View Saved Guides button with modern styling
-  Widget _buildViewSavedGuidesButton(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 24),
-      child: Container(
-        decoration: BoxDecoration(
-          color:
-              isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F0FF),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.push('/saved'),
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.bookmark_outline_rounded,
-                    size: 20,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.7)
-                        : Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    context.tr(TranslationKeys.generateStudyViewSaved),
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.8)
-                          : Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildGenerateButton(StudyState state, {bool isOffline = false}) {
+    final palette = ReaderPalette.of(context);
     final isLoading =
         state is StudyGenerationInProgress || _isGeneratingStudyGuide;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tokenCost =
-        _displayTokenCost; // Use state variable (null = hide badge)
+    final tokenCost = _modeCosts[_selectedStudyMode];
     final isEnabled = _isInputValid && !isLoading && !isOffline;
 
-    Logger.debug(
-        '🔍 [GENERATE_BUTTON] tokenCost: $tokenCost, isEnabled: $isEnabled, isLoading: $isLoading');
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (isLoading) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  AppColors.brandSecondary.withOpacity(0.1),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.2),
-              ),
+              color: palette.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: palette.hairline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2146,9 +1769,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
-                        ),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(palette.accentIcon),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -2158,194 +1780,34 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                         style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: palette.text,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  context.tr(TranslationKeys.generateStudyConsumingTokens,
-                      {'tokens': tokenCost.toString()}),
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.5)
-                        : const Color(0xFF6B7280),
+                if (tokenCost != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    context.tr(TranslationKeys.generateStudyConsumingTokens,
+                        {'tokens': tokenCost.toString()}),
+                    style: AppFonts.inter(fontSize: 12, color: palette.muted),
                   ),
-                ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 16),
         ],
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: isEnabled ? AppTheme.primaryGradient : null,
-                  color: isEnabled
-                      ? null
-                      : isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: isEnabled
-                      ? [
-                          BoxShadow(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: isEnabled ? _generateStudyGuide : null,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (isLoading) ...[
-                                  const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                ],
-                                Flexible(
-                                  child: Text(
-                                    isLoading
-                                        ? context.tr(TranslationKeys
-                                            .generateStudyButtonGenerating)
-                                        : context.tr(TranslationKeys
-                                            .generateStudyButtonGenerate),
-                                    style: AppFonts.inter(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: isEnabled
-                                          ? Colors.white
-                                          : isDark
-                                              ? Colors.white.withOpacity(0.4)
-                                              : const Color(0xFF9CA3AF),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                // Only show token badge if cost is available AND not loading
-                                if (!isLoading && tokenCost != null) ...[
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isEnabled
-                                          ? Colors.white.withOpacity(0.2)
-                                          : isDark
-                                              ? Colors.white.withOpacity(0.05)
-                                              : Colors.black.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.token,
-                                          size: 16,
-                                          color: isEnabled
-                                              ? Colors.white.withOpacity(0.9)
-                                              : isDark
-                                                  ? Colors.white
-                                                      .withOpacity(0.4)
-                                                  : const Color(0xFF9CA3AF),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '$tokenCost',
-                                          style: AppFonts.inter(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: isEnabled
-                                                ? Colors.white.withOpacity(0.9)
-                                                : isDark
-                                                    ? Colors.white
-                                                        .withOpacity(0.4)
-                                                    : const Color(0xFF9CA3AF),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (isOffline)
-                      Positioned.fill(
-                        child: _buildOfflineGenerateOverlay(context),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Mode selector button
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _showStudyModePreferenceSheet,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Icon(
-                    Icons.tune_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        GenerateStudyButton(
+          label: isLoading
+              ? context.tr(TranslationKeys.generateStudyButtonGenerating)
+              : context.tr(TranslationKeys.generateStudyButtonGenerateShort),
+          cost: tokenCost,
+          enabled: isEnabled,
+          loading: isLoading,
+          onPressed: _generateStudyGuide,
+          overlay: isOffline ? _buildOfflineGenerateOverlay(context) : null,
         ),
       ],
     );
@@ -2353,7 +1815,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
   Widget _buildOfflineGenerateOverlay(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(GenerateStudyButton.height / 2),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -2365,10 +1827,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               ),
             );
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(GenerateStudyButton.height / 2),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius:
+                  BorderRadius.circular(GenerateStudyButton.height / 2),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -2435,10 +1898,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       _isInputValid = false;
     });
     _inputFocusNode.requestFocus();
-
-    // Update token cost display when input mode changes
-    // (recommended mode calculation depends on _selectedMode)
-    _updateTokenCostDisplay();
   }
 
   Future<void> _switchLanguage(StudyLanguage? language) async {
@@ -2477,684 +1936,35 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     }
 
     // Update token cost display for new language
-    _updateTokenCostDisplay();
+    _loadModeCosts();
 
     Logger.debug(
         'ℹ️  [GENERATE STUDY] Note: This does not change the app UI language');
-  }
-
-  /// Show bottom sheet to change study mode preference
-  Future<void> _showStudyModePreferenceSheet() async {
-    final currentModeRaw =
-        await _languagePreferenceService.getStudyModePreferenceRaw();
-
-    if (!mounted) return;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 16,
-              bottom: bottomPadding + 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.2)
-                          : Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Title
-                Text(
-                  context.tr(TranslationKeys.studyModePreferenceTitle),
-                  style: AppFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  context.tr(TranslationKeys.studyModePreferenceSubtitle),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : const Color(0xFF6B7280),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-
-                // Scrollable mode options
-                Flexible(
-                  child: SheetScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: null,
-                          title: context.tr(
-                              TranslationKeys.studyModePreferenceAskEveryTime),
-                          subtitle: context.tr(TranslationKeys
-                              .studyModePreferenceAskEveryTimeSubtitle),
-                          icon: Icons.touch_app_outlined,
-                          currentModeRaw: currentModeRaw,
-                          duration: null,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: 'recommended',
-                          title: context
-                              .tr(TranslationKeys.settingsUseRecommended),
-                          subtitle: context.tr(
-                              TranslationKeys.settingsUseRecommendedSubtitle),
-                          icon: Icons.stars,
-                          currentModeRaw: currentModeRaw,
-                          duration: null,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: 'quick',
-                          title: context.tr(TranslationKeys.studyModeQuickName),
-                          subtitle: context
-                              .tr(TranslationKeys.studyModeQuickDescription),
-                          icon: Icons.bolt,
-                          currentModeRaw: currentModeRaw,
-                          duration: '3 min',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: 'standard',
-                          title:
-                              context.tr(TranslationKeys.studyModeStandardName),
-                          subtitle: context
-                              .tr(TranslationKeys.studyModeStandardDescription),
-                          icon: Icons.library_books,
-                          currentModeRaw: currentModeRaw,
-                          duration: '8 min',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: 'deep',
-                          title: context.tr(TranslationKeys.studyModeDeepName),
-                          subtitle: context
-                              .tr(TranslationKeys.studyModeDeepDescription),
-                          icon: Icons.search,
-                          currentModeRaw: currentModeRaw,
-                          duration: '12 min',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: 'lectio',
-                          title:
-                              context.tr(TranslationKeys.studyModeLectioName),
-                          subtitle: context
-                              .tr(TranslationKeys.studyModeLectioDescription),
-                          icon: Icons.self_improvement,
-                          currentModeRaw: currentModeRaw,
-                          duration: '9 min',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildModeOptionRaw(
-                          context: context,
-                          modeValue: 'sermon',
-                          title:
-                              context.tr(TranslationKeys.studyModeSermonName),
-                          subtitle: context
-                              .tr(TranslationKeys.studyModeSermonDescription),
-                          icon: Icons.church,
-                          currentModeRaw: currentModeRaw,
-                          duration: '55 min',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeOption({
-    required BuildContext context,
-    required StudyMode? mode,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required StudyMode? currentMode,
-    required String? duration,
-  }) {
-    final isSelected = mode == currentMode;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return GestureDetector(
-      onTap: () async {
-        Navigator.of(context).pop();
-
-        // Update preference
-        if (mode != null) {
-          await _languagePreferenceService.saveStudyModePreference(mode);
-        } else {
-          // Clear preference - save null
-          await _languagePreferenceService.clearStudyModePreference();
-        }
-
-        // Reload preference to update button token cost display
-        if (mounted) {
-          await _loadSavedStudyModePreference();
-        }
-
-        // Show confirmation
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              mode != null
-                  ? 'Default mode set to ${mode.displayName}'
-                  : 'Will ask for mode every time',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? isDark
-                  ? primary.withOpacity(0.15)
-                  : const Color(0xFFF3F0FF)
-              : isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? primary
-                : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : const Color(0xFFE5E7EB),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: primary.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            // Icon container
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? primary.withOpacity(0.15)
-                    : isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                size: 24,
-                color: isSelected
-                    ? primary
-                    : isDark
-                        ? Colors.white.withOpacity(0.7)
-                        : const Color(0xFF6B7280),
-              ),
-            ),
-            const SizedBox(width: 16),
-
-            // Text content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? primary
-                          : isDark
-                              ? Colors.white
-                              : const Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.6)
-                          : const Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Duration badge (if provided)
-            if (duration != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? primary
-                      : isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  duration,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? Colors.white
-                        : isDark
-                            ? Colors.white.withOpacity(0.7)
-                            : const Color(0xFF4B5563),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-
-            // Selection indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? primary : Colors.transparent,
-                border: Border.all(
-                  color: isSelected
-                      ? primary
-                      : isDark
-                          ? Colors.white.withOpacity(0.3)
-                          : const Color(0xFFD1D5DB),
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeOptionRaw({
-    required BuildContext context,
-    required String? modeValue,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required String? currentModeRaw,
-    required String? duration,
-  }) {
-    final isSelected = modeValue == currentModeRaw;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return GestureDetector(
-      onTap: () async {
-        // ✅ FIX: Update preference FIRST, then close sheet
-        try {
-          if (modeValue != null) {
-            await _languagePreferenceService
-                .saveStudyModePreferenceRaw(modeValue);
-          } else {
-            // Clear preference - save null
-            await _languagePreferenceService.clearStudyModePreference();
-          }
-
-          // Reload preference to update button token cost display
-          if (mounted) {
-            await _loadSavedStudyModePreference();
-            // Update token cost display for new mode preference
-            await _updateTokenCostDisplay();
-          }
-
-          // Close sheet after save completes
-          if (!mounted) return;
-          Navigator.of(context).pop();
-
-          // Show confirmation
-          String confirmationMessage;
-          if (StudyModePreferences.isGeneralAskEveryTime(modeValue)) {
-            confirmationMessage = 'Will ask for mode every time';
-          } else if (StudyModePreferences.isRecommended(modeValue)) {
-            confirmationMessage = 'Default mode set to Use Recommended';
-          } else {
-            confirmationMessage = 'Default mode set to $title';
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(confirmationMessage),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        } catch (e) {
-          // Close sheet even on error
-          if (mounted) {
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                backgroundColor: AppColors.error,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? isDark
-                  ? primary.withOpacity(0.15)
-                  : const Color(0xFFF3F0FF)
-              : isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? primary
-                : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : const Color(0xFFE5E7EB),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: primary.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            // Icon container
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? primary.withOpacity(0.15)
-                    : isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                size: 24,
-                color: isSelected
-                    ? primary
-                    : isDark
-                        ? Colors.white.withOpacity(0.7)
-                        : const Color(0xFF6B7280),
-              ),
-            ),
-            const SizedBox(width: 16),
-
-            // Text content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? primary
-                          : isDark
-                              ? Colors.white
-                              : const Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.6)
-                          : const Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Duration badge (if provided)
-            if (duration != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? primary
-                      : isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  duration,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? Colors.white
-                        : isDark
-                            ? Colors.white.withOpacity(0.7)
-                            : const Color(0xFF4B5563),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-
-            // Selection indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? primary : Colors.transparent,
-                border: Border.all(
-                  color: isSelected
-                      ? primary
-                      : isDark
-                          ? Colors.white.withOpacity(0.3)
-                          : const Color(0xFFD1D5DB),
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _generateStudyGuide() async {
     if (!_isInputValid) return;
 
     // Prevent multiple clicks during navigation
-    if (_isNavigating) {
+    if (_isNavigating) return;
+
+    // The depth is chosen inline (or via "All 5"), so generation starts
+    // straight away with it — no mode sheet in between.
+    final mode = _visibleStudyModes.contains(_selectedStudyMode)
+        ? _selectedStudyMode
+        : resolveInitialStudyMode(_savedStudyModePreference,
+            available: _visibleStudyModes, locked: _lockedStudyModes);
+    if (_lockedStudyModes.contains(mode)) {
+      _showUpgradeDialogForMode(mode);
       return;
     }
 
-    // Determine input type for recommended mode logic
-    final inputType = _selectedMode == StudyInputMode.scripture
-        ? 'scripture'
-        : _selectedMode == StudyInputMode.topic
-            ? 'topic'
-            : 'question';
-
-    // Check if user has a saved study mode preference (including 'recommended')
-    final savedModeString =
-        await _languagePreferenceService.getStudyModePreferenceRaw();
-
-    if (StudyModePreferences.isRecommended(savedModeString)) {
-      // User wants recommended mode - Standard is the default for all inputs.
-      const recommendedMode = StudyMode.standard;
-
-      Logger.info(
-          '✅ [GENERATE_STUDY] Using recommended mode for $inputType: ${recommendedMode.displayName}');
-      await _navigateToStudyGuide(recommendedMode, false, true);
-    } else if (savedModeString != null) {
-      // User has specific saved preference - use it directly
-      final savedMode = studyModeFromString(savedModeString);
-      if (savedMode != null) {
-        Logger.info(
-            '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
-        await _navigateToStudyGuide(savedMode, false, false);
-      } else {
-        // Invalid mode string - show mode selection sheet
-        Logger.warning(
-            '⚠️ [GENERATE_STUDY] Invalid study mode string: $savedModeString - showing mode selection sheet');
-        final result = await ModeSelectionSheet.show(
-          context: context,
-          languageCode: _selectedLanguage.code,
-        );
-        if (result != null && mounted) {
-          final selectedMode = result['mode'] as StudyMode;
-          final rememberChoice = result['rememberChoice'] as bool;
-          await _navigateToStudyGuide(selectedMode, rememberChoice, false);
-        }
-      }
-    } else {
-      // No saved preference — when offline, skip the sheet and use the
-      // recommended mode for the input type (no API call needed).
-      final isOffline =
-          context.read<ConnectivityBloc>().state is ConnectivityOffline;
-      if (isOffline) {
-        const offlineMode = StudyMode.standard;
-        Logger.debug(
-            '🔍 [GENERATE_STUDY] Offline – skipping mode sheet, using ${offlineMode.name}');
-        await _navigateToStudyGuide(offlineMode, false, true);
-        return;
-      }
-
-      Logger.debug(
-          '🔍 [GENERATE_STUDY] No saved preference - showing mode selection sheet');
-
-      final result = await ModeSelectionSheet.show(
-        context: context,
-        languageCode: _selectedLanguage.code,
-        inputType: inputType,
-      );
-      if (result != null && mounted) {
-        final selectedMode = result['mode'] as StudyMode;
-        final rememberChoice = result['rememberChoice'] as bool;
-
-        // Standard is the recommended mode for all input types.
-        const recommendedMode = StudyMode.standard;
-
-        await _navigateToStudyGuide(
-          selectedMode,
-          rememberChoice,
-          selectedMode == recommendedMode,
-        );
-      }
-    }
+    Logger.info('✅ [GENERATE_STUDY] Generating with mode: ${mode.name}');
+    await _navigateToStudyGuide(mode);
   }
 
   /// Navigate to study guide with selected mode.
-  Future<void> _navigateToStudyGuide(
-    StudyMode mode,
-    bool rememberChoice,
-    bool isRecommendedMode,
-  ) async {
+  Future<void> _navigateToStudyGuide(StudyMode mode) async {
     _isNavigating = true;
 
     final input = _inputController.text.trim();
@@ -3199,19 +2009,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       }
     }
 
-    // Backend will handle actual token consumption
-    // UI feedback token consumption removed - backend API is single source of truth
-    // Token status will be refreshed after backend processes the request
-
-    // Save user's mode preference if they chose to remember
-    if (rememberChoice) {
-      if (isRecommendedMode) {
-        // Save 'recommended' instead of specific mode when user selects recommended mode
-        _languagePreferenceService.saveStudyModePreferenceRaw('recommended');
-      } else {
-        // Save specific mode when user selects non-recommended mode
-        _languagePreferenceService.saveStudyModePreference(mode);
-      }
+    // Backend will handle actual token consumption; token status is
+    // refreshed after the backend processes the request.
+    if (!mounted) {
+      _isNavigating = false;
+      return;
     }
 
     // Set flag to indicate navigation away (will trigger token refresh on return)
@@ -3220,9 +2022,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     final encodedInput = Uri.encodeComponent(input);
 
     Logger.debug(
-        '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType: $input with mode: ${mode.name}');
+        '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType with mode: ${mode.name}');
 
-    // Navigate to study guide V2 with mode parameter
     context.go(
         '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate');
 
@@ -3398,120 +2199,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 }
 
-/// Mode toggle button widget with gradient styling.
-class _ModeToggleButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ModeToggleButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: BoxDecoration(
-          gradient: isSelected ? AppTheme.primaryGradient : null,
-          color: isSelected ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected
-                ? Colors.white
-                : isDark
-                    ? Colors.white.withOpacity(0.7)
-                    : Theme.of(context).colorScheme.primary,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-}
-
-/// Language toggle button widget with gradient styling.
-class _LanguageToggleButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _LanguageToggleButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        decoration: BoxDecoration(
-          gradient: isSelected ? AppTheme.primaryGradient : null,
-          color: isSelected ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected
-                ? Colors.white
-                : isDark
-                    ? Colors.white.withOpacity(0.7)
-                    : Theme.of(context).colorScheme.primary,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-}
-
 /// Data class for a book name autocomplete suggestion.
 class _BookSuggestion {
   final String label; // displayed on the chip
@@ -3525,7 +2212,7 @@ class _BookSuggestion {
   });
 }
 
-/// Suggestion chip widget with modern styling and optional language badge.
+/// Pill suggestion chip over the hero, with an optional language badge.
 class _SuggestionChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -3541,60 +2228,62 @@ class _SuggestionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
+    final ink = GenerateHeroInk.of(context);
+    // Dark: a translucent wash over the photo. Light: a translucent ink wash
+    // read too faint over the pale sky, so chips are solid white with a
+    // hairline and dark ink.
+    final fill =
+        palette.isDark ? Colors.white.withValues(alpha: 0.14) : palette.card;
+    final textColor = palette.isDark ? ink.text : palette.text;
 
-    return GestureDetector(
-      onTapDown: onTapDown,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color:
-              isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F0FF),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (badge != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+    return Material(
+      color: fill,
+      shape: palette.isDark
+          ? const StadiumBorder()
+          : StadiumBorder(side: BorderSide(color: palette.outline)),
+      child: InkWell(
+        onTapDown: onTapDown,
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (badge != null) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: ReaderPalette.selectedFill,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: AppFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
                 child: Text(
-                  badge!,
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: isDark
-                        ? AppColors.brandPrimaryLight
-                        : Theme.of(context).colorScheme.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
             ],
-            Text(
-              label,
-              style: AppFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isDark
-                    ? Colors.white.withOpacity(0.8)
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

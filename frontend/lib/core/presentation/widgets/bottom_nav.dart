@@ -6,7 +6,6 @@ import 'package:showcaseview/showcaseview.dart';
 import '../../constants/app_fonts.dart';
 import '../../animations/app_animations.dart';
 import '../../localization/app_localizations.dart';
-import '../../../features/community/presentation/widgets/discipler_badges.dart';
 import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
@@ -38,36 +37,36 @@ class NavTab {
   });
 }
 
-/// Disciplefy Bottom Navigation Bar - Theme Aware
+/// Disciplefy bottom navigation: a floating dock.
 ///
-/// Features:
-/// ✅ Fixed overflow issues with proper SafeArea usage
-/// ✅ Theme-aware background with rounded top corners
-/// ✅ Dynamic theme colors: Active (primary), Inactive (onSurface)
-/// ✅ Top border for visual separation
-/// ✅ No unnecessary padding or margins
-/// ✅ No swipe animations - uses IndexedStack
-/// ✅ Proper positioning to prevent bottom gaps
+/// A rounded bar floating above the page (74px, inset 14px from the sides,
+/// just above the home indicator) with five labelled destinations: Home,
+/// Generate, Discipler, Topics, Community. Selection is a state, so it is
+/// shown lightly: a soft gold pill behind the icon and a gold label. The
+/// Discipler button keeps one look — a gold circle with the white mark —
+/// and gains only a gold ring when it is the selected tab.
 class DisciplefyBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final List<NavTab> tabs;
-
-  /// Opens Discipler (voice). Rendered as a raised centre action rather than a
-  /// tab: it pushes a route instead of switching branches, so it never owns a
-  /// [currentIndex] and never becomes the "selected" destination.
-  final VoidCallback? onDisciplerTap;
 
   const DisciplefyBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
     required this.tabs,
-    this.onDisciplerTap,
   });
 
-  /// Slot index the raised action occupies — the middle of the bar.
-  int get _disciplerSlot => (tabs.length / 2).floor();
+  /// Discipler as a tab. Kept out of [defaultTabs]: its label is the brand
+  /// name, the same in every language, and the shell adds it only when the
+  /// Talk to Discipler feature is available.
+  static const NavTab disciplerTab = NavTab(
+    icon: Icons.graphic_eq,
+    id: 'discipler',
+    label: 'Discipler',
+    semanticLabel:
+        'Navigate to Discipler. Talk with your Bible companion by voice or text.',
+  );
 
   /// Default navigation tabs for Disciplefy app
   static const List<NavTab> defaultTabs = [
@@ -117,9 +116,9 @@ class DisciplefyBottomNav extends StatelessWidget {
     );
     final double tooltipWidth = math.min(280.0, screenWidth - 48);
     const double arrowWidth = 20.0;
-    // Community is the last of N equal slots. The raised Discipler action, when
-    // present, takes a slot of its own, so this cannot assume 4.
-    final int slotCount = tabs.length + (onDisciplerTap != null ? 1 : 0);
+    // Community is the last of N equal slots (Discipler is one of them when
+    // shown), so this cannot assume 4.
+    final int slotCount = tabs.length;
     final double communityCenterFraction =
         slotCount == 0 ? 0.5 : (slotCount - 0.5) / slotCount;
     final double tabCenterX = screenWidth * communityCenterFraction;
@@ -133,45 +132,35 @@ class DisciplefyBottomNav extends StatelessWidget {
             .clamp(-1.0, 1.0);
     final Alignment communityArrowAlignment = Alignment(ax, 0.0);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          ),
+    final palette = _DockPalette.of(context);
+
+    // Sit just above the home indicator, or 14px from the edge on phones
+    // without one. SafeArea plus a fixed margin stacked to ~50px on iPhones.
+    final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
+
+    return Padding(
+      padding:
+          EdgeInsets.fromLTRB(14, 6, 14, systemBottom > 0 ? systemBottom : 14),
+      child: Container(
+        height: 74,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: palette.dock,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: palette.border),
+          boxShadow: [
+            BoxShadow(
+              color: palette.shadow,
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false, // Don't apply SafeArea to top
-        child: SizedBox(
-          height: 60, // Fixed height to prevent overflow
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: _buildSlots(context, communityArrowAlignment),
-          ),
+        child: Row(
+          children: _buildTabItems(context, communityArrowAlignment),
         ),
       ),
     );
-  }
-
-  /// The tab items, with the raised Discipler action inserted mid-bar.
-  List<Widget> _buildSlots(
-      BuildContext context, Alignment communityArrowAlignment) {
-    final items = _buildTabItems(context, communityArrowAlignment);
-    if (onDisciplerTap == null) return items;
-    return [
-      ...items.take(_disciplerSlot),
-      Expanded(child: _DisciplerNavAction(onTap: onDisciplerTap!)),
-      ...items.skip(_disciplerSlot),
-    ];
   }
 
   List<Widget> _buildTabItems(
@@ -181,11 +170,17 @@ class DisciplefyBottomNav extends StatelessWidget {
       final tab = entry.value;
       final isSelected = currentIndex == index;
 
-      final navItem = _BottomNavItem(
-        tab: tab,
-        isSelected: isSelected,
-        onTap: () => _handleTap(context, index),
-      );
+      final Widget navItem = tab.id == disciplerTab.id
+          ? _DisciplerNavItem(
+              tab: tab,
+              isSelected: isSelected,
+              onTap: () => _handleTap(context, index),
+            )
+          : _BottomNavItem(
+              tab: tab,
+              isSelected: isSelected,
+              onTap: () => _handleTap(context, index),
+            );
 
       // Wrap Generate, Topics, and Community tabs with walkthrough
       // tooltips so the home screen walkthrough highlights each nav item.
@@ -248,53 +243,183 @@ class DisciplefyBottomNav extends StatelessWidget {
     if (index != currentIndex) {
       // Provide haptic feedback for better UX
       flutter_services.HapticFeedback.lightImpact();
-      onTap(index);
     }
+    // Re-taps are reported too: the shell ignores them except on Home,
+    // where tapping the current tab scrolls back to the top.
+    onTap(index);
   }
 }
 
-/// Raised centre action that opens Discipler (voice).
-///
-/// Deliberately not a [NavTab]: it pushes a route rather than switching a
-/// branch, so it never reads as the selected destination.
-class _DisciplerNavAction extends StatelessWidget {
-  final VoidCallback onTap;
+/// Dock colours per theme. Gold on white is too faint for text, so the
+/// light theme uses the deep gold for the selected icon, label and ring.
+class _DockPalette {
+  final Color dock;
+  final Color border;
+  final Color shadow;
+  final Color inactive;
+  final Color selected;
+  final Color tint;
+  final Color tintBorder;
+  final Color ring;
 
-  const _DisciplerNavAction({required this.onTap});
+  const _DockPalette({
+    required this.dock,
+    required this.border,
+    required this.shadow,
+    required this.inactive,
+    required this.selected,
+    required this.tint,
+    required this.tintBorder,
+    required this.ring,
+  });
+
+  static _DockPalette of(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return dark
+        ? const _DockPalette(
+            dock: Color(0xFF1C1C24),
+            border: Color(0x14FFFFFF),
+            shadow: Color(0x80000000),
+            inactive: Color(0xFF8A8A95),
+            selected: AppColors.brandGold,
+            tint: Color(0x26E3B154),
+            tintBorder: Color(0x55E3B154),
+            ring: AppColors.brandGold,
+          )
+        : const _DockPalette(
+            dock: Colors.white,
+            border: Color(0xFFE4E0D6),
+            shadow: Color(0x1F1A1917),
+            inactive: Color(0xFF8A857A),
+            selected: AppColors.brandGoldDeep,
+            tint: Color(0x33E3B154),
+            tintBorder: Color(0x66C9973A),
+            ring: Color(0xFFB98A2E),
+          );
+  }
+}
+
+/// Shared column for every dock item: a fixed 44px icon row with the visual
+/// (pill or Discipler button) centred in it, then the label. Equal heights
+/// keep every icon and label on the same line, centred in the dock.
+class _DockItemLayout extends StatelessWidget {
+  final Widget visual;
+  final String label;
+  final bool isSelected;
+  final _DockPalette palette;
+
+  const _DockItemLayout({
+    required this.visual,
+    required this.label,
+    required this.isSelected,
+    required this.palette,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    return SizedBox(
+      height: 60,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Every item gets the same 44px icon row (the Discipler ring's
+          // size), so icons, the button and labels share one centre line and
+          // the row sits centred in the dock.
+          SizedBox(height: 44, child: Center(child: visual)),
+          const SizedBox(height: 3),
+          AnimatedDefaultTextStyle(
+            duration: AppAnimations.fast,
+            curve: AppAnimations.defaultCurve,
+            style: AppFonts.inter(
+              fontSize: 10.5,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? palette.selected : palette.inactive,
+            ),
+            // Shrinks rather than cuts: on a very narrow phone five slots are
+            // ~56px, less than "Community" or the Malayalam labels need.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, maxLines: 1, textAlign: TextAlign.center),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Discipler: the brand's Discipler mark on gold. Its look never
+/// changes with selection except for a thin gold ring, so it always reads as
+/// the same thing.
+class _DisciplerNavItem extends StatelessWidget {
+  final NavTab tab;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _DisciplerNavItem({
+    required this.tab,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _DockPalette.of(context);
+    final label = AppLocalizations.of(context)?.navDiscipler ?? tab.label;
+
     return Semantics(
+      label: tab.semanticLabel,
       button: true,
-      label: l10n?.navDiscipler ?? 'Discipler',
-      child: Center(
-        child: InkWell(
-          onTap: () {
-            flutter_services.HapticFeedback.lightImpact();
-            onTap();
-          },
-          customBorder: const CircleBorder(),
-          child: Container(
-            width: 52,
-            height: 52,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: _DockItemLayout(
+          label: label,
+          isSelected: isSelected,
+          palette: palette,
+          visual: AnimatedContainer(
+            key: const Key('nav_discipler_ring'),
+            duration: AppAnimations.fast,
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
+              border: Border.all(
+                color: isSelected ? palette.ring : Colors.transparent,
+                width: 2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.brandPrimary.withOpacity(0.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
-            alignment: Alignment.center,
-            child: const DisciplerGlyph(size: 39),
+            // The brand's Discipler mark on gold (brand/discipler/
+            // discipler-mark-on-gold.svg): symbol plus the two sparkles.
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandGoldDeep.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/brand/discipler-mark-on-gold.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  cacheWidth: 128,
+                  errorBuilder: (_, __, ___) => const ColoredBox(
+                    color: AppColors.brandGold,
+                    child: Icon(Icons.graphic_eq, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -302,7 +427,7 @@ class _DisciplerNavAction extends StatelessWidget {
   }
 }
 
-/// Individual bottom navigation item with Disciplefy styling and animations
+/// A regular dock tab: icon in a pill (tinted gold when selected) and label.
 class _BottomNavItem extends StatefulWidget {
   final NavTab tab;
   final bool isSelected;
@@ -330,13 +455,9 @@ class _BottomNavItemState extends State<_BottomNavItem>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: AppAnimations.defaultCurve,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
+        CurvedAnimation(
+            parent: _controller, curve: AppAnimations.defaultCurve));
   }
 
   @override
@@ -345,102 +466,51 @@ class _BottomNavItemState extends State<_BottomNavItem>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    _controller.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    _controller.reverse();
-    widget.onTap();
-  }
-
-  void _onTapCancel() {
-    _controller.reverse();
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Theme-aware colors
-    // Brand gold, not the indigo primary: gold is the app's accent for the
-    // things that mark progress, and using it for the selected tab is what
-    // makes the gold mark in the header read as part of the system rather than
-    // a lone sticker. Indigo stays the colour of actions and surfaces.
-    final activeColor = context.appGoldMark; // icon + wash
-    final activeLabelColor = context.appStreakAccent; // text needs 4.5:1
-    final inactiveColor =
-        Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    final palette = _DockPalette.of(context);
+    final selected = widget.isSelected;
 
     return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
       behavior: HitTestBehavior.opaque,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        ),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
         child: Semantics(
           label: widget.tab.semanticLabel,
           button: true,
-          selected: widget.isSelected,
+          selected: selected,
           enabled: true,
           focusable: true,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icon with animated background indicator
-                AnimatedContainer(
-                  duration: AppAnimations.fast,
-                  curve: AppAnimations.defaultCurve,
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: widget.isSelected
-                        ? activeColor.withOpacity(0.15)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: AnimatedSwitcher(
-                    duration: AppAnimations.fast,
-                    switchInCurve: AppAnimations.defaultCurve,
-                    switchOutCurve: AppAnimations.defaultCurve,
-                    child: Icon(
-                      widget.isSelected && widget.tab.activeIcon != null
-                          ? widget.tab.activeIcon!
-                          : widget.tab.icon,
-                      key: ValueKey(widget.isSelected),
-                      size: 18,
-                      color: widget.isSelected ? activeColor : inactiveColor,
-                    ),
-                  ),
+          child: _DockItemLayout(
+            label: AppLocalizations.of(context)?.navLabel(widget.tab.id) ??
+                widget.tab.label,
+            isSelected: selected,
+            palette: palette,
+            visual: AnimatedContainer(
+              duration: AppAnimations.fast,
+              curve: AppAnimations.defaultCurve,
+              width: 48,
+              height: 30,
+              decoration: BoxDecoration(
+                color: selected ? palette.tint : Colors.transparent,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: selected ? palette.tintBorder : Colors.transparent,
                 ),
-
-                const SizedBox(height: 2),
-
-                // Label with animated color
-                AnimatedDefaultTextStyle(
-                  duration: AppAnimations.fast,
-                  curve: AppAnimations.defaultCurve,
-                  style: AppFonts.inter(
-                    fontSize: 10,
-                    fontWeight:
-                        widget.isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: widget.isSelected ? activeLabelColor : inactiveColor,
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context)?.navLabel(widget.tab.id) ??
-                        widget.tab.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
+              ),
+              child: Icon(
+                selected && widget.tab.activeIcon != null
+                    ? widget.tab.activeIcon!
+                    : widget.tab.icon,
+                size: 20,
+                color: selected ? palette.selected : palette.inactive,
+              ),
             ),
           ),
         ),

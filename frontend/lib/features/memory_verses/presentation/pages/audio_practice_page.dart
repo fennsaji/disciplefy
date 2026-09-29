@@ -1,28 +1,31 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/timer_badge.dart';
-import '../../../voice_buddy/data/services/speech_service.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/quality_calculator.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/data/services/speech_service.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Audio Practice Page for Memory Verses.
 ///
@@ -507,7 +510,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final title = context.tr(TranslationKeys.practiceModeAudio);
 
     return ShowCaseWidget(
       onFinish: () =>
@@ -526,578 +529,407 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _handleBackNavigation,
-                ),
-                title: Text(context.tr(TranslationKeys.practiceModeAudio)),
-                actions: [
-                  TimerBadge(elapsedSeconds: _elapsedSeconds, compact: true),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              body: SafeArea(
-                child: currentVerse == null
-                    ? const Center(child: CircularProgressIndicator())
-                    : _buildContent(theme),
-              ),
-            ),
+            child: currentVerse == null
+                ? MemoryPracticeScaffold(
+                    title: title,
+                    elapsedSeconds: _elapsedSeconds,
+                    onClose: _handleBackNavigation,
+                    scrollable: false,
+                    body: const Center(child: CircularProgressIndicator()),
+                  )
+                : MemoryPracticeScaffold(
+                    title: title,
+                    subtitle: '${currentVerse!.verseReference} · '
+                        '${context.tr(TranslationKeys.difficultyHard)}',
+                    elapsedSeconds: _elapsedSeconds,
+                    onClose: _handleBackNavigation,
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MemoryStepIndicator(
+                          steps: [
+                            context.tr(TranslationKeys.practiceStepRead),
+                            context.tr(TranslationKeys.practiceStepSpeak),
+                            context.tr(TranslationKeys.practiceStepResults),
+                          ],
+                          currentIndex: _currentPhase.index,
+                        ),
+                        const SizedBox(height: 24),
+                        switch (_currentPhase) {
+                          AudioPhase.reading => _buildReadingPhase(),
+                          AudioPhase.speaking => _buildSpeakingPhase(),
+                          AudioPhase.results => _buildResultsPhase(),
+                        },
+                      ],
+                    ),
+                    bottomBar: _buildBottomBar(),
+                  ),
           ),
         ).withAuthProtection();
       },
     );
   }
 
-  Widget _buildContent(ThemeData theme) {
-    return Column(
-      children: [
-        // Verse Reference Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          color: theme.colorScheme.primaryContainer,
-          child: Text(
-            currentVerse!.verseReference,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-
-        // Phase Indicator
-        _buildPhaseIndicator(theme),
-
-        // Main Content
-        Expanded(
-          child: switch (_currentPhase) {
-            AudioPhase.reading => _buildReadingPhase(theme),
-            AudioPhase.speaking => _buildSpeakingPhase(theme),
-            AudioPhase.results => _buildResultsPhase(theme),
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhaseIndicator(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildPhaseChip(
-            theme,
-            context.tr(TranslationKeys.practiceStepRead),
-            Icons.menu_book,
-            _currentPhase == AudioPhase.reading,
-            _currentPhase.index >= 0,
-          ),
-          Container(
-            width: 40,
-            height: 2,
-            color: _currentPhase.index >= 1
-                ? theme.colorScheme.primary
-                : AppColors.lightBorder,
-          ),
-          _buildPhaseChip(
-            theme,
-            context.tr(TranslationKeys.practiceStepSpeak),
-            Icons.mic,
-            _currentPhase == AudioPhase.speaking,
-            _currentPhase.index >= 1,
-          ),
-          Container(
-            width: 40,
-            height: 2,
-            color: _currentPhase.index >= 2
-                ? theme.colorScheme.primary
-                : AppColors.lightBorder,
-          ),
-          _buildPhaseChip(
-            theme,
-            context.tr(TranslationKeys.practiceStepResults),
-            Icons.check_circle,
-            _currentPhase == AudioPhase.results,
-            _currentPhase.index >= 2,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhaseChip(
-    ThemeData theme,
-    String label,
-    IconData icon,
-    bool isActive,
-    bool isCompleted,
-  ) {
-    return Column(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: isActive
-                ? context.appInteractive
-                : isCompleted
-                    ? context.appInteractive.withAlpha(100)
-                    : AppColors.lightBorder,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: isActive || isCompleted
-                ? Colors.white
-                : AppColors.lightTextSecondary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: isActive
-                ? theme.colorScheme.primary
-                : AppColors.lightTextSecondary,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReadingPhase(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Instructions
-          Text(
-            context.tr(TranslationKeys.audioReadCarefully),
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-
-          // Verse text to read and memorize
-          WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.practiceAudio,
-            title: AppLocalizations.of(context)!.walkthroughPracticeAudioTitle,
-            description:
-                AppLocalizations.of(context)!.walkthroughPracticeAudioDesc,
-            screen: WalkthroughScreen.practiceAudio,
-            stepNumber: 1,
-            totalSteps: 1,
-            onNext: _onNext,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.lightBorder),
-              ),
-              child: Text(
-                currentVerse!.verseText,
-                style: theme.textTheme.titleLarge?.copyWith(height: 1.5),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          const SizedBox(height: 48),
-
-          // Proceed Button
-          ElevatedButton.icon(
+  Widget? _buildBottomBar() {
+    switch (_currentPhase) {
+      case AudioPhase.reading:
+        return MemoryActionBar(
+          primary: MemoryPrimaryPill(
+            label: context.tr(TranslationKeys.audioReadyToSpeak),
+            icon: Icons.arrow_forward_rounded,
             onPressed: _proceedToSpeaking,
-            icon: const Icon(Icons.arrow_forward),
-            label: Text(context.tr(TranslationKeys.audioReadyToSpeak)),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSpeakingPhase(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Instructions
-          Text(
-            _isRecording
-                ? context.tr(TranslationKeys.audioSpeakNow)
-                : context.tr(TranslationKeys.audioTapMicrophone),
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
+        );
+      case AudioPhase.speaking:
+        if (!_hasRecorded || _isRecording) return null;
+        return MemoryActionBar(
+          primary: MemoryPrimaryPill(
+            label: context.tr(TranslationKeys.audioCheckResult),
+            icon: Icons.check_rounded,
+            onPressed: _calculateAccuracy,
           ),
-          const SizedBox(height: 32),
-
-          // Sound Level Indicator
-          if (_isRecording)
-            Container(
-              height: 40,
-              margin: const EdgeInsets.only(bottom: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(20, (index) {
-                  final barHeight = index < (_soundLevel * 2).toInt()
-                      ? 40.0
-                      : 8.0 + (index % 3) * 4;
-                  return Container(
-                    width: 4,
-                    height: barHeight,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: _isRecording
-                          ? theme.colorScheme.primary
-                              .withAlpha((150 + (index / 20 * 105)).toInt())
-                          : AppColors.lightBorder,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  );
-                }),
-              ),
+        );
+      case AudioPhase.results:
+        return MemoryActionBar(
+          secondary: [
+            MemoryActionPill(
+              label: context.tr(TranslationKeys.practiceRetry),
+              icon: Icons.refresh_rounded,
+              onPressed: _retryRecording,
             ),
-
-          // Record Button
-          GestureDetector(
-            onTap: _isRecording ? _stopRecording : _startRecording,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: _isRecording ? AppColors.error : context.appInteractive,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: (_isRecording
-                            ? AppColors.error
-                            : context.appInteractive)
-                        .withAlpha(60),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Icon(
-                _isRecording ? Icons.stop : Icons.mic,
-                color: Colors.white,
-                size: 64,
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Recognized Text Preview
-          if (_recognizedText.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${context.tr(TranslationKeys.audioRecognized)}:',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.lightTextSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _recognizedText,
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
           ],
+          primary: MemoryPrimaryPill(
+            label: context.tr(TranslationKeys.practiceSubmit),
+            onPressed: _submitPractice,
+          ),
+        );
+    }
+  }
 
-          // Submit Button
-          if (_hasRecorded && !_isRecording)
-            ElevatedButton.icon(
-              onPressed: _calculateAccuracy,
-              icon: const Icon(Icons.check),
-              label: Text(context.tr(TranslationKeys.audioCheckResult)),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+  Widget _buildReadingPhase() {
+    final palette = ReaderPalette.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          context.tr(TranslationKeys.audioReadCarefully),
+          textAlign: TextAlign.center,
+          style: AppFonts.inter(fontSize: 14.5, color: palette.muted),
+        ),
+        const SizedBox(height: 16),
+        // Verse text to read and memorize
+        WalkthroughTooltip(
+          showcaseKey: ShowcaseKeys.practiceAudio,
+          title: l10n.walkthroughPracticeAudioTitle,
+          description: l10n.walkthroughPracticeAudioDesc,
+          screen: WalkthroughScreen.practiceAudio,
+          stepNumber: 1,
+          totalSteps: 1,
+          onNext: _onNext,
+          highlightBorderRadius: 22,
+          child: MemoryAnswerCard(
+            radius: 22,
+            padding: const EdgeInsets.all(22),
+            child: Text(
+              currentVerse!.verseText,
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 19,
+                height: 1.55,
+                color: palette.text,
               ),
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildResultsPhase(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Accuracy Score
-          Container(
-            width: 150,
-            height: 150,
+  Widget _buildSpeakingPhase() {
+    final palette = ReaderPalette.of(context);
+    final micColor =
+        _isRecording ? AppColors.error : ReaderPalette.selectedFill;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SoundLevelBars(level: _soundLevel, active: _isRecording),
+        const SizedBox(height: 18),
+        Text(
+          _isRecording
+              ? context.tr(TranslationKeys.audioSpeakNow)
+              : context.tr(TranslationKeys.audioTapMicrophone),
+          textAlign: TextAlign.center,
+          style: AppFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: _isRecording ? palette.gold : palette.muted,
+          ),
+        ),
+        const SizedBox(height: 18),
+        // Record button: a flat disc inside a soft static halo (no blur).
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _getAccuracyColor().withAlpha(30),
-              border: Border.all(
-                color: _getAccuracyColor(),
-                width: 4,
-              ),
+              color: micColor.withValues(alpha: palette.isDark ? 0.14 : 0.10),
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${_accuracyPercentage.toStringAsFixed(0)}%',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      color: _getAccuracyColor(),
-                      fontWeight: FontWeight.bold,
+            child: Semantics(
+              button: true,
+              label: _isRecording
+                  ? context.tr(TranslationKeys.audioSpeakNow)
+                  : context.tr(TranslationKeys.audioTapMicrophone),
+              excludeSemantics: true,
+              child: Material(
+                color: micColor,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  key: const ValueKey('audio_record_button'),
+                  customBorder: const CircleBorder(),
+                  onTap: _isRecording ? _stopRecording : _startRecording,
+                  child: SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Icon(
+                      _isRecording
+                          ? Icons.stop_rounded
+                          : Icons.mic_none_rounded,
+                      color: Colors.white,
+                      size: 44,
                     ),
                   ),
-                  Text(
-                    context.tr(TranslationKeys.practiceResultsAccuracy),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _getAccuracyColor(),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 24),
-
-          // Original Verse
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.success.withAlpha(20),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.success.withAlpha(50)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${context.tr(TranslationKeys.audioExpected)}:',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: context.appSuccess,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  currentVerse != null
-                      ? '${currentVerse!.verseText} ${currentVerse!.verseReference}'
-                      : '',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.successDark,
-                  ),
-                ),
-              ],
-            ),
+        ),
+        // Recognized Text Preview
+        if (_recognizedText.isNotEmpty) ...[
+          MemorySectionLabel.muted(
+            context,
+            context.tr(TranslationKeys.audioYouSaid),
+            padding: const EdgeInsets.only(top: 28, bottom: 8),
           ),
-          const SizedBox(height: 12),
-
-          // What was recognized
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withAlpha(30),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: theme.colorScheme.primary.withAlpha(50),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${context.tr(TranslationKeys.audioYouSaid)}:',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _recognizedText.isEmpty
-                      ? context.tr(TranslationKeys.audioNothingRecognized)
-                      : _recognizedText,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: _recognizedText.isEmpty
-                        ? AppColors.lightTextSecondary
-                        : theme.colorScheme.onSurface,
-                    fontStyle: _recognizedText.isEmpty
-                        ? FontStyle.italic
-                        : FontStyle.normal,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Word-by-word Comparison
           Text(
-            context.tr(TranslationKeys.audioWordComparison),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            _recognizedText,
+            style: AppFonts.inter(
+              fontSize: 16,
+              height: 1.5,
+              color: palette.text,
             ),
           ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _wordComparisons.map((comparison) {
-              final isExtraWord = comparison.originalWord.isEmpty;
-              final isMissed = comparison.recognizedWord.isEmpty;
-
-              final isClose = comparison.matchType == MatchType.close;
-              final chipColor = isClose
-                  ? AppColors.warning
-                  : comparison.isMatch
-                      ? AppColors.success
-                      : AppColors.error;
-
-              return Tooltip(
-                message: isExtraWord
-                    ? 'Extra word spoken'
-                    : isMissed
-                        ? 'Word missed'
-                        : comparison.isMatch
-                            ? isClose
-                                ? 'Close! Expected: ${comparison.originalWord}'
-                                : 'Correct!'
-                            : 'Expected: ${comparison.originalWord}\nYou said: ${comparison.recognizedWord}',
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: chipColor.withAlpha(30),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: chipColor),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!comparison.isMatch && !isExtraWord) ...[
-                        // Cross out what the user said (wrong)
-                        if (comparison.recognizedWord.isNotEmpty)
-                          Text(
-                            comparison.recognizedWord,
-                            style: const TextStyle(
-                              color: AppColors.errorDark,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        // Show the correct word below
-                        Text(
-                          comparison.originalWord,
-                          style: const TextStyle(
-                            color: AppColors.warningDark,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ] else if (isClose && !isExtraWord) ...[
-                        // Show recognized word with slight strikethrough, correct below
-                        Text(
-                          comparison.recognizedWord,
-                          style: const TextStyle(
-                            color: AppColors.warningDark,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                        Text(
-                          comparison.originalWord,
-                          style: const TextStyle(
-                            color: AppColors.warningDark,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ] else
-                        Text(
-                          isExtraWord
-                              ? '+${comparison.recognizedWord}'
-                              : comparison.originalWord,
-                          style: TextStyle(
-                            color: comparison.isMatch
-                                ? AppColors.success
-                                : AppColors.error,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 32),
-
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _retryRecording,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(context.tr(TranslationKeys.practiceRetry)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _submitPractice,
-                  icon: const Icon(Icons.check),
-                  label: Text(context.tr(TranslationKeys.practiceSubmit)),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: context.appInteractive,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 14),
+          const MemoryHairline(),
         ],
+      ],
+    );
+  }
+
+  Widget _buildResultsPhase() {
+    final palette = ReaderPalette.of(context);
+    final accuracyColor = _getAccuracyColor();
+    final fullVerse = currentVerse != null
+        ? '${currentVerse!.verseText} ${currentVerse!.verseReference}'
+        : '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Accuracy Score
+        Center(
+          child: Container(
+            width: 132,
+            height: 132,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: accuracyColor, width: 5),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${_accuracyPercentage.toStringAsFixed(0)}%',
+                  style: AppFonts.poppins(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    color: palette.text,
+                    fontFeatures: kMemoryTabular,
+                  ),
+                ),
+                Text(
+                  context.tr(TranslationKeys.practiceResultsAccuracy),
+                  style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
+                ),
+              ],
+            ),
+          ),
+        ),
+        MemorySectionLabel.muted(
+            context, context.tr(TranslationKeys.audioExpected)),
+        Text(
+          fullVerse,
+          style:
+              AppFonts.inter(fontSize: 15.5, height: 1.5, color: palette.text),
+        ),
+        const SizedBox(height: 14),
+        const MemoryHairline(),
+        MemorySectionLabel.muted(
+            context, context.tr(TranslationKeys.audioYouSaid)),
+        Text(
+          _recognizedText.isEmpty
+              ? context.tr(TranslationKeys.audioNothingRecognized)
+              : _recognizedText,
+          style: AppFonts.inter(
+            fontSize: 15.5,
+            height: 1.5,
+            color: _recognizedText.isEmpty ? palette.dim : palette.text,
+            fontStyle:
+                _recognizedText.isEmpty ? FontStyle.italic : FontStyle.normal,
+          ),
+        ),
+        const SizedBox(height: 14),
+        const MemoryHairline(),
+        MemorySectionLabel.muted(
+            context, context.tr(TranslationKeys.audioWordComparison)),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _wordComparisons.map(_buildComparisonChip).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildComparisonChip(WordComparison comparison) {
+    final palette = ReaderPalette.of(context);
+    final isExtraWord = comparison.originalWord.isEmpty;
+    final isMissed = comparison.recognizedWord.isEmpty;
+    final isClose = comparison.matchType == MatchType.close;
+    final tone = isClose
+        ? MemoryTone.warning
+        : comparison.isMatch
+            ? MemoryTone.success
+            : MemoryTone.error;
+    final colors = MemoryToneColors.of(context, tone);
+
+    final String message;
+    if (isExtraWord) {
+      message = context.tr(TranslationKeys.audioPracticeExtraWord);
+    } else if (isMissed) {
+      message = context.tr(TranslationKeys.audioPracticeWordMissed);
+    } else if (comparison.isMatch) {
+      message = isClose
+          ? context.tr(TranslationKeys.memoryPracticeCloseExpected,
+              {'word': comparison.originalWord})
+          : context.tr(TranslationKeys.audioPracticeCorrect);
+    } else {
+      message = context.tr(TranslationKeys.memoryPracticeExpectedSaid, {
+        'expected': comparison.originalWord,
+        'said': comparison.recognizedWord,
+      });
+    }
+
+    final struck = AppFonts.inter(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      color: palette.muted,
+      decoration: TextDecoration.lineThrough,
+    );
+    final main = AppFonts.inter(
+      fontSize: 14.5,
+      fontWeight: FontWeight.w600,
+      color: colors.foreground,
+    );
+
+    return Tooltip(
+      message: message,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: colors.fill,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.border),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // What the user said, crossed out, above the expected word.
+            if ((!comparison.isMatch || isClose) &&
+                !isExtraWord &&
+                comparison.recognizedWord.isNotEmpty)
+              Text(comparison.recognizedWord, style: struck),
+            Text(
+              isExtraWord
+                  ? '+${comparison.recognizedWord}'
+                  : comparison.originalWord,
+              style: main,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Color _getAccuracyColor() {
-    if (_accuracyPercentage >= 80) return AppColors.success;
-    if (_accuracyPercentage >= 50) return AppColors.warning;
-    return AppColors.error;
+    if (_accuracyPercentage >= 80) return context.appSuccess;
+    if (_accuracyPercentage >= 50) return context.appWarning;
+    return context.appError;
+  }
+}
+
+/// Live microphone level: bars grow with the reported sound level while
+/// recording and rest at a quiet pattern otherwise. Driven only by
+/// `onSoundLevelChange` (no decorative animation loop).
+class _SoundLevelBars extends StatelessWidget {
+  final double level;
+  final bool active;
+
+  const _SoundLevelBars({required this.level, required this.active});
+
+  static const _pattern = [
+    0.35,
+    0.6,
+    0.85,
+    0.5,
+    0.75,
+    1.0,
+    0.55,
+    0.9,
+    0.65,
+    1.0,
+    0.5,
+    0.8,
+    0.6,
+    0.4,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final normalized = active ? (level / 10).clamp(0.0, 1.0) : 0.0;
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final factor in _pattern)
+              Container(
+                width: 5,
+                height: 12 + 44 * factor * (0.35 + 0.65 * normalized),
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                decoration: BoxDecoration(
+                  color: active
+                      ? palette.accentIcon
+                      : palette.accentIcon.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

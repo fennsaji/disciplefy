@@ -34,11 +34,16 @@ class VoiceConversationPage extends StatelessWidget {
   /// Conversation type.
   final ConversationType conversationType;
 
+  /// Shown as the Discipler tab in the bottom bar rather than as a pushed
+  /// full-screen page: no back arrow, and back is handled by the tab bar.
+  final bool asTab;
+
   const VoiceConversationPage({
     super.key,
     this.studyGuideId,
     this.relatedScripture,
     this.conversationType = ConversationType.general,
+    this.asTab = false,
   });
 
   @override
@@ -49,6 +54,7 @@ class VoiceConversationPage extends StatelessWidget {
         studyGuideId: studyGuideId,
         relatedScripture: relatedScripture,
         conversationType: conversationType,
+        asTab: asTab,
       ),
     );
   }
@@ -58,11 +64,13 @@ class _VoiceConversationView extends StatefulWidget {
   final String? studyGuideId;
   final String? relatedScripture;
   final ConversationType conversationType;
+  final bool asTab;
 
   const _VoiceConversationView({
     this.studyGuideId,
     this.relatedScripture,
     required this.conversationType,
+    this.asTab = false,
   });
 
   @override
@@ -86,6 +94,25 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     // Load preferences to get default language, then check quota
     context.read<VoiceConversationBloc>().add(const LoadPreferences());
     context.read<VoiceConversationBloc>().add(const CheckQuota());
+  }
+
+  /// As a tab, this page stays alive (offstage) while another tab is shown.
+  /// The shell turns tickers off for hidden branches; use that as the cue to
+  /// stop the microphone and any spoken reply, so Discipler never keeps
+  /// listening or talking from a tab the user has left.
+  bool _visible = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.asTab) return;
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (_visible && !visible) {
+      final bloc = context.read<VoiceConversationBloc>();
+      bloc.add(const StopListening());
+      bloc.add(const StopPlayback());
+    }
+    _visible = visible;
   }
 
   VoiceLanguage get _selectedLanguage {
@@ -160,9 +187,10 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      // As a tab, back belongs to the tab bar (AppShell returns to Home).
+      canPop: widget.asTab,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
+        if (didPop || widget.asTab) return;
         _handleBackNavigation();
       },
       child: Scaffold(
@@ -229,10 +257,13 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     final theme = Theme.of(context);
 
     return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: _handleBackNavigation,
-      ),
+      automaticallyImplyLeading: false,
+      leading: widget.asTab
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _handleBackNavigation,
+            ),
       title: Text(
         context.tr('voice_buddy.title'),
         style: theme.appBarTheme.titleTextStyle?.copyWith(

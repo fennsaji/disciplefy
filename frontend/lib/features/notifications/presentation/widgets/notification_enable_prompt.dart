@@ -213,7 +213,9 @@ Future<bool?> showNotificationEnablePrompt({
   bool forceShow = false,
 }) async {
   // Two independent things can stop a push from arriving: the OS-level
-  // permission, and this category's own preference. Prompt if EITHER is off.
+  // permission, and this category's own preference. Prompt only when the
+  // user has turned one of them off (refused the permission, or disabled
+  // the category) — both are on by default.
   //
   // The OS check matters most: category preferences default to true, so a user
   // who denied the system permission had every preference reading as "enabled"
@@ -224,6 +226,16 @@ Future<bool?> showNotificationEnablePrompt({
         .catchError((_) => true); // fail closed on the prompt, not the feature
 
     if (!context.mounted) return null;
+
+    if (!osPermissionGranted) {
+      // Notifications are on by default. Only a user who actually refused
+      // the system permission is asked again; if it was never answered, the
+      // system's own permission request handles it, not this sheet.
+      final denied = await sl<NotificationService>()
+          .isNotificationPermissionDenied()
+          .catchError((_) => false);
+      if (!denied || !context.mounted) return null;
+    }
 
     if (osPermissionGranted) {
       // System permission is fine, so only the per-category preference can be

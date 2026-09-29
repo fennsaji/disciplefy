@@ -1,40 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/payment_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
+    as auth_states;
+import 'package:disciplefy_bible_study/features/subscription/domain/entities/subscription.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/extensions/duration_extensions.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/services/payment_service.dart';
-import '../bloc/token_bloc.dart';
-import '../bloc/token_event.dart';
-import '../bloc/token_state.dart';
-import '../widgets/token_balance_widget.dart';
-import '../widgets/current_plan_section.dart';
-import '../widgets/token_actions_section.dart';
-import '../widgets/usage_info_section.dart';
-import '../widgets/plan_comparison_section.dart';
-import '../../domain/entities/token_status.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
-import '../../../subscription/presentation/bloc/subscription_bloc.dart';
-import '../../../subscription/presentation/bloc/subscription_state.dart';
-import '../../../subscription/presentation/bloc/subscription_event.dart';
-import '../../../subscription/domain/entities/subscription.dart';
-import '../../../../core/utils/logger.dart';
-
-/// Token Management Page
+/// Credits ("token management") in the quiet-ledger design.
 ///
-/// Provides comprehensive token management including:
-/// - Current token status and balance
-/// - Purchase tokens functionality
-/// - Plan upgrade options
-/// - Usage history and analytics
-/// - Token reset information
+/// Shows today's balance as the hero, the purchase / upgrade actions, the
+/// current plan, daily credits per plan and links to both histories.
 class TokenManagementPage extends StatefulWidget {
   const TokenManagementPage({super.key});
 
@@ -123,25 +119,19 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     return '+1234567890';
   }
 
-  void _showPurchaseDialog(TokenStatus tokenStatus) async {
+  Future<void> _showPurchaseDialog(TokenStatus tokenStatus) async {
     // Navigate to token purchase page
     Logger.debug('[TokenManagementPage] Navigating to token purchase page');
 
     final result =
         await context.push(AppRoutes.tokenPurchase, extra: tokenStatus);
 
-    // If purchase was successful (page returned true), refresh token status
+    // If purchase was successful (page returned true), refresh token status.
+    // The purchase page itself confirms the payment on its success screen.
     if (result == true && mounted) {
       Logger.debug(
           '[TokenManagementPage] Purchase successful, refreshing token status');
       context.read<TokenBloc>().add(const RefreshTokenStatus());
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tokens purchased successfully!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
     }
   }
 
@@ -150,6 +140,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   }
 
   /// Opens payment gateway for the given order
+  // ignore: unused_element
   Future<void> _openPaymentGateway(
       String orderId, int tokenAmount, double amount, String keyId) async {
     try {
@@ -160,8 +151,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         orderId: orderId,
         amount: amount,
         description: '$tokenAmount tokens for Disciplefy Bible Study',
-        userEmail: _getUserEmail(), // ✅ Get from authenticated user
-        userPhone: _getUserPhone(), // ✅ Get from authenticated user
+        userEmail: _getUserEmail(),
+        userPhone: _getUserPhone(),
         keyId: keyId,
         onSuccess: (response) {
           Logger.debug(
@@ -173,14 +164,12 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           // Prevent duplicate confirmation calls
           if (_processingPayments.contains(paymentId)) {
             Logger.debug(
-                '[TokenManagementPage] ⚠️ Payment $paymentId already being processed - ignoring duplicate');
+                '[TokenManagementPage] Payment $paymentId already being processed - ignoring duplicate');
             return;
           }
 
           // Mark payment as being processed
           _processingPayments.add(paymentId);
-          Logger.debug(
-              '[TokenManagementPage] 🔒 Payment $paymentId marked as processing');
 
           // Get current token amount from BLoC state
           final currentState = context.read<TokenBloc>().state;
@@ -190,9 +179,6 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           if (currentState is TokenOrderCreated) {
             tokenAmount = currentState.tokensToPurchase;
           }
-
-          Logger.debug(
-              '[TokenManagementPage] Payment success - confirming with $tokenAmount tokens');
 
           // Confirm payment
           context.read<TokenBloc>().add(
@@ -207,46 +193,40 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         onError: (response) {
           Logger.debug(
               '[TokenManagementPage] Payment gateway error: ${response.message}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          _showError();
         },
       );
     } catch (e) {
       Logger.debug('[TokenManagementPage] Error opening payment gateway: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      _showError();
     }
+  }
+
+  void _showError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   void _upgradeToPremium() {
     context.push(AppRoutes.pricing);
   }
 
-  void _manageSubscription() {
-    // Navigate to subscription management page
-    context.push(AppRoutes.subscriptionManagement);
-  }
-
-  void _viewPlanDetails() {
-    // Navigate to subscription management page (same as manage)
-    context.push(AppRoutes.subscriptionManagement);
-  }
-
-  void _resumeSubscription() {
-    // Dispatch resume subscription event
-    context.read<SubscriptionBloc>().add(const ResumeSubscription());
+  void _goBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      context.go('/generate-study');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return MultiBlocListener(
       listeners: [
         // Token BLoC listener for purchase success
@@ -256,7 +236,6 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             if (state is TokenPurchaseSuccess) {
               Logger.debug(
                   '[TokenManagementPage] TokenPurchaseSuccess received - refreshing token status');
-              // Immediately refresh to get the latest balance
               context.read<TokenBloc>().add(const RefreshTokenStatus());
             }
           },
@@ -264,7 +243,6 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         // Subscription BLoC listener
         BlocListener<SubscriptionBloc, SubscriptionState>(
           listener: (context, state) {
-            // Handle subscription resume success
             if (state is SubscriptionResumed) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -276,17 +254,9 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               context.read<TokenBloc>().add(const RefreshTokenStatus());
               // Refresh subscription to clear pending_cancellation flag
               context.read<SubscriptionBloc>().add(const RefreshSubscription());
-            }
-            // Handle subscription resume error
-            else if (state is SubscriptionError &&
+            } else if (state is SubscriptionError &&
                 state.operation == 'resuming') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                  backgroundColor: AppColors.error,
-                ),
-              );
+              _showError();
             }
           },
         ),
@@ -295,63 +265,41 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
-
           // Handle Android back button - navigate back to generate study page
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          } else {
-            context.go('/generate-study');
-          }
+          _goBack();
         },
         child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 0,
-            title: Text(
-              context.tr('tokens.management.title'),
-              style: AppFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            centerTitle: true,
-            leading: IconButton(
-              onPressed: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                } else {
-                  context.go('/generate-study');
-                }
+          backgroundColor: palette.page,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(72),
+            child: BlocBuilder<TokenBloc, TokenState>(
+              builder: (context, state) {
+                final status = _statusOf(state);
+                return LedgerTopBar(
+                  title: context.tr(TranslationKeys.ledgerCreditsTitle),
+                  subtitle: status == null
+                      ? null
+                      : context.tr(TranslationKeys.ledgerPlanName,
+                          {'plan': status.userPlan.displayName}),
+                  onBack: _goBack,
+                  actions: [
+                    LedgerBarAction(
+                      icon: Icons.history_rounded,
+                      tooltip: context.tr('tokens.management.view_history'),
+                      onPressed: () => context.push(AppRoutes.purchaseHistory),
+                    ),
+                    LedgerBarAction(
+                      key: const Key('credits_refresh'),
+                      icon: Icons.refresh_rounded,
+                      tooltip: context.tr('tokens.management.refresh_status'),
+                      onPressed: () => context
+                          .read<TokenBloc>()
+                          .add(const RefreshTokenStatus()),
+                    ),
+                  ],
+                );
               },
-              icon: Icon(
-                Icons.arrow_back,
-                color: Theme.of(context).colorScheme.primary,
-              ),
             ),
-            actions: [
-              IconButton(
-                onPressed: () {
-                  context.push('/token-management/purchase-history');
-                },
-                icon: Icon(
-                  Icons.history,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                tooltip: context.tr('tokens.management.view_history'),
-              ),
-              IconButton(
-                onPressed: () {
-                  context.read<TokenBloc>().add(const RefreshTokenStatus());
-                },
-                icon: Icon(
-                  Icons.refresh,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                tooltip: context.tr('tokens.management.refresh_status'),
-              ),
-            ],
           ),
           body: BlocBuilder<TokenBloc, TokenState>(
             builder: (context, state) {
@@ -360,188 +308,546 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               if (state is PurchaseHistoryLoaded ||
                   state is PurchaseStatisticsLoaded ||
                   state is PurchaseHistoryError) {
-                // Only trigger refresh if this page is currently visible
                 if (ModalRoute.of(context)?.isCurrent == true) {
-                  // Use post-frame callback to avoid calling add during build
                   WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
                     context.read<TokenBloc>().add(const GetTokenStatus());
                   });
                 }
               }
 
               if (state is TokenLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
+                return const LedgerLoading();
               } else if (state is TokenError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        context.tr('tokens.management.load_error'),
-                        style: AppFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onBackground,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.tr(TranslationKeys.commonErrorTryAgain),
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          context
-                              .read<TokenBloc>()
-                              .add(const RefreshTokenStatus());
-                        },
-                        child: Text(context.tr('common.retry')),
-                      ),
-                    ],
-                  ),
+                return LedgerMessage(
+                  icon: Icons.error_outline_rounded,
+                  isError: true,
+                  title: context.tr('tokens.management.load_error'),
+                  body: context.tr(TranslationKeys.commonErrorTryAgain),
+                  actionLabel: context.tr('common.retry'),
+                  onAction: () =>
+                      context.read<TokenBloc>().add(const RefreshTokenStatus()),
                 );
-              } else if (state is TokenLoaded) {
-                return _buildTokenManagement(state.tokenStatus);
-              } else if (state is TokenPurchaseSuccess) {
-                // Show updated balance immediately from purchase success state
-                // while refresh is in progress
-                return _buildTokenManagement(state.updatedTokenStatus);
               }
+              final status = _statusOf(state);
+              if (status != null) return _buildTokenManagement(status);
 
-              // Handle any other unexpected states
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(context.tr('tokens.management.loading')),
-                  ],
-                ),
+              return LedgerLoading(
+                label: context.tr('tokens.management.loading'),
               );
             },
           ),
-        ), // PopScope child: Scaffold
-      ), // PopScope
-    ); // MultiBlocListener
+        ),
+      ),
+    );
+  }
+
+  /// Balance to show for [state]; while a purchase refresh is in flight the
+  /// success state already carries the updated balance.
+  TokenStatus? _statusOf(TokenState state) {
+    if (state is TokenLoaded) return state.tokenStatus;
+    if (state is TokenPurchaseSuccess) return state.updatedTokenStatus;
+    return null;
   }
 
   Widget _buildTokenManagement(TokenStatus tokenStatus) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: BlocBuilder<SubscriptionBloc, SubscriptionState>(
-        builder: (context, subscriptionState) {
-          // Check if subscription has pending cancellation
-          bool isCancelledButActive = false;
-          bool hasActiveSubscription = false;
-          String? subscriptionPlanType;
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      builder: (context, subscriptionState) {
+        Subscription? subscription;
+        bool isCancelledButActive = false;
+        bool hasActiveSubscription = false;
 
-          if (subscriptionState is SubscriptionLoaded &&
-              subscriptionState.activeSubscription != null) {
-            final sub = subscriptionState.activeSubscription!;
-            // Check if subscription is in pending_cancellation status
-            isCancelledButActive =
-                sub.status == SubscriptionStatus.pending_cancellation;
-            // Check if user has active subscription (any status that counts as active)
-            hasActiveSubscription = sub.status == SubscriptionStatus.active ||
-                sub.status == SubscriptionStatus.authenticated ||
-                sub.status == SubscriptionStatus.created ||
-                sub.status == SubscriptionStatus.pending_cancellation;
-            subscriptionPlanType = sub.planType.toLowerCase();
-          }
+        if (subscriptionState is SubscriptionLoaded &&
+            subscriptionState.activeSubscription != null) {
+          final sub = subscriptionState.activeSubscription!;
+          subscription = sub;
+          isCancelledButActive =
+              sub.status == SubscriptionStatus.pending_cancellation;
+          hasActiveSubscription = sub.status == SubscriptionStatus.active ||
+              sub.status == SubscriptionStatus.authenticated ||
+              sub.status == SubscriptionStatus.created ||
+              sub.status == SubscriptionStatus.pending_cancellation;
+        }
 
-          // Determine if we should show manage subscription button
-          // - Premium users: always show if they have an active subscription
-          // - Standard users: show only if they have an active Standard subscription
-          final bool showManageSubscription =
-              (tokenStatus.userPlan == UserPlan.premium &&
-                      hasActiveSubscription) ||
-                  (tokenStatus.userPlan == UserPlan.standard &&
-                      hasActiveSubscription &&
-                      subscriptionPlanType?.contains('standard') == true);
+        // Trial end date for Standard plan — use backend value when available
+        final subscriptionStatus =
+            subscriptionState is UserSubscriptionStatusLoaded
+                ? subscriptionState.subscriptionStatus
+                : null;
+        final trialEndDate =
+            subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
+        final isTrialActive = DateTime.now().isBefore(trialEndDate);
 
-          // Trial end date for Standard plan — use backend value when available
-          final subscriptionStatus =
-              subscriptionState is UserSubscriptionStatusLoaded
-                  ? subscriptionState.subscriptionStatus
-                  : null;
-          final trialEndDate =
-              subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
-          final isTrialActive = DateTime.now().isBefore(trialEndDate);
+        // Standard user in trial (no subscription yet)
+        final isStandardTrialUser = tokenStatus.userPlan == UserPlan.standard &&
+            isTrialActive &&
+            !hasActiveSubscription;
 
-          // Standard user in trial (no subscription yet)
-          final isStandardTrialUser =
-              tokenStatus.userPlan == UserPlan.standard &&
-                  isTrialActive &&
-                  !hasActiveSubscription;
+        final purchaseEnabled =
+            sl<SystemConfigService>().isTokenPurchaseEnabled;
+        final subscriptionsEnabled =
+            sl<SystemConfigService>().isNewSubscriptionsEnabled;
+        final canBuy = tokenStatus.canPurchaseTokens && purchaseEnabled;
+        final canUpgrade = subscriptionsEnabled &&
+            (tokenStatus.userPlan == UserPlan.free ||
+                tokenStatus.userPlan == UserPlan.standard ||
+                tokenStatus.userPlan == UserPlan.plus);
 
-          return Column(
+        final palette = ReaderPalette.of(context);
+        return RefreshIndicator(
+          onRefresh: () async {
+            context.read<TokenBloc>().add(const RefreshTokenStatus());
+            context.read<SubscriptionBloc>().add(const RefreshSubscription());
+            await Future<void>.delayed(const Duration(milliseconds: 600));
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              _BalanceHero(tokenStatus: tokenStatus),
+              if (!_isUnlimited(tokenStatus)) ...[
+                const SizedBox(height: 16),
+                _BalanceTiles(tokenStatus: tokenStatus),
+              ],
+              if (canBuy || canUpgrade) ...[
+                const LedgerHairline(verticalMargin: 16),
+                _ActionsRow(
+                  canBuy: canBuy,
+                  canUpgrade: canUpgrade,
+                  upgradeLabel: tokenStatus.userPlan == UserPlan.plus
+                      ? context.tr('tokens.plans.upgrade_premium')
+                      : context.tr(TranslationKeys.ledgerUpgrade),
+                  onBuy: () => _showPurchaseDialog(tokenStatus),
+                  onUpgrade: tokenStatus.userPlan == UserPlan.free
+                      ? _upgradeToStandard
+                      : _upgradeToPremium,
+                ),
+              ] else
+                const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              _PlanRow(
+                tokenStatus: tokenStatus,
+                subscription: subscription,
+                onManage: () => context.push(AppRoutes.myPlan),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.tr(
+                    'tokens.plans.${tokenStatus.userPlan.name}_description'),
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  color: palette.muted,
+                  height: 1.45,
+                ),
+              ),
+              if (isCancelledButActive) ...[
+                const SizedBox(height: 10),
+                LedgerNotice(
+                  icon: Icons.info_outline_rounded,
+                  tone: LedgerTone.warning,
+                  text: context.tr(TranslationKeys.plansCancelledNotice),
+                ),
+              ] else if (isStandardTrialUser) ...[
+                const SizedBox(height: 10),
+                LedgerNotice(
+                  icon: Icons.auto_awesome_outlined,
+                  text:
+                      '${context.tr(TranslationKeys.myPlanFreeUntil)} ${DateFormat('MMMM d, y').format(trialEndDate)}',
+                ),
+              ],
+              const LedgerHairline(verticalMargin: 14),
+              _PlanAllowances(current: tokenStatus.userPlan),
+              const LedgerHairline(verticalMargin: 14),
+              LedgerSectionLabel(
+                context.tr(TranslationKeys.ledgerActivity),
+                padding: const EdgeInsets.only(top: 4, bottom: 4),
+              ),
+              _NavRow(
+                icon: Icons.bar_chart_rounded,
+                label: context.tr('tokens.usage.title'),
+                onTap: () => context.push(AppRoutes.usageHistory),
+              ),
+              _NavRow(
+                icon: Icons.receipt_long_outlined,
+                label: context.tr('tokens.history.title'),
+                onTap: () => context.push(AppRoutes.purchaseHistory),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+bool _isUnlimited(TokenStatus s) =>
+    s.isPremium || s.unlimitedUsage || s.userPlan == UserPlan.premium;
+
+/// Ring with today's balance, plus the headline and reset time.
+class _BalanceHero extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _BalanceHero({required this.tokenStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final unlimited = _isUnlimited(tokenStatus);
+    final limit = tokenStatus.dailyLimit;
+    final progress = unlimited
+        ? 1.0
+        : (limit <= 0 ? 0.0 : tokenStatus.availableTokens / limit);
+    final resetAt = DateFormat.jm().format(tokenStatus.nextResetTime.toLocal());
+
+    return Row(
+      children: [
+        LedgerRing(
+          progress: progress,
+          child: unlimited
+              ? Icon(Icons.all_inclusive_rounded, size: 34, color: palette.gold)
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '${tokenStatus.availableTokens}',
+                        style: AppFonts.poppins(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: palette.text,
+                          height: 1.1,
+                          fontFeatures: kLedgerTabular,
+                        ),
+                      ),
+                    ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        context.tr(
+                            TranslationKeys.ledgerOfTotal, {'total': limit}),
+                        maxLines: 1,
+                        style: AppFonts.inter(
+                            fontSize: 11.5, color: palette.muted),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Token Balance Widget
-              TokenBalanceWidget(
-                tokenStatus: tokenStatus,
-                showDetails: true,
-                showRefreshButton: true,
-                onRefresh: () {
-                  context.read<TokenBloc>().add(const RefreshTokenStatus());
-                },
+              LedgerSectionLabel(
+                context.tr(TranslationKeys.ledgerDailyCredits),
+                padding: const EdgeInsets.only(bottom: 4),
               ),
-
-              const SizedBox(height: 24),
-
-              // Current Plan Section - now with unified "My Plan" button
-              CurrentPlanSection(
-                tokenStatus: tokenStatus,
-                onMyPlan: () => context.push(AppRoutes.myPlan),
-                isTrialActive: isStandardTrialUser,
-                trialEndDate: isStandardTrialUser ? trialEndDate : null,
-                isCancelledButActive: isCancelledButActive,
+              _BalanceStatus(tokenStatus: tokenStatus),
+              const SizedBox(height: 6),
+              Text(
+                unlimited
+                    ? context.tr(TranslationKeys.ledgerUnlimitedTitle)
+                    : context.tr(TranslationKeys.ledgerLeftToday,
+                        {'count': tokenStatus.availableTokens}),
+                style: AppFonts.poppins(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.25,
+                  fontFeatures: kLedgerTabular,
+                ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Actions Section
-              TokenActionsSection(
-                tokenStatus: tokenStatus,
-                onPurchase: () => _showPurchaseDialog(tokenStatus),
-                onUpgrade: tokenStatus.userPlan == UserPlan.free
-                    ? _upgradeToStandard
-                    : _upgradeToPremium,
-                onViewHistory: () =>
-                    context.push('/token-management/purchase-history'),
-                onViewUsageHistory: () =>
-                    context.push('/token-management/usage-history'),
+              const SizedBox(height: 4),
+              Text(
+                unlimited
+                    ? context.tr('tokens.stats.unlimited_description')
+                    : context.tr(TranslationKeys.ledgerResetsAt, {
+                        'time': resetAt,
+                        'left': tokenStatus.timeUntilReset.toShortLabel(),
+                      }),
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  color: palette.muted,
+                  height: 1.4,
+                ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Usage Information
-              UsageInfoSection(tokenStatus: tokenStatus),
-
-              const SizedBox(height: 24),
-
-              // Plan Comparison
-              PlanComparisonSection(tokenStatus: tokenStatus),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Available", "Getting low" or "Running low" by the share of today's
+/// allowance left; "Unlimited" on Premium.
+class _BalanceStatus extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _BalanceStatus({required this.tokenStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isUnlimited(tokenStatus)) {
+      return LedgerStatusPill(
+        key: const Key('credits_balance_status'),
+        label: context.tr('tokens.balance.unlimited'),
+        tone: LedgerTone.gold,
+      );
+    }
+    final limit = tokenStatus.dailyLimit;
+    final share = limit > 0 ? tokenStatus.totalTokens / limit : 0.0;
+    final String key;
+    final LedgerTone tone;
+    if (share < 0.25) {
+      key = 'tokens.balance.running_low';
+      tone = LedgerTone.error;
+    } else if (share < 0.5) {
+      key = 'tokens.balance.getting_low';
+      tone = LedgerTone.warning;
+    } else {
+      key = 'tokens.balance.available';
+      tone = LedgerTone.success;
+    }
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: LedgerStatusPill(
+        key: const Key('credits_balance_status'),
+        label: context.tr(key),
+        tone: tone,
+      ),
+    );
+  }
+}
+
+class _BalanceTiles extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _BalanceTiles({required this.tokenStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return LedgerStatRow(
+      tiles: [
+        LedgerStatTile(
+          value: '${tokenStatus.totalConsumedToday}',
+          label: context.tr(TranslationKeys.ledgerUsedToday),
+        ),
+        LedgerStatTile(
+          value: '${tokenStatus.purchasedTokens}',
+          label: context.tr(TranslationKeys.ledgerPurchased),
+          valueColor: palette.accentIcon,
+        ),
+        LedgerStatTile(
+          value: '${tokenStatus.totalTokens}',
+          label: context.tr(TranslationKeys.ledgerTotal),
+          valueColor: palette.gold,
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionsRow extends StatelessWidget {
+  final bool canBuy;
+  final bool canUpgrade;
+  final String upgradeLabel;
+  final VoidCallback onBuy;
+  final VoidCallback onUpgrade;
+
+  const _ActionsRow({
+    required this.canBuy,
+    required this.canUpgrade,
+    required this.upgradeLabel,
+    required this.onBuy,
+    required this.onUpgrade,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final buy = LedgerPrimaryButton(
+      key: const Key('credits_get_credits'),
+      label: context.tr(TranslationKeys.ledgerGetCredits),
+      icon: Icons.add_rounded,
+      onPressed: onBuy,
+    );
+    // The upgrade is the primary action when credits can't be bought.
+    final upgrade = canBuy
+        ? LedgerSecondaryButton(
+            key: const Key('credits_upgrade'),
+            label: upgradeLabel,
+            icon: Icons.auto_awesome_outlined,
+            onPressed: onUpgrade,
+          )
+        : LedgerPrimaryButton(
+            key: const Key('credits_upgrade'),
+            label: upgradeLabel,
+            icon: Icons.auto_awesome_outlined,
+            onPressed: onUpgrade,
           );
-        },
+    if (canBuy && canUpgrade) {
+      return LedgerButtonPair(
+        first: buy,
+        second: upgrade,
+        labels: [context.tr(TranslationKeys.ledgerGetCredits), upgradeLabel],
+      );
+    }
+    return SizedBox(width: double.infinity, child: canBuy ? buy : upgrade);
+  }
+}
+
+/// Crown tile, plan name, price/renewal line and a Manage link.
+class _PlanRow extends StatelessWidget {
+  final TokenStatus tokenStatus;
+  final Subscription? subscription;
+  final VoidCallback onManage;
+
+  const _PlanRow({
+    required this.tokenStatus,
+    required this.subscription,
+    required this.onManage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final plan = tokenStatus.userPlan;
+    final sub = subscription;
+    final renewal = sub?.nextBillingAt ?? sub?.currentPeriodEnd;
+    final String detail;
+    if (sub != null && sub.amountPaise > 0 && renewal != null) {
+      detail = context.tr(TranslationKeys.ledgerPriceRenews, {
+        'price': '₹${sub.amountRupees.toStringAsFixed(0)}',
+        'date': DateFormat('MMM d').format(renewal),
+      });
+    } else {
+      detail = context.tr('tokens.plans.${plan.name}_subtitle');
+    }
+
+    return Row(
+      children: [
+        const LedgerIconTile(
+          icon: Icons.workspace_premium_outlined,
+          size: 40,
+          tone: LedgerTone.gold,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr(
+                    TranslationKeys.ledgerPlanName, {'plan': plan.displayName}),
+                style: AppFonts.inter(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                detail,
+                style: AppFonts.inter(
+                  fontSize: 12.5,
+                  color: palette.muted,
+                  fontFeatures: kLedgerTabular,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        LedgerLink(
+          key: const Key('credits_manage_plan'),
+          label: context.tr('tokens.plans.manage'),
+          onTap: onManage,
+        ),
+      ],
+    );
+  }
+}
+
+/// Daily credits of every plan, the current one in gold.
+class _PlanAllowances extends StatelessWidget {
+  final UserPlan current;
+
+  const _PlanAllowances({required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LedgerSectionLabel(
+          context.tr(TranslationKeys.ledgerDailyByPlan),
+          padding: const EdgeInsets.only(top: 4, bottom: 6),
+        ),
+        for (final plan in UserPlan.values)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LedgerRow(
+                  label: plan == current
+                      ? '${context.tr('tokens.plans.${plan.name}')} · ${context.tr('tokens.plans.current')}'
+                      : context.tr('tokens.plans.${plan.name}'),
+                  emphasizeLabel: plan == current,
+                  value: context.tr('tokens.plans.${plan.name}_subtitle'),
+                  valueColor: plan == current ? palette.gold : palette.muted,
+                ),
+                // Who the plan is for ("Best for group leaders").
+                Text(
+                  context.tr('tokens.plans.${plan.name}_desc'),
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    color: palette.dim,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavRow({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: palette.muted),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: AppFonts.inter(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500,
+                  color: palette.text,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 20, color: palette.dim),
+          ],
+        ),
       ),
     );
   }

@@ -25,6 +25,7 @@ import '../../widgets/offline_banner.dart';
 import '../../router/app_routes.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_verse_hero.dart';
 
 /// Main App Shell with Bottom Navigation
 ///
@@ -148,10 +149,12 @@ class _AppShellState extends State<AppShell>
     // Map the visible tab index to the actual branch index
     final branchIndex = _mapTabIndexToBranchIndex(index);
 
-    // Ignore if already on this tab and not waiting for anything
+    // Already on this tab and not waiting for anything. Re-tapping Home
+    // scrolls it back to the top, as users expect from a tab bar.
     if (branchIndex == widget.navigationShell.currentIndex &&
         _pendingTabIndex == null &&
         _waitingForIndex == null) {
+      if (branchIndex == 0) HomeScrollToTop.instance.request();
       return;
     }
 
@@ -193,52 +196,31 @@ class _AppShellState extends State<AppShell>
     }
   }
 
-  /// Maps visible tab index to actual router branch index
-  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden.
-  /// Community tab (branch 3) is always visible and always maps last.
+  /// Router branch for each tab id. Branch indices follow the order the
+  /// branches are declared in the router (Discipler was appended last so the
+  /// older indices stayed stable); the bar shows them in visual order.
+  static const Map<String, int> _branchForTab = {
+    'home': 0,
+    'generate': 1,
+    'topics': 2,
+    'community': 3,
+    'discipler': 4,
+  };
+
+  /// Maps visible tab index to actual router branch index. Tabs can be
+  /// hidden by feature flags, so positions are looked up by tab id.
   int _mapTabIndexToBranchIndex(int tabIndex) {
     final tabs = _getFilteredTabs();
-
-    // Determine which optional tabs are visible
-    final hasGenerate = tabs.any((tab) => tab.id == 'generate');
-    final hasTopics = tabs.any((tab) => tab.id == 'topics');
-
-    // Build an ordered list of branch indices for visible tabs.
-    // Branches: 0=Home, 1=Generate, 2=Topics, 3=Community (always shown)
-    final branchOrder = <int>[0]; // Home always first
-    if (hasGenerate) branchOrder.add(1);
-    if (hasTopics) branchOrder.add(2);
-    branchOrder.add(3); // Community always last
-
-    if (tabIndex >= 0 && tabIndex < branchOrder.length) {
-      return branchOrder[tabIndex];
-    }
-
-    // Fallback to home
-    return 0;
+    if (tabIndex < 0 || tabIndex >= tabs.length) return 0;
+    return _branchForTab[tabs[tabIndex].id] ?? 0;
   }
 
-  /// Maps router branch index to visible tab index
-  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden.
-  /// Community tab (branch 3) is always visible and always maps last.
+  /// Maps router branch index to visible tab index. A hidden branch (e.g.
+  /// Generate when disabled) falls back to Home.
   int _mapBranchIndexToTabIndex(int branchIndex) {
     final tabs = _getFilteredTabs();
-
-    // Determine which optional tabs are visible
-    final hasGenerate = tabs.any((tab) => tab.id == 'generate');
-    final hasTopics = tabs.any((tab) => tab.id == 'topics');
-
-    // Build an ordered list of branch indices for visible tabs.
-    final branchOrder = <int>[0]; // Home always first
-    if (hasGenerate) branchOrder.add(1);
-    if (hasTopics) branchOrder.add(2);
-    branchOrder.add(3); // Community always last
-
-    final tabIndex = branchOrder.indexOf(branchIndex);
-    if (tabIndex != -1) return tabIndex;
-
-    // If navigating to a hidden branch (e.g. Generate when disabled), redirect to Home
-    return 0;
+    final index = tabs.indexWhere((t) => _branchForTab[t.id] == branchIndex);
+    return index == -1 ? 0 : index;
   }
 
   @override
@@ -325,6 +307,10 @@ class _AppShellState extends State<AppShell>
             },
             child: Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              // The dock floats: pages run underneath it. Scaffold adds the
+              // dock's height to the bottom inset, so SafeArea, lists and
+              // floating buttons inside each tab still clear it.
+              extendBody: true,
               body: Column(
                 children: [
                   const OfflineBanner(),
@@ -336,7 +322,8 @@ class _AppShellState extends State<AppShell>
                           opacity: _fadeAnimation,
                           child: ScaleTransition(
                             scale: _scaleAnimation,
-                            child: widget.navigationShell,
+                            child: ClearOfFloatingDock(
+                                child: widget.navigationShell),
                           ),
                         ),
                         // Loading indicator overlay
@@ -373,10 +360,6 @@ class _AppShellState extends State<AppShell>
                         currentIndex: _mapBranchIndexToTabIndex(currentIndex),
                         tabs: _getFilteredTabs(),
                         onTap: _onTabChange,
-                        // Raised centre action. Pushes the voice route rather
-                        // than switching branches, so tab state is untouched.
-                        onDisciplerTap: () =>
-                            context.push(AppRoutes.voiceConversation),
                       ),
                     ),
                   ),
@@ -401,6 +384,7 @@ class _AppShellState extends State<AppShell>
 
   /// Get filtered tabs list based on feature flags
   /// - Hides Generate tab if all study modes and Talk to Discipler are disabled
+  /// - Hides the Discipler tab if Talk to Discipler is disabled
   /// - Hides Topics tab if learning_paths feature is disabled
   List<bottom_nav.NavTab> _getFilteredTabs() {
     final tokenBloc = sl<TokenBloc>();
@@ -452,6 +436,12 @@ class _AppShellState extends State<AppShell>
       filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[1]);
     }
 
+    // Discipler sits in the middle of the bar, after Generate. Hidden with
+    // the ai_discipler feature, like the Generate tab's own gating.
+    if (!aiDisciplerDisabled) {
+      filteredTabs.add(bottom_nav.DisciplefyBottomNav.disciplerTab);
+    }
+
     // Conditionally add Topics tab
     if (!shouldHideTopics) {
       filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[2]);
@@ -461,6 +451,29 @@ class _AppShellState extends State<AppShell>
     filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[3]);
 
     return filteredTabs;
+  }
+}
+
+/// extendBody puts the floating dock's height into the bottom *padding*, which
+/// SafeArea and lists honour. Floating action buttons are placed by the
+/// bottom *view padding* instead, which does not include the dock, so each
+/// tab's FAB (e.g. Community's "Join a Fellowship") ended up hidden behind
+/// it. Raising the view padding to match keeps FABs above the dock.
+class ClearOfFloatingDock extends StatelessWidget {
+  final Widget child;
+
+  const ClearOfFloatingDock({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    if (media.viewPadding.bottom >= media.padding.bottom) return child;
+    return MediaQuery(
+      data: media.copyWith(
+        viewPadding: media.viewPadding.copyWith(bottom: media.padding.bottom),
+      ),
+      child: child,
+    );
   }
 }
 

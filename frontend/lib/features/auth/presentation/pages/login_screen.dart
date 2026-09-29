@@ -15,9 +15,12 @@ import '../../../../core/utils/logger.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
 
-/// Login screen with Google OAuth and email sign-in options
-/// Follows Material Design 3 guidelines and brand theme with dark mode support
+/// Login screen: photo header, feature chips and Google / Apple / email
+/// sign-in pills ("V1 Photo Story" design, dark and light).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -214,116 +217,194 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         },
         child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Main content - scrollable
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height -
-                            MediaQuery.of(context).viewPadding.top -
-                            MediaQuery.of(context).viewPadding.bottom -
-                            80, // Account for skip button space
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // App logo/icon
-                          _buildAppLogo(context),
+          backgroundColor: ReaderPalette.of(context).page,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final topInset = MediaQuery.paddingOf(context).top;
+              // Gap between the brand row and the title: generous on tall
+              // screens, tight on short ones — small enough that the
+              // feature descriptions still leave the sign-in buttons on
+              // screen on a typical phone.
+              final titleGap =
+                  (constraints.maxHeight * 0.12).clamp(24.0, 180.0);
+              final photoHeight = topInset + 60 + titleGap + 250;
 
-                          const SizedBox(height: 24),
-
-                          // Welcome text
-                          _buildWelcomeText(context),
-
-                          const SizedBox(height: 32),
-
-                          // Features Preview Section
-                          _buildFeaturesSection(context),
-
-                          const SizedBox(height: 32),
-
-                          // Consent is implicit: continuing with any sign-in
-                          // method accepts the Terms and Privacy Policy shown
-                          // here, recorded when a sign-in button is tapped.
-                          const LegalLinksLine(),
-
-                          const SizedBox(height: 32),
-
-                          // Sign-in buttons
-                          _buildSignInButtons(context),
-                        ],
+              return SingleChildScrollView(
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: photoHeight,
+                      child: const WelcomePhotoBackdrop(
+                        asset: WelcomePhotos.wheatDawn,
+                        alignment: Alignment.bottomCenter,
                       ),
                     ),
-                  ),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            24,
+                            topInset + 20,
+                            24,
+                            MediaQuery.paddingOf(context).bottom + 20,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Brand row (logo + wordmark)
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: WelcomeBrandRow(),
+                              ),
+                              SizedBox(height: titleGap),
+
+                              // Welcome text
+                              _buildWelcomeText(context),
+
+                              const SizedBox(height: 22),
+
+                              // Features preview chips
+                              _buildFeaturesSection(context),
+
+                              const SizedBox(height: 22),
+
+                              // Sign-in buttons
+                              _buildSignInButtons(context),
+
+                              // Consent is implicit: continuing with any
+                              // sign-in method accepts the Terms and Privacy
+                              // Policy shown here, recorded when a sign-in
+                              // button is tapped. It sits right under the
+                              // buttons so it's on screen whenever they are.
+                              const SizedBox(height: 12),
+                              LegalLinksLine(
+                                textColor: ReaderPalette.of(context).dim,
+                                linkColor: ReaderPalette.of(context).muted,
+                              ),
+                              const SizedBox(height: 14),
+                              _buildLanguagesRow(context),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       );
 
-  /// Builds the app logo with brand colors
-  Widget _buildAppLogo(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // No ColorFiltered here: the asset is already brand gold. Tinting it meant
-    // the brand colour was defined in two places, and the filter silently won.
-    return Image.asset(
-      'assets/images/logo_transparent.png',
-      width: 120,
-      height: 120,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) {
-        // Fallback to icon if image fails to load
-        return Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.auto_stories,
-            size: 60,
-            color: theme.colorScheme.primary,
-          ),
-        );
-      },
-    );
-  }
-
   /// Builds the welcome text section
   Widget _buildWelcomeText(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final isNarrow = MediaQuery.sizeOf(context).width < 360;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        WelcomeTitle(
           context.tr(TranslationKeys.loginWelcome),
-          style: AppFonts.poppins(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onBackground,
-          ),
-          textAlign: TextAlign.center,
+          fontSize: isNarrow ? 28 : 34,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Text(
           context.tr(TranslationKeys.loginSubtitle),
           style: AppFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
-            height: 1.5,
+            fontSize: 15.5,
+            height: 1.45,
+            color: palette.isDark
+                ? Colors.white.withValues(alpha: 0.78)
+                : palette.muted,
           ),
-          textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  /// "What you'll get:" and a 2x2 grid of feature chips.
+  Widget _buildFeaturesSection(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+
+    Widget row(Widget a, Widget b) => IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: a),
+              const SizedBox(width: 8),
+              Expanded(child: b),
+            ],
+          ),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr(TranslationKeys.loginFeaturesTitle),
+          style: AppFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+            color: palette.muted,
+          ),
+        ),
+        const SizedBox(height: 10),
+        row(
+          _FeatureChip(
+            icon: Icons.auto_awesome_outlined,
+            label: context.tr(TranslationKeys.loginChipStudyGuides),
+            detail:
+                context.tr(TranslationKeys.loginFeatureAiStudyGuidesSubtitle),
+          ),
+          _FeatureChip(
+            icon: Icons.wb_sunny_outlined,
+            label: context.tr(TranslationKeys.loginChipDailyVerse),
+            detail: context.tr(TranslationKeys.loginFeatureDailyVerseSubtitle),
+          ),
+        ),
+        const SizedBox(height: 8),
+        row(
+          _FeatureChip(
+            icon: Icons.mic_none_rounded,
+            label: context.tr(TranslationKeys.loginChipDiscipler),
+            detail:
+                context.tr(TranslationKeys.loginFeatureVoiceDisciplerSubtitle),
+          ),
+          _FeatureChip(
+            icon: Icons.psychology_outlined,
+            label: context.tr(TranslationKeys.loginChipMemoryVerses),
+            detail: context.tr(TranslationKeys.loginFeatureMemoryVerseSubtitle),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Globe + "English · Hindi · Malayalam".
+  Widget _buildLanguagesRow(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.language, size: 16, color: palette.muted),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              context.tr(TranslationKeys.loginLanguagesLine),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(fontSize: 14, color: palette.muted),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -335,290 +416,161 @@ class _LoginScreenState extends State<LoginScreen> {
           final isBlocked = isLoading;
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Google Sign-In Button
               _buildGoogleSignInButton(context, isBlocked, isLoading),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Apple Sign-In Button — iOS only (required by App Store
               // Guideline 4.8 when other social logins are offered).
               if (!kIsWeb && Platform.isIOS) ...[
                 _buildAppleSignInButton(context, isBlocked, isLoading),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
               ],
 
               // Email Sign-In Button
               _buildEmailSignInButton(context, isBlocked),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Phone Sign-In Button - COMMENTED OUT FOR NOW
-              // _buildPhoneSignInButton(context, isLoading),
-              //
-              // const SizedBox(height: 16),
-
-              // Continue as Guest Button - REMOVED
-              // Guest mode disabled - all users must sign in
-              // _buildGuestSignInButton(context, isLoading),
+              // Phone sign-in and guest mode are disabled: all users sign in
+              // with Google, Apple or email.
             ],
           );
         },
       );
 
-  /// Builds the Google sign-in button following Google branding guidelines:
-  /// https://developers.google.com/identity/branding-guidelines
-  Widget _buildGoogleSignInButton(
-      BuildContext context, bool isDisabled, bool isLoading) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Google-specified colors: light=#FFFFFF bg + #1F1F1F text; dark=#131314 bg + #E3E3E3 text
-    final bgColor = isDark ? const Color(0xFF131314) : Colors.white;
-    final textColor =
-        isDark ? const Color(0xFFE3E3E3) : const Color(0xFF1F1F1F);
-    final borderColor =
-        isDark ? const Color(0xFF8E918F) : const Color(0xFF747775);
-    final disabledBg = isDark
-        ? const Color(0xFF131314).withOpacity(0.5)
-        : Colors.white.withOpacity(0.6);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: isDisabled ? null : () => _handleGoogleSignIn(context),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: isDisabled ? disabledBg : bgColor,
-          foregroundColor: textColor,
-          side: BorderSide(color: borderColor),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: EdgeInsets.zero,
+  /// Shared pill shape for the sign-in buttons.
+  ButtonStyle _pillStyle({
+    required Color background,
+    required Color foreground,
+    required BorderSide side,
+  }) =>
+      OutlinedButton.styleFrom(
+        backgroundColor: background,
+        foregroundColor: foreground,
+        disabledBackgroundColor: background.withValues(
+          alpha: background.a * 0.6,
         ),
-        child: isLoading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(borderColor),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/google_logo.png',
-                    width: 20,
-                    height: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    context.tr(TranslationKeys.loginContinueWithGoogle),
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
+        disabledForegroundColor: foreground.withValues(alpha: 0.6),
+        side: side,
+        shape: const StadiumBorder(),
+        minimumSize: const Size.fromHeight(54),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      );
 
-  /// Builds the email sign-in button
-  Widget _buildEmailSignInButton(BuildContext context, bool isDisabled) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: isDisabled ? null : () => _handleEmailSignIn(context),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
-          side: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          disabledForegroundColor:
-              theme.colorScheme.primary.withValues(alpha: 0.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.email_outlined,
-              size: 20,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              context.tr(TranslationKeys.loginContinueWithEmail),
+  /// Label row used inside the sign-in pills.
+  Widget _pillLabel(Widget icon, String label, Color color) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          icon,
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
               style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
+                color: color,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds the phone sign-in button - COMMENTED OUT FOR NOW
-  // Widget _buildPhoneSignInButton(BuildContext context, bool isLoading) {
-  //   final theme = Theme.of(context);
-  //
-  //   return SizedBox(
-  //     width: double.infinity,
-  //     height: 56,
-  //     child: OutlinedButton(
-  //       onPressed: isLoading ? null : () => _handlePhoneSignIn(context),
-  //       style: OutlinedButton.styleFrom(
-  //         foregroundColor: theme.colorScheme.primary,
-  //         side: BorderSide(
-  //           color: theme.colorScheme.primary,
-  //           width: 2,
-  //         ),
-  //         shape: RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.circular(12),
-  //         ),
-  //         disabledForegroundColor:
-  //             theme.colorScheme.primary.withValues(alpha: 0.5),
-  //       ),
-  //       child: Row(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           Icon(
-  //             Icons.phone,
-  //             size: 20,
-  //             color: theme.colorScheme.primary,
-  //           ),
-  //           const SizedBox(width: 12),
-  //           Text(
-  //             'Continue with Phone',
-  //             style: AppFonts.inter(
-  //               fontSize: 16,
-  //               fontWeight: FontWeight.w600,
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  /// Builds the features preview section
-  Widget _buildFeaturesSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
           ),
         ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            context.tr(TranslationKeys.loginFeaturesTitle),
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _FeatureItem(
-            icon: Icons.wb_sunny,
-            title: context.tr(TranslationKeys.loginFeatureDailyVerse),
-            subtitle:
-                context.tr(TranslationKeys.loginFeatureDailyVerseSubtitle),
-          ),
-          const SizedBox(height: 12),
-          _FeatureItem(
-            icon: Icons.auto_awesome,
-            title: context.tr(TranslationKeys.loginFeatureAiStudyGuides),
-            subtitle:
-                context.tr(TranslationKeys.loginFeatureAiStudyGuidesSubtitle),
-          ),
-          const SizedBox(height: 12),
-          _FeatureItem(
-            icon: Icons.mic,
-            title: context.tr(TranslationKeys.loginFeatureVoiceDiscipler),
-            subtitle:
-                context.tr(TranslationKeys.loginFeatureVoiceDisciplerSubtitle),
-          ),
-          const SizedBox(height: 12),
-          _FeatureItem(
-            icon: Icons.psychology,
-            title: context.tr(TranslationKeys.loginFeatureMemoryVerse),
-            subtitle:
-                context.tr(TranslationKeys.loginFeatureMemoryVerseSubtitle),
-          ),
-        ],
-      ),
-    );
-  }
+      );
 
-  /// Builds the Sign in with Apple button (iOS only), following Apple's
-  /// Human Interface Guidelines: black button, Apple logo, white label.
-  Widget _buildAppleSignInButton(
+  /// Builds the Google sign-in button: a white pill with the multicolour
+  /// Google mark (Google branding guidelines allow the white "light" button
+  /// on either theme).
+  Widget _buildGoogleSignInButton(
       BuildContext context, bool isDisabled, bool isLoading) {
-    const bgColor = Colors.black;
-    const fgColor = Colors.white;
+    final palette = ReaderPalette.of(context);
+    final textColor =
+        palette.isDark ? AppColors.brandPrimaryInk : const Color(0xFF1F1F1F);
 
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: isDisabled ? null : () => _handleAppleSignIn(context),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: isDisabled ? bgColor.withOpacity(0.6) : bgColor,
-          foregroundColor: fgColor,
-          side: BorderSide.none,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: isLoading
-            ? const SizedBox(
+    return OutlinedButton(
+      onPressed: isDisabled ? null : () => _handleGoogleSignIn(context),
+      style: _pillStyle(
+        background: Colors.white,
+        foreground: textColor,
+        side: palette.isDark
+            ? BorderSide.none
+            : BorderSide(color: palette.outline),
+      ),
+      child: isLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(textColor),
+              ),
+            )
+          : _pillLabel(
+              Image.asset(
+                'assets/images/google_logo.png',
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(fgColor),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.apple, color: fgColor, size: 22),
-                  const SizedBox(width: 12),
-                  Text(
-                    context.tr(TranslationKeys.loginContinueWithApple),
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: fgColor,
-                    ),
-                  ),
-                ],
               ),
+              context.tr(TranslationKeys.loginContinueWithGoogle),
+              textColor,
+            ),
+    );
+  }
+
+  /// Builds the email sign-in button (outlined pill).
+  Widget _buildEmailSignInButton(BuildContext context, bool isDisabled) {
+    final palette = ReaderPalette.of(context);
+
+    return OutlinedButton(
+      onPressed: isDisabled ? null : () => _handleEmailSignIn(context),
+      style: _pillStyle(
+        background: Colors.transparent,
+        foreground: palette.text,
+        side: BorderSide(color: palette.outline),
       ),
+      child: _pillLabel(
+        Icon(Icons.mail_outline_rounded, size: 21, color: palette.text),
+        context.tr(TranslationKeys.loginContinueWithEmail),
+        palette.text,
+      ),
+    );
+  }
+
+  /// Builds the Sign in with Apple button (iOS only): outlined white on the
+  /// dark page, solid black with white label on the light page, per Apple's
+  /// Human Interface Guidelines.
+  Widget _buildAppleSignInButton(
+      BuildContext context, bool isDisabled, bool isLoading) {
+    final palette = ReaderPalette.of(context);
+    final bgColor = palette.isDark ? Colors.transparent : Colors.black;
+    const fgColor = Colors.white;
+
+    return OutlinedButton(
+      onPressed: isDisabled ? null : () => _handleAppleSignIn(context),
+      style: _pillStyle(
+        background: bgColor,
+        foreground: fgColor,
+        side: palette.isDark
+            ? BorderSide(color: palette.outline)
+            : BorderSide.none,
+      ),
+      child: isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(fgColor),
+              ),
+            )
+          : _pillLabel(
+              const Icon(Icons.apple, color: fgColor, size: 22),
+              context.tr(TranslationKeys.loginContinueWithApple),
+              fgColor,
+            ),
     );
   }
 
@@ -662,70 +614,68 @@ class _LoginScreenState extends State<LoginScreen> {
   // }
 }
 
-/// Individual feature item widget for the login screen
-class _FeatureItem extends StatelessWidget {
+/// One "What you'll get" chip: gold icon + short label.
+class _FeatureChip extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String label;
 
-  const _FeatureItem({
+  /// One-line description of the feature under its name.
+  final String detail;
+
+  const _FeatureChip({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.label,
+    required this.detail,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
-    return Row(
-      children: [
-        // Icon container
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.2),
+    return Container(
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: palette.isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : palette.raised.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 18, color: palette.gold),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: palette.muted,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Icon(
-            icon,
-            size: 22,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-
-        const SizedBox(width: 14),
-
-        // Text content
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: AppFonts.inter(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

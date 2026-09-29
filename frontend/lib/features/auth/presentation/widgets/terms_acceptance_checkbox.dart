@@ -23,21 +23,33 @@ Future<void> _launchLegalUrl(String url) async {
 /// the terms are presented before any sign-in method is used (App Store
 /// Guideline 1.2), and tapping a sign-in button records acceptance.
 class LegalLinksLine extends StatelessWidget {
-  const LegalLinksLine({super.key});
+  const LegalLinksLine({super.key, this.textColor, this.linkColor});
+
+  /// Colour of the surrounding sentence. Defaults to muted on-surface.
+  final Color? textColor;
+
+  /// Colour of the two links. Defaults to the theme primary, underlined;
+  /// when set, links are drawn in this colour without an underline.
+  final Color? linkColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final baseStyle = AppFonts.inter(
       fontSize: 12,
-      color: theme.colorScheme.onSurface.withOpacity(0.6),
+      color: textColor ?? theme.colorScheme.onSurface.withOpacity(0.6),
       height: 1.4,
     );
-    final linkStyle = baseStyle.copyWith(
-      color: theme.colorScheme.primary,
-      fontWeight: FontWeight.w600,
-      decoration: TextDecoration.underline,
-    );
+    final linkStyle = linkColor == null
+        ? baseStyle.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.underline,
+          )
+        : baseStyle.copyWith(
+            color: linkColor,
+            fontWeight: FontWeight.w500,
+          );
 
     return Text.rich(
       TextSpan(

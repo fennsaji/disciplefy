@@ -29,7 +29,6 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
-import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -51,6 +50,8 @@ import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
 import '../widgets/home_community_section.dart';
+import '../widgets/home_sections.dart';
+import '../widgets/home_verse_hero.dart';
 import '../widgets/usage_meter_widget.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -60,6 +61,7 @@ import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
 import '../../../community/domain/entities/fellowship_meeting_entity.dart';
+import '../../../community/domain/fellowship_changes.dart';
 import '../../../community/domain/repositories/community_repository.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
@@ -166,7 +168,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       // Set up the verse-loaded future FIRST so we don't miss the BLoC event
       // while the hasSeen check is awaiting. If already loaded this resolves
       // immediately; if still loading it captures the upcoming emission.
-      final dailyVerseBloc = sl<DailyVerseBloc>();
+      final dailyVerseBloc = context.read<DailyVerseBloc>();
       final Future<DailyVerseState> verseFuture;
       if (dailyVerseBloc.state is DailyVerseLoading ||
           dailyVerseBloc.state is DailyVerseInitial) {
@@ -220,9 +222,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Listen for app language and study content language preference changes
-  /// When app language changes, study content language is reset to default,
-  /// so we need to refresh the "For You" content to reflect the new app language.
-  /// When study content language changes (from Study Topics screen), we also refresh.
+  /// Content on "Default" follows the app language, so an app-language change
+  /// can change it; a content-language change (Settings or the Topics menu)
+  /// always does.
   void _setupLanguageChangeListener() {
     final languageService = sl<LanguagePreferenceService>();
 
@@ -236,8 +238,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       Logger.debug(
           '[HOME] App language changed to: ${newLanguage.displayName}');
 
-      // When app language changes, study content language is automatically reset to default
-      // Refresh the "For You" topics with the new language
+      // Refresh the "For You" topics in case content follows the app language
       if (mounted) {
         final homeBloc = sl<HomeBloc>();
         homeBloc.add(const LoadForYouTopics(forceRefresh: true));
@@ -285,7 +286,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Small delay to let the UI settle after verse loads
     await Future.delayed(const Duration(milliseconds: 800));
 
-    if (!mounted) return;
+    if (!mounted || !await _homeWalkthroughDone()) return;
 
     await showNotificationEnablePrompt(
       context: context,
@@ -317,7 +318,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Delay to show after daily verse prompt (if shown)
     await Future.delayed(const Duration(milliseconds: 1500));
 
-    if (!mounted) return;
+    if (!mounted || !await _homeWalkthroughDone()) return;
 
     final promptType = currentStreak >= 7
         ? NotificationPromptType.streakMilestone
@@ -343,7 +344,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     await Future.delayed(const Duration(milliseconds: 1500));
 
-    if (!mounted) return;
+    if (!mounted || !await _homeWalkthroughDone()) return;
 
     await showNotificationEnablePrompt(
       context: context,
@@ -352,12 +353,25 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
+  /// Notification prompts wait for the first-run walkthrough: a bottom sheet
+  /// opening over the walkthrough tooltips leaves two overlays fighting for
+  /// the same tap. When the walkthrough is still due, the prompt is skipped
+  /// for this session and offered on a later open.
+  Future<bool> _homeWalkthroughDone() async {
+    try {
+      return await sl<WalkthroughRepository>().hasSeen(WalkthroughScreen.home);
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Load daily verse - called only once during initialization
   void _loadDailyVerse() {
     // Auto-load daily verse on home screen initialization
     // BLoC will handle caching and avoid redundant calls
-    final bloc = sl<DailyVerseBloc>();
-    // Always trigger load - the BLoC will handle daily caching logic
+    // The app-wide bloc from main.dart. DailyVerseBloc is a DI *factory*, so
+    // sl<DailyVerseBloc>() would build a throwaway instance nobody watches.
+    final bloc = context.read<DailyVerseBloc>();
     bloc.add(const LoadTodaysVerse());
   }
 
@@ -580,7 +594,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           }
         },
         child: BlocListener<DailyVerseBloc, DailyVerseState>(
-          bloc: sl<DailyVerseBloc>(),
           listener: (context, state) {
             // Trigger notification prompts when daily verse loads successfully
             if (state is DailyVerseLoaded) {
@@ -607,101 +620,80 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 Logger.debug('👤 [HOME] Auth state: ${authProvider.debugInfo}');
               }
 
+              const sectionPadding = EdgeInsets.symmetric(horizontal: 18);
+
               return Scaffold(
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                // The hero runs under the status bar; HomeScrollView covers
+                // the status bar once the hero has scrolled away.
                 body: SafeArea(
-                  child: Column(
+                  top: false,
+                  // The page scrolls behind the floating dock; HomeScrollView
+                  // pads its end by the bottom inset instead.
+                  bottom: false,
+                  child: HomeScrollView(
+                    headerBuilder: (context, onGround) =>
+                        _buildAppHeader(onGround: onGround),
                     children: [
-                      // Main content
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(height: isLargeScreen ? 32 : 24),
+                      HomeVerseHero(
+                        imageAsset: homeHeroImageFor(DateTime.now()),
+                        greeting: context.tr(
+                          homeGreetingKeyFor(DateTime.now().hour),
+                          {'name': currentUserName},
+                        ),
+                        subtitle:
+                            context.tr(TranslationKeys.homeContinueJourney),
+                        verse: _buildHeroVerse(),
+                      ),
 
-                              // App Header with Logo
-                              _buildAppHeader(),
+                      // Upcoming meeting banner (today's meetings);
+                      // collapses to nothing when there is none.
+                      const Padding(
+                        padding: sectionPadding,
+                        child: _UpcomingMeetingBanner(),
+                      ),
 
-                              // Gold hairline. The mark above it is the only
-                              // gold on most screens; resting it on a gold rule
-                              // ties it to the gold used for streaks, XP and
-                              // the selected tab instead of leaving it a lone
-                              // accent in an otherwise indigo UI.
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    top: isLargeScreen ? 14 : 10),
-                                child: Container(
-                                  height: 1,
-                                  color: context.appGoldMark
-                                      .withValues(alpha: 0.38),
-                                ),
-                              ),
-
-                              SizedBox(height: isLargeScreen ? 18 : 14),
-
-                              // Welcome Message
-                              _buildWelcomeMessage(currentUserName),
-
-                              SizedBox(height: isLargeScreen ? 16 : 12),
-
-                              // Upcoming meeting banner (today's meetings)
-                              const _UpcomingMeetingBanner(),
-
-                              SizedBox(height: isLargeScreen ? 16 : 12),
-
-                              // Daily Verse Card with click functionality and lock support
-                              WalkthroughTooltip(
-                                showcaseKey: ShowcaseKeys.homeDailyVerse,
-                                title: AppLocalizations.of(context)!
-                                    .walkthroughHomeDailyVerseTitle,
-                                description: AppLocalizations.of(context)!
-                                    .walkthroughHomeDailyVerseDesc,
-                                screen: WalkthroughScreen.home,
-                                stepNumber: 1,
-                                totalSteps: 5,
-                                onNext: _onNext,
-                                child: LockedFeatureWrapper(
-                                  featureKey: 'daily_verse',
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      DailyVerseCard(
-                                        margin: EdgeInsets.zero,
-                                        onTap: _onDailyVerseCardTap,
-                                      ),
-                                      SizedBox(height: isLargeScreen ? 24 : 20),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // Explore Learning Paths Button
-                              _buildExploreLearningPathsButton(),
-                              SizedBox(height: isLargeScreen ? 32 : 24),
-
-                              // Resume Last Study (conditional)
-                              if (_hasResumeableStudy) ...[
-                                _buildResumeStudyBanner(),
-                                SizedBox(height: isLargeScreen ? 32 : 24),
-                              ],
-
-                              // Recommended Study Topics
-                              _buildRecommendedTopics(),
-
-                              SizedBox(height: isLargeScreen ? 32 : 24),
-
-                              // Closing note: what's happening in the user's
-                              // fellowships, or an invitation to join one.
-                              // Collapses to nothing while loading or on error.
-                              const HomeCommunitySection(),
-
-                              SizedBox(height: isLargeScreen ? 32 : 24),
-                            ],
-                          ),
+                      HomeEntrance(
+                        index: 0,
+                        child: Padding(
+                          padding: sectionPadding,
+                          child: _buildTodayTiles(),
                         ),
                       ),
+
+                      const SizedBox(height: 26),
+
+                      // Resume Last Study (conditional)
+                      if (_hasResumeableStudy) ...[
+                        Padding(
+                          padding: sectionPadding,
+                          child: _buildResumeStudyBanner(),
+                        ),
+                        const SizedBox(height: 26),
+                      ],
+
+                      HomeEntrance(
+                        index: 1,
+                        child: Padding(
+                          padding: sectionPadding,
+                          child: _buildContinueLearning(),
+                        ),
+                      ),
+
+                      const SizedBox(height: 26),
+
+                      // What's happening in the user's fellowships, or
+                      // an invitation to join one. Collapses to nothing
+                      // while loading or on error.
+                      const HomeEntrance(
+                        index: 2,
+                        child: Padding(
+                          padding: sectionPadding,
+                          child: HomeCommunitySection(),
+                        ),
+                      ),
+
+                      SizedBox(height: isLargeScreen ? 32 : 24),
                     ],
                   ),
                 ),
@@ -713,7 +705,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  Widget _buildAppHeader() {
+  /// The pinned header. [onGround]: it sits on the page colour (scrolled)
+  /// rather than the hero photo; in light theme it then switches from white
+  /// to dark so it stays readable.
+  Widget _buildAppHeader({bool onGround = false}) {
+    final onPhoto =
+        !onGround || Theme.of(context).brightness == Brightness.dark;
     // Check if memory_verses feature should be visible (respects display_mode)
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
@@ -732,7 +729,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // left-aligned and shrinks only when the header is genuinely tight.
     return Row(
       children: [
-        Expanded(child: _buildLogoWidget()),
+        Expanded(
+          child: GestureDetector(
+            // The logo doubles as "back to top", like most app bars.
+            onTap: HomeScrollToTop.instance.request,
+            child: _buildLogoWidget(onPhoto: onPhoto),
+          ),
+        ),
         const SizedBox(width: 8),
         if (showMemoryVerses) ...[
           WalkthroughTooltip(
@@ -746,25 +749,24 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             onNext: _onNext,
             // Header element — not enough space above; show below
             tooltipPosition: TooltipPosition.bottom,
-            child: _buildMemoryVersesIconButton(),
+            child: _buildMemoryVersesIconButton(onPhoto: onPhoto),
           ),
           const SizedBox(width: 4),
         ],
-        _buildSettingsButton(),
+        _buildSettingsButton(onPhoto: onPhoto),
       ],
     );
   }
 
-  Widget _buildMemoryVersesIconButton() {
+  Widget _buildMemoryVersesIconButton({bool onPhoto = true}) {
     return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+      buildWhen: (_, current) => current is DueVersesLoaded,
       builder: (context, memState) {
         final dueCount =
             memState is DueVersesLoaded ? memState.verses.length : 0;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        // Neutral, not brand indigo: the gold wordmark owns this row, so the
-        // two utility controls beside it (this pill and the settings gear)
-        // stay white on dark and near-black on light.
-        final pillColor = isDark ? Colors.white : AppColors.lightTextSecondary;
+        // White on the (always dark-shaded) photo; dark once the header is
+        // on the light page colour.
+        final pillColor = onPhoto ? Colors.white : AppColors.lightTextSecondary;
         return ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 140),
           child: Stack(
@@ -891,9 +893,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     context.go('/memory-verses');
   }
 
-  Widget _buildLogoWidget() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final logoAsset = isDarkMode
+  Widget _buildLogoWidget({bool onPhoto = true}) {
+    // Dark-ground logo on the shaded photo; the regular one on a light page.
+    final logoAsset = onPhoto
         ? 'assets/images/app_logo_dark.png'
         : 'assets/images/app_logo.png';
 
@@ -937,45 +939,19 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  Widget _buildSettingsButton() {
+  Widget _buildSettingsButton({bool onPhoto = true}) {
     return IconButton(
       onPressed: () {
         context.go('/settings');
       },
+      tooltip: context.tr(TranslationKeys.settingsTitle),
       icon: Icon(
         Icons.settings_outlined,
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : AppColors.lightTextSecondary,
+        color: onPhoto ? Colors.white : AppColors.lightTextSecondary,
         size: 24,
       ),
     );
   }
-
-  Widget _buildWelcomeMessage(String userName) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr(TranslationKeys.homeWelcomeBack, {'name': userName}),
-            style: AppFonts.inter(
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.tr(TranslationKeys.homeContinueJourney),
-            style: AppFonts.inter(
-              fontSize: 16,
-              color:
-                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-              height: 1.4,
-            ),
-          ),
-        ],
-      );
 
   /// Build usage meter widget (shows token usage for free users)
   Widget _buildUsageMeter() {
@@ -1051,50 +1027,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     });
   }
 
-  Widget _buildExploreLearningPathsButton() {
-    return Container(
-      width: double.infinity,
-      height: 64,
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.go(AppRoutes.studyTopics),
-          borderRadius: BorderRadius.circular(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.explore_rounded,
-                size: 24,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                context.tr(TranslationKeys.homeExploreLearningPaths),
-                style: AppFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildResumeStudyBanner() => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -1145,29 +1077,79 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
 
-  Widget _buildRecommendedTopics() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  /// Verse of the day inside the hero. Hidden entirely by the
+  /// bible_content_enabled kill-switch; greyed and locked like every other
+  /// gated feature when the plan does not include it.
+  Widget _buildHeroVerse() {
+    if (!sl<SystemConfigService>().isBibleContentEnabled) {
+      return const SizedBox.shrink();
+    }
+    return WalkthroughTooltip(
+      showcaseKey: ShowcaseKeys.homeDailyVerse,
+      title: AppLocalizations.of(context)!.walkthroughHomeDailyVerseTitle,
+      description: AppLocalizations.of(context)!.walkthroughHomeDailyVerseDesc,
+      screen: WalkthroughScreen.home,
+      stepNumber: 1,
+      totalSteps: 5,
+      onNext: _onNext,
+      child: LockedFeatureWrapper(
+        featureKey: 'daily_verse',
+        child: HomeDailyVerse(onStudy: _onDailyVerseCardTap),
+      ),
+    );
+  }
 
+  /// Streak and memory-review tiles. The review tile follows the same
+  /// display_mode rule as the Memory Verses pill in the header.
+  Widget _buildTodayTiles() {
+    final tokenState = sl<TokenBloc>().state;
+    final userPlan = tokenState is TokenLoaded
+        ? tokenState.tokenStatus.userPlan.name
+        : 'free';
+    final showReview =
+        !sl<SystemConfigService>().shouldHideFeature('memory_verses', userPlan);
+
+    return BlocBuilder<DailyVerseBloc, DailyVerseState>(
+      builder: (context, verseState) {
+        final streakDays = verseState is DailyVerseLoaded
+            ? (verseState.streak?.currentStreak ?? 0)
+            : 0;
+        return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+          // Keep the last count through transient states (adding, reloading)
+          // rather than dropping to "all caught up" for a moment.
+          buildWhen: (_, current) => current is DueVersesLoaded,
+          builder: (context, memState) {
+            final due =
+                memState is DueVersesLoaded ? memState.verses : const [];
+            return HomeTodayTiles(
+              streakDays: streakDays,
+              dueCount: due.length,
+              nextReviewReference:
+                  due.isNotEmpty ? due.first.verseReference : null,
+              showReview: showReview,
+              onStreakTap: () => context.push(AppRoutes.statsDashboard),
+              onReviewTap: _handleMemoryVersesTap,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// "Continue learning": the user's active path as a ring row, or a row
+  /// that opens the path catalogue when there is none. Replaces the old
+  /// "For You" block and the separate Explore Learning Paths button.
+  Widget _buildContinueLearning() {
     return BlocBuilder<HomeBloc, HomeState>(
       builder: (context, state) {
         final homeState =
             state is HomeCombinedState ? state : const HomeCombinedState();
-
-        final sectionTitle = context.tr(TranslationKeys.homeForYou);
-
-        // Nothing to recommend and nothing to prompt for: drop the whole
-        // section rather than leaving a heading and a "View All" button
-        // stranded above empty space.
-        final hasSectionContent = homeState.showPersonalizationPrompt ||
-            homeState.activeLearningPath != null ||
-            homeState.isLoadingActivePath ||
-            _isLearningPathsLocked();
-        if (!hasSectionContent) return const SizedBox.shrink();
+        final path = homeState.activeLearningPath;
+        final dark = Theme.of(context).brightness == Brightness.dark;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Personalization prompt card (shown when needed)
             if (homeState.showPersonalizationPrompt) ...[
               PersonalizationPromptCard(
                 onGetStarted: () => _navigateToQuestionnaire(),
@@ -1175,146 +1157,61 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     .read<HomeBloc>()
                     .add(const DismissPersonalizationPrompt()),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
             ],
-
-            // Section header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        sectionTitle,
-                        style: AppFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white.withOpacity(0.9)
-                              : const Color(0xFF1F2937),
-                        ),
+            HomeSectionHeader(
+              title: context.tr(TranslationKeys.homeContinueLearning),
+              subtitle: path != null &&
+                      homeState.learningPathReason ==
+                          LearningPathRecommendationReason.personalized
+                  ? context.tr(TranslationKeys.homeReadyForNextStep)
+                  : path != null &&
+                          homeState.learningPathReason ==
+                              LearningPathRecommendationReason.offlineAvailable
+                      ? context.tr(TranslationKeys.homeAvailableOffline)
+                      : null,
+              actionLabel: context.tr(TranslationKeys.homeAllPaths),
+              onAction: () => context.go(AppRoutes.studyTopics),
+              trailing: homeState.isLoadingActivePath && path == null
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            context.appBrandAccent),
                       ),
-                      if (homeState.isPersonalized) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          context.tr(TranslationKeys.homeForYouSubtitle),
-                          style: AppFonts.inter(
-                            fontSize: 13,
-                            color: isDark
-                                ? Colors.white.withOpacity(0.6)
-                                : const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(context.appBrandAccent),
-                    ),
-                  )
-                else if (homeState.activeLearningPath != null ||
-                    homeState.topics.isNotEmpty)
-                  TextButton(
-                    onPressed: () => context.go('/study-topics'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      context.tr(TranslationKeys.homeViewAll),
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-              ],
+                    )
+                  : null,
             ),
-            const SizedBox(height: 16),
-            // Show Learning Path card if available with lock support
-            if (homeState.activeLearningPath != null) ...[
-              // "You're ready for..." label when proactively recommending a new path
-              if (homeState.learningPathReason ==
-                  LearningPathRecommendationReason.personalized) ...[
-                Text(
-                  context.tr(TranslationKeys.homeReadyForNextStep),
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isDark
-                        ? AppColors.brandPrimaryLight.withOpacity(0.85)
-                        : context.appBrandAccent,
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ] else if (homeState.learningPathReason ==
-                  LearningPathRecommendationReason.offlineAvailable) ...[
-                Row(
-                  children: [
-                    Icon(
-                      Icons.download_done_rounded,
-                      size: 13,
-                      color: isDark
-                          ? AppColors.brandPrimaryLight.withOpacity(0.85)
-                          : context.appBrandAccent,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      context.tr(TranslationKeys.homeAvailableOffline),
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? AppColors.brandPrimaryLight.withOpacity(0.85)
-                            : context.appBrandAccent,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
+            const SizedBox(height: 12),
+            if (path != null)
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
-                child: LearningPathCard(
-                  path: homeState.activeLearningPath!,
-                  compact: false,
-                  onTap: () =>
-                      _navigateToLearningPath(homeState.activeLearningPath!.id),
+                child: HomePathRow(
+                  key: const Key('home_active_path_row'),
+                  title: path.title,
+                  subtitle: homePathSubtitle(context, path),
+                  progress: path.progressPercentage / 100,
+                  accent: homePathAccent(context, path),
+                  onTap: () => _navigateToLearningPath(path.id),
                 ),
-              ),
-            ]
-            // Check if learning_paths is locked even when no data
+              )
             else if (_isLearningPathsLocked())
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
                 child: _buildPlaceholderLearningPathCard(),
+              )
+            else
+              HomePathRow(
+                key: const Key('home_browse_paths_row'),
+                title: context.tr(TranslationKeys.homeBrowsePaths),
+                subtitle: context.tr(TranslationKeys.homeBrowsePathsHint),
+                progress: 0,
+                icon: Icons.explore_outlined,
+                accent: dark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary,
+                onTap: () => context.go(AppRoutes.studyTopics),
               ),
-            // No active learning path and nothing locked: the "Explore
-            // Learning Paths" button above is the only call to action here.
-            // This used to fall back to a grid of unrelated cross-category
-            // topics (e.g. "Marriage and Faith" next to "Being the Light in
-            // Your Community") with no connection to each other or to the
-            // user — it read as generic filler rather than a personalized
-            // recommendation, which is exactly what this section promises.
           ],
         );
       },
@@ -1497,6 +1394,13 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
   void initState() {
     super.initState();
     _fetchUpcomingMeeting();
+    FellowshipChanges.instance.addListener(_fetchUpcomingMeeting);
+  }
+
+  @override
+  void dispose() {
+    FellowshipChanges.instance.removeListener(_fetchUpcomingMeeting);
+    super.dispose();
   }
 
   Future<void> _fetchUpcomingMeeting() async {
@@ -1524,7 +1428,13 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
       );
 
       if (fellowships == null || fellowships.isEmpty) {
-        if (mounted) setState(() => _loaded = true);
+        // Clear any meeting from a group the user has since left.
+        if (mounted) {
+          setState(() {
+            if (fellowships != null) _upcoming = null;
+            _loaded = true;
+          });
+        }
         return;
       }
 
@@ -1590,70 +1500,63 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
 
     final isHappeningNow =
         start != null && end != null && now.isAfter(start) && now.isBefore(end);
+    final timeFormat = DateFormat('h:mm a');
     final timeLabel = start == null
-        ? ''
+        ? context.tr(TranslationKeys.homeMeetingToday)
         : isHappeningNow
-            ? 'Now · ends ${DateFormat('h:mm a').format(end)}'
-            : DateFormat('h:mm a').format(start);
+            ? context.tr(TranslationKeys.homeMeetingNowEnds,
+                {'time': timeFormat.format(end)})
+            : context.tr(TranslationKeys.homeMeetingTodayAt,
+                {'time': timeFormat.format(start)});
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isOnline = meeting.meetLink.isNotEmpty;
+    final accent = isDark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary;
+    final surface = isDark ? const Color(0xFF17171C) : Colors.white;
+    final border = isHappeningNow
+        ? accent.withValues(alpha: 0.6)
+        : (isDark ? const Color(0x0DFFFFFF) : const Color(0xFFE9E5DB));
+    final textPrimary =
+        isDark ? const Color(0xFFF2F2F4) : const Color(0xFF1A1917);
+    final textMuted =
+        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6F6B61);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: GestureDetector(
-        onTap: () => context.push('/community/${data.fellowshipId}'),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.brandPrimary.withValues(alpha: 0.12)
-                : AppColors.brandPrimary.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.brandPrimary.withValues(alpha: 0.25),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const Key('home_meeting_banner'),
+          onTap: () => context.push('/community/${data.fellowshipId}'),
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
             ),
-          ),
-          child: Row(
-            children: [
-              // Left accent bar
-              Container(
-                width: 4,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isOnline
+                        ? Icons.videocam_outlined
+                        : Icons.location_on_outlined,
+                    color: accent,
+                    size: 20,
                   ),
                 ),
-              ),
-
-              const SizedBox(width: 14),
-
-              // Icon
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  isOnline ? Icons.videocam_rounded : Icons.location_on_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Text content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         children: [
@@ -1662,71 +1565,58 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.brandPrimary,
+                                color: AppColors.error,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
-                                'LIVE',
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 10,
+                              child: Text(
+                                context.tr(TranslationKeys.homeMeetingLive),
+                                style: AppFonts.inter(
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
                                   color: Colors.white,
-                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 6),
                           ],
-                          Text(
-                            'Today',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: context.appTextSecondary,
+                          Flexible(
+                            child: Text(
+                              timeLabel,
+                              style: AppFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: accent,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         meeting.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
+                        style: AppFonts.inter(
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
+                          color: textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
-                        '${data.fellowshipName} · $timeLabel',
+                        data.fellowshipName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: context.appTextSecondary,
-                        ),
+                        style: AppFonts.inter(fontSize: 11.5, color: textMuted),
                       ),
                     ],
                   ),
                 ),
-              ),
-
-              // Chevron
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  color: context.appTextTertiary,
-                  size: 20,
-                ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right, color: textMuted, size: 18),
+              ],
+            ),
           ),
         ),
       ),

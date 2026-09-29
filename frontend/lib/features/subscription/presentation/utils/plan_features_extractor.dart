@@ -138,7 +138,7 @@ class PlanFeaturesExtractor {
     final prevTokens = previousPlan?.features['daily_tokens'] as int?;
     final currTokens = currentPlan.features['daily_tokens'] as int?;
     rows.add(PlanComparisonRow(
-      label: 'Daily Tokens',
+      label: 'Daily Credits',
       previousValue: _formatTokens(prevTokens),
       currentValue: _formatTokens(currTokens),
     ));

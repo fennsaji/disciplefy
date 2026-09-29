@@ -1,5 +1,41 @@
 /// Translation key constants for type-safe translation access
 class TranslationKeys {
+  // Memory recall practice modes (flip card, progressive reveal,
+  // first letter hints, type it out)
+  static const memoryRecallFlipFront = 'memory_recall_modes.flip_card.front';
+  static const memoryRecallFlipBack = 'memory_recall_modes.flip_card.back';
+  static const memoryRecallFlipReciteHint =
+      'memory_recall_modes.flip_card.recite_hint';
+  static const memoryRecallFlipAction = 'memory_recall_modes.flip_card.flip';
+  static const memoryRecallProgressiveWords =
+      'memory_recall_modes.progressive.words_progress';
+  static const memoryRecallProgressivePhrases =
+      'memory_recall_modes.progressive.phrases_progress';
+  static const memoryRecallProgressiveAuto =
+      'memory_recall_modes.progressive.auto';
+  static const memoryRecallProgressivePause =
+      'memory_recall_modes.progressive.pause';
+  static const memoryRecallProgressiveAll =
+      'memory_recall_modes.progressive.all';
+  static const memoryRecallFirstLetterHint =
+      'memory_recall_modes.first_letter.hint';
+  static const memoryRecallFirstLetterCheck =
+      'memory_recall_modes.first_letter.check';
+  static const memoryRecallFirstLetterHintsUsed =
+      'memory_recall_modes.first_letter.hints_used';
+  static const memoryRecallFirstLetterTileLabel =
+      'memory_recall_modes.first_letter.tile_label';
+  static const memoryRecallTypeWordCount =
+      'memory_recall_modes.type_it_out.word_count';
+  static const memoryRecallTypeAnswer =
+      'memory_recall_modes.type_it_out.answer';
+  static const memoryRecallTypeRomanizedHint =
+      'memory_recall_modes.type_it_out.romanized_hint';
+  static const memoryRecallTypeHinglish =
+      'memory_recall_modes.type_it_out.hinglish';
+  static const memoryRecallTypeManglish =
+      'memory_recall_modes.type_it_out.manglish';
+
   // Study Guide Section Titles
   static const studyGuideSummary = 'study_guide.sections.summary';
   static const studyGuideInterpretation = 'study_guide.sections.interpretation';
@@ -30,6 +66,20 @@ class TranslationKeys {
 
   // Study Guide TTS
   static const studyGuideListen = 'study_guide.tts.listen';
+  static const studyGuideMenuMore = 'study_guide.menu.more';
+  static const studyGuideMenuTextSize = 'study_guide.menu.text_size';
+  static const studyGuideMenuShare = 'study_guide.menu.share';
+  static const studyGuideMenuShareFellowship =
+      'study_guide.menu.share_fellowship';
+  static const studyGuideMenuDownloadPdf = 'study_guide.menu.download_pdf';
+  static const studyGuideMenuSave = 'study_guide.menu.save';
+  static const studyGuideMenuSaved = 'study_guide.menu.saved';
+  static const studyGuideMenuComplete = 'study_guide.menu.complete';
+  static const studyGuideMenuCompleted = 'study_guide.menu.completed';
+  static const studyGuideTextSizeEyebrow = 'study_guide.text_size.eyebrow';
+  static const studyGuideTextSizePreview = 'study_guide.text_size.preview';
+  static const studyGuideTextSizeDone = 'study_guide.text_size.done';
+  static const studyGuideTextSizeReset = 'study_guide.text_size.reset';
   static const studyGuidePause = 'study_guide.tts.pause';
   static const studyGuideResume = 'study_guide.tts.resume';
   static const studyGuideLoading = 'study_guide.tts.loading';
@@ -116,6 +166,7 @@ class TranslationKeys {
   static const followUpChatInputHint = 'follow_up_chat.input_hint';
   static const followUpChatGettingResponse = 'follow_up_chat.getting_response';
   static const followUpChatCancel = 'follow_up_chat.cancel';
+  static const followUpChatSend = 'follow_up_chat.send';
   static const followUpChatTokenCost = 'follow_up_chat.token_cost';
   static const followUpChatResponding = 'follow_up_chat.responding';
   static const followUpChatFailedToSend = 'follow_up_chat.failed_to_send';
@@ -135,6 +186,10 @@ class TranslationKeys {
       'follow_up_chat.generate_new_study';
   static const followUpChatNoMessagesYet = 'follow_up_chat.no_messages_yet';
   static const followUpChatStartByAsking = 'follow_up_chat.start_by_asking';
+  static const followUpChatGreeting = 'follow_up_chat.greeting';
+  static const followUpChatPromptExplain = 'follow_up_chat.prompt_explain';
+  static const followUpChatPromptApply = 'follow_up_chat.prompt_apply';
+  static const followUpChatPromptVerses = 'follow_up_chat.prompt_verses';
   static const followUpChatListening = 'follow_up_chat.listening';
   static const followUpChatStop = 'follow_up_chat.stop';
   static const followUpChatStopListening = 'follow_up_chat.stop_listening';
@@ -144,6 +199,28 @@ class TranslationKeys {
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
+  static const homeGoodMorning = 'home.good_morning';
+  static const homeGoodAfternoon = 'home.good_afternoon';
+  static const homeGoodEvening = 'home.good_evening';
+  static const homeStudyNow = 'home.study_now';
+  static const homeContinueLearning = 'home.continue_learning';
+  static const homeAllPaths = 'home.all_paths';
+  static const homeBrowsePaths = 'home.browse_paths';
+  static const homeBrowsePathsHint = 'home.browse_paths_hint';
+  static const homeTopicsProgress = 'home.topics_progress';
+  static const homeStartHere = 'home.start_here';
+  static const homeDayStreak = 'home.day_streak';
+  static const homeKeepItAlive = 'home.keep_it_alive';
+  static const homeNoStreakYet = 'home.no_streak_yet';
+  static const homeStartStreakHint = 'home.start_streak_hint';
+  static const homeToReview = 'home.to_review';
+  static const homeAllCaughtUp = 'home.all_caught_up';
+  static const homeNothingDue = 'home.nothing_due';
+  static const homeReviewMore = 'home.review_more';
+  static const homeMeetingToday = 'home.meeting_today';
+  static const homeMeetingTodayAt = 'home.meeting_today_at';
+  static const homeMeetingNowEnds = 'home.meeting_now_ends';
+  static const homeMeetingLive = 'home.meeting_live';
   static const homeContinueJourney = 'home.continue_journey';
   static const homeMemoryVerses = 'home.memory_verses';
   static const homeGenerateStudyGuide = 'home.generate_study_guide';
@@ -240,6 +317,19 @@ class TranslationKeys {
       'generate_study.generation_failed_message';
   static const generateStudyManageTokens = 'generate_study.manage_tokens';
 
+  // Generate tab (Scripture hero)
+  static const generateStudyEyebrow = 'generate_study.eyebrow';
+  static const generateStudyHeadline = 'generate_study.headline';
+  static const generateStudyScriptureTab = 'generate_study.scripture_tab';
+  static const generateStudyChooseDepth = 'generate_study.choose_depth';
+
+  /// "All {count}" link that opens the full depth chooser.
+  static const generateStudyAllModes = 'generate_study.all_modes';
+  static const generateStudyButtonGenerateShort =
+      'generate_study.button_generate_short';
+  static const generateStudyContinueReading = 'generate_study.continue_reading';
+  static const generateStudySeeAll = 'generate_study.see_all';
+
   // Recent Guides Section
   static const recentGuidesTitle = 'recent_guides.title';
   static const recentGuidesViewAll = 'recent_guides.view_all';
@@ -288,6 +378,11 @@ class TranslationKeys {
   static const loginTermsNotice = 'login.terms_notice';
   static const loginTermsNoticeSuffix = 'login.terms_notice_suffix';
   static const loginContinueWithEmail = 'login.continue_with_email';
+  static const loginChipStudyGuides = 'login.chip_study_guides';
+  static const loginChipDailyVerse = 'login.chip_daily_verse';
+  static const loginChipDiscipler = 'login.chip_discipler';
+  static const loginChipMemoryVerses = 'login.chip_memory_verses';
+  static const loginLanguagesLine = 'login.languages_line';
 
   // Email Auth Screen
   static const emailAuthTitle = 'email_auth.title';
@@ -312,6 +407,11 @@ class TranslationKeys {
   static const emailAuthEmailExists = 'email_auth.email_exists';
   static const emailAuthInvalidCredentials = 'email_auth.invalid_credentials';
   static const emailAuthWeakPassword = 'email_auth.weak_password';
+  static const emailAuthSignInEyebrow = 'email_auth.sign_in_eyebrow';
+  static const emailAuthSignUpEyebrow = 'email_auth.sign_up_eyebrow';
+  static const emailAuthSignInTitle = 'email_auth.sign_in_title';
+  static const emailAuthSignUpTitle = 'email_auth.sign_up_title';
+  static const emailAuthNewPasswordHint = 'email_auth.new_password_hint';
 
   // Password Reset Screen
   static const passwordResetTitle = 'password_reset.title';
@@ -331,6 +431,7 @@ class TranslationKeys {
   static const emailVerificationTitle = 'email_verification.title';
   static const emailVerificationDescription = 'email_verification.description';
   static const emailVerificationResend = 'email_verification.resend';
+  static const emailVerificationResendShort = 'email_verification.resend_short';
   static const emailVerificationSent = 'email_verification.sent';
 
   // Onboarding
@@ -343,6 +444,47 @@ class TranslationKeys {
   static const onboardingLanguageSavedLocally =
       'onboarding.language_saved_locally';
   static const onboardingDefaultLanguageSet = 'onboarding.default_language_set';
+  static const onboardingSkipIntro = 'onboarding.skip_intro';
+  static const onboardingGetStarted = 'onboarding.get_started';
+  static const onboardingLanguageEyebrow = 'onboarding.language_eyebrow';
+  static const onboardingLanguageDefault = 'onboarding.language_default';
+  static const onboardingSlide1Eyebrow = 'onboarding.slide1_eyebrow';
+  static const onboardingSlide1Title = 'onboarding.slide1_title';
+  static const onboardingSlide1Description = 'onboarding.slide1_description';
+  static const onboardingSlide1Verse = 'onboarding.slide1_verse';
+  static const onboardingSlide2Eyebrow = 'onboarding.slide2_eyebrow';
+  static const onboardingSlide2Title = 'onboarding.slide2_title';
+  static const onboardingSlide2Description = 'onboarding.slide2_description';
+  static const onboardingSlide2Verse = 'onboarding.slide2_verse';
+  static const onboardingSlide3Eyebrow = 'onboarding.slide3_eyebrow';
+  static const onboardingSlide3Title = 'onboarding.slide3_title';
+  static const onboardingSlide3Description = 'onboarding.slide3_description';
+  static const onboardingSlide3Verse = 'onboarding.slide3_verse';
+  static const onboardingSlide4Eyebrow = 'onboarding.slide4_eyebrow';
+  static const onboardingSlide4Title = 'onboarding.slide4_title';
+  static const onboardingSlide4Description = 'onboarding.slide4_description';
+  static const onboardingSlide4Verse = 'onboarding.slide4_verse';
+  static const onboardingPreviewTopicMeta = 'onboarding.preview_topic_meta';
+  static const onboardingPreviewTopic = 'onboarding.preview_topic';
+  static const onboardingPreviewSummary = 'onboarding.preview_summary';
+  static const onboardingPreviewContext = 'onboarding.preview_context';
+  static const onboardingPreviewInterpretation =
+      'onboarding.preview_interpretation';
+  static const onboardingPreviewVerseOfDay = 'onboarding.preview_verse_of_day';
+  static const onboardingPreviewStudyNow = 'onboarding.preview_study_now';
+  static const onboardingPreviewScriptureMeta =
+      'onboarding.preview_scripture_meta';
+  static const onboardingPreviewSummaryBody = 'onboarding.preview_summary_body';
+  static const onboardingPreviewContextBody = 'onboarding.preview_context_body';
+  static const onboardingPreviewListening = 'onboarding.preview_listening';
+  static const onboardingPreviewQuestion = 'onboarding.preview_question';
+  static const onboardingPreviewAnswer = 'onboarding.preview_answer';
+  static const onboardingPreviewReviewMeta = 'onboarding.preview_review_meta';
+  static const onboardingPreviewBlankStart = 'onboarding.preview_blank_start';
+  static const onboardingPreviewBlankEnd = 'onboarding.preview_blank_end';
+  static const onboardingPreviewAgain = 'onboarding.preview_again';
+  static const onboardingPreviewGood = 'onboarding.preview_good';
+  static const onboardingPreviewEasy = 'onboarding.preview_easy';
 
   // Settings Screen
   static const settingsTitle = 'settings.title';
@@ -368,6 +510,11 @@ class TranslationKeys {
   static const settingsBlockedUsersSubtitle = 'settings.blocked_users_subtitle';
   static const settingsTheme = 'settings.theme';
   static const settingsContentLanguage = 'settings.content_language';
+  static const settingsContentLanguageFollowsApp =
+      'settings.content_language_follows_app';
+  static const settingsAppLanguage = 'settings.app_language';
+  static const settingsAppLanguageDescription =
+      'settings.app_language_description';
   static const settingsAccountActions = 'settings.account_actions';
   static const settingsSignOut = 'settings.sign_out';
   static const settingsDeleteAccount = 'settings.delete_account';
@@ -430,6 +577,43 @@ class TranslationKeys {
   static const settingsTextSizeLarge = 'settings.text_size_large';
   static const settingsTextSizeExtraLarge = 'settings.text_size_extra_large';
   static const settingsTextSizePercentage = 'settings.text_size_percentage';
+
+  // Settings (grouped cards)
+  static const settingsSectionYou = 'settings.section_you';
+  static const settingsSectionPreferences = 'settings.section_preferences';
+  static const settingsSectionStudy = 'settings.section_study';
+  static const settingsOfflineGuides = 'settings.offline_guides';
+  static const settingsOfflineGuidesSubtitle =
+      'settings.offline_guides_subtitle';
+  static const settingsOfflineGuidesCount = 'settings.offline_guides_count';
+  static const settingsOfflineClearAll = 'settings.offline_clear_all';
+  static const settingsOfflineRemove = 'settings.offline_remove';
+  static const settingsOfflineEmptyTitle = 'settings.offline_empty_title';
+  static const settingsOfflineEmptySubtitle = 'settings.offline_empty_subtitle';
+  static const settingsOfflinePathEmpty = 'settings.offline_path_empty';
+  static const settingsOfflinePathProgress = 'settings.offline_path_progress';
+  static const settingsOfflineClearAllTitle =
+      'settings.offline_clear_all_title';
+  static const settingsOfflineClearAllMessage =
+      'settings.offline_clear_all_message';
+  static const settingsThemeSystem = 'settings.theme_system';
+  static const settingsThemeLight = 'settings.theme_light';
+  static const settingsThemeDark = 'settings.theme_dark';
+  static const settingsThemeSystemCaption = 'settings.theme_system_caption';
+  static const settingsLanguageDefault = 'settings.language_default';
+  static const settingsDeleteAccountLoseTitle =
+      'settings.delete_account_lose_title';
+  static const settingsDeleteAccountLoseGuides =
+      'settings.delete_account_lose_guides';
+  static const settingsDeleteAccountLoseVerses =
+      'settings.delete_account_lose_verses';
+  static const settingsDeleteAccountLoseProgress =
+      'settings.delete_account_lose_progress';
+  static const settingsDeleteAccountLosePlan =
+      'settings.delete_account_lose_plan';
+  static const settingsBibleAttribution = 'settings.bible_attribution';
+  static const settingsBibleAttributionSubtitle =
+      'settings.bible_attribution_subtitle';
 
   // Settings - Help & Support
   static const settingsHelpSupport = 'settings.help_support';
@@ -565,6 +749,37 @@ class TranslationKeys {
   static const savedGuidesErrorTitle = 'saved_guides.error_title';
   static const savedGuidesErrorMessage = 'saved_guides.error_message';
   static const savedGuidesRetry = 'saved_guides.retry';
+  static const savedGuidesLibraryTitle = 'saved_guides.library_title';
+  static const savedGuidesSearch = 'saved_guides.search';
+  static const savedGuidesSearchHint = 'saved_guides.search_hint';
+  static const savedGuidesCloseSearch = 'saved_guides.close_search';
+  static const savedGuidesNoResults = 'saved_guides.no_results';
+  static const savedGuidesContinue = 'saved_guides.continue';
+  static const savedGuidesContinueSection = 'saved_guides.continue_section';
+  static const savedGuidesRemove = 'saved_guides.remove';
+  static const savedGuidesSave = 'saved_guides.save';
+  static const savedGuidesLoading = 'saved_guides.loading';
+  static const savedGuidesYesterday = 'saved_guides.yesterday';
+
+  // Popups (achievement, guide complete, upgrade, credits, sign-in)
+  static const popupAchievementEyebrow = 'popups.achievement_eyebrow';
+  static const popupAchievementCta = 'popups.achievement_cta';
+  static const popupGuideCompleteEyebrow = 'popups.guide_complete_eyebrow';
+  static const popupGuideCompleteNext = 'popups.guide_complete_next';
+  static const popupGuideCompleteNextPath = 'popups.guide_complete_next_path';
+  static const popupAddNotes = 'popups.add_notes';
+  static const popupShareFellowship = 'popups.share_fellowship';
+  static const popupAskDiscipler = 'popups.ask_discipler';
+  static const popupDone = 'popups.done';
+  static const popupContinuePath = 'popups.continue_path';
+  static const popupNotNow = 'popups.not_now';
+  static const popupUpgradeEyebrow = 'popups.upgrade_eyebrow';
+  static const popupYourPlan = 'popups.your_plan';
+  static const popupAvailableOn = 'popups.available_on';
+  static const popupUpgradeNow = 'popups.upgrade_now';
+  static const popupMaybeLater = 'popups.maybe_later';
+  static const popupCreditsEyebrow = 'popups.credits_eyebrow';
+  static const popupSignInEyebrow = 'popups.sign_in_eyebrow';
   static const savedGuidesUnsaveSuccess = 'saved_guides.unsave_success';
   static const savedGuidesUnsaveError = 'saved_guides.unsave_error';
 
@@ -572,6 +787,9 @@ class TranslationKeys {
   static const feedbackSendFeedback = 'feedback.send_feedback';
   static const feedbackSubtitle = 'feedback.subtitle';
   static const feedbackIsHelpful = 'feedback.is_helpful';
+  static const feedbackYes = 'feedback.yes';
+  static const feedbackNotYet = 'feedback.not_yet';
+  static const feedbackTopic = 'feedback.topic';
   static const feedbackCategoryGeneral = 'feedback.category.general';
   static const feedbackCategoryBugReport = 'feedback.category.bug_report';
   static const feedbackCategoryFeatureRequest =
@@ -905,6 +1123,12 @@ class TranslationKeys {
 
   // Notifications Settings
   static const notificationsSettingsTitle = 'notifications.settings.title';
+  static const notificationsSettingsSubtitle =
+      'notifications.settings.subtitle';
+  static const notificationsSettingsDailySectionTitle =
+      'notifications.settings.daily_section_title';
+  static const notificationsSettingsStreakSectionTitle =
+      'notifications.settings.streak_section_title';
   static const notificationsSettingsLoading = 'notifications.settings.loading';
   static const notificationsSettingsPreferencesUpdated =
       'notifications.settings.preferences_updated';
@@ -1102,6 +1326,8 @@ class TranslationKeys {
   static const flipCardReviewNumber = 'memory.flipCard.reviewNumber';
   static const flipCardDays = 'memory.flipCard.days';
   static const flipCardReviews = 'memory.flipCard.reviews';
+  static const flipCardDayOne = 'memory.flipCard.day_one';
+  static const flipCardReviewOne = 'memory.flipCard.review_one';
 
   // Options Menu
   static const optionsMenuSyncTitle = 'memory.optionsMenu.syncTitle';
@@ -1430,6 +1656,14 @@ class TranslationKeys {
   static const gamificationContinue = 'gamification.continue';
   static const gamificationFailedToLoad = 'gamification.failed_to_load';
   static const gamificationRetry = 'gamification.retry';
+  static const gamificationCurrentLevel = 'gamification.current_level';
+  static const gamificationXpToLevel = 'gamification.xp_to_level';
+  static const gamificationAchievementsCount =
+      'gamification.achievements_count';
+  static const gamificationDayStreakLabel = 'gamification.day_streak_label';
+  static const gamificationStudiesLabel = 'gamification.studies_label';
+  static const gamificationVersesLabel = 'gamification.verses_label';
+  static const gamificationProgressCount = 'gamification.progress_count';
 
   // Achievement Categories
   static const gamificationCategoryStudy = 'gamification.category.study';
@@ -1612,11 +1846,21 @@ class TranslationKeys {
   static const practiceRetry = 'practice.retry';
   static const practiceComplete = 'practice.complete';
 
+  // Memory practice action bar (phrase scramble, word bank, fill in the
+  // blanks, audio)
+  static const memoryPracticeHint = 'memory_practice.hint';
+  static const memoryPracticeHintCount = 'memory_practice.hint_count';
+  static const memoryPracticeCheck = 'memory_practice.check';
+  static const memoryPracticeCloseExpected = 'memory_practice.close_expected';
+  static const memoryPracticeExpectedSaid = 'memory_practice.expected_said';
+
   // Word Bank Practice Page
   static const wordBankTapWordsInstruction = 'word_bank.tap_words_instruction';
   static const wordBankLongPressHint = 'word_bank.long_press_hint';
   static const wordBankYourAnswer = 'word_bank.your_answer';
   static const wordBankTryAgain = 'word_bank.try_again';
+  static const wordBankAllPlaced = 'word_bank.all_placed';
+  static const wordBankAllPlacedDone = 'word_bank.all_placed_done';
 
   // Cloze Practice Page
   static const clozePracticeTitle = 'cloze_practice.title';
@@ -1698,6 +1942,85 @@ class TranslationKeys {
   static const typeItOutRomanizedHint = 'type_it_out.romanized_hint';
   static const typeItOutWordCount = 'type_it_out.word_count';
 
+  // Memory verses screens (home, add verse, mode picker, results, stats,
+  // champions)
+  static const memoryScreensDueTodayCount = 'memory_screens.due_today_count';
+  static const memoryScreensTapToSeePlans = 'memory_screens.tap_to_see_plans';
+  static const memoryScreensChooseUnlockedModes =
+      'memory_screens.choose_unlocked_modes';
+  static const memoryScreensTopTen = 'memory_screens.top_ten';
+  static const memoryScreensEaseFactor = 'memory_screens.ease_factor';
+  static const memoryScreensAddVerseSubtitle =
+      'memory_screens.add_verse_subtitle';
+  static const memoryScreensChooseBook = 'memory_screens.choose_book';
+  static const memoryScreensAllCaughtUp = 'memory_screens.all_caught_up';
+  static const memoryScreensVersesCount = 'memory_screens.verses_count';
+  static const memoryScreensHowItWorks = 'memory_screens.how_it_works';
+  static const memoryScreensVerseCountOne = 'memory_screens.verse_count_one';
+  static const memoryScreensMasteredCount = 'memory_screens.mastered_count';
+  static const memoryScreensCountOfTotal = 'memory_screens.count_of_total';
+  static const memoryScreensComingUp = 'memory_screens.coming_up';
+  static const memoryScreensDueToday = 'memory_screens.due_today';
+  static const memoryScreensDueTomorrow = 'memory_screens.due_tomorrow';
+  static const memoryScreensDueInDays = 'memory_screens.due_in_days';
+  static const memoryScreensOverdueDays = 'memory_screens.overdue_days';
+  static const memoryScreensOverdueOneDay = 'memory_screens.overdue_one_day';
+  static const memoryScreensNewVerse = 'memory_screens.new_verse';
+  static const memoryScreensNothingDue = 'memory_screens.nothing_due';
+  static const memoryScreensOfflineTitle = 'memory_screens.offline_title';
+  static const memoryScreensOfflineBody = 'memory_screens.offline_body';
+  static const memoryScreensTileDaily = 'memory_screens.tile_daily';
+  static const memoryScreensTileDailyHint = 'memory_screens.tile_daily_hint';
+  static const memoryScreensTileSuggested = 'memory_screens.tile_suggested';
+  static const memoryScreensTileSuggestedHint =
+      'memory_screens.tile_suggested_hint';
+  static const memoryScreensTileCustom = 'memory_screens.tile_custom';
+  static const memoryScreensTileCustomHint = 'memory_screens.tile_custom_hint';
+  static const memoryScreensModesUnlockedToday =
+      'memory_screens.modes_unlocked_today';
+  static const memoryScreensAllModesUnlocked =
+      'memory_screens.all_modes_unlocked';
+  static const memoryScreensDailyLimitReached =
+      'memory_screens.daily_limit_reached';
+  static const memoryScreensUpgrade = 'memory_screens.upgrade';
+  static const memoryScreensModeLockedUpgrade =
+      'memory_screens.mode_locked_upgrade';
+  static const memoryScreensNextReviewToday =
+      'memory_screens.next_review_today';
+  static const memoryScreensNextReviewTomorrow =
+      'memory_screens.next_review_tomorrow';
+  static const memoryScreensNextReviewInDays =
+      'memory_screens.next_review_in_days';
+  static const memoryScreensMissed = 'memory_screens.missed';
+  static const memoryScreensStatTime = 'memory_screens.stat_time';
+  static const memoryScreensStatHint = 'memory_screens.stat_hint';
+  static const memoryScreensStatHints = 'memory_screens.stat_hints';
+  static const memoryScreensStatAnswerShown =
+      'memory_screens.stat_answer_shown';
+  static const memoryScreensYes = 'memory_screens.yes';
+  static const memoryScreensNo = 'memory_screens.no';
+  static const memoryScreensQualityPerfect = 'memory_screens.quality_perfect';
+  static const memoryScreensQualityGood = 'memory_screens.quality_good';
+  static const memoryScreensQualityOk = 'memory_screens.quality_ok';
+  static const memoryScreensQualityNeedsWork =
+      'memory_screens.quality_needs_work';
+  static const memoryScreensQualityTryAgain =
+      'memory_screens.quality_try_again';
+  static const memoryScreensStatsSubtitle = 'memory_screens.stats_subtitle';
+  static const memoryScreensStatVerses = 'memory_screens.stat_verses';
+  static const memoryScreensStatVerse = 'memory_screens.stat_verse';
+  static const memoryScreensStatReviews = 'memory_screens.stat_reviews';
+  static const memoryScreensStatPerfect = 'memory_screens.stat_perfect';
+  static const memoryScreensStatDays = 'memory_screens.stat_days';
+  static const memoryScreensStreakLine = 'memory_screens.streak_line';
+  static const memoryScreensPracticeModes = 'memory_screens.practice_modes';
+  static const memoryScreensPracticesCount = 'memory_screens.practices_count';
+  static const memoryScreensChampionsSubtitle =
+      'memory_screens.champions_subtitle';
+  static const memoryScreensYourRank = 'memory_screens.your_rank';
+  static const memoryScreensStatMastered = 'memory_screens.stat_mastered';
+  static const memoryScreensStatDayStreak = 'memory_screens.stat_day_streak';
+
   // Memory Verse Home Page
   static const memoryHomeTitle = 'memory_home.title';
   static const memoryHomeFeatureDescription = 'memory_home.feature_description';
@@ -1732,6 +2055,7 @@ class TranslationKeys {
   static const heatMapSubtitle = 'memory.heatMap.subtitle';
   static const heatMapDayStreak = 'memory.heatMap.dayStreak';
   static const heatMapLongestStreak = 'memory.heatMap.longestStreak';
+  static const heatMapLongestStreakOne = 'memory.heatMap.longestStreakOne';
   static const heatMapLess = 'memory.heatMap.less';
   static const heatMapMore = 'memory.heatMap.more';
   static const heatMapMon = 'memory.heatMap.mon';
@@ -1802,6 +2126,19 @@ class TranslationKeys {
 
   /// Description of the Sermon Outline study mode
   static const studyModeSermonDescription = 'study_mode.sermon.description';
+
+  /// Short mode names for the compact depth cards on the Generate tab.
+  static const studyModeQuickShortName = 'study_mode.quick.short_name';
+  static const studyModeStandardShortName = 'study_mode.standard.short_name';
+  static const studyModeDeepShortName = 'study_mode.deep.short_name';
+  static const studyModeLectioShortName = 'study_mode.lectio.short_name';
+  static const studyModeSermonShortName = 'study_mode.sermon.short_name';
+
+  /// "{count} min" duration label.
+  static const studyModeMinutes = 'study_mode.minutes';
+
+  /// Headline of the full-height depth chooser.
+  static const modeSelectionTimeQuestion = 'mode_selection.time_question';
 
   // Settings - Study Mode Preference
   /// Settings label for study mode preference option
@@ -1939,6 +2276,10 @@ class TranslationKeys {
 
   /// "No" option for reflection responses
   static const reflectionJournalNo = 'reflection_journal.no';
+  static const reflectionJournalCount = 'reflection_journal.count';
+  static const reflectionJournalToday = 'reflection_journal.today';
+  static const reflectionJournalYesterday = 'reflection_journal.yesterday';
+  static const reflectionJournalMinutes = 'reflection_journal.minutes';
 
   // Study Guide Screen - Additional Keys
   /// Section title for key insight in Quick mode
@@ -2373,7 +2714,6 @@ class TranslationKeys {
   static const tokenDialogViewPlans = 'tokens.dialog.view_plans';
 
   // Practice Mode Info Sheet (shared)
-  static const practiceModeInfoHowItWorks = 'practice_mode_info.how_it_works';
   static const practiceModeInfoGotIt = 'practice_mode_info.got_it';
 
   // Practice Mode Info Steps — Flip Card
@@ -2479,6 +2819,43 @@ class TranslationKeys {
   static const dailyReviewLimitCount = 'daily_review_limit.count';
   static const dailyReviewLimitLimited = 'daily_review_limit.limited';
 
+  // Practice mode daily unlock limit dialog
+  static const practiceUnlockLimitTitle = 'practice_unlock_limit.title';
+  static const practiceUnlockLimitMessageOne =
+      'practice_unlock_limit.message_one';
+  static const practiceUnlockLimitMessageOther =
+      'practice_unlock_limit.message_other';
+  static const practiceUnlockLimitUnlockedToday =
+      'practice_unlock_limit.unlocked_today';
+  static const practiceUnlockLimitUpgradePrompt =
+      'practice_unlock_limit.upgrade_prompt';
+  static const practiceUnlockLimitStillPractice =
+      'practice_unlock_limit.still_practice';
+  static const practiceUnlockLimitModesPerDayOne =
+      'practice_unlock_limit.modes_per_day_one';
+  static const practiceUnlockLimitModesPerDayOther =
+      'practice_unlock_limit.modes_per_day_other';
+  static const practiceUnlockLimitAllModes = 'practice_unlock_limit.all_modes';
+  static const practiceUnlockLimitMaybeLater =
+      'practice_unlock_limit.maybe_later';
+  static const practiceUnlockLimitViewPlans =
+      'practice_unlock_limit.view_plans';
+
+  // Practice mode tier-locked dialog
+  static const practiceTierLockedTitle = 'practice_tier_locked.title';
+  static const practiceTierLockedPlanIncludes =
+      'practice_tier_locked.plan_includes';
+  static const practiceTierLockedUnlockWith =
+      'practice_tier_locked.unlock_with';
+  static const practiceTierLockedAllModesPlus =
+      'practice_tier_locked.all_modes_plus';
+  static const practiceTierLockedAllModesUnlimited =
+      'practice_tier_locked.all_modes_unlimited';
+  static const practiceTierLockedMaybeLater =
+      'practice_tier_locked.maybe_later';
+  static const practiceTierLockedUpgradeNow =
+      'practice_tier_locked.upgrade_now';
+
   // Plan Features — daily reviews
   static const planFeatureUnlimitedDailyReviews =
       'plan_features.unlimited_daily_reviews';
@@ -2519,4 +2896,121 @@ class TranslationKeys {
   static const micPermissionTypeInstead =
       'voice_buddy.mic_permission.type_instead';
   static const micPermissionAllow = 'voice_buddy.mic_permission.allow';
+
+  // Credits / plans (quiet ledger)
+  static const ledgerCreditsTitle = 'ledger.credits_title';
+  static const ledgerPlanName = 'ledger.plan_name';
+  static const ledgerDailyCredits = 'ledger.daily_credits';
+  static const ledgerLeftToday = 'ledger.left_today';
+  static const ledgerOfTotal = 'ledger.of_total';
+  static const ledgerResetsAt = 'ledger.resets_at';
+  static const ledgerUnlimitedTitle = 'ledger.unlimited_title';
+  static const ledgerUsedToday = 'ledger.used_today';
+  static const ledgerPurchased = 'ledger.purchased';
+  static const ledgerTotal = 'ledger.total';
+  static const ledgerGetCredits = 'ledger.get_credits';
+  static const ledgerUpgrade = 'ledger.upgrade';
+  static const ledgerPriceRenews = 'ledger.price_renews';
+  static const ledgerDailyByPlan = 'ledger.daily_by_plan';
+  static const ledgerActivity = 'ledger.activity';
+  static const ledgerBalanceSubtitle = 'ledger.balance_subtitle';
+  static const ledgerPopular = 'ledger.popular';
+  static const ledgerPercentOff = 'ledger.percent_off';
+  static const ledgerNeverExpire = 'ledger.never_expire';
+  static const ledgerBuyCta = 'ledger.buy_cta';
+  static const ledgerChoosePack = 'ledger.choose_pack';
+  static const ledgerCustomLabel = 'ledger.custom_label';
+  static const ledgerCustomHint = 'ledger.custom_hint';
+  static const ledgerCustomRate = 'ledger.custom_rate';
+  static const ledgerCustomTip = 'ledger.custom_tip';
+  static const ledgerCreditsLabel = 'ledger.credits_label';
+  static const ledgerCostLabel = 'ledger.cost_label';
+  static const ledgerLoadingPrices = 'ledger.loading_prices';
+  static const ledgerPricesError = 'ledger.prices_error';
+  static const ledgerPacksUnavailable = 'ledger.packs_unavailable';
+  static const ledgerNoPacks = 'ledger.no_packs';
+  static const ledgerChoosePackOrAmount = 'ledger.choose_pack_or_amount';
+  static const ledgerPurchasePausedTitle = 'ledger.purchase_paused_title';
+  static const ledgerPurchasePausedBody = 'ledger.purchase_paused_body';
+  static const ledgerPremiumUnlimitedTitle = 'ledger.premium_unlimited_title';
+  static const ledgerPremiumUnlimitedBody = 'ledger.premium_unlimited_body';
+  static const ledgerPaymentFailed = 'ledger.payment_failed';
+  static const ledgerPaymentPending = 'ledger.payment_pending';
+  static const ledgerPaymentSuccessful = 'ledger.payment_successful';
+  static const ledgerCreditsAdded = 'ledger.credits_added';
+  static const ledgerNewBalance = 'ledger.new_balance';
+  static const ledgerPaid = 'ledger.paid';
+  static const ledgerReceipt = 'ledger.receipt';
+  static const ledgerDate = 'ledger.date';
+  static const ledgerStartStudy = 'ledger.start_study';
+  static const ledgerBackToCredits = 'ledger.back_to_credits';
+  static const ledgerSince = 'ledger.since';
+  static const ledgerCreditsUsed = 'ledger.credits_used';
+  static const ledgerStudies = 'ledger.studies';
+  static const ledgerAvgPerStudy = 'ledger.avg_per_study';
+  static const ledgerMostUsed = 'ledger.most_used';
+  static const ledgerToday = 'ledger.today';
+  static const ledgerYesterday = 'ledger.yesterday';
+  static const ledgerFromDaily = 'ledger.from_daily';
+  static const ledgerFromPurchased = 'ledger.from_purchased';
+  static const ledgerDailyPlusPurchased = 'ledger.daily_plus_purchased';
+  static const ledgerStudyGuide = 'ledger.study_guide';
+  static const ledgerFollowUp = 'ledger.follow_up';
+  static const ledgerStatsError = 'ledger.stats_error';
+  static const ledgerPurchasesTitle = 'ledger.purchases_title';
+  static const ledgerPurchasesSubtitle = 'ledger.purchases_subtitle';
+  static const ledgerPurchasesCount = 'ledger.purchases_count';
+  static const ledgerCredits = 'ledger.credits';
+  static const ledgerSpent = 'ledger.spent';
+  static const ledgerCreditsCount = 'ledger.credits_count';
+  static const ledgerStatusSuccess = 'ledger.status_success';
+  static const ledgerStatusPending = 'ledger.status_pending';
+  static const ledgerStatusFailed = 'ledger.status_failed';
+  static const ledgerReportIssue = 'ledger.report_issue';
+  static const ledgerDetails = 'ledger.details';
+  static const ledgerHideDetails = 'ledger.hide_details';
+  static const ledgerPaymentId = 'ledger.payment_id';
+  static const ledgerOrderId = 'ledger.order_id';
+  static const ledgerCopied = 'ledger.copied';
+  static const ledgerPlansTitle = 'ledger.plans_title';
+  static const ledgerPlansSubtitle = 'ledger.plans_subtitle';
+  static const ledgerRecommended = 'ledger.recommended';
+  static const ledgerYourCurrentPlan = 'ledger.your_current_plan';
+  static const ledgerPerMo = 'ledger.per_mo';
+  static const ledgerPerMonth = 'ledger.per_month';
+  static const ledgerSubscriptionsPaused = 'ledger.subscriptions_paused';
+  static const ledgerLoadingPlans = 'ledger.loading_plans';
+  static const ledgerPlansError = 'ledger.plans_error';
+  static const ledgerNoPlans = 'ledger.no_plans';
+  static const ledgerCancelAnytimeMonthly = 'ledger.cancel_anytime_monthly';
+  static const ledgerWhatYouGet = 'ledger.what_you_get';
+  static const ledgerRenewsNote = 'ledger.renews_note';
+  static const ledgerRestorePurchases = 'ledger.restore_purchases';
+  static const ledgerCtaWithPrice = 'ledger.cta_with_price';
+  static const ledgerBilling = 'ledger.billing';
+  static const ledgerPaidWith = 'ledger.paid_with';
+  static const ledgerCancelPlan = 'ledger.cancel_plan';
+  static const ledgerDowngrade = 'ledger.downgrade';
+  static const ledgerStatusActive = 'ledger.status_active';
+  static const ledgerCancelEyebrow = 'ledger.cancel_eyebrow';
+  static const ledgerCancelTitle = 'ledger.cancel_title';
+  static const ledgerCancelBody = 'ledger.cancel_body';
+  static const ledgerCancelEnd = 'ledger.cancel_end';
+  static const ledgerCancelEndSub = 'ledger.cancel_end_sub';
+  static const ledgerCancelNow = 'ledger.cancel_now';
+  static const ledgerCancelNowSub = 'ledger.cancel_now_sub';
+  static const ledgerKeepPlan = 'ledger.keep_plan';
+  static const ledgerConfirmCancel = 'ledger.confirm_cancel';
+  static const ledgerInvoicesTitle = 'ledger.invoices_title';
+  static const ledgerInvoicesSubtitle = 'ledger.invoices_subtitle';
+  static const ledgerPaidOn = 'ledger.paid_on';
+  static const ledgerDownloadInvoice = 'ledger.download_invoice';
+  static const ledgerGeneratingPdf = 'ledger.generating_pdf';
+  static const ledgerInvoicesEmpty = 'ledger.invoices_empty';
+  static const ledgerInvoicesEmptyBody = 'ledger.invoices_empty_body';
+  static const ledgerInvoicesError = 'ledger.invoices_error';
+  static const ledgerInvoiceNumber = 'ledger.invoice_number';
+  static const ledgerPaisePerCredit = 'ledger.paise_per_credit';
+  static const ledgerStandardTagline = 'ledger.standard_tagline';
+  static const ledgerPlusTagline = 'ledger.plus_tagline';
 }

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../data/models/subscription_v2_models.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/subscription/data/models/subscription_v2_models.dart';
 
-/// Promo Code Input Widget
+/// Promo code field in the ledger style: one raised row with a ticket
+/// icon, the code and an Apply button.
 ///
 /// Displays an input field for promotional codes with:
 /// - Text input with validation
@@ -124,112 +125,98 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
   }
 
   Widget _buildInputField(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           context.tr(TranslationKeys.promoCodeHave),
           style: AppFonts.inter(
-            fontSize: 14,
+            fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: palette.muted,
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                enabled: !_isValidating,
-                decoration: InputDecoration(
-                  hintText: context.tr(TranslationKeys.promoCodeEnter),
-                  hintStyle: AppFonts.inter(
-                    fontSize: 14,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.4),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withOpacity(0.2),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withOpacity(0.2),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: context.appBrandAccent,
-                      width: 2,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: AppTheme.errorColor,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                textCapitalization: TextCapitalization.characters,
-                onSubmitted: (_) => _handleApply(),
-              ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+          decoration: BoxDecoration(
+            color: palette.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _errorMessage != null
+                  ? context.appError.withValues(alpha: 0.6)
+                  : palette.hairline,
             ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: _isValidating ? null : _handleApply,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.confirmation_number_outlined,
+                  size: 20, color: palette.gold),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  key: const Key('promo_code_field'),
+                  controller: _controller,
+                  enabled: !_isValidating,
+                  decoration: InputDecoration(
+                    hintText: context.tr(TranslationKeys.promoCodeEnter),
+                    hintMaxLines: 3,
+                    hintStyle:
+                        AppFonts.inter(fontSize: 14.5, color: palette.dim),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    isDense: true,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  style: AppFonts.inter(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    letterSpacing: 0.6,
+                  ),
+                  textCapitalization: TextCapitalization.characters,
+                  onSubmitted: (_) => _handleApply(),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
               ),
-              child: _isValidating
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              const SizedBox(width: 8),
+              TextButton(
+                key: const Key('promo_code_apply'),
+                onPressed: _isValidating ? null : _handleApply,
+                style: TextButton.styleFrom(
+                  backgroundColor: palette.raised,
+                  foregroundColor: palette.text,
+                  disabledBackgroundColor: palette.raised,
+                  minimumSize: const Size(72, 42),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                ),
+                child: _isValidating
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(palette.text),
+                        ),
+                      )
+                    : Text(
+                        context.tr(TranslationKeys.promoCodeApply),
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
+                        ),
                       ),
-                    )
-                  : Text(
-                      context.tr(TranslationKeys.promoCodeApply),
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 8),
@@ -245,7 +232,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                 child: Text(
                   _errorMessage!,
                   style: AppFonts.inter(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: context.appError,
                   ),
                 ),
@@ -258,103 +245,78 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
   }
 
   Widget _buildAppliedPromo(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final green = context.appSuccess;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
       decoration: BoxDecoration(
-        color: AppTheme.successColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.successColor.withOpacity(0.3),
-        ),
+        color:
+            AppColors.success.withValues(alpha: palette.isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: context.appSuccess,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  context.tr(TranslationKeys.promoCodeApplied),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: context.appSuccess,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: _handleRemove,
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                tooltip: context.tr(TranslationKeys.promoCodeRemove),
-                splashRadius: 20,
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(Icons.check_circle_rounded, color: green, size: 20),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.successColor.withOpacity(0.2),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _appliedPromo!.code,
+                  context.tr(TranslationKeys.promoCodeApplied),
                   style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: context.appBrandAccent,
-                    letterSpacing: 1.2,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: green,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.warningColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _appliedPromo!.discountDisplayText,
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      _appliedPromo!.code,
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: palette.text,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    Text(
+                      _appliedPromo!.discountDisplayText,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: palette.gold,
+                      ),
+                    ),
+                  ],
+                ),
+                if (_appliedPromo!.description != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _appliedPromo!.description!,
                     style: AppFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.warningColor,
+                      fontSize: 12.5,
+                      color: palette.muted,
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
-          if (_appliedPromo!.description != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _appliedPromo!.description!,
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-          ],
+          IconButton(
+            onPressed: _handleRemove,
+            icon: Icon(Icons.close_rounded, size: 20, color: palette.muted),
+            tooltip: context.tr(TranslationKeys.promoCodeRemove),
+          ),
         ],
       ),
     );

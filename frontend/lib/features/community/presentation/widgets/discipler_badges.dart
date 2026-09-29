@@ -48,18 +48,42 @@ class DisciplerAiChip extends StatelessWidget {
 class DisciplerGlyph extends StatelessWidget {
   final double size;
 
-  const DisciplerGlyph({this.size = 22, super.key});
+  /// Which flat colourway to draw. White for indigo/dark fills, indigo for
+  /// white fills (e.g. the dark-theme "Ask Discipler" pill).
+  final DisciplerGlyphVariant variant;
+
+  const DisciplerGlyph({
+    this.size = 22,
+    this.variant = DisciplerGlyphVariant.white,
+    super.key,
+  });
+
+  /// The glyph that reads on the reader's primary call-to-action: indigo on
+  /// the white dark-theme pill, white on the indigo light-theme pill.
+  const DisciplerGlyph.onCta({
+    this.size = 22,
+    required bool isDark,
+    super.key,
+  }) : variant =
+            isDark ? DisciplerGlyphVariant.indigo : DisciplerGlyphVariant.white;
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/brand/discipler-glyph-white.png',
+      switch (variant) {
+        DisciplerGlyphVariant.white => 'assets/brand/discipler-glyph-white.png',
+        DisciplerGlyphVariant.indigo =>
+          'assets/brand/discipler-glyph-indigo.png',
+      },
       width: size,
       height: size,
       fit: BoxFit.contain,
     );
   }
 }
+
+/// Colourways of [DisciplerGlyph].
+enum DisciplerGlyphVariant { white, indigo }
 
 class DisciplerAvatar extends StatelessWidget {
   final double radius;

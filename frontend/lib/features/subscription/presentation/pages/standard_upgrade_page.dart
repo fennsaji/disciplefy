@@ -7,26 +7,29 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/utils/platform_utils.dart';
-import '../widgets/subscription_legal_links.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/i18n/translation_service.dart';
-import '../../../../core/services/platform_detection_service.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/logger.dart';
-import '../../data/datasources/subscription_remote_data_source.dart';
-import '../../data/models/subscription_v2_models.dart';
-import '../bloc/subscription_bloc.dart';
-import '../bloc/subscription_event.dart';
-import '../bloc/subscription_state.dart';
-import '../utils/plan_features_extractor.dart';
-import '../widgets/promo_code_input.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/platform_detection_service.dart';
+import 'package:disciplefy_bible_study/core/services/platform_payment_provider_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/platform_utils.dart';
+import 'package:disciplefy_bible_study/features/subscription/data/datasources/subscription_remote_data_source.dart';
+import 'package:disciplefy_bible_study/features/subscription/data/models/subscription_v2_models.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/utils/plan_features_extractor.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/plan_detail_view.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/promo_code_input.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/subscription_legal_links.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
 class StandardUpgradePage extends StatefulWidget {
   const StandardUpgradePage({super.key});
@@ -151,477 +154,165 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.tr(TranslationKeys.upgradeToStandard),
-          style: AppFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => context
-                .read<SubscriptionBloc>()
-                .add(const GetActiveSubscription()),
-            tooltip: context.tr(TranslationKeys.premiumCheckStatus),
-          ),
-        ],
-      ),
-      body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
-        listener: (context, state) {
-          if (state is SubscriptionCreated) {
-            setState(() => _isSubmitting = false);
-            if (state.authorizationUrl.isNotEmpty &&
-                !_hasOpenedPayment &&
-                ModalRoute.of(context)?.isCurrent == true) {
-              // Razorpay flow — redirect user to payment page in browser.
-              // Guarded: the UserSubscriptionStatusLoaded branch below can also
-              // carry an authorizationUrl, and without this check both fire and
-              // the user gets two identical Razorpay tabs.
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                      'Subscription created! Opening payment page...'),
-                  backgroundColor: AppTheme.successColor,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-              _hasOpenedPayment = true;
-              _openAuthorizationUrl(state.authorizationUrl);
-            } else {
-              // Google Play IAP flow — purchase already processed, mark as complete
-              // so the SubscriptionLoaded listener below can navigate away.
-              _hasOpenedPayment = true;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                      'Purchase received! Activating subscription...'),
-                  backgroundColor: AppTheme.successColor,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            }
-          } else if (state is SubscriptionInitial) {
-            setState(() => _isSubmitting = false);
-            if (state.isPendingPayment) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                      'Payment is awaiting approval. You\'ll be notified when it\'s ready.'),
-                  duration: Duration(seconds: 5),
-                ),
-              );
-            }
-          } else if (state is SubscriptionLoaded) {
-            setState(() => _isSubmitting = false);
-            if (state.activeSubscription?.isActivatedPlan('standard') == true) {
-              _checkoutPollTimer?.cancel();
-            }
-            // Must be the newly purchased plan in a genuinely activated state.
-            // isActive() would also match the old plan parked as
-            // pending_cancellation during checkout, announcing a success for a
-            // payment the user never completed.
-            if (_hasOpenedPayment &&
-                !_hasShownSuccess &&
-                state.activeSubscription?.isActivatedPlan('standard') == true) {
-              _hasShownSuccess = true;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                      'Subscription activated! You now have Standard access.'),
-                  backgroundColor: AppTheme.successColor,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-              Future.delayed(const Duration(seconds: 1), () {
-                if (mounted) context.go(AppRoutes.myPlan);
-              });
-            }
-          } else if (state is UserSubscriptionStatusLoaded &&
-              state.authorizationUrl != null &&
-              state.authorizationUrl!.isNotEmpty &&
-              !_hasOpenedPayment) {
+    return BlocConsumer<SubscriptionBloc, SubscriptionState>(
+      listener: (context, state) {
+        if (state is SubscriptionCreated) {
+          setState(() => _isSubmitting = false);
+          if (state.authorizationUrl.isNotEmpty &&
+              !_hasOpenedPayment &&
+              ModalRoute.of(context)?.isCurrent == true) {
+            // Razorpay flow — redirect user to payment page in browser.
+            // Guarded: the UserSubscriptionStatusLoaded branch below can also
+            // carry an authorizationUrl, and without this check both fire and
+            // the user gets two identical Razorpay tabs.
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content:
+                    const Text('Subscription created! Opening payment page...'),
+                backgroundColor: AppTheme.successColor,
+                duration: const Duration(seconds: 2),
+              ),
+            );
             _hasOpenedPayment = true;
-            _openAuthorizationUrl(state.authorizationUrl!);
-          } else if (state is UserSubscriptionStatusLoaded &&
-              state.errorMessage != null &&
-              state.errorMessage!.isNotEmpty) {
-            // F28: Web Razorpay failure emitted as UserSubscriptionStatusLoaded
-            // with errorMessage — reset button and surface the error.
-            setState(() => _isSubmitting = false);
+            _openAuthorizationUrl(state.authorizationUrl);
+          } else {
+            // Google Play IAP flow — purchase already processed, mark as complete
+            // so the SubscriptionLoaded listener below can navigate away.
+            _hasOpenedPayment = true;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: AppTheme.errorColor,
-                duration: const Duration(seconds: 8),
-              ),
-            );
-          } else if (state is SubscriptionError) {
-            setState(() => _isSubmitting = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: AppTheme.errorColor,
-                duration: const Duration(seconds: 8),
+                content:
+                    const Text('Purchase received! Activating subscription...'),
+                backgroundColor: AppTheme.successColor,
+                duration: const Duration(seconds: 3),
               ),
             );
           }
-        },
-        builder: (context, state) {
-          if (state is SubscriptionLoading) {
-            return const Center(child: CircularProgressIndicator());
+        } else if (state is SubscriptionInitial) {
+          setState(() => _isSubmitting = false);
+          if (state.isPendingPayment) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Payment is awaiting approval. You\'ll be notified when it\'s ready.'),
+                duration: Duration(seconds: 5),
+              ),
+            );
           }
-
-          if (_isLoadingPlan) {
-            return const Center(child: CircularProgressIndicator());
+        } else if (state is SubscriptionLoaded) {
+          setState(() => _isSubmitting = false);
+          if (state.activeSubscription?.isActivatedPlan('standard') == true) {
+            _checkoutPollTimer?.cancel();
           }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildBadge(),
-                const SizedBox(height: 24),
-                _buildPricingCard(),
-                const SizedBox(height: 32),
-                _buildFeaturesList(),
-                const SizedBox(height: 32),
-                if (_comparisonRows.isNotEmpty) ...[
-                  _buildComparison(),
-                  const SizedBox(height: 32),
-                ],
-                // Promo codes are hidden on iOS: App Store guideline 3.1.1
-                // forbids unlocking paid content outside In-App Purchase.
-                if (!PlatformUtils.isIOS) ...[
-                  PromoCodeInput(
-                    planCode: 'standard',
-                    initialPromo: _appliedPromo,
-                    onValidate: _validatePromoCode,
-                    onPromoApplied: _handlePromoApplied,
-                    onPromoRemoved: _handlePromoRemoved,
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                _buildActionButton(state),
-                const SizedBox(height: 16),
-                _buildTermsInfo(),
-                const SizedBox(height: 24),
-              ],
+          // Must be the newly purchased plan in a genuinely activated state.
+          // isActive() would also match the old plan parked as
+          // pending_cancellation during checkout, announcing a success for a
+          // payment the user never completed.
+          if (_hasOpenedPayment &&
+              !_hasShownSuccess &&
+              state.activeSubscription?.isActivatedPlan('standard') == true) {
+            _hasShownSuccess = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                    'Subscription activated! You now have Standard access.'),
+                backgroundColor: AppTheme.successColor,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted) context.go(AppRoutes.myPlan);
+            });
+          }
+        } else if (state is UserSubscriptionStatusLoaded &&
+            state.authorizationUrl != null &&
+            state.authorizationUrl!.isNotEmpty &&
+            !_hasOpenedPayment) {
+          _hasOpenedPayment = true;
+          _openAuthorizationUrl(state.authorizationUrl!);
+        } else if (state is UserSubscriptionStatusLoaded &&
+            state.errorMessage != null &&
+            state.errorMessage!.isNotEmpty) {
+          // F28: Web Razorpay failure emitted as UserSubscriptionStatusLoaded
+          // with errorMessage — reset button and surface the error.
+          setState(() => _isSubmitting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: AppTheme.errorColor,
+              duration: const Duration(seconds: 8),
             ),
           );
-        },
-      ),
-    );
-  }
-
-  Widget _buildBadge() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+        } else if (state is SubscriptionError) {
+          setState(() => _isSubmitting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: AppTheme.errorColor,
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final plan = _standardPlan;
+        return PlanDetailView(
+          title: _standardPlan?.planName ?? 'Standard',
+          subtitle: context.tr(TranslationKeys.pricingMostPopular),
+          refreshTooltip: context.tr(TranslationKeys.premiumCheckStatus),
+          onRefresh: () => context
+              .read<SubscriptionBloc>()
+              .add(const GetActiveSubscription()),
+          loading: state is SubscriptionLoading || _isLoadingPlan,
+          price: _displayPrice,
+          originalPrice: plan?.hasDiscount == true
+              ? plan!.pricing.basePriceFormatted.toStringAsFixed(0)
+              : null,
+          offerText: plan?.hasDiscount == true
+              ? context.tr(TranslationKeys.pricingLimitedTimeOffer)
+              : null,
+          description: _standardPlan?.description ??
+              context.tr(TranslationKeys.ledgerStandardTagline),
+          previousPlanName: _freePlan?.planName ?? 'Free',
+          currentPlanName: _standardPlan?.planName ?? 'Standard',
+          comparisonRows: _comparisonRows,
+          featuresTitle: context.tr(TranslationKeys.whatYouGetStandard),
+          features: _features,
+          // Promo codes are hidden on iOS: App Store guideline 3.1.1
+          // forbids unlocking paid content outside In-App Purchase.
+          promo: PlatformUtils.isIOS
+              ? null
+              : PromoCodeInput(
+                  planCode: 'standard',
+                  initialPromo: _appliedPromo,
+                  onValidate: _validatePromoCode,
+                  onPromoApplied: _handlePromoApplied,
+                  onPromoRemoved: _handlePromoRemoved,
+                ),
+          notices: [
+            if (_hasOpenedPayment)
+              PlanInfoNotice(
+                  context.tr(TranslationKeys.premiumPaymentCompletedHint)),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-            width: 1.5),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.auto_awesome_rounded,
-              size: 64, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 12),
-          Text(
-            _planName,
-            style: AppFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _standardPlan?.description ??
-                'Unlock powerful features for your Bible study',
-            style: AppFonts.inter(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPricingCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.successColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.pricingBestValue),
-                style: AppFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_standardPlan?.hasDiscount == true) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12.0, right: 8),
-                    child: Text(
-                      '₹${_standardPlan!.pricing.basePriceFormatted.toStringAsFixed(0)}',
-                      style: AppFonts.inter(
-                        fontSize: 18,
-                        color: Colors.white.withOpacity(0.7),
-                        decoration: TextDecoration.lineThrough,
-                        decorationColor: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ),
-                ],
-                Text(
-                  '₹',
-                  style: AppFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  _displayPrice,
-                  style: AppFonts.inter(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    context.tr(TranslationKeys.pricingPerMonth),
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.premiumCancelAnytime),
-                style: AppFonts.inter(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.95),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeaturesList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.tr(TranslationKeys.whatYouGetStandard),
-          style: AppFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ..._features.map((feature) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _buildFeatureRow(feature),
-            )),
-      ],
-    );
-  }
-
-  Widget _buildFeatureRow(String feature) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(Icons.check_rounded,
-              size: 18, color: Theme.of(context).colorScheme.primary),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text(
-              feature,
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildComparison() {
-    final prevName = _freePlan?.planName ?? 'Free';
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$prevName vs ${_standardPlan?.planName ?? 'Standard'}',
-              style: AppFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ..._comparisonRows.map((row) => _buildComparisonRow(
-                  row.label,
-                  row.previousValue,
-                  row.currentValue,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComparisonRow(
-      String feature, String previousValue, String currentValue) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              feature,
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              previousValue,
-              style: AppFonts.inter(
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              currentValue,
-              style: AppFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
+          action: _buildActionButton(state),
+          termsText: context.tr(TranslationKeys.premiumTermsAgree),
+          securePaymentText: context.tr(TranslationKeys.premiumSecurePayment),
+        );
+      },
     );
   }
 
   Widget _buildActionButton(SubscriptionState state) {
     // Kill switch: new subscriptions disabled by admin
     if (!sl<SystemConfigService>().isNewSubscriptionsEnabled) {
-      return _buildSubscriptionsDisabledCard();
+      return PlanInfoNotice(
+        context.tr(TranslationKeys.ledgerSubscriptionsPaused),
+        tone: LedgerTone.warning,
+      );
     }
 
     if (state is SubscriptionEligibilityChecked && !state.canSubscribe) {
-      return Card(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline_rounded,
-                  color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  state.eligibilityMessage,
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return PlanInfoNotice(state.eligibilityMessage);
     }
 
     final isLoading = _isSubmitting ||
@@ -629,36 +320,15 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
             (state.operation?.contains('creating') == true ||
                 state.operation == 'creating'));
 
-    return ElevatedButton(
-      onPressed: isLoading ? null : _handleUpgrade,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: context.appInteractive,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
-      ),
-      child: isLoading
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.auto_awesome_rounded),
-                const SizedBox(width: 8),
-                Text(
-                  context.tr(TranslationKeys.upgradeToStandard),
-                  style:
-                      AppFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
+    return LedgerPrimaryButton(
+      key: const Key('plan_detail_cta'),
+      icon: Icons.auto_awesome_outlined,
+      loading: isLoading,
+      label: context.tr(TranslationKeys.ledgerCtaWithPrice, {
+        'label': context.tr(TranslationKeys.upgradeToStandard),
+        'price': '₹$_displayPrice',
+      }),
+      onPressed: _handleUpgrade,
     );
   }
 
@@ -733,96 +403,6 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
           .read<SubscriptionBloc>()
           .add(CreateStandardSubscription(promoCode: promoCode));
     }
-  }
-
-  Widget _buildSubscriptionsDisabledCard() {
-    return Card(
-      color: AppColors.warning.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline_rounded, color: context.appWarning),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'New subscriptions are temporarily unavailable. Please check back later.',
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTermsInfo() {
-    return Column(
-      children: [
-        if (_hasOpenedPayment) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    color: Theme.of(context).colorScheme.primary, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Completed payment? Tap refresh to check your subscription status.',
-                    style: AppFonts.inter(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        Text(
-          'By subscribing, you agree to our Terms of Service and Privacy Policy.',
-          style: AppFonts.inter(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 10),
-        const SubscriptionLegalLinks(),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_outline_rounded,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Secure payment via Razorpay',
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 
   Future<void> _openAuthorizationUrl(String url) async {

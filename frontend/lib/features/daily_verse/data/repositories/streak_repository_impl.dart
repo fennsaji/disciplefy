@@ -63,7 +63,10 @@ class StreakRepositoryImpl implements StreakRepository {
         return currentStreak;
       }
 
-      // Calculate new streak values
+      // Calculate new streak values. Timestamps are written as UTC: a local
+      // ISO string has no offset, so Postgres would store local wall time as
+      // UTC, and the server-side streak jobs (which add the user's offset)
+      // would date a late-evening view to the next day.
       final now = DateTime.now();
       int newCurrentStreak;
       int newLongestStreak = currentStreak.longestStreak;
@@ -94,9 +97,9 @@ class StreakRepositoryImpl implements StreakRepository {
           .update({
             'current_streak': newCurrentStreak,
             'longest_streak': newLongestStreak,
-            'last_viewed_at': now.toIso8601String(),
+            'last_viewed_at': now.toUtc().toIso8601String(),
             'total_views': currentStreak.totalViews + 1,
-            'updated_at': now.toIso8601String(),
+            'updated_at': now.toUtc().toIso8601String(),
           })
           .eq('user_id', userId)
           .select()
@@ -161,8 +164,8 @@ class StreakRepositoryImpl implements StreakRepository {
             'current_streak': 0,
             'longest_streak': 0,
             'total_views': 0,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
+            'created_at': now.toUtc().toIso8601String(),
+            'updated_at': now.toUtc().toIso8601String(),
           }, onConflict: 'user_id')
           .select()
           .single();

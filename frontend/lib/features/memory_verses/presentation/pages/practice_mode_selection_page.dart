@@ -4,30 +4,33 @@ import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../memory_verses/models/memory_verse_config.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_mode_entity.dart';
-import '../../domain/repositories/memory_verse_repository.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_state.dart';
-import '../widgets/practice_mode_card.dart';
-import '../widgets/practice_mode_info_sheet.dart';
-import '../widgets/unlock_limit_exceeded_dialog.dart';
-import '../widgets/verse_limit_exceeded_dialog.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_mode_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/repositories/memory_verse_repository.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/models/memory_verse_config.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/practice_mode_info_sheet.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/practice_mode_row.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/unlock_limit_exceeded_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/verse_limit_exceeded_dialog.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Practice mode selection page.
 ///
@@ -391,21 +394,6 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     }
   }
 
-  /// Get user-friendly mode name for display
-  String _getModeName(String modeSlug) {
-    const modeNames = {
-      'flip_card': 'Flip Card',
-      'type_it_out': 'Type It Out',
-      'cloze': 'Cloze',
-      'first_letter': 'First Letter',
-      'progressive': 'Progressive',
-      'word_scramble': 'Word Scramble',
-      'word_bank': 'Word Bank',
-      'audio': 'Audio',
-    };
-    return modeNames[modeSlug] ?? modeSlug;
-  }
-
   /// Get unlock limit based on tier from DB-driven config.
   /// Returns -1 for unlimited (premium).
   int _getUnlockLimit() {
@@ -417,22 +405,72 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
       BuildContext context, DifficultyFilter filter) {
     switch (filter) {
       case DifficultyFilter.all:
-        return context.tr(TranslationKeys.difficultyAll).toUpperCase();
+        return context.tr(TranslationKeys.difficultyAll);
       case DifficultyFilter.easy:
-        return context.tr(TranslationKeys.difficultyEasy).toUpperCase();
+        return context.tr(TranslationKeys.difficultyEasy);
       case DifficultyFilter.medium:
-        return context.tr(TranslationKeys.difficultyMedium).toUpperCase();
+        return context.tr(TranslationKeys.difficultyMedium);
       case DifficultyFilter.hard:
-        return context.tr(TranslationKeys.difficultyHard).toUpperCase();
+        return context.tr(TranslationKeys.difficultyHard);
     }
+  }
+
+  /// Localized name of a mode from its API slug ("word_bank").
+  String _modeNameFromSlug(String slug) {
+    try {
+      switch (PracticeModeTypeExtension.fromJson(slug)) {
+        case PracticeModeType.flipCard:
+          return context.tr(TranslationKeys.practiceModeFlipCard);
+        case PracticeModeType.wordBank:
+          return context.tr(TranslationKeys.practiceModeWordBank);
+        case PracticeModeType.cloze:
+          return context.tr(TranslationKeys.practiceModeCloze);
+        case PracticeModeType.firstLetter:
+          return context.tr(TranslationKeys.practiceModeFirstLetter);
+        case PracticeModeType.progressive:
+          return context.tr(TranslationKeys.practiceModeProgressive);
+        case PracticeModeType.wordScramble:
+          return context.tr(TranslationKeys.practiceModeWordScramble);
+        case PracticeModeType.audio:
+          return context.tr(TranslationKeys.practiceModeAudio);
+        case PracticeModeType.typeItOut:
+          return context.tr(TranslationKeys.practiceModeTypeItOut);
+      }
+    } catch (_) {
+      return slug;
+    }
+  }
+
+  void _openUpgrade() {
+    context
+        .push(AppRoutes.pricing, extra: const {'preselectedPlan': 'standard'});
+  }
+
+  void _showLockedMode(bool isTierLocked) {
+    if (isTierLocked) {
+      _openUpgrade();
+      return;
+    }
+    UnlockLimitExceededDialog.show(
+      context,
+      unlockedModes: _unlockedModesToday,
+      unlockedCount: _unlockedModesToday.length,
+      limit: _getUnlockLimit(),
+      tier: _userTier,
+      verseReference: currentVerse?.verseReference ?? '',
+    );
+  }
+
+  String? _headerSubtitle(BuildContext context) {
+    if (_isLoading) return context.tr(TranslationKeys.practiceSelectionLoading);
+    if (_hasError) return null;
+    return currentVerse?.verseReference;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final filteredModes = _filterModes();
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth >= 600 ? 3 : 2;
 
     return ShowCaseWidget(
       onFinish: () =>
@@ -446,254 +484,136 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
             _handleBackNavigation();
           },
           child: Scaffold(
-            appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _handleBackNavigation,
-              ),
-              title: Text(context.tr(TranslationKeys.practiceSelectionTitle)),
+            backgroundColor: palette.page,
+            appBar: MemoryTopBar(
+              title: context.tr(TranslationKeys.practiceSelectionTitle),
+              subtitle: _headerSubtitle(context),
+              onBack: _handleBackNavigation,
             ),
             body: SafeArea(
-              child: Column(
-                children: [
-                  // Verse Reference Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: theme.colorScheme.primaryContainer,
-                    child: Column(
-                      children: [
-                        if (_isLoading)
-                          SizedBox(
-                            height: 28,
-                            width: 28,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: theme.colorScheme.onPrimaryContainer,
-                            ),
-                          )
-                        else if (_hasError)
-                          Text(
-                            context
-                                .tr(TranslationKeys.practiceSelectionLoadError),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.error,
-                            ),
-                            textAlign: TextAlign.center,
-                          )
-                        else
-                          Text(
-                            currentVerse?.verseReference ??
-                                context.tr(
-                                    TranslationKeys.practiceSelectionLoading),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        const SizedBox(height: 8),
-                        Text(
-                          context.tr(TranslationKeys.practiceSelectionSubtitle),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withAlpha((0.7 * 255).round()),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Difficulty Filter (fixed, above scrollable area)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Text(
-                          context.tr(TranslationKeys.practiceSelectionFilter),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: DifficultyFilter.values.map((filter) {
-                                final isSelected = selectedFilter == filter;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: FilterChip(
-                                    label: Text(_getDifficultyFilterLabel(
-                                        context, filter)),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      setState(() => selectedFilter = filter);
-                                    },
-                                    selectedColor:
-                                        theme.colorScheme.primaryContainer,
-                                    checkmarkColor: theme.colorScheme.primary,
+              top: false,
+              child: WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.memoryPracticeMode,
+                title:
+                    AppLocalizations.of(context)!.walkthroughPracticeModesTitle,
+                description:
+                    AppLocalizations.of(context)!.walkthroughPracticeModesDesc,
+                screen: WalkthroughScreen.practiceModes,
+                stepNumber: 1,
+                totalSteps: 1,
+                onNext: _onNext,
+                child: _isLoading
+                    ? const LedgerLoading()
+                    : CustomScrollView(
+                        slivers: [
+                          if (_hasError)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    kMemoryGutter, 4, kMemoryGutter, 0),
+                                child: LedgerNotice(
+                                  icon: Icons.error_outline_rounded,
+                                  text: context.tr(TranslationKeys
+                                      .practiceSelectionLoadError),
+                                  tone: LedgerTone.error,
+                                ),
+                              ),
+                            )
+                          else ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    kMemoryGutter, 0, kMemoryGutter, 12),
+                                child: Text(
+                                  context.tr(TranslationKeys
+                                      .practiceSelectionSubtitle),
+                                  style: AppFonts.inter(
+                                    fontSize: 14,
+                                    color: palette.muted,
+                                    height: 1.4,
                                   ),
-                                );
-                              }).toList(),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Scrollable: Unlocked Modes Indicator + Practice Mode Grid
-                  Expanded(
-                    child: WalkthroughTooltip(
-                      showcaseKey: ShowcaseKeys.memoryPracticeMode,
-                      title: AppLocalizations.of(context)!
-                          .walkthroughPracticeModesTitle,
-                      description: AppLocalizations.of(context)!
-                          .walkthroughPracticeModesDesc,
-                      screen: WalkthroughScreen.practiceModes,
-                      stepNumber: 1,
-                      totalSteps: 1,
-                      onNext: _onNext,
-                      child: _isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : CustomScrollView(
-                              slivers: [
-                                // Daily Unlocked Modes Indicator (scrolls with content)
-                                if (!_hasError)
-                                  SliverToBoxAdapter(
-                                    child: _buildUnlockedModesIndicator(theme),
-                                  ),
-
-                                // Practice Mode Grid or empty state
-                                if (filteredModes.isEmpty)
-                                  SliverFillRemaining(
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.filter_alt_off,
-                                            size: 64,
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant
-                                                .withAlpha((0.5 * 255).round()),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            context.tr(TranslationKeys
-                                                .practiceSelectionNoModes),
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                              color: theme
-                                                  .colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  SliverPadding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        16, 0, 16, 16),
-                                    sliver: SliverList(
-                                      delegate: SliverChildBuilderDelegate(
-                                        (context, rowIndex) {
-                                          final startIndex =
-                                              rowIndex * crossAxisCount;
-                                          final rowItems = <Widget>[];
-                                          for (int i = 0;
-                                              i < crossAxisCount;
-                                              i++) {
-                                            final index = startIndex + i;
-                                            if (index < filteredModes.length) {
-                                              final mode = filteredModes[index];
-                                              final isRecommended =
-                                                  mode.modeType ==
-                                                      recommendedMode;
-                                              final isTierLocked =
-                                                  _isModeTierLocked(
-                                                      mode.modeType);
-                                              final isUnlockLimitReached =
-                                                  _isModeUnlockLimitReached(
-                                                      mode.modeType);
-                                              rowItems.add(Expanded(
-                                                child: PracticeModeCard(
-                                                  mode: mode,
-                                                  isRecommended: isRecommended,
-                                                  isFirstRecommended:
-                                                      isRecommended &&
-                                                          _isFirstRecommendation,
-                                                  isTierLocked: isTierLocked,
-                                                  isUnlockLimitReached:
-                                                      isUnlockLimitReached,
-                                                  onTap: () => _selectMode(
-                                                      mode.modeType),
-                                                  onInfoTap: () =>
-                                                      PracticeModeInfoSheet
-                                                          .show(context,
-                                                              mode.modeType),
-                                                  onLockedTap: isTierLocked
-                                                      ? () => context.push(
-                                                              AppRoutes.pricing,
-                                                              extra: const {
-                                                                'preselectedPlan':
-                                                                    'standard'
-                                                              })
-                                                      : () =>
-                                                          UnlockLimitExceededDialog
-                                                              .show(
-                                                            context,
-                                                            unlockedModes:
-                                                                _unlockedModesToday,
-                                                            unlockedCount:
-                                                                _unlockedModesToday
-                                                                    .length,
-                                                            limit:
-                                                                _getUnlockLimit(),
-                                                            tier: _userTier,
-                                                            verseReference:
-                                                                currentVerse
-                                                                        ?.verseReference ??
-                                                                    '',
-                                                          ),
-                                                ),
-                                              ));
-                                            } else {
-                                              rowItems.add(const Expanded(
-                                                  child: SizedBox.shrink()));
-                                            }
-                                            if (i < crossAxisCount - 1) {
-                                              rowItems.add(
-                                                  const SizedBox(width: 12));
-                                            }
-                                          }
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 12),
-                                            child: IntrinsicHeight(
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: rowItems,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        childCount: (filteredModes.length /
-                                                crossAxisCount)
-                                            .ceil(),
-                                      ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    kMemoryGutter, 0, kMemoryGutter, 0),
+                                child: _buildUnlockedModesIndicator(),
+                              ),
+                            ),
+                          ],
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(top: 14, bottom: 4),
+                              child: MemoryChipBar(
+                                chips: [
+                                  Text(
+                                    context.tr(TranslationKeys
+                                        .practiceSelectionFilter),
+                                    style: AppFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: palette.muted,
                                     ),
                                   ),
-                              ],
+                                  for (final filter in DifficultyFilter.values)
+                                    MemoryChoiceChip(
+                                      label: _getDifficultyFilterLabel(
+                                          context, filter),
+                                      selected: selectedFilter == filter,
+                                      onTap: () => setState(
+                                          () => selectedFilter = filter),
+                                    ),
+                                ],
+                              ),
                             ),
-                    ),
-                  ),
-                ],
+                          ),
+                          if (filteredModes.isEmpty)
+                            SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: LedgerMessage(
+                                icon: Icons.filter_alt_off_outlined,
+                                title: context.tr(
+                                    TranslationKeys.practiceSelectionNoModes),
+                              ),
+                            )
+                          else
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(
+                                  kMemoryGutter, 0, kMemoryGutter, 24),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final mode = filteredModes[index];
+                                    final isRecommended =
+                                        mode.modeType == recommendedMode;
+                                    final isTierLocked =
+                                        _isModeTierLocked(mode.modeType);
+                                    return PracticeModeRow(
+                                      mode: mode,
+                                      isRecommended: isRecommended,
+                                      isFirstRecommended: isRecommended &&
+                                          _isFirstRecommendation,
+                                      isTierLocked: isTierLocked,
+                                      isUnlockLimitReached:
+                                          _isModeUnlockLimitReached(
+                                              mode.modeType),
+                                      onTap: () => _selectMode(mode.modeType),
+                                      onInfoTap: () =>
+                                          PracticeModeInfoSheet.show(
+                                              context, mode.modeType),
+                                      onLockedTap: () =>
+                                          _showLockedMode(isTierLocked),
+                                    );
+                                  },
+                                  childCount: filteredModes.length,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -702,291 +622,113 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     );
   }
 
-  /// Returns a dark-mode-safe text color for a given base color.
-  Color _adaptiveTextColor(Color base, ThemeData theme) {
-    return theme.brightness == Brightness.dark
-        ? Color.lerp(base, Colors.white, 0.4)!
-        : base;
-  }
-
-  /// Build the daily unlocked modes indicator widget
-  Widget _buildUnlockedModesIndicator(ThemeData theme) {
+  /// Banner with today's unlock allowance and an Upgrade link, or a single
+  /// line for plans with every mode unlocked.
+  Widget _buildUnlockedModesIndicator() {
+    final palette = ReaderPalette.of(context);
+    final gold = MemoryToneColors.of(context, MemoryTone.gold);
     final unlockLimit = _getUnlockLimit();
     final unlockedCount = _unlockedModesToday.length;
-    final isPremium = _userTier == 'premium';
+    final isUnlimited = _userTier == 'premium' || unlockLimit == -1;
 
-    // Premium users don't need this indicator (all modes always unlocked)
-    if (isPremium) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.warningDark,
-              AppColors.warning,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha((0.3 * 255).round()),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.star,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Premium: All modes unlocked',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const Icon(
-              Icons.check_circle,
-              color: Colors.white,
-              size: 20,
-            ),
-          ],
-        ),
-      );
+    final String title;
+    String? detail;
+    if (isUnlimited) {
+      title = context.tr(TranslationKeys.memoryScreensAllModesUnlocked);
+    } else {
+      title = context.tr(TranslationKeys.memoryScreensModesUnlockedToday, {
+        'count': unlockedCount,
+        'limit': unlockLimit,
+      });
+      final slotsRemaining = unlockLimit - unlockedCount;
+      if (slotsRemaining <= 0) {
+        detail = context.tr(TranslationKeys.memoryScreensDailyLimitReached);
+      } else if (slotsRemaining == unlockLimit) {
+        detail = unlockLimit == 1
+            ? context.tr(TranslationKeys.practiceChooseOneMode)
+            : context.tr(
+                TranslationKeys.practiceChooseModes, {'limit': unlockLimit});
+      } else {
+        detail = slotsRemaining == 1
+            ? context.tr(TranslationKeys.practiceUnlockOneMore)
+            : context.tr(TranslationKeys.practiceUnlockMoreModes,
+                {'count': slotsRemaining});
+      }
     }
 
-    // For non-premium users, show unlock progress
-    final slotsRemaining = unlockLimit - unlockedCount;
-    final progressColor =
-        slotsRemaining > 0 ? AppColors.info : AppColors.warning;
-    final progressValue = unlockLimit > 0 ? unlockedCount / unlockLimit : 0.0;
-
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: progressColor.withAlpha((0.3 * 255).round()),
-          width: 1.5,
-        ),
+        color: gold.fill,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // Header with icon and count
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: progressColor.withAlpha((0.15 * 255).round()),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  slotsRemaining > 0 ? Icons.lock_open : Icons.lock_clock,
-                  color: progressColor,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.practiceUnlockedModesToday),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      context.tr(TranslationKeys.practiceModesProgress, {
-                        'count': unlockedCount,
-                        'limit': unlockLimit,
-                      }),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: progressColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Progress indicator
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: progressValue,
-                      backgroundColor:
-                          progressColor.withAlpha((0.2 * 255).round()),
-                      color: progressColor,
-                      strokeWidth: 3,
-                    ),
-                    Text(
-                      slotsRemaining > 0 ? '$slotsRemaining' : '✓',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: progressColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Icon(
+            isUnlimited ? Icons.lock_open_rounded : Icons.key_outlined,
+            size: 20,
+            color: gold.foreground,
           ),
-
-          // Show unlocked modes if any
-          if (unlockedCount > 0) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _unlockedModesToday.map((modeSlug) {
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withAlpha((0.1 * 255).round()),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.success.withAlpha((0.3 * 255).round()),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.35,
+                  ),
+                ),
+                if (detail != null)
+                  Text(
+                    detail,
+                    style: AppFonts.inter(
+                      fontSize: 12.5,
+                      color: palette.muted,
+                      height: 1.35,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                // Modes already unlocked today.
+                if (!isUnlimited && unlockedCount > 0) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
-                      Icon(
-                        Icons.check_circle,
-                        color: context.appSuccess,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _getModeName(modeSlug),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color:
-                              _adaptiveTextColor(AppColors.successDark, theme),
-                          fontWeight: FontWeight.w600,
+                      for (final slug in _unlockedModesToday)
+                        MemoryTag(
+                          label: _modeNameFromSlug(slug),
+                          tone: MemoryTone.success,
                         ),
-                      ),
                     ],
                   ),
-                );
-              }).toList(),
-            ),
-          ],
-
-          // Message about remaining slots
-          if (slotsRemaining > 0) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.info.withAlpha((0.15 * 255).round()),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: theme.brightness == Brightness.dark
-                        ? AppColors.infoLighter
-                        : AppColors.infoDark,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      slotsRemaining == unlockLimit
-                          ? (unlockLimit == 1
-                              ? context
-                                  .tr(TranslationKeys.practiceChooseOneMode)
-                              : context.tr(TranslationKeys.practiceChooseModes,
-                                  {'limit': unlockLimit}))
-                          : (slotsRemaining == 1
-                              ? context
-                                  .tr(TranslationKeys.practiceUnlockOneMore)
-                              : context.tr(
-                                  TranslationKeys.practiceUnlockMoreModes,
-                                  {'count': slotsRemaining})),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.brightness == Brightness.dark
-                            ? AppColors.infoLighter
-                            : AppColors.infoDark,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
                 ],
-              ),
+              ],
             ),
-          ] else ...[
-            // Daily limit reached message + upgrade button
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withAlpha((0.08 * 255).round()),
-                borderRadius: BorderRadius.circular(8),
+          ),
+          if (!isUnlimited)
+            TextButton(
+              onPressed: _openUpgrade,
+              style: TextButton.styleFrom(
+                foregroundColor: palette.accentIcon,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                minimumSize: const Size(48, 40),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: AppColors.warningDark,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Daily limit reached. Upgrade for more modes!',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: _adaptiveTextColor(AppColors.warningDark, theme),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => context.push(AppRoutes.pricing,
-                    extra: const {'preselectedPlan': 'standard'}),
-                icon: const Icon(Icons.upgrade, size: 18),
-                label: const Text('Upgrade Plan'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.warning,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              child: Text(
+                context.tr(TranslationKeys.memoryScreensUpgrade),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: palette.accentIcon,
                 ),
               ),
-            ),
-          ],
+            )
+          else
+            const SizedBox(width: 8),
         ],
       ),
     );

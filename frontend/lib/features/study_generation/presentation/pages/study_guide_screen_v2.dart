@@ -45,6 +45,13 @@ import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
 import '../widgets/streaming_study_content.dart';
+import '../widgets/study_guide_body.dart';
+import '../widgets/guide_complete_sheet.dart';
+import '../../../../shared/widgets/sign_in_required_dialog.dart';
+import '../widgets/study_reading_tracker.dart';
+import '../../data/services/reading_progress_store.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/numbered_section_header.dart';
 import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
@@ -69,42 +76,6 @@ import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
-
-/// Removes duplicate section title from content if present at the start
-String _cleanDuplicateTitle(String content, String title) {
-  final lines = content.split('\n');
-  if (lines.isEmpty) return content;
-
-  // Remove markdown formatting and normalize for comparison
-  final normalizedTitle =
-      title.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '').trim();
-
-  // If the title has no ASCII word characters (e.g. Hindi/Malayalam scripts),
-  // normalizedTitle becomes empty and would falsely match any line — skip cleanup.
-  if (normalizedTitle.isEmpty) return content;
-
-  final firstLine =
-      lines.first.toLowerCase().replaceAll(RegExp(r'[*_#]'), '').trim();
-
-  // Check if first line matches the title (with some tolerance)
-  if (firstLine.contains(normalizedTitle) ||
-      normalizedTitle.contains(firstLine)) {
-    // Remove first line and any empty lines that follow
-    final cleanedLines =
-        lines.skip(1).skipWhile((line) => line.trim().isEmpty).toList();
-    final cleaned = cleanedLines.join('\n');
-
-    // If removing the title left no content, return original
-    // (the "title" might have been the entire content)
-    if (cleaned.trim().isEmpty) {
-      return content;
-    }
-
-    return cleaned;
-  }
-
-  return content;
-}
 
 /// Lightens a color for better contrast in dark mode
 Color _lightenColor(Color color, [double amount = 0.2]) {
@@ -328,8 +299,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Timer? _autoSaveTimer;
   VoidCallback? _autoSaveListener;
 
-  // Follow-up chat state
-  bool _isChatExpanded = false;
+  // Follow-up chat state. Open by default: the redesigned guide shows the
+  // conversation inline, and the header still collapses it.
+  bool _isChatExpanded = true;
   final GlobalKey _followUpChatKey = GlobalKey();
 
   // Completion tracking state
@@ -387,6 +359,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   // Screenshot detection
   StreamSubscription<dynamic>? _screenshotSubscription;
 
+  // Reader chrome: segmented "sections read" header, and whether the page has
+  // scrolled past the hero (the floating top bar then turns solid and shows
+  // the title). Notifiers, so scrolling rebuilds only what they drive.
+  final StudyReadingTracker _readingTracker = StudyReadingTracker();
+  final ValueNotifier<bool> _topBarCollapsed = ValueNotifier<bool>(false);
+  final ReadingProgressStore _readingProgressStore = ReadingProgressStore();
+  int _lastSavedReadCount = 0;
+  String? _readingProgressSeededFor;
+
+  /// Scroll offset past which the hero is considered gone.
+  static const double _heroCollapseOffset = 160;
+
   @override
   void initState() {
     super.initState();
@@ -397,6 +381,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (!kIsWeb) _setupScreenshotDetection();
     _triggerWalkthroughIfNeeded();
     _notesFocusNode.addListener(_onNotesFocusChanged);
+    _scrollController.addListener(_onReaderScroll);
+    _readingTracker.addListener(_persistReadingProgress);
 
     // Listen for TTS section completions to auto-mark the guide as completed
     // once the user has listened through the interpretation section.
@@ -613,159 +599,185 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _showFontSizeSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final accentColor = Theme.of(ctx).colorScheme.primary;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+          final palette = ReaderPalette.of(ctx);
+          Future<void> step(double delta) async {
+            await _changeContentFontSize(delta);
+            setSheetState(() {});
+          }
+
+          Widget stepButton({
+            required String semantics,
+            required double glyphSize,
+            required bool enabled,
+            required VoidCallback onTap,
+          }) {
+            return Semantics(
+              button: true,
+              label: semantics,
+              child: Material(
+                color: Colors.transparent,
+                shape: CircleBorder(
+                  side: BorderSide(
+                      color: enabled ? palette.outline : palette.hairline),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Text Size',
-                  style: AppFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(ctx).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Decrease button
-                    IconButton(
-                      onPressed: _contentFontSize > _fontSizeMin
-                          ? () async {
-                              await _changeContentFontSize(-_fontSizeStep);
-                              setSheetState(() {});
-                            }
-                          : null,
-                      icon: Text(
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: enabled ? onTap : null,
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: Center(
+                      child: Text(
                         'A',
                         style: AppFonts.inter(
-                          fontSize: 16,
+                          fontSize: glyphSize,
                           fontWeight: FontWeight.w600,
-                          color: _contentFontSize > _fontSizeMin
-                              ? accentColor
-                              : Theme.of(ctx)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.3),
+                          color: enabled ? palette.text : palette.dim,
                         ),
                       ),
-                      style: IconButton.styleFrom(
-                        side: BorderSide(
-                          color: _contentFontSize > _fontSizeMin
-                              ? accentColor
-                              : Theme.of(ctx)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.2),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: const Size(52, 52),
-                      ),
-                      tooltip: 'Decrease font size',
                     ),
-                    const SizedBox(width: 20),
-                    // Current size display
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Container(
+            decoration: BoxDecoration(
+              color: palette.card,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: palette.hairline)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 10, 22, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: palette.outline,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      context.tr(TranslationKeys.studyGuideTextSizeEyebrow),
+                      style: AppFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.4,
+                        color: palette.gold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      context.tr(TranslationKeys.studyGuideMenuTextSize),
+                      style: AppFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Live preview at the chosen size.
                     Container(
-                      width: 72,
-                      height: 52,
-                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        color: palette.raised,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        '${_contentFontSize.toInt()}',
+                        context.tr(TranslationKeys.studyGuideTextSizePreview),
                         style: AppFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: accentColor,
+                          fontSize: _contentFontSize,
+                          height: 1.55,
+                          color: palette.text,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 20),
-                    // Increase button
-                    IconButton(
-                      onPressed: _contentFontSize < _fontSizeMax
-                          ? () async {
-                              await _changeContentFontSize(_fontSizeStep);
-                              setSheetState(() {});
-                            }
-                          : null,
-                      icon: Text(
-                        'A',
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        stepButton(
+                          semantics: 'Decrease font size',
+                          glyphSize: 15,
+                          enabled: _contentFontSize > _fontSizeMin,
+                          onTap: () => step(-_fontSizeStep),
+                        ),
+                        SizedBox(
+                          width: 88,
+                          child: Text(
+                            '${_contentFontSize.toInt()}',
+                            textAlign: TextAlign.center,
+                            style: AppFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: palette.text,
+                            ),
+                          ),
+                        ),
+                        stepButton(
+                          semantics: 'Increase font size',
+                          glyphSize: 22,
+                          enabled: _contentFontSize < _fontSizeMax,
+                          onTap: () => step(_fontSizeStep),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      height: 50,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: palette.ctaFill,
+                          foregroundColor: palette.ctaInk,
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          context.tr(TranslationKeys.studyGuideTextSizeDone),
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: palette.ctaInk,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove(_fontSizePrefsKey);
+                        final scale = sl<FontScaleService>().scaleFactor;
+                        final defaultSize =
+                            (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+                        await step(defaultSize - _contentFontSize);
+                      },
+                      child: Text(
+                        context.tr(TranslationKeys.studyGuideTextSizeReset),
                         style: AppFonts.inter(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: _contentFontSize < _fontSizeMax
-                              ? accentColor
-                              : Theme.of(ctx)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.3),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: palette.muted,
                         ),
                       ),
-                      style: IconButton.styleFrom(
-                        side: BorderSide(
-                          color: _contentFontSize < _fontSizeMax
-                              ? accentColor
-                              : Theme.of(ctx)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.2),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: const Size(52, 52),
-                      ),
-                      tooltip: 'Increase font size',
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                // Reset to app default
-                TextButton(
-                  onPressed: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.remove(_fontSizePrefsKey);
-                    final scale = sl<FontScaleService>().scaleFactor;
-                    final defaultSize =
-                        (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
-                    await _changeContentFontSize(
-                        defaultSize - _contentFontSize);
-                    setSheetState(() {});
-                  },
-                  child: Text(
-                    'Reset to default',
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      color:
-                          Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
+              ),
             ),
           );
         },
@@ -814,7 +826,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _notesFocusNode.removeListener(_onNotesFocusChanged);
     _notesFocusNode.dispose();
     _notesController.dispose();
+    _scrollController.removeListener(_onReaderScroll);
     _scrollController.dispose();
+    _readingTracker.removeListener(_persistReadingProgress);
+    _readingTracker.dispose();
+    _topBarCollapsed.dispose();
     super.dispose();
   }
 
@@ -1108,6 +1124,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       // Like the other load paths: without this, guides opened from Saved,
       // Recent or a shared link could never complete by reading.
       _startCompletionTracking();
+      // Header segments: resume from an earlier visit, then count what is
+      // already on screen (previously only fresh generations did this, so
+      // guides opened from Saved/Recent showed no segments filled).
+      _seedReadingProgress(studyGuide.id);
     } catch (e) {
       Logger.error('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
       _showError('Failed to load study guide. Please try again.');
@@ -1173,6 +1193,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     _setupAutoSave();
     _startCompletionTracking();
+    _seedReadingProgress(guide.id);
 
     // Always fetch fresh notes from backend in case they've changed
     if (!_notesLoaded) {
@@ -1260,6 +1281,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     // Start completion tracking
     _startCompletionTracking();
+
+    // Header segments: resume from an earlier visit, then count what is
+    // already on screen.
+    _seedReadingProgress(guideWithMode.id);
 
     // Cache the generated guide for cache-first loading next time
     sl<StudyLocalDataSource>().cacheStudyGuide(guideWithMode);
@@ -1377,6 +1402,71 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     // Add the listener
     _notesController.addListener(_autoSaveListener!);
+  }
+
+  // ============================================================================
+  // Reader chrome: top bar collapse + segmented reading progress
+  // ============================================================================
+
+  void _onReaderScroll() {
+    if (!_scrollController.hasClients ||
+        _scrollController.positions.length != 1) {
+      return;
+    }
+    final collapsed = _scrollController.offset > _heroCollapseOffset;
+    if (_topBarCollapsed.value != collapsed) _topBarCollapsed.value = collapsed;
+    _updateReadingProgress();
+  }
+
+  /// Line (as a fraction of the screen height) a section's top must scroll
+  /// above to count as read. High enough that on open — hero on screen — no
+  /// section below the first has reached it, whatever the section lengths.
+  static const double _readThresholdFraction = 0.3;
+
+  /// The first section is on screen as soon as the guide opens, so it counts
+  /// as read; each further section counts once its top passes the upper
+  /// third of the screen; at the very bottom every section does.
+  ///
+  /// The first-section floor keeps the header identical on every open (fresh
+  /// generation, cache, Saved/Recent) instead of depending on how tall the
+  /// first sections happen to be on this screen.
+  void _updateReadingProgress() {
+    if (!mounted) return;
+    final height = MediaQuery.sizeOf(context).height;
+    final hasScrollableContent = _scrollController.hasClients &&
+        _scrollController.positions.length == 1 &&
+        _scrollController.position.maxScrollExtent > 0;
+    if (_readingTracker.total > 0) _readingTracker.seed(1);
+    _readingTracker.update(
+      thresholdY: height * _readThresholdFraction,
+      atBottom: hasScrollableContent && _isScrolledToAbsoluteBottom(),
+    );
+  }
+
+  Future<void> _seedReadingProgress(String guideId) async {
+    if (_readingProgressSeededFor == guideId) return;
+    _readingProgressSeededFor = guideId;
+    final saved = await _readingProgressStore.get(guideId);
+    if (!mounted) return;
+    if (saved != null) {
+      _lastSavedReadCount = saved.section;
+      _readingTracker.seed(saved.section);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateReadingProgress();
+    });
+  }
+
+  /// Remembers how far this guide has been read, for the library's Continue
+  /// card. Only finished guides have an id to store it under.
+  void _persistReadingProgress() {
+    final guideId = _currentStudyGuide?.id;
+    if (guideId == null || guideId.isEmpty) return;
+    final total = _readingTracker.total;
+    final read = _readingTracker.readCount;
+    if (total <= 0 || read <= _lastSavedReadCount) return;
+    _lastSavedReadCount = read;
+    _readingProgressStore.save(guideId, read, total);
   }
 
   // ============================================================================
@@ -1697,6 +1787,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     setState(() {
       _completionMarked = true;
     });
+    _readingTracker.markComplete();
 
     // If the user is already sitting at the absolute bottom when completion
     // triggers, begin the inactivity countdown immediately so the sheet appears
@@ -1854,28 +1945,22 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetContext) {
-        final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
-        final accentColor = theme.colorScheme.primary;
-        final surfaceColor = theme.colorScheme.surface;
-        final onSurface = theme.colorScheme.onSurface;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        // Build the list of quick-action tiles dynamically.
-        final actions = <_CompletionAction>[
-          _CompletionAction(
+        // Build the list of next-step rows dynamically.
+        final actions = <GuideCompleteAction>[
+          GuideCompleteAction(
             icon: Icons.edit_note_rounded,
-            label: 'Add Notes',
-            color: const Color(0xFF6366F1), // indigo
+            label: context.tr(TranslationKeys.popupAddNotes),
             onTap: () {
               Navigator.of(sheetContext).pop();
               _scrollToNotesAndFocus();
             },
           ),
           if (hasFellowship && hasGuide)
-            _CompletionAction(
-              icon: Icons.people_rounded,
-              label: 'Share to\nFellowship',
-              color: const Color(0xFF10B981), // green
+            GuideCompleteAction(
+              icon: Icons.people_outline_rounded,
+              label: context.tr(TranslationKeys.popupShareFellowship),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 showModalBottomSheet(
@@ -1893,11 +1978,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               },
             ),
           if (hasDiscipler)
-            _CompletionAction(
+            GuideCompleteAction(
               icon: Icons.psychology_rounded,
-              leading: const DisciplerAvatar(radius: 14),
-              label: 'Ask\nDiscipler',
-              color: const Color(0xFFF59E0B), // amber
+              // The Discipler glyph on the soft indigo circle: white on
+              // dark, indigo on light — no gold disc.
+              leading: DisciplerGlyph(
+                size: 20,
+                variant: isDark
+                    ? DisciplerGlyphVariant.white
+                    : DisciplerGlyphVariant.indigo,
+              ),
+              label: context.tr(TranslationKeys.popupAskDiscipler),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _openDisciplerChat();
@@ -1905,191 +1996,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             ),
         ];
 
-        return Container(
-          padding: EdgeInsets.fromLTRB(
-              20, 16, 20, 20 + MediaQuery.of(context).padding.bottom),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(
-                color: accentColor.withOpacity(0.10),
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: onSurface.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Header row — icon + text side by side
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      color: context.appSuccess,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Guide Complete!',
-                          style: AppFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isFromLearningPath
-                              ? 'Ready to continue your learning path?'
-                              : 'What would you like to do next?',
-                          style: AppFonts.inter(
-                            fontSize: 13,
-                            color: onSurface.withOpacity(isDark ? 0.7 : 0.55),
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              // Quick-action tiles row
-              if (actions.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                Row(
-                  children: actions
-                      .map((action) => Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: _buildCompletionActionTile(
-                                action: action,
-                                isDark: isDark,
-                              ),
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ],
-
-              const SizedBox(height: 20),
-
-              // Primary CTA
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(sheetContext).pop();
-                    _handleBackNavigation();
-                  },
-                  icon: Icon(
-                    isFromLearningPath
-                        ? Icons.route_rounded
-                        : Icons.check_rounded,
-                    size: 18,
-                  ),
-                  label: Text(
-                    isFromLearningPath ? 'Continue Learning Path' : 'Done',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.appInteractive,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    textStyle: AppFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Secondary – stay on screen
-              TextButton(
-                onPressed: () => Navigator.of(sheetContext).pop(),
-                child: Text(
-                  'Not now',
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: onSurface.withOpacity(isDark ? 0.55 : 0.45),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        return GuideCompleteSheet(
+          guideTitle: _getDisplayTitle(),
+          isFromLearningPath: isFromLearningPath,
+          actions: actions,
+          onPrimary: () {
+            Navigator.of(sheetContext).pop();
+            _handleBackNavigation();
+          },
+          onNotNow: () => Navigator.of(sheetContext).pop(),
         );
       },
     ).then((_) => onDismissed?.call());
-  }
-
-  /// Builds a single quick-action tile used in the completion sheet.
-  Widget _buildCompletionActionTile({
-    required _CompletionAction action,
-    required bool isDark,
-  }) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: action.onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: action.color.withOpacity(isDark ? 0.15 : 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: action.color.withOpacity(isDark ? 0.35 : 0.2),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            action.leading ?? Icon(action.icon, color: action.color, size: 26),
-            const SizedBox(height: 6),
-            Text(
-              action.label,
-              textAlign: TextAlign.center,
-              style: AppFonts.inter(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface
-                    .withOpacity(isDark ? 0.85 : 0.75),
-                height: 1.25,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Scrolls to the personal notes section and focuses the text field.
@@ -2272,10 +2190,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 });
               }
             },
-            child: Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              appBar: _buildAppBar(),
-              body: _buildBody(),
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
+              // No AppBar sets the status bar any more: the page runs under
+              // it, over the hero photo.
+              value: Theme.of(context).brightness == Brightness.dark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark,
+              child: Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: _buildBody(),
+              ),
             ),
           ),
         ); // end PopScope
@@ -2283,240 +2207,283 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     ); // end ShowCaseWidget
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
+  /// Floating top bar: back, title and the more-options menu.
+  ///
+  /// [overPhoto]: drawn over the hero, transparent with the title hidden until
+  /// the page scrolls past the photo; otherwise solid with the title shown.
+  Widget _buildTopBar({required bool overPhoto}) {
+    final palette = ReaderPalette.of(context);
+    final foreground = palette.isDark ? Colors.white : palette.text;
+    final title = (_currentStudyGuide != null || overPhoto)
+        ? _getDisplayTitle()
+        : context.tr('study_guide.page_title');
 
-    return AppBar(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      elevation: 0,
-      leading: IconButton(
-        onPressed: _handleBackNavigation,
-        icon: Icon(
-          Icons.arrow_back_ios,
-          color: accentColor,
-        ),
-      ),
-      title: Text(
-        context.tr('study_guide.page_title'),
-        overflow: TextOverflow.ellipsis,
-        style: AppFonts.poppins(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: accentColor,
-        ),
-      ),
-      centerTitle: true,
-      actions: _currentStudyGuide != null
-          ? [
-              WalkthroughTooltip(
-                showcaseKey: ShowcaseKeys.studyGuideMenuButton,
-                title:
-                    context.tr(TranslationKeys.studyGuideWalkthroughMenuTitle),
-                description:
-                    context.tr(TranslationKeys.studyGuideWalkthroughMenuDesc),
-                screen: WalkthroughScreen.studyGuide,
-                stepNumber: 1,
-                totalSteps: 2,
-                tooltipPosition: TooltipPosition.bottom,
-                arrowAlignment: Alignment.centerRight,
-                onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                child: PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: accentColor,
+    Widget bar(bool solid) => AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: solid ? palette.page : palette.page.withValues(alpha: 0),
+            border: Border(
+              bottom: BorderSide(
+                color: solid && overPhoto
+                    ? palette.hairline
+                    : palette.hairline.withValues(alpha: 0),
+              ),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: SizedBox(
+              height: StudyGuideLayout.topBarHeight,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _handleBackNavigation,
+                    tooltip:
+                        MaterialLocalizations.of(context).backButtonTooltip,
+                    icon: Icon(Icons.arrow_back_rounded, color: foreground),
                   ),
-                  tooltip: 'More options',
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'font_size':
-                        _showFontSizeSheet();
-                        break;
-                      case 'share':
-                        _shareStudyGuide();
-                        break;
-                      case 'share_fellowship':
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => ShareGuideSheet(
-                            studyGuideId: _currentStudyGuide!.id,
-                            guideTitle: _getDisplayTitle(),
-                            guideInputType: _currentStudyGuide!.inputType,
-                            guideLanguage: _currentStudyGuide!.language,
-                            fellowships: _userFellowships!,
-                          ),
-                        );
-                        break;
-                      case 'pdf':
-                        _exportToPdf();
-                        break;
-                      case 'save':
-                        _saveStudyGuide();
-                        break;
-                      case 'complete':
-                        _markStudyGuideComplete(isManual: true);
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'font_size',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.text_fields,
-                            size: 20,
-                            color: accentColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Text Size',
-                            style: AppFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${_contentFontSize.toInt()}px',
-                            style: AppFonts.inter(
-                              fontSize: 13,
-                              color: accentColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    PopupMenuItem(
-                      value: 'share',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.share_outlined,
-                            size: 20,
-                            color: accentColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Share',
-                            style: AppFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_userFellowships?.isNotEmpty == true)
-                      PopupMenuItem(
-                        value: 'share_fellowship',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.group_rounded,
-                              size: 20,
-                              color: accentColor,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Share to Fellowship',
-                              style: AppFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                  Expanded(
+                    child: AnimatedOpacity(
+                      opacity: solid ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: palette.muted,
                         ),
                       ),
-                    PopupMenuItem(
-                      value: 'pdf',
-                      enabled: !_isExportingPdf,
-                      child: Row(
-                        children: [
-                          _isExportingPdf
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: accentColor,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.picture_as_pdf_outlined,
-                                  size: 20,
-                                  color: accentColor,
-                                ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Download PDF',
-                            style: AppFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                    ),
+                  ),
+                  _buildMenuButton(foreground) ?? const SizedBox(width: 48),
+                ],
+              ),
+            ),
+          ),
+        );
+
+    if (!overPhoto) return bar(true);
+    return ValueListenableBuilder<bool>(
+      valueListenable: _topBarCollapsed,
+      builder: (_, collapsed, __) => bar(collapsed),
+    );
+  }
+
+  /// Places the top bar over [child] (hero pages) or above it (loading and
+  /// error screens, which have no photo).
+  Widget _withTopBar(Widget child, {required bool overPhoto}) {
+    if (overPhoto) {
+      return Stack(
+        children: [
+          child,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildTopBar(overPhoto: true),
+          ),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        _buildTopBar(overPhoto: false),
+        Expanded(
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: child,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The more-options menu (text size, share, PDF, save, complete), or null
+  /// before a guide has finished loading.
+  Widget? _buildMenuButton(Color iconColor) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
+    final menuPalette = ReaderPalette.of(context);
+    return _currentStudyGuide != null
+        ? WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.studyGuideMenuButton,
+            title: context.tr(TranslationKeys.studyGuideWalkthroughMenuTitle),
+            description:
+                context.tr(TranslationKeys.studyGuideWalkthroughMenuDesc),
+            screen: WalkthroughScreen.studyGuide,
+            stepNumber: 1,
+            totalSteps: 2,
+            tooltipPosition: TooltipPosition.bottom,
+            arrowAlignment: Alignment.centerRight,
+            onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+            child: PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert,
+                color: iconColor,
+              ),
+              tooltip: context.tr(TranslationKeys.studyGuideMenuMore),
+              position: PopupMenuPosition.under,
+              offset: const Offset(0, 6),
+              color: menuPalette.card,
+              surfaceTintColor: Colors.transparent,
+              elevation: 12,
+              shadowColor: Colors.black.withValues(alpha: 0.35),
+              constraints: const BoxConstraints(minWidth: 232),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: BorderSide(color: menuPalette.hairline),
+              ),
+              onSelected: (value) {
+                switch (value) {
+                  case 'font_size':
+                    _showFontSizeSheet();
+                    break;
+                  case 'share':
+                    _shareStudyGuide();
+                    break;
+                  case 'share_fellowship':
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => ShareGuideSheet(
+                        studyGuideId: _currentStudyGuide!.id,
+                        guideTitle: _getDisplayTitle(),
+                        guideInputType: _currentStudyGuide!.inputType,
+                        guideLanguage: _currentStudyGuide!.language,
+                        fellowships: _userFellowships!,
+                      ),
+                    );
+                    break;
+                  case 'pdf':
+                    _exportToPdf();
+                    break;
+                  case 'save':
+                    _saveStudyGuide();
+                    break;
+                  case 'complete':
+                    _markStudyGuideComplete(isManual: true);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'font_size',
+                  child: _menuRow(
+                    menuPalette,
+                    icon: Icons.text_fields_rounded,
+                    label: context.tr(TranslationKeys.studyGuideMenuTextSize),
+                    trailing: Text(
+                      '${_contentFontSize.toInt()}',
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: menuPalette.muted,
                       ),
                     ),
-                    PopupMenuItem(
-                      value: 'save',
-                      child: Row(
-                        children: [
-                          Icon(
-                            _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                            size: 20,
-                            color: _isSaved ? AppColors.success : accentColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _isSaved ? 'Saved' : 'Save Study',
-                            style: AppFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: _isSaved ? AppColors.success : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'complete',
-                      enabled: !_completionMarked,
-                      child: Row(
-                        children: [
-                          Icon(
-                            _completionMarked
-                                ? Icons.check_circle
-                                : Icons.check_circle_outlined,
-                            size: 20,
-                            color: _completionMarked
-                                ? AppColors.success
-                                : accentColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _completionMarked ? 'Completed' : 'Complete Study',
-                            style: AppFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  _completionMarked ? AppColors.success : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ), // WalkthroughTooltip
-            ]
-          : null,
+                PopupMenuDivider(height: 9, color: menuPalette.hairline),
+                PopupMenuItem(
+                  value: 'share',
+                  child: _menuRow(
+                    menuPalette,
+                    icon: Icons.ios_share_rounded,
+                    label: context.tr(TranslationKeys.studyGuideMenuShare),
+                  ),
+                ),
+                if (_userFellowships?.isNotEmpty == true)
+                  PopupMenuItem(
+                    value: 'share_fellowship',
+                    child: _menuRow(
+                      menuPalette,
+                      icon: Icons.groups_2_outlined,
+                      label: context
+                          .tr(TranslationKeys.studyGuideMenuShareFellowship),
+                    ),
+                  ),
+                PopupMenuItem(
+                  value: 'pdf',
+                  enabled: !_isExportingPdf,
+                  child: _menuRow(
+                    menuPalette,
+                    icon: Icons.picture_as_pdf_outlined,
+                    label:
+                        context.tr(TranslationKeys.studyGuideMenuDownloadPdf),
+                    busy: _isExportingPdf,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'save',
+                  child: _menuRow(
+                    menuPalette,
+                    icon: _isSaved
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_border_rounded,
+                    label: context.tr(_isSaved
+                        ? TranslationKeys.studyGuideMenuSaved
+                        : TranslationKeys.studyGuideMenuSave),
+                    done: _isSaved,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'complete',
+                  enabled: !_completionMarked,
+                  child: _menuRow(
+                    menuPalette,
+                    icon: _completionMarked
+                        ? Icons.check_circle_rounded
+                        : Icons.check_circle_outline_rounded,
+                    label: context.tr(_completionMarked
+                        ? TranslationKeys.studyGuideMenuCompleted
+                        : TranslationKeys.studyGuideMenuComplete),
+                    done: _completionMarked,
+                  ),
+                ),
+              ],
+            ),
+          ) // WalkthroughTooltip
+        : null;
+  }
+
+  /// One row of the guide's "more" menu: icon, label and an optional value
+  /// on the right. Done states (saved, completed) turn gold.
+  Widget _menuRow(
+    ReaderPalette palette, {
+    required IconData icon,
+    required String label,
+    Widget? trailing,
+    bool done = false,
+    bool busy = false,
+  }) {
+    final tint = done ? palette.gold : palette.accentIcon;
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: busy
+              ? CircularProgressIndicator(strokeWidth: 2, color: tint)
+              : Icon(icon, size: 20, color: tint),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            label,
+            style: AppFonts.inter(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w500,
+              color: done ? palette.gold : palette.text,
+            ),
+          ),
+        ),
+        if (trailing != null) ...[const SizedBox(width: 12), trailing],
+      ],
     );
   }
 
@@ -2562,25 +2529,29 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 }
               });
             }
-            return _buildStudyGuideContent();
+            return _withTopBar(_buildStudyGuideContent(), overPhoto: true);
           }
 
           // Reset transition flag if we're back to streaming
           _isTransitioningFromStreaming = false;
 
           // Otherwise show progressive streaming content
-          return StreamingStudyContent(
-            content: state.content,
-            inputType: state.inputType,
-            inputValue: state.inputValue,
-            language: state.language,
-            scrollController: _scrollController,
-            studyMode: widget.studyMode,
-            contentFontSize: _contentFontSize,
-            onComplete:
-                state.content.isComplete && state.content.studyGuideId != null
-                    ? () => _handleStreamingComplete(state)
-                    : null,
+          return _withTopBar(
+            StreamingStudyContent(
+              content: state.content,
+              inputType: state.inputType,
+              inputValue: state.inputValue,
+              language: state.language,
+              scrollController: _scrollController,
+              studyMode: widget.studyMode,
+              contentFontSize: _contentFontSize,
+              tracker: _readingTracker,
+              onComplete:
+                  state.content.isComplete && state.content.studyGuideId != null
+                      ? () => _handleStreamingComplete(state)
+                      : null,
+            ),
+            overPhoto: true,
           );
         }
 
@@ -2588,28 +2559,31 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         if (state is StudyGenerationStreamingFailed) {
           if (state.hasPartialContent) {
             // Show partial content with error banner
-            return _buildPartialContentWithError(state);
+            return _withTopBar(
+              _buildPartialContentWithError(state),
+              overPhoto: false,
+            );
           }
           // No partial content, show error screen
-          return _buildErrorScreen();
+          return _withTopBar(_buildErrorScreen(), overPhoto: false);
         }
 
         // Regular loading state
         if (_isLoading || state is StudyGenerationInProgress) {
-          return _buildLoadingScreen();
+          return _withTopBar(_buildLoadingScreen(), overPhoto: false);
         }
 
         // Error state
         if (_hasError) {
-          return _buildErrorScreen();
+          return _withTopBar(_buildErrorScreen(), overPhoto: false);
         }
 
         // Success state with complete study guide
         if (_currentStudyGuide == null) {
-          return _buildErrorScreen();
+          return _withTopBar(_buildErrorScreen(), overPhoto: false);
         }
 
-        return _buildStudyGuideContent();
+        return _withTopBar(_buildStudyGuideContent(), overPhoto: true);
       },
     );
   }
@@ -2682,6 +2656,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             studyMode: widget.studyMode,
             contentFontSize: _contentFontSize,
             isPartial: true,
+            tracker: _readingTracker,
           ),
         ),
       ],
@@ -2800,7 +2775,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: accentColor,
@@ -2831,7 +2805,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: accentColor,
@@ -2859,7 +2832,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: accentColor,
@@ -2902,42 +2874,61 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  /// Builds the Read Mode content (traditional scrollable view)
+  /// Builds the Read Mode content: the full-bleed hero and numbered sections,
+  /// then the end-of-guide blocks (share, follow-up chat, notes) numbered on
+  /// from the last section.
   Widget _buildReadModeContent(bool isLargeScreen) {
-    // Horizontal padding is applied per-section (not on the scroll view) so the
-    // Follow-up Chat panel can break out and span the full screen width.
-    //
-    // 12, not 24: the cards carry their own inset, so the old value cost ~44px
-    // on each side before a word appeared. Devanagari and Malayalam set longer
-    // words than English and were breaking mid-word on a phone.
-    const sidePadding = EdgeInsets.symmetric(horizontal: 12);
+    const sidePadding = StudyGuideLayout.sidePadding;
+    final ttsService = sl<StudyGuideTTSService>();
+    final guide = _currentStudyGuide!;
+    final sections = StudyGuideSections.fromStudyGuide(guide);
+
+    // End-of-guide blocks continue the sections' numbering.
+    var nextNumber = StudyGuideBody.visibleSectionCount(
+          context,
+          studyMode: widget.studyMode,
+          sections: sections,
+        ) +
+        1;
+    final showShare = _userFellowships?.isNotEmpty == true;
+    final shareNumber = showShare ? nextNumber++ : null;
+    final chatNumber = _shouldShowStudyChat() ? nextNumber++ : null;
+    final notesNumber = nextNumber;
+
+    const blockTop = SizedBox(height: 26);
+    const blockBottom = SizedBox(height: 26);
+
     return SingleChildScrollView(
       controller: _scrollController,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Padded content above the chat
-          Padding(
-            padding: sidePadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: isLargeScreen ? 24 : 20),
+          // Hero, title and sections: the same widget the streaming view
+          // renders while the guide loads.
+          ValueListenableBuilder<StudyGuideTtsState>(
+            valueListenable: ttsService.state,
+            builder: (context, ttsState, _) => StudyGuideBody(
+              studyMode: widget.studyMode,
+              sections: sections,
+              inputType: guide.inputType,
+              title: _getDisplayTitle(),
+              contentFontSize: _contentFontSize,
+              readingSectionIndex: ttsState.status == TtsStatus.playing
+                  ? ttsState.currentSectionIndex
+                  : null,
+              interpretationKey: _interpretationKey,
+              tracker: _readingTracker,
+            ),
+          ),
 
-                // Topic Title
-                _buildTopicTitle(),
-
-                SizedBox(height: isLargeScreen ? 24 : 20),
-
-                // Study Guide Content
-                _buildStudyContent(),
-
-                SizedBox(height: isLargeScreen ? 32 : 24),
-
-                SizedBox(height: isLargeScreen ? 16 : 12),
-
-                // Share with fellowship section — write a reflection, question, or insight
-                if (_userFellowships?.isNotEmpty == true) ...[
+          // Share with fellowship — a reflection, question, or insight
+          if (showShare)
+            Padding(
+              padding: sidePadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  blockTop,
                   WalkthroughTooltip(
                     showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
                     title: context
@@ -2949,72 +2940,79 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     totalSteps: 3,
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
                     child: _FellowshipShareSection(
-                      studyGuideId: _currentStudyGuide!.id,
+                      number: shareNumber,
+                      studyGuideId: guide.id,
                       guideTitle: _getDisplayTitle(),
-                      guideInputType: _currentStudyGuide!.inputType,
-                      guideLanguage: _currentStudyGuide!.language,
+                      guideInputType: guide.inputType,
+                      guideLanguage: guide.language,
                       userFellowships: _userFellowships!,
                     ),
                   ),
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+                  blockBottom,
+                  const ReaderHairline(),
                 ],
-              ],
+              ),
             ),
-          ),
 
-          // Follow-up Chat Section — full width (no horizontal padding), with
-          // lock support for study_chat feature.
+          // Follow-up Chat Section, with lock support for study_chat feature.
           LockedFeatureWrapper(
             featureKey: 'study_chat',
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                WalkthroughTooltip(
-                  showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
-                  title: context
-                      .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
-                  description:
-                      context.tr(TranslationKeys.studyGuideWalkthroughChatDesc),
-                  screen: WalkthroughScreen.studyGuideCompletion,
-                  stepNumber: 2,
-                  totalSteps: 3,
-                  onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                  child: Container(
-                    key: _followUpChatKey,
-                    child: BlocProvider(
-                      create: (context) {
-                        final bloc = sl<FollowUpChatBloc>();
-                        bloc.add(StartConversationEvent(
-                          studyGuideId: _currentStudyGuide!.id,
-                          studyGuideTitle: _getDisplayTitle(),
-                        ));
-                        return bloc;
-                      },
-                      child: FollowUpChatWidget(
-                        studyGuideId: _currentStudyGuide!.id,
-                        studyGuideTitle: _getDisplayTitle(),
-                        isExpanded: _isChatExpanded,
-                        onToggleExpanded: () {
-                          setState(() {
-                            _isChatExpanded = !_isChatExpanded;
-                          });
+            child: Padding(
+              padding: sidePadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  blockTop,
+                  WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
+                    title: context
+                        .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
+                    description: context
+                        .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
+                    screen: WalkthroughScreen.studyGuideCompletion,
+                    stepNumber: 2,
+                    totalSteps: 3,
+                    onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                    child: Container(
+                      key: _followUpChatKey,
+                      child: BlocProvider(
+                        create: (context) {
+                          final bloc = sl<FollowUpChatBloc>();
+                          bloc.add(StartConversationEvent(
+                            studyGuideId: guide.id,
+                            studyGuideTitle: _getDisplayTitle(),
+                          ));
+                          return bloc;
                         },
+                        child: FollowUpChatWidget(
+                          studyGuideId: guide.id,
+                          studyGuideTitle: _getDisplayTitle(),
+                          sectionNumber: chatNumber,
+                          isExpanded: _isChatExpanded,
+                          onToggleExpanded: () {
+                            setState(() {
+                              _isChatExpanded = !_isChatExpanded;
+                            });
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ), // WalkthroughTooltip
-                SizedBox(height: isLargeScreen ? 32 : 24),
-              ],
+                  ), // WalkthroughTooltip
+                  blockBottom,
+                  const ReaderHairline(),
+                ],
+              ),
             ),
           ),
 
-          // Padded content below the chat
+          // Personal notes
           Padding(
             padding: sidePadding,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Notes Section
+                blockTop,
                 WalkthroughTooltip(
                   showcaseKey: ShowcaseKeys.studyGuideNotes,
                   title: context
@@ -3025,9 +3023,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   stepNumber: 3,
                   totalSteps: 3,
                   onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                  child: _buildNotesSection(),
+                  child: _buildNotesSection(notesNumber),
                 ),
-
                 SizedBox(height: isLargeScreen ? 32 : 24),
               ],
             ),
@@ -3102,844 +3099,46 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
   }
 
-  /// Builds the topic title section displayed below the AppBar
-  Widget _buildTopicTitle() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor = theme.colorScheme.primary;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            accentColor.withOpacity(0.1),
-            theme.colorScheme.secondary.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accentColor.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _currentStudyGuide?.inputType == 'scripture'
-                ? context.tr('generate_study.scripture_mode')
-                : context.tr('generate_study.topic_mode'),
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: accentColor,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _getDisplayTitle(),
-            style: AppFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-              height: 1.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStudyContent() {
-    // Route to mode-specific layout
-    return switch (widget.studyMode) {
-      StudyMode.quick => _buildQuickModeStudyContent(),
-      StudyMode.deep => _buildDeepModeStudyContent(),
-      StudyMode.lectio => _buildLectioDivinaStudyContent(),
-      StudyMode.sermon => _buildSermonModeStudyContent(),
-      StudyMode.standard => _buildStandardModeStudyContent(),
-    };
-  }
-
-  /// Standard mode - full 6-section layout (default)
-  Widget _buildStandardModeStudyContent() {
-    final ttsService = sl<StudyGuideTTSService>();
-
-    return ValueListenableBuilder<StudyGuideTtsState>(
-      valueListenable: ttsService.state,
-      builder: (context, ttsState, child) {
-        // Check if TTS is actively reading (playing status)
-        final isReading = ttsState.status == TtsStatus.playing;
-        final currentSection = ttsState.currentSectionIndex;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Section (index 0)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideSummary),
-              icon: Icons.summarize,
-              content: _currentStudyGuide!.summary,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 0,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Context Section (index 1)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideContext),
-              icon: Icons.history_edu,
-              content: _currentStudyGuide!.context,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 1,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Passage Reading Section (index 2) - LLM-generated passage for meditation
-            if (_currentStudyGuide!.passage != null &&
-                _currentStudyGuide!.passage!.isNotEmpty)
-              _StudySection(
-                title: context.tr(TranslationKeys.studyGuidePassageReading),
-                icon: Icons.auto_stories,
-                content: _currentStudyGuide!.passage!,
-                contentFontSize: _contentFontSize,
-                isBeingRead: isReading && currentSection == 2,
-              ),
-
-            if (_currentStudyGuide!.passage != null &&
-                _currentStudyGuide!.passage!.isNotEmpty)
-              const SizedBox(height: 24),
-
-            // Interpretation Section (index 3)
-            KeyedSubtree(
-              key: _interpretationKey,
-              child: _StudySection(
-                title: context.tr(TranslationKeys.studyGuideInterpretation),
-                icon: Icons.lightbulb_outline,
-                content: _currentStudyGuide!.interpretation,
-                contentFontSize: _contentFontSize,
-                isBeingRead: isReading && currentSection == 3,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Related Verses Section (index 4)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideRelatedVerses),
-              icon: Icons.menu_book,
-              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 4,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Discussion Questions Section (index 5)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
-              icon: Icons.quiz,
-              content: _currentStudyGuide!.reflectionQuestions
-                  .asMap()
-                  .entries
-                  .map((entry) => '${entry.key + 1}. ${entry.value}')
-                  .join('\n\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 5,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Prayer Points Section (index 6)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuidePrayerPoints),
-              icon: Icons.favorite,
-              content: _currentStudyGuide!.prayerPoints.length == 1
-                  ? _currentStudyGuide!.prayerPoints.first
-                  : _currentStudyGuide!.prayerPoints
-                      .map((p) => '• $p')
-                      .join('\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 6,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Sermon mode - specialized sermon preparation layout matching streaming version
-  Widget _buildSermonModeStudyContent() {
-    final ttsService = sl<StudyGuideTTSService>();
-
-    return ValueListenableBuilder<StudyGuideTtsState>(
-      valueListenable: ttsService.state,
-      builder: (context, ttsState, child) {
-        final isReading = ttsState.status == TtsStatus.playing;
-        final currentSection = ttsState.currentSectionIndex;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Sermon Thesis (index 0) - from summary
-            _StudySection(
-              title: context.tr(TranslationKeys.sermonThesis),
-              icon: Icons.lightbulb_outline,
-              content: _currentStudyGuide!.summary,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 0,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Background/Context (index 1)
-            _StudySection(
-              title: context.tr(TranslationKeys.sermonContext),
-              icon: Icons.history_edu,
-              content: _currentStudyGuide!.context,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 1,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Passage Reading (index 2)
-            if (_currentStudyGuide!.passage != null &&
-                _currentStudyGuide!.passage!.isNotEmpty)
-              _StudySection(
-                title: context.tr(TranslationKeys.studyGuidePassageReading),
-                icon: Icons.auto_stories,
-                content: _currentStudyGuide!.passage!,
-                contentFontSize: _contentFontSize,
-                isBeingRead: isReading && currentSection == 2,
-              ),
-
-            if (_currentStudyGuide!.passage != null &&
-                _currentStudyGuide!.passage!.isNotEmpty)
-              const SizedBox(height: 24),
-
-            // Main Sermon Body (index 3) - from interpretation
-            KeyedSubtree(
-              key: _interpretationKey,
-              child: _StudySection(
-                title: context.tr(TranslationKeys.sermonBody),
-                icon: Icons.menu_book,
-                content: _currentStudyGuide!.interpretation,
-                contentFontSize: _contentFontSize,
-                isBeingRead: isReading && currentSection == 3,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Supporting Verses (index 4) - from relatedVerses
-            _StudySection(
-              title: context.tr(TranslationKeys.sermonSupportingVerses),
-              icon: Icons.bookmark_border,
-              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 4,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Discussion Questions (index 5) - from reflectionQuestions
-            _StudySection(
-              title: context.tr(TranslationKeys.sermonDiscussionQuestions),
-              icon: Icons.question_answer,
-              content: _currentStudyGuide!.reflectionQuestions
-                  .asMap()
-                  .entries
-                  .map((entry) => '${entry.key + 1}. ${entry.value}')
-                  .join('\n\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 5,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Altar Call (index 6) - from prayerPoints with special styling
-            _buildAltarCallSection(
-              context,
-              content: _currentStudyGuide!.prayerPoints.join('\n\n'),
-              isBeingRead: isReading && currentSection == 6,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Quick mode - compact card layout for 3-minute reads
-  Widget _buildQuickModeStudyContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Quick Read badge
-        _buildQuickReadBadge(),
-
-        const SizedBox(height: 16),
-
-        // Key Insight (summary)
-        _QuickStudySection(
-          title: context.tr(TranslationKeys.studyGuideKeyInsight),
-          content: _currentStudyGuide!.summary,
-          icon: Icons.lightbulb_outline,
-          isHighlight: true,
-          contentFontSize: _contentFontSize,
-        ),
-
-        const SizedBox(height: 16),
-
-        // Context (historical/cultural background)
-        _QuickStudySection(
-          title: context.tr(TranslationKeys.studyGuideContext),
-          content: _currentStudyGuide!.context,
-          icon: Icons.history_edu_outlined,
-          contentFontSize: _contentFontSize,
-        ),
-
-        const SizedBox(height: 16),
-
-        // Passage Reading
-        if (_currentStudyGuide!.passage != null &&
-            _currentStudyGuide!.passage!.isNotEmpty)
-          _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuidePassageReading),
-            content: _currentStudyGuide!.passage!,
-            icon: Icons.menu_book_outlined,
-            contentFontSize: _contentFontSize,
-          ),
-
-        if (_currentStudyGuide!.passage != null &&
-            _currentStudyGuide!.passage!.isNotEmpty)
-          const SizedBox(height: 16),
-
-        // Key Verse (interpretation)
-        KeyedSubtree(
-          key: _interpretationKey,
-          child: _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuideKeyVerse),
-            content: _currentStudyGuide!.interpretation,
-            icon: Icons.auto_stories_outlined,
-            contentFontSize: _contentFontSize,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Related Verses
-        if (_currentStudyGuide!.relatedVerses.isNotEmpty)
-          _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuideRelatedVerses),
-            content: _currentStudyGuide!.relatedVerses.join('\n\n'),
-            icon: Icons.format_list_bulleted,
-            contentFontSize: _contentFontSize,
-          ),
-
-        const SizedBox(height: 16),
-
-        // Reflection Questions (all questions)
-        if (_currentStudyGuide!.reflectionQuestions.isNotEmpty)
-          _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
-            content: _currentStudyGuide!.reflectionQuestions
-                .asMap()
-                .entries
-                .map((entry) => '${entry.key + 1}. ${entry.value}')
-                .join('\n\n'),
-            icon: Icons.forum_outlined,
-            contentFontSize: _contentFontSize,
-          ),
-
-        const SizedBox(height: 16),
-
-        // Prayer Points (all prayer points)
-        if (_currentStudyGuide!.prayerPoints.isNotEmpty)
-          _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuidePrayerPoints),
-            content: _currentStudyGuide!.prayerPoints.length == 1
-                ? _currentStudyGuide!.prayerPoints.first
-                : _currentStudyGuide!.prayerPoints
-                    .asMap()
-                    .entries
-                    .map((entry) => '• ${entry.value}')
-                    .join('\n'),
-            icon: Icons.volunteer_activism_outlined,
-            contentFontSize: _contentFontSize,
-          ),
-      ],
-    );
-  }
-
-  /// Quick Read badge
-  Widget _buildQuickReadBadge() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.bolt, size: 16, color: accentColor),
-          const SizedBox(width: 6),
-          Text(
-            context.tr(TranslationKeys.studyModeQuickDuration),
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: accentColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Deep Dive mode - extended scholarly content
-  Widget _buildDeepModeStudyContent() {
-    final ttsService = sl<StudyGuideTTSService>();
-
-    return ValueListenableBuilder<StudyGuideTtsState>(
-      valueListenable: ttsService.state,
-      builder: (context, ttsState, child) {
-        final isReading = ttsState.status == TtsStatus.playing;
-        final currentSection = ttsState.currentSectionIndex;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Deep Dive badge
-            _buildDeepDiveBadge(),
-
-            const SizedBox(height: 20),
-
-            // Comprehensive Overview
-            _StudySection(
-              title:
-                  context.tr(TranslationKeys.studyGuideComprehensiveOverview),
-              icon: Icons.summarize,
-              content: _currentStudyGuide!.summary,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 0,
-            ),
-
-            const SizedBox(height: 28),
-
-            // Historical Context
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideHistoricalContext),
-              icon: Icons.history_edu,
-              content: _currentStudyGuide!.context,
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 1,
-            ),
-
-            const SizedBox(height: 28),
-
-            // Passage Reading
-            if (_currentStudyGuide!.passage != null &&
-                _currentStudyGuide!.passage!.isNotEmpty)
-              _StudySection(
-                title: context.tr(TranslationKeys.studyGuidePassageReading),
-                icon: Icons.auto_stories,
-                content: _currentStudyGuide!.passage!,
-                contentFontSize: _contentFontSize,
-                isBeingRead: isReading && currentSection == 2,
-              ),
-
-            if (_currentStudyGuide!.passage != null &&
-                _currentStudyGuide!.passage!.isNotEmpty)
-              const SizedBox(height: 28),
-
-            // In-Depth Interpretation
-            KeyedSubtree(
-              key: _interpretationKey,
-              child: _StudySection(
-                title:
-                    context.tr(TranslationKeys.studyGuideInDepthInterpretation),
-                icon: Icons.lightbulb_outline,
-                content: _currentStudyGuide!.interpretation,
-                contentFontSize: _contentFontSize,
-                isBeingRead: isReading && currentSection == 3,
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Scripture Connections
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideScriptureConnections),
-              icon: Icons.menu_book,
-              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 4,
-            ),
-
-            const SizedBox(height: 28),
-
-            // Deep Reflection
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideDeepReflection),
-              icon: Icons.edit_note,
-              content: _currentStudyGuide!.reflectionQuestions
-                  .asMap()
-                  .entries
-                  .map((entry) => '${entry.key + 1}. ${entry.value}')
-                  .join('\n\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 5,
-            ),
-
-            const SizedBox(height: 28),
-
-            // Prayer for Application
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuidePrayerForApplication),
-              icon: Icons.favorite,
-              content: _currentStudyGuide!.prayerPoints.length == 1
-                  ? _currentStudyGuide!.prayerPoints.first
-                  : _currentStudyGuide!.prayerPoints
-                      .asMap()
-                      .entries
-                      .map((entry) => '• ${entry.value}')
-                      .join('\n'),
-              contentFontSize: _contentFontSize,
-              isBeingRead: isReading && currentSection == 6,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Deep Dive badge
-  Widget _buildDeepDiveBadge() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.explore, size: 16, color: accentColor),
-          const SizedBox(width: 6),
-          Text(
-            context.tr(TranslationKeys.studyModeDeepDuration),
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: accentColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Lectio Divina mode - meditative 4-movement layout
-  Widget _buildLectioDivinaStudyContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Lectio Divina badge
-        _buildLectioDivinaBadge(),
-
-        const SizedBox(height: 20),
-
-        // Scripture for Meditation
-        _LectioStudySection(
-          title: context.tr(TranslationKeys.lectioScriptureForMeditation),
-          content: _currentStudyGuide!.summary,
-          icon: Icons.menu_book,
-          contentFontSize: _contentFontSize,
-        ),
-
-        const SizedBox(height: 24),
-
-        // About This Practice
-        _LectioStudySection(
-          title: context.tr(TranslationKeys.lectioAboutPracticeEmoji),
-          content: _currentStudyGuide!.context,
-          icon: Icons.info_outline,
-          contentFontSize: _contentFontSize,
-        ),
-
-        const SizedBox(height: 24),
-
-        // Passage Reading
-        if (_currentStudyGuide!.passage != null &&
-            _currentStudyGuide!.passage!.isNotEmpty)
-          _LectioStudySection(
-            title: context.tr(TranslationKeys.studyGuidePassageReading),
-            content: _currentStudyGuide!.passage!,
-            icon: Icons.auto_stories,
-            contentFontSize: _contentFontSize,
-          ),
-
-        if (_currentStudyGuide!.passage != null &&
-            _currentStudyGuide!.passage!.isNotEmpty)
-          const SizedBox(height: 24),
-
-        // Lectio & Meditatio
-        KeyedSubtree(
-          key: _interpretationKey,
-          child: _LectioStudySection(
-            title: context.tr(TranslationKeys.lectioLectioMeditatio),
-            subtitle: context.tr(TranslationKeys.lectioReadMeditate),
-            content: _currentStudyGuide!.interpretation,
-            icon: Icons.auto_stories,
-            contentFontSize: _contentFontSize,
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Focus Words
-        if (_currentStudyGuide!.relatedVerses.isNotEmpty)
-          _LectioStudySection(
-            title: context.tr(TranslationKeys.lectioFocusWordsEmoji),
-            content: _currentStudyGuide!.relatedVerses.join('\n• '),
-            icon: Icons.highlight,
-            contentFontSize: _contentFontSize,
-          ),
-
-        const SizedBox(height: 24),
-
-        // Oratio & Contemplatio
-        _LectioStudySection(
-          title: context.tr(TranslationKeys.lectioOratioContemplatio),
-          subtitle: context.tr(TranslationKeys.lectioPrayRest),
-          content: _currentStudyGuide!.reflectionQuestions.join('\n\n'),
-          icon: Icons.self_improvement,
-          contentFontSize: _contentFontSize,
-        ),
-
-        const SizedBox(height: 24),
-
-        // Closing Blessing
-        if (_currentStudyGuide!.prayerPoints.isNotEmpty)
-          _LectioStudySection(
-            title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
-            content: _currentStudyGuide!.prayerPoints.join('\n\n'),
-            icon: Icons.wb_sunny_outlined,
-            contentFontSize: _contentFontSize,
-          ),
-      ],
-    );
-  }
-
-  /// Lectio Divina badge
-  Widget _buildLectioDivinaBadge() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.spa, size: 16, color: accentColor),
-          const SizedBox(width: 6),
-          Text(
-            context.tr(TranslationKeys.lectioDurationLabel),
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: accentColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build altar call section with special gradient styling matching streaming version
-  Widget _buildAltarCallSection(
-    BuildContext context, {
-    required String content,
-    bool isBeingRead = false,
-  }) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.secondaryContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.volunteer_activism,
-                  color: primaryColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  context.tr(TranslationKeys.sermonAltarCall),
-                  style: AppFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              // Copy button
-              IconButton(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-                        style: AppFonts.inter(color: Colors.white),
-                      ),
-                      backgroundColor: primaryColor,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                icon: Icon(
-                  Icons.copy,
-                  color: primaryColor,
-                  size: 20,
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 44,
-                  minHeight: 44,
-                ),
-                padding: const EdgeInsets.all(8),
-                tooltip: 'Copy Altar Call',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Content with markdown formatting
-          MarkdownWithScripture(
-            data: content,
-            textStyle: AppFonts.inter(
-              fontSize: _contentFontSize,
-              height: 1.6,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotesSection() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
+  Widget _buildNotesSection(int number) {
+    final palette = ReaderPalette.of(context);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.edit_note,
-              color: accentColor,
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              context.tr(TranslationKeys.studyGuidePersonalNotes),
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onBackground,
-              ),
-            ),
-          ],
+        NumberedSectionHeader(
+          number: number,
+          title: context.tr(TranslationKeys.studyGuidePersonalNotes),
         ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: accentColor.withOpacity(0.2),
-            ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _notesController,
+          focusNode: _notesFocusNode,
+          minLines: 3,
+          maxLines: 6,
+          style: AppFonts.inter(
+            fontSize: 16,
+            color: palette.text,
+            height: 1.5,
           ),
-          child: TextField(
-            controller: _notesController,
-            focusNode: _notesFocusNode,
-            maxLines: 6,
-            style: AppFonts.inter(
-              fontSize: 16,
-              color: theme.colorScheme.onBackground,
-              height: 1.5,
+          decoration: InputDecoration(
+            hintText:
+                context.tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
+            hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+            filled: true,
+            fillColor: palette.isDark ? palette.card : palette.raised,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: palette.outline),
             ),
-            decoration: InputDecoration(
-              hintText: context
-                  .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
-              hintStyle: AppFonts.inter(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: palette.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: palette.accentIcon, width: 1.5),
             ),
           ),
         ),
@@ -3948,268 +3147,276 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   Widget _buildBottomActions() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
+    final palette = ReaderPalette.of(context);
+    final foreground = palette.text;
     final ttsService = sl<StudyGuideTTSService>();
+    const pillHeight = 52.0;
+    final pillBorder = BorderSide(color: palette.outline, width: 1.2);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: palette.page,
+        border: Border(top: BorderSide(color: palette.hairline)),
       ),
-      child: Row(
-        children: [
-          // Listen Button (Left) - with lock support for voice_buddy feature
-          Expanded(
-            child: WalkthroughTooltip(
-              showcaseKey: ShowcaseKeys.studyGuideListen,
-              title: context.tr(TranslationKeys.studyGuideWalkthroughTtsTitle),
-              description:
-                  context.tr(TranslationKeys.studyGuideWalkthroughTtsDesc),
-              screen: WalkthroughScreen.studyGuide,
-              stepNumber: 2,
-              totalSteps: 2,
-              onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-              child: LockedFeatureWrapper(
-                featureKey: 'voice_buddy',
-                child: SizedBox(
-                  height: 56,
-                  child: ValueListenableBuilder<StudyGuideTtsState>(
-                    valueListenable: ttsService.state,
-                    builder: (context, ttsState, child) {
-                      final isPlaying = ttsState.status == TtsStatus.playing;
-                      final isPaused = ttsState.status == TtsStatus.paused;
-                      final isLoading = ttsState.status == TtsStatus.loading;
-                      final showControls = isPlaying || isPaused;
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Row(
+            children: [
+              // Listen (left) - with lock support for voice_buddy feature
+              Expanded(
+                child: WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.studyGuideListen,
+                  title:
+                      context.tr(TranslationKeys.studyGuideWalkthroughTtsTitle),
+                  description:
+                      context.tr(TranslationKeys.studyGuideWalkthroughTtsDesc),
+                  screen: WalkthroughScreen.studyGuide,
+                  stepNumber: 2,
+                  totalSteps: 2,
+                  highlightBorderRadius: pillHeight / 2,
+                  onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                  child: LockedFeatureWrapper(
+                    featureKey: 'voice_buddy',
+                    child: SizedBox(
+                      height: pillHeight,
+                      child: ValueListenableBuilder<StudyGuideTtsState>(
+                        valueListenable: ttsService.state,
+                        builder: (context, ttsState, child) {
+                          final isPlaying =
+                              ttsState.status == TtsStatus.playing;
+                          final isPaused = ttsState.status == TtsStatus.paused;
+                          final isLoading =
+                              ttsState.status == TtsStatus.loading;
 
-                      if (showControls) {
-                        // Show split button with pause/resume + settings
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: accentColor, width: 2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              // Main play/pause button
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => ttsService.togglePlayPause(),
-                                  borderRadius: const BorderRadius.horizontal(
-                                    left: Radius.circular(10),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          isPlaying
-                                              ? Icons.pause_rounded
-                                              : Icons.play_arrow_rounded,
-                                          color: accentColor,
-                                          size: 22,
+                          if (isPlaying || isPaused) {
+                            // Split pill: pause/resume + listen settings. The
+                            // settings (tune) only ever appear while playing.
+                            return DecoratedBox(
+                              decoration: ShapeDecoration(
+                                shape: StadiumBorder(side: pillBorder),
+                              ),
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: () =>
+                                            ttsService.togglePlayPause(),
+                                        borderRadius:
+                                            const BorderRadius.horizontal(
+                                          left: Radius.circular(pillHeight / 2),
                                         ),
-                                        const SizedBox(width: 8),
-                                        Flexible(
-                                          child: Text(
-                                            isPlaying ? 'Pause' : 'Resume',
-                                            style: AppFonts.inter(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: accentColor,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              isPlaying
+                                                  ? Icons.pause_rounded
+                                                  : Icons.play_arrow_rounded,
+                                              color: foreground,
+                                              size: 22,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  isPlaying
+                                                      ? 'Pause'
+                                                      : 'Resume',
+                                                  maxLines: 1,
+                                                  style: AppFonts.inter(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: foreground,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 26,
+                                      color: palette.outline,
+                                    ),
+                                    InkWell(
+                                      onTap: () => showTtsControlSheet(context),
+                                      borderRadius:
+                                          const BorderRadius.horizontal(
+                                        right: Radius.circular(pillHeight / 2),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14),
+                                        child: SizedBox(
+                                          height: pillHeight,
+                                          child: Icon(
+                                            Icons.tune,
+                                            color: foreground,
+                                            size: 22,
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
-                              // Divider
-                              Container(
-                                width: 1,
-                                height: 32,
-                                color: accentColor.withOpacity(0.3),
-                              ),
-                              // Settings button
-                              InkWell(
-                                onTap: () => showTtsControlSheet(context),
-                                borderRadius: const BorderRadius.horizontal(
-                                  right: Radius.circular(10),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 16),
-                                  child: Icon(
-                                    Icons.tune,
-                                    color: accentColor,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      } else {
-                        // Show regular Listen button
-                        return OutlinedButton.icon(
-                          onPressed: () {
-                            if (_currentStudyGuide != null) {
-                              // Load and start reading the study guide if not already playing
-                              final status = ttsService.state.value.status;
-                              if (status == TtsStatus.idle ||
-                                  status == TtsStatus.error ||
-                                  status == TtsStatus.completed) {
-                                ttsService.startReading(_currentStudyGuide!,
-                                    mode: widget.studyMode);
-                              }
-                              // Open the control sheet
-                              showTtsControlSheet(context);
-                            }
-                          },
-                          icon: isLoading
-                              ? SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: accentColor,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.headphones_rounded,
-                                  size: 22,
-                                ),
-                          label: Text(
-                            isLoading
-                                ? context.tr(TranslationKeys.studyGuideLoading)
-                                : context.tr(TranslationKeys.studyGuideListen),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: accentColor,
-                            side: BorderSide(
-                              color: accentColor,
-                              width: 2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ), // WalkthroughTooltip
-          ),
-          // Ask AI Button (Right) - only show if ai_discipler is enabled and study_chat is not hidden
-          if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
-            // Add spacing (Listen button is always shown with lock support)
-            const SizedBox(width: 16),
-            Expanded(
-              child: WalkthroughTooltip(
-                showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
-                title: context
-                    .tr(TranslationKeys.studyGuideWalkthroughDeeperTitle),
-                description:
-                    context.tr(TranslationKeys.studyGuideWalkthroughDeeperDesc),
-                screen: WalkthroughScreen.disciplerHint,
-                stepNumber: 1,
-                totalSteps: 1,
-                arrowAlignment: Alignment.centerRight,
-                highlightBorderRadius: 12,
-                onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                child: SizedBox(
-                  height: 56,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          // Expand chat first if collapsed
-                          if (!_isChatExpanded) {
-                            setState(() {
-                              _isChatExpanded = true;
-                            });
+                            );
                           }
 
-                          // Then scroll to Follow-up Chat section after a brief delay
-                          // to allow the expand animation to start
-                          Future.delayed(const Duration(milliseconds: 100), () {
-                            final chatContext = _followUpChatKey.currentContext;
-                            if (chatContext != null && mounted) {
-                              Scrollable.ensureVisible(
-                                chatContext,
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeInOut,
-                                alignment: 0.1, // Position near top of viewport
-                              );
-                            }
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // White glyph, not the ink-disc avatar: on a
-                            // filled indigo button the disc reads as a sticker.
-                            const DisciplerGlyph(size: 26),
-                            const SizedBox(width: 8),
-                            Flexible(
+                          // At rest: outlined Listen pill.
+                          return OutlinedButton.icon(
+                            onPressed: () {
+                              if (_currentStudyGuide != null) {
+                                // Load and start reading the study guide if
+                                // not already playing
+                                final status = ttsService.state.value.status;
+                                if (status == TtsStatus.idle ||
+                                    status == TtsStatus.error ||
+                                    status == TtsStatus.completed) {
+                                  ttsService.startReading(_currentStudyGuide!,
+                                      mode: widget.studyMode);
+                                }
+                                // Open the control sheet
+                                showTtsControlSheet(context);
+                              }
+                            },
+                            icon: isLoading
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: foreground,
+                                    ),
+                                  )
+                                : const Icon(Icons.headphones_rounded,
+                                    size: 22),
+                            // Shrinks rather than cutting on narrow phones.
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
                               child: Text(
-                                context.tr(TranslationKeys.studyGuideAskAi),
+                                isLoading
+                                    ? context
+                                        .tr(TranslationKeys.studyGuideLoading)
+                                    : context
+                                        .tr(TranslationKeys.studyGuideListen),
+                                maxLines: 1,
                                 style: AppFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ],
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: foreground,
+                              side: pillBorder,
+                              shape: const StadiumBorder(),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ), // WalkthroughTooltip
+              ),
+              // Ask Discipler (right) - only if ai_discipler is enabled and
+              // study_chat is not hidden
+              if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
+                    title: context
+                        .tr(TranslationKeys.studyGuideWalkthroughDeeperTitle),
+                    description: context
+                        .tr(TranslationKeys.studyGuideWalkthroughDeeperDesc),
+                    screen: WalkthroughScreen.disciplerHint,
+                    stepNumber: 1,
+                    totalSteps: 1,
+                    arrowAlignment: Alignment.centerRight,
+                    highlightBorderRadius: pillHeight / 2,
+                    onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                    child: SizedBox(
+                      height: pillHeight,
+                      child: Material(
+                        color: palette.ctaFill,
+                        shape: const StadiumBorder(),
+                        child: InkWell(
+                          customBorder: const StadiumBorder(),
+                          onTap: _askDiscipler,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Flat glyph, no disc: indigo on the white
+                                // dark-theme pill, white on the indigo one.
+                                DisciplerGlyph.onCta(
+                                  size: 24,
+                                  isDark: palette.isDark,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      context
+                                          .tr(TranslationKeys.studyGuideAskAi),
+                                      maxLines: 1,
+                                      style: AppFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: palette.ctaInk,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        ],
+              ],
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  /// Opens the follow-up chat (if collapsed) and scrolls it into view.
+  void _askDiscipler() {
+    if (!_isChatExpanded) {
+      setState(() {
+        _isChatExpanded = true;
+      });
+    }
+
+    // Scroll after a brief delay so the expand animation has started.
+    Future.delayed(const Duration(milliseconds: 100), () {
+      final chatContext = _followUpChatKey.currentContext;
+      if (chatContext != null && mounted) {
+        Scrollable.ensureVisible(
+          chatContext,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.15, // Near the top, below the floating top bar
+        );
+      }
+    });
   }
 
   String _getDisplayTitle() {
@@ -4310,88 +3517,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Show enhanced authentication required dialog
   void _showEnhancedAuthenticationRequiredDialog(
       StudyEnhancedAuthenticationRequired state) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFFAFAFA),
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.1),
-        title: Text(
-          context.tr(TranslationKeys.studyGuideAuthRequired),
-          style: AppFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF333333),
-          ),
-        ),
-        content: Text(
-          context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
-          style: AppFonts.inter(
-            fontSize: 18,
-            color: const Color(0xFF333333),
-            height: 1.5,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF888888),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.commonCancel),
-              style: AppFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF888888),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Builder(
-            builder: (context) {
-              final theme = Theme.of(context);
-              final isDark = theme.brightness == Brightness.dark;
-              final accentColor = isDark
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.primary;
-
-              return ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  sl<StudyNavigator>().navigateToLogin(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  context.tr(TranslationKeys.studyGuideSignIn),
-                  style: AppFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+    SignInRequiredDialog.show(
+      context,
+      title: context.tr(TranslationKeys.studyGuideAuthRequired),
+      message: context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
+      signInLabel: context.tr(TranslationKeys.studyGuideSignIn),
+      cancelLabel: context.tr(TranslationKeys.commonCancel),
+      onSignIn: () {
+        if (mounted) sl<StudyNavigator>().navigateToLogin(context);
+      },
     );
   }
 
@@ -4659,489 +3793,6 @@ $appLink
   }
 }
 
-/// Study section widget for displaying content with consistent styling.
-class _StudySection extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final String content;
-  final bool isBeingRead;
-  final double contentFontSize;
-
-  const _StudySection({
-    required this.title,
-    required this.icon,
-    required this.content,
-    this.isBeingRead = false,
-    this.contentFontSize = 18.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      // Tighter on the sides than top and bottom: horizontal space is what the
-      // text needs, vertical space is what separates one section from the next.
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        color: isBeingRead
-            ? accentColor.withOpacity(0.08)
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isBeingRead
-              ? accentColor.withOpacity(0.5)
-              : accentColor.withOpacity(0.1),
-          width: isBeingRead ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isBeingRead
-                ? accentColor.withOpacity(0.15)
-                : accentColor.withOpacity(0.05),
-            blurRadius: isBeingRead ? 16 : 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section Header
-          Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color:
-                      isBeingRead ? accentColor : accentColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: isBeingRead
-                    ? const _PulsingIcon(icon: Icons.volume_up, size: 20)
-                    : Icon(
-                        icon,
-                        color: accentColor,
-                        size: 20,
-                      ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: AppFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onBackground,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isBeingRead)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: accentColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.graphic_eq,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Reading',
-                              style: AppFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Copy button
-              IconButton(
-                onPressed: () => _copyToClipboard(context, content),
-                icon: Icon(
-                  Icons.copy,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  size: 18,
-                ),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-                tooltip: 'Copy $title',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Section Content with markdown formatting AND clickable scripture
-          MarkdownWithScripture(
-            data: _cleanDuplicateTitle(content, title),
-            textStyle: AppFonts.inter(
-              fontSize: contentFontSize,
-              height: 1.6,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _copyToClipboard(BuildContext context, String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-          style: AppFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: context.appInteractive,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-}
-
-/// Animated pulsing icon for TTS reading indicator.
-class _PulsingIcon extends StatefulWidget {
-  final IconData icon;
-  final double size;
-
-  const _PulsingIcon({
-    required this.icon,
-    required this.size,
-  });
-
-  @override
-  State<_PulsingIcon> createState() => _PulsingIconState();
-}
-
-class _PulsingIconState extends State<_PulsingIcon>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _animation = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Icon(
-            widget.icon,
-            color: Colors.white,
-            size: widget.size,
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Compact section widget for Quick Read mode (completed content)
-class _QuickStudySection extends StatelessWidget {
-  final String title;
-  final String content;
-  final IconData icon;
-  final bool isHighlight;
-  final double contentFontSize;
-
-  const _QuickStudySection({
-    required this.title,
-    required this.content,
-    required this.icon,
-    this.isHighlight = false,
-    this.contentFontSize = 18.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-    final highlightColor = theme.colorScheme.secondary;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: accentColor.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title row with icon box and copy button
-          Row(
-            children: [
-              // Icon box
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: accentColor, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () => _copyToClipboard(context),
-                icon: Icon(
-                  Icons.copy,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  size: 16,
-                ),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Content
-          MarkdownWithScripture(
-            data: _cleanDuplicateTitle(content, title),
-            textStyle: AppFonts.inter(
-              fontSize: contentFontSize,
-              fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
-              height: 1.6,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _copyToClipboard(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    Clipboard.setData(ClipboardData(text: content));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-          style: AppFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: accentColor,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-}
-
-/// Meditative section widget for Lectio Divina mode (completed content)
-class _LectioStudySection extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final String content;
-  final IconData icon;
-  final double contentFontSize;
-
-  const _LectioStudySection({
-    required this.title,
-    this.subtitle,
-    required this.content,
-    required this.icon,
-    this.contentFontSize = 18.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    // Softer, more meditative colors
-    final backgroundColor =
-        isDark ? accentColor.withOpacity(0.08) : accentColor.withOpacity(0.04);
-    final borderColor =
-        isDark ? accentColor.withOpacity(0.2) : accentColor.withOpacity(0.15);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with icon
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: accentColor,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onBackground,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: AppFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: accentColor.withOpacity(0.8),
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: () => _copyToClipboard(context),
-                icon: Icon(
-                  Icons.copy,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  size: 16,
-                ),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Divider for meditative feel
-          Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  accentColor.withOpacity(0.0),
-                  accentColor.withOpacity(0.2),
-                  accentColor.withOpacity(0.0),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Content with meditative typography
-          MarkdownWithScripture(
-            data: _cleanDuplicateTitle(content, title),
-            textStyle: AppFonts.inter(
-              fontSize: contentFontSize,
-              fontWeight: FontWeight.w400,
-              height: 1.7, // Extra line height for meditative reading
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _copyToClipboard(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accentColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
-
-    Clipboard.setData(ClipboardData(text: content));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-          style: AppFonts.inter(color: Colors.white),
-        ),
-        backgroundColor: accentColor,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-}
-
 // =============================================================================
 // Reflection Comment Section
 // =============================================================================
@@ -5149,6 +3800,8 @@ class _LectioStudySection extends StatelessWidget {
 /// A combined card that lets users share a reflection, question, or insight
 /// directly to their fellowship feed.
 class _FellowshipShareSection extends StatefulWidget {
+  /// Position in the guide, shown as a gold `07`.
+  final int? number;
   final String studyGuideId;
   final String guideTitle;
   final String guideInputType;
@@ -5156,6 +3809,7 @@ class _FellowshipShareSection extends StatefulWidget {
   final List<FellowshipEntity> userFellowships;
 
   const _FellowshipShareSection({
+    this.number,
     required this.studyGuideId,
     required this.guideTitle,
     required this.guideInputType,
@@ -5222,160 +3876,160 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
     }
   }
 
+  /// "Name" for one fellowship, "Name +2" for several.
+  String _fellowshipLabel() {
+    final fellowships = widget.userFellowships;
+    if (fellowships.isEmpty) return '';
+    final first = fellowships.first.name;
+    return fellowships.length == 1
+        ? first
+        : '$first +${fellowships.length - 1}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
     final hasText = _controller.text.trim().isNotEmpty;
+    final canPost = hasText && !_isPosting;
+    final label = _fellowshipLabel();
 
-    final backgroundColor = isDark
-        ? AppColors.brandSecondary.withValues(alpha: 0.15)
-        : AppColors.brandSecondary.withValues(alpha: 0.10);
-    final borderColor = isDark
-        ? AppColors.brandSecondary.withValues(alpha: 0.30)
-        : AppColors.brandSecondary.withValues(alpha: 0.25);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        NumberedSectionHeader(
+          number: widget.number,
+          title: context.tr(TranslationKeys.studyGuideFellowshipCardTitle),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr(TranslationKeys.studyGuideFellowshipCardSubtitle),
+          style: AppFonts.inter(
+            fontSize: 13.5,
+            color: palette.muted,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _controller,
+          minLines: 1,
+          maxLines: 4,
+          maxLength: 500,
+          onChanged: (_) => setState(() {}),
+          style: AppFonts.inter(fontSize: 15, color: palette.text, height: 1.4),
+          // The 500 limit only shows once it is close.
+          buildCounter: (_,
+                  {required currentLength, required isFocused, maxLength}) =>
+              currentLength > 400
+                  ? Text(
+                      '$currentLength/$maxLength',
+                      style: AppFonts.inter(fontSize: 11, color: palette.dim),
+                    )
+                  : null,
+          decoration: InputDecoration(
+            hintText: context.tr(TranslationKeys.studyGuideFellowshipInputHint),
+            hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+            filled: true,
+            fillColor: palette.isDark ? palette.card : palette.raised,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide(color: palette.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide(color: palette.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide(color: palette.accentIcon, width: 1.5),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            // Where the post goes. The share sheet opened by Post is where the
+            // fellowships are actually picked.
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
                 decoration: BoxDecoration(
-                  color: AppColors.brandPrimary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+                  color: palette.raised,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(
-                  Icons.group_rounded,
-                  size: 18,
-                  color: context.appBrandAccent,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      context.tr(TranslationKeys.studyGuideFellowshipCardTitle),
-                      style: AppFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: context.appTextPrimary,
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: palette.gold.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
                       ),
+                      child: Icon(Icons.group_rounded,
+                          size: 14, color: palette.gold),
                     ),
-                    Text(
-                      context
-                          .tr(TranslationKeys.studyGuideFellowshipCardSubtitle),
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Multi-line text input
-          TextField(
-            controller: _controller,
-            maxLines: 4,
-            maxLength: 500,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText:
-                  context.tr(TranslationKeys.studyGuideFellowshipInputHint),
-              hintStyle: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                color: context.appTextTertiary,
-              ),
-              filled: true,
-              fillColor: context.appInputFill,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: context.appBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppColors.brandPrimary,
-                  width: 2,
-                ),
-              ),
-              counterStyle: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                color: context.appTextTertiary,
-              ),
             ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Share button
-          SizedBox(
-            width: double.infinity,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: hasText ? AppColors.primaryGradient : null,
-                color: hasText ? null : context.appBorder,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ElevatedButton(
-                onPressed: (hasText && !_isPosting) ? _handleShare : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  disabledBackgroundColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            const SizedBox(width: 12),
+            SizedBox(
+              height: 40,
+              child: Material(
+                color: canPost
+                    ? palette.ctaFill
+                    : palette.ctaFill
+                        .withValues(alpha: palette.isDark ? 0.3 : 0.35),
+                shape: const StadiumBorder(),
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: canPost ? _handleShare : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    child: Center(
+                      widthFactor: 1,
+                      child: _isPosting
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: palette.ctaInk,
+                              ),
+                            )
+                          : Text(
+                              AppLocalizations.of(context)!.feedCreatePost,
+                              style: AppFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: palette.ctaInk,
+                              ),
+                            ),
+                    ),
                   ),
                 ),
-                child: _isPosting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        context
-                            .tr(TranslationKeys.studyGuideFellowshipShareTitle),
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color:
-                              hasText ? Colors.white : context.appTextTertiary,
-                        ),
-                      ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -5500,29 +4154,4 @@ class _ScreenshotShareSheet extends StatelessWidget {
       ),
     );
   }
-}
-
-// ============================================================================
-// Completion sheet action model
-// ============================================================================
-
-/// Describes a single quick-action tile displayed in the study completion
-/// bottom sheet (e.g., Add Notes, Share to Fellowship, Ask Discipler).
-class _CompletionAction {
-  const _CompletionAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.leading,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  /// Optional replacement for [icon] — used by the Discipler action so it
-  /// shows the brand mark rather than a stock psychology glyph.
-  final Widget? leading;
 }
