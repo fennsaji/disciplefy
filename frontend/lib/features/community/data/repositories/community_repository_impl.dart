@@ -12,6 +12,7 @@ import '../../domain/entities/fellowship_member_entity.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../../domain/entities/public_fellowship_entity.dart';
 import '../../domain/entities/sync_calendar_result.dart';
+import '../../domain/fellowship_changes.dart';
 import '../../domain/repositories/community_repository.dart';
 import '../datasources/community_remote_datasource.dart';
 import '../models/daily_post_status_model.dart';
@@ -279,7 +280,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
   @override
   Future<Either<Failure, String>> joinFellowship(String inviteToken) async {
     try {
-      return Right(await _datasource.joinFellowship(inviteToken));
+      final id = await _datasource.joinFellowship(inviteToken);
+      FellowshipChanges.instance.notifyChanged();
+      return Right(id);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
@@ -319,6 +322,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         disciplerAllowed: disciplerAllowed,
         dailyPostAllowed: dailyPostAllowed,
       );
+      FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -463,6 +467,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, void>> leaveFellowship(String fellowshipId) async {
     try {
       await _datasource.leaveFellowship(fellowshipId);
+      FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -477,6 +482,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, void>> deleteFellowship(String fellowshipId) async {
     try {
       await _datasource.deleteFellowship(fellowshipId);
+      FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -964,6 +970,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
       String fellowshipId) async {
     try {
       final name = await _datasource.joinPublicFellowship(fellowshipId);
+      FellowshipChanges.instance.notifyChanged();
       return Right(name);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -1024,6 +1031,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         googleAccessToken: googleAccessToken,
         googleRefreshToken: googleRefreshToken,
       );
+      FellowshipChanges.instance.notifyChanged();
       return Right(model.toEntity());
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -1048,6 +1056,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         meetingId,
         googleAccessToken: googleAccessToken,
       );
+      FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
