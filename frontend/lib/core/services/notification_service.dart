@@ -402,6 +402,29 @@ class NotificationService {
     }
   }
 
+  /// True only when the user has actively refused notifications at the
+  /// system level. "Not asked yet" is not a refusal: the permission request
+  /// made at sign-in (or the browser's own prompt) covers that case, so the
+  /// in-app "turn on notifications" sheet should not.
+  Future<bool> isNotificationPermissionDenied() async {
+    try {
+      if (kIsWeb || Platform.isIOS) {
+        _firebaseMessaging ??= FirebaseMessaging.instance;
+        final settings = await _firebaseMessaging?.getNotificationSettings();
+        return settings?.authorizationStatus == AuthorizationStatus.denied;
+      } else if (Platform.isAndroid) {
+        // Android asks at sign-in (initialize), so a denied status after that
+        // is the user's answer.
+        final status = await Permission.notification.status;
+        return status.isDenied || status.isPermanentlyDenied;
+      }
+      return false;
+    } catch (e) {
+      Logger.error('[NotificationService] Check permission denial error: $e');
+      return false;
+    }
+  }
+
   // ============================================================================
   // FCM Token Management
   // ============================================================================
