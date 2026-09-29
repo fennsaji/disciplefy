@@ -10,8 +10,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
 import '../../../community/domain/entities/fellowship_post_entity.dart';
 import '../../../community/domain/entities/public_fellowship_entity.dart';
+import '../../../community/domain/fellowship_changes.dart';
 import '../../../community/domain/repositories/community_repository.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
+import 'home_sections.dart';
 
 // ---------------------------------------------------------------------------
 // Pure helpers (unit-tested in test/features/home/)
@@ -192,6 +194,12 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
   static const int _maxRows = 4;
 
   bool _loaded = false;
+
+  /// True once the fellowship list came back (even empty). A failed lookup
+  /// leaves it false and the section renders nothing, so an existing member
+  /// is never invited to join a group they are already in.
+  bool _lookupSucceeded = false;
+  bool _isMember = false;
   List<RecentActivityItem> _items = const [];
   List<PublicFellowshipEntity> _suggestions = const [];
   String? _joiningId;
@@ -199,6 +207,24 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
   @override
   void initState() {
     super.initState();
+    _load();
+    FellowshipChanges.instance.addListener(_reload);
+  }
+
+  @override
+  void dispose() {
+    FellowshipChanges.instance.removeListener(_reload);
+    super.dispose();
+  }
+
+  /// Membership changed somewhere in the app: forget what was shown and ask
+  /// again, so a group the user just joined stops being offered to them.
+  void _reload() {
+    if (!mounted) return;
+    _lookupSucceeded = false;
+    _isMember = false;
+    _items = const [];
+    _suggestions = const [];
     _load();
   }
 
@@ -240,6 +266,9 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
         if (mounted) setState(() => _loaded = true);
         return;
       }
+
+      _lookupSucceeded = true;
+      _isMember = fellowships.isNotEmpty;
 
       if (fellowships.isEmpty) {
         await _loadSuggestions(repo);
@@ -335,7 +364,54 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     if (!_loaded) return const SizedBox.shrink();
     if (_items.isNotEmpty) return _buildActivity(context);
     if (_suggestions.isNotEmpty) return _buildSuggestions(context);
-    return const SizedBox.shrink();
+    if (!_lookupSucceeded) return const SizedBox.shrink();
+    return _buildEmpty(context);
+  }
+
+  // ── Case C: nothing to list yet ────────────────────────────────────────
+  //
+  // A member whose groups have no posts, or a non-member with no group to
+  // suggest: the section still closes the page, with one row that says what
+  // to do next instead of disappearing.
+
+  Widget _buildEmpty(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final member = _isMember;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: member
+              ? l10n.homeRecentActivityTitle
+              : l10n.homeJoinFellowshipTitle,
+          subtitle: member
+              ? l10n.homeRecentActivitySubtitle
+              : l10n.homeJoinFellowshipSubtitle,
+          actionLabel:
+              member ? l10n.homeCommunityViewAll : l10n.homeCommunityBrowse,
+          onAction: () => context.go(AppRoutes.community),
+        ),
+        const SizedBox(height: 12),
+        _Panel(
+          children: [
+            _EmptyRow(
+              key: const Key('home_activity_empty_row'),
+              icon: member
+                  ? Icons.chat_bubble_outline_rounded
+                  : Icons.groups_outlined,
+              title: member
+                  ? l10n.homeActivityEmptyTitle
+                  : l10n.homeBrowseFellowships,
+              subtitle: member
+                  ? l10n.homeActivityEmptyHint
+                  : l10n.homeBrowseFellowshipsHint,
+              onTap: () => context.go(AppRoutes.community),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   // ── Case A: recent activity ────────────────────────────────────────────
@@ -352,7 +428,7 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
           actionLabel: l10n.homeCommunityViewAll,
           onAction: () => context.go(AppRoutes.community),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _Panel(
           children: [
             for (var i = 0; i < _items.length; i++) ...[
@@ -379,7 +455,7 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
           actionLabel: l10n.homeCommunityBrowse,
           onAction: () => context.go(AppRoutes.community),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _Panel(
           children: [
             for (var i = 0; i < _suggestions.length; i++) ...[
@@ -402,8 +478,8 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
 // Presentation pieces
 // ---------------------------------------------------------------------------
 
-/// Section title + optional trailing text action, matching the "For You"
-/// header a little further up the page.
+/// Section title + trailing text action, shared with the other home sections
+/// so every heading under the hero looks the same.
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -418,66 +494,12 @@ class _SectionHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.9)
-                      : const Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  height: 1.35,
-                  color: context.appTextSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: TextButton(
-            onPressed: onAction,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              actionLabel,
-              style: AppFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => HomeSectionHeader(
+        title: title,
+        subtitle: subtitle,
+        actionLabel: actionLabel,
+        onAction: onAction,
+      );
 }
 
 /// Rounded container the rows sit inside. One panel of hairline-separated
@@ -898,4 +920,71 @@ class _JoinButton extends StatelessWidget {
                 ),
         ),
       );
+}
+
+/// Single call-to-action row for the empty activity panel.
+class _EmptyRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _EmptyRow({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = context.appBrandAccent;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 17, color: accent),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: context.appTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppFonts.inter(
+                      fontSize: 11.5,
+                      color: context.appTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right,
+                size: 18, color: context.appTextSecondary),
+          ],
+        ),
+      ),
+    );
+  }
 }

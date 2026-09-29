@@ -683,6 +683,10 @@ class AppLocalizations {
       'homeJoinFellowshipCta': 'Join',
       'homeJoinedFellowship': 'You joined {name}',
       'homeJoinFailed': "Couldn't join that group. Please try again.",
+      'homeActivityEmptyTitle': 'No posts yet',
+      'homeActivityEmptyHint': 'Share a prayer or thought with your fellowship',
+      'homeBrowseFellowships': 'Browse fellowships',
+      'homeBrowseFellowshipsHint': 'Study together with other believers',
       'homeMembersCount': '{count} members',
       'homeMembersCountOne': '1 member',
       'timeAgoJustNow': 'just now',
@@ -1459,6 +1463,11 @@ class AppLocalizations {
       'homeJoinFellowshipCta': 'शामिल हों',
       'homeJoinedFellowship': 'आप {name} में शामिल हो गए',
       'homeJoinFailed': 'उस समूह में शामिल नहीं हो सके। कृपया फिर कोशिश करें।',
+      'homeActivityEmptyTitle': 'अभी कोई पोस्ट नहीं',
+      'homeActivityEmptyHint':
+          'अपनी संगति के साथ कोई प्रार्थना या विचार साझा करें',
+      'homeBrowseFellowships': 'संगतियाँ देखें',
+      'homeBrowseFellowshipsHint': 'अन्य विश्वासियों के साथ मिलकर अध्ययन करें',
       'homeMembersCount': '{count} सदस्य',
       'homeMembersCountOne': '1 सदस्य',
       'timeAgoJustNow': 'अभी',
@@ -2245,6 +2254,11 @@ class AppLocalizations {
       'homeJoinFellowshipCta': 'ചേരുക',
       'homeJoinedFellowship': 'നിങ്ങൾ {name}-ൽ ചേർന്നു',
       'homeJoinFailed': 'ആ സംഘത്തിൽ ചേരാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'homeActivityEmptyTitle': 'ഇതുവരെ പോസ്റ്റുകളില്ല',
+      'homeActivityEmptyHint':
+          'നിങ്ങളുടെ കൂട്ടായ്മയുമായി ഒരു പ്രാർത്ഥനയോ ചിന്തയോ പങ്കിടൂ',
+      'homeBrowseFellowships': 'കൂട്ടായ്മകൾ കാണൂ',
+      'homeBrowseFellowshipsHint': 'മറ്റ് വിശ്വാസികളോടൊപ്പം ഒരുമിച്ച് പഠിക്കൂ',
       'homeMembersCount': '{count} അംഗങ്ങൾ',
       'homeMembersCountOne': '1 അംഗം',
       'timeAgoJustNow': 'ഇപ്പോൾ',
@@ -2638,6 +2652,14 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['homeJoinFellowshipCta']!;
   String get homeJoinFailed =>
       _localizedValues[locale.languageCode]!['homeJoinFailed']!;
+  String get homeActivityEmptyTitle =>
+      _localizedValues[locale.languageCode]!['homeActivityEmptyTitle']!;
+  String get homeActivityEmptyHint =>
+      _localizedValues[locale.languageCode]!['homeActivityEmptyHint']!;
+  String get homeBrowseFellowships =>
+      _localizedValues[locale.languageCode]!['homeBrowseFellowships']!;
+  String get homeBrowseFellowshipsHint =>
+      _localizedValues[locale.languageCode]!['homeBrowseFellowshipsHint']!;
   String homeJoinedFellowship(String name) =>
       _localizedValues[locale.languageCode]!['homeJoinedFellowship']!
           .replaceAll('{name}', name);

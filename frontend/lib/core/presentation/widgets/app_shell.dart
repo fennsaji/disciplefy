@@ -25,6 +25,7 @@ import '../../widgets/offline_banner.dart';
 import '../../router/app_routes.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_verse_hero.dart';
 
 /// Main App Shell with Bottom Navigation
 ///
@@ -148,10 +149,12 @@ class _AppShellState extends State<AppShell>
     // Map the visible tab index to the actual branch index
     final branchIndex = _mapTabIndexToBranchIndex(index);
 
-    // Ignore if already on this tab and not waiting for anything
+    // Already on this tab and not waiting for anything. Re-tapping Home
+    // scrolls it back to the top, as users expect from a tab bar.
     if (branchIndex == widget.navigationShell.currentIndex &&
         _pendingTabIndex == null &&
         _waitingForIndex == null) {
+      if (branchIndex == 0) HomeScrollToTop.instance.request();
       return;
     }
 

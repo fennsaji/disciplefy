@@ -144,6 +144,28 @@ class TranslationKeys {
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
+  static const homeGoodMorning = 'home.good_morning';
+  static const homeGoodAfternoon = 'home.good_afternoon';
+  static const homeGoodEvening = 'home.good_evening';
+  static const homeStudyNow = 'home.study_now';
+  static const homeContinueLearning = 'home.continue_learning';
+  static const homeAllPaths = 'home.all_paths';
+  static const homeBrowsePaths = 'home.browse_paths';
+  static const homeBrowsePathsHint = 'home.browse_paths_hint';
+  static const homeTopicsProgress = 'home.topics_progress';
+  static const homeStartHere = 'home.start_here';
+  static const homeDayStreak = 'home.day_streak';
+  static const homeKeepItAlive = 'home.keep_it_alive';
+  static const homeNoStreakYet = 'home.no_streak_yet';
+  static const homeStartStreakHint = 'home.start_streak_hint';
+  static const homeToReview = 'home.to_review';
+  static const homeAllCaughtUp = 'home.all_caught_up';
+  static const homeNothingDue = 'home.nothing_due';
+  static const homeReviewMore = 'home.review_more';
+  static const homeMeetingToday = 'home.meeting_today';
+  static const homeMeetingTodayAt = 'home.meeting_today_at';
+  static const homeMeetingNowEnds = 'home.meeting_now_ends';
+  static const homeMeetingLive = 'home.meeting_live';
   static const homeContinueJourney = 'home.continue_journey';
   static const homeMemoryVerses = 'home.memory_verses';
   static const homeGenerateStudyGuide = 'home.generate_study_guide';

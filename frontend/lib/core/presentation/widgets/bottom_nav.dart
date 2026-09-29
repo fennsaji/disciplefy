@@ -248,8 +248,10 @@ class DisciplefyBottomNav extends StatelessWidget {
     if (index != currentIndex) {
       // Provide haptic feedback for better UX
       flutter_services.HapticFeedback.lightImpact();
-      onTap(index);
     }
+    // Re-taps are reported too: the shell ignores them except on Home,
+    // where tapping the current tab scrolls back to the top.
+    onTap(index);
   }
 }
 
