@@ -62,6 +62,11 @@ class AppRoutes {
 
   // Voice Buddy
   static const String voiceConversation = '/voice-conversation';
+
+  /// Discipler as a bottom-bar tab (general conversation, keeps the tab bar).
+  /// Contextual conversations (from a study guide, a verse) still open the
+  /// full-screen [voiceConversation] route.
+  static const String discipler = '/discipler';
   static const String voicePreferences = '/voice-preferences';
 
   // Personalization

@@ -574,7 +574,12 @@ class _HomeScrollViewState extends State<HomeScrollView> {
               controller: _controller,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: widget.children,
+                children: [
+                  ...widget.children,
+                  // Clears the floating dock (and home indicator): the page
+                  // runs underneath them, so its end must not.
+                  SizedBox(height: MediaQuery.paddingOf(context).bottom),
+                ],
               ),
             ),
           ),

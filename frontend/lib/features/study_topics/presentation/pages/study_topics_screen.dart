@@ -474,7 +474,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     return ListView(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      // The floating dock overlaps the page; its height is in the bottom
+      // inset, so the last card scrolls clear of it.
+      padding: EdgeInsets.fromLTRB(
+          16, 20, 16, 16 + MediaQuery.paddingOf(context).bottom),
       children: [
         // Section 1: For You — in-progress paths first, then recommended
         ForYouLearningPathsSection(

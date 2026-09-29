@@ -628,6 +628,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 // the status bar once the hero has scrolled away.
                 body: SafeArea(
                   top: false,
+                  // The page scrolls behind the floating dock; HomeScrollView
+                  // pads its end by the bottom inset instead.
+                  bottom: false,
                   child: HomeScrollView(
                     headerBuilder: (context, onGround) =>
                         _buildAppHeader(onGround: onGround),

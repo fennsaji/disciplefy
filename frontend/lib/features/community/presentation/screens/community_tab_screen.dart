@@ -520,7 +520,10 @@ class _FellowshipList extends StatelessWidget {
           .read<FellowshipListBloc>()
           .add(const FellowshipListLoadRequested()),
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+        // 100 clears the floating action button; the bottom inset adds the
+        // floating dock the page now runs under.
+        padding: EdgeInsets.fromLTRB(
+            16, 0, 16, 100 + MediaQuery.paddingOf(context).bottom),
         itemCount: fellowships.length,
         itemBuilder: (context, index) {
           return Padding(
@@ -1371,7 +1374,8 @@ class _DiscoverBodyState extends State<_DiscoverBody> {
               .add(DiscoverLoadRequested(language: state.language)),
           child: ListView.builder(
             controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            padding: EdgeInsets.fromLTRB(
+                16, 12, 16, 100 + MediaQuery.paddingOf(context).bottom),
             itemCount: state.fellowships.length + (state.hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == state.fellowships.length) {
