@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
 
-import '../../../../core/models/app_language.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../../core/di/injection_container.dart';
-import '../widgets/language_selection_card.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/language_selection_card.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
 
 /// Screen for selecting preferred language during onboarding
 class LanguageSelectionScreen extends StatefulWidget {
@@ -144,141 +146,126 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isLargeScreen = screenHeight > 700;
+    final palette = ReaderPalette.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
+    final isNarrow = MediaQuery.sizeOf(context).width < 360;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top spacing
-              SizedBox(height: isLargeScreen ? 60 : 40),
-
-              // Welcome text
-              Text(
-                context.tr(TranslationKeys.onboardingWelcome),
-                style: AppFonts.poppins(
-                  fontSize: isLargeScreen ? 32 : 28,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                  height: 1.2,
-                ),
-              ),
-
-              SizedBox(height: isLargeScreen ? 16 : 12),
-
-              // Subtitle
-              Text(
-                context.tr(TranslationKeys.onboardingSelectLanguageSubtitle),
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  height: 1.5,
-                ),
-              ),
-
-              SizedBox(height: isLargeScreen ? 48 : 32),
-
-              // Language selection header
-              Text(
-                context.tr(TranslationKeys.onboardingSelectLanguage),
-                style: AppFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Language options
-              Expanded(
-                child: ListView.builder(
-                  itemCount: AppLanguage.all.length,
-                  itemBuilder: (context, index) {
-                    final language = AppLanguage.all[index];
-                    return LanguageSelectionCard(
-                      language: language,
-                      isSelected: _selectedLanguage == language,
-                      onTap: () => _selectLanguage(language),
-                    );
-                  },
-                ),
-              ),
-
-              // Bottom section with buttons
-              const SizedBox(height: 24),
-
-              // Continue button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _selectedLanguage != null && !_isLoading
-                      ? _continueWithSelection
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.appInteractive,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        theme.colorScheme.onSurface.withOpacity(0.12),
-                    minimumSize: const Size.fromHeight(56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      backgroundColor: palette.page,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: topInset + 300,
+                    child: const WelcomePhotoBackdrop(
+                      asset: WelcomePhotos.valleyMist,
                     ),
-                    elevation: 0,
                   ),
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24, topInset + 150, 24, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            WelcomeEyebrow(
+                              context.tr(
+                                  TranslationKeys.onboardingLanguageEyebrow),
+                            ),
+                            const SizedBox(height: 10),
+                            WelcomeTitle(
+                              context.tr(TranslationKeys.onboardingWelcome),
+                              fontSize: isNarrow ? 26 : 30,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              context.tr(TranslationKeys
+                                  .onboardingSelectLanguageSubtitle),
+                              style: AppFonts.inter(
+                                fontSize: 15.5,
+                                height: 1.45,
+                                color: palette.isDark
+                                    ? Colors.white.withValues(alpha: 0.75)
+                                    : palette.muted,
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            for (final language in AppLanguage.all)
+                              LanguageSelectionCard(
+                                key: Key('language_option_${language.code}'),
+                                language: language,
+                                secondaryLabel: language == AppLanguage.english
+                                    ? context.tr(TranslationKeys
+                                        .onboardingLanguageDefault)
+                                    : null,
+                                isSelected: _selectedLanguage == language,
+                                onTap: () => _selectLanguage(language),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Continue + Skip
+          SafeArea(
+            top: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      WelcomePrimaryButton(
+                        key: const Key('language_continue'),
+                        label: context.tr(TranslationKeys.onboardingContinue),
+                        isLoading: _isLoading,
+                        onPressed: _selectedLanguage != null
+                            ? _continueWithSelection
+                            : null,
+                      ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          key: const Key('language_skip'),
+                          onPressed: _isLoading ? null : _skipSelection,
+                          style: TextButton.styleFrom(
+                            foregroundColor: palette.muted,
+                            minimumSize: const Size.fromHeight(48),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            context.tr(TranslationKeys.onboardingSkip),
+                            textAlign: TextAlign.center,
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: palette.muted,
                             ),
                           ),
-                        )
-                      : Text(
-                          context.tr(TranslationKeys.onboardingContinue),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
                         ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Skip button
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: _isLoading ? null : _skipSelection,
-                  style: TextButton.styleFrom(
-                    foregroundColor:
-                        theme.colorScheme.onSurface.withOpacity(0.6),
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: Text(
-                    context.tr(TranslationKeys.onboardingSkip),
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

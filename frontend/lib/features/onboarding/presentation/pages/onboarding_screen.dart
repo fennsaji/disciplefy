@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-
 import 'package:hive_flutter/hive_flutter.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
-/// Onboarding carousel screen with 3 intro slides.
-///
-/// Follows Disciplefy brand guidelines and UX specifications with dark mode support.
-/// Each slide introduces key app features following the design images.
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
+    as auth_states;
+import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/onboarding_previews.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+
+/// Onboarding carousel: four feature slides, each with a live-widget app
+/// preview, then login.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -43,41 +44,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  static const List<OnboardingSlide> _slides = [
-    OnboardingSlide(
-      title: 'Daily Inspiration & Study',
-      subtitle: 'Start each day with God\'s Word',
-      description:
-          'Receive daily verses with instant study guides. Tap any verse to dive deeper with personalized insights, context, and practical applications.',
-      iconData: Icons.wb_sunny,
-      verse:
-          '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
+  static const List<_SlideSpec> _slides = [
+    _SlideSpec(
+      eyebrowKey: TranslationKeys.onboardingSlide1Eyebrow,
+      titleKey: TranslationKeys.onboardingSlide1Title,
+      descriptionKey: TranslationKeys.onboardingSlide1Description,
+      verseKey: TranslationKeys.onboardingSlide1Verse,
+      reference: 'Psalm 119:105',
+      preview: DailyVersePreview(),
     ),
-    OnboardingSlide(
-      title: 'Personalized Study Guides',
-      subtitle: 'Personalized insights for your journey',
-      description:
-          'Enter any scripture or topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
-      iconData: Icons.auto_awesome,
-      verse:
-          '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
+    _SlideSpec(
+      eyebrowKey: TranslationKeys.onboardingSlide2Eyebrow,
+      titleKey: TranslationKeys.onboardingSlide2Title,
+      descriptionKey: TranslationKeys.onboardingSlide2Description,
+      verseKey: TranslationKeys.onboardingSlide2Verse,
+      reference: '2 Timothy 3:16',
+      preview: StudyGuidePreview(),
     ),
-    OnboardingSlide(
-      title: 'Talk to Discipler',
-      subtitle: 'Talk with your Bible companion',
-      description:
-          'Have natural voice conversations about Scripture. Ask questions, get answers, and deepen your understanding through guided dialogue.',
-      iconData: Icons.mic,
-      verse: '"Call to me and I will answer you..." - Jeremiah 33:3',
+    _SlideSpec(
+      eyebrowKey: TranslationKeys.onboardingSlide3Eyebrow,
+      titleKey: TranslationKeys.onboardingSlide3Title,
+      descriptionKey: TranslationKeys.onboardingSlide3Description,
+      verseKey: TranslationKeys.onboardingSlide3Verse,
+      reference: 'Jeremiah 33:3',
+      preview: DisciplerChatPreview(),
     ),
-    OnboardingSlide(
-      title: 'Memory Verses',
-      subtitle: 'Hide God\'s Word in your heart',
-      description:
-          'Memorize Scripture with scientifically-proven spaced repetition. Review verses at optimal intervals to commit them to long-term memory.',
-      iconData: Icons.psychology,
-      verse:
-          '"I have hidden your word in my heart that I might not sin against you." - Psalm 119:11',
+    _SlideSpec(
+      eyebrowKey: TranslationKeys.onboardingSlide4Eyebrow,
+      titleKey: TranslationKeys.onboardingSlide4Title,
+      descriptionKey: TranslationKeys.onboardingSlide4Description,
+      verseKey: TranslationKeys.onboardingSlide4Verse,
+      reference: 'Psalm 119:11',
+      preview: MemoryReviewPreview(),
     ),
   ];
 
@@ -136,450 +134,256 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final screenHeight = screenSize.height;
-    final screenWidth = screenSize.width;
-    final isLargeScreen = screenHeight > 700;
-    final isWideScreen = screenWidth > 800; // Desktop/tablet breakpoint
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final isLast = _currentPage == _slides.length - 1;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Column(
-              children: [
-                // Header with logo and skip
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Disciplefy Logo
-                      const _LogoWidget(),
-                      // Skip button - uses semantic color for accessibility
-                      TextButton(
-                        onPressed: _skipOnboarding,
-                        style: TextButton.styleFrom(
-                          // Ensure 44px minimum touch target for accessibility
-                          minimumSize: const Size(44, 44),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                        ),
-                        child: Text(
-                          'Skip',
-                          style: AppFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            // Use semantic color instead of hard-coded opacity for better contrast
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Page view with slides
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: _onPageChanged,
-                    itemCount: _slides.length,
-                    itemBuilder: (context, index) => _OnboardingSlideWidget(
-                      slide: _slides[index],
-                      isLargeScreen: isLargeScreen,
-                      isWideScreen: isWideScreen,
-                    ),
-                  ),
-                ),
-
-                // Bottom section with indicator and button
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    24,
-                    0,
-                    24,
-                    isLargeScreen ? 40 : 24,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: Column(
-                      children: [
-                        // Page indicator
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: isLargeScreen ? 24 : 16,
-                          ),
-                          child: SmoothPageIndicator(
-                            controller: _pageController,
-                            count: _slides.length,
-                            effect: WormEffect(
-                              dotHeight: 8,
-                              dotWidth: 8,
-                              activeDotColor: theme.colorScheme.primary,
-                              dotColor:
-                                  theme.colorScheme.primary.withOpacity(0.3),
-                              spacing: 12,
-                            ),
-                          ),
-                        ),
-
-                        // Continue button
-                        Container(
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryColor.withOpacity(0.4),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _handleContinueButton,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Center(
-                                child: Text(
-                                  _currentPage == _slides.length - 1
-                                      ? 'Start Free'
-                                      : 'Continue',
-                                  style: AppFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.onGradient,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Individual slide widget for the onboarding carousel.
-class _OnboardingSlideWidget extends StatelessWidget {
-  final OnboardingSlide slide;
-  final bool isLargeScreen;
-  final bool isWideScreen;
-
-  const _OnboardingSlideWidget({
-    required this.slide,
-    required this.isLargeScreen,
-    required this.isWideScreen,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // Use horizontal layout for wide screens
-    if (isWideScreen) {
-      return _buildWideLayout(context, theme);
-    }
-
-    return _buildNarrowLayout(context, theme);
-  }
-
-  /// Horizontal layout for desktop/tablet screens
-  Widget _buildWideLayout(BuildContext context, ThemeData theme) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Left side - Large icon with decorative elements
-            Expanded(
-              flex: 2,
-              child: Center(
-                child: _buildIconSection(theme, size: 200),
-              ),
-            ),
-
-            const SizedBox(width: 64),
-
-            // Right side - Content
-            Expanded(
-              flex: 3,
+      backgroundColor: palette.page,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: WelcomeGlow()),
+          SafeArea(
+            child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
+                constraints: const BoxConstraints(maxWidth: 520),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
-                    Text(
-                      slide.title,
-                      style: AppFonts.poppins(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                        height: 1.2,
+                    // Brand row + Skip
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 12, 4),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: WelcomeBrandRow(),
+                            ),
+                          ),
+                          TextButton(
+                            key: const Key('onboarding_skip'),
+                            onPressed: _skipOnboarding,
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(44, 44),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              foregroundColor: palette.muted,
+                            ),
+                            child: Text(
+                              context.tr(TranslationKeys.onboardingSkipIntro),
+                              style: AppFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: palette.muted,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
-                    const SizedBox(height: 16),
-
-                    // Subtitle
-                    Text(
-                      slide.subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.primary,
-                        height: 1.4,
+                    // Slides
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: _onPageChanged,
+                        itemCount: _slides.length,
+                        itemBuilder: (context, index) =>
+                            _OnboardingSlideView(slide: _slides[index]),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
-
-                    // Description
-                    Text(
-                      slide.description,
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                        height: 1.7,
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Bible verse
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.secondary.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.colorScheme.secondary.withOpacity(0.5),
-                        ),
-                      ),
-                      child: Text(
-                        slide.verse,
-                        style: AppFonts.inter(
-                          fontSize: 15,
-                          fontStyle: FontStyle.italic,
-                          color: theme.colorScheme.onSurface.withOpacity(0.8),
-                          height: 1.6,
-                        ),
+                    // Dots + Continue
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+                      child: Row(
+                        children: [
+                          _PageDots(
+                            count: _slides.length,
+                            current: _currentPage,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: WelcomePrimaryButton(
+                                key: const Key('onboarding_continue'),
+                                expand: false,
+                                label: isLast
+                                    ? context.tr(
+                                        TranslationKeys.onboardingGetStarted)
+                                    : context
+                                        .tr(TranslationKeys.onboardingContinue),
+                                onPressed: _handleContinueButton,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Vertical layout for mobile screens
-  Widget _buildNarrowLayout(BuildContext context, ThemeData theme) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon container
-            _buildIconSection(theme, size: isLargeScreen ? 140 : 110),
-
-            SizedBox(height: isLargeScreen ? 40 : 28),
-
-            // Title
-            Text(
-              slide.title,
-              style: AppFonts.poppins(
-                fontSize: isLargeScreen ? 32 : 26,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: isLargeScreen ? 12 : 8),
-
-            // Subtitle
-            Text(
-              slide.subtitle,
-              style: AppFonts.inter(
-                fontSize: isLargeScreen ? 20 : 17,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.primary,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: isLargeScreen ? 20 : 14),
-
-            // Description
-            Text(
-              slide.description,
-              style: AppFonts.inter(
-                fontSize: isLargeScreen ? 16 : 15,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: isLargeScreen ? 24 : 18),
-
-            // Bible verse
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.colorScheme.secondary.withOpacity(0.5),
-                ),
-              ),
-              child: Text(
-                slide.verse,
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: theme.colorScheme.onSurface.withOpacity(0.8),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds the icon section with decorative container
-  Widget _buildIconSection(ThemeData theme, {required double size}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withOpacity(0.1),
-            theme.colorScheme.secondary.withOpacity(0.2),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(size * 0.22),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            blurRadius: 30,
-            spreadRadius: 5,
           ),
         ],
       ),
-      child: Icon(
-        slide.iconData,
-        size: size * 0.45,
-        color: theme.colorScheme.primary,
-      ),
     );
   }
 }
 
-/// Private widget for rendering the theme-aware Disciplefy logo
-class _LogoWidget extends StatelessWidget {
-  const _LogoWidget();
+/// One onboarding slide: app preview, eyebrow, title, description, verse.
+class _OnboardingSlideView extends StatelessWidget {
+  final _SlideSpec slide;
+
+  const _OnboardingSlideView({required this.slide});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final logoAsset = isDarkMode
-        ? 'assets/images/app_logo_dark.png'
-        : 'assets/images/app_logo.png';
+    final palette = ReaderPalette.of(context);
 
-    return Semantics(
-      label: 'Disciplefy app logo',
-      child: Image.asset(
-        logoAsset,
-        width: 200,
-        height: 48,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to icon + text if image fails to load
-          return Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The preview takes a share of the height and scales down to it, so
+        // short screens keep the text in view.
+        final previewHeight = (constraints.maxHeight * 0.5).clamp(120.0, 360.0);
+        final isNarrow = constraints.maxWidth < 360;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.menu_book,
-                  color: theme.colorScheme.onPrimary,
-                  size: 20,
+              SizedBox(
+                width: double.infinity,
+                height: previewHeight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: slide.preview,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(height: isNarrow ? 18 : 24),
+              WelcomeEyebrow(context.tr(slide.eyebrowKey)),
+              const SizedBox(height: 10),
+              WelcomeTitle(
+                context.tr(slide.titleKey),
+                fontSize: isNarrow ? 25 : 30,
+              ),
+              const SizedBox(height: 12),
               Text(
-                'Disciplefy',
-                style: AppFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
+                context.tr(slide.descriptionKey),
+                style: AppFonts.inter(
+                  fontSize: isNarrow ? 14.5 : 15.5,
+                  height: 1.55,
+                  color: palette.muted,
                 ),
+              ),
+              const SizedBox(height: 18),
+              _VerseBlock(
+                verse: context.tr(slide.verseKey),
+                reference: slide.reference,
               ),
             ],
-          );
-        },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Italic verse with a gold left rule and gold reference.
+class _VerseBlock extends StatelessWidget {
+  final String verse;
+  final String reference;
+
+  const _VerseBlock({required this.verse, required this.reference});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.only(left: 14, top: 2, bottom: 2),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: palette.gold, width: 2.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '\u201C$verse\u201D',
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              height: 1.45,
+              color: palette.text.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            reference,
+            style: AppFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: palette.gold,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Data model for onboarding slide content.
-class OnboardingSlide {
-  final String title;
-  final String subtitle;
-  final String description;
-  final IconData iconData;
-  final String verse;
+/// Page dots: the active page is a wide gold pill.
+class _PageDots extends StatelessWidget {
+  final int count;
+  final int current;
 
-  const OnboardingSlide({
-    required this.title,
-    required this.subtitle,
-    required this.description,
-    required this.iconData,
-    required this.verse,
+  const _PageDots({required this.count, required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Semantics(
+      label: '${current + 1} / $count',
+      excludeSemantics: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < count; i++)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              margin: EdgeInsets.only(right: i == count - 1 ? 0 : 6),
+              width: i == current ? 22 : 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: i == current
+                    ? palette.gold
+                    : palette.dim.withValues(alpha: palette.isDark ? 0.6 : 0.4),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Content of one onboarding slide. Text is looked up by translation key;
+/// scripture references stay as written.
+class _SlideSpec {
+  final String eyebrowKey;
+  final String titleKey;
+  final String descriptionKey;
+  final String verseKey;
+  final String reference;
+  final Widget preview;
+
+  const _SlideSpec({
+    required this.eyebrowKey,
+    required this.titleKey,
+    required this.descriptionKey,
+    required this.verseKey,
+    required this.reference,
+    required this.preview,
   });
 }

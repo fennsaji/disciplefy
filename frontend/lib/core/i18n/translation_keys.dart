@@ -342,6 +342,11 @@ class TranslationKeys {
   static const loginTermsNotice = 'login.terms_notice';
   static const loginTermsNoticeSuffix = 'login.terms_notice_suffix';
   static const loginContinueWithEmail = 'login.continue_with_email';
+  static const loginChipStudyGuides = 'login.chip_study_guides';
+  static const loginChipDailyVerse = 'login.chip_daily_verse';
+  static const loginChipDiscipler = 'login.chip_discipler';
+  static const loginChipMemoryVerses = 'login.chip_memory_verses';
+  static const loginLanguagesLine = 'login.languages_line';
 
   // Email Auth Screen
   static const emailAuthTitle = 'email_auth.title';
@@ -366,6 +371,11 @@ class TranslationKeys {
   static const emailAuthEmailExists = 'email_auth.email_exists';
   static const emailAuthInvalidCredentials = 'email_auth.invalid_credentials';
   static const emailAuthWeakPassword = 'email_auth.weak_password';
+  static const emailAuthSignInEyebrow = 'email_auth.sign_in_eyebrow';
+  static const emailAuthSignUpEyebrow = 'email_auth.sign_up_eyebrow';
+  static const emailAuthSignInTitle = 'email_auth.sign_in_title';
+  static const emailAuthSignUpTitle = 'email_auth.sign_up_title';
+  static const emailAuthNewPasswordHint = 'email_auth.new_password_hint';
 
   // Password Reset Screen
   static const passwordResetTitle = 'password_reset.title';
@@ -397,6 +407,47 @@ class TranslationKeys {
   static const onboardingLanguageSavedLocally =
       'onboarding.language_saved_locally';
   static const onboardingDefaultLanguageSet = 'onboarding.default_language_set';
+  static const onboardingSkipIntro = 'onboarding.skip_intro';
+  static const onboardingGetStarted = 'onboarding.get_started';
+  static const onboardingLanguageEyebrow = 'onboarding.language_eyebrow';
+  static const onboardingLanguageDefault = 'onboarding.language_default';
+  static const onboardingSlide1Eyebrow = 'onboarding.slide1_eyebrow';
+  static const onboardingSlide1Title = 'onboarding.slide1_title';
+  static const onboardingSlide1Description = 'onboarding.slide1_description';
+  static const onboardingSlide1Verse = 'onboarding.slide1_verse';
+  static const onboardingSlide2Eyebrow = 'onboarding.slide2_eyebrow';
+  static const onboardingSlide2Title = 'onboarding.slide2_title';
+  static const onboardingSlide2Description = 'onboarding.slide2_description';
+  static const onboardingSlide2Verse = 'onboarding.slide2_verse';
+  static const onboardingSlide3Eyebrow = 'onboarding.slide3_eyebrow';
+  static const onboardingSlide3Title = 'onboarding.slide3_title';
+  static const onboardingSlide3Description = 'onboarding.slide3_description';
+  static const onboardingSlide3Verse = 'onboarding.slide3_verse';
+  static const onboardingSlide4Eyebrow = 'onboarding.slide4_eyebrow';
+  static const onboardingSlide4Title = 'onboarding.slide4_title';
+  static const onboardingSlide4Description = 'onboarding.slide4_description';
+  static const onboardingSlide4Verse = 'onboarding.slide4_verse';
+  static const onboardingPreviewTopicMeta = 'onboarding.preview_topic_meta';
+  static const onboardingPreviewTopic = 'onboarding.preview_topic';
+  static const onboardingPreviewSummary = 'onboarding.preview_summary';
+  static const onboardingPreviewContext = 'onboarding.preview_context';
+  static const onboardingPreviewInterpretation =
+      'onboarding.preview_interpretation';
+  static const onboardingPreviewVerseOfDay = 'onboarding.preview_verse_of_day';
+  static const onboardingPreviewStudyNow = 'onboarding.preview_study_now';
+  static const onboardingPreviewScriptureMeta =
+      'onboarding.preview_scripture_meta';
+  static const onboardingPreviewSummaryBody = 'onboarding.preview_summary_body';
+  static const onboardingPreviewContextBody = 'onboarding.preview_context_body';
+  static const onboardingPreviewListening = 'onboarding.preview_listening';
+  static const onboardingPreviewQuestion = 'onboarding.preview_question';
+  static const onboardingPreviewAnswer = 'onboarding.preview_answer';
+  static const onboardingPreviewReviewMeta = 'onboarding.preview_review_meta';
+  static const onboardingPreviewBlankStart = 'onboarding.preview_blank_start';
+  static const onboardingPreviewBlankEnd = 'onboarding.preview_blank_end';
+  static const onboardingPreviewAgain = 'onboarding.preview_again';
+  static const onboardingPreviewGood = 'onboarding.preview_good';
+  static const onboardingPreviewEasy = 'onboarding.preview_easy';
 
   // Settings Screen
   static const settingsTitle = 'settings.title';

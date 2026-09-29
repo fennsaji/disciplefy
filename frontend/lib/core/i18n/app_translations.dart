@@ -432,6 +432,11 @@ class AppTranslations {
       'minutes_ago': '{count}m ago',
     },
     'login': {
+      'chip_study_guides': 'Study guides',
+      'chip_daily_verse': 'Daily verse',
+      'chip_discipler': 'Talk to Discipler',
+      'chip_memory_verses': 'Memory verses',
+      'languages_line': 'English · Hindi · Malayalam',
       'welcome': 'Welcome to Disciplefy',
       'subtitle': 'Deepen your faith through guided Bible study',
       'continue_with_google': 'Continue with Google',
@@ -464,6 +469,11 @@ class AppTranslations {
       'continue_with_email': 'Continue with Email',
     },
     'email_auth': {
+      'sign_in_eyebrow': 'Welcome back',
+      'sign_up_eyebrow': 'Join Disciplefy',
+      'sign_in_title': 'Sign in',
+      'sign_up_title': 'Create account',
+      'new_password_hint': 'At least 8 characters',
       'title': 'Email Sign In',
       'sign_in': 'Sign In',
       'sign_up': 'Sign Up',
@@ -511,6 +521,54 @@ class AppTranslations {
       'sent': 'Verification email sent! Check your inbox.',
     },
     'onboarding': {
+      'skip_intro': 'Skip',
+      'get_started': 'Get Started',
+      'language_eyebrow': 'Language',
+      'language_default': 'Default',
+      'slide1_eyebrow': 'Daily verse',
+      'slide1_title': 'Start each day with God\'s Word',
+      'slide1_description':
+          'Receive daily verses with instant study guides. Tap any verse to dive deeper with personalized insights, context, and practical applications.',
+      'slide1_verse': 'Your word is a lamp for my feet, a light on my path.',
+      'slide2_eyebrow': 'Study guides',
+      'slide2_title': 'Personalized insights for your journey',
+      'slide2_description':
+          'Enter any scripture or topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
+      'slide2_verse':
+          'All Scripture is God-breathed and is useful for teaching...',
+      'slide3_eyebrow': 'Discipler',
+      'slide3_title': 'Talk with your Bible companion',
+      'slide3_description':
+          'Have natural voice conversations about Scripture. Ask questions, get answers, and deepen your understanding through guided dialogue.',
+      'slide3_verse': 'Call to me and I will answer you...',
+      'slide4_eyebrow': 'Memory verses',
+      'slide4_title': 'Hide God\'s Word in your heart',
+      'slide4_description':
+          'Memorize Scripture with scientifically-proven spaced repetition. Review verses at optimal intervals to commit them to long-term memory.',
+      'slide4_verse':
+          'I have hidden your word in my heart that I might not sin against you.',
+      'preview_topic_meta': 'Topic · Standard · 8 min',
+      'preview_topic': 'Forgiveness',
+      'preview_summary': 'Summary',
+      'preview_context': 'Context',
+      'preview_interpretation': 'Interpretation',
+      'preview_verse_of_day': 'Verse of the day',
+      'preview_study_now': 'Study now',
+      'preview_scripture_meta': 'Scripture · Deep dive · 12 min',
+      'preview_summary_body':
+          'God works all things together for good for those who love Him.',
+      'preview_context_body':
+          'Paul writes to Roman believers facing suffering.',
+      'preview_listening': 'listening',
+      'preview_question': 'Why did Jesus speak in parables?',
+      'preview_answer':
+          'Parables invite the listener in. Jesus used everyday pictures so open hearts would understand (Matthew 13:13).',
+      'preview_review_meta': 'Review · 3 due',
+      'preview_blank_start': 'I have hidden your word in my heart',
+      'preview_blank_end': 'sin against you.',
+      'preview_again': 'Again',
+      'preview_good': 'Good',
+      'preview_easy': 'Easy',
       'welcome': 'Welcome to Disciplefy!',
       'select_language_subtitle':
           'Choose your preferred language for Bible verses and study guides.',
@@ -2702,6 +2760,11 @@ class AppTranslations {
       'minutes_ago': '{count} मिनट पहले',
     },
     'login': {
+      'chip_study_guides': 'अध्ययन गाइड',
+      'chip_daily_verse': 'दैनिक वचन',
+      'chip_discipler': 'डिसाइप्लर से बात करें',
+      'chip_memory_verses': 'स्मृति वचन',
+      'languages_line': 'अंग्रेज़ी · हिन्दी · मलयालम',
       'welcome': 'Disciplefy में आपका स्वागत है',
       'subtitle': 'निर्देशित बाइबिल अध्ययन से अपने विश्वास को बढ़ाएं',
       'continue_with_google': 'Google के साथ जारी रखें',
@@ -2731,6 +2794,11 @@ class AppTranslations {
       'continue_with_email': 'ईमेल से जारी रखें',
     },
     'email_auth': {
+      'sign_in_eyebrow': 'फिर से स्वागत है',
+      'sign_up_eyebrow': 'Disciplefy से जुड़ें',
+      'sign_in_title': 'साइन इन',
+      'sign_up_title': 'खाता बनाएं',
+      'new_password_hint': 'कम से कम 8 अक्षर',
       'title': 'ईमेल से साइन इन',
       'sign_in': 'साइन इन',
       'sign_up': 'साइन अप',
@@ -2778,6 +2846,55 @@ class AppTranslations {
       'sent': 'सत्यापन ईमेल भेजा गया! अपना इनबॉक्स देखें।',
     },
     'onboarding': {
+      'skip_intro': 'छोड़ें',
+      'get_started': 'शुरू करें',
+      'language_eyebrow': 'भाषा',
+      'language_default': 'डिफ़ॉल्ट',
+      'slide1_eyebrow': 'दैनिक वचन',
+      'slide1_title': 'हर दिन की शुरुआत परमेश्वर के वचन से करें',
+      'slide1_description':
+          'हर दिन वचन और तुरंत अध्ययन गाइड पाएं। किसी भी वचन पर टैप करें और व्यक्तिगत अंतर्दृष्टि, संदर्भ और व्यावहारिक प्रयोग के साथ गहराई में जाएं।',
+      'slide1_verse':
+          'तेरा वचन मेरे पांव के लिये दीपक, और मेरे मार्ग के लिये उजियाला है।',
+      'slide2_eyebrow': 'अध्ययन गाइड',
+      'slide2_title': 'आपकी यात्रा के लिए व्यक्तिगत अंतर्दृष्टि',
+      'slide2_description':
+          'कोई भी वचन या विषय दर्ज करें और संदर्भ, व्याख्या, मनन के प्रश्न और प्रार्थना बिंदुओं के साथ पूरी अध्ययन गाइड बनाएं।',
+      'slide2_verse':
+          'सम्पूर्ण पवित्रशास्त्र परमेश्वर की प्रेरणा से रचा गया है और उपदेश के लिये लाभदायक है...',
+      'slide3_eyebrow': 'डिसाइप्लर',
+      'slide3_title': 'अपने बाइबल साथी से बात करें',
+      'slide3_description':
+          'पवित्रशास्त्र के बारे में सहज आवाज़ में बातचीत करें। प्रश्न पूछें, उत्तर पाएं और मार्गदर्शित संवाद से अपनी समझ बढ़ाएं।',
+      'slide3_verse':
+          'मुझ से प्रार्थना कर और मैं तेरी सुनकर तुझे उत्तर दूंगा...',
+      'slide4_eyebrow': 'स्मृति वचन',
+      'slide4_title': 'परमेश्वर के वचन को अपने हृदय में रखें',
+      'slide4_description':
+          'वैज्ञानिक रूप से प्रमाणित स्पेस्ड रिपिटीशन से वचन याद करें। सही अंतराल पर दोहराएं ताकि वचन लंबे समय तक याद रहें।',
+      'slide4_verse':
+          'मैं ने तेरे वचन को अपने हृदय में रख छोड़ा है, कि तेरे विरुद्ध पाप न करूं।',
+      'preview_topic_meta': 'विषय · स्टैंडर्ड · 8 मिनट',
+      'preview_topic': 'क्षमा',
+      'preview_summary': 'सारांश',
+      'preview_context': 'संदर्भ',
+      'preview_interpretation': 'व्याख्या',
+      'preview_verse_of_day': 'आज का वचन',
+      'preview_study_now': 'अभी पढ़ें',
+      'preview_scripture_meta': 'पवित्रशास्त्र · गहन अध्ययन · 12 मिनट',
+      'preview_summary_body':
+          'जो परमेश्वर से प्रेम रखते हैं, उनके लिए वह सब बातों से भलाई उत्पन्न करता है।',
+      'preview_context_body': 'पौलुस दुःख सह रहे रोमी विश्वासियों को लिखता है।',
+      'preview_listening': 'सुन रहा है',
+      'preview_question': 'यीशु दृष्टांतों में क्यों बोलते थे?',
+      'preview_answer':
+          'दृष्टांत सुनने वाले को भीतर बुलाते हैं। यीशु ने रोज़मर्रा के चित्रों का उपयोग किया ताकि खुले हृदय समझ सकें (मत्ती 13:13)।',
+      'preview_review_meta': 'दोहराव · 3 बाकी',
+      'preview_blank_start': 'मैं ने तेरे वचन को अपने हृदय में रख छोड़ा है,',
+      'preview_blank_end': 'पाप न करूं।',
+      'preview_again': 'फिर से',
+      'preview_good': 'अच्छा',
+      'preview_easy': 'आसान',
       'welcome': 'Disciplefy में आपका स्वागत है!',
       'select_language_subtitle':
           'बाइबिल आयतों और गाइड के लिए अपनी भाषा चुनें।',
@@ -4986,6 +5103,11 @@ class AppTranslations {
       'minutes_ago': '{count} മിനിറ്റ് മുമ്പ്',
     },
     'login': {
+      'chip_study_guides': 'പഠന സഹായികൾ',
+      'chip_daily_verse': 'ദിനവചനം',
+      'chip_discipler': 'ഡിസൈപ്ലറോട് സംസാരിക്കൂ',
+      'chip_memory_verses': 'മനഃപാഠ വാക്യങ്ങൾ',
+      'languages_line': 'ഇംഗ്ലീഷ് · ഹിന്ദി · മലയാളം',
       'welcome': 'Disciplefy-ലേക്ക് സ്വാഗതം',
       'subtitle': 'ബൈബിൾ അധ്യയനം ചെയ്ത് വിശ്വാസം വളര്‍ത്തുക',
       'continue_with_google': 'Google ഉപയോഗിച്ച് തുടരുക',
@@ -5019,6 +5141,11 @@ class AppTranslations {
       'continue_with_email': 'ഇമെയിൽ ഉപയോഗിച്ച് തുടരുക',
     },
     'email_auth': {
+      'sign_in_eyebrow': 'വീണ്ടും സ്വാഗതം',
+      'sign_up_eyebrow': 'Disciplefy-യിൽ ചേരൂ',
+      'sign_in_title': 'സൈൻ ഇൻ',
+      'sign_up_title': 'അക്കൗണ്ട് സൃഷ്ടിക്കൂ',
+      'new_password_hint': 'കുറഞ്ഞത് 8 അക്ഷരങ്ങൾ',
       'title': 'ഇമെയിൽ സൈൻ ഇൻ',
       'sign_in': 'സൈൻ ഇൻ',
       'sign_up': 'സൈൻ അപ്പ്',
@@ -5067,6 +5194,55 @@ class AppTranslations {
       'sent': 'സ്ഥിരീകരണ ഇമെയിൽ അയച്ചു! നിങ്ങളുടെ ഇൻബോക്സ് പരിശോധിക്കുക.',
     },
     'onboarding': {
+      'skip_intro': 'ഒഴിവാക്കുക',
+      'get_started': 'ആരംഭിക്കുക',
+      'language_eyebrow': 'ഭാഷ',
+      'language_default': 'ഡിഫോൾട്ട്',
+      'slide1_eyebrow': 'ദിനവചനം',
+      'slide1_title': 'ഓരോ ദിവസവും ദൈവവചനത്തോടെ ആരംഭിക്കൂ',
+      'slide1_description':
+          'ദിവസവും വചനങ്ങളും ഉടനടി പഠന സഹായികളും നേടൂ. ഏതു വചനത്തിലും ടാപ്പ് ചെയ്ത് വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ, പശ്ചാത്തലം, പ്രായോഗിക പാഠങ്ങൾ എന്നിവയിലേക്ക് ആഴത്തിൽ ഇറങ്ങൂ.',
+      'slide1_verse':
+          'നിന്റെ വചനം എന്റെ കാലിന്നു ദീപവും എന്റെ പാതെക്കു പ്രകാശവും ആകുന്നു.',
+      'slide2_eyebrow': 'പഠന സഹായികൾ',
+      'slide2_title': 'നിങ്ങളുടെ യാത്രയ്ക്കായി വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ',
+      'slide2_description':
+          'ഏതു വേദഭാഗമോ വിഷയമോ നൽകി പശ്ചാത്തലം, വ്യാഖ്യാനം, ധ്യാന ചോദ്യങ്ങൾ, പ്രാർത്ഥനാ വിഷയങ്ങൾ എന്നിവയുള്ള സമഗ്ര പഠന സഹായികൾ തയ്യാറാക്കൂ.',
+      'slide2_verse':
+          'എല്ലാ തിരുവെഴുത്തും ദൈവശ്വാസീയമാകയാൽ ഉപദേശത്തിന്നു പ്രയോജനമുള്ളതു...',
+      'slide3_eyebrow': 'ഡിസൈപ്ലർ',
+      'slide3_title': 'നിങ്ങളുടെ ബൈബിൾ സഹായിയോട് സംസാരിക്കൂ',
+      'slide3_description':
+          'തിരുവെഴുത്തിനെക്കുറിച്ച് സ്വാഭാവികമായി ശബ്ദത്തിൽ സംസാരിക്കൂ. ചോദ്യങ്ങൾ ചോദിക്കൂ, ഉത്തരങ്ങൾ നേടൂ, മാർഗനിർദേശമുള്ള സംഭാഷണത്തിലൂടെ ഗ്രാഹ്യം ആഴപ്പെടുത്തൂ.',
+      'slide3_verse': 'എന്നോടു വിളിച്ചപേക്ഷിക്ക; ഞാൻ നിനക്കു ഉത്തരം അരുളും...',
+      'slide4_eyebrow': 'മനഃപാഠ വാക്യങ്ങൾ',
+      'slide4_title': 'ദൈവവചനം ഹൃദയത്തിൽ സംഗ്രഹിക്കൂ',
+      'slide4_description':
+          'ശാസ്ത്രീയമായി തെളിയിക്കപ്പെട്ട സ്പേസ്ഡ് റിപ്പീറ്റേഷനിലൂടെ വചനം മനഃപാഠമാക്കൂ. ശരിയായ ഇടവേളകളിൽ ആവർത്തിച്ച് ദീർഘകാലം ഓർമ്മയിൽ സൂക്ഷിക്കൂ.',
+      'slide4_verse':
+          'ഞാൻ നിന്നോടു പാപം ചെയ്യാതിരിപ്പാൻ നിന്റെ വചനത്തെ എന്റെ ഹൃദയത്തിൽ സംഗ്രഹിക്കുന്നു.',
+      'preview_topic_meta': 'വിഷയം · സ്റ്റാൻഡേർഡ് · 8 മിനിറ്റ്',
+      'preview_topic': 'ക്ഷമ',
+      'preview_summary': 'സംഗ്രഹം',
+      'preview_context': 'പശ്ചാത്തലം',
+      'preview_interpretation': 'വ്യാഖ്യാനം',
+      'preview_verse_of_day': 'ഇന്നത്തെ വചനം',
+      'preview_study_now': 'ഇപ്പോൾ പഠിക്കൂ',
+      'preview_scripture_meta': 'തിരുവെഴുത്ത് · ആഴത്തിലുള്ള പഠനം · 12 മിനിറ്റ്',
+      'preview_summary_body':
+          'ദൈവത്തെ സ്നേഹിക്കുന്നവർക്കു സകലവും നന്മയ്ക്കായി കൂടി വ്യാപരിക്കുന്നു.',
+      'preview_context_body':
+          'കഷ്ടത നേരിടുന്ന റോമിലെ വിശ്വാസികൾക്കു പൗലൊസ് എഴുതുന്നു.',
+      'preview_listening': 'കേൾക്കുന്നു',
+      'preview_question': 'യേശു ഉപമകളിലൂടെ സംസാരിച്ചത് എന്തുകൊണ്ട്?',
+      'preview_answer':
+          'ഉപമകൾ കേൾവിക്കാരനെ ഉള്ളിലേക്കു ക്ഷണിക്കുന്നു. തുറന്ന ഹൃദയങ്ങൾ ഗ്രഹിക്കേണ്ടതിന് യേശു ദൈനംദിന ചിത്രങ്ങൾ ഉപയോഗിച്ചു (മത്തായി 13:13).',
+      'preview_review_meta': 'പുനരവലോകനം · 3 ബാക്കി',
+      'preview_blank_start': 'ഞാൻ നിന്നോടു പാപം ചെയ്യാതിരിപ്പാൻ',
+      'preview_blank_end': 'ഹൃദയത്തിൽ സംഗ്രഹിക്കുന്നു.',
+      'preview_again': 'വീണ്ടും',
+      'preview_good': 'നല്ലത്',
+      'preview_easy': 'എളുപ്പം',
       'welcome': 'Disciplefy-ലേക്ക് സ്വാഗതം!',
       'select_language_subtitle':
           'ബൈബിൾ വചനങ്ങൾക്കും പഠന ഗൈഡുകൾക്കുമായി നിങ്ങളുടെ ഇഷ്ടഭാഷ തിരഞ്ഞെടുക്കുക.',
