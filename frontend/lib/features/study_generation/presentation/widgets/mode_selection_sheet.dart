@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/widgets/upgrade_dialog.dart';
-import '../../../subscription/domain/repositories/subscription_repository.dart';
-import '../../domain/entities/study_mode.dart';
-import '../../data/repositories/token_cost_repository.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
-import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/features/study_generation/data/repositories/token_cost_repository.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/repositories/subscription_repository.dart';
 
-/// Bottom sheet for selecting study mode before generating a study guide.
+/// Full-height "Choose depth" page for picking a study mode before a study
+/// guide is generated.
 ///
-/// Presents 4 study mode options (Quick, Standard, Deep, Lectio) with
-/// visual icons, durations, and descriptions. Optionally allows users
-/// to remember their choice for future sessions.
+/// Lists every study mode the user's plan can see (locked ones open the
+/// upgrade dialog) with its description, duration and credit cost, and
+/// optionally lets the user remember the choice.
 ///
-/// For learning paths, can highlight a recommended mode and offer an
+/// For learning paths it can highlight a recommended mode and offer an
 /// "Always use recommended" preference option.
 class ModeSelectionSheet extends StatefulWidget {
   /// The initially selected mode (defaults to standard).
@@ -42,6 +43,10 @@ class ModeSelectionSheet extends StatefulWidget {
   /// Language code for token cost calculation (en, hi, ml)
   final String languageCode;
 
+  /// Gold eyebrow above the headline — what is being studied (the user's
+  /// input). Falls back to [learningPathTitle]; hidden when neither is set.
+  final String? eyebrow;
+
   const ModeSelectionSheet({
     super.key,
     this.initialMode = StudyMode.standard,
@@ -49,17 +54,20 @@ class ModeSelectionSheet extends StatefulWidget {
     this.recommendedMode,
     this.isFromLearningPath = false,
     this.learningPathTitle,
+    this.eyebrow,
     required this.languageCode,
   });
 
-  /// Shows the mode selection sheet as a modal bottom sheet.
+  /// Shows the depth chooser as a full-height modal sheet.
   /// Returns a map with 'mode', 'rememberChoice', and 'alwaysUseRecommended'
   /// or null if the user cancelled.
   ///
-  /// If [inputType] is provided, recommended mode is determined automatically:
-  /// - 'scripture' → Deep Dive
-  /// - 'topic' → Standard
-  /// - 'question' → Standard
+  /// If [inputType] is provided, recommended mode is determined automatically
+  /// (Standard for scripture, topic and question).
+  ///
+  /// [preselectedMode] overrides the initial selection (e.g. the depth
+  /// already chosen inline on the Generate tab) while still marking the
+  /// recommended mode.
   static Future<Map<String, dynamic>?> show({
     required BuildContext context,
     required String languageCode,
@@ -69,6 +77,8 @@ class ModeSelectionSheet extends StatefulWidget {
     bool isFromLearningPath = false,
     String? learningPathTitle,
     String? inputType,
+    String? eyebrow,
+    StudyMode? preselectedMode,
   }) {
     // Auto-determine recommended mode based on input type if not from learning path
     final effectiveRecommendedMode =
@@ -77,13 +87,15 @@ class ModeSelectionSheet extends StatefulWidget {
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => ModeSelectionSheet(
-        initialMode: effectiveRecommendedMode ?? initialMode,
+        initialMode: preselectedMode ?? effectiveRecommendedMode ?? initialMode,
         showRememberOption: showRememberOption,
         recommendedMode: effectiveRecommendedMode,
         isFromLearningPath: isFromLearningPath,
         learningPathTitle: learningPathTitle,
+        eyebrow: eyebrow,
         languageCode: languageCode,
       ),
     );
@@ -156,28 +168,12 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         },
       );
 
-      // Map StudyMode to feature flag keys
-      final modeFeatureMap = {
-        StudyMode.quick: 'quick_read_mode',
-        StudyMode.standard: 'standard_study_mode',
-        StudyMode.deep: 'deep_dive_mode',
-        StudyMode.lectio: 'lectio_divina_mode',
-        StudyMode.sermon: 'sermon_outline_mode',
-      };
-
       // Check each mode for lock/hide status
       _availableModes = [];
       _lockedModes = {};
 
       for (final mode in StudyMode.values) {
-        final featureKey = modeFeatureMap[mode];
-        if (featureKey == null) {
-          // Unknown mode - show it
-          _availableModes.add(mode);
-          _lockedModes[mode] = false;
-          continue;
-        }
-
+        final featureKey = mode.featureKey;
         final shouldHide =
             _systemConfigService.shouldHideFeature(featureKey, _userPlan);
         final isLocked =
@@ -282,17 +278,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
 
   /// Show upgrade dialog for locked study mode
   void _showUpgradeDialogForMode(StudyMode mode) {
-    // Map mode to feature key
-    final modeFeatureMap = {
-      StudyMode.quick: 'quick_read_mode',
-      StudyMode.standard: 'standard_study_mode',
-      StudyMode.deep: 'deep_dive_mode',
-      StudyMode.lectio: 'lectio_divina_mode',
-      StudyMode.sermon: 'sermon_outline_mode',
-    };
-
-    final featureKey = modeFeatureMap[mode];
-    if (featureKey == null) return;
+    final featureKey = mode.featureKey;
 
     final requiredPlans = _systemConfigService.getRequiredPlans(featureKey);
     final upgradePlan =
@@ -311,320 +297,255 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
     );
   }
 
+  /// Whether the remember checkbox is currently ticked (the learning-path
+  /// recommended mode uses "always use recommended" instead).
+  bool get _rememberTicked =>
+      widget.isFromLearningPath && _selectedMode == widget.recommendedMode
+          ? _alwaysUseRecommended
+          : _rememberChoice;
+
+  void _toggleRemember() {
+    setState(() {
+      if (widget.isFromLearningPath &&
+          widget.recommendedMode != null &&
+          _selectedMode == widget.recommendedMode) {
+        _alwaysUseRecommended = !_alwaysUseRecommended;
+      } else {
+        _rememberChoice = !_rememberChoice;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    final palette = ReaderPalette.of(context);
+    final eyebrow = widget.eyebrow ?? widget.learningPathTitle;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 16,
-            bottom: bottomPadding + 16,
-          ),
+    return Material(
+      color: palette.page,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: double.infinity,
+        child: SafeArea(
+          top: false,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Title
-              Text(
-                context.tr(TranslationKeys.modeSelectionTitle),
-                style: AppFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr(TranslationKeys.modeSelectionSubtitle),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.6)
-                      : const Color(0xFF6B7280),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-
-              // Scrollable content area
-              Flexible(
-                child: SheetScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Loading indicator while checking feature flags
-                      if (_isLoadingFeatureFlags)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      // Mode options (with lock support)
-                      else
-                        ..._availableModes.map((mode) {
-                          final isLocked = _lockedModes[mode] ?? false;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _ModeOptionCard(
-                              mode: mode,
-                              isSelected: _selectedMode == mode,
-                              isRecommended: mode == widget.recommendedMode,
-                              isLocked: isLocked,
-                              translatedName:
-                                  _getStudyModeTranslatedName(mode, context),
-                              translatedDescription:
-                                  _getStudyModeTranslatedDescription(
-                                      mode, context),
-                              recommendedBadgeText: widget.isFromLearningPath
-                                  ? context.tr(TranslationKeys
-                                      .learningPathRecommendedModeBadge)
-                                  : context.tr(TranslationKeys
-                                      .modeSelectionRecommendedBadge),
-                              tokenCost: _tokenCosts[mode],
-                              onTap: () {
-                                if (isLocked) {
-                                  // Show upgrade dialog for locked modes
-                                  _showUpgradeDialogForMode(mode);
-                                } else {
-                                  // Select unlocked mode
-                                  setState(() {
-                                    _selectedMode = mode;
-                                  });
-                                }
-                              },
-                            ),
-                          );
-                        }),
-
-                      const SizedBox(height: 8),
-
-                      // Remember choice checkbox (dynamic text based on selection)
-                      if (widget.showRememberOption)
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              if (widget.isFromLearningPath &&
-                                  widget.recommendedMode != null) {
-                                // For learning paths, toggle alwaysUseRecommended when on recommended mode
-                                if (_selectedMode == widget.recommendedMode) {
-                                  _alwaysUseRecommended =
-                                      !_alwaysUseRecommended;
-                                } else {
-                                  // If not on recommended mode, toggle rememberChoice
-                                  _rememberChoice = !_rememberChoice;
-                                }
-                              } else {
-                                // For non-learning path, always toggle rememberChoice
-                                _rememberChoice = !_rememberChoice;
-                              }
-                            });
-                          },
-                          behavior: HitTestBehavior.opaque,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  height: 44,
-                                  child: Center(
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        // Use gold color if selected mode is recommended
-                                        color: (widget.isFromLearningPath &&
-                                                    _selectedMode ==
-                                                        widget.recommendedMode
-                                                ? _alwaysUseRecommended
-                                                : _rememberChoice)
-                                            ? (_selectedMode ==
-                                                    widget.recommendedMode
-                                                ? const Color(
-                                                    0xFFF59E0B) // Gold for recommended
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .primary)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: (widget.isFromLearningPath &&
-                                                      _selectedMode ==
-                                                          widget.recommendedMode
-                                                  ? _alwaysUseRecommended
-                                                  : _rememberChoice)
-                                              ? (_selectedMode ==
-                                                      widget.recommendedMode
-                                                  ? const Color(0xFFF59E0B)
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .primary)
-                                              : isDark
-                                                  ? Colors.white
-                                                      .withOpacity(0.3)
-                                                  : const Color(0xFFD1D5DB),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: (widget.isFromLearningPath &&
-                                                  _selectedMode ==
-                                                      widget.recommendedMode
-                                              ? _alwaysUseRecommended
-                                              : _rememberChoice)
-                                          ? Icon(
-                                              _selectedMode ==
-                                                      widget.recommendedMode
-                                                  ? Icons.stars
-                                                  : Icons.check,
-                                              size: 14,
-                                              color: Colors.white,
-                                            )
-                                          : null,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Flexible(
-                                  child: Text(
-                                    // Dynamic text based on whether selected mode is recommended
-                                    _selectedMode == widget.recommendedMode
-                                        ? context.tr(TranslationKeys
-                                            .modeSelectionAlwaysUseRecommended)
-                                        : context.tr(TranslationKeys
-                                            .modeSelectionRememberChoice),
-                                    style: AppFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark
-                                          ? Colors.white.withOpacity(0.7)
-                                          : const Color(0xFF4B5563),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+              // Top bar: back arrow + page title
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 16, 0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.arrow_back_rounded, color: palette.text),
+                      tooltip:
+                          MaterialLocalizations.of(context).backButtonTooltip,
+                    ),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        context.tr(TranslationKeys.generateStudyChooseDepth),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
                         ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Continue button
-              Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      ),
                     ),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.of(context).pop({
-                        'mode': _selectedMode,
-                        'rememberChoice': _rememberChoice,
-                        'alwaysUseRecommended': _alwaysUseRecommended,
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            _selectedMode.iconData,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              context
-                                  .tr(TranslationKeys.modeSelectionStartButton)
-                                  .replaceAll(
-                                      '{mode}',
-                                      _getStudyModeTranslatedName(
-                                          _selectedMode, context)),
-                              style: AppFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                          if (eyebrow != null && eyebrow.trim().isNotEmpty) ...[
+                            Text(
+                              eyebrow.trim().toUpperCase(),
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _selectedMode.durationText,
                               style: AppFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.5,
+                                color: palette.gold,
                               ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          Text(
+                            context
+                                .tr(TranslationKeys.modeSelectionTimeQuestion),
+                            style: AppFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: palette.text,
+                              height: 1.25,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 20),
+                    if (_isLoadingFeatureFlags)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else
+                      ..._availableModes.map((mode) {
+                        final isLocked = _lockedModes[mode] ?? false;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _ModeOptionCard(
+                            mode: mode,
+                            isSelected: _selectedMode == mode,
+                            isRecommended: mode == widget.recommendedMode,
+                            isLocked: isLocked,
+                            translatedName: mode.localizedName(context),
+                            translatedDescription:
+                                mode.localizedDescription(context),
+                            recommendedBadgeText: widget.isFromLearningPath
+                                ? context.tr(TranslationKeys
+                                    .learningPathRecommendedModeBadge)
+                                : context.tr(TranslationKeys
+                                    .modeSelectionRecommendedBadge),
+                            tokenCost: _tokenCosts[mode],
+                            onTap: () {
+                              if (isLocked) {
+                                _showUpgradeDialogForMode(mode);
+                              } else {
+                                setState(() => _selectedMode = mode);
+                              }
+                            },
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+
+              // Remember choice + start button, pinned to the bottom.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.showRememberOption)
+                      _RememberChoiceToggle(
+                        ticked: _rememberTicked,
+                        label: _selectedMode == widget.recommendedMode
+                            ? context.tr(TranslationKeys
+                                .modeSelectionAlwaysUseRecommended)
+                            : context.tr(
+                                TranslationKeys.modeSelectionRememberChoice),
+                        onTap: _toggleRemember,
+                      ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 54,
+                      child: FilledButton(
+                        key: const Key('mode_selection_start'),
+                        onPressed: _isLoadingFeatureFlags
+                            ? null
+                            : () => Navigator.of(context).pop({
+                                  'mode': _selectedMode,
+                                  'rememberChoice': _rememberChoice,
+                                  'alwaysUseRecommended': _alwaysUseRecommended,
+                                }),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: palette.ctaFill,
+                          foregroundColor: palette.ctaInk,
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            context.tr(TranslationKeys.modeSelectionStartButton,
+                                {'mode': _selectedMode.localizedName(context)}),
+                            maxLines: 1,
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: palette.ctaInk,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Checkbox row for "Remember my choice" / "Always use recommended".
+class _RememberChoiceToggle extends StatelessWidget {
+  final bool ticked;
+  final String label;
+  final VoidCallback onTap;
+
+  const _RememberChoiceToggle({
+    required this.ticked,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Semantics(
+      checked: ticked,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color:
+                      ticked ? ReaderPalette.selectedFill : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color:
+                        ticked ? ReaderPalette.selectedFill : palette.outline,
+                    width: 2,
+                  ),
+                ),
+                child: ticked
+                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: palette.muted,
                   ),
                 ),
               ),
@@ -634,42 +555,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
       ),
     );
   }
-
-  /// Get translated display name for study mode
-  String _getStudyModeTranslatedName(StudyMode mode, BuildContext context) {
-    switch (mode) {
-      case StudyMode.quick:
-        return context.tr(TranslationKeys.studyModeQuickName);
-      case StudyMode.standard:
-        return context.tr(TranslationKeys.studyModeStandardName);
-      case StudyMode.deep:
-        return context.tr(TranslationKeys.studyModeDeepName);
-      case StudyMode.lectio:
-        return context.tr(TranslationKeys.studyModeLectioName);
-      case StudyMode.sermon:
-        return context.tr(TranslationKeys.studyModeSermonName);
-    }
-  }
-
-  /// Get translated description for study mode
-  String _getStudyModeTranslatedDescription(
-      StudyMode mode, BuildContext context) {
-    switch (mode) {
-      case StudyMode.quick:
-        return context.tr(TranslationKeys.studyModeQuickDescription);
-      case StudyMode.standard:
-        return context.tr(TranslationKeys.studyModeStandardDescription);
-      case StudyMode.deep:
-        return context.tr(TranslationKeys.studyModeDeepDescription);
-      case StudyMode.lectio:
-        return context.tr(TranslationKeys.studyModeLectioDescription);
-      case StudyMode.sermon:
-        return context.tr(TranslationKeys.studyModeSermonDescription);
-    }
-  }
 }
 
-/// Individual mode option card widget.
+/// One depth row: icon | name + description | duration over cost.
 class _ModeOptionCard extends StatelessWidget {
   final StudyMode mode;
   final bool isSelected;
@@ -695,308 +583,110 @@ class _ModeOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
+    final onSelected = Colors.white.withValues(alpha: 0.8);
+    final titleColor = isSelected ? Colors.white : palette.text;
+    final secondary = isSelected ? onSelected : palette.muted;
+    final radius = BorderRadius.circular(20);
 
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return GestureDetector(
-      onTap: onTap,
+    return Semantics(
+      button: true,
+      selected: isSelected,
       child: Opacity(
-        opacity: isLocked ? 0.7 : 1.0,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? isDark
-                    ? primary.withOpacity(0.15)
-                    : const Color(0xFFF3F0FF)
-                : isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isLocked
-                  ? AppColors.warning.withOpacity(0.5)
-                  : isSelected
-                      ? primary
-                      : isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : const Color(0xFFE5E7EB),
-              width: isLocked ? 2 : (isSelected ? 2 : 1),
+        opacity: isLocked ? 0.6 : 1,
+        child: Material(
+          color: isSelected ? ReaderPalette.selectedFill : palette.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: isSelected
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : palette.hairline,
             ),
-            boxShadow: isSelected && !isLocked
-                ? [
-                    BoxShadow(
-                      color: primary.withOpacity(0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
           ),
-          child: Row(
-            children: [
-              // Icon container
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? primary.withOpacity(0.15)
-                      : isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  mode.iconData,
-                  size: 24,
-                  color: isSelected
-                      ? primary
-                      : isDark
-                          ? Colors.white.withOpacity(0.7)
-                          : const Color(0xFF6B7280),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Text content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+          child: InkWell(
+            key: ValueKey('mode_option_${mode.name}'),
+            onTap: onTap,
+            borderRadius: radius,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Row(
+                children: [
+                  Icon(
+                    mode.outlineIcon,
+                    size: 22,
+                    color: isSelected ? Colors.white : palette.accentIcon,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            translatedName,
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? primary
-                                  : isDark
-                                      ? Colors.white
-                                      : const Color(0xFF1F2937),
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          translatedName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.inter(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: titleColor,
                           ),
                         ),
                         if (isRecommended) ...[
-                          const SizedBox(width: 8),
-                          Tooltip(
-                            message: recommendedBadgeText,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(
-                                        0xFF4A3B1F) // Dark gold/amber for dark theme
-                                    : const Color(
-                                        0xFFFFFBF0), // Light gold for light theme
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFF59E0B)
-                                        .withOpacity(0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.stars,
-                                size: 16,
-                                color: isDark
-                                    ? const Color(
-                                        0xFFFBBF24) // Brighter gold for dark theme
-                                    : const Color(
-                                        0xFFF59E0B), // Standard gold for light theme
-                              ),
+                          const SizedBox(height: 2),
+                          Text(
+                            recommendedBadgeText.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                              color: isSelected ? onSelected : palette.gold,
                             ),
                           ),
                         ],
+                        const SizedBox(height: 3),
+                        Text(
+                          translatedDescription,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            color: secondary,
+                            height: 1.3,
+                          ),
+                        ),
                       ],
                     ),
-                    // Show recommended badge text below mode name
-                    if (isRecommended) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        recommendedBadgeText,
-                        style: AppFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? const Color(
-                                  0xFFFBBF24) // Brighter gold for dark theme
-                              : const Color(
-                                  0xFFF59E0B), // Standard gold for light theme
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      translatedDescription,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.6)
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Show lock badge if locked, otherwise show duration and token cost
-              if (isLocked)
-                // Locked badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
                   ),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.warning.withOpacity(0.15)
-                        : AppColors.warning.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.warning,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
+                  const SizedBox(width: 12),
+                  // Right column: duration above cost (no progress bars).
+                  Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Icon(
-                        Icons.lock_rounded,
-                        size: 16,
-                        color: context.appWarning,
-                      ),
-                      const SizedBox(width: 6),
                       Text(
-                        'Locked',
+                        mode.localizedDuration(context),
                         style: AppFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: context.appWarning,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                // Duration and token cost badges
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Duration badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? primary
-                            : isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        mode.durationText,
-                        style: AppFonts.inter(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? Colors.white
-                              : isDark
-                                  ? Colors.white.withOpacity(0.7)
-                                  : const Color(0xFF4B5563),
+                          color: titleColor,
                         ),
                       ),
-                    ),
-
-                    // Token cost badge (for all modes)
-                    if (tokenCost != null) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                      const SizedBox(height: 4),
+                      if (isLocked)
+                        Icon(Icons.lock_rounded, size: 16, color: secondary)
+                      else if (tokenCost != null)
+                        CreditCost(
+                          cost: tokenCost!,
+                          color: isSelected ? onSelected : palette.gold,
                         ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? primary.withOpacity(0.2)
-                              : isDark
-                                  ? Colors.white.withOpacity(0.1)
-                                  : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.token,
-                              size: 12,
-                              color: isSelected
-                                  ? primary
-                                  : isDark
-                                      ? Colors.white.withOpacity(0.7)
-                                      : const Color(0xFF6B7280),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$tokenCost',
-                              style: AppFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isSelected
-                                    ? primary
-                                    : isDark
-                                        ? Colors.white.withOpacity(0.7)
-                                        : const Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
-                  ],
-                ),
-
-              const SizedBox(width: 8),
-
-              // Selection indicator
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected ? primary : Colors.transparent,
-                  border: Border.all(
-                    color: isSelected
-                        ? primary
-                        : isDark
-                            ? Colors.white.withOpacity(0.3)
-                            : const Color(0xFFD1D5DB),
-                    width: 2,
                   ),
-                ),
-                child: isSelected
-                    ? const Icon(
-                        Icons.check,
-                        size: 14,
-                        color: Colors.white,
-                      )
-                    : null,
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

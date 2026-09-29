@@ -6,6 +6,8 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/v2_popup.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
 /// Daily credit allowance per plan, mirroring `subscription_plans.daily_tokens`
@@ -55,143 +57,84 @@ class InsufficientTokensDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final colorScheme = theme.colorScheme;
-
-    return Dialog(
-      backgroundColor: isDark ? const Color(0xFF1E1E2E) : colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, isDark, colorScheme),
-            const SizedBox(height: 16),
-            _buildTokenBalance(context, isDark, colorScheme),
-            const SizedBox(height: 16),
-            _buildUpgradePlans(context, isDark, colorScheme, theme),
-            const SizedBox(height: 16),
-            _buildInfoBox(context, isDark, colorScheme),
-            const SizedBox(height: 20),
-            if (tokenStatus.canPurchaseTokens) ...[
-              _buildPurchaseTokensButton(context, isDark, colorScheme),
-              const SizedBox(height: 8),
-            ],
-            _buildActionButtons(context, isDark, colorScheme),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-      BuildContext context, bool isDark, ColorScheme colorScheme) {
-    return Row(
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.token_rounded,
-            color: colorScheme.primary,
-            size: 28,
-          ),
+        PopupHeader(
+          icon: const PopupIconCircle(icon: Icons.toll_outlined),
+          eyebrow: context.tr(TranslationKeys.popupCreditsEyebrow),
+          title: context.tr(TranslationKeys.tokenDialogTitle),
+          body: context.tr(TranslationKeys.tokenDialogSubtitle),
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.tr(TranslationKeys.tokenDialogTitle),
-                style: AppFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.95)
-                      : colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                context.tr(TranslationKeys.tokenDialogSubtitle),
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.65)
-                      : colorScheme.onSurface.withOpacity(0.65),
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 20),
+        _buildTokenBalance(context),
+        const SizedBox(height: 16),
+        _buildUpgradePlans(context),
+        const SizedBox(height: 14),
+        _buildInfo(context),
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          key: const Key('insufficient_tokens_view_plans'),
+          label: context.tr(TranslationKeys.tokenDialogViewPlans),
+          onPressed: () {
+            Navigator.of(context).pop();
+            // Land on the cheapest plan that lifts this limit, not the top of
+            // the page where Free — the plan they already have — sits.
+            GoRouter.of(context).push(AppRoutes.pricing,
+                extra: const {'preselectedPlan': 'standard'});
+          },
+        ),
+        if (tokenStatus.canPurchaseTokens) ...[
+          const SizedBox(height: 8),
+          _buildPurchaseTokensButton(context),
+        ],
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('insufficient_tokens_later'),
+          label: context.tr(TranslationKeys.tokenDialogMaybeLater),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
   }
 
-  Widget _buildTokenBalance(
-      BuildContext context, bool isDark, ColorScheme colorScheme) {
-    final bgColor = isDark
-        ? Colors.white.withOpacity(0.07)
-        : colorScheme.onSurface.withOpacity(0.06);
-    final labelStyle = AppFonts.inter(
-      fontSize: 13,
-      fontWeight: FontWeight.w500,
-      color: isDark
-          ? Colors.white.withOpacity(0.75)
-          : colorScheme.onSurface.withOpacity(0.75),
-    );
-    final valueStyle = AppFonts.inter(
-      fontSize: 13,
-      fontWeight: FontWeight.bold,
-      color: AppColors.error,
-    );
+  Widget _buildTokenBalance(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final unit = context.tr(TranslationKeys.tokenDialogCreditsUnit);
+    Widget row(String label, String value, Color valueColor) => Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: AppFonts.inter(fontSize: 13.5, color: palette.muted),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              value,
+              style: AppFonts.inter(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: valueColor,
+              ),
+            ),
+          ],
+        );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return PopupPanel(
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(context.tr(TranslationKeys.tokenDialogYourCredits),
-                  style: labelStyle),
-              Text(
-                '${tokenStatus.totalTokens} ${context.tr(TranslationKeys.tokenDialogCreditsUnit)}',
-                style: valueStyle,
-              ),
-            ],
+          row(
+            context.tr(TranslationKeys.tokenDialogYourCredits),
+            '${tokenStatus.totalTokens} $unit',
+            AppColors.error,
           ),
           if (requiredTokens != null) ...[
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(context.tr(TranslationKeys.tokenDialogNeeded),
-                    style: labelStyle),
-                Text(
-                  '$requiredTokens ${context.tr(TranslationKeys.tokenDialogCreditsUnit)}',
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.85)
-                        : colorScheme.onSurface,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 8),
+            row(
+              context.tr(TranslationKeys.tokenDialogNeeded),
+              '$requiredTokens $unit',
+              palette.text,
             ),
           ],
         ],
@@ -199,8 +142,8 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildUpgradePlans(BuildContext context, bool isDark,
-      ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildUpgradePlans(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -209,17 +152,12 @@ class InsufficientTokensDialog extends StatelessWidget {
           style: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isDark
-                ? Colors.white.withOpacity(0.7)
-                : colorScheme.onSurface.withOpacity(0.7),
+            color: palette.text,
           ),
         ),
         const SizedBox(height: 10),
         _buildPlanRow(
-          isDark: isDark,
-          colorScheme: colorScheme,
-          icon: Icons.radio_button_unchecked,
-          iconColor: isDark ? Colors.white54 : Colors.black45,
+          context,
           label: 'Standard',
           detail: context.tr(TranslationKeys.tokenDialogPlanCreditsPerDay, {
             'credits': kPlanDailyCredits['standard'],
@@ -228,10 +166,7 @@ class InsufficientTokensDialog extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
-          isDark: isDark,
-          colorScheme: colorScheme,
-          icon: Icons.info_outline,
-          iconColor: colorScheme.primary,
+          context,
           label: 'Plus',
           detail: context.tr(TranslationKeys.tokenDialogPlanCreditsPerDay, {
             'credits': kPlanDailyCredits['plus'],
@@ -240,10 +175,7 @@ class InsufficientTokensDialog extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
-          isDark: isDark,
-          colorScheme: colorScheme,
-          icon: Icons.info_outline,
-          iconColor: colorScheme.primary,
+          context,
           label: 'Premium',
           detail: context
               .tr(TranslationKeys.tokenDialogPlanUnlimited, {'price': 499}),
@@ -252,43 +184,43 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildPlanRow({
-    required bool isDark,
-    required ColorScheme colorScheme,
-    required IconData icon,
-    required Color iconColor,
+  Widget _buildPlanRow(
+    BuildContext context, {
     required String label,
     required String detail,
   }) {
+    final palette = ReaderPalette.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: iconColor),
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: palette.accentIcon,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
         const SizedBox(width: 10),
-        // Expanded so the plan line wraps instead of running past the dialog:
-        // unconstrained, the longest row overflowed the right edge by 25px.
+        // Expanded so the plan line wraps instead of running past the dialog.
         Expanded(
-          child: RichText(
-            text: TextSpan(
+          child: Text.rich(
+            TextSpan(
               children: [
                 TextSpan(
                   text: '$label: ',
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.85)
-                        : colorScheme.onSurface.withOpacity(0.85),
+                    color: palette.text,
                   ),
                 ),
                 TextSpan(
                   text: detail,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                  style: AppFonts.inter(fontSize: 13, color: palette.muted),
                 ),
               ],
             ),
@@ -298,132 +230,54 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBox(
-      BuildContext context, bool isDark, ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.25),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 18,
-            color: colorScheme.primary,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              context.tr(TranslationKeys.tokenDialogInfoBox),
-              style: AppFonts.inter(
-                fontSize: 13,
-                color: isDark
-                    ? Colors.white.withOpacity(0.75)
-                    : colorScheme.primary,
-                height: 1.4,
-              ),
+  Widget _buildInfo(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.info_outline_rounded, size: 16, color: palette.dim),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            context.tr(TranslationKeys.tokenDialogInfoBox),
+            style: AppFonts.inter(
+              fontSize: 12.5,
+              color: palette.muted,
+              height: 1.4,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildPurchaseTokensButton(
-    BuildContext context,
-    bool isDark,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildPurchaseTokensButton(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
+        key: const Key('insufficient_tokens_purchase'),
         onPressed: () {
           Navigator.of(context).pop();
           GoRouter.of(context)
               .push(AppRoutes.tokenPurchase, extra: tokenStatus);
         },
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Theme.of(context).colorScheme.primary),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          foregroundColor: palette.text,
+          side: BorderSide(color: palette.outline),
+          minimumSize: const Size.fromHeight(48),
+          shape: const StadiumBorder(),
         ),
         child: Text(
           context.tr(TranslationKeys.tokenDialogPurchase),
+          textAlign: TextAlign.center,
           style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: colorScheme.primary,
+            color: palette.text,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildActionButtons(
-    BuildContext context,
-    bool isDark,
-    ColorScheme colorScheme,
-  ) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.tokenDialogMaybeLater),
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: isDark
-                    ? Colors.white.withOpacity(0.6)
-                    : colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Land on the cheapest plan that lifts this limit, not the top of the
-              // page where Free — the plan they already have — sits.
-              GoRouter.of(context).push(AppRoutes.pricing,
-                  extra: const {'preselectedPlan': 'standard'});
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.appInteractive,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: Text(
-              context.tr(TranslationKeys.tokenDialogViewPlans),
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

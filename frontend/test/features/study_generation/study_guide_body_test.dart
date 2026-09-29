@@ -31,16 +31,14 @@ void _usePhoneSize(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-/// What the finished screen renders above the follow-up chat.
+/// What the finished screen renders above the end-of-guide blocks. The body
+/// is full-bleed (hero photo) and pads its own sections.
 Widget _finishedBody(StudyGuide guide, StudyMode mode) => SingleChildScrollView(
-      child: Padding(
-        padding: StudyGuideLayout.sidePadding,
-        child: StudyGuideBody(
-          studyMode: mode,
-          sections: StudyGuideSections.fromStudyGuide(guide),
-          inputType: guide.inputType,
-          title: StudyGuideLayout.displayTitle(guide.inputType, guide.input),
-        ),
+      child: StudyGuideBody(
+        studyMode: mode,
+        sections: StudyGuideSections.fromStudyGuide(guide),
+        inputType: guide.inputType,
+        title: StudyGuideLayout.displayTitle(guide.inputType, guide.input),
       ),
     );
 
@@ -97,8 +95,8 @@ void main() {
       final finishedFirstCard =
           tester.getRect(find.byType(StudySectionCard).first);
 
-      // Same place on both sides of the stream completing. The progress bar
-      // floats over the top gap, so even the vertical position must match.
+      // Same place on both sides of the stream completing. The progress line
+      // floats over the hero, so even the vertical position must match.
       expect(loadingTitle.left, StudyGuideLayout.sidePadding.left);
       expect(loadingTitle.width,
           _screenWidth - StudyGuideLayout.sidePadding.horizontal);

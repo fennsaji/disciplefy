@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../saved_guides/domain/entities/saved_guide_entity.dart';
-import '../../../saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
-import '../../../saved_guides/presentation/bloc/saved_guides_event.dart';
-import '../../../saved_guides/presentation/bloc/saved_guides_state.dart';
-import 'guide_quick_item.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/saved_guides/domain/entities/saved_guide_entity.dart';
+import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/saved_guides_event.dart';
+import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/saved_guides_state.dart';
+import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/guide_quick_item.dart';
 
-/// Recent guides section widget for the bottom of GenerateStudyScreen
+/// "Continue reading" section at the bottom of the Generate tab.
 ///
-/// Features:
-/// - Shows 3-5 most recent study guides
-/// - Loading states and empty states
-/// - Quick access to recent guides with save/unsave actions
+/// Loads the most recent guides and shows the latest two as tinted cards,
+/// with "See all" opening the Recent tab of the library. Also covers the
+/// loading, empty, signed-out and error states.
 class RecentGuidesSection extends StatefulWidget {
   const RecentGuidesSection({super.key});
 
@@ -73,237 +71,72 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
     );
   }
 
+  void _seeAll() => context.push('/saved?tab=recent&source=generate');
+
   Widget _buildRecentStudiesSection(SavedGuidesApiLoaded state) {
     if (state.recentGuides.isEmpty) {
       return _buildEmptyRecentSection();
     }
 
-    // Show only first 3 guides for compact display
-    final displayGuides = state.recentGuides.take(3).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section title
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              context.tr(TranslationKeys.recentGuidesTitle),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            if (state.recentGuides.length > 3)
-              GestureDetector(
-                onTap: () => context.push('/saved?tab=recent&source=generate'),
-                child: Text(
-                  context.tr(TranslationKeys.recentGuidesViewAll),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        // Recent guides list
-        ...displayGuides.map((guide) => GuideQuickItem(
-              guide: guide,
-              onTap: () => _openGuide(guide),
-              onSave:
-                  guide.isSaved ? null : () => _toggleSaveStatus(guide, true),
-              showSaveAction: !guide.isSaved,
-            )),
-      ],
+    return ContinueReadingRow(
+      guides: state.recentGuides,
+      onOpen: _openGuide,
+      onSave: (guide) => _toggleSaveStatus(guide, true),
+      onSeeAll: _seeAll,
     );
   }
 
   Widget _buildEmptyRecentSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.history,
-            size: 40,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.tr(TranslationKeys.recentGuidesEmpty),
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            context.tr(TranslationKeys.recentGuidesEmptyMessage),
-            style: AppFonts.inter(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return _StatusCard(
+      icon: Icons.history_rounded,
+      title: context.tr(TranslationKeys.recentGuidesEmpty),
+      message: context.tr(TranslationKeys.recentGuidesEmptyMessage),
     );
   }
 
   Widget _buildLoadingSection() {
+    final palette = ReaderPalette.of(context);
+    Widget placeholder() => Expanded(
+          child: Container(
+            height: GuideQuickItem.height,
+            decoration: BoxDecoration(
+              color: palette.raised,
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          context.tr(TranslationKeys.recentGuidesTitle),
-          style: AppFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onBackground,
-          ),
-        ),
+        ContinueReadingHeader(onSeeAll: _seeAll),
         const SizedBox(height: 12),
-        // Shimmer loading placeholders
-        ...List.generate(
-          3,
-          (index) => Container(
-            height: 60,
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
+        Row(children: [
+          placeholder(),
+          const SizedBox(width: 10),
+          placeholder()
+        ]),
       ],
     );
   }
 
   Widget _buildAuthRequiredSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.person_outline,
-            size: 40,
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.tr(TranslationKeys.recentGuidesAuthRequired),
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            context.tr(TranslationKeys.recentGuidesAuthMessage),
-            style: AppFonts.inter(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => context.push('/login'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.recentGuidesSignIn),
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return _StatusCard(
+      icon: Icons.person_outline_rounded,
+      title: context.tr(TranslationKeys.recentGuidesAuthRequired),
+      message: context.tr(TranslationKeys.recentGuidesAuthMessage),
+      actionLabel: context.tr(TranslationKeys.recentGuidesSignIn),
+      onAction: () => context.push('/login'),
     );
   }
 
   Widget _buildErrorSection(String message) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.error.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 40,
-            color: Theme.of(context).colorScheme.error,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.tr(TranslationKeys.recentGuidesError),
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            context.tr(TranslationKeys.recentGuidesErrorMessage),
-            style: AppFonts.inter(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => _bloc
-                ?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-              side: BorderSide(color: Theme.of(context).colorScheme.primary),
-            ),
-            icon: const Icon(Icons.refresh),
-            label: Text(context.tr(TranslationKeys.homeTryAgain)),
-          ),
-        ],
-      ),
+    return _StatusCard(
+      icon: Icons.error_outline_rounded,
+      title: context.tr(TranslationKeys.recentGuidesError),
+      message: context.tr(TranslationKeys.recentGuidesErrorMessage),
+      actionLabel: context.tr(TranslationKeys.homeTryAgain),
+      onAction: () =>
+          _bloc?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5)),
     );
   }
 
@@ -338,6 +171,170 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       ToggleGuideApiEvent(
         guideId: guide.id,
         save: save,
+      ),
+    );
+  }
+}
+
+/// "Continue reading" title with the "See all" link to the library.
+class ContinueReadingHeader extends StatelessWidget {
+  final VoidCallback onSeeAll;
+
+  const ContinueReadingHeader({super.key, required this.onSeeAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            context.tr(TranslationKeys.generateStudyContinueReading),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppFonts.poppins(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onSeeAll,
+          style: TextButton.styleFrom(
+            foregroundColor: palette.muted,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            minimumSize: const Size(44, 36),
+          ),
+          child: Text(
+            context.tr(TranslationKeys.generateStudySeeAll),
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: palette.muted,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Header plus the two most recent guides side by side.
+class ContinueReadingRow extends StatelessWidget {
+  final List<SavedGuideEntity> guides;
+  final ValueChanged<SavedGuideEntity> onOpen;
+  final ValueChanged<SavedGuideEntity> onSave;
+  final VoidCallback onSeeAll;
+
+  /// Injectable clock for the cards' "time ago" labels (tests).
+  final DateTime? now;
+
+  const ContinueReadingRow({
+    super.key,
+    required this.guides,
+    required this.onOpen,
+    required this.onSave,
+    required this.onSeeAll,
+    this.now,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = guides.take(2).toList();
+    Widget card(SavedGuideEntity guide) => GuideQuickItem(
+          guide: guide,
+          now: now,
+          onTap: () => onOpen(guide),
+          onSave: guide.isSaved ? null : () => onSave(guide),
+          showSaveAction: !guide.isSaved,
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ContinueReadingHeader(onSeeAll: onSeeAll),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: card(shown[0])),
+            const SizedBox(width: 10),
+            Expanded(
+              child: shown.length > 1 ? card(shown[1]) : const SizedBox(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Empty / signed-out / error state in the reader card style.
+class _StatusCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _StatusCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 32, color: palette.accentIcon),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onAction,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: palette.text,
+                side: BorderSide(color: palette.outline),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                actionLabel!,
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

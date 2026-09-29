@@ -30,6 +30,20 @@ class TranslationKeys {
 
   // Study Guide TTS
   static const studyGuideListen = 'study_guide.tts.listen';
+  static const studyGuideMenuMore = 'study_guide.menu.more';
+  static const studyGuideMenuTextSize = 'study_guide.menu.text_size';
+  static const studyGuideMenuShare = 'study_guide.menu.share';
+  static const studyGuideMenuShareFellowship =
+      'study_guide.menu.share_fellowship';
+  static const studyGuideMenuDownloadPdf = 'study_guide.menu.download_pdf';
+  static const studyGuideMenuSave = 'study_guide.menu.save';
+  static const studyGuideMenuSaved = 'study_guide.menu.saved';
+  static const studyGuideMenuComplete = 'study_guide.menu.complete';
+  static const studyGuideMenuCompleted = 'study_guide.menu.completed';
+  static const studyGuideTextSizeEyebrow = 'study_guide.text_size.eyebrow';
+  static const studyGuideTextSizePreview = 'study_guide.text_size.preview';
+  static const studyGuideTextSizeDone = 'study_guide.text_size.done';
+  static const studyGuideTextSizeReset = 'study_guide.text_size.reset';
   static const studyGuidePause = 'study_guide.tts.pause';
   static const studyGuideResume = 'study_guide.tts.resume';
   static const studyGuideLoading = 'study_guide.tts.loading';
@@ -116,6 +130,7 @@ class TranslationKeys {
   static const followUpChatInputHint = 'follow_up_chat.input_hint';
   static const followUpChatGettingResponse = 'follow_up_chat.getting_response';
   static const followUpChatCancel = 'follow_up_chat.cancel';
+  static const followUpChatSend = 'follow_up_chat.send';
   static const followUpChatTokenCost = 'follow_up_chat.token_cost';
   static const followUpChatResponding = 'follow_up_chat.responding';
   static const followUpChatFailedToSend = 'follow_up_chat.failed_to_send';
@@ -135,6 +150,10 @@ class TranslationKeys {
       'follow_up_chat.generate_new_study';
   static const followUpChatNoMessagesYet = 'follow_up_chat.no_messages_yet';
   static const followUpChatStartByAsking = 'follow_up_chat.start_by_asking';
+  static const followUpChatGreeting = 'follow_up_chat.greeting';
+  static const followUpChatPromptExplain = 'follow_up_chat.prompt_explain';
+  static const followUpChatPromptApply = 'follow_up_chat.prompt_apply';
+  static const followUpChatPromptVerses = 'follow_up_chat.prompt_verses';
   static const followUpChatListening = 'follow_up_chat.listening';
   static const followUpChatStop = 'follow_up_chat.stop';
   static const followUpChatStopListening = 'follow_up_chat.stop_listening';
@@ -261,6 +280,19 @@ class TranslationKeys {
   static const generateStudyGenerationFailedMessage =
       'generate_study.generation_failed_message';
   static const generateStudyManageTokens = 'generate_study.manage_tokens';
+
+  // Generate tab (V2 Scripture hero)
+  static const generateStudyEyebrow = 'generate_study.eyebrow';
+  static const generateStudyHeadline = 'generate_study.headline';
+  static const generateStudyScriptureTab = 'generate_study.scripture_tab';
+  static const generateStudyChooseDepth = 'generate_study.choose_depth';
+
+  /// "All {count}" link that opens the full depth chooser.
+  static const generateStudyAllModes = 'generate_study.all_modes';
+  static const generateStudyButtonGenerateShort =
+      'generate_study.button_generate_short';
+  static const generateStudyContinueReading = 'generate_study.continue_reading';
+  static const generateStudySeeAll = 'generate_study.see_all';
 
   // Recent Guides Section
   static const recentGuidesTitle = 'recent_guides.title';
@@ -592,6 +624,37 @@ class TranslationKeys {
   static const savedGuidesErrorTitle = 'saved_guides.error_title';
   static const savedGuidesErrorMessage = 'saved_guides.error_message';
   static const savedGuidesRetry = 'saved_guides.retry';
+  static const savedGuidesLibraryTitle = 'saved_guides.library_title';
+  static const savedGuidesSearch = 'saved_guides.search';
+  static const savedGuidesSearchHint = 'saved_guides.search_hint';
+  static const savedGuidesCloseSearch = 'saved_guides.close_search';
+  static const savedGuidesNoResults = 'saved_guides.no_results';
+  static const savedGuidesContinue = 'saved_guides.continue';
+  static const savedGuidesContinueSection = 'saved_guides.continue_section';
+  static const savedGuidesRemove = 'saved_guides.remove';
+  static const savedGuidesSave = 'saved_guides.save';
+  static const savedGuidesLoading = 'saved_guides.loading';
+  static const savedGuidesYesterday = 'saved_guides.yesterday';
+
+  // V2 popups (achievement, guide complete, upgrade, credits, sign-in)
+  static const popupAchievementEyebrow = 'popups.achievement_eyebrow';
+  static const popupAchievementCta = 'popups.achievement_cta';
+  static const popupGuideCompleteEyebrow = 'popups.guide_complete_eyebrow';
+  static const popupGuideCompleteNext = 'popups.guide_complete_next';
+  static const popupGuideCompleteNextPath = 'popups.guide_complete_next_path';
+  static const popupAddNotes = 'popups.add_notes';
+  static const popupShareFellowship = 'popups.share_fellowship';
+  static const popupAskDiscipler = 'popups.ask_discipler';
+  static const popupDone = 'popups.done';
+  static const popupContinuePath = 'popups.continue_path';
+  static const popupNotNow = 'popups.not_now';
+  static const popupUpgradeEyebrow = 'popups.upgrade_eyebrow';
+  static const popupYourPlan = 'popups.your_plan';
+  static const popupAvailableOn = 'popups.available_on';
+  static const popupUpgradeNow = 'popups.upgrade_now';
+  static const popupMaybeLater = 'popups.maybe_later';
+  static const popupCreditsEyebrow = 'popups.credits_eyebrow';
+  static const popupSignInEyebrow = 'popups.sign_in_eyebrow';
   static const savedGuidesUnsaveSuccess = 'saved_guides.unsave_success';
   static const savedGuidesUnsaveError = 'saved_guides.unsave_error';
 
@@ -1829,6 +1892,19 @@ class TranslationKeys {
 
   /// Description of the Sermon Outline study mode
   static const studyModeSermonDescription = 'study_mode.sermon.description';
+
+  /// Short mode names for the compact depth cards on the Generate tab.
+  static const studyModeQuickShortName = 'study_mode.quick.short_name';
+  static const studyModeStandardShortName = 'study_mode.standard.short_name';
+  static const studyModeDeepShortName = 'study_mode.deep.short_name';
+  static const studyModeLectioShortName = 'study_mode.lectio.short_name';
+  static const studyModeSermonShortName = 'study_mode.sermon.short_name';
+
+  /// "{count} min" duration label.
+  static const studyModeMinutes = 'study_mode.minutes';
+
+  /// Headline of the full-height depth chooser.
+  static const modeSelectionTimeQuestion = 'mode_selection.time_question';
 
   // Settings - Study Mode Preference
   /// Settings label for study mode preference option

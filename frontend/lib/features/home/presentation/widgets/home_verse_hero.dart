@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:disciplefy_bible_study/core/constants/hero_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,18 +18,10 @@ import '../../../daily_verse/presentation/widgets/daily_verse_actions.dart';
 
 /// Scenery behind the home hero. One is picked per calendar day so the page
 /// changes with the verse but stays put through the day.
-const List<String> homeHeroImages = [
-  'assets/images/hero/mountains_fog.jpg',
-  'assets/images/hero/mountains_dawn.jpg',
-];
+const List<String> homeHeroImages = heroImages;
 
 /// The hero image for [date]: stable within a day, rotates across days.
-String homeHeroImageFor(DateTime date) {
-  final dayIndex =
-      DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/
-          Duration.millisecondsPerDay;
-  return homeHeroImages[dayIndex % homeHeroImages.length];
-}
+String homeHeroImageFor(DateTime date) => heroImageForDay(date);
 
 /// Translation key for the time-of-day greeting at [hour] (0–23).
 String homeGreetingKeyFor(int hour) {
@@ -56,6 +49,7 @@ const Color _onSceneMuted = Color(0xFFD6D6DC);
 
 /// Height of the strip at the hero's bottom edge that fades into the page.
 const double _groundFadeHeight = 28;
+const double _groundFadeHeightLight = 64;
 
 /// Full-bleed top of the home screen: scenery photo, a greeting and the
 /// verse of the day, with room at the top for the pinned header.
@@ -79,8 +73,14 @@ class HomeVerseHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ground = Theme.of(context).scaffoldBackgroundColor;
+    final theme = Theme.of(context);
+    final ground = theme.scaffoldBackgroundColor;
     final topInset = MediaQuery.paddingOf(context).top;
+    // A dark photo meeting a pale page needs a longer, eased fade or the
+    // seam reads as a hard edge; on the dark page a short one is enough.
+    final fadeHeight = theme.brightness == Brightness.light
+        ? _groundFadeHeightLight
+        : _groundFadeHeight;
 
     return Stack(
       children: [
@@ -91,7 +91,7 @@ class HomeVerseHero extends StatelessWidget {
                 // Decode only as many pixels as are shown. The photos are
                 // 3:2 and the hero is taller than that, so "cover" fills
                 // the height: decode width = height x 1.5 (plus the parallax
-                // zoom), never the full 1080px source on a small phone.
+                // zoom), never the full 2000px source on a small phone.
                 final dpr = MediaQuery.devicePixelRatioOf(context);
                 final coverWidth = box.maxWidth > box.maxHeight * 1.5
                     ? box.maxWidth
@@ -101,7 +101,7 @@ class HomeVerseHero extends StatelessWidget {
                     imageAsset,
                     fit: BoxFit.cover,
                     cacheWidth:
-                        math.min(1080, (coverWidth * dpr * 1.2).round()),
+                        math.min(2000, (coverWidth * dpr * 1.2).round()),
                     errorBuilder: (_, __, ___) =>
                         const ColoredBox(color: Color(0xFF1B1B24)),
                   ),
@@ -135,21 +135,26 @@ class HomeVerseHero extends StatelessWidget {
           left: 0,
           right: 0,
           bottom: 0,
-          height: _groundFadeHeight,
+          height: fadeHeight,
           child: DecoratedBox(
             key: const Key('home_hero_ground_fade'),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [ground.withValues(alpha: 0), ground],
+                colors: [
+                  ground.withValues(alpha: 0),
+                  ground.withValues(alpha: 0.35),
+                  ground.withValues(alpha: 0.8),
+                  ground,
+                ],
+                stops: const [0, 0.35, 0.72, 1],
               ),
             ),
           ),
         ),
         Padding(
-          padding:
-              EdgeInsets.fromLTRB(0, topInset + 12, 0, _groundFadeHeight + 6),
+          padding: EdgeInsets.fromLTRB(0, topInset + 12, 0, fadeHeight + 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

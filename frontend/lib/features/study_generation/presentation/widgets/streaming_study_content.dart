@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_stream_event.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_guide_body.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_reading_tracker.dart';
 
-/// Study guide content while it streams in: a progress bar over the same
-/// [StudyGuideBody] the finished guide uses, with shimmer placeholders for
-/// sections that have not arrived. Sharing the body keeps padding, cards and
-/// section order identical, so nothing moves when the stream completes.
+/// Study guide content while it streams in: a thin progress line over the
+/// same [StudyGuideBody] (hero + numbered sections) the finished guide uses,
+/// with shimmer placeholders for sections that have not arrived. Sharing the
+/// body keeps padding, numbering and section order identical, so nothing
+/// moves when the stream completes.
 class StreamingStudyContent extends StatelessWidget {
   /// The accumulated streaming content
   final StreamingStudyGuideContent content;
@@ -38,6 +41,9 @@ class StreamingStudyContent extends StatelessWidget {
   /// Font size override for section content text
   final double contentFontSize;
 
+  /// Drives the hero's segmented reading progress.
+  final StudyReadingTracker? tracker;
+
   const StreamingStudyContent({
     super.key,
     required this.content,
@@ -49,6 +55,7 @@ class StreamingStudyContent extends StatelessWidget {
     this.isPartial = false,
     this.studyMode = StudyMode.standard,
     this.contentFontSize = 18.0,
+    this.tracker,
   });
 
   @override
@@ -57,14 +64,13 @@ class StreamingStudyContent extends StatelessWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) => onComplete!());
     }
 
-    // The progress bar floats over the top gap instead of sitting above the
-    // scroll view: in the flow it pushed the page down ~45px, and the whole
-    // guide jumped up when the stream finished and the bar went away.
+    // The progress line floats over the hero instead of sitting above the
+    // scroll view: in the flow it pushed the page down, and the whole guide
+    // jumped up when the stream finished and the line went away.
     return Stack(
       children: [
         SingleChildScrollView(
           controller: scrollController,
-          padding: StudyGuideLayout.sidePadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -77,6 +83,7 @@ class StreamingStudyContent extends StatelessWidget {
                 inputType: inputType,
                 title: StudyGuideLayout.displayTitle(inputType, inputValue),
                 contentFontSize: contentFontSize,
+                tracker: tracker,
               ),
               SizedBox(height: StudyGuideLayout.endGap(context)),
             ],
@@ -93,25 +100,21 @@ class StreamingStudyContent extends StatelessWidget {
     );
   }
 
-  /// A 4px bar that fits inside the gap above the title card. The section
-  /// count is kept for screen readers.
+  /// A 2px gold line along the top of the hero, under the status bar. The
+  /// section count is kept for screen readers.
   Widget _buildProgressBar(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final label = '${context.tr(TranslationKeys.studyGuideStreamingLoading)} '
         '${context.tr(TranslationKeys.studyGuideStreamingSections).replaceAll('{count}', '${content.sectionsLoaded}').replaceAll('{total}', '${content.totalSections}')}';
     return Semantics(
       label: label,
       child: Padding(
-        padding: StudyGuideLayout.sidePadding.copyWith(top: 8),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: content.progress,
-            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-            valueColor:
-                AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-            minHeight: 4,
-          ),
+        padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+        child: LinearProgressIndicator(
+          value: content.progress,
+          backgroundColor: Colors.transparent,
+          valueColor: AlwaysStoppedAnimation<Color>(palette.gold),
+          minHeight: 2,
         ),
       ),
     );

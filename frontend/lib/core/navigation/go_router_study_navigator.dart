@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/widgets/v2_popup.dart';
 import '../router/app_routes.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import 'study_navigator.dart';
@@ -99,21 +100,35 @@ class GoRouterStudyNavigator implements StudyNavigator {
   }) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+      builder: (dialogContext) => PopupDialog(
+        children: [
+          PopupHeader(
+            icon: PopupIconCircle(
+              icon: requiresLogin
+                  ? Icons.person_outline_rounded
+                  : Icons.info_outline_rounded,
+            ),
+            title: title,
+            body: message,
           ),
-          if (requiresLogin)
-            TextButton(
+          const SizedBox(height: 24),
+          if (requiresLogin) ...[
+            PopupPrimaryButton(
+              label: 'Login',
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 navigateToLogin(context);
               },
-              child: const Text('Login'),
+            ),
+            const SizedBox(height: 4),
+            PopupTextButton(
+              label: 'OK',
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+          ] else
+            PopupPrimaryButton(
+              label: 'OK',
+              onPressed: () => Navigator.of(dialogContext).pop(),
             ),
         ],
       ),
