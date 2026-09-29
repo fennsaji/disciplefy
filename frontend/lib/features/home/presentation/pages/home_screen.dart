@@ -220,9 +220,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Listen for app language and study content language preference changes
-  /// When app language changes, study content language is reset to default,
-  /// so we need to refresh the "For You" content to reflect the new app language.
-  /// When study content language changes (from Study Topics screen), we also refresh.
+  /// Content on "Default" follows the app language, so an app-language change
+  /// can change it; a content-language change (Settings or the Topics menu)
+  /// always does.
   void _setupLanguageChangeListener() {
     final languageService = sl<LanguagePreferenceService>();
 
@@ -236,8 +236,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       Logger.debug(
           '[HOME] App language changed to: ${newLanguage.displayName}');
 
-      // When app language changes, study content language is automatically reset to default
-      // Refresh the "For You" topics with the new language
+      // Refresh the "For You" topics in case content follows the app language
       if (mounted) {
         final homeBloc = sl<HomeBloc>();
         homeBloc.add(const LoadForYouTopics(forceRefresh: true));
@@ -1052,17 +1051,19 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   Widget _buildExploreLearningPathsButton() {
+    // 48, not 64: at 64 with 18px text it read heavier than the verse card
+    // above it. 48 is a standard button height and still a full touch target.
     return Container(
       width: double.infinity,
-      height: 64,
+      height: 48,
       decoration: BoxDecoration(
         gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: AppTheme.primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1070,22 +1071,28 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => context.go(AppRoutes.studyTopics),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
                 Icons.explore_rounded,
-                size: 24,
+                size: 20,
                 color: Colors.white,
               ),
-              const SizedBox(width: 12),
-              Text(
-                context.tr(TranslationKeys.homeExploreLearningPaths),
-                style: AppFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+              const SizedBox(width: 10),
+              // Flexible: a larger Text Size setting must shorten the label,
+              // not overflow the button.
+              Flexible(
+                child: Text(
+                  context.tr(TranslationKeys.homeExploreLearningPaths),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],

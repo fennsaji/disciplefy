@@ -555,10 +555,7 @@ class DailyVerseCard extends StatelessWidget {
             size: 20,
           ),
           tooltip: context.tr(TranslationKeys.dailyVerseCopy),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(40, 40),
-            padding: const EdgeInsets.all(6),
-          ),
+          style: _actionButtonStyle,
         ),
 
         const SizedBox(width: 8),
@@ -572,10 +569,7 @@ class DailyVerseCard extends StatelessWidget {
             size: 20,
           ),
           tooltip: context.tr(TranslationKeys.dailyVerseShare),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(40, 40),
-            padding: const EdgeInsets.all(6),
-          ),
+          style: _actionButtonStyle,
         ),
 
         const SizedBox(width: 8),
@@ -595,10 +589,7 @@ class DailyVerseCard extends StatelessWidget {
             color: iconColor,
             size: 20,
           ),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(40, 40),
-            padding: const EdgeInsets.all(6),
-          ),
+          style: _actionButtonStyle,
         ),
       ],
     );
@@ -874,12 +865,20 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
           tooltip: isAlreadyInMemory
               ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
               : context.tr(TranslationKeys.dailyVerseAddToMemory),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(40, 40),
-            padding: const EdgeInsets.all(6),
-          ),
+          style: _actionButtonStyle,
         );
       },
     );
   }
 }
+
+/// Compact icon buttons for the verse card's action row. Material pads an
+/// IconButton to a 48px touch target on phones, which made this row the
+/// tallest thing in the card; 36px with a shrink-wrapped target keeps the
+/// icons easy to hit without the extra band of empty space.
+final ButtonStyle _actionButtonStyle = IconButton.styleFrom(
+  minimumSize: const Size(36, 36),
+  padding: const EdgeInsets.all(6),
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  visualDensity: VisualDensity.compact,
+);
