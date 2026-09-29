@@ -45,14 +45,17 @@ async function handleListMeetings(req: Request, services: ServiceContainer): Pro
 
   const now = new Date().toISOString()
 
-  // Fetch upcoming one-time meetings AND all recurring meetings (even if their
-  // original starts_at is in the past — we advance them to the next occurrence).
+  // Fetch one-time meetings that have not ended yet (upcoming AND in
+  // progress — a meeting must stay visible while it is happening, so the app
+  // can show it as live) AND all recurring meetings (even if their original
+  // starts_at is in the past — we advance them to the current or next
+  // occurrence).
   const { data: rawMeetings, error } = await db
     .from('fellowship_meetings')
     .select('id, fellowship_id, created_by, title, description, starts_at, ends_at, recurrence, location, meet_link, created_at, last_synced_at')
     .eq('fellowship_id', fellowshipId)
     .eq('is_cancelled', false)
-    .or(`starts_at.gte.${now},recurrence.not.is.null`)
+    .or(`ends_at.gt.${now},recurrence.not.is.null`)
     .order('starts_at', { ascending: true })
     .limit(Math.min(limit * 4, 200))
 
@@ -61,20 +64,20 @@ async function handleListMeetings(req: Request, services: ServiceContainer): Pro
     throw new AppError('DATABASE_ERROR', 'Failed to fetch meetings', 500)
   }
 
-  // Advance recurring meetings whose starts_at has already passed to their
-  // next future occurrence.  One-time past meetings are already excluded by
-  // the query filter above.
+  // Advance recurring meetings whose occurrence has already ended to the
+  // occurrence in progress or the next one.  One-time meetings that have
+  // ended are already excluded by the query filter above.
   const nowMs = Date.now()
   const processed = (rawMeetings ?? []).map((m: any) => {
-    if (!m.recurrence) return m  // one-time, already in the future
+    if (!m.recurrence) return m  // one-time, not ended yet
 
     const origStartMs = new Date(m.starts_at).getTime()
-    if (origStartMs >= nowMs) return m  // recurring but first occurrence still upcoming
-
-    // Advance to next occurrence >= now
     const durationMs = new Date(m.ends_at).getTime() - origStartMs
+    if (origStartMs + durationMs > nowMs) return m  // first occurrence not over yet
+
+    // Advance until the occurrence has not ended (in progress or upcoming)
     const nextStart = new Date(m.starts_at)
-    while (nextStart.getTime() < nowMs) {
+    while (nextStart.getTime() + durationMs <= nowMs) {
       switch (m.recurrence) {
         case 'daily':   nextStart.setDate(nextStart.getDate() + 1); break
         case 'weekly':  nextStart.setDate(nextStart.getDate() + 7); break
