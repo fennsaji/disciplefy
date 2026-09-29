@@ -25,7 +25,9 @@ class DailyVerseStreak extends Equatable {
     if (lastViewedAt == null) return false;
 
     final now = DateTime.now();
-    final lastViewed = lastViewedAt!;
+    // Compare calendar days in the user's own timezone: the stored value is
+    // UTC, and a UTC date differs from the local one for part of every day.
+    final lastViewed = lastViewedAt!.toLocal();
 
     return lastViewed.year == now.year &&
         lastViewed.month == now.month &&
@@ -38,7 +40,7 @@ class DailyVerseStreak extends Equatable {
 
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(days: 1));
-    final lastViewed = lastViewedAt!;
+    final lastViewed = lastViewedAt!.toLocal();
 
     return lastViewed.year == yesterday.year &&
         lastViewed.month == yesterday.month &&
