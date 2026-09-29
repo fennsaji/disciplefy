@@ -4,53 +4,52 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
-import '../../../../core/constants/app_fonts.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/utils/reset_progress_error_localizer.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/widgets/destructive_confirm_dialog.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/models/app_language.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../tokens/presentation/bloc/token_bloc.dart';
-import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
-import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
-import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
-import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
-import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/memory_streak_entity.dart';
-import '../../domain/entities/daily_goal_entity.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../widgets/add_manual_verse_dialog.dart';
-import '../widgets/add_verse_options_sheet.dart';
-import '../widgets/suggested_verses_sheet.dart';
-import '../widgets/memory_verse_list_item.dart';
-import '../widgets/options_menu_sheet.dart';
-import '../widgets/statistics_card.dart';
-import '../widgets/streak_display_widget.dart';
-import '../widgets/daily_goal_progress_widget.dart';
-import '../widgets/milestone_celebration_dialog.dart';
-import '../widgets/streak_protection_dialog.dart';
-import '../widgets/verse_limit_exceeded_dialog.dart';
-import '../widgets/memory_verse_navigation_bar.dart';
-import '../../../../core/connectivity/connectivity_bloc.dart';
-import '../../../gamification/presentation/bloc/gamification_bloc.dart';
-import '../../../gamification/presentation/bloc/gamification_event.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/connectivity/connectivity_bloc.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/reset_progress_error_localizer.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/core/widgets/destructive_confirm_dialog.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/daily_goal_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_streak_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/add_manual_verse_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_verse_list_item.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/milestone_celebration_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/options_menu_sheet.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/streak_protection_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/suggested_verses_sheet.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/verse_limit_exceeded_dialog.dart';
+import 'package:disciplefy_bible_study/features/notifications/presentation/widgets/notification_enable_prompt.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
+/// Memory verses deck: streak and counts, today's review goal, Champions
+/// and Statistics links, language filter, then the verses due for review and the ones coming up, as quiet
+/// rows split by hairlines.
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
 
@@ -174,6 +173,17 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     }
   }
 
+  /// Gold line under the title: "N due today" or "All caught up", hidden
+  /// until the deck has loaded and when the deck is empty.
+  String? _dueSubtitle() {
+    final loaded = _lastLoadedState;
+    if (loaded == null || loaded.statistics.totalVerses == 0) return null;
+    final due = loaded.statistics.dueVerses;
+    if (due <= 0) return context.tr(TranslationKeys.memoryScreensAllCaughtUp);
+    return context.tr(
+        TranslationKeys.memoryScreensDueTodayCount, {'count': due.toString()});
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determine whether the verse list is non-empty at build time.
@@ -194,35 +204,11 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             _handleBackNavigation();
           },
           child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              elevation: 0,
-              leading: IconButton(
-                onPressed: _handleBackNavigation,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 18,
-                  ),
-                ),
-              ),
-              title: Text(
-                context.tr(TranslationKeys.memoryTitle),
-                style: AppFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
-              ),
-              centerTitle: true,
+            backgroundColor: ReaderPalette.of(context).page,
+            appBar: MemoryTopBar(
+              title: context.tr(TranslationKeys.memoryTitle),
+              subtitle: _dueSubtitle(),
+              onBack: _handleBackNavigation,
               actions: [
                 WalkthroughTooltip(
                   showcaseKey: ShowcaseKeys.memoryAddVerse,
@@ -236,43 +222,16 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   tooltipPosition: TooltipPosition.bottom,
                   arrowAlignment: Alignment.centerRight,
                   onNext: _onNext,
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    child: IconButton(
-                      icon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppTheme.primaryColor,
-                              AppTheme.secondaryPurple
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                      onPressed: () => _showAddVerseOptions(context),
-                      tooltip: context.tr(TranslationKeys.memoryHomeAddVerse),
-                    ),
+                  child: MemoryBarAction(
+                    icon: Icons.add,
+                    tooltip: context.tr(TranslationKeys.memoryHomeAddVerse),
+                    onPressed: () => _showAddVerseOptions(context),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onBackground
-                        .withOpacity(0.7),
-                  ),
-                  onPressed: () => _showOptionsMenu(context),
+                MemoryBarAction(
+                  icon: Icons.more_vert,
                   tooltip: context.tr(TranslationKeys.memoryHomeOptions),
+                  onPressed: () => _showOptionsMenu(context),
                 ),
               ],
             ),
@@ -441,53 +400,15 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   Widget _buildOfflineState() {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off,
-              size: 64,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'You\'re offline',
-              style: AppFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Memory Verses require an internet connection. Connect and come back.',
-              textAlign: TextAlign.center,
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return LedgerMessage(
+      icon: Icons.wifi_off_rounded,
+      title: context.tr(TranslationKeys.memoryScreensOfflineTitle),
+      body: context.tr(TranslationKeys.memoryScreensOfflineBody),
     );
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(context.tr(TranslationKeys.memoryHomeLoading)),
-        ],
-      ),
-    );
+    return LedgerLoading(label: context.tr(TranslationKeys.memoryHomeLoading));
   }
 
   Widget _buildLoadedState(DueVersesLoaded state, {bool hasVerses = false}) {
@@ -496,483 +417,334 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       return _buildEmptyState();
     }
 
+    final palette = ReaderPalette.of(context);
+    final dueVerses = state.verses.where((v) => v.isDue).toList();
+    final upcomingVerses = state.verses.where((v) => !v.isDue).toList();
+    final firstVerseId = dueVerses.isNotEmpty
+        ? dueVerses.first.id
+        : (upcomingVerses.isNotEmpty ? upcomingVerses.first.id : null);
+
     return RefreshIndicator(
-      color: context.appBrandAccent,
+      color: palette.accentIcon,
       onRefresh: () async {
         _loadVerses(forceRefresh: true);
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: CustomScrollView(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Compact streak + Daily goal + action buttons
-                  _buildCompactProgressSection(state, hasVerses: hasVerses),
-                  const SizedBox(height: 24),
-                  _buildLanguageFilter(context),
-                  const SizedBox(height: 16),
-                  Text(
-                    '${context.tr(TranslationKeys.memoryDueForReview)} (${state.verses.length})',
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-                  ),
-                  if (state.statistics.dueVerses > 0) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _getVersesToReviewMessage(
-                          context, state.statistics.dueVerses),
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+              padding:
+                  const EdgeInsets.fromLTRB(kMemoryGutter, 4, kMemoryGutter, 0),
+              child: _buildSummary(state),
             ),
           ),
-          // Show verses list or empty filter message
-          if (state.verses.isNotEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final verse = state.verses[index];
-                    final card = Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: MemoryVerseListItem(
-                        verse: verse,
-                        onTap: () => _navigateToReviewPage(context, verse.id),
-                        onDelete: () => _showDeleteConfirmation(context, verse),
-                        masteryLevel: verse.masteryLevel,
-                      ),
-                    );
-                    if (index == 0) {
-                      return WalkthroughTooltip(
-                        showcaseKey: ShowcaseKeys.memoryVerseCard,
-                        title: AppLocalizations.of(context)!
-                            .walkthroughMemoryVerseTitle,
-                        description: AppLocalizations.of(context)!
-                            .walkthroughMemoryVerseDesc,
-                        screen: WalkthroughScreen.memoryVerses,
-                        stepNumber: 2,
-                        totalSteps: 2,
-                        onNext: _onNext,
-                        child: card,
-                      );
-                    }
-                    return card;
-                  },
-                  childCount: state.verses.length,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: _buildLanguageFilter(context),
+            ),
+          ),
+          if (state.verses.isEmpty)
+            SliverToBoxAdapter(child: _buildFilteredEmptyMessage())
+          else ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+                child: MemorySectionLabel(
+                  '${context.tr(TranslationKeys.memoryDueForReview)} (${dueVerses.length})',
+                  padding: const EdgeInsets.only(top: 20),
                 ),
               ),
-            )
-          else
-            SliverToBoxAdapter(
-              child: _buildFilteredEmptyMessage(),
             ),
+            if (dueVerses.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      kMemoryGutter, 12, kMemoryGutter, 4),
+                  child: Text(
+                    context.tr(TranslationKeys.memoryScreensNothingDue),
+                    style: AppFonts.inter(fontSize: 14, color: palette.muted),
+                  ),
+                ),
+              )
+            else
+              _buildVerseSliver(dueVerses, firstVerseId),
+            if (upcomingVerses.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+                  child: MemorySectionLabel(
+                    context.tr(TranslationKeys.memoryScreensComingUp),
+                    padding: const EdgeInsets.only(top: 24),
+                  ),
+                ),
+              ),
+              _buildVerseSliver(upcomingVerses, firstVerseId),
+            ],
+          ],
           if (state.isLoadingMore)
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Center(child: CircularProgressIndicator()),
+                child: LedgerLoading(),
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+      ),
+    );
+  }
+
+  /// Rows of one section. The very first row of the list carries the
+  /// walkthrough step that points at a verse card.
+  Widget _buildVerseSliver(
+    List<MemoryVerseEntity> verses,
+    String? firstVerseId,
+  ) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final verse = verses[index];
+            final row = MemoryVerseListItem(
+              verse: verse,
+              onTap: () => _navigateToReviewPage(context, verse.id),
+              onDelete: () => _showDeleteConfirmation(context, verse),
+              masteryLevel: verse.masteryLevel,
+            );
+            if (verse.id == firstVerseId) {
+              return WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.memoryVerseCard,
+                title:
+                    AppLocalizations.of(context)!.walkthroughMemoryVerseTitle,
+                description:
+                    AppLocalizations.of(context)!.walkthroughMemoryVerseDesc,
+                screen: WalkthroughScreen.memoryVerses,
+                stepNumber: 2,
+                totalSteps: 2,
+                onNext: _onNext,
+                child: row,
+              );
+            }
+            return row;
+          },
+          childCount: verses.length,
+        ),
       ),
     );
   }
 
   /// Build message when filter returns no results but user has verses
   Widget _buildFilteredEmptyMessage() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 48,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              context.tr(TranslationKeys.memoryNoVersesInLanguage),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.memoryTryDifferentFilter),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withOpacity(0.7),
-                  ),
-            ),
-          ],
-        ),
-      ),
+    return LedgerMessage(
+      icon: Icons.search_off_rounded,
+      title: context.tr(TranslationKeys.memoryNoVersesInLanguage),
+      body: context.tr(TranslationKeys.memoryTryDifferentFilter),
     );
   }
 
-  /// Builds a compact progress section combining streak, daily goal, and action buttons
-  Widget _buildCompactProgressSection(DueVersesLoaded state,
-      {bool hasVerses = false}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          // Header row with streak
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Streak badge
-              if (_memoryStreak != null)
-                GestureDetector(
-                  onTap: () {
-                    if (!_memoryStreak!.isPracticedToday &&
-                        _memoryStreak!.canUseFreeze) {
-                      StreakProtectionDialog.show(
-                        context,
-                        freezeDaysAvailable: _memoryStreak!.freezeDaysAvailable,
-                        currentStreak: _memoryStreak!.currentStreak,
-                        onConfirm: () {
-                          context.read<MemoryVerseBloc>().add(
-                                UseStreakFreezeEvent(
-                                    freezeDate: DateTime.now()),
-                              );
-                        },
-                      );
-                    }
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          context.appStreakAccent,
-                          AppColors.streakGlow,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.local_fire_department,
-                            color: Colors.white, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${_memoryStreak!.currentStreak} ${_memoryStreak!.currentStreak != 1 ? context.tr(TranslationKeys.memoryHomeStreakDays) : context.tr(TranslationKeys.memoryHomeStreakDay)}',
-                          style: AppFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
-              // Quick stats
-              Row(
-                children: [
-                  _buildMiniStat(
-                    Icons.library_books_outlined,
-                    '${state.statistics.totalVerses}',
-                    context.tr(TranslationKeys.memoryHomeTotal),
-                  ),
-                  const SizedBox(width: 16),
-                  _buildMiniStat(
-                    Icons.star_outline,
-                    '${state.statistics.masteredVerses}',
-                    context.tr(TranslationKeys.memoryHomeMastered),
-                    color: context.appStreakAccent,
-                  ),
-                ],
-              ),
-            ],
+  /// Day streak / verses / mastered tiles, then the daily review goal bar.
+  Widget _buildSummary(DueVersesLoaded state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildStatTiles(state),
+        if (_dailyGoal != null) ...[
+          const SizedBox(height: 20),
+          _buildGoalProgress(
+            context.tr(TranslationKeys.memoryHomeDailyReviews),
+            _dailyGoal!.completedReviews,
+            _dailyGoal!.targetReviews,
           ),
-          // Daily goal progress - Reviews only (simpler)
-          if (_dailyGoal != null) ...[
-            const SizedBox(height: 16),
-            _buildGoalProgress(
-              context.tr(TranslationKeys.memoryHomeDailyReviews),
-              _dailyGoal!.completedReviews,
-              _dailyGoal!.targetReviews,
-              context.appBrandAccent,
+        ],
+        const SizedBox(height: 16),
+        _buildQuickLinks(),
+        const SizedBox(height: 16),
+        const MemoryHairline(),
+      ],
+    );
+  }
+
+  /// Champions and Statistics entry points (also in the options menu).
+  Widget _buildQuickLinks() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: MemoryActionPill(
+            label: context.tr(TranslationKeys.memoryHomeChampions),
+            icon: Icons.emoji_events_outlined,
+            height: 44,
+            onPressed: () => context.push('/memory-verses/champions'),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: MemoryActionPill(
+            label: context.tr(TranslationKeys.memoryHomeStatistics),
+            icon: Icons.bar_chart_outlined,
+            height: 44,
+            onPressed: () => context.push('/memory-verses/stats'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Three equal tiles: day streak (gold flame, taps into streak
+  /// protection like the old pill), verses (lavender) and mastered (gold).
+  Widget _buildStatTiles(DueVersesLoaded state) {
+    final palette = ReaderPalette.of(context);
+    final streak = _memoryStreak;
+    final total = state.statistics.totalVerses;
+    final mastered = state.statistics.masteredVerses;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _HomeStatTile(
+              icon: Icons.local_fire_department_outlined,
+              iconColor: palette.gold,
+              value: streak == null ? '–' : '${streak.currentStreak}',
+              label: context.tr(TranslationKeys.memoryScreensStatDayStreak),
+              onTap: streak == null ? null : _onStreakTap,
             ),
-          ],
-          // Action buttons row
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionButton(
-                  icon: Icons.emoji_events_outlined,
-                  label: context.tr(TranslationKeys.memoryHomeChampions),
-                  onTap: () => context.push('/memory-verses/champions'),
-                  color: context.appStreakAccent,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionButton(
-                  icon: Icons.bar_chart_outlined,
-                  label: context.tr(TranslationKeys.memoryHomeStatistics),
-                  onTap: () => context.push('/memory-verses/stats'),
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _HomeStatTile(
+              icon: Icons.psychology_outlined,
+              iconColor: palette.accentIcon,
+              value: '$total',
+              label: context.tr(total == 1
+                  ? TranslationKeys.memoryScreensStatVerse
+                  : TranslationKeys.memoryScreensStatVerses),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _HomeStatTile(
+              icon: Icons.emoji_events_outlined,
+              iconColor: palette.gold,
+              value: '$mastered',
+              label: context.tr(TranslationKeys.memoryScreensStatMastered),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required Color color,
-  }) {
-    return Material(
-      color: color.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  /// Offers a streak freeze when today is not practised yet and one is
+  /// available (same behaviour as the previous streak pill).
+  void _onStreakTap() {
+    final streak = _memoryStreak;
+    if (streak == null) return;
+    if (!streak.isPracticedToday && streak.canUseFreeze) {
+      StreakProtectionDialog.show(
+        context,
+        freezeDaysAvailable: streak.freezeDaysAvailable,
+        currentStreak: streak.currentStreak,
+        onConfirm: () {
+          context.read<MemoryVerseBloc>().add(
+                UseStreakFreezeEvent(freezeDate: DateTime.now()),
+              );
+        },
+      );
+    }
   }
 
-  Widget _buildMiniStat(IconData icon, String value, String label,
-      {Color? color}) {
-    return Column(
-      children: [
-        Icon(icon,
-            size: 18,
-            color: color ?? Theme.of(context).colorScheme.onSurfaceVariant),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 10,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoalProgress(
-      String label, int current, int target, Color color) {
+  Widget _buildGoalProgress(String label, int current, int target) {
+    final palette = ReaderPalette.of(context);
     final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
-    final isComplete = current >= target;
+    final isComplete = target > 0 && current >= target;
+    final color = isComplete ? context.appSuccess : palette.gold;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            Expanded(
+              child: Text(
+                label,
+                style: AppFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
               ),
             ),
-            Row(
-              children: [
-                if (isComplete)
-                  Icon(Icons.check_circle, size: 14, color: context.appSuccess),
-                const SizedBox(width: 4),
-                Text(
-                  '$current/$target',
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isComplete ? AppColors.success : color,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 8),
+            if (isComplete) ...[
+              Icon(Icons.check_circle, size: 15, color: color),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              context.tr(TranslationKeys.memoryScreensCountOfTotal, {
+                'count': current.toString(),
+                'total': target.toString(),
+              }),
+              style: AppFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: color,
+                fontFeatures: kMemoryTabular,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: color.withOpacity(0.15),
-            valueColor:
-                AlwaysStoppedAnimation(isComplete ? AppColors.success : color),
-            minHeight: 6,
-          ),
-        ),
+        const SizedBox(height: 10),
+        MemoryProgressBar(value: progress, color: color),
       ],
     );
   }
 
   Widget _buildEmptyState() {
+    final palette = ReaderPalette.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primaryColor.withOpacity(0.15),
-                    AppTheme.secondaryPurple.withOpacity(0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Icon(
-                Icons.auto_stories_outlined,
-                size: 50,
-                color: context.appBrandAccent,
-              ),
-            ),
-            const SizedBox(height: 24),
+            Icon(Icons.auto_stories_outlined,
+                size: 44, color: palette.accentIcon),
+            const SizedBox(height: 18),
             Text(
               context.tr(TranslationKeys.memoryHomeNoVersesTitle),
               textAlign: TextAlign.center,
-              style: AppFonts.inter(
-                fontSize: 22,
+              style: AppFonts.poppins(
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onBackground,
+                color: palette.text,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.memoryHomeNoVersesSubtitle),
               textAlign: TextAlign.center,
               style: AppFonts.inter(
-                fontSize: 15,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 14.5,
+                color: palette.muted,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 32),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primaryColor, AppTheme.secondaryPurple],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.appBrandAccent.withOpacity(0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _showAddVerseOptions(context),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            context.tr(TranslationKeys.memoryHomeAddFirstVerse),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            const SizedBox(height: 28),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: SizedBox(
+                width: double.infinity,
+                child: MemoryPrimaryPill(
+                  label: context.tr(TranslationKeys.memoryHomeAddFirstVerse),
+                  icon: Icons.add,
+                  onPressed: () => _showAddVerseOptions(context),
                 ),
               ),
             ),
@@ -993,16 +765,22 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     return 'standard';
   }
 
+  /// Opens the add-verse sheet: daily verse / suggested / custom tiles on
+  /// top of the suggested list. The daily and custom tiles close the sheet
+  /// and run the same flows as before.
   void _showAddVerseOptions(BuildContext context) {
-    AddVerseOptionsSheet.show(
+    _showSuggestedVersesSheet(
       context,
       onAddFromDaily: () => _showAddFromDailyDialog(context),
-      onAddSuggested: () => _showSuggestedVersesSheet(context),
       onAddManually: () => _showAddManuallyDialog(context),
     );
   }
 
-  void _showSuggestedVersesSheet(BuildContext context) {
+  void _showSuggestedVersesSheet(
+    BuildContext context, {
+    VoidCallback? onAddFromDaily,
+    VoidCallback? onAddManually,
+  }) {
     // Get language: use filter if selected, otherwise use user's preferred language
     String language;
     if (_selectedLanguageFilter != null) {
@@ -1015,6 +793,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     SuggestedVersesSheet.show(
       context,
       language: language,
+      onAddFromDaily: onAddFromDaily,
+      onAddManually: onAddManually,
       onVerseAdded: () {
         // Reload verses list to show the newly added verse
         context.read<MemoryVerseBloc>().add(
@@ -1136,101 +916,29 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   Widget _buildLanguageFilter(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.tr(TranslationKeys.memoryFilterByLanguage),
-          style: AppFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-            letterSpacing: 0.5,
+    return Semantics(
+      label: context.tr(TranslationKeys.memoryFilterByLanguage),
+      container: true,
+      child: MemoryChipBar(
+        chips: [
+          MemoryChoiceChip(
+            label: context.tr(TranslationKeys.memoryAll),
+            selected: _selectedLanguageFilter == null,
+            onTap: () {
+              setState(() => _selectedLanguageFilter = null);
+              _loadVerses();
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildLanguageChip(
-                context,
-                label: context.tr(TranslationKeys.memoryAll),
-                isSelected: _selectedLanguageFilter == null,
-                onTap: () {
-                  setState(() => _selectedLanguageFilter = null);
-                  _loadVerses();
-                },
-              ),
-              const SizedBox(width: 8),
-              ...VerseLanguage.values.map((language) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _buildLanguageChip(
-                    context,
-                    label: language.displayName,
-                    isSelected: _selectedLanguageFilter == language,
-                    onTap: () {
-                      setState(() => _selectedLanguageFilter = language);
-                      _loadVerses();
-                    },
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLanguageChip(
-    BuildContext context, {
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: isSelected ? AppTheme.primaryGradient : null,
-          color: isSelected
-              ? null
-              : isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? Colors.transparent
-                : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : context.appBrandAccent.withOpacity(0.2),
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: context.appBrandAccent.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: isSelected
-                ? Colors.white
-                : Theme.of(context).colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
+          for (final language in VerseLanguage.values)
+            MemoryChoiceChip(
+              label: language.displayName,
+              selected: _selectedLanguageFilter == language,
+              onTap: () {
+                setState(() => _selectedLanguageFilter = language);
+                _loadVerses();
+              },
+            ),
+        ],
       ),
     );
   }
@@ -1422,11 +1130,77 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       ),
     );
   }
+}
 
-  String _getVersesToReviewMessage(BuildContext context, int count) {
-    final key = count == 1
-        ? TranslationKeys.memoryVersesToReviewSingular
-        : TranslationKeys.memoryVersesToReviewPlural;
-    return context.tr(key, {'count': count.toString()});
+/// Home summary tile: icon top-left, big number, muted label that wraps.
+class _HomeStatTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _HomeStatTile({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: palette.hairline),
+    );
+    return Semantics(
+      button: onTap != null,
+      label: '$value $label',
+      excludeSemantics: true,
+      child: Material(
+        color: palette.card,
+        shape: shape,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 22, color: iconColor),
+                const SizedBox(height: 10),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: AppFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: palette.text,
+                      height: 1.15,
+                      fontFeatures: kMemoryTabular,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    color: palette.muted,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -6,11 +6,11 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/plan_detail_view.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-/// One plan on the "Choose your plan" page, in the K2 ledger style.
+/// One plan on the "Choose your plan" page, in the ledger style.
 ///
 /// Name, badge and price on one line, daily credits in gold, the features as a
-/// muted run of text. The whole card is the action: tapping it calls
-/// [onPressed] (the old "Get started" button). The current plan gets a gold
+/// muted run of text. The whole card is the action: tapping it (or its
+/// "Get started" link) calls [onPressed]. The current plan gets a gold
 /// ring and a "Your current plan" line and is not tappable; the highlighted
 /// tier (Plus) gets a violet ring on a soft wash.
 class PricingCard extends StatelessWidget {
@@ -129,6 +129,17 @@ class PricingCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: context.appWarning,
                       ),
+                    ),
+                  ],
+                  // The card is tappable; the action is also spelled out
+                  // so it reads as a button, not just a description.
+                  if (tappable) ...[
+                    const SizedBox(height: 6),
+                    LedgerLink(
+                      key: Key('pricing_card_action_$planName'),
+                      label: buttonText,
+                      trailingIcon: Icons.arrow_forward_rounded,
+                      onTap: onPressed,
                     ),
                   ],
                   if (isCurrentPlan) ...[

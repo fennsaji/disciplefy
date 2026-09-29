@@ -117,6 +117,8 @@ void showThemeSheet(BuildContext context, ThemeModeEntity currentTheme) {
                   child: ThemePreviewOption(
                     mode: options[i].mode,
                     label: themeModeLabel(sheetContext, options[i].mode),
+                    description:
+                        themeModeDescription(sheetContext, options[i].mode),
                     selected: options[i].mode == currentTheme.mode,
                     onTap: () => pick(options[i]),
                   ),
@@ -141,10 +143,22 @@ void showThemeSheet(BuildContext context, ThemeModeEntity currentTheme) {
   );
 }
 
-/// A miniature screen preview with its caption; System is split light/dark.
+/// One line on what each theme option does ("Follows your device theme").
+String themeModeDescription(BuildContext context, AppThemeMode mode) =>
+    switch (mode) {
+      AppThemeMode.light =>
+        context.tr(TranslationKeys.settingsLightModeSubtitle),
+      AppThemeMode.dark => context.tr(TranslationKeys.settingsDarkModeSubtitle),
+      AppThemeMode.system =>
+        context.tr(TranslationKeys.settingsSystemDefaultSubtitle),
+    };
+
+/// A miniature screen preview with its caption and a short description;
+/// System is split light/dark.
 class ThemePreviewOption extends StatelessWidget {
   final AppThemeMode mode;
   final String label;
+  final String? description;
   final bool selected;
   final VoidCallback onTap;
 
@@ -154,6 +168,7 @@ class ThemePreviewOption extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.description,
   });
 
   @override
@@ -178,7 +193,7 @@ class ThemePreviewOption extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: description == null ? label : '$label. $description',
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -205,14 +220,24 @@ class ThemePreviewOption extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 color: selected ? palette.text : palette.muted,
               ),
             ),
+            if (description != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                description!,
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 11.5,
+                  color: palette.muted,
+                  height: 1.3,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -732,24 +757,19 @@ void showSupportSheet(BuildContext context) {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: SettingsButton(
-                  label: sheetContext.tr(TranslationKeys.settingsClose),
-                  kind: SettingsButtonKind.neutral,
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                ),
+          SettingsButtonRow(
+            buttons: [
+              SettingsButton(
+                label: sheetContext.tr(TranslationKeys.settingsClose),
+                kind: SettingsButtonKind.neutral,
+                onPressed: () => Navigator.of(sheetContext).pop(),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: SettingsButton(
-                  label: sheetContext.tr(TranslationKeys.settingsSupport),
-                  onPressed: () {
-                    Navigator.of(sheetContext).pop();
-                    launchBuyMeCoffee();
-                  },
-                ),
+              SettingsButton(
+                label: sheetContext.tr(TranslationKeys.settingsSupport),
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  launchBuyMeCoffee();
+                },
               ),
             ],
           ),
@@ -906,8 +926,6 @@ class _TipRow extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w500,

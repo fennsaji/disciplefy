@@ -9,6 +9,36 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _englishTranslations = {
+    // Memory recall practice modes (flip card, progressive reveal,
+    // first letter hints, type it out).
+    'memory_recall_modes': {
+      'flip_card': {
+        'front': 'Front',
+        'back': 'Back',
+        'recite_hint': 'Recite it, then tap to flip',
+        'flip': 'Flip card',
+      },
+      'progressive': {
+        'words_progress': '{current} of {total} words',
+        'phrases_progress': '{current} of {total} phrases',
+        'auto': 'Auto',
+        'pause': 'Pause',
+        'all': 'All',
+      },
+      'first_letter': {
+        'hint': 'Hint',
+        'check': 'Check',
+        'hints_used': 'Hints used {used}/{total}',
+        'tile_label': 'Word {index}, starts with {letter}. Tap to reveal',
+      },
+      'type_it_out': {
+        'word_count': '{current} / {total} words',
+        'answer': 'Answer',
+        'romanized_hint': 'Type in romanized {lang}',
+        'hinglish': 'Hindi (Hinglish)',
+        'manglish': 'Malayalam (Manglish)',
+      },
+    },
     'community': {
       'link_unavailable': "This group isn't available.",
       'link_not_a_member': "You're not part of this group.",
@@ -939,6 +969,8 @@ class AppTranslations {
         'reviewNumber': 'Review {count}',
         'days': '{count} days',
         'reviews': '{count} reviews',
+        'day_one': '1 day',
+        'review_one': '1 review',
       },
       'optionsMenu': {
         'syncTitle': 'Sync with Server',
@@ -964,6 +996,7 @@ class AppTranslations {
         'subtitle': 'Last 12 weeks',
         'dayStreak': '{count} day streak',
         'longestStreak': 'Longest streak: {days} days',
+        'longestStreakOne': 'Longest streak: 1 day',
         'less': 'Less',
         'more': 'More',
         'mon': 'Mon',
@@ -1363,6 +1396,9 @@ class AppTranslations {
       'invoices_empty_body': 'Your subscription payments will appear here.',
       'invoices_error': 'Couldn\'t load payments',
       'invoice_number': 'Invoice {number}',
+      'paise_per_credit': '{paise} paise/credit',
+      'standard_tagline': 'Unlock powerful features for your Bible study',
+      'plus_tagline': 'Enhanced features for serious Bible students',
     },
     'tokens': {
       'management': {
@@ -2077,8 +2113,8 @@ class AppTranslations {
       'type_it_out_desc': 'Type the entire verse from memory',
     },
     'self_assessment': {
-      'title': 'How well did you know it?',
-      'subtitle': 'Rate your recall before seeing the answer',
+      'title': 'How well did you recall it?',
+      'subtitle': 'Be honest — this sets your next review',
       'did_not_know': "Didn't know it",
       'did_not_know_desc': 'Complete blank - needed to see the answer',
       'knew_a_little': 'Knew a little',
@@ -2160,12 +2196,24 @@ class AppTranslations {
       'step_speak': 'Speak',
       'step_results': 'Results',
     },
+    // Memory practice action bar (phrase scramble, word bank, fill in the
+    // blanks, audio)
+    'memory_practice': {
+      'hint': 'Hint',
+      'hint_count': 'Hint · {count}',
+      'check': 'Check',
+      'close_expected': 'Close! Expected: {word}',
+      'expected_said': 'Expected: {expected}\nYou said: {said}',
+    },
     // Word Bank Practice Page
     'word_bank': {
       'tap_words_instruction': 'Tap words in order to form the verse',
       'long_press_hint': 'Long press word to use hint',
       'your_answer': 'Your Answer:',
       'try_again': 'Try Again',
+      'all_placed':
+          'All words placed. Tap a word in your answer to put it back.',
+      'all_placed_done': 'All words placed.',
     },
     // Cloze Practice Page
     'cloze_practice': {
@@ -2252,6 +2300,72 @@ class AppTranslations {
       'malayalam_manglish': 'Malayalam (Manglish)',
       'romanized_hint': 'Type in romanized @lang',
       'word_count': 'Words: @current / @expected',
+    },
+    // Memory verses redesign: home, add verse, mode picker, results, stats, champions
+    'memory_screens': {
+      'due_today_count': '{count} due today',
+      'tap_to_see_plans': 'Tap to see plans',
+      'choose_unlocked_modes': 'Choose an unlocked mode',
+      'top_ten': 'Top 10',
+      'ease_factor': 'Ease {value}',
+      'add_verse_subtitle': 'Pick a passage or type your own',
+      'choose_book': 'Choose a book',
+      'all_caught_up': 'All caught up',
+      'verses_count': '{count} verses',
+      'verse_count_one': '{count} verse',
+      'how_it_works': 'How it works',
+      'mastered_count': '{count} mastered',
+      'count_of_total': '{count} of {total}',
+      'coming_up': 'Coming up',
+      'due_today': 'Due today',
+      'due_tomorrow': 'Tomorrow',
+      'due_in_days': 'In {count} days',
+      'overdue_days': '{count} days overdue',
+      'overdue_one_day': '1 day overdue',
+      'new_verse': 'New',
+      'nothing_due': 'Nothing due right now',
+      'offline_title': "You're offline",
+      'offline_body':
+          'Memory Verses need an internet connection. Connect and come back.',
+      'tile_daily': 'Daily verse',
+      'tile_daily_hint': "Today's verse",
+      'tile_suggested': 'Suggested',
+      'tile_suggested_hint': 'Curated verses',
+      'tile_custom': 'Custom',
+      'tile_custom_hint': 'Any reference',
+      'modes_unlocked_today': '{count} of {limit} modes unlocked today',
+      'all_modes_unlocked': 'All modes unlocked',
+      'daily_limit_reached': 'Daily limit reached',
+      'upgrade': 'Upgrade',
+      'mode_locked_upgrade': 'Upgrade required',
+      'next_review_today': 'Next review today',
+      'next_review_tomorrow': 'Next review tomorrow',
+      'next_review_in_days': 'Next review in {count} days',
+      'missed': 'Missed: {words}',
+      'stat_time': 'time',
+      'stat_hint': 'hint',
+      'stat_hints': 'hints',
+      'stat_answer_shown': 'answer shown',
+      'yes': 'Yes',
+      'no': 'No',
+      'quality_perfect': 'Perfect recall',
+      'quality_good': 'Good recall',
+      'quality_ok': 'Fair recall',
+      'quality_needs_work': 'Needs work',
+      'quality_try_again': 'Try again',
+      'stats_subtitle': 'Your memory practice',
+      'stat_verses': 'verses',
+      'stat_verse': 'verse',
+      'stat_reviews': 'reviews',
+      'stat_perfect': 'perfect',
+      'stat_days': 'days',
+      'streak_line': 'Current streak {current} · Longest {longest}',
+      'practice_modes': 'Practice modes',
+      'practices_count': '{count} practices',
+      'champions_subtitle': 'Memory verse leaderboard',
+      'your_rank': 'Your rank',
+      'stat_mastered': 'mastered',
+      'stat_day_streak': 'day streak',
     },
     // Memory Verse Home Page
     'memory_home': {
@@ -2368,6 +2482,7 @@ class AppTranslations {
       'duration_badge': 'Sermon Outline • 50-60 min',
     },
     'reflection_journal': {
+      'load_study_failed': 'Couldn\'t open this study. Please try again.',
       'title': 'Reflection Journal',
       'filter_by_mode': 'Filter by mode',
       'all_modes': 'All Modes',
@@ -2502,6 +2617,31 @@ class AppTranslations {
       'count': '{count} daily verse reviews',
       'limited': 'Limited daily reviews',
     },
+    'practice_unlock_limit': {
+      'title': 'Daily Unlock Limit Reached',
+      'message_one':
+          'You\'ve unlocked {count} practice mode for "{verse}" today.',
+      'message_other':
+          'You\'ve unlocked {count} practice modes for "{verse}" today.',
+      'unlocked_today': 'Modes Unlocked Today:',
+      'upgrade_prompt': 'Upgrade to unlock more modes per verse per day:',
+      'still_practice':
+          'You can still practice unlimited times with your unlocked modes today!',
+      'modes_per_day_one': '{count} mode per verse per day',
+      'modes_per_day_other': '{count} modes per verse per day',
+      'all_modes': 'All modes unlocked',
+      'maybe_later': 'Maybe Later',
+      'view_plans': 'View Plans',
+    },
+    'practice_tier_locked': {
+      'title': 'Upgrade Required',
+      'plan_includes': 'Your {plan} Plan Includes:',
+      'unlock_with': 'Unlock advanced practice modes with:',
+      'all_modes_plus': 'All {count} practice modes + {limit}',
+      'all_modes_unlimited': 'All {count} practice modes + unlimited practice',
+      'maybe_later': 'Maybe Later',
+      'upgrade_now': 'Upgrade Now',
+    },
     'plan_features': {
       'unlimited_daily_reviews': 'Unlimited daily verse reviews',
       'daily_reviews': '{count} daily verse reviews',
@@ -2510,6 +2650,36 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
+    // Memory recall practice modes (flip card, progressive reveal,
+    // first letter hints, type it out).
+    'memory_recall_modes': {
+      'flip_card': {
+        'front': 'सामने',
+        'back': 'पीछे',
+        'recite_hint': 'इसे बोलें, फिर पलटने के लिए टैप करें',
+        'flip': 'कार्ड पलटें',
+      },
+      'progressive': {
+        'words_progress': '{total} में से {current} शब्द',
+        'phrases_progress': '{total} में से {current} वाक्यांश',
+        'auto': 'ऑटो',
+        'pause': 'रोकें',
+        'all': 'सभी',
+      },
+      'first_letter': {
+        'hint': 'संकेत',
+        'check': 'जाँचें',
+        'hints_used': 'संकेत {used}/{total}',
+        'tile_label': 'शब्द {index}, {letter} से शुरू। देखने के लिए टैप करें',
+      },
+      'type_it_out': {
+        'word_count': '{current} / {total} शब्द',
+        'answer': 'उत्तर',
+        'romanized_hint': 'रोमन अक्षरों में टाइप करें: {lang}',
+        'hinglish': 'हिंदी (हिंग्लिश)',
+        'manglish': 'मलयालम (मंग्लिश)',
+      },
+    },
     'community': {
       'link_unavailable': 'यह ग्रुप उपलब्ध नहीं है।',
       'link_not_a_member': 'आप इस ग्रुप का हिस्सा नहीं हैं।',
@@ -3445,6 +3615,8 @@ class AppTranslations {
         'reviewNumber': 'समीक्षा {count}',
         'days': '{count} दिन',
         'reviews': '{count} समीक्षाएं',
+        'day_one': '1 दिन',
+        'review_one': '1 समीक्षा',
       },
       'optionsMenu': {
         'syncTitle': 'सर्वर से सिंक करें',
@@ -3470,6 +3642,7 @@ class AppTranslations {
         'subtitle': 'पिछले 12 सप्ताह',
         'dayStreak': '{count} दिन की स्ट्रीक',
         'longestStreak': 'सबसे लंबी स्ट्रीक: {days} दिन',
+        'longestStreakOne': 'सबसे लंबी स्ट्रीक: 1 दिन',
         'less': 'कम',
         'more': 'अधिक',
         'mon': 'सोम',
@@ -3867,6 +4040,9 @@ class AppTranslations {
       'invoices_empty_body': 'आपके सदस्यता भुगतान यहां दिखेंगे।',
       'invoices_error': 'भुगतान लोड नहीं हो सके',
       'invoice_number': 'इनवॉइस {number}',
+      'paise_per_credit': '{paise} पैसे/क्रेडिट',
+      'standard_tagline': 'अपनी बाइबिल स्टडी के लिए दमदार फीचर्स पाएं',
+      'plus_tagline': 'गंभीर बाइबिल विद्यार्थियों के लिए और बेहतर फीचर्स',
     },
     'tokens': {
       'management': {
@@ -4578,8 +4754,8 @@ class AppTranslations {
       'type_it_out_desc': 'याद से पूरा वचन टाइप करें',
     },
     'self_assessment': {
-      'title': 'आपको कितना याद था?',
-      'subtitle': 'उत्तर देखने से पहले अपनी याददाश्त का मूल्यांकन करें',
+      'title': 'आपको कितना अच्छा याद रहा?',
+      'subtitle': 'ईमानदारी से बताएं — इसी से आपकी अगली समीक्षा तय होती है',
       'did_not_know': 'याद नहीं था',
       'did_not_know_desc': 'पूरी तरह भूल गया - उत्तर देखना पड़ा',
       'knew_a_little': 'थोड़ा याद था',
@@ -4658,11 +4834,23 @@ class AppTranslations {
       'step_speak': 'बोलें',
       'step_results': 'नतीजे',
     },
+    // Memory practice action bar (phrase scramble, word bank, fill in the
+    // blanks, audio)
+    'memory_practice': {
+      'hint': 'संकेत',
+      'hint_count': 'संकेत · {count}',
+      'check': 'जाँचें',
+      'close_expected': 'लगभग सही! अपेक्षित: {word}',
+      'expected_said': 'अपेक्षित: {expected}\nआपने कहा: {said}',
+    },
     'word_bank': {
       'tap_words_instruction': 'वचन बनाने के लिए शब्दों पर क्रम से टैप करें',
       'long_press_hint': 'संकेत के लिए शब्द को देर तक दबाएं',
       'your_answer': 'आपका उत्तर:',
       'try_again': 'पुनः प्रयास करें',
+      'all_placed':
+          'सभी शब्द रख दिए गए। किसी शब्द को वापस लाने के लिए अपने उत्तर में उस पर टैप करें।',
+      'all_placed_done': 'सभी शब्द रख दिए गए।',
     },
     'cloze_practice': {
       'title': 'रिक्त स्थान भरें',
@@ -4741,6 +4929,71 @@ class AppTranslations {
       'characters_remaining': '@count अक्षर शेष',
       'well_done': 'बहुत बढ़िया!',
       'keep_practicing': 'अभ्यास जारी रखें',
+    },
+    'memory_screens': {
+      'due_today_count': 'आज {count} दोहराने हैं',
+      'tap_to_see_plans': 'प्लान देखने के लिए टैप करें',
+      'choose_unlocked_modes': 'कोई अनलॉक मोड चुनें',
+      'top_ten': 'शीर्ष 10',
+      'ease_factor': 'सरलता {value}',
+      'add_verse_subtitle': 'कोई अंश चुनें या खुद टाइप करें',
+      'choose_book': 'पुस्तक चुनें',
+      'all_caught_up': 'सब पूरा हो गया',
+      'verses_count': '{count} वचन',
+      'verse_count_one': '{count} वचन',
+      'how_it_works': 'यह कैसे काम करता है',
+      'mastered_count': '{count} कंठस्थ',
+      'count_of_total': '{total} में से {count}',
+      'coming_up': 'आगामी',
+      'due_today': 'आज दोहराना है',
+      'due_tomorrow': 'कल',
+      'due_in_days': '{count} दिन में',
+      'overdue_days': '{count} दिन से बाकी',
+      'overdue_one_day': '1 दिन से बाकी',
+      'new_verse': 'नया',
+      'nothing_due': 'अभी कुछ बाकी नहीं है',
+      'offline_title': 'आप ऑफ़लाइन हैं',
+      'offline_body':
+          'मेमोरी वचनों के लिए इंटरनेट कनेक्शन चाहिए। कनेक्ट करके वापस आएँ।',
+      'tile_daily': 'दैनिक वचन',
+      'tile_daily_hint': 'आज का वचन',
+      'tile_suggested': 'सुझाए गए',
+      'tile_suggested_hint': 'चुने हुए वचन',
+      'tile_custom': 'अपना',
+      'tile_custom_hint': 'कोई भी संदर्भ',
+      'modes_unlocked_today': 'आज {limit} में से {count} मोड खुले',
+      'all_modes_unlocked': 'सभी मोड खुले हैं',
+      'daily_limit_reached': 'दैनिक सीमा पूरी हुई',
+      'upgrade': 'अपग्रेड',
+      'mode_locked_upgrade': 'अपग्रेड आवश्यक',
+      'next_review_today': 'अगला दोहराव आज',
+      'next_review_tomorrow': 'अगला दोहराव कल',
+      'next_review_in_days': 'अगला दोहराव {count} दिन में',
+      'missed': 'छूटे: {words}',
+      'stat_time': 'समय',
+      'stat_hint': 'संकेत',
+      'stat_hints': 'संकेत',
+      'stat_answer_shown': 'उत्तर दिखाया',
+      'yes': 'हाँ',
+      'no': 'नहीं',
+      'quality_perfect': 'उत्कृष्ट स्मरण',
+      'quality_good': 'अच्छा स्मरण',
+      'quality_ok': 'ठीक स्मरण',
+      'quality_needs_work': 'और अभ्यास चाहिए',
+      'quality_try_again': 'फिर से प्रयास करें',
+      'stats_subtitle': 'आपका स्मरण अभ्यास',
+      'stat_verses': 'वचन',
+      'stat_verse': 'वचन',
+      'stat_reviews': 'दोहराव',
+      'stat_perfect': 'उत्कृष्ट',
+      'stat_days': 'दिन',
+      'streak_line': 'वर्तमान लगातार {current} · सबसे लंबा {longest}',
+      'practice_modes': 'अभ्यास मोड',
+      'practices_count': '{count} अभ्यास',
+      'champions_subtitle': 'स्मरण वचन लीडरबोर्ड',
+      'your_rank': 'आपकी रैंक',
+      'stat_mastered': 'कंठस्थ',
+      'stat_day_streak': 'दिन लगातार',
     },
     'memory_home': {
       'title': 'स्मृति वचन',
@@ -4874,6 +5127,7 @@ class AppTranslations {
       'duration_badge': 'उपदेश रूपरेखा • 50-60 मिनट',
     },
     'reflection_journal': {
+      'load_study_failed': 'यह अध्ययन नहीं खुल सका। कृपया फिर से प्रयास करें।',
       'title': 'सोच की डायरी',
       'filter_by_mode': 'मोड से छाँटें',
       'all_modes': 'सभी मोड',
@@ -5009,6 +5263,32 @@ class AppTranslations {
       'count': 'रोज़ {count} वचन अभ्यास',
       'limited': 'सीमित रोज़ के अभ्यास',
     },
+    'practice_unlock_limit': {
+      'title': 'आज की अनलॉक सीमा पूरी',
+      'message_one':
+          'आपने आज "{verse}" के लिए {count} अभ्यास मोड अनलॉक किया है।',
+      'message_other':
+          'आपने आज "{verse}" के लिए {count} अभ्यास मोड अनलॉक किए हैं।',
+      'unlocked_today': 'आज अनलॉक किए गए मोड:',
+      'upgrade_prompt':
+          'हर वचन के लिए रोज़ ज़्यादा मोड अनलॉक करने के लिए अपग्रेड करें:',
+      'still_practice':
+          'आज अनलॉक किए गए मोड से आप जितनी बार चाहें अभ्यास कर सकते हैं!',
+      'modes_per_day_one': 'हर वचन के लिए रोज़ {count} मोड',
+      'modes_per_day_other': 'हर वचन के लिए रोज़ {count} मोड',
+      'all_modes': 'सभी मोड अनलॉक',
+      'maybe_later': 'बाद में',
+      'view_plans': 'प्लान देखें',
+    },
+    'practice_tier_locked': {
+      'title': 'अपग्रेड ज़रूरी है',
+      'plan_includes': 'आपके {plan} प्लान में शामिल:',
+      'unlock_with': 'उन्नत अभ्यास मोड इनके साथ अनलॉक करें:',
+      'all_modes_plus': 'सभी {count} अभ्यास मोड + {limit}',
+      'all_modes_unlimited': 'सभी {count} अभ्यास मोड + असीमित अभ्यास',
+      'maybe_later': 'बाद में',
+      'upgrade_now': 'अभी अपग्रेड करें',
+    },
     'plan_features': {
       'unlimited_daily_reviews': 'असीमित रोज़ के वचन अभ्यास',
       'daily_reviews': 'रोज़ {count} वचन अभ्यास',
@@ -5017,6 +5297,37 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _malayalamTranslations = {
+    // Memory recall practice modes (flip card, progressive reveal,
+    // first letter hints, type it out).
+    'memory_recall_modes': {
+      'flip_card': {
+        'front': 'മുൻവശം',
+        'back': 'പിൻവശം',
+        'recite_hint': 'ഇത് ചൊല്ലിയ ശേഷം മറിക്കാൻ ടാപ്പ് ചെയ്യുക',
+        'flip': 'കാർഡ് മറിക്കുക',
+      },
+      'progressive': {
+        'words_progress': '{total}-ൽ {current} വാക്കുകൾ',
+        'phrases_progress': '{total}-ൽ {current} വാക്യഭാഗങ്ങൾ',
+        'auto': 'ഓട്ടോ',
+        'pause': 'നിർത്തുക',
+        'all': 'എല്ലാം',
+      },
+      'first_letter': {
+        'hint': 'സൂചന',
+        'check': 'പരിശോധിക്കുക',
+        'hints_used': 'സൂചനകൾ {used}/{total}',
+        'tile_label':
+            'വാക്ക് {index}, {letter} എന്നതിൽ തുടങ്ങുന്നു. കാണാൻ ടാപ്പ് ചെയ്യുക',
+      },
+      'type_it_out': {
+        'word_count': '{current} / {total} വാക്കുകൾ',
+        'answer': 'ഉത്തരം',
+        'romanized_hint': 'ഇംഗ്ലീഷ് അക്ഷരങ്ങളിൽ ടൈപ്പ് ചെയ്യുക: {lang}',
+        'hinglish': 'ഹിന്ദി (ഹിംഗ്ലിഷ്)',
+        'manglish': 'മലയാളം (മംഗ്ലീഷ്)',
+      },
+    },
     'community': {
       'link_unavailable': 'ഈ ഗ്രൂപ്പ് ലഭ്യമല്ല.',
       'link_not_a_member': 'നിങ്ങൾ ഈ ഗ്രൂപ്പിന്റെ ഭാഗമല്ല.',
@@ -5966,6 +6277,8 @@ class AppTranslations {
         'reviewNumber': 'അവലോകനം {count}',
         'days': '{count} ദിവസം',
         'reviews': '{count} അവലോകനങ്ങൾ',
+        'day_one': '1 ദിവസം',
+        'review_one': '1 അവലോകനം',
       },
       'optionsMenu': {
         'syncTitle': 'സെർവറുമായി സിങ്ക് ചെയ്യുക',
@@ -5991,6 +6304,7 @@ class AppTranslations {
         'subtitle': 'കഴിഞ്ഞ 12 ആഴ്ച',
         'dayStreak': '{count} ദിവസ സ്ട്രീക്ക്',
         'longestStreak': 'ഏറ്റവും നീണ്ട സ്ട്രീക്ക്: {days} ദിവസം',
+        'longestStreakOne': 'ഏറ്റവും നീണ്ട സ്ട്രീക്ക്: 1 ദിവസം',
         'less': 'കുറവ്',
         'more': 'കൂടുതൽ',
         'mon': 'തി',
@@ -6399,6 +6713,10 @@ class AppTranslations {
           'നിങ്ങളുടെ സബ്സ്ക്രിപ്ഷൻ പേയ്മെന്റുകൾ ഇവിടെ കാണാം.',
       'invoices_error': 'പേയ്മെന്റുകൾ ലോഡ് ചെയ്യാനായില്ല',
       'invoice_number': 'ഇൻവോയ്സ് {number}',
+      'paise_per_credit': '{paise} പൈസ/ക്രെഡിറ്റ്',
+      'standard_tagline': 'നിങ്ങളുടെ ബൈബിൾ പഠനത്തിന് ശക്തമായ ഫീച്ചറുകൾ',
+      'plus_tagline':
+          'ഗൗരവമുള്ള ബൈബിൾ വിദ്യാർത്ഥികൾക്കായി മെച്ചപ്പെട്ട ഫീച്ചറുകൾ',
     },
     'tokens': {
       'management': {
@@ -7173,8 +7491,9 @@ class AppTranslations {
       'type_it_out_desc': 'ഓർമ്മയിൽ നിന്ന് മുഴുവൻ വചനവും ടൈപ്പ് ചെയ്യുക',
     },
     'self_assessment': {
-      'title': 'നിങ്ങൾക്ക് എത്രമാത്രം ഓർമ്മയുണ്ടായിരുന്നു?',
-      'subtitle': 'ഉത്തരം കാണുന്നതിന് മുമ്പ് നിങ്ങളുടെ ഓർമ്മ വിലയിരുത്തുക',
+      'title': 'നിങ്ങൾക്ക് എത്ര നന്നായി ഓർമ്മിക്കാൻ കഴിഞ്ഞു?',
+      'subtitle':
+          'സത്യസന്ധമായി പറയുക — ഇതാണ് അടുത്ത പുനരവലോകനം നിശ്ചയിക്കുന്നത്',
       'did_not_know': 'ഓർമ്മയില്ലായിരുന്നു',
       'did_not_know_desc': 'പൂർണ്ണമായി മറന്നു - ഉത്തരം കാണേണ്ടി വന്നു',
       'knew_a_little': 'കുറച്ച് ഓർമ്മയുണ്ടായിരുന്നു',
@@ -7253,12 +7572,24 @@ class AppTranslations {
       'step_speak': 'പറയുക',
       'step_results': 'ഫലങ്ങൾ',
     },
+    // Memory practice action bar (phrase scramble, word bank, fill in the
+    // blanks, audio)
+    'memory_practice': {
+      'hint': 'സൂചന',
+      'hint_count': 'സൂചന · {count}',
+      'check': 'പരിശോധിക്കുക',
+      'close_expected': 'ഏതാണ്ട് ശരി! പ്രതീക്ഷിച്ചത്: {word}',
+      'expected_said': 'പ്രതീക്ഷിച്ചത്: {expected}\nനിങ്ങൾ പറഞ്ഞത്: {said}',
+    },
     'word_bank': {
       'tap_words_instruction':
           'വചനം രൂപീകരിക്കാൻ വാക്കുകളിൽ ക്രമത്തിൽ ടാപ്പ് ചെയ്യുക',
       'long_press_hint': 'സൂചനയ്ക്ക് വാക്കിൽ ദീർഘമായി അമർത്തുക',
       'your_answer': 'നിങ്ങളുടെ ഉത്തരം:',
       'try_again': 'വീണ്ടും ശ്രമിക്കുക',
+      'all_placed':
+          'എല്ലാ വാക്കുകളും വെച്ചു. ഒരു വാക്ക് തിരികെ എടുക്കാൻ ഉത്തരത്തിൽ അതിൽ ടാപ്പ് ചെയ്യുക.',
+      'all_placed_done': 'എല്ലാ വാക്കുകളും വെച്ചു.',
     },
     'cloze_practice': {
       'title': 'ശൂന്യ സ്ഥാനങ്ങൾ നിറയ്ക്കുക',
@@ -7337,6 +7668,72 @@ class AppTranslations {
       'characters_remaining': '@count അക്ഷരങ്ങൾ ശേഷിക്കുന്നു',
       'well_done': 'കലക്കി!',
       'keep_practicing': 'പരിശീലനം തുടരുക',
+    },
+    'memory_screens': {
+      'due_today_count': 'ഇന്ന് {count} എണ്ണം ആവർത്തിക്കണം',
+      'tap_to_see_plans': 'പ്ലാനുകൾ കാണാൻ ടാപ്പ് ചെയ്യുക',
+      'choose_unlocked_modes': 'അൺലോക്ക് ചെയ്ത ഒരു മോഡ് തിരഞ്ഞെടുക്കുക',
+      'top_ten': 'ആദ്യ 10',
+      'ease_factor': 'എളുപ്പം {value}',
+      'add_verse_subtitle':
+          'ഒരു ഭാഗം തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ സ്വയം ടൈപ്പ് ചെയ്യുക',
+      'choose_book': 'പുസ്തകം തിരഞ്ഞെടുക്കുക',
+      'all_caught_up': 'എല്ലാം പൂർത്തിയായി',
+      'verses_count': '{count} വാക്യങ്ങൾ',
+      'verse_count_one': '{count} വാക്യം',
+      'how_it_works': 'എങ്ങനെ പ്രവർത്തിക്കുന്നു',
+      'mastered_count': '{count} മനഃപാഠം',
+      'count_of_total': '{total}-ൽ {count}',
+      'coming_up': 'വരാനിരിക്കുന്നവ',
+      'due_today': 'ഇന്ന് ആവർത്തിക്കണം',
+      'due_tomorrow': 'നാളെ',
+      'due_in_days': '{count} ദിവസത്തിനുള്ളിൽ',
+      'overdue_days': '{count} ദിവസം വൈകി',
+      'overdue_one_day': '1 ദിവസം വൈകി',
+      'new_verse': 'പുതിയത്',
+      'nothing_due': 'ഇപ്പോൾ ഒന്നും ബാക്കിയില്ല',
+      'offline_title': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്',
+      'offline_body':
+          'മനഃപാഠ വാക്യങ്ങൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്. കണക്റ്റ് ചെയ്ത് തിരികെ വരൂ.',
+      'tile_daily': 'ദിനവാക്യം',
+      'tile_daily_hint': 'ഇന്നത്തെ വാക്യം',
+      'tile_suggested': 'നിർദ്ദേശിച്ചവ',
+      'tile_suggested_hint': 'തിരഞ്ഞെടുത്ത വാക്യങ്ങൾ',
+      'tile_custom': 'സ്വന്തം',
+      'tile_custom_hint': 'ഏത് റഫറൻസും',
+      'modes_unlocked_today': 'ഇന്ന് {limit}-ൽ {count} മോഡുകൾ തുറന്നു',
+      'all_modes_unlocked': 'എല്ലാ മോഡുകളും തുറന്നിരിക്കുന്നു',
+      'daily_limit_reached': 'ദിവസ പരിധി എത്തി',
+      'upgrade': 'അപ്‌ഗ്രേഡ്',
+      'mode_locked_upgrade': 'അപ്‌ഗ്രേഡ് ആവശ്യമാണ്',
+      'next_review_today': 'അടുത്ത ആവർത്തനം ഇന്ന്',
+      'next_review_tomorrow': 'അടുത്ത ആവർത്തനം നാളെ',
+      'next_review_in_days': 'അടുത്ത ആവർത്തനം {count} ദിവസത്തിനുള്ളിൽ',
+      'missed': 'വിട്ടുപോയത്: {words}',
+      'stat_time': 'സമയം',
+      'stat_hint': 'സൂചന',
+      'stat_hints': 'സൂചനകൾ',
+      'stat_answer_shown': 'ഉത്തരം കാണിച്ചു',
+      'yes': 'ഉവ്വ്',
+      'no': 'ഇല്ല',
+      'quality_perfect': 'മികച്ച ഓർമ്മ',
+      'quality_good': 'നല്ല ഓർമ്മ',
+      'quality_ok': 'ശരാശരി ഓർമ്മ',
+      'quality_needs_work': 'കൂടുതൽ പരിശീലനം വേണം',
+      'quality_try_again': 'വീണ്ടും ശ്രമിക്കൂ',
+      'stats_subtitle': 'നിങ്ങളുടെ മനഃപാഠ പരിശീലനം',
+      'stat_verses': 'വാക്യങ്ങൾ',
+      'stat_verse': 'വാക്യം',
+      'stat_reviews': 'ആവർത്തനങ്ങൾ',
+      'stat_perfect': 'മികച്ചത്',
+      'stat_days': 'ദിവസം',
+      'streak_line': 'നിലവിലെ തുടർച്ച {current} · ഏറ്റവും നീണ്ടത് {longest}',
+      'practice_modes': 'പരിശീലന മോഡുകൾ',
+      'practices_count': '{count} പരിശീലനങ്ങൾ',
+      'champions_subtitle': 'മനഃപാഠ വാക്യ ലീഡർബോർഡ്',
+      'your_rank': 'നിങ്ങളുടെ റാങ്ക്',
+      'stat_mastered': 'മനഃപാഠം',
+      'stat_day_streak': 'ദിവസ തുടർച്ച',
     },
     'memory_home': {
       'title': 'മെമ്മറി വചനങ്ങൾ',
@@ -7473,6 +7870,7 @@ class AppTranslations {
       'duration_badge': 'പ്രഭാഷണ രൂപരേഖ • 50-60 മിനിറ്റ്',
     },
     'reflection_journal': {
+      'load_study_failed': 'ഈ പഠനം തുറക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.',
       'title': 'ചിന്തന ഡയറി',
       'filter_by_mode': 'രീതി അനുസരിച്ച് ഫിൽട്ടർ ചെയ്യുക',
       'all_modes': 'എല്ലാ രീതികളും',
@@ -7610,6 +8008,33 @@ class AppTranslations {
       'unlimited': 'എത്ര വേണമെങ്കിലും ദിവസം വചന പരിശീലനം',
       'count': 'ദിവസം {count} വചന പരിശീലനം',
       'limited': 'പരിമിതമായ ദിവസ പരിശീലനം',
+    },
+    'practice_unlock_limit': {
+      'title': 'ഇന്നത്തെ അൺലോക്ക് പരിധി കഴിഞ്ഞു',
+      'message_one':
+          '"{verse}" എന്ന വചനത്തിന് ഇന്ന് {count} പരിശീലന രീതി അൺലോക്ക് ചെയ്തു.',
+      'message_other':
+          '"{verse}" എന്ന വചനത്തിന് ഇന്ന് {count} പരിശീലന രീതികൾ അൺലോക്ക് ചെയ്തു.',
+      'unlocked_today': 'ഇന്ന് അൺലോക്ക് ചെയ്ത രീതികൾ:',
+      'upgrade_prompt':
+          'ഓരോ വചനത്തിനും ദിവസവും കൂടുതൽ രീതികൾ അൺലോക്ക് ചെയ്യാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ:',
+      'still_practice':
+          'അൺലോക്ക് ചെയ്ത രീതികളിൽ ഇന്ന് എത്ര തവണ വേണമെങ്കിലും പരിശീലിക്കാം!',
+      'modes_per_day_one': 'ഓരോ വചനത്തിനും ദിവസം {count} രീതി',
+      'modes_per_day_other': 'ഓരോ വചനത്തിനും ദിവസം {count} രീതികൾ',
+      'all_modes': 'എല്ലാ രീതികളും അൺലോക്ക്',
+      'maybe_later': 'പിന്നീട്',
+      'view_plans': 'പ്ലാനുകൾ കാണുക',
+    },
+    'practice_tier_locked': {
+      'title': 'അപ്‌ഗ്രേഡ് ആവശ്യമാണ്',
+      'plan_includes': 'നിങ്ങളുടെ {plan} പ്ലാനിൽ ഉള്ളത്:',
+      'unlock_with': 'വിപുലമായ പരിശീലന രീതികൾ ഇവയിലൂടെ അൺലോക്ക് ചെയ്യൂ:',
+      'all_modes_plus': 'എല്ലാ {count} പരിശീലന രീതികളും + {limit}',
+      'all_modes_unlimited':
+          'എല്ലാ {count} പരിശീലന രീതികളും + പരിധിയില്ലാത്ത പരിശീലനം',
+      'maybe_later': 'പിന്നീട്',
+      'upgrade_now': 'അപ്‌ഗ്രേഡ് ചെയ്യൂ',
     },
     'plan_features': {
       'unlimited_daily_reviews': 'എത്ര വേണമെങ്കിലും ദിവസം വചന പരിശീലനം',

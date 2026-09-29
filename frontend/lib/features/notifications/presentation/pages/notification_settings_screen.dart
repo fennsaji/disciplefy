@@ -184,11 +184,22 @@ class _NotificationSettingsView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
       children: [
-        // Only when something needs doing: the switch rows below say the rest.
-        if (!state.permissionsGranted) ...[
-          const SizedBox(height: 8),
+        // Permission status: an action card while missing, a quiet status
+        // row once granted.
+        const SizedBox(height: 8),
+        if (state.permissionsGranted)
+          SettingsGroup(children: [
+            SettingsRow(
+              icon: Icons.check_circle_outline_rounded,
+              tone: SettingsTone.green,
+              title: context
+                  .tr(TranslationKeys.notificationsSettingsPermissionTitle),
+              subtitle: context
+                  .tr(TranslationKeys.notificationsSettingsPermissionEnabled),
+            ),
+          ])
+        else
           _buildPermissionCard(context),
-        ],
 
         SettingsSectionLabel(
             context.tr(TranslationKeys.notificationsSettingsDailySectionTitle)),
@@ -477,7 +488,7 @@ class _NotificationSettingsView extends StatelessWidget {
     );
   }
 
-  /// Shown only while permission is missing: explains and offers the prompt.
+  /// Shown while permission is missing: explains and offers the prompt.
   Widget _buildPermissionCard(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final amber = SettingsToneColors.of(context, SettingsTone.amber);

@@ -7,7 +7,7 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/subscription/data/models/subscription_v2_models.dart';
 
-/// Promo code field in the K2 ledger style: one raised row with a ticket
+/// Promo code field in the ledger style: one raised row with a ticket
 /// icon, the code and an Apply button.
 ///
 /// Displays an input field for promotional codes with:
@@ -129,6 +129,15 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          context.tr(TranslationKeys.promoCodeHave),
+          style: AppFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: palette.muted,
+          ),
+        ),
+        const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
           decoration: BoxDecoration(
@@ -151,7 +160,8 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                   controller: _controller,
                   enabled: !_isValidating,
                   decoration: InputDecoration(
-                    hintText: context.tr(TranslationKeys.promoCodeHave),
+                    hintText: context.tr(TranslationKeys.promoCodeEnter),
+                    hintMaxLines: 3,
                     hintStyle:
                         AppFonts.inter(fontSize: 14.5, color: palette.dim),
                     border: InputBorder.none,

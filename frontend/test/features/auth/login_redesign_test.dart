@@ -15,6 +15,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_stat
 import 'package:disciplefy_bible_study/features/auth/presentation/pages/login_screen.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
 
+import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
 void main() {
@@ -97,6 +98,10 @@ void main() {
     useSurface(tester, const Size(390, 844));
     await pumpLogin(tester, dark: true);
 
+    // The square test glyphs are far wider than Inter, so the page is
+    // taller here than on a phone.
+    await tester.ensureVisible(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Google'));
     await tester.pump();
 
@@ -149,5 +154,41 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
     expect(
         find.text('Something went wrong. Please try again.'), findsOneWidget);
+  });
+
+  testWidgets('feature chips keep their one-line descriptions', (tester) async {
+    useSurface(tester, const Size(390, 1400));
+    await pumpLogin(tester, dark: true);
+    for (final detail in [
+      'Personalized insights for any verse or topic',
+      'Start each day with inspiring scripture and instant study guides',
+      'Talk with your Bible companion',
+      'Memorize Scripture with spaced repetition',
+    ]) {
+      expect(find.text(detail), findsOneWidget);
+    }
+  });
+
+  group('no cut-off text at 320px', () {
+    setUpAll(loadAppFonts);
+    for (final language in AppLanguage.values) {
+      testWidgets(language.code, (tester) async {
+        useSurface(tester, const Size(320, 1600));
+        translations.language = language;
+        await pumpLogin(tester, dark: true);
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+    }
+  });
+
+  testWidgets(
+      'with the feature descriptions the sign-in buttons stay on screen '
+      'on a 390x844 phone', (tester) async {
+    await loadAppFonts();
+    useSurface(tester, const Size(390, 844));
+    await pumpLogin(tester, dark: true);
+    expect(tester.getBottomLeft(find.text('Continue with Email')).dy,
+        lessThan(844));
   });
 }

@@ -37,7 +37,7 @@ class _PurchaseHistoryCardState extends State<PurchaseHistoryCard> {
     final palette = ReaderPalette.of(context);
     final status = purchase.status.toLowerCase();
     final isSuccess = status == 'completed' || status == 'success';
-    final date = DateFormat('MMM d · h:mm a').format(purchase.purchasedAt);
+    final date = DateFormat('MMM d, y · h:mm a').format(purchase.purchasedAt);
     final amount = purchase.costRupees == purchase.costRupees.roundToDouble()
         ? '₹${purchase.costRupees.toStringAsFixed(0)}'
         : '₹${purchase.costRupees.toStringAsFixed(2)}';
@@ -55,8 +55,6 @@ class _PurchaseHistoryCardState extends State<PurchaseHistoryCard> {
                 child: Text(
                   context.tr(TranslationKeys.ledgerCreditsCount,
                       {'count': purchase.tokenAmount}),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -194,10 +192,9 @@ class _CopyText extends StatelessWidget {
           ),
         );
       },
+      // IDs wrap rather than being cut so they can be read in full.
       child: Text(
         text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.end,
         style: AppFonts.inter(
           fontSize: 14,

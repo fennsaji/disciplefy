@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_level.dart';
@@ -19,10 +21,11 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/shared/widgets/gold_marks.dart';
 
-/// My Progress, in the S3 grouped-cards style.
+/// My Progress, in the grouped-cards style.
 ///
-/// Level card with XP progress, three headline stats, the achievement
-/// badges, then streaks and the remaining statistics as group cards.
+/// Profile header (avatar, name, total XP, leaderboard rank), level card
+/// with XP progress, three headline stats, achievements by category with
+/// their progress, then streaks and the remaining statistics as group cards.
 class StatsDashboardPage extends StatefulWidget {
   const StatsDashboardPage({super.key});
 
@@ -60,7 +63,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     return Scaffold(
       backgroundColor: palette.page,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
+        preferredSize: const Size.fromHeight(76),
         child: BlocBuilder<GamificationBloc, GamificationState>(
           buildWhen: (a, b) => a.level != b.level,
           builder: (context, state) => SettingsTopBar(
@@ -116,6 +119,8 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
               children: [
+                _ProfileHeader(state: state),
+                const SizedBox(height: 12),
                 if (state.level != null)
                   _LevelCard(
                     level: state.level!,
@@ -134,10 +139,11 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                       'total': '${state.totalCount}',
                     },
                   )),
-                  _AchievementBadges(
-                    achievements: _orderedAchievements(state.achievements),
-                    onTap: (a) => _showAchievementDetails(context, a, state),
+                  _AchievementsProgressBar(
+                    unlocked: state.unlockedCount,
+                    total: state.totalCount,
                   ),
+                  ..._buildAchievementGroups(context, state),
                 ],
                 if (state.stats != null) ...[
                   ..._buildStreaksSection(context, state),
@@ -151,10 +157,53 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     );
   }
 
-  List<Achievement> _orderedAchievements(List<Achievement> achievements) => [
-        for (final category in _categoryOrder)
-          ...achievements.where((a) => a.category == category),
-      ];
+  Map<AchievementCategory, int> _progressMap(GamificationState state) {
+    final stats = state.stats;
+    if (stats == null) return const {};
+    return {
+      AchievementCategory.study: stats.totalStudiesCompleted,
+      AchievementCategory.streak: stats.studyCurrentStreak,
+      AchievementCategory.memory: stats.totalMemoryVerses,
+      AchievementCategory.voice: stats.totalVoiceSessions,
+      AchievementCategory.saved: stats.totalSavedGuides,
+    };
+  }
+
+  String _categoryTitle(BuildContext context, AchievementCategory category) {
+    final l10n = AppLocalizations.of(context)!;
+    return switch (category) {
+      AchievementCategory.study => '📚 ${l10n.achievementCategoryStudy}',
+      AchievementCategory.streak => '🔥 ${l10n.achievementCategoryStreak}',
+      AchievementCategory.memory => '🧠 ${l10n.achievementCategoryMemory}',
+      AchievementCategory.voice => '🎙️ ${l10n.achievementCategoryVoice}',
+      AchievementCategory.saved => '📕 ${l10n.achievementCategorySaved}',
+    };
+  }
+
+  /// One small heading and group card per category, in [_categoryOrder].
+  List<Widget> _buildAchievementGroups(
+      BuildContext context, GamificationState state) {
+    final progress = _progressMap(state);
+    return [
+      for (final category in _categoryOrder)
+        if (state.achievements.any((a) => a.category == category)) ...[
+          _CategoryHeading(_categoryTitle(context, category)),
+          SettingsGroup(
+            children: [
+              for (final achievement
+                  in state.achievements.where((a) => a.category == category))
+                _AchievementRow(
+                  achievement: achievement,
+                  currentProgress:
+                      achievement.currentProgress ?? progress[category],
+                  onTap: () =>
+                      _showAchievementDetails(context, achievement, state),
+                ),
+            ],
+          ),
+        ],
+    ];
+  }
 
   Widget _buildHeadlineStats(BuildContext context, GamificationState state) {
     final stats = state.stats!;
@@ -336,18 +385,8 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     Achievement achievement,
     GamificationState state,
   ) {
-    final stats = state.stats;
-    final progressMap = <AchievementCategory, int>{
-      if (stats != null) ...{
-        AchievementCategory.study: stats.totalStudiesCompleted,
-        AchievementCategory.streak: stats.studyCurrentStreak,
-        AchievementCategory.memory: stats.totalMemoryVerses,
-        AchievementCategory.voice: stats.totalVoiceSessions,
-        AchievementCategory.saved: stats.totalSavedGuides,
-      },
-    };
-    final current =
-        achievement.currentProgress ?? progressMap[achievement.category];
+    final current = achievement.currentProgress ??
+        _progressMap(state)[achievement.category];
 
     showSettingsSheet<void>(
       context: context,
@@ -469,6 +508,7 @@ class _LevelCard extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     final l10n = AppLocalizations.of(context)!;
     final xp = NumberFormat.decimalPattern().format(level.currentXp);
+    final percent = '${(level.progressToNextLevel * 100).round()}%';
     final remaining = level.isMaxLevel
         ? l10n.progressMaxLevel
         : nextTitle != null
@@ -537,7 +577,7 @@ class _LevelCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Semantics(
-            value: '${(level.progressToNextLevel * 100).round()}%',
+            value: percent,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
@@ -550,62 +590,175 @@ class _LevelCard extends StatelessWidget {
               ),
             ),
           ),
+          if (!level.isMaxLevel) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: ExcludeSemantics(
+                child: Text(
+                  percent,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: palette.accentIcon,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// Four-per-row grid of achievement circles with names.
-class _AchievementBadges extends StatelessWidget {
-  final List<Achievement> achievements;
-  final ValueChanged<Achievement> onTap;
+/// Avatar with the level number, display name, total XP and, when ranked,
+/// a tappable leaderboard rank.
+class _ProfileHeader extends StatelessWidget {
+  final GamificationState state;
 
-  const _AchievementBadges({required this.achievements, required this.onTap});
+  const _ProfileHeader({required this.state});
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const columns = 4;
-        const gap = 8.0;
-        final itemWidth =
-            (constraints.maxWidth - gap * (columns - 1)) / columns;
-        final circle = itemWidth.clamp(40.0, 58.0);
-        return Wrap(
-          spacing: gap,
-          runSpacing: 16,
-          children: [
-            for (final achievement in achievements)
-              SizedBox(
-                width: itemWidth,
-                child: Semantics(
-                  button: true,
-                  label: achievement.name,
-                  excludeSemantics: true,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onTap(achievement),
-                    child: Column(
-                      children: [
-                        AchievementCircle(
-                          achievement: achievement,
-                          size: circle,
+    final l10n = AppLocalizations.of(context)!;
+    final auth =
+        sl.isRegistered<AuthStateProvider>() ? sl<AuthStateProvider>() : null;
+    final name = auth?.profileBasedDisplayName ?? '';
+    final photoUrl = auth?.profilePictureUrl;
+    final stats = state.stats;
+    final level = state.level;
+    final initial = name.trim().isEmpty ? null : name.trim()[0].toUpperCase();
+
+    Widget fallback() => Center(
+          child: initial == null
+              ? Icon(Icons.person_outline, size: 28, color: palette.accentIcon)
+              : Text(
+                  initial,
+                  style: AppFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: palette.accentIcon,
+                  ),
+                ),
+        );
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 60,
+            height: 60,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: SettingsToneColors.of(context, SettingsTone.indigo)
+                        .fill,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: photoUrl == null
+                      ? fallback()
+                      : Image.network(
+                          photoUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => fallback(),
                         ),
-                        const SizedBox(height: 8),
+                ),
+                if (level != null)
+                  PositionedDirectional(
+                    end: 0,
+                    bottom: 0,
+                    child: Semantics(
+                      label: context.tr(
+                          TranslationKeys.gamificationCurrentLevel,
+                          {'level': '${level.level}'}),
+                      excludeSemantics: true,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: settingsPrimaryFill,
+                          border: Border.all(color: palette.card, width: 2),
+                        ),
+                        child: Text(
+                          '${level.level}',
+                          style: AppFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (name.isNotEmpty)
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                    ),
+                  ),
+                if (stats != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${NumberFormat.decimalPattern().format(stats.totalXp)} ${l10n.progressXpTotal}',
+                    style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (stats?.isOnLeaderboard == true) ...[
+            const SizedBox(width: 8),
+            Tooltip(
+              message: l10n.progressViewLeaderboard,
+              child: Material(
+                color: SettingsToneColors.of(context, SettingsTone.gold).fill,
+                borderRadius: BorderRadius.circular(14),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => AppRouter.router.goToLeaderboard(),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.emoji_events_outlined,
+                            size: 18, color: palette.gold),
+                        const SizedBox(height: 2),
                         Text(
-                          achievement.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: achievement.isUnlocked
-                                ? palette.text
-                                : palette.dim,
-                            height: 1.3,
+                          '#${stats!.leaderboardRank}',
+                          style: AppFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: palette.text,
                           ),
                         ),
                       ],
@@ -613,9 +766,181 @@ class _AchievementBadges extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
           ],
-        );
-      },
+        ],
+      ),
+    );
+  }
+}
+
+/// Overall unlocked / total bar under the achievements heading.
+class _AchievementsProgressBar extends StatelessWidget {
+  final int unlocked;
+  final int total;
+
+  const _AchievementsProgressBar({required this.unlocked, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Semantics(
+      value: '$unlocked/$total',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: LinearProgressIndicator(
+          value: total > 0 ? unlocked / total : 0,
+          minHeight: 6,
+          backgroundColor:
+              palette.isDark ? palette.raised : const Color(0xFFE4E4EA),
+          valueColor: const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+        ),
+      ),
+    );
+  }
+}
+
+/// Category name above its group of achievements ("📚 Study").
+class _CategoryHeading extends StatelessWidget {
+  final String text;
+
+  const _CategoryHeading(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 16, 2, 8),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          style: AppFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: palette.muted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One achievement: badge, name, description, then either its progress
+/// toward the threshold or when it was unlocked; XP reward on the right.
+class _AchievementRow extends StatelessWidget {
+  final Achievement achievement;
+  final int? currentProgress;
+  final VoidCallback onTap;
+
+  const _AchievementRow({
+    required this.achievement,
+    required this.currentProgress,
+    required this.onTap,
+  });
+
+  String _relativeDate(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final days = DateTime(now.year, now.month, now.day)
+        .difference(DateTime(date.year, date.month, date.day))
+        .inDays;
+    if (days <= 0) return l10n.progressToday;
+    if (days == 1) return l10n.progressYesterday;
+    if (days < 7) return '$days ${l10n.progressDaysAgo}';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final unlocked = achievement.isUnlocked;
+    final threshold = achievement.threshold;
+    final current = currentProgress ?? 0;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AchievementCircle(achievement: achievement, size: 44),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    achievement.name,
+                    style: AppFonts.inter(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      color: unlocked ? palette.text : palette.muted,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    achievement.description,
+                    style: AppFonts.inter(
+                      fontSize: 12.5,
+                      color: palette.muted,
+                      height: 1.35,
+                    ),
+                  ),
+                  if (!unlocked && threshold != null && threshold > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: achievement.getProgress(current),
+                              minHeight: 5,
+                              backgroundColor: palette.isDark
+                                  ? palette.raised
+                                  : const Color(0xFFE4E4EA),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  settingsPrimaryFill),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${current.clamp(0, threshold)}/$threshold',
+                          style: AppFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (unlocked && achievement.unlockedAt != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${l10n.progressUnlocked} ${_relativeDate(context, achievement.unlockedAt!)}',
+                      style: AppFonts.inter(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: palette.gold,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (achievement.xpReward > 0) ...[
+              const SizedBox(width: 8),
+              XpRewardPill(xp: achievement.xpReward, compact: true),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

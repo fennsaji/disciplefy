@@ -202,6 +202,7 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
           label: '$removeLabel ${path.learningPathTitle}',
           excludeSemantics: true,
           child: IconButton(
+            tooltip: '$removeLabel ${path.learningPathTitle}',
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.delete_outline, size: 18, color: palette.dim),
             onPressed: () => _deletePath(path.learningPathId),

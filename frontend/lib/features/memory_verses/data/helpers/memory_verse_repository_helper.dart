@@ -89,6 +89,11 @@ class MemoryVerseRepositoryHelper {
     await _localDataSource.cacheVerses(verses);
   }
 
+  /// Caches (inserts or replaces) a single verse, keeping the others.
+  Future<void> cacheVerse(MemoryVerseModel verse) async {
+    await _localDataSource.cacheVerse(verse);
+  }
+
   /// Updates a cached verse with new SM-2 algorithm state after review.
   Future<MemoryVerseModel?> updateVerseAfterReview({
     required String memoryVerseId,

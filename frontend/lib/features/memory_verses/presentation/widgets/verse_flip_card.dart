@@ -2,17 +2,23 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/bible_translation_citation.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/constants/bible_translation_citation.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
 
-/// Animated flip card widget for memory verse review.
+/// Flip card used by the flip card practice mode.
 ///
-/// Shows verse reference on front, full verse text on back.
-/// Tap to flip between front and back with 3D animation.
+/// Front: gold "FRONT" label, the reference and a "recite, then flip" hint.
+/// Back: the cited reference, the verse text (scrolls when long) and the
+/// spaced-repetition stats. Tapping anywhere calls [onFlip]; the 3D flip is
+/// a one-shot 500ms animation driven by [isFlipped].
 class VerseFlipCard extends StatefulWidget {
   final MemoryVerseEntity verse;
   final bool isFlipped;
@@ -31,8 +37,8 @@ class VerseFlipCard extends StatefulWidget {
 
 class _VerseFlipCardState extends State<VerseFlipCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   void initState() {
@@ -40,14 +46,9 @@ class _VerseFlipCardState extends State<VerseFlipCard>
     _controller = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
+      value: widget.isFlipped ? 1 : 0,
     );
-
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
   }
 
   @override
@@ -70,118 +71,35 @@ class _VerseFlipCardState extends State<VerseFlipCard>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onFlip,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          final angle = _animation.value * math.pi;
-          final transform = Matrix4.identity()
-            ..setEntry(3, 2, 0.001) // perspective
-            ..rotateY(angle);
-
-          return Transform(
-            transform: transform,
-            alignment: Alignment.center,
-            child: angle < math.pi / 2
-                ? _buildFront(context)
-                : Transform(
-                    transform: Matrix4.identity()..rotateY(math.pi),
-                    alignment: Alignment.center,
-                    child: _buildBack(context),
-                  ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildFront(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 8,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.primaryColor.withOpacity(0.8),
-              theme.primaryColor,
-            ],
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(),
-            Icon(
-              Icons.auto_stories,
-              size: 64,
-              color: Colors.white.withOpacity(0.9),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              widget.verse.verseReference,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildLanguageBadge(context, isLight: true),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.touch_app,
-                    size: 20,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    context.tr(TranslationKeys.flipCardTapToReveal),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.w500,
+    return Semantics(
+      button: true,
+      onTapHint: context.tr(TranslationKeys.memoryRecallFlipAction),
+      child: GestureDetector(
+        onTap: widget.onFlip,
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, _) {
+            final angle = _animation.value * math.pi;
+            final showFront = angle < math.pi / 2;
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.001) // perspective
+                ..rotateY(angle),
+              child: showFront
+                  ? _CardFace(child: _FrontContent(verse: widget.verse))
+                  : Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()..rotateY(math.pi),
+                      child: _CardFace(
+                        child: _BackContent(
+                          verse: widget.verse,
+                          citedReference: _citedReference(),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 24.0),
-              child: _buildStatChip(
-                context: context,
-                icon: Icons.repeat,
-                label: context
-                    .tr(TranslationKeys.flipCardReviewNumber)
-                    .replaceAll('{count}', '${widget.verse.repetitions + 1}'),
-                backgroundColor: Colors.white.withOpacity(0.2),
-                textColor: Colors.white,
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -198,213 +116,220 @@ class _VerseFlipCardState extends State<VerseFlipCard>
         ? widget.verse.verseReference
         : '${widget.verse.verseReference} ($abbr)';
   }
+}
 
-  Widget _buildBack(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+/// Indigo-tinted card face filling the space the page gives the card.
+class _CardFace extends StatelessWidget {
+  final Widget child;
 
-    return Card(
-      elevation: 8,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: isDarkMode
-            ? BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.3),
-              )
-            : BorderSide.none,
-      ),
+  const _CardFace({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return SizedBox.expand(
       child: Container(
-        width: double.infinity,
-        height: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: isDarkMode ? theme.colorScheme.surfaceContainer : Colors.white,
+          color: Color.alphaBlend(
+            AppColors.brandPrimary
+                .withValues(alpha: palette.isDark ? 0.16 : 0.06),
+            palette.card,
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: AppColors.brandPrimary.withValues(alpha: 0.35),
+          ),
         ),
-        child: Column(
-          children: [
-            // Reference
-            Padding(
-              padding:
-                  const EdgeInsets.only(top: 24.0, left: 24.0, right: 24.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.primaryColor.withOpacity(isDarkMode ? 0.2 : 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _citedReference(),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+        child: child,
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 16),
+class _FrontContent extends StatelessWidget {
+  final MemoryVerseEntity verse;
 
-            // Verse text - takes up remaining space
-            Expanded(
-              child: Center(
-                child: () {
-                  // Hide API.Bible verse text for daily_verse-sourced verses
-                  // when the bible_content_enabled kill-switch is off.
-                  final hideApiContent =
-                      widget.verse.sourceType == 'daily_verse' &&
-                          !sl<SystemConfigService>().isBibleContentEnabled;
-                  if (hideApiContent) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0, vertical: 16.0),
-                      child: Text(
-                        context
-                            .tr(TranslationKeys.verseSheetContentUnavailable),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          height: 1.5,
-                          fontWeight: FontWeight.w400,
-                          color: isDarkMode ? Colors.white54 : Colors.black45,
-                        ),
-                      ),
-                    );
-                  }
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0, vertical: 16.0),
-                    child: Text(
-                      widget.verse.verseText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 26,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                        color: isDarkMode ? Colors.white : Colors.black87,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  );
-                }(),
-              ),
-            ),
+  const _FrontContent({required this.verse});
 
-            const SizedBox(height: 16),
-
-            // Stats row
-            Padding(
-              padding:
-                  const EdgeInsets.only(bottom: 24.0, left: 24.0, right: 24.0),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.center,
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildStatChip(
-                    context: context,
-                    icon: Icons.trending_up,
-                    label: 'EF: ${widget.verse.easeFactor.toStringAsFixed(1)}',
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    textColor: theme.colorScheme.onSurfaceVariant,
+                  _FaceLabel(context.tr(TranslationKeys.memoryRecallFlipFront)),
+                  const SizedBox(height: 14),
+                  Text(
+                    verse.verseReference,
+                    textAlign: TextAlign.center,
+                    style: AppFonts.poppins(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: palette.text,
+                      height: 1.25,
+                    ),
                   ),
-                  _buildStatChip(
-                    context: context,
-                    icon: Icons.schedule,
-                    label: context
-                        .tr(TranslationKeys.flipCardDays)
-                        .replaceAll('{count}', '${widget.verse.intervalDays}'),
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    textColor: theme.colorScheme.onSurfaceVariant,
+                  const SizedBox(height: 12),
+                  Text(
+                    context.tr(TranslationKeys.memoryRecallFlipReciteHint),
+                    textAlign: TextAlign.center,
+                    style: AppFonts.inter(fontSize: 14, color: palette.muted),
                   ),
-                  _buildStatChip(
-                    context: context,
-                    icon: Icons.repeat,
-                    label: context
-                        .tr(TranslationKeys.flipCardReviews)
-                        .replaceAll('{count}', '${widget.verse.repetitions}'),
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    textColor: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  _buildLanguageBadge(context, isLight: false),
+                  const SizedBox(height: 14),
+                  Icon(Icons.flip_camera_android_rounded,
+                      size: 26, color: palette.accentIcon),
                 ],
               ),
             ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _MetaLine(
+          text: [
+            context
+                .tr(TranslationKeys.flipCardReviewNumber)
+                .replaceAll('{count}', '${verse.repetitions + 1}'),
+            _languageLabel(verse.language),
+          ].join(' · '),
+        ),
+      ],
+    );
+  }
+}
+
+class _BackContent extends StatelessWidget {
+  final MemoryVerseEntity verse;
+  final String citedReference;
+
+  const _BackContent({required this.verse, required this.citedReference});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    // Hide API.Bible verse text for daily_verse-sourced verses when the
+    // bible_content_enabled kill-switch is off.
+    final hideApiContent = verse.sourceType == 'daily_verse' &&
+        !sl<SystemConfigService>().isBibleContentEnabled;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _FaceLabel(context.tr(TranslationKeys.memoryRecallFlipBack)),
+        const SizedBox(height: 10),
+        Text(
+          citedReference,
+          textAlign: TextAlign.center,
+          style: AppFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: palette.accentIcon,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                hideApiContent
+                    ? context.tr(TranslationKeys.verseSheetContentUnavailable)
+                    : verse.verseText,
+                textAlign: TextAlign.center,
+                style: hideApiContent
+                    ? AppFonts.inter(
+                        fontSize: 16, height: 1.5, color: palette.muted)
+                    : AppFonts.poppins(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w500,
+                        height: 1.5,
+                        color: palette.text,
+                      ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            MemoryTag(
+              label: verse.intervalDays == 1
+                  ? context.tr(TranslationKeys.flipCardDayOne)
+                  : context
+                      .tr(TranslationKeys.flipCardDays)
+                      .replaceAll('{count}', '${verse.intervalDays}'),
+            ),
+            MemoryTag(
+              label: verse.repetitions == 1
+                  ? context.tr(TranslationKeys.flipCardReviewOne)
+                  : context
+                      .tr(TranslationKeys.flipCardReviews)
+                      .replaceAll('{count}', '${verse.repetitions}'),
+            ),
+            MemoryTag(
+              label: context.tr(TranslationKeys.memoryScreensEaseFactor,
+                  {'value': verse.easeFactor.toStringAsFixed(1)}),
+            ),
+            MemoryTag(label: _languageLabel(verse.language)),
           ],
         ),
-      ),
+      ],
     );
   }
+}
 
-  Widget _buildLanguageBadge(BuildContext context, {required bool isLight}) {
-    final theme = Theme.of(context);
+class _MetaLine extends StatelessWidget {
+  final String text;
 
-    String label;
+  const _MetaLine({required this.text});
 
-    switch (widget.verse.language) {
-      case 'hi':
-        label = 'हिन्दी';
-        break;
-      case 'ml':
-        label = 'മലയാളം';
-        break;
-      case 'en':
-      default:
-        label = 'English';
-    }
-
-    final backgroundColor = isLight
-        ? Colors.white.withOpacity(0.2)
-        : theme.colorScheme.surfaceContainerHighest;
-    final textColor =
-        isLight ? Colors.white : theme.colorScheme.onSurfaceVariant;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w600,
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        textAlign: TextAlign.center,
+        style: AppFonts.inter(
+          fontSize: 12.5,
+          color: ReaderPalette.of(context).dim,
         ),
-      ),
-    );
-  }
+      );
+}
 
-  Widget _buildStatChip({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required Color backgroundColor,
-    required Color textColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: textColor),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ],
-      ),
-    );
+String _languageLabel(String language) {
+  switch (language) {
+    case 'hi':
+      return 'हिन्दी';
+    case 'ml':
+      return 'മലയാളം';
+    default:
+      return 'English';
   }
+}
+
+/// Gold, tracked, uppercase face label ("FRONT" / "BACK").
+class _FaceLabel extends StatelessWidget {
+  final String text;
+
+  const _FaceLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        header: true,
+        child: Text(
+          text.toUpperCase(),
+          textAlign: TextAlign.center,
+          style: AppFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.6,
+            color: ReaderPalette.of(context).gold,
+          ),
+        ),
+      );
 }

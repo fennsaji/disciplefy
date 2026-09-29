@@ -6,26 +6,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../data/services/transliteration_service.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/timer_badge.dart';
-import 'cloze_models.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/data/services/transliteration_service.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/pages/cloze_models.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/quality_calculator.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Cloze deletion practice mode with progressive difficulty.
 ///
@@ -57,6 +59,15 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   double accuracyPercentage = 0.0;
   bool isCompleted = false;
   String detectedLanguage = 'en'; // For transliteration support
+
+  /// Current blank density; starts at the route's difficulty.
+  late ClozeDifficulty _difficulty = widget.difficulty;
+
+  /// The user revealed the correct words ("Show answer").
+  bool _showedAnswer = false;
+
+  /// What the user had typed in each blank before revealing the answer.
+  Map<int, String> _inputsBeforeReveal = {};
 
   BuildContext? _showcaseContext;
   VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
@@ -250,7 +261,7 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   /// Returns the 1-in-N ratio for blank density based on difficulty.
   /// e.g. easy=5 → 1 blank per 5 words, medium=4 → 1 per 4, hard=3 → 1 per 3.
   int _getBlankDivisor() {
-    switch (widget.difficulty) {
+    switch (_difficulty) {
       case ClozeDifficulty.easy:
         return 5;
       case ClozeDifficulty.medium:
@@ -345,28 +356,35 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
     final blanks = wordEntries.where((e) => e.isBlank).toList();
     const int hintsUsed = 0;
 
-    // Collect blank comparisons for results page
+    // Collect blank comparisons for results page. When the answer was
+    // shown, compare what the user had typed before revealing it.
     final blankComparisons = blanks.map((entry) {
-      final result = _evaluateWord(entry.word, entry.userInput);
+      final input = _showedAnswer
+          ? (_inputsBeforeReveal[entry.index] ?? '')
+          : entry.userInput;
+      final result = _evaluateWord(entry.word, input);
       return BlankComparison(
         expected: entry.word,
-        userInput: entry.userInput.isEmpty ? '(empty)' : entry.userInput,
+        userInput: input.isEmpty ? '(empty)' : input,
         isCorrect: result.matchType != MatchType.wrong,
         matchType: result.matchType,
         score: result.score,
       );
     }).toList();
 
+    // Showing the answer scores 0, as in the other practice modes.
+    final accuracy = _showedAnswer ? 0.0 : accuracyPercentage;
+
     // Auto-calculate quality and confidence
     final quality = QualityCalculator.calculateQuality(
-      accuracy: accuracyPercentage,
+      accuracy: accuracy,
       hintsUsed: hintsUsed,
-      showedAnswer: false,
+      showedAnswer: _showedAnswer,
     );
     final confidence = QualityCalculator.calculateConfidence(
-      accuracy: accuracyPercentage,
+      accuracy: accuracy,
       hintsUsed: hintsUsed,
-      showedAnswer: false,
+      showedAnswer: _showedAnswer,
     );
 
     // Navigate to results page
@@ -376,9 +394,9 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
       verseText: currentVerse!.verseText,
       practiceMode: 'cloze',
       timeSpentSeconds: elapsedSeconds,
-      accuracyPercentage: accuracyPercentage,
+      accuracyPercentage: accuracy,
       hintsUsed: hintsUsed,
-      showedAnswer: false,
+      showedAnswer: _showedAnswer,
       qualityRating: quality,
       confidenceRating: confidence,
       blankComparisons: blankComparisons,
@@ -387,16 +405,40 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
     GoRouter.of(context).goToPracticeResults(params);
   }
 
-  /// Get translated difficulty label
-  String _getDifficultyLabel(BuildContext context) {
-    switch (widget.difficulty) {
-      case ClozeDifficulty.easy:
-        return context.tr(TranslationKeys.difficultyEasy).toUpperCase();
-      case ClozeDifficulty.medium:
-        return context.tr(TranslationKeys.difficultyMedium).toUpperCase();
-      case ClozeDifficulty.hard:
-        return context.tr(TranslationKeys.difficultyHard).toUpperCase();
+  /// Fills every blank with the correct word and locks the inputs. The
+  /// user still taps Check to finish; the attempt is scored as "answer shown".
+  void _showAnswer() {
+    if (_showedAnswer) return;
+    _inputsBeforeReveal = {
+      for (final entry in wordEntries.where((e) => e.isBlank))
+        entry.index: entry.userInput,
+    };
+    FocusScope.of(context).unfocus();
+    setState(() => _showedAnswer = true);
+    for (final entry in wordEntries.where((e) => e.isBlank)) {
+      blankControllers[entry.index]!.text = entry.word;
     }
+  }
+
+  /// Switches blank density; rebuilds the blanks and clears typed answers.
+  void _setDifficulty(ClozeDifficulty difficulty) {
+    if (difficulty == _difficulty) return;
+    FocusScope.of(context).unfocus();
+    final oldControllers = blankControllers.values.toList();
+    setState(() {
+      _difficulty = difficulty;
+      blankControllers = {};
+      _showedAnswer = false;
+      _inputsBeforeReveal = {};
+      accuracyPercentage = 0.0;
+      isCompleted = false;
+      _initializeWordEntries();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final controller in oldControllers) {
+        controller.dispose();
+      }
+    });
   }
 
   /// Handle back navigation - go to practice mode selection when can't pop
@@ -411,8 +453,8 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final title = context.tr(TranslationKeys.practiceModeCloze);
 
     return ShowCaseWidget(
       onFinish: () =>
@@ -431,86 +473,84 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _handleBackNavigation,
-                ),
-                title: Text(
-                    '${context.tr(TranslationKeys.practiceModeCloze)} - ${_getDifficultyLabel(context)}'),
-                actions: [
-                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              body: currentVerse == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : SafeArea(
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 16),
-                          // Verse Reference
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              currentVerse!.verseReference,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
+            child: currentVerse == null
+                ? MemoryPracticeScaffold(
+                    title: title,
+                    onClose: _handleBackNavigation,
+                    elapsedSeconds: elapsedSeconds,
+                    scrollable: false,
+                    body: const Center(child: CircularProgressIndicator()),
+                  )
+                : MemoryPracticeScaffold(
+                    title: title,
+                    subtitle: '${currentVerse!.verseReference} · '
+                        '${context.tr(switch (_difficulty) {
+                      ClozeDifficulty.easy => TranslationKeys.difficultyEasy,
+                      ClozeDifficulty.medium =>
+                        TranslationKeys.difficultyMedium,
+                      ClozeDifficulty.hard => TranslationKeys.difficultyHard,
+                    })}',
+                    elapsedSeconds: elapsedSeconds,
+                    onClose: _handleBackNavigation,
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MemorySegmentedControl<ClozeDifficulty>(
+                          segments: [
+                            MemorySegment(
+                              value: ClozeDifficulty.easy,
+                              label: context.tr(TranslationKeys.difficultyEasy),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: WalkthroughTooltip(
-                                showcaseKey: ShowcaseKeys.practiceCloze,
-                                title: l10n.walkthroughPracticeClozeTitle,
-                                description: l10n.walkthroughPracticeClozeDesc,
-                                screen: WalkthroughScreen.practiceCloze,
-                                stepNumber: 1,
-                                totalSteps: 1,
-                                onNext: _onNext,
-                                tooltipPosition: TooltipPosition.bottom,
-                                child: _ClozeVerseView(
-                                  wordEntries: wordEntries,
-                                  blankControllers: blankControllers,
-                                  showFeedback: false,
-                                ),
-                              ),
+                            MemorySegment(
+                              value: ClozeDifficulty.medium,
+                              label:
+                                  context.tr(TranslationKeys.difficultyMedium),
                             ),
-                          ),
-                          // Submit Button
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: isCompleted ? _submitPractice : null,
-                                icon: const Icon(Icons.check),
-                                label: Text(
-                                    context.tr(TranslationKeys.practiceSubmit)),
-                                style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  backgroundColor: context.appInteractive,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
+                            MemorySegment(
+                              value: ClozeDifficulty.hard,
+                              label: context.tr(TranslationKeys.difficultyHard),
                             ),
+                          ],
+                          selected: _difficulty,
+                          onChanged: _setDifficulty,
+                        ),
+                        const SizedBox(height: 14),
+                        WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.practiceCloze,
+                          title: l10n.walkthroughPracticeClozeTitle,
+                          description: l10n.walkthroughPracticeClozeDesc,
+                          screen: WalkthroughScreen.practiceCloze,
+                          stepNumber: 1,
+                          totalSteps: 1,
+                          onNext: _onNext,
+                          tooltipPosition: TooltipPosition.bottom,
+                          highlightBorderRadius: 22,
+                          child: _ClozeVerseView(
+                            key: ValueKey(_difficulty),
+                            wordEntries: wordEntries,
+                            blankControllers: blankControllers,
+                            revealed: _showedAnswer,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    bottomBar: MemoryActionBar(
+                      secondary: [
+                        MemoryActionPill(
+                          label: context.tr(TranslationKeys.practiceShowAnswer),
+                          icon: Icons.visibility_outlined,
+                          onPressed: _showedAnswer ? null : _showAnswer,
+                        ),
+                      ],
+                      primary: MemoryPrimaryPill(
+                        label: context.tr(TranslationKeys.memoryPracticeCheck),
+                        icon: Icons.check_rounded,
+                        onPressed: isCompleted || _showedAnswer
+                            ? _submitPractice
+                            : null,
                       ),
                     ),
-            ),
+                  ),
           ),
         ).withAuthProtection();
       },
@@ -518,112 +558,99 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   }
 }
 
-/// Cloze verse view with blanks
+/// The verse as one card: plain words plus inline text fields for blanks.
 class _ClozeVerseView extends StatelessWidget {
   final List<WordEntry> wordEntries;
   final Map<int, TextEditingController> blankControllers;
-  final bool showFeedback;
+
+  /// Answer shown: blanks are filled with the correct word and locked.
+  final bool revealed;
 
   const _ClozeVerseView({
+    super.key,
     required this.wordEntries,
     required this.blankControllers,
-    required this.showFeedback,
+    required this.revealed,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withAlpha((0.3 * 255).round()),
-        ),
-      ),
+    final palette = ReaderPalette.of(context);
+    return MemoryAnswerCard(
+      radius: 22,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
       child: Wrap(
-        spacing: 4,
-        runSpacing: 8,
+        spacing: 6,
+        runSpacing: 10,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: wordEntries.map((entry) {
           if (entry.isBlank) {
-            return _BlankWidget(
-              entry: entry,
+            return _BlankField(
+              key: ValueKey('cloze_blank_${entry.index}'),
               controller: blankControllers[entry.index]!,
-              showFeedback: showFeedback,
-            );
-          } else {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: Text(
-                entry.word,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  height: 1.8,
-                  fontSize: 16,
-                ),
-              ),
+              revealed: revealed,
             );
           }
+          return Text(
+            entry.word,
+            style: AppFonts.inter(
+              fontSize: 18,
+              height: 1.5,
+              color: palette.text,
+            ),
+          );
         }).toList(),
       ),
     );
   }
 }
 
-/// Blank input widget
-class _BlankWidget extends StatelessWidget {
-  final WordEntry entry;
+/// Inline blank: accent outline while empty/typing, green once revealed.
+class _BlankField extends StatelessWidget {
   final TextEditingController controller;
-  final bool showFeedback;
+  final bool revealed;
 
-  const _BlankWidget({
-    required this.entry,
+  const _BlankField({
+    super.key,
     required this.controller,
-    required this.showFeedback,
+    required this.revealed,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      constraints: const BoxConstraints(
-        minWidth: 80,
-        maxWidth: 150,
-      ),
-      child: TextField(
-        controller: controller,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-        decoration: InputDecoration(
-          hintText: '____',
-          filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline,
-            ),
+    final palette = ReaderPalette.of(context);
+    final borderColor = revealed ? context.appSuccess : palette.accentIcon;
+    OutlineInputBorder border(double width) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: borderColor, width: width),
+        );
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 80, maxWidth: 150),
+      child: IntrinsicWidth(
+        child: TextField(
+          controller: controller,
+          readOnly: revealed,
+          textAlign: TextAlign.center,
+          textInputAction: TextInputAction.next,
+          style: AppFonts.inter(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: revealed ? context.appSuccess : palette.text,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(
-              color: theme.colorScheme.primary,
-              width: 2,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: revealed
+                ? AppColors.success
+                    .withValues(alpha: palette.isDark ? 0.14 : 0.10)
+                : Colors.transparent,
+            border: border(1.5),
+            enabledBorder: border(1.5),
+            focusedBorder: border(2),
+            disabledBorder: border(1.5),
+            constraints: const BoxConstraints(minWidth: 80),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
         ),
       ),

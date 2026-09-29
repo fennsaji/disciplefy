@@ -9,9 +9,9 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
-import 'package:disciplefy_bible_study/shared/widgets/v2_popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
-/// Soft paywall dialog shown at usage thresholds (80%, 100%), in the V2
+/// Soft paywall dialog shown at usage thresholds (80%, 100%), in the popup
 /// popup style shared with the insufficient-credits dialog.
 class SoftPaywallDialog extends StatelessWidget {
   final int percentage;

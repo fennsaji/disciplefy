@@ -14,7 +14,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledg
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/purchase_history_card.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/purchase_statistics_card.dart';
 
-/// Credit-pack purchases in the K2 quiet-ledger design: a purchase summary,
+/// Credit-pack purchases in the quiet-ledger design: a purchase summary,
 /// then each purchase as a ledger entry, paginated on scroll.
 class PurchaseHistoryPage extends StatefulWidget {
   const PurchaseHistoryPage({super.key});
@@ -263,6 +263,14 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
+                            if (index == 0) {
+                              return LedgerSectionLabel(
+                                context
+                                    .tr('tokens.history.transaction_details'),
+                                padding: const EdgeInsets.only(top: 14),
+                              );
+                            }
+                            index -= 1;
                             if (index < state.purchases.length) {
                               final purchase = state.purchases[index];
                               return Column(
@@ -280,8 +288,9 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                             }
                             return null;
                           },
-                          childCount:
-                              state.purchases.length + (_isLoadingMore ? 1 : 0),
+                          childCount: 1 +
+                              state.purchases.length +
+                              (_isLoadingMore ? 1 : 0),
                         ),
                       ),
                     );

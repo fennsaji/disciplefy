@@ -190,8 +190,6 @@ class ContinueReadingHeader extends StatelessWidget {
         Expanded(
           child: Text(
             context.tr(TranslationKeys.generateStudyContinueReading),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: AppFonts.poppins(
               fontSize: 17,
               fontWeight: FontWeight.w600,

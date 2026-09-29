@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
-import 'package:disciplefy_bible_study/shared/widgets/v2_popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
-/// Empty / signed-out / error state of the library, in the V2 style: a soft
+/// Empty / signed-out / error state of the library, in the popup style: a soft
 /// indigo icon circle, Poppins title, muted message and an optional action.
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;

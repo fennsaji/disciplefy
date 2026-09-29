@@ -347,8 +347,6 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                     Expanded(
                       child: Text(
                         context.tr(TranslationKeys.generateStudyChooseDepth),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -390,6 +388,15 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                               fontWeight: FontWeight.w600,
                               color: palette.text,
                               height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            context.tr(TranslationKeys.modeSelectionSubtitle),
+                            style: AppFonts.inter(
+                              fontSize: 14,
+                              color: palette.muted,
+                              height: 1.4,
                             ),
                           ),
                         ],
@@ -624,8 +631,6 @@ class _ModeOptionCard extends StatelessWidget {
                       children: [
                         Text(
                           translatedName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.inter(
                             fontSize: 16.5,
                             fontWeight: FontWeight.w700,
@@ -636,8 +641,6 @@ class _ModeOptionCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             recommendedBadgeText.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: AppFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -649,8 +652,6 @@ class _ModeOptionCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           translatedDescription,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.inter(
                             fontSize: 13.5,
                             color: secondary,
@@ -676,7 +677,22 @@ class _ModeOptionCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       if (isLocked)
-                        Icon(Icons.lock_rounded, size: 16, color: secondary)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.lock_rounded,
+                                size: 14, color: secondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              context.tr(TranslationKeys.learningPathsLocked),
+                              style: AppFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: secondary,
+                              ),
+                            ),
+                          ],
+                        )
                       else if (tokenCost != null)
                         CreditCost(
                           cost: tokenCost!,

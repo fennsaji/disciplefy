@@ -45,6 +45,7 @@ class GuideQuickItem extends StatelessWidget {
     final mode = studyModeFromString(guide.studyMode);
     final meta = [
       if (mode != null) mode.localizedShortName(context),
+      if (mode != null) mode.localizedDuration(context),
       _timeAgo(context, guide.lastAccessedAt),
     ].join(' · ');
 
@@ -90,16 +91,19 @@ class GuideQuickItem extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          context.tr(isScripture
-                              ? TranslationKeys.generateStudyScriptureTab
-                              : TranslationKeys.generateStudyTopicMode),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: palette.muted,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            context.tr(isScripture
+                                ? TranslationKeys.generateStudyScriptureTab
+                                : TranslationKeys.generateStudyTopicMode),
+                            maxLines: 1,
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: palette.muted,
+                            ),
                           ),
                         ),
                       ),
@@ -126,11 +130,16 @@ class GuideQuickItem extends StatelessWidget {
                   const SizedBox(height: 2),
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: Text(
-                      meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.inter(fontSize: 12, color: palette.muted),
+                    // Mode · duration · when: shrinks rather than cutting.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        meta,
+                        maxLines: 1,
+                        style:
+                            AppFonts.inter(fontSize: 12, color: palette.muted),
+                      ),
                     ),
                   ),
                 ],

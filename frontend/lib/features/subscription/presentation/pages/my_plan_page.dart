@@ -449,8 +449,6 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
               Expanded(
                 child: Text(
                   userPlan.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -708,7 +706,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         for (final invoice in recentInvoices)
           LedgerRow(
             label:
-                '${DateFormat('MMM d').format(invoice.createdAt)} · ${invoice.isPaid ? planName : invoice.status.toUpperCase()}',
+                '${DateFormat('MMM d, y').format(invoice.createdAt)} · ${invoice.isPaid ? planName : invoice.status.toUpperCase()}',
             labelColor: invoice.isPaid ? null : context.appWarning,
             value: '₹${invoice.amountRupees.toStringAsFixed(0)}',
           ),
@@ -806,20 +804,29 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (canUpgrade && canCancel)
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: upgrade),
-                  const SizedBox(width: 10),
-                  Expanded(child: cancel),
-                ],
-              ),
+            LedgerButtonPair(
+              first: upgrade,
+              second: cancel,
+              labels: [
+                upgradeLabel,
+                context.tr(TranslationKeys.ledgerCancelPlan),
+              ],
             )
           else if (canUpgrade)
             upgrade
           else if (canCancel)
             cancel,
+          if (canCancel) ...[
+            const SizedBox(height: 6),
+            Text(
+              context.tr(TranslationKeys.myPlanCancelAtPeriodEnd),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 12.5,
+                color: ReaderPalette.of(context).muted,
+              ),
+            ),
+          ],
           if (canDowngrade) ...[
             const SizedBox(height: 6),
             Center(

@@ -381,18 +381,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               ),
             ),
 
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _buildReflectionCard(_reflections[index]),
-                ),
-                childCount: _reflections.length,
-              ),
-            ),
-          ),
+          // Reflections grouped under a heading per day.
+          ..._buildGroupedReflections(),
 
           // Loading more indicator
           if (_isLoadingMore)
@@ -465,11 +455,13 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
         .replaceAll(RegExp(r'[:：]\s*$'), '');
 
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       sliver: SliverToBoxAdapter(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            SettingsSectionLabel(
+                context.tr(TranslationKeys.reflectionJournalYourJourney)),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -531,7 +523,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     );
   }
 
-  /// "Today", "Yesterday" or a short date.
+  /// Day heading: "Today", "Yesterday" or the full date.
   String _dayLabel(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -541,8 +533,35 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     if (diff == 1) {
       return context.tr(TranslationKeys.reflectionJournalYesterday);
     }
-    return DateFormat(date.year == now.year ? 'MMM d' : 'MMM d, yyyy')
-        .format(date);
+    return DateFormat('MMMM d, yyyy').format(date);
+  }
+
+  /// A date heading followed by that day's cards, newest day first (the
+  /// order the list arrives in).
+  List<Widget> _buildGroupedReflections() {
+    final groups = <DateTime, List<ReflectionSession>>{};
+    for (final reflection in _reflections) {
+      final date = reflection.completedAt ?? reflection.createdAt;
+      groups
+          .putIfAbsent(DateTime(date.year, date.month, date.day), () => [])
+          .add(reflection);
+    }
+    return [
+      for (final entry in groups.entries)
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _DateHeading(_dayLabel(entry.key)),
+              for (final reflection in entry.value)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _buildReflectionCard(reflection),
+                ),
+            ]),
+          ),
+        ),
+    ];
   }
 
   /// First written or tapped answer, shown as the card's quoted excerpt.
@@ -592,9 +611,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      _dayLabel(date),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      '${reflection.studyMode.icon} ${reflection.studyMode.displayName}',
                       style: AppFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -643,7 +660,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               ],
               const SizedBox(height: 8),
               Text(
-                '$time · ${reflection.studyMode.displayName}',
+                time,
                 style: AppFonts.inter(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
@@ -902,7 +919,6 @@ class _ActiveFilterPill extends StatelessWidget {
               Flexible(
                 child: Text(
                   label,
-                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -913,6 +929,32 @@ class _ActiveFilterPill extends StatelessWidget {
               const SizedBox(width: 6),
               Icon(Icons.close, size: 16, color: palette.accentIcon),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Day heading above a group of reflection cards.
+class _DateHeading extends StatelessWidget {
+  final String text;
+
+  const _DateHeading(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 16, 2, 8),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          style: AppFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: palette.muted,
           ),
         ),
       ),

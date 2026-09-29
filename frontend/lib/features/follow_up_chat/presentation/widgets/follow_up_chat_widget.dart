@@ -780,8 +780,6 @@ class _SuggestionChip extends StatelessWidget {
               Flexible(
                 child: Text(
                   text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,

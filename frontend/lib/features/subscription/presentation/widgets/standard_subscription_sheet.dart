@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
@@ -174,6 +176,10 @@ class _StandardSubscriptionSheetState extends State<StandardSubscriptionSheet> {
                 ],
               ),
               const LedgerHairline(verticalMargin: 14),
+              LedgerSectionLabel(
+                context.tr(TranslationKeys.ledgerWhatYouGet),
+                padding: const EdgeInsets.only(bottom: 8),
+              ),
               _buildFeatureItem(
                 context,
                 Icons.menu_book_outlined,

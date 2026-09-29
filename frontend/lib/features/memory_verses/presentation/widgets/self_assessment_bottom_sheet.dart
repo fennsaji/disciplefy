@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
-/// Self-assessment rating for passive practice modes (Flip Card, Progressive Reveal).
+/// Recall rating sheet for passive practice modes (Flip Card, Progressive
+/// Reveal), shown after the user has seen the answer.
 ///
-/// Since these modes don't have measurable user input, we ask the user
-/// to rate how well they knew the verse.
+/// Those modes have no measurable input, so the user rates how well they
+/// recalled the verse; the rating drives the next review date.
 class SelfAssessmentBottomSheet extends StatelessWidget {
   final void Function(SelfAssessmentRating rating) onRatingSelected;
 
@@ -16,7 +20,7 @@ class SelfAssessmentBottomSheet extends StatelessWidget {
     required this.onRatingSelected,
   });
 
-  /// Shows the self-assessment bottom sheet and returns the selected rating.
+  /// Shows the sheet and returns the selected rating (null if dismissed).
   static Future<SelfAssessmentRating?> show(BuildContext context) {
     return showModalBottomSheet<SelfAssessmentRating>(
       context: context,
@@ -32,65 +36,28 @@ class SelfAssessmentBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(77),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-
-              // Title
-              Text(
-                context.tr(TranslationKeys.selfAssessmentTitle),
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr(TranslationKeys.selfAssessmentSubtitle),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-
-              // Rating options
-              ...SelfAssessmentRating.values.map(
-                (rating) => _RatingOption(
-                  rating: rating,
-                  onTap: () => onRatingSelected(rating),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-            ],
-          ),
+    return PopupSheet(
+      children: [
+        PopupHeader(
+          title: context.tr(TranslationKeys.selfAssessmentTitle),
+          body: context.tr(TranslationKeys.selfAssessmentSubtitle),
         ),
-      ),
+        const SizedBox(height: 20),
+        for (final rating in SelfAssessmentRating.values) ...[
+          _RatingOption(
+            rating: rating,
+            onTap: () => onRatingSelected(rating),
+          ),
+          if (rating != SelfAssessmentRating.values.last)
+            const SizedBox(height: 8),
+        ],
+        const SizedBox(height: 8),
+      ],
     );
   }
 }
 
+/// One rating row: tone dot, label and one-line description, chevron.
 class _RatingOption extends StatelessWidget {
   final SelfAssessmentRating rating;
   final VoidCallback onTap;
@@ -102,48 +69,70 @@ class _RatingOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+    final palette = ReaderPalette.of(context);
+    final tone = MemoryToneColors.of(context, rating.tone);
+    final radius = BorderRadius.circular(16);
+    return Semantics(
+      button: true,
       child: Material(
-        color: rating.backgroundColor(theme),
-        borderRadius: BorderRadius.circular(12),
+        key: Key('self_assessment_${rating.name}'),
+        color: palette.raised,
+        borderRadius: radius,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: radius,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
             child: Row(
               children: [
-                Text(
-                  rating.emoji,
-                  style: const TextStyle(fontSize: 28),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: tone.fill,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: tone.foreground,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         rating.label(context),
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: AppFonts.inter(
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: rating.textColor(theme),
+                          color: palette.text,
+                          height: 1.3,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         rating.description(context),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: rating.textColor(theme).withAlpha(179),
+                        style: AppFonts.inter(
+                          fontSize: 12.5,
+                          color: palette.muted,
+                          height: 1.35,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 6),
                 Icon(
-                  Icons.chevron_right,
-                  color: rating.textColor(theme).withAlpha(128),
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: palette.dim,
                 ),
               ],
             ),
@@ -164,18 +153,18 @@ enum SelfAssessmentRating {
 }
 
 extension SelfAssessmentRatingExtension on SelfAssessmentRating {
-  String get emoji {
+  /// Colour on the red → amber → gold → green recall scale.
+  MemoryTone get tone {
     switch (this) {
       case SelfAssessmentRating.didNotKnow:
-        return '😟';
+        return MemoryTone.error;
       case SelfAssessmentRating.knewALittle:
-        return '😕';
+        return MemoryTone.warning;
       case SelfAssessmentRating.knewHalf:
-        return '😐';
+        return MemoryTone.gold;
       case SelfAssessmentRating.knewMost:
-        return '🙂';
       case SelfAssessmentRating.knewPerfectly:
-        return '😄';
+        return MemoryTone.success;
     }
   }
 
@@ -206,37 +195,6 @@ extension SelfAssessmentRatingExtension on SelfAssessmentRating {
         return context.tr(TranslationKeys.selfAssessmentKnewMostDesc);
       case SelfAssessmentRating.knewPerfectly:
         return context.tr(TranslationKeys.selfAssessmentKnewPerfectlyDesc);
-    }
-  }
-
-  Color backgroundColor(ThemeData theme) {
-    switch (this) {
-      case SelfAssessmentRating.didNotKnow:
-        return theme.colorScheme.errorContainer.withAlpha(128);
-      case SelfAssessmentRating.knewALittle:
-        return AppColors.warning.withAlpha(51);
-      case SelfAssessmentRating.knewHalf:
-        return AppColors.brandGold.withAlpha(51);
-      case SelfAssessmentRating.knewMost:
-        return AppColors.successLight.withAlpha(51);
-      case SelfAssessmentRating.knewPerfectly:
-        return AppColors.success.withAlpha(51);
-    }
-  }
-
-  Color textColor(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    switch (this) {
-      case SelfAssessmentRating.didNotKnow:
-        return isDark ? AppColors.errorLighter : theme.colorScheme.error;
-      case SelfAssessmentRating.knewALittle:
-        return isDark ? AppColors.warningLighter : AppColors.warningDark;
-      case SelfAssessmentRating.knewHalf:
-        return isDark ? AppColors.warningLighter : AppColors.warningDark;
-      case SelfAssessmentRating.knewMost:
-        return isDark ? AppColors.successLighter : AppColors.successDark;
-      case SelfAssessmentRating.knewPerfectly:
-        return isDark ? AppColors.successLighter : AppColors.successDark;
     }
   }
 

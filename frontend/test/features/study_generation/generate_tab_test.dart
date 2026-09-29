@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:disciplefy_bible_study/core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/i18n/app_translations.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
@@ -21,6 +22,8 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/wi
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 import 'package:disciplefy_bible_study/features/subscription/domain/entities/user_subscription_status.dart';
 import 'package:disciplefy_bible_study/features/subscription/domain/repositories/subscription_repository.dart';
+
+import '../../helpers/text_fit.dart';
 
 class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   final AppLanguage language;
@@ -116,6 +119,17 @@ SavedGuideEntity _guide(String id, GuideType type, String title,
       lastAccessedAt: at,
       isSaved: saved,
     );
+
+/// Real translation table lookups for expectations.
+class FakeTranslations {
+  static String of(AppLanguage language, String key) {
+    dynamic node = AppTranslations.translations[language];
+    for (final part in key.split('.')) {
+      node = (node as Map)[part];
+    }
+    return node as String;
+  }
+}
 
 void main() {
   tearDown(() => GetIt.instance.reset());
@@ -280,8 +294,8 @@ void main() {
         expect(find.text('How much time do you have?'), findsOneWidget);
         expect(find.text('Choose depth'), findsOneWidget);
         expect(find.text('Start Quick Read'), findsOneWidget);
-        expect(find.text('50–60 min'), findsOneWidget);
-        expect(find.text('40'), findsOneWidget);
+        expect(find.text('Choose a study mode based on your available time'),
+            findsOneWidget);
         // Full height: the sheet fills the screen below the safe area.
         expect(tester.getSize(find.byType(ModeSelectionSheet)).height,
             greaterThan(700));
@@ -295,6 +309,18 @@ void main() {
               .color,
           ReaderPalette.selectedFill,
         );
+
+        // The last rows sit below the fold on a short phone.
+        await tester.scrollUntilVisible(find.text('50–60 min'), 120,
+            scrollable: find.byType(Scrollable).last);
+        expect(find.text('50–60 min'), findsOneWidget);
+        expect(find.text('40'), findsOneWidget);
+        await tester.scrollUntilVisible(
+            find.byKey(const ValueKey('mode_option_deep')), -120,
+            scrollable: find.byType(Scrollable).last);
+        await tester
+            .ensureVisible(find.byKey(const ValueKey('mode_option_deep')));
+        await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const ValueKey('mode_option_deep')));
         await tester.pumpAndSettle();
@@ -345,8 +371,9 @@ void main() {
         expect(find.text('Why Read the Bible?'), findsOneWidget);
         expect(find.text('John 3:16'), findsOneWidget);
         expect(find.text('Hidden third'), findsNothing);
-        expect(find.text('Standard · 1m ago'), findsOneWidget);
-        expect(find.text('Quick Read · 1d ago'), findsOneWidget);
+        // Mode · duration · when.
+        expect(find.text('Standard · 8 min · 1m ago'), findsOneWidget);
+        expect(find.text('Quick Read · 3 min · 1d ago'), findsOneWidget);
         expect(find.text('Topic'), findsOneWidget);
         expect(find.text('Scripture'), findsOneWidget);
 
@@ -434,4 +461,47 @@ void main() {
       expect(find.text('How much time do you have?'), findsNothing);
     });
   }
+
+  group('no cut-off text at 320px', () {
+    setUpAll(loadAppFonts);
+
+    for (final language in AppLanguage.values) {
+      testWidgets('${language.code}: depth chooser with a locked mode',
+          (tester) async {
+        await _registerServices(
+            language: language, lockedKeys: const {'sermon_outline_mode'});
+        tester.view.physicalSize = const Size(320, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(_app(
+          Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => ModeSelectionSheet.show(
+                  context: context,
+                  languageCode: language.code,
+                  recommendedMode: StudyMode.standard,
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+          dark: true,
+        ));
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+        // The subtitle and the locked row's label are back.
+        expect(
+            find.text(FakeTranslations.of(language, 'mode_selection.subtitle')),
+            findsOneWidget);
+        expect(
+            find.text(FakeTranslations.of(language, 'learning_paths.locked')),
+            findsOneWidget);
+      });
+    }
+  });
 }

@@ -231,6 +231,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
 
     return InputDecoration(
       hintText: hint,
+      // Long Hindi/Malayalam hints wrap instead of being cut.
+      hintMaxLines: 2,
       hintStyle: AppFonts.inter(fontSize: 15.5, color: palette.dim),
       prefixIcon: Icon(icon, size: 21, color: palette.muted),
       suffixIcon: suffix,

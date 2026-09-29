@@ -181,16 +181,19 @@ class InputTypeTabs extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        labels[i],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: i == selectedIndex
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: i == selectedIndex ? ink.text : ink.muted,
+                      // Shrinks on narrow phones instead of cutting.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          labels[i],
+                          maxLines: 1,
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: i == selectedIndex
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: i == selectedIndex ? ink.text : ink.muted,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -290,14 +293,16 @@ class GenerateStudyButton extends StatelessWidget {
                         const SizedBox(width: 12),
                       ],
                       Flexible(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: ink,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            style: AppFonts.inter(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: ink,
+                            ),
                           ),
                         ),
                       ),

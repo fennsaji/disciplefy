@@ -11,7 +11,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledg
 /// How the user chose to cancel in [CancelSubscriptionSheet].
 enum CancelChoice { endOfCycle, immediately }
 
-/// Bottom sheet that confirms a subscription cancellation (K2 design 07):
+/// Bottom sheet that confirms a subscription cancellation:
 /// a red eyebrow, "Keep studying until …?", the two ways to cancel as radio
 /// rows, and Keep plan / Confirm cancel.
 ///

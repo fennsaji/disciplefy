@@ -13,6 +13,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_stat
 import 'package:disciplefy_bible_study/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/onboarding_previews.dart';
 
+import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
 void main() {
@@ -133,5 +134,27 @@ void main() {
 
     expect(find.text('stub:/login'), findsOneWidget);
     expect(Hive.box('app_settings').get('onboarding_completed'), isTrue);
+  });
+
+  group('no cut-off text at 320px', () {
+    setUpAll(loadAppFonts);
+    for (final language in AppLanguage.values) {
+      testWidgets('${language.code}: every slide', (tester) async {
+        useSurface(tester, const Size(320, 1200));
+        translations.language = language;
+        await pumpOnboarding(tester, dark: true);
+        // The phone-screen previews are miniature illustrations.
+        final previews = [
+          find.byType(DailyVersePreview),
+          find.byType(StudyGuidePreview),
+          find.byType(DisciplerChatPreview),
+          find.byType(MemoryReviewPreview),
+        ];
+        for (var i = 0; i < 4; i++) {
+          expectNoTruncatedText(tester, ignoreUnder: previews);
+          if (i < 3) await tapContinue(tester);
+        }
+      });
+    }
   });
 }

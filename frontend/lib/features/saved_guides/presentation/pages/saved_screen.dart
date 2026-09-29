@@ -18,7 +18,7 @@ import 'package:disciplefy_bible_study/features/saved_guides/presentation/widget
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/widgets/guide_list_item.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/widgets/library_continue_card.dart';
 
-/// "Your library": Saved and Recent study guides (V2 design).
+/// "Your library": Saved and Recent study guides.
 ///
 /// Title with search, underline tabs, a photo "Continue" card resuming the
 /// most recently read guide, then a two-column grid of tinted guide cards.
@@ -331,15 +331,19 @@ class _SavedScreenContent extends StatelessWidget {
                       ),
                     ),
                   )
-                : Text(
-                    context.tr(TranslationKeys.savedGuidesLibraryTitle),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: palette.text,
-                      height: 1.2,
+                // Shrinks rather than cutting a long (Malayalam) title.
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      context.tr(TranslationKeys.savedGuidesLibraryTitle),
+                      maxLines: 1,
+                      style: AppFonts.poppins(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: palette.text,
+                        height: 1.2,
+                      ),
                     ),
                   ),
           ),

@@ -317,7 +317,8 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
           offerText: plan?.hasDiscount == true
               ? context.tr(TranslationKeys.pricingLimitedTimeOffer)
               : null,
-          description: _plusPlan?.description,
+          description: _plusPlan?.description ??
+              context.tr(TranslationKeys.ledgerPlusTagline),
           previousPlanName: _comparisonPlan?.planName ??
               (_isDowngrade ? 'Premium' : 'Standard'),
           currentPlanName: _plusPlan?.planName ?? 'Plus',

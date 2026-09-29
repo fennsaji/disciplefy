@@ -85,8 +85,6 @@ class LanguageSelectionCard extends StatelessWidget {
                       children: [
                         Text(
                           language.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.inter(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
@@ -96,8 +94,6 @@ class LanguageSelectionCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           secondaryLabel ?? englishName(language),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.inter(
                             fontSize: 13.5,
                             color: palette.muted,

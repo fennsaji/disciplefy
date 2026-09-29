@@ -2475,8 +2475,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         Expanded(
           child: Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: AppFonts.inter(
               fontSize: 14.5,
               fontWeight: FontWeight.w500,
@@ -2777,7 +2775,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: accentColor,
@@ -2808,7 +2805,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: accentColor,
@@ -2836,7 +2832,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: accentColor,
@@ -3227,14 +3222,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                             ),
                                             const SizedBox(width: 8),
                                             Flexible(
-                                              child: Text(
-                                                isPlaying ? 'Pause' : 'Resume',
-                                                style: AppFonts.inter(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: foreground,
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  isPlaying
+                                                      ? 'Pause'
+                                                      : 'Resume',
+                                                  maxLines: 1,
+                                                  style: AppFonts.inter(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: foreground,
+                                                  ),
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
@@ -3299,17 +3299,20 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                   )
                                 : const Icon(Icons.headphones_rounded,
                                     size: 22),
-                            label: Text(
-                              isLoading
-                                  ? context
-                                      .tr(TranslationKeys.studyGuideLoading)
-                                  : context
-                                      .tr(TranslationKeys.studyGuideListen),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                            // Shrinks rather than cutting on narrow phones.
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                isLoading
+                                    ? context
+                                        .tr(TranslationKeys.studyGuideLoading)
+                                    : context
+                                        .tr(TranslationKeys.studyGuideListen),
+                                maxLines: 1,
+                                style: AppFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -3364,14 +3367,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                 ),
                                 const SizedBox(width: 8),
                                 Flexible(
-                                  child: Text(
-                                    context.tr(TranslationKeys.studyGuideAskAi),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppFonts.inter(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: palette.ctaInk,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      context
+                                          .tr(TranslationKeys.studyGuideAskAi),
+                                      maxLines: 1,
+                                      style: AppFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: palette.ctaInk,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -3894,7 +3900,16 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
           number: widget.number,
           title: context.tr(TranslationKeys.studyGuideFellowshipCardTitle),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 6),
+        Text(
+          context.tr(TranslationKeys.studyGuideFellowshipCardSubtitle),
+          style: AppFonts.inter(
+            fontSize: 13.5,
+            color: palette.muted,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 12),
         TextField(
           controller: _controller,
           minLines: 1,

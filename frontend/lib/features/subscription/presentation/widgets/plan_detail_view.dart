@@ -8,7 +8,7 @@ import 'package:disciplefy_bible_study/features/subscription/presentation/utils/
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/subscription_legal_links.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-/// Shared K2 layout of the Standard / Plus / Premium upgrade pages: big price,
+/// Shared layout of the Standard / Plus / Premium upgrade pages: big price,
 /// a comparison table against the neighbouring plan, the feature list, the
 /// promo code, legal links, and the CTA pinned at the bottom.
 ///

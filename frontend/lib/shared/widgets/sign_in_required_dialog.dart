@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
-import 'package:disciplefy_bible_study/shared/widgets/v2_popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
-/// V2 popup asking a guest (or signed-out) user to sign in before an action
+/// Popup asking a guest (or signed-out) user to sign in before an action
 /// that needs an account, e.g. saving a study guide.
 class SignInRequiredDialog extends StatelessWidget {
   final String title;

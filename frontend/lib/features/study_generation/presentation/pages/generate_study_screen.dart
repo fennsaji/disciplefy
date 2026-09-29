@@ -1029,8 +1029,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
             Expanded(
               child: Text(
                 context.tr(TranslationKeys.generateStudyEyebrow).toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -1096,8 +1094,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
             Expanded(
               child: Text(
                 context.tr(TranslationKeys.generateStudyChooseDepth),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.poppins(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
@@ -1198,15 +1194,18 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // "Default" in Hindi/Malayalam shrinks to fit the pill.
             Flexible(
-              child: Text(
-                getLanguageLabel(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: _searchInk,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  getLanguageLabel(),
+                  maxLines: 1,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _searchInk,
+                  ),
                 ),
               ),
             ),
@@ -1304,8 +1303,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                           child: Text(
                             context
                                 .tr(TranslationKeys.generateStudyTalkToAiBuddy),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                             style: AppFonts.inter(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w600,
@@ -1339,8 +1336,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                     Text(
                       context.tr(
                           TranslationKeys.generateStudyTalkToAiBuddySubtitle),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: AppFonts.inter(fontSize: 12, color: palette.muted),
                     ),
                   ],
@@ -1420,7 +1415,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                             ? context.tr(TranslationKeys.generateStudyTopicHint)
                             : context
                                 .tr(TranslationKeys.generateStudyQuestionHint),
-                    hintMaxLines: isQuestion ? 3 : 1,
+                    // Long hints wrap instead of being cut on narrow phones.
+                    hintMaxLines: isQuestion ? 4 : 3,
                     hintStyle: AppFonts.inter(
                       fontSize: 15,
                       color: _searchHint,
@@ -1692,7 +1688,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
   VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
 
-  // Voice Discipler lives in the dock's Discipler tab, not here.
+  // Talk to Discipler lives in its own dock tab, not on Generate.
   int get _totalWalkthroughSteps => 3;
 
   Future<void> _triggerWalkthroughIfNeeded() async {

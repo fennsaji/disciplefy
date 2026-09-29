@@ -16,7 +16,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledg
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/usage_history_list_item.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/usage_statistics_card.dart';
 
-/// Usage history in the K2 quiet-ledger design: a usage summary, then every
+/// Usage history in the quiet-ledger design: a usage summary, then every
 /// spend as a ledger line, paginated on scroll.
 class TokenUsageHistoryPage extends StatefulWidget {
   const TokenUsageHistoryPage({super.key});

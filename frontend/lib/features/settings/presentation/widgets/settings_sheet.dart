@@ -5,7 +5,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
-/// Opens a modal bottom sheet in the S3 settings style. [builder] usually
+/// Opens a modal bottom sheet in the settings style. [builder] usually
 /// returns a [SettingsSheetFrame].
 Future<T?> showSettingsSheet<T>({
   required BuildContext context,
@@ -131,7 +131,7 @@ class SettingsSheetGroup extends StatelessWidget {
   }
 }
 
-/// Dialog in the S3 style: card fill, 22 radius, Poppins title, pill actions.
+/// Dialog in the settings style: card fill, 22 radius, Poppins title, pill actions.
 class SettingsDialog extends StatelessWidget {
   final String title;
   final Color? titleColor;
@@ -184,14 +184,20 @@ class SettingsDialog extends StatelessWidget {
                 child: content,
               ),
               const SizedBox(height: 22),
-              Row(
-                children: [
-                  for (var i = 0; i < actions.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 10),
-                    Expanded(child: actions[i]),
+              // Pill actions stack when a label would not fit side by side.
+              if (actions.every((a) => a is SettingsButton))
+                SettingsButtonRow(
+                  buttons: actions.cast<SettingsButton>(),
+                )
+              else
+                Row(
+                  children: [
+                    for (var i = 0; i < actions.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      Expanded(child: actions[i]),
+                    ],
                   ],
-                ],
-              ),
+                ),
             ],
           ),
         ),

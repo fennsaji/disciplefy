@@ -661,8 +661,6 @@ class StudyGuideTopicTitle extends StatelessWidget {
       children: [
         Text(
           eyebrow(context, inputType: inputType, studyMode: studyMode),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
           style: AppFonts.inter(
             fontSize: 11,
             fontWeight: FontWeight.w700,

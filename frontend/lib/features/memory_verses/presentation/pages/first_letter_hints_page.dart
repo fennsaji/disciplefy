@@ -6,24 +6,25 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../domain/entities/memory_verse_entity.dart';
-import '../../domain/entities/practice_result_params.dart';
-import '../bloc/memory_verse_bloc.dart';
-import '../bloc/memory_verse_event.dart';
-import '../bloc/memory_verse_state.dart';
-import '../utils/quality_calculator.dart';
-import '../widgets/timer_badge.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/quality_calculator.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// First letter hints practice mode.
 ///
@@ -133,6 +134,13 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
     });
   }
 
+  /// Reveals the first still-hidden word (same hint accounting as tapping
+  /// the word itself).
+  void _revealNextHint() {
+    final index = hintWords.indexWhere((w) => !w.isRevealed);
+    if (index != -1) _revealWord(index);
+  }
+
   void _submitPractice() {
     if (currentVerse == null) return;
 
@@ -184,13 +192,15 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ShowCaseWidget(
       onFinish: () => sl<WalkthroughRepository>()
           .markSeen(WalkthroughScreen.practiceFirstLetter),
       builder: (showcaseCtx) {
         _showcaseContext = showcaseCtx;
+        final verse = currentVerse;
+        final palette = ReaderPalette.of(context);
+        final l10n = AppLocalizations.of(context)!;
+        final hasHiddenWords = hintWords.any((w) => !w.isRevealed);
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -203,102 +213,74 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
                 _loadVerse();
               }
             },
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _handleBackNavigation,
-                ),
-                title:
-                    Text(context.tr(TranslationKeys.practiceModeFirstLetter)),
-                actions: [
-                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              body: currentVerse == null
+            child: MemoryPracticeScaffold(
+              title: context.tr(TranslationKeys.practiceModeFirstLetter),
+              subtitle: verse == null
+                  ? null
+                  : '${verse.verseReference} · '
+                      '${context.tr(TranslationKeys.difficultyEasy)}',
+              elapsedSeconds: elapsedSeconds,
+              onClose: _handleBackNavigation,
+              scrollable: verse != null,
+              body: verse == null
                   ? const Center(child: CircularProgressIndicator())
-                  : SafeArea(
-                      child: Column(
-                        children: [
-                          _HintsBadge(
-                            hintsUsed: hintsUsed,
-                            totalWords: hintWords.length,
-                          ),
-                          const SizedBox(height: 16),
-                          // Verse Reference
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              currentVerse!.verseReference,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Instructions
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              context
-                                  .tr(TranslationKeys.firstLetterInstruction),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontStyle: FontStyle.italic,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: WalkthroughTooltip(
-                                showcaseKey: ShowcaseKeys.practiceFirstLetter,
-                                title: AppLocalizations.of(context)!
-                                    .walkthroughPracticeFirstLetterTitle,
-                                description: AppLocalizations.of(context)!
-                                    .walkthroughPracticeFirstLetterDesc,
-                                screen: WalkthroughScreen.practiceFirstLetter,
-                                stepNumber: 1,
-                                totalSteps: 1,
-                                onNext: _onNext,
-                                child: _HintWordsView(
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.practiceFirstLetter,
+                          title: l10n.walkthroughPracticeFirstLetterTitle,
+                          description: l10n.walkthroughPracticeFirstLetterDesc,
+                          screen: WalkthroughScreen.practiceFirstLetter,
+                          stepNumber: 1,
+                          totalSteps: 1,
+                          onNext: _onNext,
+                          tooltipPosition: TooltipPosition.bottom,
+                          highlightBorderRadius: 20,
+                          child: MemoryAnswerCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _HintWordsView(
                                   hintWords: hintWords,
                                   onWordTap: _revealWord,
                                 ),
-                              ),
-                            ),
-                          ),
-                          // Submit Button
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _submitPractice,
-                                icon: const Icon(Icons.check),
-                                label: Text(
-                                    context.tr(TranslationKeys.practiceSubmit)),
-                                style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  backgroundColor: context.appInteractive,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                const SizedBox(height: 14),
+                                _HintsUsedLine(
+                                  hintsUsed: hintsUsed,
+                                  totalWords: hintWords.length,
                                 ),
-                              ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          context.tr(TranslationKeys.firstLetterInstruction),
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            height: 1.45,
+                            color: palette.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+              bottomBar: verse == null
+                  ? null
+                  : MemoryActionBar(
+                      secondary: [
+                        MemoryActionPill(
+                          label: context
+                              .tr(TranslationKeys.memoryRecallFirstLetterHint),
+                          icon: Icons.lightbulb_outline_rounded,
+                          onPressed: hasHiddenWords ? _revealNextHint : null,
+                        ),
+                      ],
+                      primary: MemoryPrimaryPill(
+                        label: context
+                            .tr(TranslationKeys.memoryRecallFirstLetterCheck),
+                        icon: Icons.check_rounded,
+                        onPressed: _submitPractice,
                       ),
                     ),
             ),
@@ -322,142 +304,117 @@ class HintWord {
   });
 }
 
-/// Hints used badge
-class _HintsBadge extends StatelessWidget {
+/// "Hints used 2/10", coloured green / gold / red as hint use grows.
+class _HintsUsedLine extends StatelessWidget {
   final int hintsUsed;
   final int totalWords;
 
-  const _HintsBadge({
-    required this.hintsUsed,
-    required this.totalWords,
-  });
+  const _HintsUsedLine({required this.hintsUsed, required this.totalWords});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final percentage = totalWords > 0 ? (hintsUsed / totalWords) * 100 : 0;
-
-    final color = percentage <= 20
-        ? AppColors.success
-        : percentage <= 50
-            ? AppColors.warning
-            : AppColors.error;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withAlpha((0.1 * 255).round()),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color, width: 2),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            percentage <= 20
-                ? Icons.lightbulb_outline
-                : percentage <= 50
-                    ? Icons.lightbulb
-                    : Icons.lightbulb,
-            color: color,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Hints Used: $hintsUsed/$totalWords',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+    final tone = hintsUsed == 0
+        ? MemoryTone.neutral
+        : percentage <= 20
+            ? MemoryTone.success
+            : percentage <= 50
+                ? MemoryTone.gold
+                : MemoryTone.error;
+    final color = tone == MemoryTone.neutral
+        ? ReaderPalette.of(context).muted
+        : MemoryToneColors.of(context, tone).foreground;
+    return Text(
+      context.tr(TranslationKeys.memoryRecallFirstLetterHintsUsed, {
+        'used': hintsUsed,
+        'total': totalWords,
+      }),
+      style: AppFonts.inter(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w500,
+        color: color,
+        fontFeatures: kMemoryTabular,
       ),
     );
   }
 }
 
-/// Hint words view
+/// Wrap of first-letter tiles; revealed words show in full.
 class _HintWordsView extends StatelessWidget {
   final List<HintWord> hintWords;
   final ValueChanged<int> onWordTap;
 
-  const _HintWordsView({
-    required this.hintWords,
-    required this.onWordTap,
-  });
+  const _HintWordsView({required this.hintWords, required this.onWordTap});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withAlpha((0.3 * 255).round()),
-        ),
-      ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 12,
-        children: hintWords.asMap().entries.map((entry) {
-          final index = entry.key;
-          final hintWord = entry.value;
-
-          return _HintWordChip(
-            hintWord: hintWord,
-            onTap: () => onWordTap(index),
-          );
-        }).toList(),
-      ),
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var i = 0; i < hintWords.length; i++)
+          _HintWordTile(
+            hintWord: hintWords[i],
+            index: i,
+            onTap: () => onWordTap(i),
+          ),
+      ],
     );
   }
 }
 
-/// Individual hint word chip
-class _HintWordChip extends StatelessWidget {
+/// One word: its first letter on a raised tile, tap to reveal the word
+/// (counts as a hint). Revealed words use the indigo selected fill.
+class _HintWordTile extends StatelessWidget {
   final HintWord hintWord;
+  final int index;
   final VoidCallback onTap;
 
-  const _HintWordChip({
+  const _HintWordTile({
     required this.hintWord,
+    required this.index,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: hintWord.isRevealed ? null : onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: hintWord.isRevealed
-              ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: hintWord.isRevealed
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline.withAlpha((0.3 * 255).round()),
-            width: hintWord.isRevealed ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          hintWord.isRevealed ? hintWord.word : hintWord.hint,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontSize: 16,
-            fontWeight:
-                hintWord.isRevealed ? FontWeight.bold : FontWeight.normal,
-            color: hintWord.isRevealed
-                ? theme.colorScheme.onPrimaryContainer
-                : theme.colorScheme.onSurface,
-            fontFamily: hintWord.isRevealed ? null : 'monospace',
+    final palette = ReaderPalette.of(context);
+    final revealed = hintWord.isRevealed;
+    final letter = hintWord.word.isEmpty ? '' : hintWord.word.characters.first;
+    final radius = BorderRadius.circular(10);
+    return Semantics(
+      button: !revealed,
+      label: revealed
+          ? hintWord.word
+          : context.tr(TranslationKeys.memoryRecallFirstLetterTileLabel, {
+              'index': index + 1,
+              'letter': letter,
+            }),
+      excludeSemantics: true,
+      child: Material(
+        color: revealed ? ReaderPalette.selectedFill : palette.raised,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: revealed ? null : onTap,
+          borderRadius: radius,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Center(
+                widthFactor: 1,
+                heightFactor: 1,
+                child: Text(
+                  revealed ? hintWord.word : letter.toUpperCase(),
+                  softWrap: true,
+                  style: AppFonts.inter(
+                    fontSize: revealed ? 15.5 : 17,
+                    fontWeight: FontWeight.w700,
+                    color: revealed ? Colors.white : palette.accentIcon,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

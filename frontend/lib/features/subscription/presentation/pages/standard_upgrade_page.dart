@@ -271,7 +271,8 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
           offerText: plan?.hasDiscount == true
               ? context.tr(TranslationKeys.pricingLimitedTimeOffer)
               : null,
-          description: _standardPlan?.description,
+          description: _standardPlan?.description ??
+              context.tr(TranslationKeys.ledgerStandardTagline),
           previousPlanName: _freePlan?.planName ?? 'Free',
           currentPlanName: _standardPlan?.planName ?? 'Standard',
           comparisonRows: _comparisonRows,

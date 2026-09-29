@@ -17,7 +17,7 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/wi
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sign_in_required_dialog.dart';
-import 'package:disciplefy_bible_study/shared/widgets/v2_popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   @override

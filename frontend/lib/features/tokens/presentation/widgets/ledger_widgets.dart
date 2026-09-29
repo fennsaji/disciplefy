@@ -6,7 +6,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
-/// Building blocks of the "K2 quiet ledger" credits and plans design.
+/// Building blocks of the quiet-ledger credits and plans design.
 ///
 /// Content sits straight on the page, split by 1px hairlines; numbers are the
 /// hero (Poppins, tabular figures) and a raised card appears only where the
@@ -108,27 +108,31 @@ class LedgerTopBar extends StatelessWidget implements PreferredSizeWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Long titles (Malayalam) shrink to fit rather than
+                    // being cut with an ellipsis.
                     Semantics(
                       header: true,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: palette.text,
-                          height: 1.2,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          style: AppFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: palette.text,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty)
                       Text(
                         subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
                         style: AppFonts.inter(
-                          fontSize: 12.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: palette.gold,
                         ),
@@ -194,8 +198,6 @@ class LedgerSectionLabel extends StatelessWidget {
               header: true,
               child: Text(
                 text.toUpperCase(),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
@@ -261,8 +263,6 @@ class LedgerRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight:
@@ -283,9 +283,7 @@ class LedgerRow extends StatelessWidget {
               child: valueWidget ??
                   Text(
                     value ?? '',
-                    maxLines: 2,
                     textAlign: TextAlign.end,
-                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -355,8 +353,6 @@ class LedgerStatTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               textAlign: centered ? TextAlign.center : TextAlign.start,
               style: AppFonts.inter(fontSize: 12, color: palette.muted),
             ),
@@ -457,7 +453,76 @@ class LedgerSecondaryButton extends StatelessWidget {
   }
 }
 
+/// Two actions side by side when both labels fit on one line at half width,
+/// otherwise stacked full width (primary first), so no label is ever cut.
+class LedgerButtonPair extends StatelessWidget {
+  final Widget first;
+  final Widget second;
+
+  /// Labels of [first] and [second], measured to pick the layout.
+  final List<String> labels;
+
+  /// Whether the buttons carry a leading icon (it takes label room).
+  final bool withIcons;
+
+  const LedgerButtonPair({
+    super.key,
+    required this.first,
+    required this.second,
+    required this.labels,
+    this.withIcons = true,
+  });
+
+  static const double _gap = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final half = (constraints.maxWidth - _gap) / 2;
+        // Pill padding (18 each side) plus the optional icon and its gap.
+        final room = half - 36 - (withIcons ? 26 : 0);
+        final scaler = MediaQuery.textScalerOf(context);
+        final fits = labels.every((label) {
+          final painter = TextPainter(
+            text: TextSpan(text: label, style: _LedgerPill.labelStyle),
+            textDirection: Directionality.of(context),
+            textScaler: scaler,
+            maxLines: 1,
+          )..layout();
+          final width = painter.width;
+          painter.dispose();
+          return width <= room;
+        });
+        if (fits) {
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: first),
+                const SizedBox(width: _gap),
+                Expanded(child: second),
+              ],
+            ),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [first, const SizedBox(height: _gap), second],
+        );
+      },
+    );
+  }
+}
+
 class _LedgerPill extends StatelessWidget {
+  /// Label style without colour, shared with [LedgerButtonPair]'s measuring.
+  static TextStyle get labelStyle => AppFonts.inter(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        height: 1.25,
+      );
+
   final String label;
   final IconData? icon;
   final bool loading;
@@ -510,9 +575,7 @@ class _LedgerPill extends StatelessWidget {
                   Flexible(
                     child: Text(
                       label,
-                      maxLines: 2,
                       textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
                       style: AppFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -566,8 +629,6 @@ class LedgerLink extends StatelessWidget {
                 Flexible(
                   child: Text(
                     label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -636,8 +697,7 @@ class LedgerStatusPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: AppFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,

@@ -148,8 +148,9 @@ void main() {
       final left = tester.getSize(find.byKey(const ValueKey('saved_g2')));
       final right = tester.getSize(find.byKey(const ValueKey('saved_g3')));
       expect(left.height, right.height);
-      // Content-sized, not a fixed tall tile.
-      expect(left.height, lessThan(200));
+      // Content-sized, not a fixed tall tile (title, summary preview and
+      // the mode · duration · date line).
+      expect(left.height, lessThan(280));
     });
 
     testWidgets('$theme: no progress shows plain CONTINUE', (tester) async {
@@ -294,5 +295,22 @@ void main() {
     test('null when there are no guides', () {
       expect(pickContinueGuide(const [], const {}), isNull);
     });
+  });
+
+  testWidgets('library cards show the summary preview and mode duration',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await pumpLibrary(tester,
+        dark: true,
+        state: SavedGuidesApiLoaded(
+          savedGuides: _saved,
+          recentGuides: const [],
+        ));
+    expect(find.text('content'), findsWidgets);
+    expect(find.textContaining('Quick Read · 3 min ·'), findsOneWidget);
+    expect(find.textContaining('Deep Dive · 12 min ·'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

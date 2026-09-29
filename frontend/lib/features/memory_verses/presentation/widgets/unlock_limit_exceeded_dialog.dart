@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/practice_limit_popup_parts.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Dialog shown when user exceeds their daily practice mode unlock limit for a verse.
 /// Displays unlocked modes, remaining slots, and upgrade options.
@@ -48,177 +53,87 @@ class UnlockLimitExceededDialog extends StatelessWidget {
     );
   }
 
-  /// Get user-friendly mode names
-  String _getModeName(String modeSlug) {
-    const modeNames = {
-      'flip_card': 'Flip Card',
-      'type_it_out': 'Type It Out',
-      'cloze': 'Cloze Practice',
-      'first_letter': 'First Letter',
-      'progressive': 'Progressive Reveal',
-      'word_scramble': 'Word Scramble',
-      'word_bank': 'Word Bank',
-      'audio': 'Audio Practice',
-    };
-    return modeNames[modeSlug] ?? modeSlug;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final unlockedModeNames =
-        unlockedModes.map((m) => _getModeName(m)).toList();
+        unlockedModes.map((m) => practiceModeLabel(context, m)).toList();
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: theme.colorScheme.surface,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.tertiaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.lock_clock,
-              color: theme.colorScheme.tertiary,
-              size: 24,
-            ),
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PopupHeader(
+          icon: const PopupIconCircle(icon: Icons.lock_clock_outlined),
+          title: context.tr(TranslationKeys.practiceUnlockLimitTitle),
+          body: context.tr(
+            unlockedCount == 1
+                ? TranslationKeys.practiceUnlockLimitMessageOne
+                : TranslationKeys.practiceUnlockLimitMessageOther,
+            {'count': '$unlockedCount', 'verse': verseReference},
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Daily Unlock Limit Reached',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'You\'ve unlocked $unlockedCount practice mode${unlockedCount > 1 ? 's' : ''} for "$verseReference" today.',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-
-            // Unlocked modes box
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Modes Unlocked Today:',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '$unlockedCount / $limit',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
+        ),
+        const SizedBox(height: 18),
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PracticePopupSubheading(
+                context.tr(TranslationKeys.practiceUnlockLimitUnlockedToday),
+                trailing: Text(
+                  '$unlockedCount / $limit',
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: palette.accentIcon,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
-                  const SizedBox(height: 8),
-                  ...unlockedModeNames.map((name) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: theme.colorScheme.tertiary,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(name, style: theme.textTheme.bodySmall),
-                          ],
-                        ),
-                      )),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            Text(
-              'Upgrade to unlock more modes per verse per day:',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ..._buildDynamicPlanOptions(context),
-            const SizedBox(height: 8),
-
-            // Info box
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.3),
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: theme.colorScheme.primary,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'You can still practice unlimited times with your unlocked modes today!',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Maybe Later',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              if (unlockedModeNames.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                ...practicePopupSpaced(
+                  [
+                    for (final name in unlockedModeNames) PracticeCheckRow(name)
+                  ],
+                  gap: 6,
+                ),
+              ],
+            ],
           ),
         ),
-        ElevatedButton(
+        const SizedBox(height: 16),
+        PracticePopupSubheading(
+          context.tr(TranslationKeys.practiceUnlockLimitUpgradePrompt),
+        ),
+        const SizedBox(height: 10),
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: practicePopupSpaced(_buildDynamicPlanOptions(context)),
+          ),
+        ),
+        const SizedBox(height: 14),
+        PracticePopupNote(
+          context.tr(TranslationKeys.practiceUnlockLimitStillPractice),
+        ),
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          key: const Key('unlock_limit_view_plans'),
+          label: context.tr(TranslationKeys.practiceUnlockLimitViewPlans),
           onPressed: () {
+            final router = GoRouter.of(context);
             Navigator.of(context).pop();
             // Land on the cheapest plan that lifts this limit, not the top of the
             // page where Free — the plan they already have — sits.
-            context.push(AppRoutes.pricing,
+            router.push(AppRoutes.pricing,
                 extra: const {'preselectedPlan': 'standard'});
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: theme.colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: const Text('View Plans'),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('unlock_limit_later'),
+          label: context.tr(TranslationKeys.practiceUnlockLimitMaybeLater),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
@@ -236,16 +151,16 @@ class UnlockLimitExceededDialog extends StatelessWidget {
           _buildPlanOption(
               context,
               'Standard',
-              '2 modes per verse per day',
+              unlockLimitLabel(context, 2),
               pricingService.getFormattedPricePerMonth('standard'),
               tier == 'free'),
           _buildPlanOption(
               context,
               'Plus',
-              '3 modes per verse per day',
+              unlockLimitLabel(context, 3),
               pricingService.getFormattedPricePerMonth('plus'),
               tier == 'free' || tier == 'standard'),
-          _buildPlanOption(context, 'Premium', 'All modes unlocked',
+          _buildPlanOption(context, 'Premium', unlockLimitLabel(context, -1),
               pricingService.getFormattedPricePerMonth('premium'), true),
         ];
       }
@@ -258,7 +173,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
         return _buildPlanOption(
           context,
           tierInfo.tierName,
-          tierInfo.unlockLimitText,
+          unlockLimitLabel(context, tierInfo.unlockLimit),
           pricingService.getFormattedPricePerMonth(tierInfo.tier),
           isUpgrade,
         );
@@ -269,7 +184,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
         _buildPlanOption(
           context,
           'Standard',
-          '2 modes per verse per day',
+          unlockLimitLabel(context, 2),
           pricingService.getFormattedPricePerMonth('standard'),
           true,
         ),
@@ -289,45 +204,11 @@ class UnlockLimitExceededDialog extends StatelessWidget {
     String price,
     bool isUpgrade,
   ) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(
-              isUpgrade ? Icons.upgrade : Icons.circle_outlined,
-              color: isUpgrade
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodySmall,
-                children: [
-                  TextSpan(
-                    text: '$name: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: '$modes '),
-                  TextSpan(
-                    text: '($price)',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    return PracticePlanRow(
+      name: name,
+      description: modes,
+      price: price,
+      highlighted: isUpgrade,
     );
   }
 }

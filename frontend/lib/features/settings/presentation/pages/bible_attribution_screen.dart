@@ -23,7 +23,6 @@ class BibleAttributionScreen extends StatelessWidget {
   static const List<_Attribution> _attributions = [
     _Attribution(
       language: 'English',
-      shortLanguage: 'English',
       abbreviation: 'KJV',
       name: 'King James (Authorised) Version',
       notice:
@@ -33,7 +32,6 @@ class BibleAttributionScreen extends StatelessWidget {
     ),
     _Attribution(
       language: 'हिन्दी (Hindi)',
-      shortLanguage: 'Hindi',
       abbreviation: 'IRV',
       name: 'Indian Revised Version (IRV) Hindi — 2019',
       notice:
@@ -45,7 +43,6 @@ class BibleAttributionScreen extends StatelessWidget {
     ),
     _Attribution(
       language: 'മലയാളം (Malayalam)',
-      shortLanguage: 'Malayalam',
       abbreviation: 'IRV',
       name: 'Indian Revised Version (IRV) Malayalam — 2025',
       notice:
@@ -126,7 +123,6 @@ class BibleAttributionScreen extends StatelessWidget {
 
 class _Attribution {
   final String language;
-  final String shortLanguage;
   final String abbreviation;
   final String name;
   final String notice;
@@ -134,7 +130,6 @@ class _Attribution {
 
   const _Attribution({
     required this.language,
-    required this.shortLanguage,
     required this.abbreviation,
     required this.name,
     required this.notice,
@@ -170,15 +165,13 @@ class _AttributionRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Semantics(
-                  label: attribution.language,
-                  child: Text(
-                    '${attribution.shortLanguage} · ${attribution.abbreviation}',
-                    style: AppFonts.inter(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w500,
-                      color: palette.text,
-                    ),
+                // Native-script name as well, e.g. "हिन्दी (Hindi) · IRV".
+                Text(
+                  '${attribution.language} · ${attribution.abbreviation}',
+                  style: AppFonts.inter(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                    color: palette.text,
                   ),
                 ),
                 const SizedBox(height: 2),

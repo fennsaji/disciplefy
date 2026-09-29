@@ -4,7 +4,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
-/// Building blocks for dialogs and sheets in the V2 "Scripture hero" style:
+/// Building blocks for dialogs and sheets in the "Scripture hero" style:
 /// a flat card surface (#17171C dark / white light), a soft tinted icon
 /// circle, a gold uppercase eyebrow, a Poppins title, muted Inter body, a
 /// primary pill and a plain text secondary action.
@@ -14,10 +14,10 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 /// Colour of an icon circle: gold for rewards/achievements, indigo otherwise.
 enum PopupTone { gold, indigo }
 
-/// Corner radius shared by V2 popups.
+/// Corner radius shared by popups.
 const double kPopupRadius = 24;
 
-/// Card surface used as the body of a V2 dialog.
+/// Card surface used as the body of a popup dialog.
 ///
 /// Centred, at most [maxWidth] wide, scrolls when taller than the screen
 /// (small phones, large text).
@@ -273,9 +273,7 @@ class PopupPrimaryButton extends StatelessWidget {
             Flexible(
               child: Text(
                 label,
-                maxLines: 2,
                 textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

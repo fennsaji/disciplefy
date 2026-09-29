@@ -67,8 +67,6 @@ class NumberedSectionHeader extends StatelessWidget {
               color: titleColor ?? palette.text,
               height: 1.25,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ),
         ...trailing,

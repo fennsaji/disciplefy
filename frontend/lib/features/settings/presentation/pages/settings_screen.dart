@@ -47,7 +47,7 @@ import 'package:disciplefy_bible_study/features/user_profile/data/services/user_
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
-/// Settings in the "S3 grouped cards" design.
+/// Settings in the grouped-cards design.
 ///
 /// Handles both authenticated and anonymous users. Uses the global
 /// [SettingsBloc] so a theme change does not recreate the screen.
@@ -261,6 +261,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 icon: Icons.emoji_events_outlined,
                 tone: SettingsTone.gold,
                 title: context.tr(TranslationKeys.gamificationTitle),
+                subtitle: context.tr(TranslationKeys.gamificationSubtitle),
                 onTap: () => context.push(AppRoutes.statsDashboard),
               ),
             ),
@@ -271,6 +272,8 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 icon: Icons.edit_note_outlined,
                 tone: SettingsTone.pink,
                 title: context.tr(TranslationKeys.settingsReflectionJournal),
+                subtitle: context
+                    .tr(TranslationKeys.settingsReflectionJournalSubtitle),
                 onTap: () => context.push(AppRoutes.reflectionJournal),
               ),
             ),
@@ -279,6 +282,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             icon: Icons.workspace_premium_outlined,
             tone: SettingsTone.gold,
             title: context.tr(TranslationKeys.settingsMyPlan),
+            subtitle: context.tr(TranslationKeys.settingsMyPlanSubtitle),
             onTap: () => context.push(AppRoutes.myPlan),
           ),
         ],
@@ -336,12 +340,23 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             icon: Icons.notifications_none_outlined,
             tone: SettingsTone.sky,
             title: context.tr(TranslationKeys.settingsNotifications),
+            subtitle: context.tr(TranslationKeys.settingsNotificationSubtitle),
             onTap: () => context.push('/notification-settings'),
           ),
           SettingsRow(
             icon: Icons.download_outlined,
             tone: SettingsTone.green,
             title: context.tr(TranslationKeys.settingsOfflineGuides),
+            // Each downloaded path with its progress, or how to get one.
+            subtitle: _downloadedPaths.isEmpty
+                ? context.tr(TranslationKeys.settingsOfflineEmptySubtitle)
+                : _downloadedPaths
+                    .map((path) =>
+                        '${path.learningPathTitle} · ${context.tr(TranslationKeys.settingsOfflinePathProgress, {
+                              'done': '${path.completedCount}',
+                              'total': '${path.totalCount}',
+                            })}')
+                    .join('\n'),
             value: offlineCount > 0 ? '$offlineCount' : null,
             // Deleting happens on that screen; refresh the count on return.
             onTap: () => context
@@ -420,12 +435,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             SettingsRow(
               icon: Icons.chat_bubble_outline_rounded,
               title: context.tr(TranslationKeys.settingsFeedback),
+              subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
               onTap: () => showFeedbackBottomSheet(context),
             ),
             SettingsRow(
               icon: Icons.receipt_long_outlined,
               tone: SettingsTone.gold,
               title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
+              subtitle: context
+                  .tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
               onTap: () => context.push(AppRoutes.purchaseHistory),
             ),
             SettingsRow(
@@ -438,6 +456,8 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             SettingsRow(
               icon: Icons.replay_rounded,
               title: context.tr(TranslationKeys.settingsReplayWalkthrough),
+              subtitle:
+                  context.tr(TranslationKeys.settingsReplayWalkthroughSubtitle),
               onTap: () => _replayWalkthrough(context),
             ),
           ],
@@ -452,6 +472,8 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               icon: Icons.favorite_outline,
               tone: SettingsTone.pink,
               title: context.tr(TranslationKeys.settingsSupportDeveloper),
+              subtitle:
+                  context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
               // iOS: tips must go through In-App Purchase (guideline 3.1.1);
               // Android/web keep the external Buy Me a Coffee link.
               onTap: () => PlatformUtils.isIOS
@@ -469,16 +491,22 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             SettingsRow(
               icon: Icons.verified_user_outlined,
               title: context.tr(TranslationKeys.settingsPrivacyPolicy),
+              subtitle:
+                  context.tr(TranslationKeys.settingsPrivacyPolicySubtitle),
               onTap: () => _launchExternal(LegalUrls.privacy),
             ),
             SettingsRow(
               icon: Icons.description_outlined,
               title: context.tr(TranslationKeys.settingsTermsOfService),
+              subtitle:
+                  context.tr(TranslationKeys.settingsTermsOfServiceSubtitle),
               onTap: () => _launchExternal(LegalUrls.terms),
             ),
             SettingsRow(
               icon: Icons.receipt_outlined,
               title: context.tr(TranslationKeys.settingsRefundPolicy),
+              subtitle:
+                  context.tr(TranslationKeys.settingsRefundPolicySubtitle),
               onTap: () => _launchExternal('https://www.disciplefy.in/refund'),
             ),
             SettingsRow(
@@ -497,18 +525,23 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             SettingsRow(
               icon: Icons.block,
               title: context.tr(TranslationKeys.settingsBlockedUsers),
+              subtitle:
+                  context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
               onTap: () => context.push(AppRoutes.blockedUsers),
             ),
             if (isAuthenticated) ...[
               SettingsRow(
                 icon: Icons.logout_rounded,
                 title: context.tr(TranslationKeys.settingsSignOut),
+                subtitle: context.tr(TranslationKeys.settingsSignOutOfAccount),
                 destructive: true,
                 onTap: () => _showLogoutDialog(context),
               ),
               SettingsRow(
                 icon: Icons.delete_outline_rounded,
                 title: context.tr(TranslationKeys.settingsDeleteAccount),
+                subtitle:
+                    context.tr(TranslationKeys.settingsDeleteAccountSubtitle),
                 destructive: true,
                 onTap: () => _showDeleteAccountDialog(context),
               ),

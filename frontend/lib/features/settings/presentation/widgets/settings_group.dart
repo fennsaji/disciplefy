@@ -4,13 +4,13 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
-/// Building blocks of the "S3 grouped cards" settings design: a plain top bar,
+/// Building blocks of the grouped-cards settings design: a plain top bar,
 /// tracked section labels, and flat cards of icon rows split by hairlines.
 ///
 /// Every colour comes from [ReaderPalette] or [SettingsTone], so call sites
 /// never branch on brightness. No shadows, gradients or blur.
 
-/// Primary action fill in S3: indigo with white ink in both themes (unlike
+/// Primary action fill in settings: indigo with white ink in both themes (unlike
 /// [ReaderPalette.ctaFill], which is white on dark).
 const Color settingsPrimaryFill = ReaderPalette.selectedFill;
 const Color settingsPrimaryInk = Colors.white;
@@ -87,8 +87,10 @@ class SettingsTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions = const [],
   });
 
+  /// Taller with a subtitle, so a long hi/ml subtitle can wrap to three
+  /// lines instead of being cut.
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => Size.fromHeight(subtitle == null ? 64 : 76);
 
   @override
   Widget build(BuildContext context) {
@@ -113,24 +115,41 @@ class SettingsTopBar extends StatelessWidget implements PreferredSizeWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: palette.text,
+                    // Never cut: alone the title may take two lines; above
+                    // a subtitle it shrinks to fit one line instead.
+                    if (subtitle == null)
+                      Text(
+                        title,
+                        maxLines: 2,
+                        style: AppFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
+                          height: 1.25,
+                        ),
+                      )
+                    else
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          style: AppFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
+                        ),
                       ),
-                    ),
                     if (subtitle != null)
                       Text(
                         subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 3,
                         style: AppFonts.inter(
                           fontSize: 11.5,
                           color: palette.muted,
+                          height: 1.25,
                         ),
                       ),
                   ],
@@ -165,8 +184,6 @@ class SettingsSectionLabel extends StatelessWidget {
               header: true,
               child: Text(
                 text.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
@@ -319,8 +336,6 @@ class SettingsRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                       style: AppFonts.inter(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w500,
@@ -332,8 +347,6 @@ class SettingsRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle!,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
                         style: AppFonts.inter(
                           fontSize: 12,
                           color: palette.muted,
@@ -346,13 +359,12 @@ class SettingsRow extends StatelessWidget {
               ),
               if (value != null && value!.isNotEmpty) ...[
                 const SizedBox(width: 8),
-                // Capped so a long value never squeezes the title away.
+                // Capped so a long value never squeezes the title away; it
+                // wraps rather than being cut.
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 120),
                   child: Text(
                     value!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
                     style: AppFonts.inter(fontSize: 13, color: palette.muted),
                   ),
@@ -467,8 +479,6 @@ class SettingsRadioRow extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                         style: AppFonts.inter(
                           fontSize: 15,
                           fontWeight:
@@ -481,8 +491,6 @@ class SettingsRadioRow extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           subtitle!,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.inter(
                             fontSize: 12.5,
                             color: palette.muted,
@@ -508,12 +516,18 @@ class SettingsRadioRow extends StatelessWidget {
 enum SettingsButtonKind { primary, destructive, neutral }
 
 /// Pill button: indigo primary, red-tinted destructive or raised neutral.
+///
+/// The label is never cut off: it wraps to a second line (and the pill grows)
+/// when the width is tight. Put two of them side by side with
+/// [SettingsButtonRow], which stacks them when their labels don't fit.
 class SettingsButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final SettingsButtonKind kind;
   final IconData? icon;
   final bool loading;
+
+  /// Minimum height; a two-line label makes the pill taller.
   final double height;
 
   const SettingsButton({
@@ -526,6 +540,30 @@ class SettingsButton extends StatelessWidget {
     this.height = 50,
   });
 
+  /// Horizontal padding inside the pill.
+  static const double horizontalPadding = 18;
+
+  static TextStyle labelStyle(Color ink) => AppFonts.inter(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: ink,
+        height: 1.25,
+      );
+
+  /// Width this button needs to show its label on one line.
+  double singleLineWidth(BuildContext context) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: labelStyle(Colors.black)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width =
+        painter.width + horizontalPadding * 2 + (icon != null ? 26 : 0);
+    painter.dispose();
+    return width;
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
@@ -535,8 +573,8 @@ class SettingsButton extends StatelessWidget {
       SettingsButtonKind.destructive => (red.fill, red.foreground),
       SettingsButtonKind.neutral => (palette.raised, palette.text),
     };
-    return SizedBox(
-      height: height,
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: height),
       child: TextButton(
         onPressed: loading ? null : onPressed,
         style: TextButton.styleFrom(
@@ -545,7 +583,9 @@ class SettingsButton extends StatelessWidget {
           disabledBackgroundColor: fill.withValues(alpha: 0.6),
           disabledForegroundColor: ink.withValues(alpha: 0.7),
           shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: 18),
+          minimumSize: Size(0, height),
+          padding: const EdgeInsets.symmetric(
+              horizontal: horizontalPadding, vertical: 8),
         ),
         child: loading
             ? SizedBox(
@@ -566,13 +606,9 @@ class SettingsButton extends StatelessWidget {
                   Flexible(
                     child: Text(
                       label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: ink,
-                      ),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      style: labelStyle(ink),
                     ),
                   ),
                 ],
@@ -580,6 +616,51 @@ class SettingsButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Two or more [SettingsButton]s side by side, or stacked full-width when any
+/// label would not fit its share of the row on one line (long hi/ml copy at
+/// 320pt). When stacked, the last button — the primary action — goes on top.
+class SettingsButtonRow extends StatelessWidget {
+  final List<SettingsButton> buttons;
+  final double spacing;
+
+  const SettingsButtonRow({
+    super.key,
+    required this.buttons,
+    this.spacing = 10,
+  });
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final count = buttons.length;
+          final share = (constraints.maxWidth - spacing * (count - 1)) / count;
+          final fits =
+              buttons.every((b) => b.singleLineWidth(context) <= share);
+          if (fits) {
+            return Row(
+              children: [
+                for (var i = 0; i < count; i++) ...[
+                  if (i > 0) SizedBox(width: spacing),
+                  Expanded(child: buttons[i]),
+                ],
+              ],
+            );
+          }
+          final stacked = buttons.reversed.toList();
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < stacked.length; i++) ...[
+                if (i > 0) SizedBox(height: spacing),
+                stacked[i],
+              ],
+            ],
+          );
+        },
+      );
 }
 
 /// Small card with an icon, a big number and a label under it.
@@ -632,8 +713,6 @@ class SettingsStatTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
             ),
           ],

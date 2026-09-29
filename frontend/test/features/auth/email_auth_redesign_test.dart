@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_stat
 import 'package:disciplefy_bible_study/features/auth/presentation/pages/email_auth_screen.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
 
+import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
 void main() {
@@ -170,5 +171,20 @@ void main() {
     await tester.tap(find.byIcon(Icons.visibility_outlined));
     await tester.pump();
     expect(field().obscureText, isFalse);
+  });
+
+  group('no cut-off text at 320px', () {
+    setUpAll(loadAppFonts);
+    for (final language in AppLanguage.values) {
+      testWidgets(language.code, (tester) async {
+        useSurface(tester, const Size(320, 1400));
+        translations.language = language;
+        await pumpEmailAuth(tester, dark: true);
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+        await toggleMode(tester);
+        expectNoTruncatedText(tester);
+      });
+    }
   });
 }

@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_level.dart';
@@ -23,6 +24,7 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/reposito
 import 'package:disciplefy_bible_study/features/study_generation/presentation/pages/reflection_journal_screen.dart';
 
 import '../../helpers/welcome_test_harness.dart';
+import 'text_fit.dart';
 
 class _MockGamificationBloc
     extends MockBloc<GamificationEvent, GamificationState>
@@ -54,6 +56,15 @@ class _FakeReflections extends Fake implements ReflectionsRepository {
         reflectionsByMode: const {},
         mostCommonLifeAreas: const ['family', 'work'],
       );
+}
+
+class _FakeAuthStateProvider extends Fake
+    with ChangeNotifier
+    implements AuthStateProvider {
+  @override
+  String get profileBasedDisplayName => 'Fenn';
+  @override
+  String? get profilePictureUrl => null;
 }
 
 void main() {
@@ -124,6 +135,7 @@ void main() {
 
     setUp(() {
       bloc = _MockGamificationBloc();
+      sl.registerSingleton<AuthStateProvider>(_FakeAuthStateProvider());
     });
 
     Widget page(bool dark) => app(
@@ -154,6 +166,47 @@ void main() {
       });
     }
 
+    testWidgets('restores profile header, XP %, categories and details',
+        (tester) async {
+      whenListen(bloc, const Stream<GamificationState>.empty(),
+          initialState: loaded('en'));
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(page(false));
+      await tester.pumpAndSettle();
+
+      final level = UserLevel.fromXp(1720, 'en');
+      // Header: name, avatar initial, level badge, total XP, rank.
+      expect(find.text('Fenn'), findsOneWidget);
+      expect(find.text('F'), findsOneWidget);
+      expect(find.text('${level.level}'), findsWidgets);
+      expect(find.text('1,720 XP total'), findsOneWidget);
+      expect(find.text('#12'), findsWidgets);
+      // Level card percentage.
+      expect(find.text('${(level.progressToNextLevel * 100).round()}%'),
+          findsOneWidget);
+
+      final seen = <String>{};
+      void collect() {
+        for (final e in find.byType(Text).evaluate()) {
+          final data = (e.widget as Text).data;
+          if (data != null) seen.add(data);
+        }
+      }
+
+      collect();
+      for (var i = 0; i < 8; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -300));
+        await tester.pumpAndSettle();
+        collect();
+      }
+      // Category headings, descriptions, progress and XP reward.
+      expect(seen, contains('📚 Study Guides'));
+      expect(seen, contains('Do the thing 0 times'));
+      expect(seen, contains('Do the thing 5 times'));
+      // Locked achievements show "current/threshold".
+      expect(seen.where((t) => RegExp(r'^\d+/10$').hasMatch(t)), isNotEmpty);
+    });
+
     for (final language in AppLanguage.values) {
       testWidgets('320x640 ${language.code}: no overflow', (tester) async {
         translations.language = language;
@@ -162,9 +215,11 @@ void main() {
         useSurface(tester, const Size(320, 640));
         await tester.pumpWidget(page(true));
         await tester.pumpAndSettle();
-        for (var i = 0; i < 6; i++) {
+        expectNoTruncatedText(tester);
+        for (var i = 0; i < 10; i++) {
           await tester.drag(find.byType(ListView), const Offset(0, -400));
           await tester.pumpAndSettle();
+          expectNoTruncatedText(tester);
         }
         expect(tester.takeException(), isNull);
       });
@@ -177,9 +232,13 @@ void main() {
       await tester.pumpWidget(page(false));
       await tester.pumpAndSettle();
 
+      await tester.scrollUntilVisible(find.text('Achievement number 5'), 300,
+          scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Achievement number 5'));
       await tester.pumpAndSettle();
-      expect(find.text('Do the thing 5 times'), findsOneWidget);
+      // Row and sheet both show the description now.
+      expect(find.text('Do the thing 5 times'), findsNWidgets(2));
       expect(find.text('Locked'), findsOneWidget);
     });
   });
@@ -241,14 +300,17 @@ void main() {
 
         expect(find.text('Reflection Journal'), findsOneWidget);
         expect(find.text('2 reflections'), findsOneWidget);
+        expect(find.text('YOUR JOURNEY'), findsOneWidget);
+        // Day group headings, and the mode (with its icon) on each card.
         expect(find.text('Today'), findsOneWidget);
         expect(find.text('Yesterday'), findsOneWidget);
+        expect(find.text('📖 Standard Study'), findsOneWidget);
+        expect(find.text('⚡ Quick Read'), findsOneWidget);
         expect(find.text('8 min'), findsOneWidget);
         expect(find.textContaining('Forgiving my brother'), findsOneWidget);
-        expect(find.textContaining('· Standard'), findsOneWidget);
 
         // Expanding shows the actions.
-        await tester.tap(find.text('Today'));
+        await tester.tap(find.text('📖 Standard Study'));
         await tester.pumpAndSettle();
         expect(find.text('View Study'), findsOneWidget);
         expect(find.text('Delete'), findsOneWidget);
@@ -277,8 +339,10 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byType(InkWell).at(0), warnIfMissed: false);
         await tester.pumpAndSettle();
+        expectNoTruncatedText(tester);
         await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
         await tester.pumpAndSettle();
+        expectNoTruncatedText(tester);
         expect(tester.takeException(), isNull);
       });
     }

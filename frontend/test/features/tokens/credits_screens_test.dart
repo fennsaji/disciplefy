@@ -33,7 +33,13 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_e
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/pages/token_management_page.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/pages/token_purchase_page.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/purchase_statistics.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/usage_statistics.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/purchase_statistics_card.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/usage_statistics_card.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
+import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
 class _MockTokenBloc extends MockBloc<TokenEvent, TokenState>
@@ -527,5 +533,260 @@ void main() {
       verifyNever(
           () => subscriptionBloc.add(any(that: isA<CancelSubscription>())));
     });
+  });
+
+  group('restored content', () {
+    testWidgets(
+        'credits: refresh, balance status, plan description, '
+        'who each plan is for', (tester) async {
+      useSurface(tester, const Size(390, 1600));
+      await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Refresh'), findsOneWidget);
+      expect(find.text('Available'), findsOneWidget);
+      expect(
+          find.text('40 daily credits plus ability to purchase more. '
+              'Best for group leaders.'),
+          findsOneWidget);
+      expect(find.text('Best for daily Bible study'), findsOneWidget);
+      expect(find.text('Best for group leaders'), findsOneWidget);
+      expect(find.text('Best for active Bible students'), findsOneWidget);
+      expect(find.text('Best for pastors and teachers'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('credits_refresh')));
+      verify(() => tokenBloc.add(const RefreshTokenStatus()))
+          .called(greaterThan(0));
+    });
+
+    testWidgets('credits: low balance reads "Running Low"', (tester) async {
+      when(() => tokenBloc.state).thenReturn(TokenLoaded(
+          tokenStatus: TokenStatus(
+            availableTokens: 4,
+            purchasedTokens: 0,
+            totalTokens: 4,
+            dailyLimit: 40,
+            totalConsumedToday: 36,
+            userPlan: UserPlan.standard,
+            lastReset: DateTime(2026, 9, 29),
+            nextResetTime: _nextReset,
+            authenticationType: AuthenticationType.authenticated,
+            isPremium: false,
+            unlimitedUsage: false,
+            canPurchaseTokens: true,
+            planDescription: '',
+          ),
+          lastUpdated: DateTime(2026)));
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const TokenManagementPage(), dark: false));
+      await tester.pumpAndSettle();
+      expect(find.text('Running Low'), findsOneWidget);
+    });
+
+    testWidgets('get credits: every rupee pack shows its price per credit',
+        (tester) async {
+      useSurface(tester, const Size(390, 1200));
+      await tester.pumpWidget(app(
+        TokenPurchasePage(
+            tokenStatus: _status(), userEmail: 'a@b.c', userPhone: '1'),
+        dark: true,
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('40.0 paise/credit'), findsOneWidget); // 100 for ₹40
+      expect(find.text('30.0 paise/credit'), findsOneWidget); // 1000 for ₹300
+    });
+
+    testWidgets('plans: each card spells out its action; promo has a label',
+        (tester) async {
+      Hive.init(Directory.systemTemp.createTempSync().path);
+      useSurface(tester, const Size(390, 2400));
+      await tester.pumpWidget(app(
+        PricingPage(
+          platformService: _FakePlatform(),
+          dataSource: _FakeSubscriptionData(),
+        ),
+        dark: true,
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('Get Started'), findsNWidgets(3));
+      expect(find.text('Have a promo code?'), findsOneWidget);
+      expect(find.text('Enter promo code'), findsOneWidget);
+    });
+
+    testWidgets('my plan: cancel explains cycle end; payments show the year',
+        (tester) async {
+      whenListen(
+        subscriptionBloc,
+        Stream<SubscriptionState>.fromIterable([
+          SubscriptionLoaded(
+            activeSubscription: _subscription(),
+            invoices: _invoices(),
+            lastUpdated: DateTime(2026),
+          ),
+        ]),
+        initialState: const SubscriptionInitial(),
+      );
+      useSurface(tester, const Size(390, 1600));
+      await tester.pumpWidget(app(const MyPlanPage(), dark: false));
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel at period end'), findsOneWidget);
+      expect(find.textContaining('Sep 29, 2026'), findsOneWidget);
+    });
+
+    Widget card(Widget child) => MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: Scaffold(body: ListView(children: [child])),
+        );
+
+    testWidgets('purchase summary: heading, average, first and last purchase',
+        (tester) async {
+      await tester.pumpWidget(card(PurchaseStatisticsCard(
+        statistics: PurchaseStatistics(
+          totalPurchases: 2,
+          totalTokens: 150,
+          totalSpent: 62,
+          averagePurchaseAmount: 31,
+          firstPurchaseDate: DateTime(2026, 8, 2),
+          lastPurchaseDate: DateTime(2026, 9, 20),
+        ),
+      )));
+      expect(find.text('PURCHASE SUMMARY'), findsOneWidget);
+      expect(find.text('Average per Credit'), findsOneWidget);
+      expect(find.text('₹0.41'), findsOneWidget);
+      expect(find.text('Aug 2, 2026'), findsOneWidget);
+      expect(find.text('Last Purchase'), findsOneWidget);
+      expect(find.text('Sep 20, 2026'), findsOneWidget);
+    });
+
+    testWidgets('usage summary: daily / purchased split, most used, last use',
+        (tester) async {
+      await tester.pumpWidget(card(UsageStatisticsCard(
+        statistics: UsageStatistics(
+          totalTokens: 100,
+          totalOperations: 10,
+          dailyTokensConsumed: 75,
+          purchasedTokensConsumed: 25,
+          mostUsedFeature: 'study_generate',
+          mostUsedLanguage: 'en',
+          mostUsedMode: 'standard',
+          featureBreakdown: const [],
+          languageBreakdown: const [],
+          studyModeBreakdown: const [],
+          lastUsageDate: DateTime(2026, 9, 28),
+        ),
+      )));
+      expect(find.text('75'), findsOneWidget);
+      expect(find.text('Purchased · 25%'), findsOneWidget);
+      expect(find.text('Feature'), findsOneWidget);
+      expect(find.text('Study Generation'), findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
+      expect(find.text('Study Mode'), findsOneWidget);
+      expect(find.text('Last Usage'), findsOneWidget);
+      expect(find.text('Sep 28, 2026'), findsOneWidget);
+    });
+
+    testWidgets('button pair stacks when a label would not fit at half width',
+        (tester) async {
+      await loadAppFonts();
+      Widget pair(double width, String second) => MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: width,
+                  child: LedgerButtonPair(
+                    labels: ['Get credits', second],
+                    first: LedgerPrimaryButton(
+                        key: const Key('a'),
+                        label: 'Get credits',
+                        icon: Icons.add,
+                        onPressed: () {}),
+                    second: LedgerSecondaryButton(
+                        key: const Key('b'),
+                        label: second,
+                        icon: Icons.add,
+                        onPressed: () {}),
+                  ),
+                ),
+              ),
+            ),
+          );
+      await tester.pumpWidget(pair(358, 'Upgrade'));
+      expect(tester.getTopLeft(find.byKey(const Key('a'))).dy,
+          tester.getTopLeft(find.byKey(const Key('b'))).dy);
+
+      await tester.pumpWidget(pair(288, 'Upgrade to Premium'));
+      expect(tester.getTopLeft(find.byKey(const Key('b'))).dy,
+          greaterThan(tester.getTopLeft(find.byKey(const Key('a'))).dy));
+      expectNoTruncatedText(tester);
+    });
+  });
+
+  // Tall surfaces so every row of the list is laid out; only the width
+  // matters for wrapping.
+  group('no cut-off text at 320px', () {
+    setUpAll(() async {
+      Hive.init(Directory.systemTemp.createTempSync().path);
+      await loadAppFonts();
+    });
+
+    for (final language in AppLanguage.values) {
+      testWidgets('credits ${language.code}', (tester) async {
+        translations.language = language;
+        useSurface(tester, const Size(320, 2000));
+        await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+
+      testWidgets('get credits ${language.code}', (tester) async {
+        translations.language = language;
+        useSurface(tester, const Size(320, 2000));
+        await tester.pumpWidget(app(
+          TokenPurchasePage(
+              tokenStatus: _status(), userEmail: 'a@b.c', userPhone: '1'),
+          dark: true,
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+
+      testWidgets('plans ${language.code}', (tester) async {
+        translations.language = language;
+        useSurface(tester, const Size(320, 3000));
+        await tester.pumpWidget(app(
+          PricingPage(
+            platformService: _FakePlatform(),
+            dataSource: _FakeSubscriptionData(),
+          ),
+          dark: false,
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+
+      testWidgets('my plan ${language.code}', (tester) async {
+        translations.language = language;
+        whenListen(
+          subscriptionBloc,
+          Stream<SubscriptionState>.fromIterable([
+            SubscriptionLoaded(
+              activeSubscription: _subscription(),
+              invoices: _invoices(),
+              lastUpdated: DateTime(2026),
+            ),
+          ]),
+          initialState: const SubscriptionInitial(),
+        );
+        useSurface(tester, const Size(320, 2000));
+        await tester.pumpWidget(app(const MyPlanPage(), dark: true));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+    }
   });
 }

@@ -8,6 +8,7 @@ import 'package:disciplefy_bible_study/core/services/language_preference_service
 import 'package:disciplefy_bible_study/features/onboarding/presentation/pages/language_selection_screen.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/language_selection_card.dart';
 
+import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
 void main() {
@@ -94,5 +95,18 @@ void main() {
 
     expect(languageService.saved, [AppLanguage.english]);
     expect(find.text('stub:/'), findsOneWidget);
+  });
+
+  group('no cut-off text at 320px', () {
+    setUpAll(loadAppFonts);
+    for (final language in AppLanguage.values) {
+      testWidgets(language.code, (tester) async {
+        useSurface(tester, const Size(320, 1400));
+        translations.language = language;
+        await pumpLanguage(tester, dark: true);
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+    }
   });
 }

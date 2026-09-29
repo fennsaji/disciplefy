@@ -7,7 +7,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/reader_palette.dart';
-import '../../../../shared/widgets/v2_popup.dart';
+import '../../../../shared/widgets/popup.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
 /// Daily credit allowance per plan, mirroring `subscription_plans.daily_tokens`

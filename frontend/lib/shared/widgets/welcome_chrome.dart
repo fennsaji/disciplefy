@@ -218,9 +218,7 @@ class WelcomePrimaryButton extends StatelessWidget {
             )
           : Text(
               label,
-              maxLines: 2,
               textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

@@ -50,7 +50,7 @@ class ReadingProgress {
   String toString() => 'ReadingProgress($section/$total @ $updatedAt)';
 }
 
-/// Local, per-guide reading progress (ruling 5 of the Generate V2 redesign).
+/// Local, per-guide reading progress (ruling 5 of the Generate redesign).
 ///
 /// The study guide screen writes it whenever its segmented progress header
 /// advances; the library's "Continue" card reads it to show

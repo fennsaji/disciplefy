@@ -243,11 +243,14 @@ class DepthModeCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      mode.localizedDuration(context),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.inter(fontSize: 11.5, color: secondary),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        mode.localizedDuration(context),
+                        maxLines: 1,
+                        style: AppFonts.inter(fontSize: 11.5, color: secondary),
+                      ),
                     ),
                   ],
                 ),

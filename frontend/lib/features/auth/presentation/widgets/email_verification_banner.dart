@@ -63,68 +63,82 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
         final amber = SettingsToneColors.of(context, SettingsTone.amber);
         return Container(
           margin: const EdgeInsets.only(top: 12),
-          padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-          constraints: const BoxConstraints(minHeight: 52),
+          padding: const EdgeInsets.fromLTRB(14, 12, 8, 6),
           decoration: BoxDecoration(
             color: palette.isDark
                 ? amber.foreground.withValues(alpha: 0.12)
                 : amber.fill,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.mail_outline_rounded,
-                  size: 18, color: amber.foreground),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  context.tr(TranslationKeys.emailVerificationTitle),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.inter(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w500,
-                    color: palette.text,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Icon(Icons.mail_outline_rounded,
+                        size: 18, color: amber.foreground),
                   ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              // Tooltip carries the full "Resend verification email" wording
-              // the short label leaves out.
-              // Flexible: long hi/ml labels wrap instead of overflowing.
-              Flexible(
-                flex: 2,
-                child: Tooltip(
-                  message: context.tr(TranslationKeys.emailVerificationResend),
-                  child: TextButton(
-                    onPressed: _isResending ? null : _onResendVerification,
-                    style: TextButton.styleFrom(
-                      foregroundColor: amber.foreground,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      minimumSize: const Size(48, 40),
-                    ),
-                    child: _isResending
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  amber.foreground),
-                            ),
-                          )
-                        : Text(
-                            context.tr(
-                                TranslationKeys.emailVerificationResendShort),
-                            textAlign: TextAlign.center,
-                            style: AppFonts.inter(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                              color: amber.foreground,
-                            ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.emailVerificationTitle),
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
                           ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context
+                              .tr(TranslationKeys.emailVerificationDescription),
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            color: palette.muted,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+              // Full "Resend verification email" label on its own line, so
+              // long hi/ml copy wraps instead of being cut.
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: _isResending ? null : _onResendVerification,
+                  style: TextButton.styleFrom(
+                    foregroundColor: amber.foreground,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(48, 40),
+                  ),
+                  child: _isResending
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(amber.foreground),
+                          ),
+                        )
+                      : Text(
+                          context.tr(TranslationKeys.emailVerificationResend),
+                          textAlign: TextAlign.end,
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: amber.foreground,
+                          ),
+                        ),
                 ),
               ),
             ],

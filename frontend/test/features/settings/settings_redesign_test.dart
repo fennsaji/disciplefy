@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import 'package:disciplefy_bible_study/core/connectivity/connectivity_bloc.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
@@ -37,6 +38,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_e
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 
 import '../../helpers/welcome_test_harness.dart';
+import 'text_fit.dart';
 
 class _MockSettingsBloc extends MockBloc<SettingsEvent, SettingsState>
     implements SettingsBloc {}
@@ -179,13 +181,19 @@ void main() {
     );
   }
 
-  /// Scrolls the settings list to the end so every row gets laid out.
-  Future<void> scrollToEnd(WidgetTester tester) async {
+  /// Scrolls the settings list to the end so every row gets laid out,
+  /// running [check] on each screenful.
+  Future<void> scrollToEnd(WidgetTester tester,
+      {void Function()? check}) async {
+    check?.call();
     for (var i = 0; i < 12; i++) {
       await tester.drag(find.byType(ListView).first, const Offset(0, -400));
       await tester.pumpAndSettle();
+      check?.call();
     }
   }
+
+  String tr(String key) => translations.getTranslation(key);
 
   group('SettingsScreen', () {
     for (final dark in [true, false]) {
@@ -202,7 +210,9 @@ void main() {
         expect(find.text('gen.check@local.test'), findsOneWidget);
         expect(find.text('F'), findsOneWidget); // avatar initial
         expect(find.text('Verify Your Email'), findsOneWidget);
-        expect(find.text('Resend'), findsOneWidget);
+        expect(find.text(tr(TranslationKeys.emailVerificationDescription)),
+            findsOneWidget);
+        expect(find.text('Resend Verification Email'), findsOneWidget);
         expect(find.text('YOU'), findsOneWidget);
         expect(find.text('PREFERENCES'), findsOneWidget);
         expect(find.text('System'), findsOneWidget); // theme value
@@ -224,10 +234,94 @@ void main() {
           useSurface(tester, const Size(320, 640));
           await tester.pumpWidget(app(const SettingsScreen(), dark: dark));
           await tester.pumpAndSettle();
-          await scrollToEnd(tester);
+          await scrollToEnd(tester,
+              check: () => expectNoTruncatedText(tester,
+                  allowed: const {'gen.check@local.test', 'Fenn'}));
           expect(tester.takeException(), isNull);
         });
       }
+    }
+
+    testWidgets('restores row subtitles and offline guidance', (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const SettingsScreen(), dark: false));
+      await tester.pumpAndSettle();
+
+      final seen = <String>{};
+      void collect() {
+        for (final e in find.byType(Text).evaluate()) {
+          final data = (e.widget as Text).data;
+          if (data != null) seen.add(data);
+        }
+      }
+
+      await scrollToEnd(tester, check: collect);
+      for (final key in [
+        TranslationKeys.gamificationSubtitle,
+        TranslationKeys.settingsReflectionJournalSubtitle,
+        TranslationKeys.settingsMyPlanSubtitle,
+        TranslationKeys.settingsNotificationSubtitle,
+        TranslationKeys.settingsOfflineEmptySubtitle,
+        TranslationKeys.settingsFeedbackSubtitle,
+        TranslationKeys.settingsReportPurchaseIssueSubtitle,
+        TranslationKeys.settingsReplayWalkthroughSubtitle,
+        TranslationKeys.settingsSupportDeveloperSubtitle,
+        TranslationKeys.settingsPrivacyPolicySubtitle,
+        TranslationKeys.settingsTermsOfServiceSubtitle,
+        TranslationKeys.settingsRefundPolicySubtitle,
+        TranslationKeys.settingsBlockedUsersSubtitle,
+        TranslationKeys.settingsSignOutOfAccount,
+        TranslationKeys.settingsDeleteAccountSubtitle,
+      ]) {
+        expect(seen, contains(tr(key)), reason: key);
+      }
+    });
+
+    for (final language in AppLanguage.values) {
+      testWidgets(
+          '320 ${language.code}: sign-out and delete dialogs show full '
+          'button labels', (tester) async {
+        translations.language = language;
+        useSurface(tester, const Size(320, 640));
+        await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+        await tester.pumpAndSettle();
+        await scrollToEnd(tester);
+
+        await tester.tap(find.byIcon(Icons.logout_rounded));
+        await tester.pumpAndSettle();
+        expectFullLabel(tester, tr(TranslationKeys.commonCancel));
+        expect(find.text(tr(TranslationKeys.settingsSignOut)), findsWidgets);
+        expectNoTruncatedText(tester);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text(tr(TranslationKeys.commonCancel)));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+        await tester.pumpAndSettle();
+        expectFullLabel(tester, tr(TranslationKeys.commonCancel));
+        expectFullLabel(
+            tester, tr(TranslationKeys.settingsDeleteAccountConfirm));
+        expectNoTruncatedText(tester);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('320 ${language.code}: support sheet Close/Support in full',
+          (tester) async {
+        translations.language = language;
+        useSurface(tester, const Size(320, 640));
+        await tester.pumpWidget(app(const SettingsScreen(), dark: false));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+            find.byIcon(Icons.favorite_outline), 300,
+            scrollable: find.byType(Scrollable).first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.favorite_outline));
+        await tester.pumpAndSettle();
+        expectFullLabel(tester, tr(TranslationKeys.settingsClose));
+        expectFullLabel(tester, tr(TranslationKeys.settingsSupport));
+        expectNoTruncatedText(tester);
+        expect(tester.takeException(), isNull);
+      });
     }
 
     testWidgets('theme sheet: picking Dark dispatches ThemeModeChanged(dark)',
@@ -241,6 +335,9 @@ void main() {
       expect(find.byType(ThemePreviewOption), findsNWidgets(3));
       expect(find.text("System follows your phone's light or dark setting."),
           findsOneWidget);
+      expect(find.text('Follows your device theme'), findsOneWidget);
+      expect(find.text('Always use light theme'), findsOneWidget);
+      expect(find.text('Always use dark theme'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(ThemePreviewOption, 'Dark'));
       await tester.pumpAndSettle();
@@ -255,9 +352,13 @@ void main() {
       useSurface(tester, const Size(320, 640));
       await tester.pumpWidget(app(const SettingsScreen(), dark: true));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.byIcon(Icons.palette_outlined), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.palette_outlined));
       await tester.pumpAndSettle();
       expect(find.byType(ThemePreviewOption), findsNWidgets(3));
+      expectNoTruncatedText(tester);
       expect(tester.takeException(), isNull);
     });
   });
@@ -303,6 +404,53 @@ void main() {
         expect(find.text('STREAK'), findsOneWidget);
         expect(find.text('Reminders that help you keep going'), findsOneWidget);
         expect(find.text('8:00 PM'), findsOneWidget);
+        // Granted: the permission status is still shown.
+        expect(
+            find.text(
+                tr(TranslationKeys.notificationsSettingsPermissionEnabled)),
+            findsOneWidget);
+      });
+    }
+
+    for (final language in AppLanguage.values) {
+      testWidgets('320 ${language.code}: permission card button in full',
+          (tester) async {
+        translations.language = language;
+        final denied = _MockNotificationBloc();
+        whenListen(
+          denied,
+          const Stream<NotificationState>.empty(),
+          initialState: NotificationPreferencesLoaded(
+            permissionsGranted: false,
+            preferences: NotificationPreferences(
+              userId: 'u1',
+              dailyVerseEnabled: true,
+              recommendedTopicEnabled: true,
+              streakReminderEnabled: false,
+              streakMilestoneEnabled: true,
+              streakLostEnabled: false,
+              streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
+              memoryVerseReminderEnabled: false,
+              memoryVerseOverdueEnabled: true,
+              memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+          ),
+        );
+        await sl.unregister<NotificationBloc>();
+        sl.registerFactory<NotificationBloc>(() => denied);
+        useSurface(tester, const Size(320, 640));
+        await tester
+            .pumpWidget(app(const NotificationSettingsScreen(), dark: false));
+        await tester.pumpAndSettle();
+        expectFullLabel(
+            tester, tr(TranslationKeys.notificationsSettingsEnableButton));
+        expect(
+            find.text(
+                tr(TranslationKeys.notificationsSettingsPermissionDisabled)),
+            findsOneWidget);
+        expectNoTruncatedText(tester);
       });
     }
 
@@ -328,7 +476,7 @@ void main() {
         await tester
             .pumpWidget(app(const NotificationSettingsScreen(), dark: true));
         await tester.pumpAndSettle();
-        await scrollToEnd(tester);
+        await scrollToEnd(tester, check: () => expectNoTruncatedText(tester));
         expect(tester.takeException(), isNull);
       });
     }

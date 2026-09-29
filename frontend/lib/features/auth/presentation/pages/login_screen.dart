@@ -222,9 +222,11 @@ class _LoginScreenState extends State<LoginScreen> {
             builder: (context, constraints) {
               final topInset = MediaQuery.paddingOf(context).top;
               // Gap between the brand row and the title: generous on tall
-              // screens, tight on short ones.
+              // screens, tight on short ones — small enough that the
+              // feature descriptions still leave the sign-in buttons on
+              // screen on a typical phone.
               final titleGap =
-                  (constraints.maxHeight * 0.22).clamp(24.0, 220.0);
+                  (constraints.maxHeight * 0.12).clamp(24.0, 180.0);
               final photoHeight = topInset + 60 + titleGap + 250;
 
               return SingleChildScrollView(
@@ -357,10 +359,13 @@ class _LoginScreenState extends State<LoginScreen> {
           _FeatureChip(
             icon: Icons.auto_awesome_outlined,
             label: context.tr(TranslationKeys.loginChipStudyGuides),
+            detail:
+                context.tr(TranslationKeys.loginFeatureAiStudyGuidesSubtitle),
           ),
           _FeatureChip(
             icon: Icons.wb_sunny_outlined,
             label: context.tr(TranslationKeys.loginChipDailyVerse),
+            detail: context.tr(TranslationKeys.loginFeatureDailyVerseSubtitle),
           ),
         ),
         const SizedBox(height: 8),
@@ -368,10 +373,13 @@ class _LoginScreenState extends State<LoginScreen> {
           _FeatureChip(
             icon: Icons.mic_none_rounded,
             label: context.tr(TranslationKeys.loginChipDiscipler),
+            detail:
+                context.tr(TranslationKeys.loginFeatureVoiceDisciplerSubtitle),
           ),
           _FeatureChip(
             icon: Icons.psychology_outlined,
             label: context.tr(TranslationKeys.loginChipMemoryVerses),
+            detail: context.tr(TranslationKeys.loginFeatureMemoryVerseSubtitle),
           ),
         ),
       ],
@@ -462,9 +470,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Flexible(
             child: Text(
               label,
-              maxLines: 2,
               textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -613,7 +619,14 @@ class _FeatureChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _FeatureChip({required this.icon, required this.label});
+  /// One-line description of the feature under its name.
+  final String detail;
+
+  const _FeatureChip({
+    required this.icon,
+    required this.label,
+    required this.detail,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -630,19 +643,35 @@ class _FeatureChip extends StatelessWidget {
         border: Border.all(color: palette.hairline),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: palette.gold),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 18, color: palette.gold),
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: palette.text,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: palette.muted,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -282,11 +282,11 @@ class _HelpfulOption extends StatelessWidget {
               children: [
                 Icon(icon, size: 18, color: ink),
                 const SizedBox(width: 8),
+                // Wraps (never cut) for long hi/ml answers at 320pt.
                 Flexible(
                   child: Text(
                     label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: AppFonts.inter(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,

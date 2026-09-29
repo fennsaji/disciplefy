@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/shared/widgets/gold_marks.dart';
-import 'package:disciplefy_bible_study/shared/widgets/v2_popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 
 /// Dialog shown when user unlocks an achievement.
 ///
-/// V2 popup: gold "ACHIEVEMENT UNLOCKED" eyebrow, the badge in a soft gold
+/// Popup: gold "ACHIEVEMENT UNLOCKED" eyebrow, the badge in a soft gold
 /// circle, the achievement name, its XP reward and one primary pill.
 class AchievementUnlockDialog extends StatelessWidget {
   final AchievementUnlockResult achievement;

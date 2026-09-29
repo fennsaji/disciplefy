@@ -1,5 +1,41 @@
 /// Translation key constants for type-safe translation access
 class TranslationKeys {
+  // Memory recall practice modes (flip card, progressive reveal,
+  // first letter hints, type it out)
+  static const memoryRecallFlipFront = 'memory_recall_modes.flip_card.front';
+  static const memoryRecallFlipBack = 'memory_recall_modes.flip_card.back';
+  static const memoryRecallFlipReciteHint =
+      'memory_recall_modes.flip_card.recite_hint';
+  static const memoryRecallFlipAction = 'memory_recall_modes.flip_card.flip';
+  static const memoryRecallProgressiveWords =
+      'memory_recall_modes.progressive.words_progress';
+  static const memoryRecallProgressivePhrases =
+      'memory_recall_modes.progressive.phrases_progress';
+  static const memoryRecallProgressiveAuto =
+      'memory_recall_modes.progressive.auto';
+  static const memoryRecallProgressivePause =
+      'memory_recall_modes.progressive.pause';
+  static const memoryRecallProgressiveAll =
+      'memory_recall_modes.progressive.all';
+  static const memoryRecallFirstLetterHint =
+      'memory_recall_modes.first_letter.hint';
+  static const memoryRecallFirstLetterCheck =
+      'memory_recall_modes.first_letter.check';
+  static const memoryRecallFirstLetterHintsUsed =
+      'memory_recall_modes.first_letter.hints_used';
+  static const memoryRecallFirstLetterTileLabel =
+      'memory_recall_modes.first_letter.tile_label';
+  static const memoryRecallTypeWordCount =
+      'memory_recall_modes.type_it_out.word_count';
+  static const memoryRecallTypeAnswer =
+      'memory_recall_modes.type_it_out.answer';
+  static const memoryRecallTypeRomanizedHint =
+      'memory_recall_modes.type_it_out.romanized_hint';
+  static const memoryRecallTypeHinglish =
+      'memory_recall_modes.type_it_out.hinglish';
+  static const memoryRecallTypeManglish =
+      'memory_recall_modes.type_it_out.manglish';
+
   // Study Guide Section Titles
   static const studyGuideSummary = 'study_guide.sections.summary';
   static const studyGuideInterpretation = 'study_guide.sections.interpretation';
@@ -281,7 +317,7 @@ class TranslationKeys {
       'generate_study.generation_failed_message';
   static const generateStudyManageTokens = 'generate_study.manage_tokens';
 
-  // Generate tab (V2 Scripture hero)
+  // Generate tab (Scripture hero)
   static const generateStudyEyebrow = 'generate_study.eyebrow';
   static const generateStudyHeadline = 'generate_study.headline';
   static const generateStudyScriptureTab = 'generate_study.scripture_tab';
@@ -542,7 +578,7 @@ class TranslationKeys {
   static const settingsTextSizeExtraLarge = 'settings.text_size_extra_large';
   static const settingsTextSizePercentage = 'settings.text_size_percentage';
 
-  // Settings - S3 redesign
+  // Settings (grouped cards)
   static const settingsSectionYou = 'settings.section_you';
   static const settingsSectionPreferences = 'settings.section_preferences';
   static const settingsSectionStudy = 'settings.section_study';
@@ -725,7 +761,7 @@ class TranslationKeys {
   static const savedGuidesLoading = 'saved_guides.loading';
   static const savedGuidesYesterday = 'saved_guides.yesterday';
 
-  // V2 popups (achievement, guide complete, upgrade, credits, sign-in)
+  // Popups (achievement, guide complete, upgrade, credits, sign-in)
   static const popupAchievementEyebrow = 'popups.achievement_eyebrow';
   static const popupAchievementCta = 'popups.achievement_cta';
   static const popupGuideCompleteEyebrow = 'popups.guide_complete_eyebrow';
@@ -1290,6 +1326,8 @@ class TranslationKeys {
   static const flipCardReviewNumber = 'memory.flipCard.reviewNumber';
   static const flipCardDays = 'memory.flipCard.days';
   static const flipCardReviews = 'memory.flipCard.reviews';
+  static const flipCardDayOne = 'memory.flipCard.day_one';
+  static const flipCardReviewOne = 'memory.flipCard.review_one';
 
   // Options Menu
   static const optionsMenuSyncTitle = 'memory.optionsMenu.syncTitle';
@@ -1808,11 +1846,21 @@ class TranslationKeys {
   static const practiceRetry = 'practice.retry';
   static const practiceComplete = 'practice.complete';
 
+  // Memory practice action bar (phrase scramble, word bank, fill in the
+  // blanks, audio)
+  static const memoryPracticeHint = 'memory_practice.hint';
+  static const memoryPracticeHintCount = 'memory_practice.hint_count';
+  static const memoryPracticeCheck = 'memory_practice.check';
+  static const memoryPracticeCloseExpected = 'memory_practice.close_expected';
+  static const memoryPracticeExpectedSaid = 'memory_practice.expected_said';
+
   // Word Bank Practice Page
   static const wordBankTapWordsInstruction = 'word_bank.tap_words_instruction';
   static const wordBankLongPressHint = 'word_bank.long_press_hint';
   static const wordBankYourAnswer = 'word_bank.your_answer';
   static const wordBankTryAgain = 'word_bank.try_again';
+  static const wordBankAllPlaced = 'word_bank.all_placed';
+  static const wordBankAllPlacedDone = 'word_bank.all_placed_done';
 
   // Cloze Practice Page
   static const clozePracticeTitle = 'cloze_practice.title';
@@ -1894,6 +1942,85 @@ class TranslationKeys {
   static const typeItOutRomanizedHint = 'type_it_out.romanized_hint';
   static const typeItOutWordCount = 'type_it_out.word_count';
 
+  // Memory verses screens (home, add verse, mode picker, results, stats,
+  // champions)
+  static const memoryScreensDueTodayCount = 'memory_screens.due_today_count';
+  static const memoryScreensTapToSeePlans = 'memory_screens.tap_to_see_plans';
+  static const memoryScreensChooseUnlockedModes =
+      'memory_screens.choose_unlocked_modes';
+  static const memoryScreensTopTen = 'memory_screens.top_ten';
+  static const memoryScreensEaseFactor = 'memory_screens.ease_factor';
+  static const memoryScreensAddVerseSubtitle =
+      'memory_screens.add_verse_subtitle';
+  static const memoryScreensChooseBook = 'memory_screens.choose_book';
+  static const memoryScreensAllCaughtUp = 'memory_screens.all_caught_up';
+  static const memoryScreensVersesCount = 'memory_screens.verses_count';
+  static const memoryScreensHowItWorks = 'memory_screens.how_it_works';
+  static const memoryScreensVerseCountOne = 'memory_screens.verse_count_one';
+  static const memoryScreensMasteredCount = 'memory_screens.mastered_count';
+  static const memoryScreensCountOfTotal = 'memory_screens.count_of_total';
+  static const memoryScreensComingUp = 'memory_screens.coming_up';
+  static const memoryScreensDueToday = 'memory_screens.due_today';
+  static const memoryScreensDueTomorrow = 'memory_screens.due_tomorrow';
+  static const memoryScreensDueInDays = 'memory_screens.due_in_days';
+  static const memoryScreensOverdueDays = 'memory_screens.overdue_days';
+  static const memoryScreensOverdueOneDay = 'memory_screens.overdue_one_day';
+  static const memoryScreensNewVerse = 'memory_screens.new_verse';
+  static const memoryScreensNothingDue = 'memory_screens.nothing_due';
+  static const memoryScreensOfflineTitle = 'memory_screens.offline_title';
+  static const memoryScreensOfflineBody = 'memory_screens.offline_body';
+  static const memoryScreensTileDaily = 'memory_screens.tile_daily';
+  static const memoryScreensTileDailyHint = 'memory_screens.tile_daily_hint';
+  static const memoryScreensTileSuggested = 'memory_screens.tile_suggested';
+  static const memoryScreensTileSuggestedHint =
+      'memory_screens.tile_suggested_hint';
+  static const memoryScreensTileCustom = 'memory_screens.tile_custom';
+  static const memoryScreensTileCustomHint = 'memory_screens.tile_custom_hint';
+  static const memoryScreensModesUnlockedToday =
+      'memory_screens.modes_unlocked_today';
+  static const memoryScreensAllModesUnlocked =
+      'memory_screens.all_modes_unlocked';
+  static const memoryScreensDailyLimitReached =
+      'memory_screens.daily_limit_reached';
+  static const memoryScreensUpgrade = 'memory_screens.upgrade';
+  static const memoryScreensModeLockedUpgrade =
+      'memory_screens.mode_locked_upgrade';
+  static const memoryScreensNextReviewToday =
+      'memory_screens.next_review_today';
+  static const memoryScreensNextReviewTomorrow =
+      'memory_screens.next_review_tomorrow';
+  static const memoryScreensNextReviewInDays =
+      'memory_screens.next_review_in_days';
+  static const memoryScreensMissed = 'memory_screens.missed';
+  static const memoryScreensStatTime = 'memory_screens.stat_time';
+  static const memoryScreensStatHint = 'memory_screens.stat_hint';
+  static const memoryScreensStatHints = 'memory_screens.stat_hints';
+  static const memoryScreensStatAnswerShown =
+      'memory_screens.stat_answer_shown';
+  static const memoryScreensYes = 'memory_screens.yes';
+  static const memoryScreensNo = 'memory_screens.no';
+  static const memoryScreensQualityPerfect = 'memory_screens.quality_perfect';
+  static const memoryScreensQualityGood = 'memory_screens.quality_good';
+  static const memoryScreensQualityOk = 'memory_screens.quality_ok';
+  static const memoryScreensQualityNeedsWork =
+      'memory_screens.quality_needs_work';
+  static const memoryScreensQualityTryAgain =
+      'memory_screens.quality_try_again';
+  static const memoryScreensStatsSubtitle = 'memory_screens.stats_subtitle';
+  static const memoryScreensStatVerses = 'memory_screens.stat_verses';
+  static const memoryScreensStatVerse = 'memory_screens.stat_verse';
+  static const memoryScreensStatReviews = 'memory_screens.stat_reviews';
+  static const memoryScreensStatPerfect = 'memory_screens.stat_perfect';
+  static const memoryScreensStatDays = 'memory_screens.stat_days';
+  static const memoryScreensStreakLine = 'memory_screens.streak_line';
+  static const memoryScreensPracticeModes = 'memory_screens.practice_modes';
+  static const memoryScreensPracticesCount = 'memory_screens.practices_count';
+  static const memoryScreensChampionsSubtitle =
+      'memory_screens.champions_subtitle';
+  static const memoryScreensYourRank = 'memory_screens.your_rank';
+  static const memoryScreensStatMastered = 'memory_screens.stat_mastered';
+  static const memoryScreensStatDayStreak = 'memory_screens.stat_day_streak';
+
   // Memory Verse Home Page
   static const memoryHomeTitle = 'memory_home.title';
   static const memoryHomeFeatureDescription = 'memory_home.feature_description';
@@ -1928,6 +2055,7 @@ class TranslationKeys {
   static const heatMapSubtitle = 'memory.heatMap.subtitle';
   static const heatMapDayStreak = 'memory.heatMap.dayStreak';
   static const heatMapLongestStreak = 'memory.heatMap.longestStreak';
+  static const heatMapLongestStreakOne = 'memory.heatMap.longestStreakOne';
   static const heatMapLess = 'memory.heatMap.less';
   static const heatMapMore = 'memory.heatMap.more';
   static const heatMapMon = 'memory.heatMap.mon';
@@ -2586,7 +2714,6 @@ class TranslationKeys {
   static const tokenDialogViewPlans = 'tokens.dialog.view_plans';
 
   // Practice Mode Info Sheet (shared)
-  static const practiceModeInfoHowItWorks = 'practice_mode_info.how_it_works';
   static const practiceModeInfoGotIt = 'practice_mode_info.got_it';
 
   // Practice Mode Info Steps — Flip Card
@@ -2692,6 +2819,43 @@ class TranslationKeys {
   static const dailyReviewLimitCount = 'daily_review_limit.count';
   static const dailyReviewLimitLimited = 'daily_review_limit.limited';
 
+  // Practice mode daily unlock limit dialog
+  static const practiceUnlockLimitTitle = 'practice_unlock_limit.title';
+  static const practiceUnlockLimitMessageOne =
+      'practice_unlock_limit.message_one';
+  static const practiceUnlockLimitMessageOther =
+      'practice_unlock_limit.message_other';
+  static const practiceUnlockLimitUnlockedToday =
+      'practice_unlock_limit.unlocked_today';
+  static const practiceUnlockLimitUpgradePrompt =
+      'practice_unlock_limit.upgrade_prompt';
+  static const practiceUnlockLimitStillPractice =
+      'practice_unlock_limit.still_practice';
+  static const practiceUnlockLimitModesPerDayOne =
+      'practice_unlock_limit.modes_per_day_one';
+  static const practiceUnlockLimitModesPerDayOther =
+      'practice_unlock_limit.modes_per_day_other';
+  static const practiceUnlockLimitAllModes = 'practice_unlock_limit.all_modes';
+  static const practiceUnlockLimitMaybeLater =
+      'practice_unlock_limit.maybe_later';
+  static const practiceUnlockLimitViewPlans =
+      'practice_unlock_limit.view_plans';
+
+  // Practice mode tier-locked dialog
+  static const practiceTierLockedTitle = 'practice_tier_locked.title';
+  static const practiceTierLockedPlanIncludes =
+      'practice_tier_locked.plan_includes';
+  static const practiceTierLockedUnlockWith =
+      'practice_tier_locked.unlock_with';
+  static const practiceTierLockedAllModesPlus =
+      'practice_tier_locked.all_modes_plus';
+  static const practiceTierLockedAllModesUnlimited =
+      'practice_tier_locked.all_modes_unlimited';
+  static const practiceTierLockedMaybeLater =
+      'practice_tier_locked.maybe_later';
+  static const practiceTierLockedUpgradeNow =
+      'practice_tier_locked.upgrade_now';
+
   // Plan Features — daily reviews
   static const planFeatureUnlimitedDailyReviews =
       'plan_features.unlimited_daily_reviews';
@@ -2733,7 +2897,7 @@ class TranslationKeys {
       'voice_buddy.mic_permission.type_instead';
   static const micPermissionAllow = 'voice_buddy.mic_permission.allow';
 
-  // Credits / plans "K2 quiet ledger" redesign
+  // Credits / plans (quiet ledger)
   static const ledgerCreditsTitle = 'ledger.credits_title';
   static const ledgerPlanName = 'ledger.plan_name';
   static const ledgerDailyCredits = 'ledger.daily_credits';
@@ -2846,4 +3010,7 @@ class TranslationKeys {
   static const ledgerInvoicesEmptyBody = 'ledger.invoices_empty_body';
   static const ledgerInvoicesError = 'ledger.invoices_error';
   static const ledgerInvoiceNumber = 'ledger.invoice_number';
+  static const ledgerPaisePerCredit = 'ledger.paise_per_credit';
+  static const ledgerStandardTagline = 'ledger.standard_tagline';
+  static const ledgerPlusTagline = 'ledger.plus_tagline';
 }

@@ -24,7 +24,7 @@ extension LibraryGuideKindOf on SavedGuideEntity {
 }
 
 /// Library card tints, cycled by grid position (indigo, gold, teal, violet)
-/// as in the V2 library design.
+/// as in the library design.
 const List<Color> kLibraryCardTints = [
   AppColors.brandPrimary,
   AppColors.brandGold,
@@ -32,12 +32,14 @@ const List<Color> kLibraryCardTints = [
   Color(0xFF9B5DE5),
 ];
 
-/// "Mode · date" line of a library card: "Quick Read · Yesterday".
+/// "Mode · date" line of a library card: "Quick Read · Yesterday", or
+/// "Quick Read · 3 min · Yesterday" [withDuration].
 String libraryGuideMeta(BuildContext context, SavedGuideEntity guide,
-    {DateTime? now}) {
+    {DateTime? now, bool withDuration = false}) {
   final mode = studyModeFromString(guide.studyMode);
   return [
     if (mode != null) mode.localizedShortName(context),
+    if (mode != null && withDuration) mode.localizedDuration(context),
     libraryRelativeDate(context, guide.lastAccessedAt, now: now),
   ].join(' · ');
 }
@@ -174,8 +176,6 @@ class GuideListItem extends StatelessWidget {
                         Expanded(
                           child: Text(
                             kindLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: AppFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -201,13 +201,29 @@ class GuideListItem extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // Summary preview (guide content; may ellipsize).
+                    if (guide.contentPreview.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Text(
+                          guide.contentPreview,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            color: palette.muted,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.only(right: 10),
                       child: Text(
-                        libraryGuideMeta(context, guide, now: now),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        libraryGuideMeta(context, guide,
+                            now: now, withDuration: true),
                         style: AppFonts.inter(
                           fontSize: 12.5,
                           color: palette.muted,

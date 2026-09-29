@@ -23,7 +23,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_b
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-/// Subscription Management Page (K2 quiet ledger)
+/// Subscription Management Page (quiet ledger)
 ///
 /// Allows users to view and manage their subscription including:
 /// - Current subscription status
@@ -543,7 +543,7 @@ class _SubscriptionManagementPageState
     }
   }
 
-  /// Confirms the cancellation in the K2 cancel sheet; [immediate] picks the
+  /// Confirms the cancellation in the cancel sheet; [immediate] picks the
   /// option pre-selected from the button the user tapped.
   Future<void> _showCancelDialog(
       Subscription subscription, bool immediate) async {

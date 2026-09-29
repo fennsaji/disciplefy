@@ -27,7 +27,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/payment_success_view.dart';
 
-/// "Get credits" in the K2 quiet-ledger design.
+/// "Get credits" in the quiet-ledger design.
 ///
 /// Pricing comes from the backend; packs are shown as a two-column grid and a
 /// custom amount tab is offered where Razorpay is used. On iOS purchases go
@@ -585,31 +585,29 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: visiblePackages.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 116,
+        // Two packs per row; each row is as tall as its tallest card so
+        // long translations grow the cards instead of clipping them.
+        for (var row = 0; row < visiblePackages.length; row += 2) ...[
+          if (row > 0) const SizedBox(height: 10),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var index = row; index < row + 2; index++) ...[
+                  if (index > row) const SizedBox(width: 10),
+                  Expanded(
+                    child: index < visiblePackages.length
+                        ? ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 116),
+                            child: _packCardAt(visiblePackages, index),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
           ),
-          itemBuilder: (context, index) {
-            final package = visiblePackages[index];
-            final iosProduct =
-                _useAppleIAP ? _iosProducts[package.tokens] : null;
-            return _PackCard(
-              package: package,
-              // iOS: App Store sets the charged price — show its localized
-              // value, not the Razorpay rupee price.
-              price: iosProduct?.price ?? '₹${package.rupees}',
-              showDiscount: iosProduct == null && package.discount > 0,
-              selected: _selectedPackageTokens == package.tokens,
-              onTap: () => _onPackageSelected(package),
-            );
-          },
-        ),
+        ],
         const SizedBox(height: 14),
         Text(
           context.tr(TranslationKeys.ledgerNeverExpire),
@@ -617,6 +615,28 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
         ),
       ],
+    );
+  }
+
+  Widget _packCardAt(List<TokenPackage> visiblePackages, int index) {
+    final package = visiblePackages[index];
+    final iosProduct = _useAppleIAP ? _iosProducts[package.tokens] : null;
+    return _PackCard(
+      package: package,
+      // iOS: App Store sets the charged price — show its localized
+      // value, not the Razorpay rupee price.
+      price: iosProduct?.price ?? '₹${package.rupees}',
+      showDiscount: iosProduct == null && package.discount > 0,
+      // Unit price only for rupee packs; App Store prices are
+      // localized strings.
+      unitPrice: iosProduct == null && package.tokens > 0
+          ? context.tr(TranslationKeys.ledgerPaisePerCredit, {
+              'paise':
+                  (package.rupees * 100 / package.tokens).toStringAsFixed(1),
+            })
+          : null,
+      selected: _selectedPackageTokens == package.tokens,
+      onTap: () => _onPackageSelected(package),
     );
   }
 
@@ -746,7 +766,11 @@ class _SegmentedTabs extends StatelessWidget {
           for (final label in labels)
             Tab(
               height: 40,
-              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              // Shrinks a long (Malayalam) label instead of cutting it.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, maxLines: 1),
+              ),
             ),
         ],
       ),
@@ -760,6 +784,7 @@ class _PackCard extends StatelessWidget {
   final TokenPackage package;
   final String price;
   final bool showDiscount;
+  final String? unitPrice;
   final bool selected;
   final VoidCallback onTap;
 
@@ -767,6 +792,7 @@ class _PackCard extends StatelessWidget {
     required this.package,
     required this.price,
     required this.showDiscount,
+    required this.unitPrice,
     required this.selected,
     required this.onTap,
   });
@@ -799,77 +825,57 @@ class _PackCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final amount = Row(
+                // Amount and the "Popular" tag share a line when they fit
+                // and wrap otherwise, so neither is cut.
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.toll_outlined,
                             size: 18, color: palette.gold),
                         const SizedBox(width: 6),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '${package.tokens}',
-                              style: AppFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: palette.text,
-                                fontFeatures: kLedgerTabular,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                    if (!package.isPopular) return amount;
-                    final pill = _PopularPill(
-                        label: context.tr(TranslationKeys.ledgerPopular));
-                    // Side by side where there is room, stacked on narrow
-                    // phones so neither the amount nor the pill is cut.
-                    if (constraints.maxWidth >= 140) {
-                      return Row(
-                        children: [
-                          Expanded(child: amount),
-                          const SizedBox(width: 6),
-                          pill,
-                        ],
-                      );
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [amount, const SizedBox(height: 4), pill],
-                    );
-                  },
-                ),
-                const Spacer(),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          price,
+                        Text(
+                          '${package.tokens}',
                           style: AppFonts.poppins(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                             color: palette.text,
                             fontFeatures: kLedgerTabular,
                           ),
                         ),
+                      ],
+                    ),
+                    if (package.isPopular)
+                      _PopularPill(
+                          label: context.tr(TranslationKeys.ledgerPopular)),
+                  ],
+                ),
+                const Spacer(),
+                // Price and discount share a line when they fit; the
+                // discount wraps under the price otherwise.
+                Wrap(
+                  spacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    Text(
+                      price,
+                      style: AppFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                        fontFeatures: kLedgerTabular,
                       ),
                     ),
-                    if (showDiscount) ...[
-                      const SizedBox(width: 6),
-                      Flexible(
+                    if (showDiscount)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
                         child: Text(
                           context.tr(TranslationKeys.ledgerPercentOff,
                               {'percent': package.discount}),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -877,9 +883,17 @@ class _PackCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
                   ],
                 ),
+                if (unitPrice != null)
+                  Text(
+                    unitPrice!,
+                    style: AppFonts.inter(
+                      fontSize: 11.5,
+                      color: palette.muted,
+                      fontFeatures: kLedgerTabular,
+                    ),
+                  ),
               ],
             ),
           ),

@@ -523,7 +523,13 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
 
       _helper.logSuccess('Practice session submitted successfully');
 
+      final updatedVerse = await _applyPracticeSchedule(
+        params.memoryVerseId,
+        response,
+      );
+
       return Right(SubmitPracticeSessionResponse(
+        updatedVerse: updatedVerse,
         newAchievements: newAchievements,
         xpEarned: xpEarned,
         dailyGoalProgress: dailyGoalProgress,
@@ -936,6 +942,38 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
         message: 'Failed to fetch suggested verses. Please try again.',
         code: 'GET_SUGGESTED_VERSES_FAILED',
       ));
+    }
+  }
+
+  /// Applies the rescheduled review state the practice endpoint returns
+  /// (`next_review_date`, `interval_days`, ...) to the cached verse so the
+  /// results page can show when the verse is due next.
+  ///
+  /// Returns null when the verse is not cached or the response has no
+  /// schedule; never throws, since the session itself was already saved.
+  Future<MemoryVerseEntity?> _applyPracticeSchedule(
+    String memoryVerseId,
+    Map<String, dynamic> response,
+  ) async {
+    try {
+      final nextReview =
+          DateTime.tryParse(response['next_review_date'] as String? ?? '');
+      if (nextReview == null) return null;
+      final cached = await _helper.getCachedVerseById(memoryVerseId);
+      if (cached == null) return null;
+      final updated = cached.copyWith(
+        nextReviewDate: nextReview,
+        intervalDays: (response['interval_days'] as num?)?.toInt(),
+        easeFactor: (response['ease_factor'] as num?)?.toDouble(),
+        repetitions: (response['repetitions'] as num?)?.toInt(),
+        totalReviews: (response['total_reviews'] as num?)?.toInt(),
+        lastReviewed: DateTime.now(),
+      );
+      await _helper.cacheVerse(updated);
+      return updated.toEntity();
+    } catch (e) {
+      _helper.logError('Could not apply practice schedule to cache: $e');
+      return null;
     }
   }
 }

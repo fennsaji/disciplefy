@@ -39,6 +39,8 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import '../../helpers/text_fit.dart';
+
 class _MockTokenBloc extends MockBloc<TokenEvent, TokenState>
     implements TokenBloc {}
 
@@ -54,13 +56,14 @@ class _MockSavedGuidesBloc extends MockBloc<SavedGuidesEvent, SavedGuidesState>
 
 class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   final String? savedMode;
-  _FakeLanguageService({this.savedMode});
+  final AppLanguage language;
+  _FakeLanguageService({this.savedMode, this.language = AppLanguage.english});
 
   @override
   Stream<AppLanguage> get languageChanges => const Stream.empty();
 
   @override
-  Future<AppLanguage> getSelectedLanguage() async => AppLanguage.english;
+  Future<AppLanguage> getSelectedLanguage() async => language;
 
   @override
   Future<String?> getStudyModePreferenceRaw() async => savedMode;
@@ -122,10 +125,15 @@ class _FakeLocalData extends Fake implements StudyLocalDataSource {
 
 class _FakeNavigator extends Fake implements StudyNavigator {}
 
-Future<void> _register({String? savedMode}) async {
-  SharedPreferences.setMockInitialValues({});
+Future<void> _register({
+  String? savedMode,
+  AppLanguage language = AppLanguage.english,
+}) async {
+  SharedPreferences.setMockInitialValues(
+      {'user_language_preference': language.code});
   final prefs = await SharedPreferences.getInstance();
-  final languageService = _FakeLanguageService(savedMode: savedMode);
+  final languageService =
+      _FakeLanguageService(savedMode: savedMode, language: language);
   final savedGuides = _MockSavedGuidesBloc();
   when(() => savedGuides.state).thenReturn(SavedGuidesInitial());
 
@@ -270,11 +278,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('FORGIVENESS'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('mode_option_lectio')), 120,
+        scrollable: find.byType(Scrollable).last);
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('mode_option_lectio')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('mode_option_lectio')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('mode_selection_start')));
     await tester.pumpAndSettle();
 
     expect(find.text('guide:lectio'), findsOneWidget);
+  });
+
+  testWidgets('Generate has no Talk to Discipler entry (it has its own tab)',
+      (tester) async {
+    await _register();
+    _usePhone(tester, width: 390);
+    await tester.pumpWidget(_app(dark: true));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Talk to Discipler'), findsNothing);
+  });
+
+  group('no cut-off text at 320px', () {
+    setUpAll(loadAppFonts);
+
+    for (final language in AppLanguage.values) {
+      testWidgets(language.code, (tester) async {
+        await _register(language: language);
+        tester.view.physicalSize = const Size(320, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(_app(dark: language != AppLanguage.hindi));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+    }
   });
 }

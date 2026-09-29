@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
@@ -7,8 +8,9 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/usage_statistics.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-/// Usage summary in the K2 ledger: three stat tiles, the share of daily
-/// credits as a gold bar and the most used mode / language.
+/// Usage summary in the ledger: three stat tiles, the share of daily
+/// credits as a gold bar with the daily / purchased split, the most used
+/// feature, language and mode, and the last usage date.
 class UsageStatisticsCard extends StatelessWidget {
   final UsageStatistics statistics;
 
@@ -21,15 +23,9 @@ class UsageStatisticsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final dailyShare = statistics.dailyTokensPercentage.clamp(0.0, 100.0);
-    final mostUsed = [
-      if (statistics.mostUsedMode != null) statistics.mostUsedModeDisplay,
-      if (statistics.mostUsedLanguage != null)
-        statistics.mostUsedLanguageDisplay,
-      if (statistics.mostUsedMode == null &&
-          statistics.mostUsedLanguage == null &&
-          statistics.mostUsedFeature != null)
-        statistics.mostUsedFeatureDisplay,
-    ].join(' · ');
+    final hasMostUsed = statistics.mostUsedFeature != null ||
+        statistics.mostUsedLanguage != null ||
+        statistics.mostUsedMode != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,11 +71,45 @@ class UsageStatisticsCard extends StatelessWidget {
             ),
           ),
         ],
-        if (mostUsed.isNotEmpty) ...[
+        if (statistics.totalTokens > 0) ...[
           const SizedBox(height: 6),
           LedgerRow(
-            label: context.tr(TranslationKeys.ledgerMostUsed),
-            value: mostUsed,
+            label: context.tr('tokens.stats.daily_tokens'),
+            value: '${statistics.dailyTokensConsumed}',
+          ),
+          LedgerRow(
+            label:
+                '${context.tr('tokens.stats.purchased_tokens')} · ${statistics.purchasedTokensPercentage.toStringAsFixed(0)}%',
+            value: '${statistics.purchasedTokensConsumed}',
+          ),
+        ],
+        if (hasMostUsed) ...[
+          LedgerSectionLabel(
+            context.tr(TranslationKeys.ledgerMostUsed),
+            padding: const EdgeInsets.only(top: 14, bottom: 2),
+          ),
+          if (statistics.mostUsedFeature != null)
+            LedgerRow(
+              label: context.tr('tokens.stats.feature'),
+              value: statistics.mostUsedFeatureDisplay,
+            ),
+          if (statistics.mostUsedLanguage != null)
+            LedgerRow(
+              label: context.tr('tokens.stats.language'),
+              value: statistics.mostUsedLanguageDisplay,
+            ),
+          if (statistics.mostUsedMode != null)
+            LedgerRow(
+              label: context.tr('tokens.stats.study_mode'),
+              value: statistics.mostUsedModeDisplay,
+            ),
+        ],
+        if (statistics.lastUsageDate != null) ...[
+          const SizedBox(height: 4),
+          LedgerRow(
+            label: context.tr('tokens.stats.last_usage'),
+            value: DateFormat('MMM d, y')
+                .format(statistics.lastUsageDate!.toLocal()),
           ),
         ],
       ],

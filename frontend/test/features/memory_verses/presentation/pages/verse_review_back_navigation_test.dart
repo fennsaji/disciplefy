@@ -91,12 +91,11 @@ void main() {
     await pumpPage(tester);
     expect(path(), '/memory-verse-review');
 
-    // The page draws its own leading IconButton wired to
+    // The practice top bar draws its own close (x) button wired to
     // _handleBackNavigation, not a Navigator BackButton.
-    final leading = find.descendant(
-        of: find.byType(AppBar), matching: find.byType(IconButton));
-    expect(leading, findsWidgets);
-    await tester.tap(leading.first);
+    final leading = find.widgetWithIcon(IconButton, Icons.close_rounded);
+    expect(leading, findsOneWidget);
+    await tester.tap(leading);
     await tester.pumpAndSettle();
 
     expect(path(), '/memory-verses');

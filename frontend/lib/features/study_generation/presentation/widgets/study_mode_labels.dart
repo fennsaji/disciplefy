@@ -44,7 +44,7 @@ extension StudyModePresentation on StudyMode {
         },
       );
 
-  /// Outline icon used by the V2 depth cards and rows.
+  /// Outline icon used by the depth cards and rows.
   IconData get outlineIcon => switch (this) {
         StudyMode.quick => Icons.bolt_outlined,
         StudyMode.standard => Icons.menu_book_outlined,

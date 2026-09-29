@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Colours of the editorial "reader" surfaces (study guide, its follow-up
-/// chat and end-of-guide blocks) in the V2 Scripture-hero design.
+/// chat and end-of-guide blocks) in the Scripture-hero design.
 ///
 /// One place for the handful of values the design uses beyond [AppColors],
 /// resolved per theme so call sites never branch on brightness themselves.

@@ -27,7 +27,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/tokens/presentation/extensions/duration_extensions.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-/// Credits ("token management") in the K2 quiet-ledger design.
+/// Credits ("token management") in the quiet-ledger design.
 ///
 /// Shows today's balance as the hero, the purchase / upgrade actions, the
 /// current plan, daily credits per plan and links to both histories.
@@ -288,6 +288,14 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       tooltip: context.tr('tokens.management.view_history'),
                       onPressed: () => context.push(AppRoutes.purchaseHistory),
                     ),
+                    LedgerBarAction(
+                      key: const Key('credits_refresh'),
+                      icon: Icons.refresh_rounded,
+                      tooltip: context.tr('tokens.management.refresh_status'),
+                      onPressed: () => context
+                          .read<TokenBloc>()
+                          .add(const RefreshTokenStatus()),
+                    ),
                   ],
                 );
               },
@@ -385,6 +393,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                 tokenStatus.userPlan == UserPlan.standard ||
                 tokenStatus.userPlan == UserPlan.plus);
 
+        final palette = ReaderPalette.of(context);
         return RefreshIndicator(
           onRefresh: () async {
             context.read<TokenBloc>().add(const RefreshTokenStatus());
@@ -420,6 +429,16 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                 tokenStatus: tokenStatus,
                 subscription: subscription,
                 onManage: () => context.push(AppRoutes.myPlan),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.tr(
+                    'tokens.plans.${tokenStatus.userPlan.name}_description'),
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  color: palette.muted,
+                  height: 1.45,
+                ),
               ),
               if (isCancelledButActive) ...[
                 const SizedBox(height: 10),
@@ -502,13 +521,15 @@ class _BalanceHero extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      context
-                          .tr(TranslationKeys.ledgerOfTotal, {'total': limit}),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          AppFonts.inter(fontSize: 11.5, color: palette.muted),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        context.tr(
+                            TranslationKeys.ledgerOfTotal, {'total': limit}),
+                        maxLines: 1,
+                        style: AppFonts.inter(
+                            fontSize: 11.5, color: palette.muted),
+                      ),
                     ),
                   ],
                 ),
@@ -522,6 +543,8 @@ class _BalanceHero extends StatelessWidget {
                 context.tr(TranslationKeys.ledgerDailyCredits),
                 padding: const EdgeInsets.only(bottom: 4),
               ),
+              _BalanceStatus(tokenStatus: tokenStatus),
+              const SizedBox(height: 6),
               Text(
                 unlimited
                     ? context.tr(TranslationKeys.ledgerUnlimitedTitle)
@@ -553,6 +576,47 @@ class _BalanceHero extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "Available", "Getting low" or "Running low" by the share of today's
+/// allowance left; "Unlimited" on Premium.
+class _BalanceStatus extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _BalanceStatus({required this.tokenStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isUnlimited(tokenStatus)) {
+      return LedgerStatusPill(
+        key: const Key('credits_balance_status'),
+        label: context.tr('tokens.balance.unlimited'),
+        tone: LedgerTone.gold,
+      );
+    }
+    final limit = tokenStatus.dailyLimit;
+    final share = limit > 0 ? tokenStatus.totalTokens / limit : 0.0;
+    final String key;
+    final LedgerTone tone;
+    if (share < 0.25) {
+      key = 'tokens.balance.running_low';
+      tone = LedgerTone.error;
+    } else if (share < 0.5) {
+      key = 'tokens.balance.getting_low';
+      tone = LedgerTone.warning;
+    } else {
+      key = 'tokens.balance.available';
+      tone = LedgerTone.success;
+    }
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: LedgerStatusPill(
+        key: const Key('credits_balance_status'),
+        label: context.tr(key),
+        tone: tone,
+      ),
     );
   }
 }
@@ -624,15 +688,10 @@ class _ActionsRow extends StatelessWidget {
             onPressed: onUpgrade,
           );
     if (canBuy && canUpgrade) {
-      return IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: buy),
-            const SizedBox(width: 10),
-            Expanded(child: upgrade),
-          ],
-        ),
+      return LedgerButtonPair(
+        first: buy,
+        second: upgrade,
+        labels: [context.tr(TranslationKeys.ledgerGetCredits), upgradeLabel],
       );
     }
     return SizedBox(width: double.infinity, child: canBuy ? buy : upgrade);
@@ -682,8 +741,6 @@ class _PlanRow extends StatelessWidget {
               Text(
                 context.tr(
                     TranslationKeys.ledgerPlanName, {'plan': plan.displayName}),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w600,
@@ -693,8 +750,6 @@ class _PlanRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 detail,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: AppFonts.inter(
                   fontSize: 12.5,
                   color: palette.muted,
@@ -732,13 +787,30 @@ class _PlanAllowances extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4, bottom: 6),
         ),
         for (final plan in UserPlan.values)
-          LedgerRow(
-            label: plan == current
-                ? '${context.tr('tokens.plans.${plan.name}')} · ${context.tr('tokens.plans.current')}'
-                : context.tr('tokens.plans.${plan.name}'),
-            emphasizeLabel: plan == current,
-            value: context.tr('tokens.plans.${plan.name}_subtitle'),
-            valueColor: plan == current ? palette.gold : palette.muted,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LedgerRow(
+                  label: plan == current
+                      ? '${context.tr('tokens.plans.${plan.name}')} · ${context.tr('tokens.plans.current')}'
+                      : context.tr('tokens.plans.${plan.name}'),
+                  emphasizeLabel: plan == current,
+                  value: context.tr('tokens.plans.${plan.name}_subtitle'),
+                  valueColor: plan == current ? palette.gold : palette.muted,
+                ),
+                // Who the plan is for ("Best for group leaders").
+                Text(
+                  context.tr('tokens.plans.${plan.name}_desc'),
+                  style: AppFonts.inter(
+                    fontSize: 12.5,
+                    color: palette.dim,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
           ),
       ],
     );

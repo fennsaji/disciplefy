@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../shared/widgets/v2_popup.dart';
+import '../../shared/widgets/popup.dart';
 import '../router/app_routes.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import 'study_navigator.dart';

@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/study_topics/data/models/learnin
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
 
 import '../../helpers/welcome_test_harness.dart';
+import 'text_fit.dart';
 
 class _MockFeedbackBloc extends MockBloc<FeedbackEvent, FeedbackState>
     implements FeedbackBloc {}
@@ -173,8 +174,9 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('English · KJV'), findsOneWidget);
-        expect(find.text('Hindi · IRV'), findsOneWidget);
-        expect(find.text('Malayalam · IRV'), findsOneWidget);
+        // Native-script language names are shown again.
+        expect(find.text('हिन्दी (Hindi) · IRV'), findsOneWidget);
+        expect(find.text('മലയാളം (Malayalam) · IRV'), findsOneWidget);
         expect(find.textContaining('PUBLIC DOMAIN'), findsOneWidget);
         expect(find.text('CC BY-SA 4.0'), findsNWidgets(2));
         await tester.scrollUntilVisible(find.text('VachanOnline'), 300,
@@ -240,6 +242,7 @@ void main() {
         useSurface(tester, const Size(320, 640));
         await tester.pumpWidget(sheet(true));
         await tester.pumpAndSettle();
+        expectNoTruncatedText(tester);
         expect(tester.takeException(), isNull);
       });
     }
