@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/shared/widgets/v2_popup.dart';
 
 /// Reusable dialog for features that require a plan upgrade.
 ///
@@ -63,224 +66,88 @@ class UpgradeRequiredDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Dialog(
-      backgroundColor: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 340),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Feature icon with lock overlay
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.primaryColor.withValues(alpha: 0.1),
-                        AppTheme.primaryColor.withValues(alpha: 0.2),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(
-                    featureIcon,
-                    size: 40,
-                    color: context.appBrandAccent.withValues(alpha: 0.5),
-                  ),
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.lock_outline,
-                      size: 20,
-                      color: AppColors.warningDark,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Title
-            Text(
-              context.tr(
-                TranslationKeys.upgradeDialogTitle,
-                {'feature': featureName},
-              ),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-
-            // Description
-            Text(
-              featureDescription,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-
-            // Upgrade benefits box
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.appBrandAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: context.appBrandAccent.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: context.appBrandAccent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.auto_awesome,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              context.tr(
-                                  TranslationKeys.upgradeDialogStandardPlan),
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            Text(
-                              context.tr(TranslationKeys.upgradeDialogPrice),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildBenefitRow(
-                    context,
-                    Icons.mic_outlined,
-                    context.tr(TranslationKeys.upgradeDialogBenefitVoice),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildBenefitRow(
-                    context,
-                    Icons.psychology_outlined,
-                    context.tr(TranslationKeys.upgradeDialogBenefitMemory),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildBenefitRow(
-                    context,
-                    Icons.token_outlined,
-                    context.tr(TranslationKeys.upgradeDialogBenefitTokens),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Action buttons
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ElevatedButton(
-                  onPressed: onUpgrade,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.appInteractive,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    context.tr(TranslationKeys.upgradeDialogUpgradeButton),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: onDismiss,
-                  child: Text(
-                    context.tr(TranslationKeys.upgradeDialogMaybeLater),
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    final palette = ReaderPalette.of(context);
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PopupHeader(
+          icon: PopupIconCircle(icon: featureIcon),
+          eyebrow: context.tr(TranslationKeys.upgradeDialogStandardPlan),
+          title: context.tr(
+            TranslationKeys.upgradeDialogTitle,
+            {'feature': featureName},
+          ),
+          body: featureDescription,
         ),
-      ),
+        const SizedBox(height: 18),
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                // The copy is "Just {price}" — the price was never passed, so
+                // the placeholder used to show literally.
+                context.tr(TranslationKeys.upgradeDialogPrice, {
+                  'price': sl<PricingService>()
+                      .getFormattedPricePerMonth('standard'),
+                }),
+                style: AppFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: palette.gold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildBenefitRow(
+                context,
+                Icons.mic_none_rounded,
+                context.tr(TranslationKeys.upgradeDialogBenefitVoice),
+              ),
+              const SizedBox(height: 8),
+              _buildBenefitRow(
+                context,
+                Icons.psychology_outlined,
+                context.tr(TranslationKeys.upgradeDialogBenefitMemory),
+              ),
+              const SizedBox(height: 8),
+              _buildBenefitRow(
+                context,
+                Icons.toll_outlined,
+                context.tr(TranslationKeys.upgradeDialogBenefitTokens),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          key: const Key('upgrade_required_upgrade'),
+          label: context.tr(TranslationKeys.upgradeDialogUpgradeButton),
+          onPressed: onUpgrade,
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('upgrade_required_later'),
+          label: context.tr(TranslationKeys.upgradeDialogMaybeLater),
+          onPressed: onDismiss,
+        ),
+      ],
     );
   }
 
   Widget _buildBenefitRow(BuildContext context, IconData icon, String text) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: context.appBrandAccent,
-        ),
-        const SizedBox(width: 8),
+        Icon(icon, size: 17, color: palette.accentIcon),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             text,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            style: AppFonts.inter(
+              fontSize: 13.5,
+              color: palette.text,
+              height: 1.35,
             ),
           ),
         ),

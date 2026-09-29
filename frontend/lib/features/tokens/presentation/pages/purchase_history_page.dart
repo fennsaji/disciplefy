@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/error/failures.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../domain/entities/purchase_history.dart';
-import '../bloc/token_bloc.dart';
-import '../bloc/token_event.dart';
-import '../bloc/token_state.dart';
-import '../widgets/purchase_history_card.dart';
-import '../widgets/purchase_statistics_card.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/error/failures.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/purchase_history_card.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/purchase_statistics_card.dart';
 
+/// Credit-pack purchases in the K2 quiet-ledger design: a purchase summary,
+/// then each purchase as a ledger entry, paginated on scroll.
 class PurchaseHistoryPage extends StatefulWidget {
   const PurchaseHistoryPage({super.key});
 
@@ -140,7 +142,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return PopScope(
       canPop: false,
@@ -151,20 +153,16 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
         Navigator.of(context).pop();
       },
       child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: Text(context.tr('tokens.history.title')),
-          backgroundColor: theme.scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+        backgroundColor: palette.page,
+        appBar: LedgerTopBar(
+          title: context.tr(TranslationKeys.ledgerPurchasesTitle),
+          subtitle: context.tr(TranslationKeys.ledgerPurchasesSubtitle),
+          onBack: () => Navigator.of(context).pop(),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _onRefresh,
+            LedgerBarAction(
+              icon: Icons.sync_rounded,
               tooltip: context.tr('tokens.balance.refresh'),
+              onPressed: _onRefresh,
             ),
           ],
         ),
@@ -176,11 +174,12 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
           },
           child: CustomScrollView(
             controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               // Statistics Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                   child: BlocBuilder<TokenBloc, TokenState>(
                     buildWhen: (previous, current) =>
                         current is PurchaseStatisticsLoading ||
@@ -198,64 +197,21 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                           statistics: state.statistics!,
                         );
                       } else if (state is PurchaseStatisticsLoading) {
-                        return const Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: LedgerLoading(),
                         );
                       } else if (state is PurchaseHistoryError) {
-                        return Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  color: theme.colorScheme.error,
-                                  size: 32,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  context.tr('tokens.stats.failed_to_load'),
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  context
-                                      .tr(TranslationKeys.commonErrorTryAgain),
-                                  style: theme.textTheme.bodySmall,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
+                        return Text(
+                          context.tr('tokens.stats.failed_to_load'),
+                          style: AppFonts.inter(
+                              fontSize: 13.5, color: palette.muted),
                         );
                       }
                       return const SizedBox.shrink();
                     },
                   ),
                 ),
-              ),
-
-              // Section Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    context.tr('tokens.history.transaction_details'),
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onBackground,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 16),
               ),
 
               // Purchase History List
@@ -293,107 +249,57 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                   if (state is PurchaseHistoryLoaded) {
                     if (state.isEmpty) {
                       return SliverFillRemaining(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.receipt_long_outlined,
-                                size: 64,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                context.tr('tokens.history.empty'),
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                context.tr('tokens.history.empty_message'),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.5),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
+                        hasScrollBody: false,
+                        child: LedgerMessage(
+                          icon: Icons.receipt_long_outlined,
+                          title: context.tr('tokens.history.empty'),
+                          body: context.tr('tokens.history.empty_message'),
                         ),
                       );
                     }
 
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index < state.purchases.length) {
-                            final purchase = state.purchases[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 4.0,
-                              ),
-                              child: PurchaseHistoryCard(
-                                purchase: purchase,
-                              ),
-                            );
-                          } else if (_isLoadingMore) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          }
-                          return null;
-                        },
-                        childCount:
-                            state.purchases.length + (_isLoadingMore ? 1 : 0),
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index < state.purchases.length) {
+                              final purchase = state.purchases[index];
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  PurchaseHistoryCard(purchase: purchase),
+                                  const LedgerHairline(),
+                                ],
+                              );
+                            } else if (_isLoadingMore) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: LedgerLoading(),
+                              );
+                            }
+                            return null;
+                          },
+                          childCount:
+                              state.purchases.length + (_isLoadingMore ? 1 : 0),
+                        ),
                       ),
                     );
                   } else if (state is PurchaseHistoryLoading) {
                     return const SliverFillRemaining(
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      hasScrollBody: false,
+                      child: LedgerLoading(),
                     );
                   } else if (state is PurchaseHistoryError) {
                     return SliverFillRemaining(
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: theme.colorScheme.error,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                context.tr('tokens.history.failed'),
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: theme.colorScheme.error,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                context.tr(TranslationKeys.commonErrorTryAgain),
-                                style: theme.textTheme.bodyMedium,
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _onRefresh,
-                                child: Text(context.tr('tokens.history.retry')),
-                              ),
-                            ],
-                          ),
-                        ),
+                      hasScrollBody: false,
+                      child: LedgerMessage(
+                        icon: Icons.error_outline_rounded,
+                        isError: true,
+                        title: context.tr('tokens.history.failed'),
+                        body: context.tr(TranslationKeys.commonErrorTryAgain),
+                        actionLabel: context.tr('tokens.history.retry'),
+                        onAction: _onRefresh,
                       ),
                     );
                   }
@@ -406,7 +312,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
 
               // Bottom padding
               const SliverToBoxAdapter(
-                child: SizedBox(height: 16),
+                child: SizedBox(height: 24),
               ),
             ],
           ),

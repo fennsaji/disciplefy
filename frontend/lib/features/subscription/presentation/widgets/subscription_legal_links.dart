@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Functional Terms of Use (EULA) and Privacy Policy links.
 ///
@@ -26,15 +27,17 @@ class SubscriptionLegalLinks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     final linkStyle = AppFonts.inter(
       fontSize: 12,
-      color: colorScheme.primary,
+      color: palette.accentIcon,
       fontWeight: FontWeight.w600,
-    ).copyWith(decoration: TextDecoration.underline);
+      decoration: TextDecoration.underline,
+      decorationColor: palette.accentIcon,
+    );
     final separatorStyle = AppFonts.inter(
       fontSize: 12,
-      color: colorScheme.onSurface.withOpacity(0.5),
+      color: palette.dim,
     );
 
     return Wrap(
@@ -43,17 +46,23 @@ class SubscriptionLegalLinks extends StatelessWidget {
       children: [
         InkWell(
           onTap: () => _launch(termsUrl),
-          child: Text(
-            context.tr(TranslationKeys.subscriptionTermsOfUse),
-            style: linkStyle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              context.tr(TranslationKeys.subscriptionTermsOfUse),
+              style: linkStyle,
+            ),
           ),
         ),
         Text('    •    ', style: separatorStyle),
         InkWell(
           onTap: () => _launch(privacyUrl),
-          child: Text(
-            context.tr(TranslationKeys.subscriptionPrivacyPolicy),
-            style: linkStyle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              context.tr(TranslationKeys.subscriptionPrivacyPolicy),
+              style: linkStyle,
+            ),
           ),
         ),
       ],

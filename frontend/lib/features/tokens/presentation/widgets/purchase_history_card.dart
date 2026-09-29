@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/purchase_history.dart';
-import '../../../purchase_issue/presentation/widgets/report_issue_bottom_sheet.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/purchase_issue/presentation/widgets/report_issue_bottom_sheet.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/purchase_history.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
-class PurchaseHistoryCard extends StatelessWidget {
+/// One credit-pack purchase as a ledger entry: credits and status pill,
+/// date · method and amount, the receipt, and "Report an issue".
+///
+/// Payment and order IDs sit behind a "Details" toggle; every ID copies on
+/// tap.
+class PurchaseHistoryCard extends StatefulWidget {
   final PurchaseHistory purchase;
 
   const PurchaseHistoryCard({
@@ -16,260 +24,100 @@ class PurchaseHistoryCard extends StatelessWidget {
   });
 
   @override
+  State<PurchaseHistoryCard> createState() => _PurchaseHistoryCardState();
+}
+
+class _PurchaseHistoryCardState extends State<PurchaseHistoryCard> {
+  bool _showDetails = false;
+
+  PurchaseHistory get purchase => widget.purchase;
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dateFormatter = DateFormat('MMM dd, yyyy • hh:mm a');
+    final palette = ReaderPalette.of(context);
+    final status = purchase.status.toLowerCase();
+    final isSuccess = status == 'completed' || status == 'success';
+    final date = DateFormat('MMM d · h:mm a').format(purchase.purchasedAt);
+    final amount = purchase.costRupees == purchase.costRupees.roundToDouble()
+        ? '₹${purchase.costRupees.toStringAsFixed(0)}'
+        : '₹${purchase.costRupees.toStringAsFixed(2)}';
 
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row - Tokens and Status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.token,
-                            size: 16,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${purchase.tokenAmount} tokens',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                _StatusChip(status: purchase.status),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Amount and Payment Method
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Amount Paid',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '₹${purchase.costRupees.toStringAsFixed(2)}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Payment Method',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _getPaymentMethodIcon(purchase.paymentMethod),
-                          size: 16,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _getPaymentMethodLabel(purchase.paymentMethod),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Date and Receipt
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Purchase Date',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      dateFormatter.format(purchase.purchasedAt),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                if (purchase.receiptNumber != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Receipt #',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      GestureDetector(
-                        onTap: () => _copyToClipboard(
-                          context,
-                          purchase.receiptNumber!,
-                          'Receipt number copied',
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              purchase.receiptNumber!,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.copy,
-                              size: 14,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.toll_outlined, size: 20, color: palette.gold),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  context.tr(TranslationKeys.ledgerCreditsCount,
+                      {'count': purchase.tokenAmount}),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    fontFeatures: kLedgerTabular,
                   ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Transaction IDs (Expandable)
-            ExpansionTile(
-              title: Text(
-                'Transaction Details',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
                 ),
               ),
-              tilePadding: EdgeInsets.zero,
-              childrenPadding: const EdgeInsets.only(top: 8, bottom: 4),
-              children: [
-                _TransactionDetailRow(
-                  label: 'Payment ID',
-                  value: purchase.paymentId,
-                ),
-                const SizedBox(height: 8),
-                _TransactionDetailRow(
-                  label: 'Order ID',
-                  value: purchase.orderId,
-                ),
-                const SizedBox(height: 16),
-                // Report Issue Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        showReportIssueBottomSheet(context, purchase),
-                    icon: Icon(
-                      Icons.report_problem_outlined,
-                      size: 18,
-                      color: AppColors.warningDark,
-                    ),
-                    label: Text(
-                      'Report Issue',
-                      style: TextStyle(
-                        color: AppColors.warningDark,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: context.appWarning),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              const SizedBox(width: 8),
+              _StatusPill(status: status),
+            ],
+          ),
+          const SizedBox(height: 6),
+          LedgerRow(
+            label: '$date · ${_paymentMethodLabel(purchase.paymentMethod)}',
+            value: amount,
+          ),
+          if (purchase.receiptNumber != null)
+            LedgerRow(
+              label: context.tr(TranslationKeys.ledgerReceipt),
+              valueWidget: _CopyText(
+                text: purchase.receiptNumber!,
+                color: palette.accentIcon,
+              ),
+            ),
+          if (_showDetails) ...[
+            LedgerRow(
+              label: context.tr(TranslationKeys.ledgerPaymentId),
+              valueWidget:
+                  _CopyText(text: purchase.paymentId, color: palette.muted),
+            ),
+            LedgerRow(
+              label: context.tr(TranslationKeys.ledgerOrderId),
+              valueWidget:
+                  _CopyText(text: purchase.orderId, color: palette.muted),
             ),
           ],
-        ),
+          const SizedBox(height: 2),
+          Wrap(
+            spacing: 18,
+            children: [
+              if (!isSuccess || _showDetails)
+                LedgerLink(
+                  label: context.tr(TranslationKeys.ledgerReportIssue),
+                  trailingIcon: Icons.arrow_forward_rounded,
+                  onTap: () => showReportIssueBottomSheet(context, purchase),
+                ),
+              LedgerLink(
+                label: context.tr(_showDetails
+                    ? TranslationKeys.ledgerHideDetails
+                    : TranslationKeys.ledgerDetails),
+                onTap: () => setState(() => _showDetails = !_showDetails),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  IconData _getPaymentMethodIcon(String paymentMethod) {
-    switch (paymentMethod.toLowerCase()) {
-      case 'card':
-      case 'credit_card':
-      case 'debit_card':
-        return Icons.credit_card;
-      case 'upi':
-        return Icons.account_balance_wallet;
-      case 'netbanking':
-        return Icons.account_balance;
-      case 'wallet':
-        return Icons.wallet;
-      case 'razorpay':
-        return Icons.payment;
-      default:
-        return Icons.payment;
-    }
-  }
-
-  String _getPaymentMethodLabel(String paymentMethod) {
+  String _paymentMethodLabel(String paymentMethod) {
     switch (paymentMethod.toLowerCase()) {
       case 'card':
       case 'credit_card':
@@ -288,143 +136,75 @@ class PurchaseHistoryCard extends StatelessWidget {
         return paymentMethod.toUpperCase();
     }
   }
-
-  void _copyToClipboard(BuildContext context, String text, String message) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 }
 
-class _StatusChip extends StatelessWidget {
+class _StatusPill extends StatelessWidget {
   final String status;
 
-  const _StatusChip({required this.status});
+  const _StatusPill({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    Color backgroundColor;
-    Color textColor;
-    IconData icon;
-
-    switch (status.toLowerCase()) {
+    switch (status) {
       case 'completed':
-        backgroundColor = AppColors.success.withOpacity(0.1);
-        textColor = AppColors.successDark;
-        icon = Icons.check_circle;
-        break;
+      case 'success':
+        return LedgerStatusPill(
+          label: context.tr(TranslationKeys.ledgerStatusSuccess),
+          tone: LedgerTone.success,
+        );
       case 'pending':
-        backgroundColor = AppColors.warning.withOpacity(0.1);
-        textColor = AppColors.warningDark;
-        icon = Icons.schedule;
-        break;
+        return LedgerStatusPill(
+          label: context.tr(TranslationKeys.ledgerStatusPending),
+          tone: LedgerTone.warning,
+        );
       case 'failed':
-        backgroundColor = AppColors.error.withOpacity(0.1);
-        textColor = AppColors.errorDark;
-        icon = Icons.error;
-        break;
+        return LedgerStatusPill(
+          label: context.tr(TranslationKeys.ledgerStatusFailed),
+          tone: LedgerTone.error,
+        );
       default:
-        backgroundColor = theme.colorScheme.surface;
-        textColor = theme.colorScheme.onSurface;
-        icon = Icons.info;
+        return LedgerStatusPill(
+          label: status.isEmpty
+              ? status
+              : status[0].toUpperCase() + status.substring(1),
+          tone: LedgerTone.neutral,
+        );
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: textColor,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            status.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
-class _TransactionDetailRow extends StatelessWidget {
-  final String label;
-  final String value;
+/// Tabular text that copies itself to the clipboard on tap.
+class _CopyText extends StatelessWidget {
+  final String text;
+  final Color color;
 
-  const _TransactionDetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _CopyText({required this.text, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: text));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr(TranslationKeys.ledgerCopied)),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
           ),
+        );
+      },
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.end,
+        style: AppFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: color,
+          fontFeatures: kLedgerTabular,
         ),
-        Expanded(
-          flex: 3,
-          child: GestureDetector(
-            onTap: () => _copyToClipboard(context, value, '$label copied'),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.copy,
-                  size: 12,
-                  color: theme.colorScheme.primary,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _copyToClipboard(BuildContext context, String text, String message) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }

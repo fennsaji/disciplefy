@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,13 +11,16 @@ import 'pdf_download_stub.dart'
     if (dart.library.html) 'pdf_download_web.dart'
     if (dart.library.io) 'pdf_download_mobile.dart' as pdf_download;
 
-import '../../domain/entities/subscription.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../bloc/subscription_bloc.dart';
-import '../bloc/subscription_event.dart';
-import '../bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/entities/subscription.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
 /// Page displaying subscription payment history (invoices)
 class SubscriptionPaymentHistoryPage extends StatefulWidget {
@@ -42,23 +46,19 @@ class _SubscriptionPaymentHistoryPageState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Payment History'),
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      backgroundColor: palette.page,
+      appBar: LedgerTopBar(
+        title: context.tr(TranslationKeys.ledgerInvoicesTitle),
+        subtitle: context.tr(TranslationKeys.ledgerInvoicesSubtitle),
+        onBack: () => Navigator.of(context).pop(),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          LedgerBarAction(
+            icon: Icons.refresh_rounded,
+            tooltip: context.tr(TranslationKeys.subscriptionRefresh),
             onPressed: _onRefresh,
-            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -82,113 +82,60 @@ class _SubscriptionPaymentHistoryPageState
               current is SubscriptionError,
           builder: (context, state) {
             if (state is SubscriptionLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const LedgerLoading();
             }
 
             if (state is SubscriptionError) {
-              return _buildErrorView(context, state);
+              return _scrollable(LedgerMessage(
+                icon: Icons.error_outline_rounded,
+                isError: true,
+                title: context.tr(TranslationKeys.ledgerInvoicesError),
+                body: context.tr(TranslationKeys.commonErrorTryAgain),
+                actionLabel: context.tr(TranslationKeys.commonRetry),
+                onAction: _onRefresh,
+              ));
             }
 
             if (state is SubscriptionLoaded) {
               final invoices = state.invoices;
               if (invoices == null || invoices.isEmpty) {
-                return _buildEmptyView(context);
+                return _scrollable(LedgerMessage(
+                  icon: Icons.receipt_long_outlined,
+                  title: context.tr(TranslationKeys.ledgerInvoicesEmpty),
+                  body: context.tr(TranslationKeys.ledgerInvoicesEmptyBody),
+                ));
               }
-              return _buildInvoiceList(context, invoices);
+              return ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                itemCount: invoices.length,
+                itemBuilder: (context, index) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _InvoiceCard(invoice: invoices[index]),
+                    const LedgerHairline(),
+                  ],
+                ),
+              );
             }
 
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const LedgerLoading();
           },
         ),
       ),
     );
   }
 
-  Widget _buildEmptyView(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 64,
-            color: theme.colorScheme.onSurface.withOpacity(0.3),
+  /// Keeps pull-to-refresh working on the empty and error states.
+  Widget _scrollable(Widget child) => LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
           ),
-          const SizedBox(height: 16),
-          Text(
-            'No Payment History',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Your subscription payments will appear here',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorView(BuildContext context, SubscriptionError state) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: theme.colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to Load',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: theme.colorScheme.error,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.commonErrorTryAgain),
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _onRefresh,
-              child: const Text('Retry'),
-            ),
-          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInvoiceList(
-      BuildContext context, List<SubscriptionInvoice> invoices) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: invoices.length,
-      itemBuilder: (context, index) {
-        final invoice = invoices[index];
-        return _InvoiceCard(invoice: invoice);
-      },
-    );
-  }
+      );
 }
 
 /// Card widget displaying a single invoice
@@ -328,246 +275,131 @@ class _InvoiceCardState extends State<_InvoiceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final dateFormat = DateFormat('MMM d, yyyy');
-    final timeFormat = DateFormat('h:mm a');
+    final palette = ReaderPalette.of(context);
+    final invoice = widget.invoice;
+    final paidAt = invoice.paidAt;
 
-    // Status color and icon
-    final statusColor = _getStatusColor(widget.invoice.status, isDark);
-    final statusIcon = _getStatusIcon(widget.invoice.status);
+    final title = invoice.invoiceNumber != null
+        ? '${DateFormat('MMM y').format(invoice.billingPeriodStart)} · ${context.tr(TranslationKeys.ledgerInvoiceNumber, {
+                'number': invoice.invoiceNumber
+              })}'
+        : DateFormat('MMM y').format(invoice.billingPeriodStart);
+    final paidLine = [
+      if (paidAt != null)
+        context.tr(TranslationKeys.ledgerPaidOn, {
+          'date': DateFormat('MMM d · h:mm a').format(paidAt),
+        }),
+      if (invoice.paymentMethod != null)
+        _formatPaymentMethod(invoice.paymentMethod!),
+    ].join(' · ');
+    final period =
+        '${DateFormat('MMM d').format(invoice.billingPeriodStart)} – ${DateFormat('MMM d, y').format(invoice.billingPeriodEnd)}';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row: Amount and Status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '₹${widget.invoice.amountRupees.toStringAsFixed(0)}',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: statusColor.withOpacity(0.3),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const LedgerIconTile(icon: Icons.receipt_long_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.inter(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                        height: 1.3,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, size: 14, color: statusColor),
-                      const SizedBox(width: 4),
+                    const SizedBox(height: 2),
+                    Text(
+                      paidLine.isNotEmpty ? paidLine : period,
+                      style: AppFonts.inter(
+                        fontSize: 12.5,
+                        color: palette.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                    if (paidLine.isNotEmpty)
                       Text(
-                        _formatStatus(widget.invoice.status),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600,
+                        period,
+                        style: AppFonts.inter(
+                          fontSize: 12,
+                          color: palette.dim,
+                          height: 1.35,
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Invoice number with download button
-            if (widget.invoice.invoiceNumber != null) ...[
-              Row(
-                children: [
-                  Icon(
-                    Icons.receipt_outlined,
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Invoice: ${widget.invoice.invoiceNumber}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Download PDF button
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _isDownloading ? null : _downloadInvoicePDF,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_isDownloading)
-                              SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    theme.colorScheme.primary,
-                                  ),
-                                ),
-                              )
-                            else
-                              Icon(
-                                Icons.download,
-                                size: 14,
-                                color: theme.colorScheme.primary,
-                              ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _isDownloading ? 'Generating...' : 'PDF',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 8),
-            ],
-
-            // Billing period
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${dateFormat.format(widget.invoice.billingPeriodStart)} - ${dateFormat.format(widget.invoice.billingPeriodEnd)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Payment date
-            if (widget.invoice.paidAt != null) ...[
-              Row(
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  const SizedBox(width: 8),
                   Text(
-                    'Paid on ${dateFormat.format(widget.invoice.paidAt!)} at ${timeFormat.format(widget.invoice.paidAt!)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    '₹${invoice.amountRupees.toStringAsFixed(0)}',
+                    style: AppFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      fontFeatures: kLedgerTabular,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Payment method
-            if (widget.invoice.paymentMethod != null) ...[
-              Row(
-                children: [
-                  Icon(
-                    _getPaymentMethodIcon(widget.invoice.paymentMethod!),
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatPaymentMethod(widget.invoice.paymentMethod!),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  if (!invoice.isPaid) ...[
+                    const SizedBox(height: 4),
+                    LedgerStatusPill(
+                      label: _formatStatus(invoice.status),
+                      tone: _statusTone(invoice.status),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],
+          ),
+          // Invoice PDF (only numbered invoices can be generated)
+          if (invoice.invoiceNumber != null) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: LedgerLink(
+                key: Key('invoice_download_${invoice.id}'),
+                label: context.tr(_isDownloading
+                    ? TranslationKeys.ledgerGeneratingPdf
+                    : TranslationKeys.ledgerDownloadInvoice),
+                leadingIcon: Icons.download_rounded,
+                onTap: _isDownloading ? null : _downloadInvoicePDF,
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  Color _getStatusColor(String status, bool isDark) {
+  LedgerTone _statusTone(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
-        return isDark ? AppColors.success : AppColors.successDark;
+        return LedgerTone.success;
       case 'pending':
-        return isDark ? AppColors.warning : AppColors.warningDark;
+        return LedgerTone.warning;
       case 'failed':
-        return isDark ? AppColors.error : AppColors.errorDark;
+        return LedgerTone.error;
       default:
-        return isDark ? Colors.grey[300]! : Colors.grey[700]!;
-    }
-  }
-
-  IconData _getStatusIcon(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return Icons.check_circle;
-      case 'pending':
-        return Icons.schedule;
-      case 'failed':
-        return Icons.error;
-      default:
-        return Icons.info;
+        return LedgerTone.neutral;
     }
   }
 
   String _formatStatus(String status) {
     return status[0].toUpperCase() + status.substring(1).toLowerCase();
-  }
-
-  IconData _getPaymentMethodIcon(String method) {
-    switch (method.toLowerCase()) {
-      case 'upi':
-        return Icons.qr_code;
-      case 'card':
-        return Icons.credit_card;
-      case 'netbanking':
-        return Icons.account_balance;
-      case 'wallet':
-        return Icons.account_balance_wallet;
-      default:
-        return Icons.payment;
-    }
   }
 
   String _formatPaymentMethod(String method) {

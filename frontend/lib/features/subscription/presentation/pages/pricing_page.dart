@@ -2,32 +2,33 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/utils/platform_utils.dart';
-import '../../../../core/di/injection_container.dart';
-import '../bloc/subscription_bloc.dart';
-import '../bloc/subscription_state.dart';
-import '../../../../core/i18n/translation_service.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/platform_detection_service.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/logger.dart';
-import '../../data/datasources/subscription_remote_data_source.dart';
-import '../../data/models/subscription_v2_models.dart';
-import '../bloc/subscription_event.dart';
-import '../utils/plan_features_extractor.dart';
-import '../widgets/pricing_card.dart';
-import '../widgets/promo_code_input.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/platform_detection_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/platform_utils.dart';
+import 'package:disciplefy_bible_study/features/subscription/data/datasources/subscription_remote_data_source.dart';
+import 'package:disciplefy_bible_study/features/subscription/data/models/subscription_v2_models.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/utils/plan_features_extractor.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/pricing_card.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/promo_code_input.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 
 /// Public Pricing Page
 ///
@@ -248,29 +249,21 @@ class _PricingPageState extends State<PricingPage> {
   @override
   Widget build(BuildContext context) {
     final isWideScreen = MediaQuery.of(context).size.width > 800;
+    final palette = ReaderPalette.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.tr(TranslationKeys.pricingTitle),
-          style: AppFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: context.appBrandAccent,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(AppRoutes.home);
-            }
-          },
-        ),
+      backgroundColor: palette.page,
+      appBar: LedgerTopBar(
+        title: context.tr(TranslationKeys.ledgerPlansTitle),
+        subtitle: context.tr(TranslationKeys.ledgerPlansSubtitle),
+        useCloseIcon: true,
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(AppRoutes.home);
+          }
+        },
       ),
       body: _buildBody(context, isWideScreen),
     );
@@ -314,7 +307,7 @@ class _PricingPageState extends State<PricingPage> {
     // "_elements.contains(element)" assertion in _InactiveElements.remove.
     // Keeping the scroll view constant eliminates the conflict entirely.
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: _isLoading
           ? _buildLoadingContent(context)
           : _errorMessage != null
@@ -326,21 +319,8 @@ class _PricingPageState extends State<PricingPage> {
   Widget _buildLoadingContent(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.6,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              'Loading pricing plans...',
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
+      child: LedgerLoading(
+        label: context.tr(TranslationKeys.ledgerLoadingPlans),
       ),
     );
   }
@@ -348,48 +328,12 @@ class _PricingPageState extends State<PricingPage> {
   Widget _buildErrorContent(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.6,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: context.appError,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _fetchPlans,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                ),
-                child: Text(
-                  'Retry',
-                  style: AppFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: LedgerMessage(
+        icon: Icons.cloud_off_rounded,
+        isError: true,
+        title: context.tr(TranslationKeys.ledgerPlansError),
+        actionLabel: context.tr(TranslationKeys.commonRetry),
+        onAction: _fetchPlans,
       ),
     );
   }
@@ -399,34 +343,16 @@ class _PricingPageState extends State<PricingPage> {
         sl<SystemConfigService>().isNewSubscriptionsEnabled;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header
-        _buildHeader(context),
-        const SizedBox(height: 32),
-
         // Kill switch banner: new subscriptions temporarily disabled
         if (!newSubscriptionsEnabled) ...[
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.warning.withOpacity(0.4)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: context.appWarning),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'New subscriptions are temporarily unavailable. Please check back later.',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
+          LedgerNotice(
+            icon: Icons.info_outline_rounded,
+            tone: LedgerTone.warning,
+            text: context.tr(TranslationKeys.ledgerSubscriptionsPaused),
           ),
+          const SizedBox(height: 12),
         ],
 
         // Promo codes are hidden on iOS: App Store guideline 3.1.1
@@ -438,10 +364,10 @@ class _PricingPageState extends State<PricingPage> {
             onValidate: _validatePromoCode,
             initialPromo: _appliedPromo,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
         ],
 
-        // Pricing Cards — disable button for the current active plan.
+        // Pricing Cards — disable the action for the current active plan.
         // _activePlanCode is populated from SubscriptionBloc via a stream
         // subscription in initState (see _initSubscriptionListener). Using a
         // stream subscription rather than BlocBuilder keeps the widget tree
@@ -450,7 +376,7 @@ class _PricingPageState extends State<PricingPage> {
             ? _buildWideLayoutCards(context, activePlanCode: _activePlanCode)
             : _buildMobileLayoutCards(context, activePlanCode: _activePlanCode),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
 
         // Footer info
         _buildFooterInfo(context),
@@ -458,37 +384,11 @@ class _PricingPageState extends State<PricingPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Column(
-      children: [
-        Icon(
-          Icons.workspace_premium_rounded,
-          size: 56,
-          color: context.appBrandAccent,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          context.tr(TranslationKeys.pricingSubtitle),
-          style: AppFonts.inter(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
   Widget _buildWideLayoutCards(BuildContext context, {String? activePlanCode}) {
     if (_plans.isEmpty) {
-      return Center(
-        child: Text(
-          'No pricing plans available',
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
+      return LedgerMessage(
+        icon: Icons.inventory_2_outlined,
+        title: context.tr(TranslationKeys.ledgerNoPlans),
       );
     }
 
@@ -516,14 +416,9 @@ class _PricingPageState extends State<PricingPage> {
   Widget _buildMobileLayoutCards(BuildContext context,
       {String? activePlanCode}) {
     if (_plans.isEmpty) {
-      return Center(
-        child: Text(
-          'No pricing plans available',
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
+      return LedgerMessage(
+        icon: Icons.inventory_2_outlined,
+        title: context.tr(TranslationKeys.ledgerNoPlans),
       );
     }
 
@@ -532,7 +427,7 @@ class _PricingPageState extends State<PricingPage> {
         final isLast = plan == _plans.last;
         return Padding(
           key: ValueKey('mobile_${plan.planCode}'),
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
           child: KeyedSubtree(
             key: _planCardKey(plan.planCode),
             child: _buildDynamicPlanCard(context, plan,
@@ -572,7 +467,7 @@ class _PricingPageState extends State<PricingPage> {
         isHighlighted = true;
         break;
       case 2: // Plus
-        badge = 'Recommended';
+        badge = context.tr(TranslationKeys.ledgerRecommended);
         badgeColor = AppColors.tierPlus; // Violet — matches plus-upgrade page
         isHighlighted = true;
         break;
@@ -609,14 +504,17 @@ class _PricingPageState extends State<PricingPage> {
       planName: plan.planName,
       price: price,
       originalPrice: originalPrice,
-      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
+      priceSubtext: context.tr(TranslationKeys.ledgerPerMo),
       tokenInfo: tokenInfo,
       promotionalText: promotionalText,
       badge: badge,
       badgeColor: badgeColor,
       features: features,
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: (isCurrentPlan || !newSubscriptionsEnabled)
+      // Free has nothing to buy, so its card isn't tappable.
+      onPressed: (isCurrentPlan ||
+              !newSubscriptionsEnabled ||
+              normalizedPlan == 'free')
           ? null
           : isPremium
               ? () => _handlePremiumPlanPress(context)
@@ -626,6 +524,7 @@ class _PricingPageState extends State<PricingPage> {
       isMobile: isMobile,
       accentColor: plan.tier == 2 ? AppColors.tierPlus : null,
       isCurrentPlan: isCurrentPlan,
+      currentPlanLabel: context.tr(TranslationKeys.ledgerYourCurrentPlan),
     );
   }
 
@@ -922,41 +821,15 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   Widget _buildFooterInfo(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_outline_rounded,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                context.tr(TranslationKeys.pricingSecurePayments),
-                style: AppFonts.inter(
-                  fontSize: 12,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          context.tr(TranslationKeys.pricingPricesInInr),
-          style: AppFonts.inter(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          ),
-        ),
-      ],
+    final palette = ReaderPalette.of(context);
+    return Text(
+      '${context.tr(TranslationKeys.pricingSecurePayments)} · ${context.tr(TranslationKeys.pricingPricesInInr)}',
+      textAlign: TextAlign.center,
+      style: AppFonts.inter(
+        fontSize: 12,
+        color: palette.muted,
+        height: 1.45,
+      ),
     );
   }
 }
