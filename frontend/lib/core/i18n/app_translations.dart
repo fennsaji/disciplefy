@@ -518,6 +518,7 @@ class AppTranslations {
       'description':
           'Please verify your email address to ensure account security and enable password recovery.',
       'resend': 'Resend Verification Email',
+      'resend_short': 'Resend',
       'sent': 'Verification email sent! Check your inbox.',
     },
     'onboarding': {
@@ -685,6 +686,35 @@ class AppTranslations {
       'text_size_large': 'Large',
       'text_size_extra_large': 'Extra Large',
       'text_size_percentage': '{percent}% of default size',
+      'section_you': 'You',
+      'section_preferences': 'Preferences',
+      'section_study': 'Study',
+      'offline_guides': 'Offline guides',
+      'offline_guides_subtitle': 'Read without internet',
+      'offline_guides_count': '{count} guides',
+      'offline_clear_all': 'Clear all',
+      'offline_remove': 'Remove',
+      'offline_empty_title': 'No offline guides downloaded yet',
+      'offline_empty_subtitle': 'Download a learning path to access it offline',
+      'offline_path_empty': 'No completed guides in this path',
+      'offline_path_progress': '{done} of {total} guides downloaded',
+      'offline_clear_all_title': 'Remove all offline guides?',
+      'offline_clear_all_message':
+          'You can download them again from their learning paths.',
+      'theme_system': 'System',
+      'theme_light': 'Light',
+      'theme_dark': 'Dark',
+      'theme_system_caption':
+          'System follows your phone\'s light or dark setting.',
+      'language_default': 'Default',
+      'delete_account_lose_title': 'You will permanently lose',
+      'delete_account_lose_guides': 'Your study guides and notes',
+      'delete_account_lose_verses': 'Your memory verses and streaks',
+      'delete_account_lose_progress': 'Your XP, level and achievements',
+      'delete_account_lose_plan':
+          'Any active plan (cancel your subscription first)',
+      'bible_attribution': 'Bible copyright & attribution',
+      'bible_attribution_subtitle': 'Scripture provided by API.Bible',
     },
     'questionnaire': {
       'your_journey': 'Your Journey',
@@ -805,6 +835,9 @@ class AppTranslations {
       'send_feedback': 'Send Feedback',
       'subtitle': 'Help us improve Disciplefy by sharing your thoughts',
       'is_helpful': 'Is the app helpful?',
+      'yes': 'Yes',
+      'not_yet': 'Not yet',
+      'topic': 'Topic',
       'category': {
         'general': 'General',
         'bug_report': 'Bug Report',
@@ -1145,6 +1178,9 @@ class AppTranslations {
             'Receive encouragement to start a new streak after a break',
         'set_reminder_time': 'Set Reminder Time',
         'reminder_time_label': 'Reminder Time',
+        'subtitle': 'Reminders that help you keep going',
+        'daily_section_title': 'Daily',
+        'streak_section_title': 'Streak',
         'memory_verse_section_title': 'Memory Verse',
         'memory_verse_reminder_title': 'Daily Review Reminder',
         'memory_verse_reminder_description':
@@ -1860,6 +1896,12 @@ class AppTranslations {
       'keep_studying': 'Keep studying to unlock achievements!',
       'error_loading': 'Error loading progress',
       'tap_to_retry': 'Tap to retry',
+      'xp_to_level': '{xp} XP to {level}',
+      'achievements_count': 'Achievements · {unlocked} of {total}',
+      'day_streak_label': 'day streak',
+      'studies_label': 'studies',
+      'verses_label': 'verses',
+      'progress_count': '{current} of {total}',
     },
     'memory_nav': {
       'my_collections': 'My Collections',
@@ -2230,6 +2272,10 @@ class AppTranslations {
       'verses_saved': '{count} verses saved',
       'yes': 'Yes',
       'no': 'No',
+      'count': '{count} reflections',
+      'today': 'Today',
+      'yesterday': 'Yesterday',
+      'minutes': '{minutes} min',
     },
     'reading_complete': {
       'title': 'Reading Complete!',
@@ -2843,6 +2889,7 @@ class AppTranslations {
       'description':
           'खाता सुरक्षा और पासवर्ड रिकवरी सक्षम करने के लिए कृपया अपना ईमेल पता सत्यापित करें।',
       'resend': 'सत्यापन ईमेल फिर से भेजें',
+      'resend_short': 'फिर भेजें',
       'sent': 'सत्यापन ईमेल भेजा गया! अपना इनबॉक्स देखें।',
     },
     'onboarding': {
@@ -3014,6 +3061,37 @@ class AppTranslations {
       'text_size_large': 'बड़ा',
       'text_size_extra_large': 'बहुत बड़ा',
       'text_size_percentage': 'डिफॉल्ट का {percent}%',
+      'section_you': 'आप',
+      'section_preferences': 'प्राथमिकताएँ',
+      'section_study': 'अध्ययन',
+      'offline_guides': 'ऑफ़लाइन गाइड',
+      'offline_guides_subtitle': 'बिना इंटरनेट के पढ़ें',
+      'offline_guides_count': '{count} गाइड',
+      'offline_clear_all': 'सब हटाएँ',
+      'offline_remove': 'हटाएँ',
+      'offline_empty_title': 'अभी तक कोई ऑफ़लाइन गाइड डाउनलोड नहीं हुई',
+      'offline_empty_subtitle':
+          'ऑफ़लाइन पढ़ने के लिए कोई लर्निंग पाथ डाउनलोड करें',
+      'offline_path_empty': 'इस पाथ में कोई पूरी गाइड नहीं है',
+      'offline_path_progress': '{total} में से {done} गाइड डाउनलोड हुईं',
+      'offline_clear_all_title': 'सभी ऑफ़लाइन गाइड हटाएँ?',
+      'offline_clear_all_message':
+          'आप इन्हें उनके लर्निंग पाथ से फिर डाउनलोड कर सकते हैं।',
+      'theme_system': 'सिस्टम',
+      'theme_light': 'लाइट',
+      'theme_dark': 'डार्क',
+      'theme_system_caption':
+          'सिस्टम आपके फ़ोन की लाइट या डार्क सेटिंग का पालन करता है।',
+      'language_default': 'डिफ़ॉल्ट',
+      'delete_account_lose_title': 'आप हमेशा के लिए खो देंगे',
+      'delete_account_lose_guides': 'आपकी अध्ययन गाइड और नोट्स',
+      'delete_account_lose_verses': 'आपके स्मरण पद और स्ट्रीक',
+      'delete_account_lose_progress': 'आपके XP, लेवल और उपलब्धियाँ',
+      'delete_account_lose_plan':
+          'कोई भी सक्रिय प्लान (पहले अपनी सदस्यता रद्द करें)',
+      'bible_attribution': 'बाइबल कॉपीराइट और श्रेय',
+      'bible_attribution_subtitle':
+          'पवित्रशास्त्र API.Bible द्वारा प्रदान किया गया',
     },
     'questionnaire': {
       'your_journey': 'आपकी यात्रा',
@@ -3143,6 +3221,9 @@ class AppTranslations {
       'subtitle':
           'अपने विचार साझा करके Disciplefy को बेहतर बनाने में हमारी मदद करें',
       'is_helpful': 'क्या ऐप मददगार है?',
+      'yes': 'हाँ',
+      'not_yet': 'अभी नहीं',
+      'topic': 'विषय',
       'category': {
         'general': 'सामान्य',
         'bug_report': 'बग रिपोर्ट',
@@ -3483,6 +3564,9 @@ class AppTranslations {
             'ब्रेक के बाद नई स्ट्रीक शुरू करने के लिए प्रोत्साहन प्राप्त करें',
         'set_reminder_time': 'रिमाइंडर समय सेट करें',
         'reminder_time_label': 'रिमाइंडर समय',
+        'subtitle': 'रिमाइंडर जो आपको आगे बढ़ते रहने में मदद करते हैं',
+        'daily_section_title': 'दैनिक',
+        'streak_section_title': 'स्ट्रीक',
         'memory_verse_section_title': 'स्मृति वचन',
         'memory_verse_reminder_title': 'दैनिक समीक्षा रिमाइंडर',
         'memory_verse_reminder_description':
@@ -4193,6 +4277,12 @@ class AppTranslations {
       'keep_studying': 'उपलब्धियाँ अनलॉक करने के लिए अध्ययन जारी रखें!',
       'error_loading': 'प्रगति लोड करने में त्रुटि',
       'tap_to_retry': 'पुनः प्रयास करने के लिए टैप करें',
+      'xp_to_level': '{level} तक {xp} XP',
+      'achievements_count': 'उपलब्धियाँ · {total} में से {unlocked}',
+      'day_streak_label': 'दिन की स्ट्रीक',
+      'studies_label': 'अध्ययन',
+      'verses_label': 'पद',
+      'progress_count': '{total} में से {current}',
     },
     'memory_nav': {
       'my_collections': 'मेरे संग्रह',
@@ -4569,6 +4659,10 @@ class AppTranslations {
       'verses_saved': '{count} आयतें सहेजी गईं',
       'yes': 'हां',
       'no': 'नहीं',
+      'count': '{count} मनन',
+      'today': 'आज',
+      'yesterday': 'कल',
+      'minutes': '{minutes} मिनट',
     },
     'reading_complete': {
       'title': 'पढ़ाई पूरी हो गई!',
@@ -5191,6 +5285,7 @@ class AppTranslations {
       'description':
           'അക്കൗണ്ട് സുരക്ഷയും പാസ്‌വേഡ് റിക്കവറിയും സാധ്യമാക്കാൻ ദയവായി നിങ്ങളുടെ ഇമെയിൽ വിലാസം സ്ഥിരീകരിക്കുക.',
       'resend': 'സ്ഥിരീകരണ ഇമെയിൽ വീണ്ടും അയയ്ക്കുക',
+      'resend_short': 'വീണ്ടും അയയ്ക്കുക',
       'sent': 'സ്ഥിരീകരണ ഇമെയിൽ അയച്ചു! നിങ്ങളുടെ ഇൻബോക്സ് പരിശോധിക്കുക.',
     },
     'onboarding': {
@@ -5367,6 +5462,37 @@ class AppTranslations {
       'text_size_large': 'വലുത്',
       'text_size_extra_large': 'വളരെ വലുത്',
       'text_size_percentage': 'ഡിഫോൾട്ടിന്റെ {percent}%',
+      'section_you': 'നിങ്ങൾ',
+      'section_preferences': 'മുൻഗണനകൾ',
+      'section_study': 'പഠനം',
+      'offline_guides': 'ഓഫ്‌ലൈൻ ഗൈഡുകൾ',
+      'offline_guides_subtitle': 'ഇന്റർനെറ്റ് ഇല്ലാതെ വായിക്കുക',
+      'offline_guides_count': '{count} ഗൈഡുകൾ',
+      'offline_clear_all': 'എല്ലാം മായ്ക്കുക',
+      'offline_remove': 'നീക്കുക',
+      'offline_empty_title': 'ഇതുവരെ ഓഫ്‌ലൈൻ ഗൈഡുകൾ ഡൗൺലോഡ് ചെയ്തിട്ടില്ല',
+      'offline_empty_subtitle':
+          'ഓഫ്‌ലൈനായി വായിക്കാൻ ഒരു ലേണിംഗ് പാത്ത് ഡൗൺലോഡ് ചെയ്യുക',
+      'offline_path_empty': 'ഈ പാത്തിൽ പൂർത്തിയായ ഗൈഡുകളില്ല',
+      'offline_path_progress': '{total}-ൽ {done} ഗൈഡുകൾ ഡൗൺലോഡ് ചെയ്തു',
+      'offline_clear_all_title': 'എല്ലാ ഓഫ്‌ലൈൻ ഗൈഡുകളും നീക്കണോ?',
+      'offline_clear_all_message':
+          'അവയുടെ ലേണിംഗ് പാത്തുകളിൽ നിന്ന് വീണ്ടും ഡൗൺലോഡ് ചെയ്യാം.',
+      'theme_system': 'സിസ്റ്റം',
+      'theme_light': 'ലൈറ്റ്',
+      'theme_dark': 'ഡാർക്ക്',
+      'theme_system_caption':
+          'സിസ്റ്റം നിങ്ങളുടെ ഫോണിന്റെ ലൈറ്റ് അല്ലെങ്കിൽ ഡാർക്ക് ക്രമീകരണം പിന്തുടരുന്നു.',
+      'language_default': 'ഡിഫോൾട്ട്',
+      'delete_account_lose_title': 'നിങ്ങൾക്ക് സ്ഥിരമായി നഷ്ടപ്പെടും',
+      'delete_account_lose_guides': 'നിങ്ങളുടെ പഠന ഗൈഡുകളും കുറിപ്പുകളും',
+      'delete_account_lose_verses':
+          'നിങ്ങളുടെ മനഃപാഠ വാക്യങ്ങളും സ്ട്രീക്കുകളും',
+      'delete_account_lose_progress': 'നിങ്ങളുടെ XP, ലെവൽ, നേട്ടങ്ങൾ',
+      'delete_account_lose_plan':
+          'സജീവമായ ഏതു പ്ലാനും (ആദ്യം സബ്സ്ക്രിപ്ഷൻ റദ്ദാക്കുക)',
+      'bible_attribution': 'ബൈബിൾ പകർപ്പവകാശവും കടപ്പാടും',
+      'bible_attribution_subtitle': 'തിരുവെഴുത്ത് API.Bible നൽകുന്നത്',
     },
     'questionnaire': {
       'your_journey': 'നിങ്ങളുടെ യാത്ര',
@@ -5496,6 +5622,9 @@ class AppTranslations {
       'subtitle':
           'നിങ്ങളുടെ ചിന്തകൾ പങ്കുവെച്ച് Disciplefy മെച്ചപ്പെടുത്താൻ ഞങ്ങളെ സഹായിക്കുക',
       'is_helpful': 'ആപ്പ് സഹായകരമാണോ?',
+      'yes': 'അതെ',
+      'not_yet': 'ഇതുവരെ ഇല്ല',
+      'topic': 'വിഷയം',
       'category': {
         'general': 'പൊതുവായത്',
         'bug_report': 'ബഗ് റിപ്പോർട്ട്',
@@ -5841,6 +5970,9 @@ class AppTranslations {
             'ഇടവേളയ്ക്ക് ശേഷം പുതിയ സ്ട്രീക് ആരംഭിക്കാൻ പ്രോത്സാഹനം നേടുക',
         'set_reminder_time': 'ഓർമ്മപ്പെടുത്തൽ സമയം സജ്ജമാക്കുക',
         'reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
+        'subtitle': 'തുടരാൻ സഹായിക്കുന്ന ഓർമ്മപ്പെടുത്തലുകൾ',
+        'daily_section_title': 'ദിവസേന',
+        'streak_section_title': 'സ്ട്രീക്ക്',
         'memory_verse_section_title': 'സ്മൃതി വചനം',
         'memory_verse_reminder_title': 'ദൈനിക അവലോകന ഓർമ്മപ്പെടുത്തൽ',
         'memory_verse_reminder_description':
@@ -6615,6 +6747,12 @@ class AppTranslations {
       'keep_studying': 'നേട്ടങ്ങൾ അൺലോക്ക് ചെയ്യാൻ പഠനം തുടരുക!',
       'error_loading': 'പുരോഗതി ലോഡ് ചെയ്യുന്നതിൽ പിശക്',
       'tap_to_retry': 'വീണ്ടും ശ്രമിക്കാൻ ടാപ്പ് ചെയ്യുക',
+      'xp_to_level': '{level} വരെ {xp} XP',
+      'achievements_count': 'നേട്ടങ്ങൾ · {total}-ൽ {unlocked}',
+      'day_streak_label': 'ദിവസത്തെ സ്ട്രീക്ക്',
+      'studies_label': 'പഠനങ്ങൾ',
+      'verses_label': 'വാക്യങ്ങൾ',
+      'progress_count': '{total}-ൽ {current}',
     },
     'memory_nav': {
       'my_collections': 'എന്റെ ശേഖരങ്ങൾ',
@@ -6997,6 +7135,10 @@ class AppTranslations {
       'verses_saved': '{count} വചനങ്ങൾ സംരക്ഷിച്ചു',
       'yes': 'അതെ',
       'no': 'ഇല്ല',
+      'count': '{count} ധ്യാനങ്ങൾ',
+      'today': 'ഇന്ന്',
+      'yesterday': 'ഇന്നലെ',
+      'minutes': '{minutes} മിനിറ്റ്',
     },
     'reading_complete': {
       'title': 'വായന പൂർത്തിയായി!',

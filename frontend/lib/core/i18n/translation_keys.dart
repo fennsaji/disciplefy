@@ -395,6 +395,7 @@ class TranslationKeys {
   static const emailVerificationTitle = 'email_verification.title';
   static const emailVerificationDescription = 'email_verification.description';
   static const emailVerificationResend = 'email_verification.resend';
+  static const emailVerificationResendShort = 'email_verification.resend_short';
   static const emailVerificationSent = 'email_verification.sent';
 
   // Onboarding
@@ -540,6 +541,43 @@ class TranslationKeys {
   static const settingsTextSizeLarge = 'settings.text_size_large';
   static const settingsTextSizeExtraLarge = 'settings.text_size_extra_large';
   static const settingsTextSizePercentage = 'settings.text_size_percentage';
+
+  // Settings - S3 redesign
+  static const settingsSectionYou = 'settings.section_you';
+  static const settingsSectionPreferences = 'settings.section_preferences';
+  static const settingsSectionStudy = 'settings.section_study';
+  static const settingsOfflineGuides = 'settings.offline_guides';
+  static const settingsOfflineGuidesSubtitle =
+      'settings.offline_guides_subtitle';
+  static const settingsOfflineGuidesCount = 'settings.offline_guides_count';
+  static const settingsOfflineClearAll = 'settings.offline_clear_all';
+  static const settingsOfflineRemove = 'settings.offline_remove';
+  static const settingsOfflineEmptyTitle = 'settings.offline_empty_title';
+  static const settingsOfflineEmptySubtitle = 'settings.offline_empty_subtitle';
+  static const settingsOfflinePathEmpty = 'settings.offline_path_empty';
+  static const settingsOfflinePathProgress = 'settings.offline_path_progress';
+  static const settingsOfflineClearAllTitle =
+      'settings.offline_clear_all_title';
+  static const settingsOfflineClearAllMessage =
+      'settings.offline_clear_all_message';
+  static const settingsThemeSystem = 'settings.theme_system';
+  static const settingsThemeLight = 'settings.theme_light';
+  static const settingsThemeDark = 'settings.theme_dark';
+  static const settingsThemeSystemCaption = 'settings.theme_system_caption';
+  static const settingsLanguageDefault = 'settings.language_default';
+  static const settingsDeleteAccountLoseTitle =
+      'settings.delete_account_lose_title';
+  static const settingsDeleteAccountLoseGuides =
+      'settings.delete_account_lose_guides';
+  static const settingsDeleteAccountLoseVerses =
+      'settings.delete_account_lose_verses';
+  static const settingsDeleteAccountLoseProgress =
+      'settings.delete_account_lose_progress';
+  static const settingsDeleteAccountLosePlan =
+      'settings.delete_account_lose_plan';
+  static const settingsBibleAttribution = 'settings.bible_attribution';
+  static const settingsBibleAttributionSubtitle =
+      'settings.bible_attribution_subtitle';
 
   // Settings - Help & Support
   static const settingsHelpSupport = 'settings.help_support';
@@ -713,6 +751,9 @@ class TranslationKeys {
   static const feedbackSendFeedback = 'feedback.send_feedback';
   static const feedbackSubtitle = 'feedback.subtitle';
   static const feedbackIsHelpful = 'feedback.is_helpful';
+  static const feedbackYes = 'feedback.yes';
+  static const feedbackNotYet = 'feedback.not_yet';
+  static const feedbackTopic = 'feedback.topic';
   static const feedbackCategoryGeneral = 'feedback.category.general';
   static const feedbackCategoryBugReport = 'feedback.category.bug_report';
   static const feedbackCategoryFeatureRequest =
@@ -1046,6 +1087,12 @@ class TranslationKeys {
 
   // Notifications Settings
   static const notificationsSettingsTitle = 'notifications.settings.title';
+  static const notificationsSettingsSubtitle =
+      'notifications.settings.subtitle';
+  static const notificationsSettingsDailySectionTitle =
+      'notifications.settings.daily_section_title';
+  static const notificationsSettingsStreakSectionTitle =
+      'notifications.settings.streak_section_title';
   static const notificationsSettingsLoading = 'notifications.settings.loading';
   static const notificationsSettingsPreferencesUpdated =
       'notifications.settings.preferences_updated';
@@ -1571,6 +1618,14 @@ class TranslationKeys {
   static const gamificationContinue = 'gamification.continue';
   static const gamificationFailedToLoad = 'gamification.failed_to_load';
   static const gamificationRetry = 'gamification.retry';
+  static const gamificationCurrentLevel = 'gamification.current_level';
+  static const gamificationXpToLevel = 'gamification.xp_to_level';
+  static const gamificationAchievementsCount =
+      'gamification.achievements_count';
+  static const gamificationDayStreakLabel = 'gamification.day_streak_label';
+  static const gamificationStudiesLabel = 'gamification.studies_label';
+  static const gamificationVersesLabel = 'gamification.verses_label';
+  static const gamificationProgressCount = 'gamification.progress_count';
 
   // Achievement Categories
   static const gamificationCategoryStudy = 'gamification.category.study';
@@ -2093,6 +2148,10 @@ class TranslationKeys {
 
   /// "No" option for reflection responses
   static const reflectionJournalNo = 'reflection_journal.no';
+  static const reflectionJournalCount = 'reflection_journal.count';
+  static const reflectionJournalToday = 'reflection_journal.today';
+  static const reflectionJournalYesterday = 'reflection_journal.yesterday';
+  static const reflectionJournalMinutes = 'reflection_journal.minutes';
 
   // Study Guide Screen - Additional Keys
   /// Section title for key insight in Quick mode

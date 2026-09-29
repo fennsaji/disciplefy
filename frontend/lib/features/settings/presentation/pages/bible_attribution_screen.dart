@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 
 /// Bible copyright & attribution page (API.Bible compliance).
 ///
@@ -19,6 +23,7 @@ class BibleAttributionScreen extends StatelessWidget {
   static const List<_Attribution> _attributions = [
     _Attribution(
       language: 'English',
+      shortLanguage: 'English',
       abbreviation: 'KJV',
       name: 'King James (Authorised) Version',
       notice:
@@ -28,6 +33,7 @@ class BibleAttributionScreen extends StatelessWidget {
     ),
     _Attribution(
       language: 'हिन्दी (Hindi)',
+      shortLanguage: 'Hindi',
       abbreviation: 'IRV',
       name: 'Indian Revised Version (IRV) Hindi — 2019',
       notice:
@@ -39,6 +45,7 @@ class BibleAttributionScreen extends StatelessWidget {
     ),
     _Attribution(
       language: 'മലയാളം (Malayalam)',
+      shortLanguage: 'Malayalam',
       abbreviation: 'IRV',
       name: 'Indian Revised Version (IRV) Malayalam — 2025',
       notice:
@@ -59,48 +66,59 @@ class BibleAttributionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Bible Copyright & Attribution')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
+      backgroundColor: palette.page,
+      appBar: SettingsTopBar(
+        title: context.tr(TranslationKeys.settingsBibleAttribution),
+        subtitle: 'Scripture provided by API.Bible',
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
               'Scripture text in Disciplefy is provided by API.Bible. Each '
               'translation is used under its respective copyright or licence, '
               'as shown below.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: AppFonts.inter(
+                fontSize: 13.5,
+                color: palette.muted,
+                height: 1.5,
               ),
             ),
-            const SizedBox(height: 20),
-            for (final a in _attributions) ...[
-              _AttributionCard(attribution: a, onLicenseTap: _launch),
-              const SizedBox(height: 12),
+          ),
+          const SettingsSectionLabel('Bible text'),
+          SettingsGroup(
+            children: [
+              for (final a in _attributions)
+                _AttributionRow(attribution: a, onLicenseTap: _launch),
             ],
-            const SizedBox(height: 8),
-            const Divider(),
-            const SizedBox(height: 8),
-            // API.Bible attribution (required visible link on the Starter plan).
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.menu_book_outlined),
-              title: const Text('Scripture provided by API.Bible'),
-              subtitle: const Text(_apiBibleUrl),
-              trailing: const Icon(Icons.open_in_new, size: 18),
-              onTap: () => _launch(_apiBibleUrl),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.public),
-              title: const Text('VachanOnline'),
-              subtitle: const Text(_vachanUrl),
-              trailing: const Icon(Icons.open_in_new, size: 18),
-              onTap: () => _launch(_vachanUrl),
-            ),
-          ],
-        ),
+          ),
+          const SettingsSectionLabel('Sources'),
+          SettingsGroup(
+            children: [
+              // API.Bible attribution (required visible link on the Starter
+              // plan).
+              SettingsRow(
+                icon: Icons.menu_book_outlined,
+                title: 'Scripture provided by API.Bible',
+                subtitle: _apiBibleUrl,
+                trailing: Icon(Icons.open_in_new, size: 16, color: palette.dim),
+                onTap: () => _launch(_apiBibleUrl),
+              ),
+              SettingsRow(
+                icon: Icons.public,
+                tone: SettingsTone.sky,
+                title: 'VachanOnline',
+                subtitle: _vachanUrl,
+                trailing: Icon(Icons.open_in_new, size: 16, color: palette.dim),
+                onTap: () => _launch(_vachanUrl),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -108,6 +126,7 @@ class BibleAttributionScreen extends StatelessWidget {
 
 class _Attribution {
   final String language;
+  final String shortLanguage;
   final String abbreviation;
   final String name;
   final String notice;
@@ -115,6 +134,7 @@ class _Attribution {
 
   const _Attribution({
     required this.language,
+    required this.shortLanguage,
     required this.abbreviation,
     required this.name,
     required this.notice,
@@ -122,76 +142,89 @@ class _Attribution {
   });
 }
 
-class _AttributionCard extends StatelessWidget {
+/// One translation: gold book tile, "Language · ABBR", its full name, the
+/// verbatim copyright notice and, when licensed, the licence link.
+class _AttributionRow extends StatelessWidget {
   final _Attribution attribution;
   final Future<void> Function(String) onLicenseTap;
 
-  const _AttributionCard(
-      {required this.attribution, required this.onLicenseTap});
+  const _AttributionRow({
+    required this.attribution,
+    required this.onLicenseTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightBorder),
-      ),
-      child: Column(
+    final palette = ReaderPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  attribution.language,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  attribution.abbreviation,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          const SettingsIconTile(
+            icon: Icons.book_outlined,
+            tone: SettingsTone.gold,
           ),
-          const SizedBox(height: 8),
-          Text(attribution.notice, style: theme.textTheme.bodySmall),
-          if (attribution.licenseUrl != null) ...[
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () => onLicenseTap(attribution.licenseUrl!),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'CC BY-SA 4.0',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      decoration: TextDecoration.underline,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  label: attribution.language,
+                  child: Text(
+                    '${attribution.shortLanguage} · ${attribution.abbreviation}',
+                    style: AppFonts.inter(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w500,
+                      color: palette.text,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.open_in_new,
-                      size: 14, color: theme.colorScheme.primary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  attribution.name,
+                  style: AppFonts.inter(fontSize: 12, color: palette.muted),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  attribution.notice,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    color: palette.muted,
+                    height: 1.5,
+                  ),
+                ),
+                if (attribution.licenseUrl != null) ...[
+                  const SizedBox(height: 6),
+                  InkWell(
+                    onTap: () => onLicenseTap(attribution.licenseUrl!),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'CC BY-SA 4.0',
+                            style: AppFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: palette.accentIcon,
+                              decoration: TextDecoration.underline,
+                              decorationColor: palette.accentIcon,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(Icons.open_in_new,
+                              size: 14, color: palette.accentIcon),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );
