@@ -503,3 +503,4 @@ docs/marketing/Content_Playbook_Season1/PDF/
 **/.claude/agent-memory/
 # Playwright MCP screenshot/snapshot output
 .playwright-mcp/
+design-exports/
