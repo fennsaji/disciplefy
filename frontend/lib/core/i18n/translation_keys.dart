@@ -368,6 +368,11 @@ class TranslationKeys {
   static const settingsBlockedUsersSubtitle = 'settings.blocked_users_subtitle';
   static const settingsTheme = 'settings.theme';
   static const settingsContentLanguage = 'settings.content_language';
+  static const settingsContentLanguageFollowsApp =
+      'settings.content_language_follows_app';
+  static const settingsAppLanguage = 'settings.app_language';
+  static const settingsAppLanguageDescription =
+      'settings.app_language_description';
   static const settingsAccountActions = 'settings.account_actions';
   static const settingsSignOut = 'settings.sign_out';
   static const settingsDeleteAccount = 'settings.delete_account';

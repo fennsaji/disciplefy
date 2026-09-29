@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/models/app_language.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/font_scale_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
@@ -42,6 +44,7 @@ import '../../../../core/services/apple_consumable_purchase_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../../../../shared/widgets/sheet_scroll_view.dart';
+import '../../../../shared/widgets/content_language_sheet.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
 import '../../../auth/domain/utils/auth_validator.dart';
@@ -627,7 +630,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           _buildSettingsTile(
             context: context,
             icon: Icons.language_outlined,
-            title: context.tr(TranslationKeys.settingsContentLanguage),
+            title: context.tr(TranslationKeys.settingsAppLanguage),
             subtitle: _getLanguageDisplayName(state.settings.language),
             trailing: Icon(
               Icons.arrow_forward_ios,
@@ -636,6 +639,25 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             onTap: () =>
                 _showLanguageBottomSheet(context, state.settings.language),
+          ),
+          _buildDivider(),
+          // Separate from the app language: which language study guides,
+          // learning paths and daily verses are generated in. Same sheet as
+          // the Topics screen's menu.
+          _ContentLanguageSubtitle(
+            appLanguageCode: state.settings.language,
+            builder: (subtitle) => _buildSettingsTile(
+              context: context,
+              icon: Icons.menu_book_outlined,
+              title: context.tr(TranslationKeys.settingsContentLanguage),
+              subtitle: subtitle,
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              onTap: () => showContentLanguageSheet(context),
+            ),
           ),
           _buildDivider(),
           ListenableBuilder(
@@ -1328,139 +1350,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         ],
       );
 
-  /// Account Settings Bottom Sheet
-  void _showAccountSettingsBottomSheet(
-      BuildContext context, AuthStateProvider authProvider) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        // Scrollable: the mode list is taller than a short
-        // screen, and isScrollControlled alone does not scroll.
-        child: SheetScrollView(
-            child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            Text(
-              'Account Settings',
-              style: AppFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Language Preference
-            _buildAccountSettingItem(
-              icon: Icons.language_outlined,
-              title: 'Language Preference',
-              subtitle:
-                  'English', // Default since AuthStateProvider doesn't expose language preference
-              onTap: () {
-                Navigator.pop(context);
-                _showLanguageBottomSheet(context, 'en'); // Default to English
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Theme Preference
-            _buildAccountSettingItem(
-              icon: Icons.palette_outlined,
-              title: 'Theme Preference',
-              subtitle:
-                  'System Default', // Default since AuthStateProvider doesn't expose theme preference
-              onTap: () {
-                Navigator.pop(context);
-                // Toggle to light theme as default
-                final newTheme = ThemeModeEntity.light();
-                context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
-              },
-            ),
-
-            const SizedBox(height: 24),
-          ],
-        )),
-      ),
-    );
-  }
-
-  Widget _buildAccountSettingItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) =>
-      Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: context.appBrandAccent,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          color: AppTheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
   /// Logout confirmation dialog with AuthBloc integration
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -2106,14 +1995,26 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             const SizedBox(height: 24),
             Text(
-              context.tr(TranslationKeys.settingsSelectLanguage),
+              context.tr(TranslationKeys.settingsAppLanguage),
               style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(builderContext).colorScheme.onBackground,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 6),
+            Text(
+              context.tr(TranslationKeys.settingsAppLanguageDescription),
+              style: AppFonts.inter(
+                fontSize: 13,
+                color: Theme.of(builderContext)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.7),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
             _buildLanguageOption(
                 builderContext, settingsBloc, 'en', 'English', currentLanguage),
             _buildLanguageOption(
@@ -2448,89 +2349,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     String value,
     String label,
     String currentLanguage,
-  ) {
-    final isSelected = value == currentLanguage;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+  ) =>
+      LanguageOptionTile(
+        label: label,
+        isSelected: value == currentLanguage,
         onTap: () {
           settingsBloc.add(UpdateLanguage(value));
           Navigator.of(context).pop();
         },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? context.appBrandAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  color: isSelected
-                      ? null
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.language,
-                  size: 18,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 15,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? context.appBrandAccent
-                        : Theme.of(context).colorScheme.onBackground,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: context.appBrandAccent,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+      );
 
   /// Build study mode option tile
   Widget _buildStudyModeOption(
@@ -3218,16 +3045,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     }
   }
 
-  String _getThemeDisplayName(ThemeModeEntity themeMode) {
-    switch (themeMode.mode) {
-      case AppThemeMode.light:
-        return 'Light Mode';
-      case AppThemeMode.dark:
-        return 'Dark Mode';
-      case AppThemeMode.system:
-        return 'System Default';
-    }
-  }
+  // Same keys as the theme sheet's options, so the row and the sheet agree
+  // and both follow the app language.
+  String _getThemeDisplayName(ThemeModeEntity themeMode) =>
+      switch (themeMode.mode) {
+        AppThemeMode.light => context.tr(TranslationKeys.settingsLightMode),
+        AppThemeMode.dark => context.tr(TranslationKeys.settingsDarkMode),
+        AppThemeMode.system =>
+          context.tr(TranslationKeys.settingsSystemDefault),
+      };
 
   String _getLanguageDisplayName(String languageCode) {
     switch (languageCode) {
@@ -3276,5 +3102,69 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+}
+
+/// Resolves the Content Language row's subtitle: the chosen language, or
+/// "Same as app language (X)". Rebuilds when either language changes, since
+/// "Default" follows the app language.
+class _ContentLanguageSubtitle extends StatefulWidget {
+  final String appLanguageCode;
+  final Widget Function(String subtitle) builder;
+
+  const _ContentLanguageSubtitle({
+    required this.appLanguageCode,
+    required this.builder,
+  });
+
+  @override
+  State<_ContentLanguageSubtitle> createState() =>
+      _ContentLanguageSubtitleState();
+}
+
+class _ContentLanguageSubtitleState extends State<_ContentLanguageSubtitle> {
+  final _languageService = sl<LanguagePreferenceService>();
+  StreamSubscription<AppLanguage>? _subscription;
+  bool _isDefault = true;
+  AppLanguage? _language;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscription =
+        _languageService.studyContentLanguageChanges.listen((_) => _load());
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ContentLanguageSubtitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.appLanguageCode != widget.appLanguageCode) _load();
+  }
+
+  Future<void> _load() async {
+    final isDefault = await _languageService.isStudyContentLanguageDefault();
+    final language = await _languageService.getStudyContentLanguage();
+    if (!mounted) return;
+    setState(() {
+      _isDefault = isDefault;
+      _language = language;
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appLanguage = AppLanguage.fromCode(widget.appLanguageCode);
+    final subtitle = _isDefault || _language == null
+        ? context.tr(TranslationKeys.settingsContentLanguageFollowsApp,
+            {'language': appLanguage.displayName})
+        : _language!.displayName;
+    return widget.builder(subtitle);
   }
 }

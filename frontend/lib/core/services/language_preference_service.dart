@@ -236,17 +236,19 @@ class LanguagePreferenceService {
         }
       }
 
-      // Reset study content language to default when app language changes
-      // This ensures study content follows the new app language automatically.
+      // App language and content language are separate settings. A content
+      // language the user chose explicitly is left alone; one on "Default"
+      // follows the app, so its effective value just changed and content
+      // screens must hear about it.
       //
-      // Pass the language we just saved. Letting this re-resolve would call
-      // getSelectedLanguage(), which re-reads the profile and writes whatever
-      // the DB says back over local storage — so a failed DB write above
-      // silently reverted the user's choice to the old language and emitted it,
-      // leaving storage and UI disagreeing until the next launch.
-      await setStudyContentLanguageToDefault(appLanguage: language);
-      Logger.debug(
-          '🔄 [STUDY_CONTENT_LANGUAGE] Reset to default after app language change');
+      // Emit the language we just saved rather than re-resolving: resolving
+      // calls getSelectedLanguage(), which re-reads the profile and can write
+      // a stale DB value back over this choice if the DB write above failed.
+      if (await isStudyContentLanguageDefault()) {
+        _studyContentLanguageChangeController.add(language);
+        Logger.debug(
+            '🔄 [STUDY_CONTENT_LANGUAGE] Follows app language: ${language.displayName}');
+      }
 
       // Notify listeners of the language change
       _languageChangeController.add(language);

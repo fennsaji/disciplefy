@@ -490,7 +490,11 @@ class AppTranslations {
       'blocked_users': 'Blocked Users',
       'blocked_users_subtitle': 'Manage the people you have blocked',
       'theme': 'Theme',
-      'content_language': 'Language',
+      'app_language': 'App Language',
+      'app_language_description':
+          'Menus, buttons and messages. Study content follows it unless you choose a content language.',
+      'content_language': 'Content Language',
+      'content_language_follows_app': 'Same as app language ({language})',
       'account_actions': 'Account Actions',
       'sign_out': 'Sign Out',
       'delete_account': 'Delete Account',
@@ -956,7 +960,7 @@ class AppTranslations {
       'topics_found': '{count} topics found',
       'content_language': 'Content Language',
       'content_language_description':
-          'This only affects study content, not app UI',
+          'Study guides, learning paths and daily verses. Menus and buttons stay in the app language.',
       'content_language_default': 'Default (App Language)',
       'content_language_default_description':
           'Use the same language as your app',
@@ -2663,7 +2667,11 @@ class AppTranslations {
       'blocked_users_subtitle':
           'आपके द्वारा ब्लॉक किए गए लोगों को प्रबंधित करें',
       'theme': 'थीम',
-      'content_language': 'भाषा',
+      'app_language': 'ऐप भाषा',
+      'app_language_description':
+          'मेनू, बटन और संदेश। जब तक आप अलग सामग्री भाषा न चुनें, अध्ययन सामग्री भी इसी भाषा में रहती है।',
+      'content_language': 'सामग्री भाषा',
+      'content_language_follows_app': 'ऐप भाषा जैसी ({language})',
       'account_actions': 'खाता एक्शन',
       'sign_out': 'साइन आउट करें',
       'delete_account': 'अकाउंट डिलीट करें',
@@ -3139,7 +3147,7 @@ class AppTranslations {
       'topics_found': '{count} विषय मिले',
       'content_language': 'सामग्री भाषा',
       'content_language_description':
-          'यह केवल अध्ययन सामग्री को प्रभावित करता है, ऐप UI को नहीं',
+          'अध्ययन गाइड, सीखने के मार्ग और दैनिक वचन। मेनू और बटन ऐप भाषा में ही रहते हैं।',
       'content_language_default': 'डिफ़ॉल्ट (ऐप भाषा)',
       'content_language_default_description':
           'अपने ऐप की समान भाषा का उपयोग करें',
@@ -4857,7 +4865,11 @@ class AppTranslations {
       'blocked_users': 'ബ്ലോക്ക് ചെയ്ത ഉപയോക്താക്കൾ',
       'blocked_users_subtitle': 'നിങ്ങൾ ബ്ലോക്ക് ചെയ്ത ആളുകളെ കൈകാര്യം ചെയ്യുക',
       'theme': 'ഥീം',
-      'content_language': 'ഭാഷ',
+      'app_language': 'ആപ്പ് ഭാഷ',
+      'app_language_description':
+          'മെനുകൾ, ബട്ടണുകൾ, സന്ദേശങ്ങൾ. നിങ്ങൾ മറ്റൊരു ഉള്ളടക്ക ഭാഷ തിരഞ്ഞെടുക്കാത്തിടത്തോളം പഠന ഉള്ളടക്കവും ഈ ഭാഷയിലായിരിക്കും.',
+      'content_language': 'ഉള്ളടക്ക ഭാഷ',
+      'content_language_follows_app': 'ആപ്പ് ഭാഷ തന്നെ ({language})',
       'account_actions': 'അക്കൗണ്ട് പ്രവർ‍ത്തനങ്ങൾ',
       'sign_out': 'സൈൻ ഔട്ട് ചെയ്യുക',
       'delete_account': 'അക്കൗണ്ട് ഡിലീറ്റ് ചെയ്യുക',
@@ -5342,7 +5354,7 @@ class AppTranslations {
       'topics_found': '{count} വിഷയങ്ങൾ കണ്ടെത്തി',
       'content_language': 'ഉള്ളടക്ക ഭാഷ',
       'content_language_description':
-          'ഇത് പഠന ഉള്ളടക്കത്തെ മാത്രമേ ബാധിക്കൂ, ആപ്പ് UI-യെ അല്ല',
+          'പഠന ഗൈഡുകൾ, പഠന പാതകൾ, ദിനവചനം. മെനുകളും ബട്ടണുകളും ആപ്പ് ഭാഷയിൽ തന്നെ തുടരും.',
       'content_language_default': 'സ്ഥിരസ്ഥിതി (ആപ്പ് ഭാഷ)',
       'content_language_default_description':
           'നിങ്ങളുടെ ആപ്പിന്റെ അതേ ഭാഷ ഉപയോഗിക്കുക',

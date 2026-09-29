@@ -44,6 +44,7 @@ import '../widgets/learning_path_card.dart';
 import '../widgets/learning_paths_section.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
 /// Screen for browsing study topics with For You and Learning Paths sections.
 ///
@@ -69,6 +70,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   late SystemConfigService _systemConfigService;
   late SubscriptionRepository _subscriptionRepository;
   StreamSubscription<AppLanguage>? _languageSubscription;
+  StreamSubscription<AppLanguage>? _contentLanguageSubscription;
   String _userPlan = 'free';
   bool _isLearningPathsFeatureEnabled = true; // Default to true until checked
   bool _isLeaderboardFeatureEnabled = true; // Default to true until checked
@@ -148,9 +150,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     }
   }
 
-  /// Listen for language preference changes from settings
-  /// When app language changes, study content language is reset to default,
-  /// so we need to refresh the content to reflect the new app language.
+  /// Listen for language changes from Settings. Content on "Default" follows
+  /// the app language, so an app-language change can change the content.
   void _setupLanguageChangeListener() {
     Logger.debug('[STUDY_TOPICS] Setting up language change listener');
 
@@ -163,14 +164,29 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       Logger.debug(
           '[STUDY_TOPICS] App language changed to: ${newLanguage.displayName}');
 
-      // When app language changes, study content language is automatically reset to default
-      // Reload content with the new language
+      // Re-resolve the content language; it only changes if it is on Default.
       if (mounted) {
         await _loadLanguageAndInitialize();
         Logger.debug(
             '[STUDY_TOPICS] Content refreshed after app language change');
       }
     });
+
+    // Content language can also change from Settings while this tab stays
+    // alive in the tab stack; reload so paths match the chosen language.
+    _contentLanguageSubscription?.cancel();
+    _contentLanguageSubscription = _languageService.studyContentLanguageChanges
+        .listen((newLanguage) => _applyContentLanguage(newLanguage.code));
+  }
+
+  /// Reloads paths in [code] unless they are already in it. Both the stream
+  /// above and the Topics menu's own callback land here, so one change never
+  /// triggers two reloads.
+  void _applyContentLanguage(String code) {
+    if (!mounted || code == _currentLanguage) return;
+    setState(() => _currentLanguage = code);
+    _learningPathsBloc.add(RefreshLearningPaths(language: code));
+    _learningPathsBloc.add(LoadPersonalizedPaths(language: code));
   }
 
   Future<void> _loadLanguageAndInitialize() async {
@@ -212,6 +228,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   @override
   void dispose() {
     _languageSubscription?.cancel();
+    _contentLanguageSubscription?.cancel();
     _learningPathsBloc.close();
     super.dispose();
   }
@@ -233,11 +250,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
           dataLoadingStarted: _dataLoadingStarted,
           isLearningPathsFeatureEnabled: _isLearningPathsFeatureEnabled,
           isLeaderboardFeatureEnabled: _isLeaderboardFeatureEnabled,
-          onStudyLanguageChanged: (newLang) {
-            setState(() => _currentLanguage = newLang);
-            _learningPathsBloc.add(RefreshLearningPaths(language: newLang));
-            _learningPathsBloc.add(LoadPersonalizedPaths(language: newLang));
-          },
+          onStudyLanguageChanged: _applyContentLanguage,
         ),
       );
 }
@@ -820,98 +833,12 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
   }
 
-  /// Show language selection bottom sheet for study content only
-  /// This DOES NOT change the app UI language
+  /// Content-language picker (study content only, not the app UI). Shared
+  /// with Settings so both write the same preference the same way.
   Future<void> _showLanguageSelector(
       BuildContext context, VoidCallback? onLanguageChange) async {
-    final theme = Theme.of(context);
-    final languageService = sl<LanguagePreferenceService>();
-    final currentLanguage = await languageService.getStudyContentLanguage();
-    final isDefault = await languageService.isStudyContentLanguageDefault();
-    final appLanguage = await languageService.getSelectedLanguage();
-
-    if (!context.mounted) return;
-
-    await showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Text(
-                    context.tr(TranslationKeys.studyTopicsContentLanguage),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.tr(
-                        TranslationKeys.studyTopicsContentLanguageDescription),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            // Default option
-            ListTile(
-              title: Text(context
-                  .tr(TranslationKeys.studyTopicsContentLanguageDefault)),
-              subtitle: Text(
-                '${context.tr(TranslationKeys.studyTopicsContentLanguageDefaultDescription)} (${appLanguage.displayName})',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-              trailing: isDefault
-                  ? Icon(Icons.check,
-                      color: Theme.of(context).colorScheme.primary)
-                  : null,
-              onTap: () async {
-                // Set to default (use app language)
-                await languageService.saveStudyContentLanguage(null);
-
-                if (sheetContext.mounted) {
-                  Navigator.pop(sheetContext);
-                }
-
-                // Notify parent to refresh content
-                onLanguageChange?.call();
-              },
-            ),
-            const Divider(height: 1),
-            // Specific language options
-            ...AppLanguage.values.map((language) {
-              final isSelected = !isDefault && language == currentLanguage;
-              return ListTile(
-                title: Text(language.displayName),
-                trailing: isSelected
-                    ? Icon(Icons.check,
-                        color: Theme.of(context).colorScheme.primary)
-                    : null,
-                onTap: () async {
-                  // Save study content language (does NOT affect app UI)
-                  await languageService.saveStudyContentLanguage(language);
-
-                  if (sheetContext.mounted) {
-                    Navigator.pop(sheetContext);
-                  }
-
-                  // Notify parent to refresh content
-                  onLanguageChange?.call();
-                },
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
+    final changed = await showContentLanguageSheet(context);
+    if (changed) onLanguageChange?.call();
   }
 
   /// Show learning path study mode preference bottom sheet
