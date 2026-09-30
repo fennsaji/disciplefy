@@ -1907,6 +1907,28 @@ class AppTranslations {
       'loading_topics': 'Loading topics...',
       'percent_complete': '{percent}% complete',
     },
+    // Study Topics tab (header cards, For you, Learning paths, category page)
+    'topics_hub': {
+      'continue_eyebrow': 'Continue · Topic {current} of {total}',
+      'next_topic': 'Next: {title}',
+      'streak_value': '{count} days',
+      'streak_value_one': '{count} day',
+      'streak_label': 'Study streak',
+      'leaderboard_label': 'Leaderboard',
+      'for_you': 'For you',
+      'based_on_goals': 'Based on your goals',
+      'search_paths': 'Search {count} paths',
+      'see_all': 'See all',
+      'paths_count': '{count} paths',
+      'paths_count_one': '{count} path',
+      'level_range': '{from} to {to}',
+      'offline_message':
+          'You\'re offline. Learning Paths require an internet connection.',
+      'retry': 'Retry',
+      'no_search_results': 'No paths found for "{query}"',
+      'no_filter_results': 'No paths match the selected filters',
+      'all_levels': 'All',
+    },
     'disciple_level': {
       'seeker': 'Seeker',
       'believer': 'Believer',
@@ -1934,6 +1956,8 @@ class AppTranslations {
       'weekly': 'Weekly',
       'monthly': 'Monthly',
       'all_time': 'All Time',
+      // Leaderboard page redesign
+      'xp_to_pass': '{xp} XP to pass {name}',
     },
     'voice_buddy': {
       'title': 'Discipler',
@@ -4711,7 +4735,7 @@ class AppTranslations {
       'days': 'दिन',
       'xp': 'XP',
       'progress': 'प्रगति',
-      'topics_completed': '{completed} में से {total} पूर्ण',
+      'topics_completed': '{total} में से {completed} पूर्ण',
       'start_path': 'रास्ता शुरू करें',
       'resume_path': 'रास्ता जारी रखें',
       'path_completed': 'रास्ता पूर्ण!',
@@ -4726,6 +4750,28 @@ class AppTranslations {
       'failed_to_load': 'रास्ते की जानकारी लोड नहीं हुई',
       'loading_topics': 'विषय लोड हो रहे हैं...',
       'percent_complete': '{percent}% पूर्ण',
+    },
+    // Study Topics tab (header cards, For you, Learning paths, category page)
+    'topics_hub': {
+      'continue_eyebrow': 'जारी रखें · विषय {current} / {total}',
+      'next_topic': 'अगला: {title}',
+      'streak_value': '{count} दिन',
+      'streak_value_one': '{count} दिन',
+      'streak_label': 'अध्ययन स्ट्रीक',
+      'leaderboard_label': 'लीडरबोर्ड',
+      'for_you': 'आपके लिए',
+      'based_on_goals': 'आपके लक्ष्यों के आधार पर',
+      'search_paths': '{count} रास्ते खोजें',
+      'see_all': 'सभी देखें',
+      'paths_count': '{count} रास्ते',
+      'paths_count_one': '{count} रास्ता',
+      'level_range': '{from} से {to}',
+      'offline_message':
+          'आप ऑफ़लाइन हैं। सीखने के रास्तों के लिए इंटरनेट कनेक्शन ज़रूरी है।',
+      'retry': 'फिर कोशिश करें',
+      'no_search_results': '"{query}" के लिए कोई रास्ता नहीं मिला',
+      'no_filter_results': 'चुने गए फ़िल्टर से कोई रास्ता मेल नहीं खाता',
+      'all_levels': 'सभी',
     },
     'disciple_level': {
       'seeker': 'खोजी',
@@ -4754,6 +4800,8 @@ class AppTranslations {
       'weekly': 'साप्ताहिक',
       'monthly': 'मासिक',
       'all_time': 'सभी समय',
+      // Leaderboard page redesign
+      'xp_to_pass': '{name} से आगे निकलने के लिए {xp} XP',
     },
     'voice_buddy': {
       'title': 'शिक्षागुरु',
@@ -7640,6 +7688,28 @@ class AppTranslations {
       'loading_topics': 'വിഷയങ്ങൾ ലോഡ് ചെയ്യുന്നു...',
       'percent_complete': '{percent}% പൂർത്തിയായി',
     },
+    // Study Topics tab (header cards, For you, Learning paths, category page)
+    'topics_hub': {
+      'continue_eyebrow': 'തുടരുക · വിഷയം {current} / {total}',
+      'next_topic': 'അടുത്തത്: {title}',
+      'streak_value': '{count} ദിവസം',
+      'streak_value_one': '{count} ദിവസം',
+      'streak_label': 'പഠന സ്ട്രീക്ക്',
+      'leaderboard_label': 'ലീഡർബോർഡ്',
+      'for_you': 'നിങ്ങൾക്കായി',
+      'based_on_goals': 'നിങ്ങളുടെ ലക്ഷ്യങ്ങൾ അനുസരിച്ച്',
+      'search_paths': '{count} പാതകളിൽ തിരയുക',
+      'see_all': 'എല്ലാം കാണൂ',
+      'paths_count': '{count} പാതകൾ',
+      'paths_count_one': '{count} പാത',
+      'level_range': '{from} മുതൽ {to} വരെ',
+      'offline_message':
+          'നിങ്ങൾ ഓഫ്‌ലൈനാണ്. പഠന പാതകൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്.',
+      'retry': 'വീണ്ടും ശ്രമിക്കുക',
+      'no_search_results': '"{query}" എന്നതിന് പാതകളൊന്നും കണ്ടെത്തിയില്ല',
+      'no_filter_results': 'തിരഞ്ഞെടുത്ത ഫിൽട്ടറുകൾക്ക് പൊരുത്തമുള്ള പാതകളില്ല',
+      'all_levels': 'എല്ലാം',
+    },
     'disciple_level': {
       'seeker': 'അന്വേഷകൻ',
       'believer': 'വിശ്വാസി',
@@ -7667,6 +7737,8 @@ class AppTranslations {
       'weekly': 'ആഴ്ചതോറും',
       'monthly': 'മാസം തോറും',
       'all_time': 'എല്ലാ സമയവും',
+      // Leaderboard page redesign
+      'xp_to_pass': '{name}-നെ മറികടക്കാൻ {xp} XP',
     },
     'voice_buddy': {
       'title': 'Discipler',

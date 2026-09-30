@@ -78,6 +78,7 @@ import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
 import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
+import '../../features/study_topics/presentation/pages/learning_path_category_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../widgets/locked_feature_wrapper.dart';
@@ -882,6 +883,40 @@ class AppRouter {
                 create: (context) => sl<LearningPathsBloc>(),
                 child: LearningPathDetailPage(pathId: pathId, source: source),
               ),
+            ),
+          );
+        },
+      ),
+
+      // All paths in one category ("See all"). Shares the Topics tab's
+      // LearningPathsBloc when passed as `extra`, so loaded pages carry over;
+      // a direct link gets its own bloc and loads from scratch.
+      GoRoute(
+        path: AppRoutes.learningPathCategory,
+        name: 'learning_path_category',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          var category = state.pathParameters['category'] ?? '';
+          if (category.contains('%')) {
+            try {
+              category = Uri.decodeComponent(category);
+            } catch (_) {}
+          }
+          final language = state.uri.queryParameters['language'];
+          final page = LearningPathCategoryPage(
+            category: category,
+            language: language,
+          );
+          final extra = state.extra;
+          return MaxWidthWrapper(
+            child: LockedFeatureWrapper(
+              featureKey: 'learning_paths',
+              child: extra is LearningPathsBloc && !extra.isClosed
+                  ? BlocProvider.value(value: extra, child: page)
+                  : BlocProvider(
+                      create: (context) => sl<LearningPathsBloc>(),
+                      child: page,
+                    ),
             ),
           );
         },

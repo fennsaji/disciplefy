@@ -2,22 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/locked_feature_wrapper.dart';
-import '../../../community/domain/repositories/community_repository.dart';
-import '../../domain/repositories/learning_paths_repository.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
-import '../../domain/entities/learning_path.dart';
-import '../bloc/learning_paths_bloc.dart';
-import '../bloc/learning_paths_state.dart';
-import 'learning_path_card.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// "For You" learning paths section shown on the Study Topics screen.
 ///
@@ -198,147 +199,118 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
   }
 
   Widget _buildContent(BuildContext context, List<LearningPath> paths) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final header = Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: context.appBrandAccent.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.auto_awesome_rounded,
-            size: 18,
-            color:
-                isDark ? AppColors.brandPrimaryLight : context.appBrandAccent,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppLocalizations.of(context)!.walkthroughForYouTitle,
-              style: AppFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? Colors.white.withOpacity(0.9)
-                    : const Color(0xFF1F2937),
-              ),
-            ),
-            Text(
-              AppLocalizations.of(context)!.forYouSectionSubtitle,
-              style: AppFonts.inter(
-                fontSize: 13,
-                color: isDark
-                    ? Colors.white.withOpacity(0.6)
-                    : const Color(0xFF6B7280),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-
+    // Tiles share one height: if any shows progress, all keep room for it.
+    final reserveProgress = paths.any((p) => p.isEnrolled);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        header,
-        const SizedBox(height: 16),
+        _header(context),
+        const SizedBox(height: 12),
         LockedFeatureWrapper(
           featureKey: 'learning_paths',
-          child: Column(
-            children: [
-              for (int i = 0; i < paths.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: i == 0 && widget.onNext != null
-                      ? WalkthroughTooltip(
-                          showcaseKey: ShowcaseKeys.topicsPathList,
-                          title: AppLocalizations.of(context)!
-                              .walkthroughForYouTitle,
-                          description: AppLocalizations.of(context)!
-                              .walkthroughForYouDesc,
-                          screen: WalkthroughScreen.learningPaths,
-                          stepNumber: 1,
-                          totalSteps: 2,
-                          onNext: widget.onNext!,
-                          tooltipPosition: TooltipPosition.bottom,
-                          child: LearningPathCard(
-                            path: paths[i],
-                            compact: false,
-                            onTap: () => widget.onPathTap(paths[i]),
-                          ),
-                        )
-                      : LearningPathCard(
-                          path: paths[i],
-                          compact: false,
-                          onTap: () => widget.onPathTap(paths[i]),
-                        ),
-                ),
-            ],
+          child: SingleChildScrollView(
+            key: const Key('for_you_paths_row'),
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < paths.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 12),
+                  if (i == 0 && widget.onNext != null)
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.topicsPathList,
+                      title:
+                          AppLocalizations.of(context)!.walkthroughForYouTitle,
+                      description:
+                          AppLocalizations.of(context)!.walkthroughForYouDesc,
+                      screen: WalkthroughScreen.learningPaths,
+                      stepNumber: 1,
+                      totalSteps: 2,
+                      onNext: widget.onNext!,
+                      tooltipPosition: TooltipPosition.bottom,
+                      child: LearningPathCard(
+                        path: paths[i],
+                        reserveProgressSpace: reserveProgress,
+                        onTap: () => widget.onPathTap(paths[i]),
+                      ),
+                    )
+                  else
+                    LearningPathCard(
+                      path: paths[i],
+                      reserveProgressSpace: reserveProgress,
+                      onTap: () => widget.onPathTap(paths[i]),
+                    ),
+                ],
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSkeleton(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final shimmerBase =
-        isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB);
+  /// "For you" title with the "Based on your goals" note on the right.
+  Widget _header(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              context.tr(TranslationKeys.topicsHubForYou),
+              style: AppFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              context.tr(TranslationKeys.topicsHubBasedOnGoals),
+              textAlign: TextAlign.end,
+              style: AppFonts.inter(fontSize: 13, color: palette.muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildSkeleton(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: shimmerBase,
-                borderRadius: BorderRadius.circular(10),
-              ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            width: 90,
+            height: 18,
+            decoration: BoxDecoration(
+              color: palette.raised,
+              borderRadius: BorderRadius.circular(4),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                    width: 80,
-                    height: 14,
-                    decoration: BoxDecoration(
-                        color: shimmerBase,
-                        borderRadius: BorderRadius.circular(4))),
-                const SizedBox(height: 4),
-                Container(
-                    width: 160,
-                    height: 11,
-                    decoration: BoxDecoration(
-                        color: shimmerBase,
-                        borderRadius: BorderRadius.circular(4))),
-              ],
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 16),
-        ...List.generate(
-          3,
-          (_) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                color: shimmerBase,
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
+        const SizedBox(height: 14),
+        const SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              LearningPathCardSkeleton(),
+              SizedBox(width: 12),
+              LearningPathCardSkeleton(),
+            ],
           ),
         ),
       ],

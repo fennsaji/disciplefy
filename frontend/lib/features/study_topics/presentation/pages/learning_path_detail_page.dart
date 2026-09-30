@@ -16,10 +16,13 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
-import '../../../../core/utils/category_utils.dart';
+import '../../../../core/utils/path_icon_utils.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/photo_wash.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
+import '../../../study_generation/presentation/widgets/study_mode_labels.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import '../../../study_generation/data/repositories/token_cost_repository.dart';
 import '../../../study_generation/data/datasources/study_local_data_source.dart';
@@ -34,7 +37,7 @@ import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
 import '../../../../core/utils/logger.dart';
-import '../../../../shared/widgets/gold_marks.dart';
+import '../widgets/learning_path_detail_parts.dart';
 
 /// Detail page for a learning path showing topics and progress.
 class LearningPathDetailPage extends StatefulWidget {
@@ -69,11 +72,6 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   /// caller can refetch its own path list only when the data is actually stale
   /// — an ordinary look-and-go-back leaves the caller's state untouched.
   bool _progressChanged = false;
-
-  /// Whether the path description is showing its full text rather than the
-  /// 3-line preview. A path's description can run well past 3 lines, and
-  /// there was no way to read the rest of it.
-  bool _descriptionExpanded = false;
 
   @override
   void initState() {
@@ -411,104 +409,96 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         _handleBackNavigation();
       },
       child: Scaffold(
-        body: BlocConsumer<LearningPathsBloc, LearningPathsState>(
-          listener: (context, state) {
-            if (state is LearningPathEnrolled) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      context.tr(TranslationKeys.learningPathsEnrolledSuccess)),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-              // Reload details to show updated enrollment status
-              _loadPathDetails();
-            }
-          },
-          builder: (context, state) {
-            if (state is LearningPathDetailLoading) {
-              return _buildLoadingState(context);
-            }
+        backgroundColor: ReaderPalette.of(context).page,
+        body: PhotoWash.forKey(
+          photoKey: widget.pathId,
+          child: SafeArea(
+            bottom: false,
+            child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
+              listener: (context, state) {
+                if (state is LearningPathEnrolled) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context
+                          .tr(TranslationKeys.learningPathsEnrolledSuccess)),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  // Reload details to show updated enrollment status
+                  _loadPathDetails();
+                }
+              },
+              builder: (context, state) {
+                if (state is LearningPathDetailLoading) {
+                  return _buildLoadingState(context);
+                }
 
-            if (state is LearningPathsError) {
-              return _buildErrorState(context, state);
-            }
+                if (state is LearningPathsError) {
+                  return _buildErrorState(context, state);
+                }
 
-            if (state is LearningPathDetailLoaded) {
-              return _buildLoadedState(context, state.pathDetail);
-            }
+                if (state is LearningPathDetailLoaded) {
+                  return _buildLoadedState(context, state.pathDetail);
+                }
 
-            if (state is LearningPathEnrolling) {
-              return _buildEnrollingState(context);
-            }
+                if (state is LearningPathEnrolling) {
+                  return _buildEnrollingState(context);
+                }
 
-            // Show initial path data while loading
-            if (widget.initialPath != null) {
-              return _buildInitialState(context, widget.initialPath!);
-            }
+                // Show initial path data while loading
+                if (widget.initialPath != null) {
+                  return _buildInitialState(context, widget.initialPath!);
+                }
 
-            return _buildLoadingState(context);
-          },
+                return _buildLoadingState(context);
+              },
+            ),
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildTopBar([LearningPathDetail? path]) {
+    return PathDetailTopBar(
+      onBack: _handleBackNavigation,
+      actions: path == null
+          ? const []
+          : [
+              _buildShareButton(path),
+              _buildDownloadButton(path),
+            ],
+    );
+  }
+
+  Widget _spinner() => SizedBox(
+        width: 32,
+        height: 32,
+        child: CircularProgressIndicator(
+          strokeWidth: 3,
+          color: ReaderPalette.of(context).gold,
+        ),
+      );
+
   Widget _buildLoadingState(BuildContext context) {
-    final theme = Theme.of(context);
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(context, null),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                CircularProgressIndicator(
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  context.tr(TranslationKeys.learningPathsLoadingDetails),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return ListView(
+      children: [
+        _buildTopBar(),
+        PathDetailStatusView(
+          leading: _spinner(),
+          title: context.tr(TranslationKeys.learningPathsLoadingDetails),
         ),
       ],
     );
   }
 
   Widget _buildEnrollingState(BuildContext context) {
-    final theme = Theme.of(context);
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(context, null),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                CircularProgressIndicator(
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  context.tr(TranslationKeys.learningPathsEnrolling),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return ListView(
+      children: [
+        _buildTopBar(),
+        PathDetailStatusView(
+          leading: _spinner(),
+          title: context.tr(TranslationKeys.learningPathsEnrolling),
         ),
       ],
     );
@@ -516,145 +506,150 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   Widget _buildErrorState(BuildContext context, LearningPathsError state) {
     final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final isOffline =
         context.read<ConnectivityBloc>().state is ConnectivityOffline;
 
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(context, null),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                Icon(
-                  isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
-                  size: 64,
-                  color: isOffline
-                      ? theme.colorScheme.onSurfaceVariant
-                      : theme.colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  isOffline
-                      ? "You're offline"
-                      : context.tr(TranslationKeys.learningPathsFailedToLoad),
-                  style: AppFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isOffline
-                      ? context
-                          .tr(TranslationKeys.downloadsNotDownloadedOffline)
-                      : context
-                          .tr(TranslationKeys.studyTopicsSomethingWentWrong),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: isOffline
-                        ? theme.colorScheme.onSurfaceVariant
-                        : theme.colorScheme.error,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                if (!isOffline)
-                  ElevatedButton(
-                    onPressed: _loadPathDetails,
-                    child: Text(context.tr(TranslationKeys.commonRetry)),
-                  )
-                else
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back),
-                    label: Text(context.tr(TranslationKeys.downloadsGoBack)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.onSurfaceVariant,
-                      side: BorderSide(
-                          color: theme.colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.4)),
-                    ),
-                  ),
-              ],
-            ),
+    return ListView(
+      children: [
+        _buildTopBar(),
+        PathDetailStatusView(
+          leading: Icon(
+            isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
+            size: 64,
+            color: isOffline ? palette.muted : theme.colorScheme.error,
           ),
+          title: isOffline
+              ? "You're offline"
+              : context.tr(TranslationKeys.learningPathsFailedToLoad),
+          message: isOffline
+              ? context.tr(TranslationKeys.downloadsNotDownloadedOffline)
+              : context.tr(TranslationKeys.studyTopicsSomethingWentWrong),
+          messageColor: isOffline ? palette.muted : theme.colorScheme.error,
+          action: !isOffline
+              ? FilledButton(
+                  onPressed: _loadPathDetails,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: palette.ctaFill,
+                    foregroundColor: palette.ctaInk,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Text(context.tr(TranslationKeys.commonRetry)),
+                )
+              : OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: Text(context.tr(TranslationKeys.downloadsGoBack)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.muted,
+                    side: BorderSide(color: palette.outline),
+                    shape: const StadiumBorder(),
+                  ),
+                ),
         ),
       ],
     );
   }
 
   Widget _buildInitialState(BuildContext context, LearningPath path) {
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(context, path),
-        SliverToBoxAdapter(
-          child: _buildPathHeader(context, path),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                  context.tr(TranslationKeys.learningPathsLoadingTopics),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return ListView(
+      children: [
+        _buildTopBar(),
+        _buildPathHeader(context, path),
+        PathDetailStatusView(
+          leading: _spinner(),
+          title: context.tr(TranslationKeys.learningPathsLoadingTopics),
         ),
       ],
     );
   }
 
   Widget _buildLoadedState(BuildContext context, LearningPathDetail path) {
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(context, path),
-        SliverToBoxAdapter(
-          child: _buildPathHeader(context, path),
-        ),
-        if (!path.isEnrolled)
-          SliverToBoxAdapter(
-            child: _buildEnrollButton(context, path),
+    final cta = _primaryAction(context, path);
+    return Column(
+      children: [
+        Expanded(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: _buildTopBar(path)),
+              SliverToBoxAdapter(child: _buildPathHeader(context, path)),
+              if (path.isEnrolled)
+                SliverToBoxAdapter(
+                  child: PathDetailProgress(
+                    completed: path.topicsCompleted,
+                    total: path.topicsCount,
+                    percent: path.progressPercentage,
+                    isCompleted: path.isCompleted,
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) =>
+                      _buildTopicItem(context, path.topics[index], index, path),
+                  childCount: path.topics.length,
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
           ),
-        if (path.isEnrolled)
-          SliverToBoxAdapter(
-            child: _buildProgressSection(context, path),
+        ),
+        if (cta != null)
+          PathDetailCtaBar(
+            label: cta.label,
+            icon: cta.icon,
+            onPressed: cta.onPressed,
           ),
-        SliverToBoxAdapter(
-          child: _buildTopicsHeader(context, path),
-        ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) =>
-                _buildTopicItem(context, path.topics[index], index, path),
-            childCount: path.topics.length,
-          ),
-        ),
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 40),
-        ),
       ],
     );
   }
 
+  /// The bottom pill: enroll when not enrolled, otherwise open the next
+  /// topic, or review from the start once the path is complete.
+  ({String label, IconData icon, VoidCallback onPressed})? _primaryAction(
+    BuildContext context,
+    LearningPathDetail path,
+  ) {
+    if (!path.isEnrolled) {
+      return (
+        label: context.tr(TranslationKeys.learningPathsStartPath),
+        icon: Icons.play_arrow_outlined,
+        onPressed: () => _enroll(path),
+      );
+    }
+    if (path.topics.isEmpty) return null;
+
+    final next = path.nextTopic;
+    if (next == null) {
+      final first = path.topics.first;
+      return (
+        label:
+            '${context.tr(TranslationKeys.learningPathsReview)} · ${first.title}',
+        icon: Icons.replay_rounded,
+        onPressed: () => _navigateToTopic(first, path),
+      );
+    }
+    final started = path.topics.any((t) => t.isCompleted || t.isInProgress);
+    final verb = context.tr(started
+        ? TranslationKeys.learningPathsContinue
+        : TranslationKeys.learningPathsStartPath);
+    return (
+      label: '$verb · ${next.title}',
+      icon: Icons.play_arrow_outlined,
+      onPressed: () => _navigateToTopic(next, path),
+    );
+  }
+
+  void _enroll(LearningPath path) {
+    context
+        .read<LearningPathsBloc>()
+        .add(EnrollInLearningPath(pathId: path.id));
+    _progressChanged = true;
+  }
+
   Widget _buildShareButton(LearningPathDetail path) {
     return IconButton(
-      icon: const Icon(Icons.ios_share),
+      icon: Icon(Icons.share_outlined, color: ReaderPalette.of(context).text),
       tooltip: context.tr(TranslationKeys.downloadsSharePath),
       onPressed: () => _sharePath(path),
     );
@@ -680,12 +675,13 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   Widget _buildDownloadButton(LearningPathDetail path) {
     final model = _downloadModel;
+    final palette = ReaderPalette.of(context);
 
     if (model == null ||
         model.status == PathDownloadStatus.failed ||
         model.status == PathDownloadStatus.paused) {
       return IconButton(
-        icon: const Icon(Icons.download_outlined),
+        icon: Icon(Icons.download_outlined, color: palette.text),
         tooltip: context.tr(TranslationKeys.downloadsDownloadForOffline),
         onPressed: () => _showTopicSelectionSheet(path),
       );
@@ -702,27 +698,29 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     // Downloading / queued — show progress ring
     final total = model.totalCount;
     final done = model.completedCount;
-    return GestureDetector(
-      onTap: () => _showDownloadOptions(path),
-      child: Stack(
+    return IconButton(
+      tooltip: context.tr(TranslationKeys.downloadsStatusDownloading),
+      onPressed: () => _showDownloadOptions(path),
+      icon: Stack(
         alignment: Alignment.center,
         children: [
           SizedBox(
-            width: 36,
-            height: 36,
+            width: 28,
+            height: 28,
             child: CircularProgressIndicator(
               value: total > 0 ? done / total : null,
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
-              ),
+              strokeWidth: 2.5,
+              backgroundColor: palette.outline,
+              valueColor: AlwaysStoppedAnimation<Color>(palette.gold),
             ),
           ),
           Text(
             '$done',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: AppFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: palette.text,
+            ),
           ),
         ],
       ),
@@ -772,6 +770,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     final selected = Set<String>.from(selectable.map((t) => t.topicId));
 
     await showModalBottomSheet<void>(
+      useRootNavigator: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -814,6 +813,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     final model = _downloadModel;
     if (model == null) return;
     showModalBottomSheet<void>(
+      useRootNavigator: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -859,431 +859,21 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, LearningPath? path) {
-    final theme = Theme.of(context);
-    final color =
-        path != null ? _parseColor(path.color) : theme.colorScheme.primary;
-
-    return SliverAppBar(
-      expandedHeight: 160,
-      pinned: true,
-      backgroundColor: theme.colorScheme.surface,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.arrow_back_ios_new,
-            size: 18,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        onPressed: _handleBackNavigation,
-      ),
-      actions: path is LearningPathDetail
-          ? [
-              _buildShareButton(path),
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _buildDownloadButton(path),
-              ),
-            ]
-          : null,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                color.withValues(alpha: 0.2),
-                color.withValues(alpha: 0.05),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: path != null
-              ? Center(
-                  child: Icon(
-                    CategoryUtils.getIconForCategory(path.iconName),
-                    size: 80,
-                    color: color.withValues(alpha: 0.3),
-                  ),
-                )
-              : null,
-        ),
-      ),
-    );
-  }
-
   Widget _buildPathHeader(BuildContext context, LearningPath path) {
-    final theme = Theme.of(context);
-    final color = _parseColor(path.color);
-
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title and badge
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  path.title,
-                  style: AppFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: _getDiscipleLevelColor(path.discipleLevel)
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _getTranslatedDiscipleLevel(context, path.discipleLevel),
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _getDiscipleLevelColor(path.discipleLevel),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Description — tap to read the rest when it runs past 3 lines.
-          GestureDetector(
-            onTap: () =>
-                setState(() => _descriptionExpanded = !_descriptionExpanded),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  path.description,
-                  style: AppFonts.inter(
-                    fontSize: 15,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    height: 1.5,
-                  ),
-                  maxLines: _descriptionExpanded ? null : 3,
-                  overflow: _descriptionExpanded
-                      ? TextOverflow.visible
-                      : TextOverflow.ellipsis,
-                ),
-                Builder(builder: (context) {
-                  final span = TextSpan(
-                    text: path.description,
-                    style: AppFonts.inter(fontSize: 15, height: 1.5),
-                  );
-                  final painter = TextPainter(
-                    text: span,
-                    maxLines: 3,
-                    textDirection: Directionality.of(context),
-                  )..layout(maxWidth: MediaQuery.of(context).size.width - 40);
-                  if (!painter.didExceedMaxLines) {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      _descriptionExpanded
-                          ? context.tr(TranslationKeys.commonShowLess)
-                          : context.tr(TranslationKeys.commonShowMore),
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Stats row
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  context,
-                  Icons.book_outlined,
-                  '${path.topicsCount}',
-                  context.tr(TranslationKeys.learningPathsTopics),
-                  color,
-                ),
-                _buildDivider(context),
-                _buildStatItem(
-                  context,
-                  Icons.star_outline,
-                  '${path.totalXp}',
-                  context.tr(TranslationKeys.learningPathsXp),
-                  context.appStreakAccent,
-                ),
-                _buildDivider(context),
-                _buildStatItem(
-                  context,
-                  Icons.schedule_outlined,
-                  '${path.estimatedDays}',
-                  context.tr(TranslationKeys.learningPathsDays),
-                  AppColors.info,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    BuildContext context,
-    IconData icon,
-    String value,
-    String label,
-    Color color,
-  ) {
-    final theme = Theme.of(context);
-
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: AppFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 12,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDivider(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: 1,
-      height: 40,
-      color: theme.colorScheme.outline.withValues(alpha: 0.2),
-    );
-  }
-
-  Widget _buildEnrollButton(BuildContext context, LearningPath path) {
-    final theme = Theme.of(context);
-    final color = _parseColor(path.color);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: ElevatedButton(
-        onPressed: () {
-          context.read<LearningPathsBloc>().add(
-                EnrollInLearningPath(pathId: path.id),
-              );
-          _progressChanged = true;
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.play_circle_fill, size: 20),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                context.tr(TranslationKeys.learningPathsStartPath),
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressSection(BuildContext context, LearningPathDetail path) {
-    final theme = Theme.of(context);
-    final color = _parseColor(path.color);
-    final progress = path.progressPercentage / 100.0;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  context.tr(TranslationKeys.learningPathsProgress),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '${path.topicsCompleted}/${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}',
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor:
-                    theme.colorScheme.outline.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation(
-                  path.isCompleted ? AppColors.success : color,
-                ),
-                minHeight: 8,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  context.tr(
-                    TranslationKeys.learningPathsPercentComplete,
-                    {'percent': path.progressPercentage.toString()},
-                  ),
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: path.isCompleted ? AppColors.success : color,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (path.isCompleted)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: context.appSuccess,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        context.tr(TranslationKeys.learningPathsCompleted),
-                        style: AppFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: context.appSuccess,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopicsHeader(BuildContext context, LearningPathDetail path) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-      child: Row(
-        children: [
-          Text(
-            context.tr(TranslationKeys.learningPathsTopics),
-            style: AppFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '${path.topics.length}',
-              style: AppFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
+    // A cached detail saved before the category was stored has none; the
+    // path passed in from the list still knows it.
+    final category = path.category.isNotEmpty
+        ? path.category
+        : (widget.initialPath?.category ?? '');
+    return PathDetailHeader(
+      levelLabel: _getTranslatedDiscipleLevel(context, path.discipleLevel),
+      category: category,
+      title: path.title,
+      description: path.description,
+      topicsCount: path.topicsCount,
+      totalXp: path.totalXp,
+      estimatedDays: path.estimatedDays,
+      icon: iconForPath(path.iconName, category: category),
     );
   }
 
@@ -1293,9 +883,6 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     int index,
     LearningPathDetail path,
   ) {
-    final theme = Theme.of(context);
-    final color = CategoryUtils.getColorForCategory(context, topic.category);
-
     // Determine if topic is locked based on sequential progression
     // A topic is unlocked if:
     // - Path allows non-sequential access (all topics unlocked), OR
@@ -1326,200 +913,47 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         !topic.isCompleted &&
         !path.topics.take(index).any((t) => !t.isCompleted);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      child: GestureDetector(
-        onTap: isLocked ? null : () => _navigateToTopic(topic, path),
-        child: AnimatedOpacity(
-          opacity: isLocked ? 0.5 : 1.0,
-          duration: const Duration(milliseconds: 150),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: topic.isCompleted
-                    ? AppColors.success.withOpacity(0.4)
-                    : (isNext
-                        ? color.withValues(alpha: 0.5)
-                        : theme.colorScheme.outline.withValues(alpha: 0.2)),
-                width: isNext ? 2 : 1,
-              ),
-              boxShadow: isNext
-                  ? [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              children: [
-                // Position indicator
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: topic.isCompleted
-                        ? AppColors.success
-                        : (isNext
-                            ? color
-                            : theme.colorScheme.outline.withValues(alpha: 0.2)),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Center(
-                    child: topic.isCompleted
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 18,
-                          )
-                        : (isLocked
-                            ? Icon(
-                                Icons.lock,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                                size: 16,
-                              )
-                            : Text(
-                                // `position` is 0-based in the database and is
-                                // used as a cursor (fellowship_study.current_
-                                // guide_index), so only the label is shifted.
-                                '${topic.position + 1}',
-                                style: AppFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isNext
-                                      ? Colors.white
-                                      : theme.colorScheme.onSurface,
-                                ),
-                              )),
-                  ),
-                ),
+    final PathTopicStatus status;
+    if (topic.isCompleted) {
+      status = PathTopicStatus.completed;
+    } else if (isLocked) {
+      status = PathTopicStatus.locked;
+    } else if (isNext) {
+      status = PathTopicStatus.current;
+    } else {
+      status = PathTopicStatus.upcoming;
+    }
 
-                const SizedBox(width: 14),
-
-                // Topic info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Two lines, and the badge aligned to the first one: a
-                      // chapter title like "വെളിപ്പാട് 1: നിലവിളക്കുകളുടെ
-                      // നടുവിൽ" does not fit on one line in Malayalam or Hindi,
-                      // and on a milestone row the badge took part of the width
-                      // too — so the title people scan by was cut mid-word.
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              topic.title,
-                              style: AppFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (topic.isMilestone)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8, top: 2),
-                              child: MilestoneBadge(),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                topic.category,
-                                style: AppFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: color,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.star_outline,
-                            size: 12,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '+${topic.xpValue} XP',
-                            style: AppFonts.inter(
-                              fontSize: 11,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Action indicator
-                if (!isLocked)
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: topic.isCompleted
-                        ? AppColors.success
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return PathTopicRow(
+      // `position` is 0-based in the database and is used as a cursor
+      // (fellowship_study.current_guide_index), so only the label is shifted.
+      number: topic.position + 1,
+      title: topic.title,
+      category: topic.category,
+      xp: topic.xpValue,
+      isMilestone: topic.isMilestone,
+      status: status,
+      upNextLine: isNext ? _upNextLine(context, path) : null,
+      onTap: isLocked ? null : () => _navigateToTopic(topic, path),
     );
   }
 
-  Color _parseColor(String colorHex) {
-    try {
-      final hex = colorHex.replaceFirst('#', '');
-      return Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {
-      return Theme.of(context).colorScheme.primary;
-    }
-  }
-
-  Color _getDiscipleLevelColor(String level) {
-    switch (level.toLowerCase()) {
-      case 'seeker':
-        return AppColors.info;
-      case 'believer':
-        return AppColors.success;
-      case 'disciple':
-        return AppColors.warning;
-      case 'leader':
-        return Theme.of(context).colorScheme.primary;
-      default:
-        return AppColors.lightTextSecondary;
-    }
+  /// "Next Topic · Standard · 8 min" — the mode the topic will open in:
+  /// the mode fixed in Settings, else the path's recommended mode.
+  String _upNextLine(BuildContext context, LearningPathDetail path) {
+    final pref =
+        sl<LanguagePreferenceService>().getLearningPathStudyModePreferenceRaw();
+    final mode =
+        (StudyModePreferences.isSpecificMode(pref, isLearningPath: true)
+                ? studyModeFromString(pref)
+                : null) ??
+            studyModeFromString(path.recommendedMode) ??
+            StudyMode.standard;
+    return [
+      context.tr(TranslationKeys.learningPathsNextTopic),
+      mode.localizedShortName(context),
+      mode.localizedDuration(context),
+    ].join(' · ');
   }
 
   String _getTranslatedDiscipleLevel(BuildContext context, String level) {

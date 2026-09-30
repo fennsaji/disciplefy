@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/category_utils.dart';
-import '../../domain/entities/learning_path.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_level_style.dart';
 
-/// Card widget for displaying a learning path.
+/// Localised name of a disciple level (`seeker`, `follower`, ...).
+String discipleLevelLabel(BuildContext context, String level) {
+  switch (level.toLowerCase()) {
+    case 'seeker':
+      return context.tr(TranslationKeys.discipleLevelSeeker);
+    case 'believer':
+      return context.tr(TranslationKeys.discipleLevelBeliever);
+    case 'disciple':
+      return context.tr(TranslationKeys.discipleLevelDisciple);
+    case 'leader':
+      return context.tr(TranslationKeys.discipleLevelLeader);
+    case 'follower':
+      return context.tr(TranslationKeys.discipleLevelFollower);
+    default:
+      return level.isEmpty
+          ? level
+          : level[0].toUpperCase() + level.substring(1);
+  }
+}
+
+/// Gradient tile for a learning path (For you row, category rows).
 ///
-/// Shows path title, description, progress (if enrolled), XP value,
-/// and number of topics.
+/// Coloured by the path's disciple level ([PathLevelStyle]), with the path
+/// icon drawn large and faint in the top-right corner. Shows the status
+/// (completed / in progress / featured), level and topic count, title, XP,
+/// duration and — once enrolled — progress.
 class LearningPathCard extends StatelessWidget {
   /// The learning path data.
   final LearningPath path;
@@ -18,488 +41,279 @@ class LearningPathCard extends StatelessWidget {
   /// Callback when the card is tapped.
   final VoidCallback onTap;
 
-  /// Whether to show as a compact card (for horizontal lists).
+  /// Fixed tile width for horizontal rows; `false` fills the parent width.
   final bool compact;
+
+  /// Keep room for the progress bar even when this path has none, so tiles
+  /// in a row where some show progress all have the same height.
+  final bool reserveProgressSpace;
+
+  /// Tile width when [compact].
+  static const double compactWidth = 200;
+
+  /// Minimum tile height.
+  static const double minHeight = 150;
 
   const LearningPathCard({
     super.key,
     required this.path,
     required this.onTap,
     this.compact = true,
+    this.reserveProgressSpace = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final color = _parseColor(path.color, context);
-    final isEnrolled = path.isEnrolled;
-    final isCompleted = path.isCompleted;
-    final isInProgress = path.isInProgress;
+    const radius = BorderRadius.all(Radius.circular(18));
+    final topicsLabel = context.tr(TranslationKeys.learningPathsTopics);
+    final topics = path.isEnrolled
+        ? '${path.topicsCompleted}/${path.topicsCount} $topicsLabel'
+        : '${path.topicsCount} $topicsLabel';
+    final eyebrow =
+        '${discipleLevelLabel(context, path.discipleLevel)} · $topics'
+            .toUpperCase();
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: compact ? 300 : null,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isCompleted
-                ? AppColors.success.withOpacity(0.4)
-                : color.withValues(alpha: 0.3),
-            width: isCompleted ? 2 : 1,
+    final tile = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: minHeight),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child:
+                PathLevelStyle.background(path.discipleLevel, radius: radius),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isCompleted
-                  ? AppColors.success.withOpacity(0.1)
-                  : color.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+          Positioned(
+            top: 12,
+            right: 12,
+            child: ExcludeSemantics(
+              child: Icon(
+                iconForPath(path.iconName, category: path.category),
+                size: 52,
+                color: PathLevelStyle.motifColor,
+              ),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with icon and status
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Path icon
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        color.withValues(alpha: 0.2),
-                        color.withValues(alpha: 0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                // Status badge, or empty room for the icon motif.
+                Padding(
+                  padding: const EdgeInsets.only(right: 60),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 26),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: _StatusBadge(path: path),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _getIconForPath(path.iconName),
-                    color: color,
-                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Disciple level badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getDiscipleLevelColor(
-                                  context, path.discipleLevel)
-                              .withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _getTranslatedDiscipleLevel(
-                              context, path.discipleLevel),
-                          style: AppFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: _getDiscipleLevelColor(
-                                context, path.discipleLevel),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      // Topics count — always "X/Y Topics"
-                      Text(
-                        '${path.topicsCompleted}/${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}',
-                        style: AppFonts.inter(
-                          fontSize: 11,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: isDark ? 0.85 : 0.6),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                const SizedBox(height: 22),
+                Text(
+                  eyebrow,
+                  maxLines: 2,
+                  style: AppFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: PathLevelStyle.eyebrowGold,
                   ),
                 ),
-                // Status badge
-                _buildStatusBadge(
-                    context, isEnrolled, isCompleted, isInProgress),
+                const SizedBox(height: 4),
+                // Room for two lines, so tiles in a row line up unless a
+                // title needs a third.
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight:
+                        MediaQuery.textScalerOf(context).scale(16) * 1.25 * 2,
+                  ),
+                  child: Text(
+                    path.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _MetaRow(path: path),
+                if (path.isEnrolled || reserveProgressSpace) ...[
+                  const SizedBox(height: 10),
+                  Visibility(
+                    visible: path.isEnrolled,
+                    maintainSize: true,
+                    maintainAnimation: true,
+                    maintainState: true,
+                    child: _TileProgress(path: path),
+                  ),
+                ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
 
-            const SizedBox(height: 14),
-
-            // Title
-            Text(
-              path.title,
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-                height: 1.2,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 6),
-
-            // Description — fixed height so cards are uniform height
-            // (3 lines × 13px × 1.4 line-height ≈ 55px).
-            SizedBox(
-              height: 55,
-              child: Text(
-                path.description,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Progress bar (if enrolled).
-            if (isEnrolled) ...[
-              _buildProgressBar(context, color),
-              const SizedBox(height: 12),
-            ],
-
-            // Footer with XP and duration
-            Row(
-              children: [
-                // Left side: XP + duration — expands to push action button right
-                Expanded(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isCompleted ? Icons.star : Icons.star_outline,
-                        size: 16,
-                        color: isCompleted
-                            ? AppColors.success
-                            : context.appGoldMark,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${path.totalXp} XP',
-                          style: AppFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isCompleted
-                                ? AppColors.success
-                                : context.appStreakAccent,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.schedule_outlined,
-                        size: 14,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: isDark ? 0.8 : 0.5),
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${path.estimatedDays} ${context.tr(TranslationKeys.learningPathsDays)}',
-                          style: AppFonts.inter(
-                            fontSize: 11,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: isDark ? 0.8 : 0.5),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Action button
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? AppColors.success.withOpacity(0.1)
-                        : color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isCompleted
-                            ? context.tr(TranslationKeys.learningPathsReview)
-                            : (isInProgress
-                                ? context
-                                    .tr(TranslationKeys.learningPathsContinue)
-                                : context
-                                    .tr(TranslationKeys.learningPathsExplore)),
-                        style: AppFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isCompleted ? AppColors.success : color,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 10,
-                        color: isCompleted ? AppColors.success : color,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+    return Semantics(
+      button: true,
+      child: SizedBox(
+        width: compact ? compactWidth : null,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: tile,
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildStatusBadge(
-    BuildContext context,
-    bool isEnrolled,
-    bool isCompleted,
-    bool isInProgress,
-  ) {
-    if (isCompleted) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.success.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_circle,
-              size: 14,
-              color: context.appSuccess,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              context.tr(TranslationKeys.learningPathsCompleted),
-              style: AppFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: context.appSuccess,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      );
-    }
+/// XP and duration, wrapping instead of truncating.
+class _MetaRow extends StatelessWidget {
+  final LearningPath path;
 
-    if (isInProgress) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final badgeColor =
-          isDark ? AppColors.warningLighter : AppColors.warningDark;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.warning.withOpacity(isDark ? 0.25 : 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.play_circle_filled,
-              size: 14,
-              color: badgeColor,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              context.tr(TranslationKeys.learningPathsInProgress),
-              style: AppFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: badgeColor,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      );
-    }
+  const _MetaRow({required this.path});
 
-    if (path.isFeatured) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: context.appGoldMark.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.auto_awesome,
-              size: 14,
-              color: context.appGoldMark,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              context.tr(TranslationKeys.learningPathsFeatured),
-              style: AppFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: context.appStreakAccent,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildProgressBar(BuildContext context, Color color) {
-    final theme = Theme.of(context);
-    final progress = path.progressPercentage / 100.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  @override
+  Widget build(BuildContext context) {
+    final style = AppFonts.inter(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      color: Colors.white.withValues(alpha: 0.85),
+    );
+    final iconColor = Colors.white.withValues(alpha: 0.8);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              context.tr(TranslationKeys.learningPathsProgress),
-              style: AppFonts.inter(
-                fontSize: 11,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Icon(
+              path.isCompleted
+                  ? Icons.star_rounded
+                  : Icons.star_outline_rounded,
+              size: 15,
+              color: path.isCompleted ? PathLevelStyle.eyebrowGold : iconColor,
             ),
+            const SizedBox(width: 4),
             Text(
-              '${path.progressPercentage}%',
-              style: AppFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                // Gold: how far along a path you are is progress, which is
-                // what gold marks everywhere else in the app.
-                color: path.isCompleted
-                    ? AppColors.success
-                    : context.appStreakAccent,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+                '${path.totalXp} ${context.tr(TranslationKeys.learningPathsXp)}',
+                style: style),
+          ],
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.timer_outlined, size: 14, color: iconColor),
+            const SizedBox(width: 4),
+            Text(
+              '${path.estimatedDays} ${context.tr(TranslationKeys.learningPathsDays)}',
+              style: style,
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: theme.colorScheme.outline.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation(
-              path.isCompleted ? AppColors.success : color,
+      ],
+    );
+  }
+}
+
+/// Thin gold progress bar with the percentage.
+class _TileProgress extends StatelessWidget {
+  final LearningPath path;
+
+  const _TileProgress({required this.path});
+
+  @override
+  Widget build(BuildContext context) {
+    final value = (path.progressPercentage / 100).clamp(0.0, 1.0);
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: value,
+              minHeight: 4,
+              backgroundColor: Colors.white.withValues(alpha: 0.22),
+              valueColor:
+                  const AlwaysStoppedAnimation(PathLevelStyle.eyebrowGold),
             ),
-            minHeight: 6,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '${path.progressPercentage}%',
+          style: AppFonts.inter(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: PathLevelStyle.eyebrowGold,
           ),
         ),
       ],
     );
   }
+}
 
-  Color _parseColor(String colorHex, BuildContext context) {
-    try {
-      final hex = colorHex.replaceFirst('#', '');
-      return Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {
-      return Theme.of(context).colorScheme.primary; // Default purple
+/// Completed / in progress / featured pill on a dark glass chip.
+class _StatusBadge extends StatelessWidget {
+  final LearningPath path;
+
+  const _StatusBadge({required this.path});
+
+  @override
+  Widget build(BuildContext context) {
+    final IconData icon;
+    final String label;
+    if (path.isCompleted) {
+      icon = Icons.check_circle_rounded;
+      label = context.tr(TranslationKeys.learningPathsCompleted);
+    } else if (path.isInProgress) {
+      icon = Icons.play_circle_fill_rounded;
+      label = context.tr(TranslationKeys.learningPathsInProgress);
+    } else if (path.isFeatured) {
+      icon = Icons.auto_awesome_rounded;
+      label = context.tr(TranslationKeys.learningPathsFeatured);
+    } else {
+      return const SizedBox.shrink();
     }
-  }
-
-  IconData _getIconForPath(String iconName) {
-    return CategoryUtils.getIconForCategory(iconName);
-  }
-
-  Color _getDiscipleLevelColor(BuildContext context, String level) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    switch (level.toLowerCase()) {
-      case 'seeker':
-        return isDark ? AppColors.infoLighter : AppColors.infoDark;
-      case 'believer':
-        return isDark ? AppColors.successLighter : AppColors.successDark;
-      case 'disciple':
-        return isDark ? AppColors.warningLighter : AppColors.warningDark;
-      case 'leader':
-        return isDark
-            ? AppColors.brandPrimaryLight
-            : Theme.of(context).colorScheme.primary;
-      case 'follower':
-        return isDark
-            ? AppColors.brandPrimaryLight
-            : AppColors.brandPrimaryDeep;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
-  }
-
-  String _getTranslatedDiscipleLevel(BuildContext context, String level) {
-    switch (level.toLowerCase()) {
-      case 'seeker':
-        return context.tr(TranslationKeys.discipleLevelSeeker);
-      case 'believer':
-        return context.tr(TranslationKeys.discipleLevelBeliever);
-      case 'disciple':
-        return context.tr(TranslationKeys.discipleLevelDisciple);
-      case 'leader':
-        return context.tr(TranslationKeys.discipleLevelLeader);
-      case 'follower':
-        return context.tr(TranslationKeys.discipleLevelFollower);
-      default:
-        return _capitalize(level);
-    }
-  }
-
-  String _capitalize(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: PathLevelStyle.eyebrowGold),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-/// Skeleton loading card for learning paths.
+/// Skeleton for a [LearningPathCard] while paths load.
 class LearningPathCardSkeleton extends StatelessWidget {
   final bool compact;
 
@@ -510,128 +324,13 @@ class LearningPathCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final shimmerColor = theme.colorScheme.onSurface.withValues(alpha: 0.08);
-
+    final palette = ReaderPalette.of(context);
     return Container(
-      width: compact ? 300 : null,
-      padding: const EdgeInsets.all(16),
+      width: compact ? LearningPathCard.compactWidth : null,
+      height: LearningPathCard.minHeight,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header skeleton
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: shimmerColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: shimmerColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      width: 50,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: shimmerColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // Title skeleton
-          Container(
-            width: double.infinity,
-            height: 18,
-            decoration: BoxDecoration(
-              color: shimmerColor,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Description skeleton
-          Container(
-            width: double.infinity,
-            height: 14,
-            decoration: BoxDecoration(
-              color: shimmerColor,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            width: 160,
-            height: 14,
-            decoration: BoxDecoration(
-              color: shimmerColor,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Footer skeleton
-          Row(
-            children: [
-              Container(
-                width: 60,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: shimmerColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 50,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: shimmerColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 80,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: shimmerColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ],
-          ),
-        ],
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(18),
       ),
     );
   }

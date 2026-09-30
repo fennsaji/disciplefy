@@ -1488,6 +1488,26 @@ class TranslationKeys {
 
   static const discipleLevelFollower = 'disciple_level.follower';
 
+  // Study Topics tab (header cards, For you, Learning paths, category page)
+  static const topicsHubContinueEyebrow = 'topics_hub.continue_eyebrow';
+  static const topicsHubNextTopic = 'topics_hub.next_topic';
+  static const topicsHubStreakValue = 'topics_hub.streak_value';
+  static const topicsHubStreakValueOne = 'topics_hub.streak_value_one';
+  static const topicsHubStreakLabel = 'topics_hub.streak_label';
+  static const topicsHubLeaderboardLabel = 'topics_hub.leaderboard_label';
+  static const topicsHubForYou = 'topics_hub.for_you';
+  static const topicsHubBasedOnGoals = 'topics_hub.based_on_goals';
+  static const topicsHubSearchPaths = 'topics_hub.search_paths';
+  static const topicsHubSeeAll = 'topics_hub.see_all';
+  static const topicsHubPathsCount = 'topics_hub.paths_count';
+  static const topicsHubPathsCountOne = 'topics_hub.paths_count_one';
+  static const topicsHubLevelRange = 'topics_hub.level_range';
+  static const topicsHubOfflineMessage = 'topics_hub.offline_message';
+  static const topicsHubRetry = 'topics_hub.retry';
+  static const topicsHubNoSearchResults = 'topics_hub.no_search_results';
+  static const topicsHubNoFilterResults = 'topics_hub.no_filter_results';
+  static const topicsHubAllLevels = 'topics_hub.all_levels';
+
   // Continue Learning
   static const continueLearningTitle = 'continue_learning.title';
   static const continueLearningEmpty = 'continue_learning.empty';
@@ -1506,6 +1526,9 @@ class TranslationKeys {
   static const leaderboardXpPoints = 'leaderboard.xp_points';
   static const leaderboardClose = 'leaderboard.close';
   static const leaderboardError = 'leaderboard.error';
+
+  // Leaderboard page redesign
+  static const leaderboardXpToPass = 'leaderboard.xp_to_pass';
 
   // Pricing Page (Public)
   static const pricingTitle = 'pricing.title';

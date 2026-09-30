@@ -132,6 +132,7 @@ class LearningPathDetailModel extends LearningPathDetail {
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,
+    super.category,
     super.topicsCompleted,
     super.enrolledAt,
     super.topics,
@@ -160,6 +161,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       topicsCount: topics.length,
       isEnrolled: json['is_enrolled'] as bool? ?? false,
       progressPercentage: json['progress_percentage'] as int? ?? 0,
+      category: json['category'] as String? ?? '',
       // Counted from the topics themselves when the API omits the field:
       // LearningPathDetail overrides the derived getter with this value, so a
       // missing key made a started path read "0/8 Topics".
@@ -188,6 +190,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       'is_featured': isFeatured,
       'is_enrolled': isEnrolled,
       'progress_percentage': progressPercentage,
+      'category': category,
       'topics_completed': topicsCompleted,
       'enrolled_at': enrolledAt?.toIso8601String(),
       'topics': topics.map((t) {

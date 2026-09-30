@@ -76,6 +76,16 @@ class AppRoutes {
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';
 
+  /// Every path in one category ("See all" on the Study Topics tab).
+  static const String learningPathCategory =
+      '/learning-paths/category/:category';
+
+  /// Location of [learningPathCategory] for [category].
+  static String learningPathCategoryLocation(String category,
+          {String? language}) =>
+      '/learning-paths/category/${Uri.encodeComponent(category)}'
+      '${language != null ? '?language=${Uri.encodeQueryComponent(language)}' : ''}';
+
   // Shared links
   static const String dailyVerseShared = '/daily-verse';
   static const String studyGuideOpen = '/study-guide/:guideId';
