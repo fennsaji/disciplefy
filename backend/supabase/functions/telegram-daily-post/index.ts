@@ -106,7 +106,7 @@ createServiceRoleFunction(async (req, supabase) => {
   }
 
   const services = await getServiceContainer()
-  const teaser = await getOrCreateTeaser(supabase, services.llmService, {
+  const teaser = await getOrCreateTeaser(supabase, (await services.getLlmService()), {
     topicId: next.topic_id,
     topicTitle: next.topic_title,
     pathTitle: next.path_title,

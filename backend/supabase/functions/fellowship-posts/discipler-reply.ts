@@ -59,7 +59,7 @@ async function markQueue(db: SupabaseClient, queueId: string, status: string, la
 
 async function findCachedGuide(services: ServiceContainer, db: SupabaseClient, req: { input_type: string; input_value: string }, language: string): Promise<{ id: string; title: string } | null> {
   const normalized = req.input_value.toLowerCase().trim().replace(/\s+/g, ' ')
-  const hash = await services.securityValidator.hashSensitiveData(`${req.input_type}:${language}:standard:${normalized}`)
+  const hash = await (await services.getSecurityValidator()).hashSensitiveData(`${req.input_type}:${language}:standard:${normalized}`)
   const { data } = await db.from('study_guides').select('id, input_value').eq('input_type', req.input_type)
     .eq('input_value_hash', hash).eq('language', language).eq('study_mode', 'standard').maybeSingle()
   return data ? { id: data.id as string, title: data.input_value as string } : null
@@ -146,7 +146,7 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
   let usage: { inputTokens?: number; outputTokens?: number; costUsd?: number }
   let model: string
   try {
-    const result = await services.llmService.generateDisciplerReply({
+    const result = await (await services.getLlmService()).generateDisciplerReply({
       systemMessage: buildDisciplerSystemPrompt(),
       userMessage: buildDisciplerUserMessage({ trigger, fellowshipLanguage: settings.language, question, askerName, guideContext, thread }),
     })

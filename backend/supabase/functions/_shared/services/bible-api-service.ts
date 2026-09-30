@@ -11,7 +11,7 @@
  * API Documentation: https://scripture.api.bible/
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { getServiceRoleClient } from '../core/service-client.ts';
 
 // Bible Version IDs from API.Bible
 const BIBLE_VERSIONS = {
@@ -534,7 +534,7 @@ export async function cacheVerses(
     return;
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getServiceRoleClient(supabaseUrl, supabaseKey);
 
   const dateKey = verseDate.toISOString().split('T')[0];
   // API.Bible Terms require cached content be refreshed at least every 30 days.
@@ -587,7 +587,7 @@ export async function getCachedVerses(
     return null;
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getServiceRoleClient(supabaseUrl, supabaseKey);
 
   const dateKey = verseDate.toISOString().split('T')[0];
 

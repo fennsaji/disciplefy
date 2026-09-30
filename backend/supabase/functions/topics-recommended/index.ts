@@ -113,7 +113,7 @@ async function handleTopicsRecommended(
   const cacheKey = topicsCacheKey(queryParams)
   let topicsData = topicsCache.get(cacheKey)
   if (!topicsData) {
-    topicsData = await getFilteredTopics(services.topicsRepository, queryParams)
+    topicsData = await getFilteredTopics((await services.getTopicsRepository()), queryParams)
     topicsCache.set(cacheKey, topicsData)
   }
 
@@ -237,7 +237,7 @@ function parseQueryParameters(url: string): TopicsQueryParams {
  * Retrieves and filters topics based on query parameters
  */
 async function getFilteredTopics(
-  repository: ServiceContainer['topicsRepository'], 
+  repository: Awaited<ReturnType<ServiceContainer['getTopicsRepository']>>, 
   params: TopicsQueryParams
 ): Promise<{
   topics: readonly RecommendedGuideTopic[]

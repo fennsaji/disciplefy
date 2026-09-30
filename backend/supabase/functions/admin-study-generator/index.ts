@@ -95,14 +95,14 @@ function parseRequestParams(req: Request): {
  */
 async function handleAdminStudyGenerator(
   req: Request,
-  {
-    authService,
-    llmService,
-    studyGuideRepository,
-    analyticsLogger,
-    securityValidator
-  }: ServiceContainer
+  services: ServiceContainer
 ): Promise<Response> {
+  const { authService, analyticsLogger } = services
+  const [llmService, studyGuideRepository, securityValidator] = await Promise.all([
+    services.getLlmService(),
+    services.getStudyGuideRepository(),
+    services.getSecurityValidator()
+  ])
   console.log('🚀 [ADMIN-STUDY] Starting admin study guide generation')
 
   const corsHeaders = getCorsHeaders(req.headers.get('origin'))

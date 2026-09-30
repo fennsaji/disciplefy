@@ -4,7 +4,7 @@
 // Handles all FCM operations including token management and notification sending
 // Uses Firebase Admin SDK with service account credentials from Supabase secrets
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { formatError, formatFCMError } from './utils/error-formatter.ts';
 import { SCHEDULED_NOTIFICATION_TYPES_FOR_SPACING } from './utils/notification-window.ts';
 import type { NotificationType } from './services/notification-helper-service.ts';

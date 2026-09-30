@@ -8,7 +8,7 @@
  * SECURITY: Refuses all requests unless SUPABASE_URL contains 127.0.0.1
  */
 
-import { createClient } from 'npm:@supabase/supabase-js'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateHmacSha256 } from '../_shared/utils/crypto-utils.ts'
 
 const corsHeaders = {

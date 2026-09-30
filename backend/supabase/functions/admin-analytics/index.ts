@@ -16,7 +16,7 @@
  * Deduped into one shared module-private helper.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { usdToInrRate } from '../_shared/services/exchange-rate.ts'
 import type { AdminUsageAnalytics, UsageStats } from '../_shared/types/usage-types.ts'
 

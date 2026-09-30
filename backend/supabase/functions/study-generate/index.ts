@@ -89,7 +89,12 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
   await checkMaintenanceMode(req, services)
 
   // 1. Get user context SECURELY from the new AuthService
-  const { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator, usageLoggingService, costTrackingService } = services
+  const { authService, tokenService, analyticsLogger, usageLoggingService, costTrackingService } = services
+  const [llmService, studyGuideRepository, securityValidator] = await Promise.all([
+    services.getLlmService(),
+    services.getStudyGuideRepository(),
+    services.getSecurityValidator()
+  ])
   const userContext = await authService.getUserContext(req)
 
   // 2. Validate request body and parse data

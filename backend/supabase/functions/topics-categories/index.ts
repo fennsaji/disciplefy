@@ -84,7 +84,7 @@ async function handleTopicsCategories(req: Request, services: ServiceContainer):
     const queryParams = parseQueryParameters(req.url)
     let categories = categoriesCache.get(queryParams.language)
     if (!categories) {
-      categories = await services.topicsRepository.getCategories(queryParams.language)
+      categories = await (await services.getTopicsRepository()).getCategories(queryParams.language)
       categoriesCache.set(queryParams.language, categories)
     }
 

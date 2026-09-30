@@ -5,7 +5,8 @@
 // Avoids recently sent topics and considers user study history
 // Supports questionnaire-based personalization scoring
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceRoleClient } from './core/service-client.ts';
 import { formatError } from './utils/error-formatter.ts';
 
 // ============================================================================
@@ -170,7 +171,7 @@ export async function selectTopicForUser(
   userId: string,
   language: string
 ): Promise<TopicSelectionResult> {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceRoleClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // Get topics recently sent to this user (within 30 days)
@@ -462,7 +463,7 @@ export async function getLocalizedTopicContent(
   }
 
   // Fetch translation from database
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceRoleClient(supabaseUrl, supabaseServiceKey);
   
   try {
     const { data: translation, error } = await supabase
@@ -628,7 +629,7 @@ export async function selectTopicsForYou(
 ): Promise<TopicsForYouResult> {
   // Reuse the caller's service client when given; a new client per call
   // costs a fresh connection setup.
-  const supabase = client ?? createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = client ?? getServiceRoleClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // Get user's personalization data
@@ -799,7 +800,7 @@ export async function selectTopicsForYouWithLearningPath(
 ): Promise<TopicsForYouWithPathResult> {
   // Reuse the caller's service client when given; a new client per call
   // costs a fresh connection setup.
-  const supabase = client ?? createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = client ?? getServiceRoleClient(supabaseUrl, supabaseServiceKey);
 
   console.log(`[TOPICS_FOR_YOU] Starting selectTopicsForYouWithLearningPath for user: ${userId}, limit: ${limit}`);
 

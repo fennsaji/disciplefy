@@ -1,5 +1,5 @@
 // Supabase client is now injected via DI container - no need to import createClient
-import { LLMService } from '../_shared/services/llm-service.ts'
+import type { LLMService } from '../_shared/services/llm-service.ts'
 import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 import { TtlCache, msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
 
@@ -127,7 +127,7 @@ export class DailyVerseService {
 
   constructor(
     private readonly supabase: any,
-    private readonly llmService: LLMService
+    private readonly getLlmService: () => Promise<LLMService>
   ) {
     // Supabase client and LLM service injected via DI container
   }
@@ -284,7 +284,7 @@ export class DailyVerseService {
     
     try {
       // Use the dedicated daily verse generation method from LLM service
-      const llmResponse = await this.llmService.generateDailyVerse(excludeReferences, language)
+      const llmResponse = await (await this.getLlmService()).generateDailyVerse(excludeReferences, language)
       
       console.log(`LLM generated verse: ${llmResponse.reference}`)
       console.log('LLM referenceTranslations:', JSON.stringify(llmResponse.referenceTranslations))

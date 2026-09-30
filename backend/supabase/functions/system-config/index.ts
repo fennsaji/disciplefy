@@ -12,7 +12,7 @@
 import { getSystemConfig, getSystemConfigRows } from '../_shared/services/system-config-service.ts'
 import { getFeatureFlags, isTesterEmail, applyTesterBypass } from '../_shared/services/feature-flag-service.ts'
 import { MemoryVerseConfigService } from '../_shared/services/memory-verse-config-service.ts'
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts'
 
 /**

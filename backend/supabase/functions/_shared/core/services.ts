@@ -6,225 +6,213 @@
  * invocations for optimal performance.
  */
 
-import { SupabaseClient, createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AuthService } from '../services/auth-service.ts'
-import { LLMService, LLMServiceConfig } from '../services/llm-service.ts'
-import { StudyGuideRepository } from '../repositories/study-guide-repository.ts'
-import { TopicsRepository } from '../repositories/topics-repository.ts'
-import { FeedbackRepository } from '../repositories/feedback-repository.ts'
-import { VoiceConversationRepository } from '../repositories/voice-conversation-repository.ts'
-import { StudyGuideService } from '../services/study-guide-service.ts'
-import { FeedbackService } from '../services/feedback-service.ts'
-import { PersonalNotesService } from '../services/personal-notes-service.ts'
 import { RateLimiter } from '../services/rate-limiter.ts'
 import { TokenService } from '../services/token-service.ts'
 import { AnalyticsLogger } from '../services/analytics-service.ts'
-import { VoiceStreamingService } from '../services/voice-streaming-service.ts'
 import { VoiceQuotaService } from '../services/voice-quota-service.ts'
-import { SecurityValidator } from '../utils/security-validator.ts'
-import { AppError } from '../utils/error-handler.ts'
 import { UsageLoggingService } from '../services/usage-logging-service.ts'
 import { CostTrackingService } from '../services/cost-tracking-service.ts'
 import { RateLimitService } from '../services/rate-limit-service.ts'
 import { MemoryVerseConfigService } from '../services/memory-verse-config-service.ts'
+import { AppError } from '../utils/error-handler.ts'
+import { getServiceRoleClient } from './service-client.ts'
 import { config } from './config.ts'
+// Heavy services are type-only here and loaded with dynamic import() on first
+// use, so functions that never touch them don't load or evaluate their modules
+// (LLM clients, prompt builders, voice streaming, repositories).
+import type { LLMService, LLMServiceConfig } from '../services/llm-service.ts'
+import type { StudyGuideRepository } from '../repositories/study-guide-repository.ts'
+import type { TopicsRepository } from '../repositories/topics-repository.ts'
+import type { FeedbackRepository } from '../repositories/feedback-repository.ts'
+import type { VoiceConversationRepository } from '../repositories/voice-conversation-repository.ts'
+import type { StudyGuideService } from '../services/study-guide-service.ts'
+import type { FeedbackService } from '../services/feedback-service.ts'
+import type { PersonalNotesService } from '../services/personal-notes-service.ts'
+import type { VoiceStreamingService } from '../services/voice-streaming-service.ts'
+import type { SecurityValidator } from '../utils/security-validator.ts'
 
 /**
- * Rate limiter configuration
- */
-interface RateLimiterConfig {
-  readonly anonymousLimit: number
-  readonly authenticatedLimit: number
-  readonly anonymousWindowMinutes: number
-  readonly authenticatedWindowMinutes: number
-}
-
-/**
- * Service container interface
+ * Service container.
+ *
+ * Cheap services are sync properties constructed on first access.
+ * Heavy services are async getters that load their module on first call and
+ * return the same instance afterwards.
  */
 export interface ServiceContainer {
   readonly authService: AuthService
   readonly supabaseServiceClient: SupabaseClient
-  readonly llmService: LLMService
-  readonly studyGuideRepository: StudyGuideRepository
-  readonly topicsRepository: TopicsRepository
-  readonly feedbackRepository: FeedbackRepository
-  readonly voiceConversationRepository: VoiceConversationRepository
-  readonly studyGuideService: StudyGuideService
-  readonly feedbackService: FeedbackService
-  readonly personalNotesService: PersonalNotesService
   readonly rateLimiter: RateLimiter
   readonly tokenService: TokenService
   readonly analyticsLogger: AnalyticsLogger
-  readonly securityValidator: SecurityValidator
-  readonly voiceStreamingService: VoiceStreamingService
   readonly voiceQuotaService: VoiceQuotaService
   readonly usageLoggingService: UsageLoggingService
   readonly costTrackingService: CostTrackingService
   readonly rateLimitService: RateLimitService
   readonly memoryVerseConfigService: MemoryVerseConfigService
   readonly serviceRoleClient: SupabaseClient // Alias for compatibility
+  getLlmService(): Promise<LLMService>
+  getStudyGuideRepository(): Promise<StudyGuideRepository>
+  getTopicsRepository(): Promise<TopicsRepository>
+  getFeedbackRepository(): Promise<FeedbackRepository>
+  getVoiceConversationRepository(): Promise<VoiceConversationRepository>
+  getStudyGuideService(): Promise<StudyGuideService>
+  getFeedbackService(): Promise<FeedbackService>
+  getPersonalNotesService(): Promise<PersonalNotesService>
+  getSecurityValidator(): Promise<SecurityValidator>
+  getVoiceStreamingService(): Promise<VoiceStreamingService>
 }
 
-// Global singleton instances
+// Global singleton instance
 let globalServiceContainer: ServiceContainer | null = null
-let globalInitializationPromise: Promise<ServiceContainer> | null = null
 
-/**
- * Creates and validates environment configuration
- */
+/** Memoizes a sync factory: runs once, on first call. */
+function lazy<T>(factory: () => T): () => T {
+  let value: T | undefined
+  let done = false
+  return () => {
+    if (!done) {
+      value = factory()
+      done = true
+    }
+    return value as T
+  }
+}
 
-/**
- * Creates rate limiter configuration from environment variables
- */
-function createRateLimiterConfig(): RateLimiterConfig {
-  return {
+/** Memoizes an async factory; a failed load is retried on the next call. */
+function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
+  let promise: Promise<T> | null = null
+  return () => {
+    if (!promise) {
+      promise = factory().catch((error) => {
+        promise = null
+        throw error
+      })
+    }
+    return promise
+  }
+}
+
+function buildServiceContainer(): ServiceContainer {
+  const supabaseServiceClient = getServiceRoleClient(config.supabaseUrl, config.supabaseServiceKey)
+
+  const authService = lazy(() => new AuthService(config.supabaseUrl, config.supabaseAnonKey, supabaseServiceClient))
+  const rateLimiter = lazy(() => new RateLimiter(supabaseServiceClient, {
     anonymousLimit: 3,
     authenticatedLimit: 10,
     anonymousWindowMinutes: 480, // 8 hours
     authenticatedWindowMinutes: 60 // 1 hour
-  }
-}
+  }))
+  const tokenService = lazy(() => new TokenService(supabaseServiceClient))
+  const analyticsLogger = lazy(() => new AnalyticsLogger(supabaseServiceClient))
+  const voiceQuotaService = lazy(() => new VoiceQuotaService(supabaseServiceClient))
+  const usageLoggingService = lazy(() => new UsageLoggingService(config.supabaseUrl, config.supabaseServiceKey))
+  const costTrackingService = lazy(() => new CostTrackingService())
+  const rateLimitService = lazy(() => new RateLimitService(config.supabaseUrl, config.supabaseServiceKey))
+  const memoryVerseConfigService = lazy(() => new MemoryVerseConfigService(supabaseServiceClient))
 
-/**
- * Initializes the service container with all singleton instances
- */
-async function initializeServiceContainer(): Promise<ServiceContainer> {
-  try {
-    console.log('[Services] Initializing service container...')
-    
-    // Create Supabase service role client using centralized config
-    const supabaseServiceClient = createClient(
-      config.supabaseUrl,
-      config.supabaseServiceKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
-
-    // OPTIMIZATION: Skip database connection test during boot to prevent worker timeout
-    // The database connection will be tested implicitly on first actual query
-    // If database is down, functions will fail gracefully with proper error messages
-    console.log('[Services] Skipping database connection test (lazy validation on first query)')
-
-    // Initialize services with dependency injection
-    const authService = new AuthService(config.supabaseUrl, config.supabaseAnonKey, supabaseServiceClient)
-    
-    // Create LLM service config from centralized config
+  const getLlmService = lazyAsync(async () => {
+    const { LLMService } = await import('../services/llm-service.ts')
     const llmConfig: LLMServiceConfig = {
       openaiApiKey: config.openaiApiKey,
       anthropicApiKey: config.anthropicApiKey,
       provider: config.llmProvider,
       useMock: config.useMock,
-      supabaseClient: supabaseServiceClient  // For security event logging
+      supabaseClient: supabaseServiceClient // For security event logging
     }
-    const llmService = new LLMService(llmConfig)
-    
-    const studyGuideRepository = new StudyGuideRepository(supabaseServiceClient)
-    const topicsRepository = new TopicsRepository(supabaseServiceClient)
-    const feedbackRepository = new FeedbackRepository(supabaseServiceClient)
-    const voiceConversationRepository = new VoiceConversationRepository(supabaseServiceClient)
-    const studyGuideService = new StudyGuideService(llmService, studyGuideRepository)
-    const feedbackService = new FeedbackService()
-    const personalNotesService = new PersonalNotesService(studyGuideRepository)
-    const rateLimiterConfig = createRateLimiterConfig()
-    const rateLimiter = new RateLimiter(supabaseServiceClient, rateLimiterConfig)
-    const tokenService = new TokenService(supabaseServiceClient)
-    const analyticsLogger = new AnalyticsLogger(supabaseServiceClient)
-    const securityValidator = new SecurityValidator()
-    const voiceStreamingService = new VoiceStreamingService({
+    return new LLMService(llmConfig)
+  })
+  const getStudyGuideRepository = lazyAsync(async () => {
+    const { StudyGuideRepository } = await import('../repositories/study-guide-repository.ts')
+    return new StudyGuideRepository(supabaseServiceClient)
+  })
+  const getTopicsRepository = lazyAsync(async () => {
+    const { TopicsRepository } = await import('../repositories/topics-repository.ts')
+    return new TopicsRepository(supabaseServiceClient)
+  })
+  const getFeedbackRepository = lazyAsync(async () => {
+    const { FeedbackRepository } = await import('../repositories/feedback-repository.ts')
+    return new FeedbackRepository(supabaseServiceClient)
+  })
+  const getVoiceConversationRepository = lazyAsync(async () => {
+    const { VoiceConversationRepository } = await import('../repositories/voice-conversation-repository.ts')
+    return new VoiceConversationRepository(supabaseServiceClient)
+  })
+  const getStudyGuideService = lazyAsync(async () => {
+    const [{ StudyGuideService }, llmService, repository] = await Promise.all([
+      import('../services/study-guide-service.ts'),
+      getLlmService(),
+      getStudyGuideRepository()
+    ])
+    return new StudyGuideService(llmService, repository)
+  })
+  const getFeedbackService = lazyAsync(async () => {
+    const { FeedbackService } = await import('../services/feedback-service.ts')
+    return new FeedbackService()
+  })
+  const getPersonalNotesService = lazyAsync(async () => {
+    const [{ PersonalNotesService }, repository] = await Promise.all([
+      import('../services/personal-notes-service.ts'),
+      getStudyGuideRepository()
+    ])
+    return new PersonalNotesService(repository)
+  })
+  const getSecurityValidator = lazyAsync(async () => {
+    const { SecurityValidator } = await import('../utils/security-validator.ts')
+    return new SecurityValidator()
+  })
+  const getVoiceStreamingService = lazyAsync(async () => {
+    const { VoiceStreamingService } = await import('../services/voice-streaming-service.ts')
+    return new VoiceStreamingService({
       openaiApiKey: config.useMock ? '' : (config.openaiApiKey || ''),
       anthropicApiKey: config.useMock ? undefined : config.anthropicApiKey,
       useMock: config.useMock
     })
-    const voiceQuotaService = new VoiceQuotaService(supabaseServiceClient)
+  })
 
-    // Initialize usage tracking services
-    const usageLoggingService = new UsageLoggingService(config.supabaseUrl, config.supabaseServiceKey)
-    const costTrackingService = new CostTrackingService()
-    const rateLimitService = new RateLimitService(config.supabaseUrl, config.supabaseServiceKey)
-    const memoryVerseConfigService = new MemoryVerseConfigService(supabaseServiceClient)
-
-    // Test LLM service initialization
-    try {
-      // This will validate API keys and throw if misconfigured
-      console.log('[Services] LLM service initialized successfully')
-    } catch (error) {
-      console.error('[Services] LLM service initialization failed:', error)
-      // Don't throw - allow the service to start but log the error
-      // LLM errors will be handled at request time
-    }
-
-    const container: ServiceContainer = {
-      authService,
-      supabaseServiceClient,
-      llmService,
-      studyGuideRepository,
-      topicsRepository,
-      feedbackRepository,
-      voiceConversationRepository,
-      studyGuideService,
-      feedbackService,
-      personalNotesService,
-      rateLimiter,
-      tokenService,
-      analyticsLogger,
-      securityValidator,
-      voiceStreamingService,
-      voiceQuotaService,
-      usageLoggingService,
-      costTrackingService,
-      rateLimitService,
-      memoryVerseConfigService,
-      serviceRoleClient: supabaseServiceClient // Alias for compatibility
-    }
-
-    console.log('[Services] Service container initialized successfully')
-    return container
-    
-  } catch (error) {
-    console.error('[Services] Failed to initialize service container:', error)
-    throw error
+  return {
+    supabaseServiceClient,
+    serviceRoleClient: supabaseServiceClient,
+    get authService() { return authService() },
+    get rateLimiter() { return rateLimiter() },
+    get tokenService() { return tokenService() },
+    get analyticsLogger() { return analyticsLogger() },
+    get voiceQuotaService() { return voiceQuotaService() },
+    get usageLoggingService() { return usageLoggingService() },
+    get costTrackingService() { return costTrackingService() },
+    get rateLimitService() { return rateLimitService() },
+    get memoryVerseConfigService() { return memoryVerseConfigService() },
+    getLlmService,
+    getStudyGuideRepository,
+    getTopicsRepository,
+    getFeedbackRepository,
+    getVoiceConversationRepository,
+    getStudyGuideService,
+    getFeedbackService,
+    getPersonalNotesService,
+    getSecurityValidator,
+    getVoiceStreamingService
   }
 }
 
 /**
- * Gets the singleton service container instance
- * 
- * This function ensures that services are initialized only once
- * and reused across all function invocations for optimal performance.
+ * Gets the singleton service container instance.
+ *
+ * Building the container only creates the shared client; every service is
+ * constructed on first use and reused for the worker's lifetime.
  */
-export async function getServiceContainer(): Promise<ServiceContainer> {
-  // Return existing instance if available
-  if (globalServiceContainer) {
-    return globalServiceContainer
+export function getServiceContainer(): Promise<ServiceContainer> {
+  if (!globalServiceContainer) {
+    globalServiceContainer = buildServiceContainer()
   }
-
-  // If initialization is in progress, wait for it
-  if (globalInitializationPromise) {
-    return await globalInitializationPromise
-  }
-
-  // Start initialization
-  globalInitializationPromise = initializeServiceContainer()
-  
-  try {
-    globalServiceContainer = await globalInitializationPromise
-    return globalServiceContainer
-  } catch (error) {
-    // Reset globals on failure to allow retry
-    globalInitializationPromise = null
-    globalServiceContainer = null
-    throw error
-  }
+  return Promise.resolve(globalServiceContainer)
 }
 
 /**
  * Creates a user-specific Supabase client with authentication
- * 
+ *
  * @param authToken - Authorization token from request headers
  * @returns Configured Supabase client
  */
@@ -239,7 +227,7 @@ export function createUserSupabaseClient(authToken: string, supabaseUrl: string,
 
   return createClient(supabaseUrl, supabaseAnonKey, {
     global: {
-      headers: { 
+      headers: {
         Authorization: authToken
       },
     },
@@ -251,7 +239,6 @@ export function createUserSupabaseClient(authToken: string, supabaseUrl: string,
  */
 export function resetServiceContainer(): void {
   globalServiceContainer = null
-  globalInitializationPromise = null
   console.log('[Services] Service container reset')
 }
 
@@ -271,11 +258,11 @@ export async function healthCheck(): Promise<{
       // Database check
       container.supabaseServiceClient.from('study_guides').select('count').limit(1),
       // LLM service check (basic instantiation)
-      Promise.resolve(container.llmService ? 'up' : 'down'),
+      container.getLlmService().then(() => 'up'),
       // Other services are mostly in-memory, so just check instantiation
       Promise.resolve(container.rateLimiter ? 'up' : 'down'),
       Promise.resolve(container.analyticsLogger ? 'up' : 'down'),
-      Promise.resolve(container.securityValidator ? 'up' : 'down')
+      container.getSecurityValidator().then(() => 'up')
     ])
 
     const services = {

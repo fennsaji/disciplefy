@@ -13,7 +13,7 @@ import { DailyVerseService } from '../daily-verse/daily-verse-service.ts'
 let _dailyVerseService: DailyVerseService | null = null
 function getDailyVerseService(services: ServiceContainer): DailyVerseService {
   if (!_dailyVerseService) {
-    _dailyVerseService = new DailyVerseService(services.supabaseServiceClient, services.llmService)
+    _dailyVerseService = new DailyVerseService(services.supabaseServiceClient, services.getLlmService)
   }
   return _dailyVerseService
 }
