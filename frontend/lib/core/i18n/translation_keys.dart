@@ -1,5 +1,34 @@
 /// Translation key constants for type-safe translation access
 class TranslationKeys {
+  // App chrome: lock overlay, update dialogs, offline banner,
+  // notification prompt eyebrow.
+  static const appChromeLockTapToUpgrade = 'app_chrome.lock.tap_to_upgrade';
+  static const appChromeLockNotAvailableOffline =
+      'app_chrome.lock.not_available_offline';
+  static const appChromeLockConnectToUpgrade =
+      'app_chrome.lock.connect_to_upgrade';
+  static const appChromeUpdateEyebrow = 'app_chrome.update.eyebrow';
+  static const appChromeUpdateRequiredTitle =
+      'app_chrome.update.required_title';
+  static const appChromeUpdateRequiredBody = 'app_chrome.update.required_body';
+  static const appChromeUpdateRequiredHint = 'app_chrome.update.required_hint';
+  static const appChromeUpdateAvailableTitle =
+      'app_chrome.update.available_title';
+  static const appChromeUpdateAvailableBody =
+      'app_chrome.update.available_body';
+  static const appChromeUpdateCurrentVersion =
+      'app_chrome.update.current_version';
+  static const appChromeUpdateRequiredVersion =
+      'app_chrome.update.required_version';
+  static const appChromeUpdateLatestVersion =
+      'app_chrome.update.latest_version';
+  static const appChromeUpdateUpdateNow = 'app_chrome.update.update_now';
+  static const appChromeUpdateUpdate = 'app_chrome.update.update';
+  static const appChromeUpdateLater = 'app_chrome.update.later';
+  static const appChromeOfflineOffline = 'app_chrome.offline.offline';
+  static const appChromeOfflineBackOnline = 'app_chrome.offline.back_online';
+  static const appChromeNotifyPromptEyebrow =
+      'app_chrome.notify_prompt.eyebrow';
   // Memory recall practice modes (flip card, progressive reveal,
   // first letter hints, type it out)
   static const memoryRecallFlipFront = 'memory_recall_modes.flip_card.front';
@@ -426,6 +455,7 @@ class TranslationKeys {
   static const passwordResetInvalidEmail = 'password_reset.invalid_email';
   static const passwordResetResend = 'password_reset.resend';
   static const passwordResetError = 'password_reset.error';
+  static const passwordResetEyebrow = 'password_reset.eyebrow';
 
   // Email Verification Banner
   static const emailVerificationTitle = 'email_verification.title';
@@ -444,6 +474,7 @@ class TranslationKeys {
   static const onboardingLanguageSavedLocally =
       'onboarding.language_saved_locally';
   static const onboardingDefaultLanguageSet = 'onboarding.default_language_set';
+  static const onboardingLanguageSaveFailed = 'onboarding.language_save_failed';
   static const onboardingSkipIntro = 'onboarding.skip_intro';
   static const onboardingGetStarted = 'onboarding.get_started';
   static const onboardingLanguageEyebrow = 'onboarding.language_eyebrow';
@@ -647,6 +678,36 @@ class TranslationKeys {
   static const questionnaireSkipTitle = 'questionnaire.skip_title';
   static const questionnaireSkipMessage = 'questionnaire.skip_message';
   static const questionnaireCancel = 'questionnaire.cancel';
+  static const questionnaireStepOf = 'questionnaire.step_of';
+
+  // Memory verse add feedback (Home verse bookmark snackbars)
+  static const memoryAddFeedbackAdded = 'memory_add_feedback.added';
+  static const memoryAddFeedbackReviewNow = 'memory_add_feedback.review_now';
+  static const memoryAddFeedbackAlreadyExists =
+      'memory_add_feedback.already_exists';
+  static const memoryAddFeedbackReview = 'memory_add_feedback.review';
+
+  // Streak protection (freeze day) dialog
+  static const streakProtectionEyebrow = 'streak_protection.eyebrow';
+  static const streakProtectionTitle = 'streak_protection.title';
+  static const streakProtectionAtRisk = 'streak_protection.at_risk';
+  static const streakProtectionExplanation = 'streak_protection.explanation';
+  static const streakProtectionAvailable = 'streak_protection.available';
+  static const streakProtectionEarnMore = 'streak_protection.earn_more';
+  static const streakProtectionCancel = 'streak_protection.cancel';
+  static const streakProtectionUse = 'streak_protection.use';
+
+  // Streak milestone celebration dialog
+  static const streakMilestoneEyebrow = 'streak_milestone.eyebrow';
+  static const streakMilestoneTitleDays = 'streak_milestone.title_days';
+  static const streakMilestoneTitleYear = 'streak_milestone.title_year';
+  static const streakMilestoneMessage10 = 'streak_milestone.message_10';
+  static const streakMilestoneMessage30 = 'streak_milestone.message_30';
+  static const streakMilestoneMessage100 = 'streak_milestone.message_100';
+  static const streakMilestoneMessage365 = 'streak_milestone.message_365';
+  static const streakMilestoneMessageDefault =
+      'streak_milestone.message_default';
+  static const streakMilestoneContinue = 'streak_milestone.continue';
 
   // Question 1: Faith Stage
   static const questionnaireFaithStageTitle = 'questionnaire.faith_stage.title';
@@ -3299,4 +3360,33 @@ class TranslationKeys {
       'community_fellowship.type_desc_praise';
   static const communityFellowshipTypeDescQuestion =
       'community_fellowship.type_desc_question';
+
+  // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
+  static const guideFeedbackCompletedWhileAway =
+      'guide_feedback.completed_while_away';
+  static const guideFeedbackFellowshipPathComplete =
+      'guide_feedback.fellowship_path_complete';
+  static const guideFeedbackFellowshipNextGuide =
+      'guide_feedback.fellowship_next_guide';
+  static const guideFeedbackXpEarned = 'guide_feedback.xp_earned';
+  static const guideFeedbackNotesSaved = 'guide_feedback.notes_saved';
+  static const guideFeedbackReflectionNotLoaded =
+      'guide_feedback.reflection_not_loaded';
+  static const guideFeedbackReflectionSaved = 'guide_feedback.reflection_saved';
+  static const guideFeedbackReflectionFailed =
+      'guide_feedback.reflection_failed';
+  static const guideFeedbackSavedNotesFailed =
+      'guide_feedback.saved_notes_failed';
+  static const guideFeedbackAuthExpired = 'guide_feedback.auth_expired';
+  static const guideFeedbackNetworkError = 'guide_feedback.network_error';
+  static const guideFeedbackAlreadySaved = 'guide_feedback.already_saved';
+  static const guideFeedbackSharedToFellowship =
+      'guide_feedback.shared_to_fellowship';
+  static const guideFeedbackOk = 'guide_feedback.ok';
+  static const guideFeedbackTtsPrevSection = 'guide_feedback.tts_prev_section';
+  static const guideFeedbackTtsNextSection = 'guide_feedback.tts_next_section';
+  static const guideFeedbackTtsPlay = 'guide_feedback.tts_play';
+  static const guideFeedbackTtsReplay = 'guide_feedback.tts_replay';
+  static const guideFeedbackTtsProgress = 'guide_feedback.tts_progress';
+  static const guideFeedbackVerseEyebrow = 'guide_feedback.verse_eyebrow';
 }

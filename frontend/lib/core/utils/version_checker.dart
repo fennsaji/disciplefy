@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/system_config_service.dart';
-import '../theme/app_colors.dart';
+import '../../shared/widgets/popup.dart';
+import '../constants/app_fonts.dart';
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
+import '../theme/reader_palette.dart';
 import '../router/app_router.dart';
 import 'logger.dart';
 
@@ -125,43 +129,19 @@ class VersionChecker {
       barrierDismissible: false, // Cannot dismiss
       builder: (dialogContext) => PopScope(
         canPop: false, // Prevent back button
-        child: AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.system_update_alt, color: context.appWarning),
-              SizedBox(width: 12),
-              Text('Update Required'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'A critical update is required to continue using the app.',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 16),
-              Text('Current version: $currentVersion'),
-              Text('Required version: $minVersion'),
-              const SizedBox(height: 16),
-              const Text(
-                'Please update from your app store to continue.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton.icon(
-              onPressed: () => _openAppStore(platform),
-              icon: const Icon(Icons.download),
-              label: const Text('Update Now'),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ],
+        child: AppUpdateDialog(
+          icon: Icons.system_update_alt_rounded,
+          tone: PopupTone.gold,
+          title: dialogContext.tr(TranslationKeys.appChromeUpdateRequiredTitle),
+          body: dialogContext.tr(TranslationKeys.appChromeUpdateRequiredBody),
+          currentVersion: currentVersion,
+          targetLabel:
+              dialogContext.tr(TranslationKeys.appChromeUpdateRequiredVersion),
+          targetVersion: minVersion,
+          hint: dialogContext.tr(TranslationKeys.appChromeUpdateRequiredHint),
+          primaryLabel:
+              dialogContext.tr(TranslationKeys.appChromeUpdateUpdateNow),
+          onPrimary: () => _openAppStore(platform),
         ),
       ),
     );
@@ -180,40 +160,22 @@ class VersionChecker {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.new_releases_outlined, color: context.appInfo),
-            SizedBox(width: 12),
-            Text('Update Available'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'A new version of the app is available with improvements and bug fixes.',
-            ),
-            const SizedBox(height: 16),
-            Text('Current version: $currentVersion'),
-            Text('Latest version: $minVersion'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Later'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _openAppStore(platform);
-            },
-            icon: const Icon(Icons.download, size: 18),
-            label: const Text('Update'),
-          ),
-        ],
+      builder: (dialogContext) => AppUpdateDialog(
+        icon: Icons.new_releases_outlined,
+        tone: PopupTone.indigo,
+        title: dialogContext.tr(TranslationKeys.appChromeUpdateAvailableTitle),
+        body: dialogContext.tr(TranslationKeys.appChromeUpdateAvailableBody),
+        currentVersion: currentVersion,
+        targetLabel:
+            dialogContext.tr(TranslationKeys.appChromeUpdateLatestVersion),
+        targetVersion: minVersion,
+        primaryLabel: dialogContext.tr(TranslationKeys.appChromeUpdateUpdate),
+        onPrimary: () {
+          Navigator.pop(dialogContext);
+          _openAppStore(platform);
+        },
+        secondaryLabel: dialogContext.tr(TranslationKeys.appChromeUpdateLater),
+        onSecondary: () => Navigator.pop(dialogContext),
       ),
     );
   }
@@ -268,5 +230,110 @@ class VersionChecker {
     } catch (e) {
       Logger.debug('[VersionChecker] Error opening app store: $e');
     }
+  }
+}
+
+/// Update prompt in the popup style: tinted icon, gold eyebrow, Poppins
+/// title, version panel and pill actions.
+/// Public so it can be widget-tested; shown only by [VersionChecker].
+class AppUpdateDialog extends StatelessWidget {
+  final IconData icon;
+  final PopupTone tone;
+  final String title;
+  final String body;
+  final String currentVersion;
+  final String targetLabel;
+  final String targetVersion;
+  final String? hint;
+  final String primaryLabel;
+  final VoidCallback onPrimary;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+
+  const AppUpdateDialog({
+    super.key,
+    required this.icon,
+    required this.tone,
+    required this.title,
+    required this.body,
+    required this.currentVersion,
+    required this.targetLabel,
+    required this.targetVersion,
+    required this.primaryLabel,
+    required this.onPrimary,
+    this.hint,
+    this.secondaryLabel,
+    this.onSecondary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    Widget versionRow(String label, String value) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: AppFonts.inter(fontSize: 13, color: palette.muted),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              value,
+              style: AppFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+              ),
+            ),
+          ],
+        );
+
+    return PopupDialog(
+      children: [
+        PopupHeader(
+          icon: PopupIconCircle(icon: icon, tone: tone),
+          eyebrow: context.tr(TranslationKeys.appChromeUpdateEyebrow),
+          title: title,
+          body: body,
+        ),
+        const SizedBox(height: 18),
+        PopupPanel(
+          child: Column(
+            children: [
+              versionRow(
+                context.tr(TranslationKeys.appChromeUpdateCurrentVersion),
+                currentVersion,
+              ),
+              const SizedBox(height: 8),
+              versionRow(targetLabel, targetVersion),
+            ],
+          ),
+        ),
+        if (hint != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            hint!,
+            textAlign: TextAlign.center,
+            style: AppFonts.inter(
+              fontSize: 12.5,
+              color: palette.muted,
+              height: 1.4,
+            ),
+          ),
+        ],
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          label: primaryLabel,
+          icon: Icons.download_rounded,
+          onPressed: onPrimary,
+        ),
+        if (secondaryLabel != null) ...[
+          const SizedBox(height: 4),
+          PopupTextButton(label: secondaryLabel!, onPressed: onSecondary),
+        ],
+      ],
+    );
   }
 }

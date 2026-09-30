@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
@@ -88,14 +90,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       // Show error and do NOT navigate - allow user to retry
       Logger.error('Failed to save language preference', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to save language preference. Please try again.',
-              style: AppFonts.inter(),
-            ),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.onboardingLanguageSaveFailed),
+          tone: AppSnackTone.error,
         );
       }
     } finally {
@@ -124,14 +122,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.tr(TranslationKeys.onboardingDefaultLanguageSet),
-              style: AppFonts.inter(),
-            ),
-            backgroundColor: AppColors.warning,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.onboardingDefaultLanguageSet),
+          tone: AppSnackTone.warning,
         );
         context.go('/');
       }

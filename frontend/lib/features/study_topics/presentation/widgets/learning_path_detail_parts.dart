@@ -483,8 +483,7 @@ class _Disc extends StatelessWidget {
       case PathTopicStatus.completed:
         fill =
             AppColors.success.withValues(alpha: palette.isDark ? 0.16 : 0.14);
-        child =
-            const Icon(Icons.check_rounded, size: 18, color: AppColors.success);
+        child = Icon(Icons.check_rounded, size: 18, color: context.appSuccess);
       case PathTopicStatus.current:
         fill = palette.gold;
         child = Text(

@@ -34,12 +34,54 @@ class _MockConnectivityBloc
     implements ConnectivityBloc {}
 
 class _FakeDownloads extends Fake implements LearningPathDownloadService {
+  _FakeDownloads([this.model]);
+
+  /// The path's download, or null when nothing was downloaded.
+  final LearningPathDownloadModel? model;
+  final List<String> paused = [];
+
   @override
   Stream<LearningPathDownloadModel> watchDownload(String learningPathId) =>
       const Stream.empty();
 
   @override
-  LearningPathDownloadModel? getDownload(String learningPathId) => null;
+  LearningPathDownloadModel? getDownload(String learningPathId) => model;
+
+  @override
+  Future<void> pauseDownload(String learningPathId) async =>
+      paused.add(learningPathId);
+}
+
+/// A download in progress: two guides done, one downloading, one failed,
+/// the rest waiting.
+LearningPathDownloadModel _downloading() {
+  LearningPathTopicDownload topic(int i, TopicDownloadStatus status) =>
+      LearningPathTopicDownload(
+        topicId: 't$i',
+        topicTitle: 'Topic $i',
+        inputType: 'topic',
+        description: '',
+        studyMode: 'standard',
+        status: status,
+        cachedGuideId: status == TopicDownloadStatus.done ? 'g$i' : null,
+      );
+  return LearningPathDownloadModel(
+    learningPathId: 'path-1',
+    learningPathTitle: 'New Believer Essentials',
+    language: 'en',
+    topics: [
+      topic(0, TopicDownloadStatus.done),
+      topic(1, TopicDownloadStatus.done),
+      topic(2, TopicDownloadStatus.downloading),
+      topic(3, TopicDownloadStatus.failed),
+      topic(4, TopicDownloadStatus.pending),
+      topic(5, TopicDownloadStatus.pending),
+    ],
+    status: PathDownloadStatus.downloading,
+    queuedAt: DateTime(2026),
+    completedCount: 2,
+    totalCount: 6,
+  );
 }
 
 class _FakeLanguagePrefs extends Fake implements LanguagePreferenceService {
@@ -255,5 +297,59 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.tap(find.text('Locked'));
     expect(taps, 1);
+  });
+
+  group('offline download sheet', () {
+    late _FakeDownloads downloads;
+
+    setUp(() {
+      downloads = _FakeDownloads(_downloading());
+      sl
+        ..unregister<LearningPathDownloadService>()
+        ..registerSingleton<LearningPathDownloadService>(downloads);
+    });
+
+    Future<void> openSheet(WidgetTester tester,
+        {required bool dark, required AppLanguage language}) async {
+      await pump(
+        tester,
+        LearningPathDetailLoaded(pathDetail: _path(enrolled: true)),
+        dark: dark,
+        language: language,
+      );
+      await tester.tap(find.byTooltip(translations
+          .getTranslation(TranslationKeys.downloadsStatusDownloading)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    for (final language in AppLanguage.values) {
+      for (final dark in [true, false]) {
+        testWidgets('fits 320x640 ${language.code} ${dark ? 'dark' : 'light'}',
+            (tester) async {
+          await openSheet(tester, dark: dark, language: language);
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester, allowed: {
+            // The page behind the sheet: its clamped description and CTA.
+            _path(enrolled: true).description,
+            '${translations.getTranslation(TranslationKeys.learningPathsContinue)}'
+                ' · Confidence in Your Salvation',
+            // Content titles; the test font renders every glyph 1em wide.
+            'New Believer Essentials',
+            'NEW BELIEVER ESSENTIALS',
+          });
+          expect(find.byKey(const Key('download_sheet_pause')), findsOneWidget);
+          expect(
+              find.byKey(const Key('download_sheet_cancel')), findsOneWidget);
+        });
+      }
+    }
+
+    testWidgets('pause still pauses the download', (tester) async {
+      await openSheet(tester, dark: true, language: AppLanguage.english);
+      await tester.tap(find.byKey(const Key('download_sheet_pause')));
+      await tester.pump();
+      expect(downloads.paused, ['path-1']);
+    });
   });
 }

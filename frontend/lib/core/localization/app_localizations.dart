@@ -308,6 +308,10 @@ class AppLocalizations {
       'lessonsCurrentStudy': 'Current Study',
       'lessonsSelectPath': 'Select a Learning Path',
       'lessonsPickPathTitle': 'Pick a Learning Path for Your Fellowship',
+      'lessonsChoosePathTitle': 'Choose a learning path',
+      'lessonsChoosePathSubtitle':
+          'Everyone studies it together, one lesson at a time.',
+      'lessonsCurrentPathTag': 'Current',
       'searchPathsHint': 'Search learning paths...',
       'searchNoResults': 'No paths match your search',
       'lessonsGuide': 'Guide',
@@ -1091,6 +1095,9 @@ class AppLocalizations {
       'lessonsCurrentStudy': 'वर्तमान अध्ययन',
       'lessonsSelectPath': 'एक लर्निंग पथ चुनें',
       'lessonsPickPathTitle': 'अपनी संगति के लिए एक लर्निंग पथ चुनें',
+      'lessonsChoosePathTitle': 'एक लर्निंग पथ चुनें',
+      'lessonsChoosePathSubtitle': 'सब मिलकर इसे पढ़ते हैं, एक बार में एक पाठ।',
+      'lessonsCurrentPathTag': 'वर्तमान',
       'searchPathsHint': 'लर्निंग पथ खोजें...',
       'searchNoResults': 'कोई पथ मेल नहीं खाता',
       'lessonsGuide': 'मार्गदर्शिका',
@@ -1877,6 +1884,10 @@ class AppLocalizations {
       'lessonsSelectPath': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
       'lessonsPickPathTitle':
           'നിങ്ങളുടെ കൂട്ടായ്മക്കായി ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'lessonsChoosePathTitle': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'lessonsChoosePathSubtitle':
+          'എല്ലാവരും ഒരുമിച്ച് പഠിക്കുന്നു, ഒരു സമയം ഒരു പാഠം.',
+      'lessonsCurrentPathTag': 'നിലവിലുള്ളത്',
       'searchPathsHint': 'ലേണിംഗ് പാത്തുകൾ തിരയുക...',
       'searchNoResults': 'തിരയലുമായി പൊരുത്തപ്പെടുന്ന പാത്തുകൾ ഇല്ല',
       'lessonsGuide': 'ഗൈഡ്',
@@ -2710,6 +2721,12 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsSelectPath']!;
   String get lessonsPickPathTitle =>
       _localizedValues[locale.languageCode]!['lessonsPickPathTitle']!;
+  String get lessonsChoosePathTitle =>
+      _localizedValues[locale.languageCode]!['lessonsChoosePathTitle']!;
+  String get lessonsChoosePathSubtitle =>
+      _localizedValues[locale.languageCode]!['lessonsChoosePathSubtitle']!;
+  String get lessonsCurrentPathTag =>
+      _localizedValues[locale.languageCode]!['lessonsCurrentPathTag']!;
   String get searchPathsHint =>
       _localizedValues[locale.languageCode]!['searchPathsHint']!;
   String get searchNoResults =>

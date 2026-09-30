@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart' as auth_states;
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../domain/utils/auth_validator.dart';
-import '../../../../core/theme/app_colors.dart';
 
-/// Password reset screen for email-based authentication
-/// Allows users to request a password reset link via email
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/auth/domain/utils/auth_validator.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
+    as auth_states;
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+
+/// Password reset: asks for the account email and sends a reset link, then
+/// shows a "check your email" confirmation. Same photo-header chrome as the
+/// email sign-in screen it is opened from.
 class PasswordResetScreen extends StatefulWidget {
   const PasswordResetScreen({super.key});
 
@@ -38,328 +43,278 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
           if (state is auth_states.PasswordResetSentState) {
             setState(() => _emailSent = true);
           } else if (state is auth_states.AuthErrorState) {
-            final theme = Theme.of(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                backgroundColor: theme.colorScheme.error,
-                behavior: SnackBarBehavior.floating,
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(TranslationKeys.commonErrorTryAgain),
+              tone: AppSnackTone.error,
             );
           }
         },
         child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-              onPressed: () => context.pop(),
-            ),
-          ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: _emailSent
-                  ? _buildSuccessContent(context)
-                  : _buildFormContent(context),
-            ),
-          ),
+          backgroundColor: ReaderPalette.of(context).page,
+          body: _buildBody(context),
         ),
       );
 
+  Widget _buildBody(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topInset + 230,
+            child: const WelcomePhotoBackdrop(
+              asset: WelcomePhotos.valleyMist,
+              alignment: Alignment.bottomCenter,
+            ),
+          ),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding:
+                    EdgeInsets.fromLTRB(24, topInset + 8, 24, bottomInset + 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        key: const Key('password_reset_back'),
+                        tooltip:
+                            MaterialLocalizations.of(context).backButtonTooltip,
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.centerLeft,
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: palette.isDark ? Colors.white : palette.text,
+                        ),
+                        onPressed: () => context.pop(),
+                      ),
+                    ),
+                    const SizedBox(height: 64),
+                    if (_emailSent)
+                      _buildSuccessContent(context)
+                    else
+                      _buildFormContent(context),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Muted Inter paragraph under a title.
+  Widget _subtitle(BuildContext context, String text) {
+    final palette = ReaderPalette.of(context);
+    return Text(
+      text,
+      style: AppFonts.inter(
+        fontSize: 15.5,
+        height: 1.45,
+        color: palette.isDark
+            ? Colors.white.withValues(alpha: 0.75)
+            : palette.muted,
+      ),
+    );
+  }
+
   Widget _buildFormContent(BuildContext context) {
-    final theme = Theme.of(context);
+    final isNarrow = MediaQuery.sizeOf(context).width < 360;
 
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 20),
-
-          // Icon
-          Icon(
-            Icons.lock_reset,
-            size: 80,
-            color: theme.colorScheme.primary,
-          ),
-
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
+          WelcomeEyebrow(context.tr(TranslationKeys.passwordResetEyebrow)),
+          const SizedBox(height: 10),
+          WelcomeTitle(
             context.tr(TranslationKeys.passwordResetTitle),
-            style: AppFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onBackground,
-            ),
-            textAlign: TextAlign.center,
+            fontSize: isNarrow ? 28 : 32,
           ),
-
-          const SizedBox(height: 12),
-
-          // Subtitle
-          Text(
-            context.tr(TranslationKeys.passwordResetSubtitle),
-            style: AppFonts.inter(
-              fontSize: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 40),
-
-          // Email field
+          const SizedBox(height: 10),
+          _subtitle(context, context.tr(TranslationKeys.passwordResetSubtitle)),
+          const SizedBox(height: 32),
           _buildEmailField(context),
-
           const SizedBox(height: 32),
-
-          // Submit button
           _buildSubmitButton(context),
-
-          const SizedBox(height: 24),
-
-          // Back to sign in link
+          const SizedBox(height: 10),
           _buildBackToSignInLink(context),
-
-          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
   Widget _buildSuccessContent(BuildContext context) {
-    final theme = Theme.of(context);
+    final isNarrow = MediaQuery.sizeOf(context).width < 360;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 64),
-
-        // Success icon
-        Icon(
-          Icons.mark_email_read,
-          size: 100,
-          color: theme.colorScheme.primary,
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: PopupIconCircle(
+            icon: Icons.mark_email_read_outlined,
+            tone: PopupTone.gold,
+            size: 60,
+          ),
         ),
-
-        const SizedBox(height: 32),
-
-        // Success title
-        Text(
+        const SizedBox(height: 20),
+        WelcomeEyebrow(context.tr(TranslationKeys.passwordResetSuccess)),
+        const SizedBox(height: 10),
+        WelcomeTitle(
           context.tr(TranslationKeys.passwordResetSuccessTitle),
-          style: AppFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onBackground,
-          ),
-          textAlign: TextAlign.center,
+          fontSize: isNarrow ? 28 : 32,
         ),
-
-        const SizedBox(height: 16),
-
-        // Success message
-        Text(
-          context.tr(TranslationKeys.passwordResetSuccessMessage),
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
-          ),
-          textAlign: TextAlign.center,
+        const SizedBox(height: 10),
+        _subtitle(
+            context, context.tr(TranslationKeys.passwordResetSuccessMessage)),
+        const SizedBox(height: 36),
+        WelcomePrimaryButton(
+          key: const Key('password_reset_done'),
+          label: context.tr(TranslationKeys.passwordResetBackToSignIn),
+          onPressed: () => context.pop(),
         ),
-
-        const SizedBox(height: 48),
-
-        // Back to sign in button
-        _buildBackToSignInButton(context),
-
-        const SizedBox(height: 16),
-
-        // Resend link
+        const SizedBox(height: 10),
         _buildResendLink(context),
-
-        const SizedBox(height: 32),
       ],
     );
   }
 
   Widget _buildEmailField(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final error = Theme.of(context).colorScheme.error;
+    final radius = BorderRadius.circular(16);
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: color, width: width),
+        );
 
-    return TextFormField(
-      controller: _emailController,
-      keyboardType: TextInputType.emailAddress,
-      autocorrect: false,
-      decoration: InputDecoration(
-        labelText: context.tr(TranslationKeys.passwordResetEmail),
-        hintText: context.tr(TranslationKeys.passwordResetEmailHint),
-        prefixIcon: Icon(
-          Icons.email_outlined,
-          color: theme.colorScheme.primary,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            context.tr(TranslationKeys.passwordResetEmail),
+            style: AppFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: palette.muted,
+            ),
           ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
+        TextFormField(
+          key: const Key('password_reset_email'),
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          autofillHints: const [AutofillHints.email],
+          autocorrect: false,
+          onFieldSubmitted: (_) => _handleSubmit(context),
+          style: AppFonts.inter(fontSize: 15.5, color: palette.text),
+          decoration: InputDecoration(
+            hintText: context.tr(TranslationKeys.passwordResetEmailHint),
+            hintMaxLines: 2,
+            hintStyle: AppFonts.inter(fontSize: 15.5, color: palette.dim),
+            prefixIcon: Icon(Icons.mail_outline_rounded,
+                size: 21, color: palette.muted),
+            filled: true,
+            fillColor: palette.card,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+            border: border(palette.outline),
+            enabledBorder: border(palette.outline),
+            focusedBorder: border(palette.accentIcon, 1.5),
+            errorBorder: border(error),
+            focusedErrorBorder: border(error, 1.5),
+            errorMaxLines: 3,
           ),
+          validator: (value) {
+            if (value == null || !AuthValidator.isValidEmail(value)) {
+              return context.tr(TranslationKeys.passwordResetInvalidEmail);
+            }
+            return null;
+          },
         ),
-        filled: true,
-        fillColor: theme.colorScheme.surface,
-      ),
-      validator: (value) {
-        if (value == null || !AuthValidator.isValidEmail(value)) {
-          return context.tr(TranslationKeys.passwordResetInvalidEmail);
-        }
-        return null;
-      },
+      ],
     );
   }
 
   Widget _buildSubmitButton(BuildContext context) {
     return BlocBuilder<AuthBloc, auth_states.AuthState>(
       builder: (context, state) {
-        final isLoading = state is auth_states.AuthLoadingState;
-
-        return Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: isLoading ? null : AppTheme.primaryGradient,
-            color: isLoading ? AppTheme.primaryColor.withOpacity(0.5) : null,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isLoading
-                ? null
-                : [
-                    BoxShadow(
-                      color: context.appBrandAccent.withOpacity(0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: isLoading ? null : () => _handleSubmit(context),
-              borderRadius: BorderRadius.circular(12),
-              child: Center(
-                child: isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        context.tr(TranslationKeys.passwordResetSendButton),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ),
+        return WelcomePrimaryButton(
+          key: const Key('password_reset_submit'),
+          label: context.tr(TranslationKeys.passwordResetSendButton),
+          isLoading: state is auth_states.AuthLoadingState,
+          onPressed: () => _handleSubmit(context),
         );
       },
     );
   }
 
-  Widget _buildBackToSignInLink(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return TextButton(
-      onPressed: () => context.pop(),
-      child: Text(
-        context.tr(TranslationKeys.passwordResetBackToSignIn),
-        style: AppFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: theme.colorScheme.primary,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackToSignInButton(BuildContext context) {
-    return Container(
+  /// Muted full-width text link.
+  Widget _textLink(
+    BuildContext context, {
+    required Key key,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    final palette = ReaderPalette.of(context);
+    final color = onPressed == null ? palette.dim : palette.muted;
+    return SizedBox(
       width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.pop(),
-          borderRadius: BorderRadius.circular(12),
-          child: Center(
-            child: Text(
-              context.tr(TranslationKeys.passwordResetBackToSignIn),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+      child: TextButton(
+        key: key,
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: color,
+          minimumSize: const Size.fromHeight(48),
+          shape: const StadiumBorder(),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: AppFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: color,
           ),
         ),
       ),
     );
   }
+
+  Widget _buildBackToSignInLink(BuildContext context) => _textLink(
+        context,
+        key: const Key('password_reset_back_to_sign_in'),
+        label: context.tr(TranslationKeys.passwordResetBackToSignIn),
+        onPressed: () => context.pop(),
+      );
 
   Widget _buildResendLink(BuildContext context) {
-    final theme = Theme.of(context);
-
     return BlocBuilder<AuthBloc, auth_states.AuthState>(
       builder: (context, state) {
         final isLoading = state is auth_states.AuthLoadingState;
-
-        return TextButton(
-          onPressed: isLoading
-              ? null
-              : () {
-                  setState(() => _emailSent = false);
-                },
-          child: Text(
-            context.tr(TranslationKeys.passwordResetResend),
-            style: AppFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: isLoading
-                  ? theme.colorScheme.onSurface.withOpacity(0.3)
-                  : theme.colorScheme.primary,
-            ),
-          ),
+        return _textLink(
+          context,
+          key: const Key('password_reset_resend'),
+          label: context.tr(TranslationKeys.passwordResetResend),
+          onPressed:
+              isLoading ? null : () => setState(() => _emailSent = false),
         );
       },
     );

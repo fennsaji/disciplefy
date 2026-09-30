@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/reader_palette.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart'
+    show SettingsButton, SettingsButtonKind;
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart'
+    show PopupEyebrow, kPopupRadius;
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Bottom sheet for advanced TTS controls including speed and section navigation.
@@ -34,16 +39,17 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
 
     return ValueListenableBuilder<StudyGuideTtsState>(
       valueListenable: _ttsService.state,
       builder: (context, state, child) {
         return Container(
           decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            color: palette.card,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(kPopupRadius)),
+            border: Border(top: BorderSide(color: palette.hairline)),
           ),
           child: SafeArea(
             child: SheetScrollView(
@@ -55,23 +61,36 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                   Center(
                     child: Container(
                       margin: const EdgeInsets.only(top: 12),
-                      width: 40,
+                      width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.3),
+                        color: palette.outline,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
 
-                  // Title
+                  // Eyebrow and title
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                    child: Text(
-                      context.tr(TranslationKeys.studyGuideTtsControls),
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        PopupEyebrow(
+                          context.tr(TranslationKeys.studyGuideListen),
+                          textAlign: TextAlign.start,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          context.tr(TranslationKeys.studyGuideTtsControls),
+                          style: AppFonts.poppins(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -81,14 +100,10 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          context.tr(TranslationKeys.studyGuideTtsSpeed),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.textTheme.bodySmall?.color,
-                          ),
-                        ),
+                        _sectionLabel(
+                            context.tr(TranslationKeys.studyGuideTtsSpeed)),
                         const SizedBox(height: 12),
-                        _buildSpeedSelector(state.speechRate, isDark),
+                        _buildSpeedSelector(state.speechRate, palette),
                       ],
                     ),
                   ),
@@ -97,12 +112,12 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
 
                   // Progress bar for section navigation
                   if (_ttsService.hasGuide && _ttsService.totalSections > 1)
-                    _buildProgressBar(state, isDark),
+                    _buildProgressBar(state, palette),
 
                   const SizedBox(height: 20),
 
                   // Playback controls (Previous, Play/Pause, Next)
-                  _buildPlaybackControls(state, isDark),
+                  _buildPlaybackControls(state, palette),
 
                   const SizedBox(height: 24),
 
@@ -111,15 +126,11 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                       _ttsService.sectionNames.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        context.tr(TranslationKeys.studyGuideTtsNowReading),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.textTheme.bodySmall?.color,
-                        ),
-                      ),
+                      child: _sectionLabel(
+                          context.tr(TranslationKeys.studyGuideTtsNowReading)),
                     ),
                     const SizedBox(height: 12),
-                    _buildSectionList(state, theme, isDark),
+                    _buildSectionList(state, palette),
                     const SizedBox(height: 24),
                   ],
 
@@ -128,21 +139,15 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton.icon(
+                      child: SettingsButton(
+                        key: const Key('tts_stop_button'),
+                        label: context.tr(TranslationKeys.studyGuideTtsStop),
+                        icon: Icons.stop_rounded,
+                        kind: SettingsButtonKind.destructive,
                         onPressed: () {
                           _ttsService.stop();
                           Navigator.pop(context);
                         },
-                        icon: const Icon(Icons.stop),
-                        label:
-                            Text(context.tr(TranslationKeys.studyGuideTtsStop)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(
-                            color: theme.colorScheme.error,
-                          ),
-                          foregroundColor: theme.colorScheme.error,
-                        ),
                       ),
                     ),
                   ),
@@ -157,7 +162,12 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
     );
   }
 
-  Widget _buildPlaybackControls(StudyGuideTtsState state, bool isDark) {
+  /// Gold tracked label above a group of controls.
+  Widget _sectionLabel(String text) =>
+      PopupEyebrow(text, textAlign: TextAlign.start);
+
+  Widget _buildPlaybackControls(
+      StudyGuideTtsState state, ReaderPalette palette) {
     final isPlaying = state.status == TtsStatus.playing;
     final isPaused = state.status == TtsStatus.paused;
     final isCompleted = state.status == TtsStatus.completed;
@@ -176,15 +186,16 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             icon: Icons.skip_previous_rounded,
             onPressed:
                 canGoBack ? () => _ttsService.skipToPreviousSection() : null,
-            isDark: isDark,
+            palette: palette,
             size: 48,
             iconSize: 28,
-            semanticLabel: 'Previous section',
+            semanticLabel:
+                context.tr(TranslationKeys.guideFeedbackTtsPrevSection),
           ),
           const SizedBox(width: 24),
           // Play/Pause/Loading button (larger)
           if (isLoading)
-            _buildLoadingButton(isDark: isDark)
+            _buildLoadingButton(palette)
           else
             _buildControlButton(
               icon: isPlaying
@@ -195,11 +206,14 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
               onPressed: (isPlaying || isPaused || isCompleted)
                   ? () => _ttsService.togglePlayPause()
                   : null,
-              isDark: isDark,
+              palette: palette,
               size: 64,
               iconSize: 36,
-              semanticLabel:
-                  isPlaying ? 'Pause' : (isCompleted ? 'Replay' : 'Play'),
+              semanticLabel: context.tr(isPlaying
+                  ? TranslationKeys.studyGuidePause
+                  : (isCompleted
+                      ? TranslationKeys.guideFeedbackTtsReplay
+                      : TranslationKeys.guideFeedbackTtsPlay)),
               isPrimary: true,
             ),
           const SizedBox(width: 24),
@@ -208,45 +222,39 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             icon: Icons.skip_next_rounded,
             onPressed:
                 canGoForward ? () => _ttsService.skipToNextSection() : null,
-            isDark: isDark,
+            palette: palette,
             size: 48,
             iconSize: 28,
-            semanticLabel: 'Next section',
+            semanticLabel:
+                context.tr(TranslationKeys.guideFeedbackTtsNextSection),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLoadingButton({required bool isDark}) {
+  Widget _buildLoadingButton(ReaderPalette palette) {
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: context.appBrandAccent,
-        boxShadow: [
-          BoxShadow(
-            color: context.appBrandAccent.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: palette.ctaFill,
       ),
-      child: const Center(
+      child: Center(
         child: SizedBox(
           width: 28,
           height: 28,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            color: Colors.white,
+            color: palette.ctaInk,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProgressBar(StudyGuideTtsState state, bool isDark) {
+  Widget _buildProgressBar(StudyGuideTtsState state, ReaderPalette palette) {
     final totalSections = _ttsService.totalSections;
     final currentIndex = state.currentSectionIndex;
     final sectionNames = _ttsService.sectionNames;
@@ -261,6 +269,9 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
       return '$mins:${secs.toString().padLeft(2, '0')}';
     }
 
+    final timeStyle = AppFonts.inter(fontSize: 12, color: palette.muted);
+    final shownProgress = _isScrubbing ? _scrubValue : sectionProgress;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -273,46 +284,42 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
               Expanded(
                 child: Text(
                   currentIndex < sectionNames.length
-                      ? sectionNames[currentIndex]
+                      ? _getSectionDisplayName(
+                          context, sectionNames[currentIndex])
                       : '',
-                  style: TextStyle(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: context.appBrandAccent,
+                    color: palette.accentIcon,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${currentIndex + 1} / $totalSections',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                ),
+                style: AppFonts.inter(fontSize: 13, color: palette.muted),
               ),
             ],
           ),
           const SizedBox(height: 4),
           // Seek slider for scrubbing within the current section
           Semantics(
-            label: 'Section playback progress',
-            value:
-                '${((_isScrubbing ? _scrubValue : sectionProgress) * 100).round()} percent',
+            label: context.tr(TranslationKeys.guideFeedbackTtsProgress),
+            value: '${(shownProgress * 100).round()}%',
             slider: true,
             child: SliderTheme(
               data: SliderThemeData(
                 trackHeight: 4,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                activeTrackColor: context.appBrandAccent,
-                inactiveTrackColor:
-                    isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-                thumbColor: context.appBrandAccent,
-                overlayColor: context.appBrandAccent.withOpacity(0.2),
+                activeTrackColor: palette.gold,
+                inactiveTrackColor: palette.raised,
+                thumbColor: palette.gold,
+                overlayColor: palette.gold.withValues(alpha: 0.18),
               ),
               child: Slider(
-                value: (_isScrubbing ? _scrubValue : sectionProgress)
-                    .clamp(0.0, 1.0),
+                value: shownProgress.clamp(0.0, 1.0),
                 onChangeStart: (value) {
                   setState(() {
                     _isScrubbing = true;
@@ -336,20 +343,8 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                formatTime(elapsedSeconds),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                ),
-              ),
-              Text(
-                formatTime(estimatedSeconds),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                ),
-              ),
+              Text(formatTime(elapsedSeconds), style: timeStyle),
+              Text(formatTime(estimatedSeconds), style: timeStyle),
             ],
           ),
         ],
@@ -360,13 +355,23 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
   Widget _buildControlButton({
     required IconData icon,
     required VoidCallback? onPressed,
-    required bool isDark,
+    required ReaderPalette palette,
     required double size,
     required double iconSize,
     required String semanticLabel,
     bool isPrimary = false,
   }) {
     final isEnabled = onPressed != null;
+    final Color fill;
+    final Color ink;
+    if (isPrimary) {
+      fill =
+          isEnabled ? palette.ctaFill : palette.ctaFill.withValues(alpha: 0.5);
+      ink = palette.ctaInk;
+    } else {
+      fill = palette.raised;
+      ink = isEnabled ? palette.text : palette.dim;
+    }
 
     return Semantics(
       button: true,
@@ -379,73 +384,49 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isPrimary
-                ? (isEnabled
-                    ? context.appBrandAccent
-                    : context.appBrandAccent.withOpacity(0.5))
-                : (isDark
-                    ? (isEnabled ? Colors.grey.shade800 : Colors.grey.shade900)
-                    : (isEnabled
-                        ? Colors.grey.shade200
-                        : Colors.grey.shade100)),
-            boxShadow: isPrimary && isEnabled
-                ? [
-                    BoxShadow(
-                      color: context.appBrandAccent.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
+            color: fill,
+            border: isPrimary ? null : Border.all(color: palette.hairline),
           ),
-          child: Icon(
-            icon,
-            size: iconSize,
-            color: isPrimary
-                ? Colors.white
-                : (isEnabled
-                    ? (isDark ? Colors.white : Colors.black87)
-                    : (isDark ? Colors.grey.shade700 : Colors.grey.shade400)),
-          ),
+          child: Icon(icon, size: iconSize, color: ink),
         ),
       ),
     );
   }
 
-  Widget _buildSpeedSelector(double currentSpeed, bool isDark) {
+  Widget _buildSpeedSelector(double currentSpeed, ReaderPalette palette) {
     return Row(
       children: _speedOptions.map((speed) {
         final isSelected = (currentSpeed - speed).abs() < 0.01;
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: GestureDetector(
-              onTap: () => _ttsService.setSpeechRate(speed),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? context.appBrandAccent
-                      : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
-                  borderRadius: BorderRadius.circular(12),
-                  border: isSelected
-                      ? null
-                      : Border.all(
-                          color: isDark
-                              ? Colors.grey.shade700
-                              : Colors.grey.shade300,
-                        ),
-                ),
-                child: Center(
-                  child: Text(
-                    '${speed}x',
-                    style: TextStyle(
+            child: Semantics(
+              button: true,
+              selected: isSelected,
+              child: GestureDetector(
+                onTap: () => _ttsService.setSpeechRate(speed),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ReaderPalette.selectedFill
+                        : palette.raised,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
                       color: isSelected
-                          ? Colors.white
-                          : (isDark ? Colors.white70 : Colors.black87),
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 14,
+                          ? ReaderPalette.selectedFill
+                          : palette.hairline,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${speed}x',
+                      style: AppFonts.inter(
+                        color: isSelected ? Colors.white : palette.text,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -457,20 +438,17 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
     );
   }
 
-  Widget _buildSectionList(
-      StudyGuideTtsState state, ThemeData theme, bool isDark) {
+  Widget _buildSectionList(StudyGuideTtsState state, ReaderPalette palette) {
     final sectionNames = _ttsService.sectionNames;
     final currentIndex = state.currentSectionIndex;
     final isPlaying = state.status == TtsStatus.playing;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-        ),
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: List.generate(sectionNames.length, (index) {
@@ -478,87 +456,74 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
           final sectionName =
               _getSectionDisplayName(context, sectionNames[index]);
 
-          return InkWell(
-            onTap: () => _ttsService.skipToSection(index),
-            borderRadius: BorderRadius.vertical(
-              top: index == 0 ? const Radius.circular(12) : Radius.zero,
-              bottom: index == sectionNames.length - 1
-                  ? const Radius.circular(12)
-                  : Radius.zero,
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: isCurrentSection && isPlaying
-                    ? context.appBrandAccent.withOpacity(0.1)
-                    : null,
-                border: index < sectionNames.length - 1
-                    ? Border(
-                        bottom: BorderSide(
-                          color: isDark
-                              ? Colors.grey.shade800
-                              : Colors.grey.shade200,
+          return Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: () => _ttsService.skipToSection(index),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isCurrentSection && isPlaying
+                      ? AppColors.brandPrimary
+                          .withValues(alpha: palette.isDark ? 0.2 : 0.08)
+                      : null,
+                  border: index < sectionNames.length - 1
+                      ? Border(bottom: BorderSide(color: palette.hairline))
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    // Status indicator
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCurrentSection && isPlaying
+                            ? palette.gold
+                            : (isCurrentSection
+                                ? palette.gold.withValues(alpha: 0.25)
+                                : Colors.transparent),
+                        border: Border.all(
+                          color:
+                              isCurrentSection ? palette.gold : palette.outline,
+                          width: isCurrentSection ? 2 : 1,
                         ),
-                      )
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  // Status indicator
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isCurrentSection && isPlaying
-                          ? context.appBrandAccent
-                          : (isCurrentSection
-                              ? context.appBrandAccent.withOpacity(0.3)
-                              : Colors.transparent),
-                      border: Border.all(
-                        color: isCurrentSection
-                            ? context.appBrandAccent
-                            : (isDark
-                                ? Colors.grey.shade600
-                                : Colors.grey.shade400),
-                        width: isCurrentSection ? 2 : 1,
+                      ),
+                      child: isCurrentSection && isPlaying
+                          ? Icon(
+                              Icons.play_arrow,
+                              size: 14,
+                              color: palette.isDark
+                                  ? AppColors.brandPrimaryInk
+                                  : Colors.white,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Section name
+                    Expanded(
+                      child: Text(
+                        sectionName,
+                        style: AppFonts.inter(
+                          color: isCurrentSection
+                              ? palette.accentIcon
+                              : palette.text,
+                          fontWeight: isCurrentSection
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
-                    child: isCurrentSection && isPlaying
-                        ? const Icon(
-                            Icons.play_arrow,
-                            size: 14,
-                            color: Colors.white,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
 
-                  // Section name
-                  Expanded(
-                    child: Text(
-                      sectionName,
-                      style: TextStyle(
-                        color: isCurrentSection
-                            ? context.appBrandAccent
-                            : (isDark ? Colors.white70 : Colors.black87),
-                        fontWeight: isCurrentSection
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-
-                  // Skip indicator
-                  if (!isCurrentSection)
-                    Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color:
-                          isDark ? Colors.grey.shade600 : Colors.grey.shade400,
-                    ),
-                ],
+                    // Skip indicator
+                    if (!isCurrentSection)
+                      Icon(Icons.chevron_right, size: 20, color: palette.dim),
+                  ],
+                ),
               ),
             ),
           );
@@ -596,6 +561,7 @@ void showTtsControlSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (context) => const TtsControlSheet(),
   );

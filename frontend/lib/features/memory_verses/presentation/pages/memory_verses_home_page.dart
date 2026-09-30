@@ -39,6 +39,8 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/widge
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/suggested_verses_sheet.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/verse_limit_exceeded_dialog.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/widgets/notification_enable_prompt.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
@@ -1093,38 +1095,39 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   void _showDeleteConfirmation(BuildContext context, MemoryVerseEntity verse) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr(TranslationKeys.memoryDeleteTitle)),
+      builder: (dialogContext) => SettingsDialog(
+        title: context.tr(TranslationKeys.memoryDeleteTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               verse.verseReference,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+              style: AppFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: ReaderPalette.of(dialogContext).gold,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(context.tr(TranslationKeys.memoryDeleteConfirmation)),
           ],
         ),
         actions: [
-          TextButton(
+          SettingsButton(
+            key: const Key('memory_delete_cancel'),
+            label: context.tr(TranslationKeys.memoryDeleteCancel),
+            kind: SettingsButtonKind.neutral,
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.tr(TranslationKeys.memoryDeleteCancel)),
           ),
-          ElevatedButton(
+          SettingsButton(
+            key: const Key('memory_delete_confirm'),
+            label: context.tr(TranslationKeys.memoryDeleteConfirm),
+            kind: SettingsButtonKind.destructive,
             onPressed: () {
               Navigator.pop(dialogContext);
               context.read<MemoryVerseBloc>().add(DeleteVerse(verse.id));
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(context.tr(TranslationKeys.memoryDeleteConfirm)),
           ),
         ],
       ),

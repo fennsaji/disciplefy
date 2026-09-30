@@ -9,6 +9,64 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _englishTranslations = {
+    // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
+    'guide_feedback': {
+      'completed_while_away': 'Your study guide finished while you were away!',
+      'fellowship_path_complete':
+          'Your fellowship has completed the entire study path!',
+      'fellowship_next_guide': 'Your fellowship has moved to the next guide!',
+      'xp_earned': '+{xp} XP earned!',
+      'notes_saved': 'Notes saved',
+      'reflection_not_loaded':
+          "Couldn't save your reflection: the study guide hasn't loaded.",
+      'reflection_saved': 'Reflection saved! Time spent: {minutes} min',
+      'reflection_failed': "Couldn't save your reflection. Please try again.",
+      'saved_notes_failed':
+          'Study guide saved, but your notes could not be saved.',
+      'auth_expired': 'Your session has expired. Please sign in again.',
+      'network_error': 'Network error. Please check your connection.',
+      'already_saved': 'This study guide is already saved.',
+      'shared_to_fellowship': 'Shared to your fellowship feed!',
+      'ok': 'OK',
+      'tts_prev_section': 'Previous section',
+      'tts_next_section': 'Next section',
+      'tts_play': 'Play',
+      'tts_replay': 'Replay',
+      'tts_progress': 'Section playback progress',
+      'verse_eyebrow': 'Scripture',
+    },
+    // App chrome: lock overlay, update dialogs, offline banner,
+    // notification prompt eyebrow.
+    'app_chrome': {
+      'lock': {
+        'tap_to_upgrade': 'Tap to upgrade',
+        'not_available_offline': 'Not available offline',
+        'connect_to_upgrade': 'Connect to the internet to upgrade',
+      },
+      'update': {
+        'eyebrow': 'App update',
+        'required_title': 'Update required',
+        'required_body':
+            'A critical update is required to continue using the app.',
+        'required_hint': 'Please update from your app store to continue.',
+        'available_title': 'Update available',
+        'available_body':
+            'A new version of the app is available with improvements and bug fixes.',
+        'current_version': 'Current version',
+        'required_version': 'Required version',
+        'latest_version': 'Latest version',
+        'update_now': 'Update now',
+        'update': 'Update',
+        'later': 'Later',
+      },
+      'offline': {
+        'offline': 'You\'re offline · Showing saved content',
+        'back_online': 'Back online · Syncing',
+      },
+      'notify_prompt': {
+        'eyebrow': 'Notifications',
+      },
+    },
     // Memory recall practice modes (flip card, progressive reveal,
     // first letter hints, type it out).
     'memory_recall_modes': {
@@ -684,6 +742,7 @@ class AppTranslations {
       'invalid_email': 'Please enter a valid email address',
       'resend': 'Didn\'t receive it? Try again',
       'error': 'Failed to send reset email. Please try again.',
+      'eyebrow': 'Account recovery',
     },
     'email_verification': {
       'title': 'Verify Your Email',
@@ -752,6 +811,7 @@ class AppTranslations {
           'Language preference saved locally. Will sync when online.',
       'default_language_set':
           'Default language (English) set. Will sync when online.',
+      'language_save_failed': "Couldn't save your language. Please try again.",
     },
     'settings': {
       'title': 'Settings',
@@ -888,7 +948,38 @@ class AppTranslations {
       'bible_attribution': 'Bible copyright & attribution',
       'bible_attribution_subtitle': 'Scripture provided by API.Bible',
     },
+    'memory_add_feedback': {
+      'added':
+          'Added to Memory Verses! Start reviewing to memorize this verse.',
+      'review_now': 'Review Now',
+      'already_exists': 'Verse already in your memory deck',
+      'review': 'Review',
+    },
+    'streak_protection': {
+      'eyebrow': 'Freeze day',
+      'title': 'Protect Your Streak',
+      'at_risk': 'Your {count}-day streak is at risk!',
+      'explanation':
+          'Use a freeze day to protect your streak on a day you couldn\'t practice.',
+      'available': 'Available freeze days',
+      'earn_more':
+          'Earn 1 freeze day for every 7 consecutive days of practice (max 5).',
+      'cancel': 'Cancel',
+      'use': 'Use Freeze Day',
+    },
+    'streak_milestone': {
+      'eyebrow': 'Streak milestone',
+      'title_days': '{count}-Day Streak!',
+      'title_year': 'Full Year Streak!',
+      'message_10': 'You\'re building a great habit! Keep going!',
+      'message_30': 'A month of dedication! Your commitment is inspiring!',
+      'message_100': 'Incredible persistence! You\'re a memorization champion!',
+      'message_365': 'An entire year of faithfulness! You\'re amazing!',
+      'message_default': 'Your dedication is inspiring!',
+      'continue': 'Continue',
+    },
     'questionnaire': {
+      'step_of': 'Step {current} of {total}',
       'your_journey': 'Your Journey',
       'your_goals': 'Your Goals',
       'your_time': 'Your Time',
@@ -2856,6 +2947,64 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
+    // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
+    'guide_feedback': {
+      'completed_while_away': 'आपके दूर रहते हुए आपकी अध्ययन गाइड तैयार हो गई!',
+      'fellowship_path_complete':
+          'आपकी फ़ेलोशिप ने पूरा अध्ययन पथ पूरा कर लिया!',
+      'fellowship_next_guide': 'आपकी फ़ेलोशिप अगली गाइड पर पहुँच गई!',
+      'xp_earned': '+{xp} XP मिले!',
+      'notes_saved': 'नोट्स सहेजे गए',
+      'reflection_not_loaded':
+          'आपका चिंतन सहेजा नहीं जा सका: अध्ययन गाइड लोड नहीं हुई है।',
+      'reflection_saved': 'चिंतन सहेजा गया! लगा समय: {minutes} मिनट',
+      'reflection_failed':
+          'आपका चिंतन सहेजा नहीं जा सका। कृपया फिर से प्रयास करें।',
+      'saved_notes_failed':
+          'अध्ययन गाइड सहेजी गई, लेकिन आपके नोट्स सहेजे नहीं जा सके।',
+      'auth_expired': 'आपका सत्र समाप्त हो गया है। कृपया फिर से साइन इन करें।',
+      'network_error': 'नेटवर्क त्रुटि। कृपया अपना कनेक्शन जाँचें।',
+      'already_saved': 'यह अध्ययन गाइड पहले से सहेजी हुई है।',
+      'shared_to_fellowship': 'आपकी फ़ेलोशिप फ़ीड में साझा किया गया!',
+      'ok': 'ठीक है',
+      'tts_prev_section': 'पिछला भाग',
+      'tts_next_section': 'अगला भाग',
+      'tts_play': 'चलाएँ',
+      'tts_replay': 'फिर से चलाएँ',
+      'tts_progress': 'भाग की प्लेबैक प्रगति',
+      'verse_eyebrow': 'पवित्रशास्त्र',
+    },
+    // App chrome: lock overlay, update dialogs, offline banner,
+    // notification prompt eyebrow.
+    'app_chrome': {
+      'lock': {
+        'tap_to_upgrade': 'अपग्रेड के लिए टैप करें',
+        'not_available_offline': 'ऑफ़लाइन उपलब्ध नहीं',
+        'connect_to_upgrade': 'अपग्रेड करने के लिए इंटरनेट से जुड़ें',
+      },
+      'update': {
+        'eyebrow': 'ऐप अपडेट',
+        'required_title': 'अपडेट ज़रूरी है',
+        'required_body': 'ऐप का उपयोग जारी रखने के लिए एक ज़रूरी अपडेट चाहिए।',
+        'required_hint': 'जारी रखने के लिए कृपया अपने ऐप स्टोर से अपडेट करें।',
+        'available_title': 'अपडेट उपलब्ध है',
+        'available_body':
+            'ऐप का नया संस्करण सुधारों और बग फ़िक्स के साथ उपलब्ध है।',
+        'current_version': 'मौजूदा संस्करण',
+        'required_version': 'ज़रूरी संस्करण',
+        'latest_version': 'नवीनतम संस्करण',
+        'update_now': 'अभी अपडेट करें',
+        'update': 'अपडेट करें',
+        'later': 'बाद में',
+      },
+      'offline': {
+        'offline': 'आप ऑफ़लाइन हैं · सहेजी गई सामग्री दिख रही है',
+        'back_online': 'फिर से ऑनलाइन · सिंक हो रहा है',
+      },
+      'notify_prompt': {
+        'eyebrow': 'सूचनाएं',
+      },
+    },
     // Memory recall practice modes (flip card, progressive reveal,
     // first letter hints, type it out).
     'memory_recall_modes': {
@@ -3522,6 +3671,7 @@ class AppTranslations {
       'invalid_email': 'कृपया एक वैध ईमेल पता दर्ज करें',
       'resend': 'नहीं मिला? फिर से कोशिश करें',
       'error': 'रीसेट ईमेल नहीं भेज सका। फिर से कोशिश करें।',
+      'eyebrow': 'खाता पुनर्प्राप्ति',
     },
     'email_verification': {
       'title': 'अपना ईमेल सत्यापित करें',
@@ -3590,6 +3740,8 @@ class AppTranslations {
       'language_saved_locally': 'भाषा सेव हो गई। ऑनलाइन होने पर सिंक होगी।',
       'default_language_set':
           'डिफ़ॉल्ट भाषा (अंग्रेजी) सेट हो गई। ऑनलाइन होने पर सिंक होगी।',
+      'language_save_failed':
+          'आपकी भाषा सेव नहीं हो सकी। कृपया फिर से कोशिश करें।',
     },
     'settings': {
       'title': 'सेटिंग्स',
@@ -3732,7 +3884,37 @@ class AppTranslations {
       'bible_attribution_subtitle':
           'पवित्रशास्त्र API.Bible द्वारा प्रदान किया गया',
     },
+    'memory_add_feedback': {
+      'added':
+          'स्मृति वचनों में जोड़ा गया! इसे याद करने के लिए दोहराना शुरू करें।',
+      'review_now': 'अभी दोहराएं',
+      'already_exists': 'यह वचन पहले से आपके स्मृति संग्रह में है',
+      'review': 'दोहराएं',
+    },
+    'streak_protection': {
+      'eyebrow': 'फ्रीज़ दिन',
+      'title': 'अपनी स्ट्रीक बचाएं',
+      'at_risk': 'आपकी {count} दिन की स्ट्रीक खतरे में है!',
+      'explanation':
+          'जिस दिन आप अभ्यास नहीं कर पाए, उस दिन अपनी स्ट्रीक बचाने के लिए एक फ्रीज़ दिन का उपयोग करें।',
+      'available': 'उपलब्ध फ्रीज़ दिन',
+      'earn_more': 'लगातार 7 दिन अभ्यास करने पर 1 फ्रीज़ दिन पाएं (अधिकतम 5)।',
+      'cancel': 'रद्द करें',
+      'use': 'फ्रीज़ दिन उपयोग करें',
+    },
+    'streak_milestone': {
+      'eyebrow': 'स्ट्रीक उपलब्धि',
+      'title_days': '{count} दिन की स्ट्रीक!',
+      'title_year': 'पूरे साल की स्ट्रीक!',
+      'message_10': 'आप एक अच्छी आदत बना रहे हैं! जारी रखें!',
+      'message_30': 'एक महीने का समर्पण! आपकी प्रतिबद्धता प्रेरणादायक है!',
+      'message_100': 'अद्भुत दृढ़ता! आप याद करने के चैंपियन हैं!',
+      'message_365': 'पूरे एक साल की विश्वासयोग्यता! आप अद्भुत हैं!',
+      'message_default': 'आपका समर्पण प्रेरणादायक है!',
+      'continue': 'आगे बढ़ें',
+    },
     'questionnaire': {
+      'step_of': 'चरण {current} / {total}',
       'your_journey': 'आपकी यात्रा',
       'your_goals': 'आपके लक्ष्य',
       'your_time': 'आपका समय',
@@ -5711,6 +5893,69 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _malayalamTranslations = {
+    // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
+    'guide_feedback': {
+      'completed_while_away':
+          'നിങ്ങൾ മാറിനിന്നപ്പോൾ നിങ്ങളുടെ പഠന ഗൈഡ് തയ്യാറായി!',
+      'fellowship_path_complete':
+          'നിങ്ങളുടെ ഫെലോഷിപ്പ് മുഴുവൻ പഠന പാതയും പൂർത്തിയാക്കി!',
+      'fellowship_next_guide': 'നിങ്ങളുടെ ഫെലോഷിപ്പ് അടുത്ത ഗൈഡിലേക്ക് നീങ്ങി!',
+      'xp_earned': '+{xp} XP ലഭിച്ചു!',
+      'notes_saved': 'കുറിപ്പുകൾ സേവ് ചെയ്തു',
+      'reflection_not_loaded':
+          'നിങ്ങളുടെ ധ്യാനം സേവ് ചെയ്യാനായില്ല: പഠന ഗൈഡ് ലോഡ് ആയിട്ടില്ല.',
+      'reflection_saved':
+          'ധ്യാനം സേവ് ചെയ്തു! ചെലവഴിച്ച സമയം: {minutes} മിനിറ്റ്',
+      'reflection_failed':
+          'നിങ്ങളുടെ ധ്യാനം സേവ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'saved_notes_failed':
+          'പഠന ഗൈഡ് സേവ് ചെയ്തു, പക്ഷേ നിങ്ങളുടെ കുറിപ്പുകൾ സേവ് ചെയ്യാനായില്ല.',
+      'auth_expired': 'നിങ്ങളുടെ സെഷൻ കാലഹരണപ്പെട്ടു. വീണ്ടും സൈൻ ഇൻ ചെയ്യുക.',
+      'network_error': 'നെറ്റ്‌വർക്ക് പിശക്. നിങ്ങളുടെ കണക്ഷൻ പരിശോധിക്കുക.',
+      'already_saved': 'ഈ പഠന ഗൈഡ് ഇതിനകം സേവ് ചെയ്തിട്ടുണ്ട്.',
+      'shared_to_fellowship': 'നിങ്ങളുടെ ഫെലോഷിപ്പ് ഫീഡിൽ പങ്കിട്ടു!',
+      'ok': 'ശരി',
+      'tts_prev_section': 'മുമ്പത്തെ ഭാഗം',
+      'tts_next_section': 'അടുത്ത ഭാഗം',
+      'tts_play': 'പ്ലേ ചെയ്യുക',
+      'tts_replay': 'വീണ്ടും പ്ലേ ചെയ്യുക',
+      'tts_progress': 'ഭാഗത്തിന്റെ പ്ലേബാക്ക് പുരോഗതി',
+      'verse_eyebrow': 'തിരുവചനം',
+    },
+    // App chrome: lock overlay, update dialogs, offline banner,
+    // notification prompt eyebrow.
+    'app_chrome': {
+      'lock': {
+        'tap_to_upgrade': 'അപ്‌ഗ്രേഡ് ചെയ്യാൻ ടാപ്പ് ചെയ്യൂ',
+        'not_available_offline': 'ഓഫ്‌ലൈനിൽ ലഭ്യമല്ല',
+        'connect_to_upgrade':
+            'അപ്‌ഗ്രേഡ് ചെയ്യാൻ ഇന്റർനെറ്റുമായി ബന്ധിപ്പിക്കൂ',
+      },
+      'update': {
+        'eyebrow': 'ആപ്പ് അപ്ഡേറ്റ്',
+        'required_title': 'അപ്ഡേറ്റ് ആവശ്യമാണ്',
+        'required_body':
+            'ആപ്പ് തുടർന്ന് ഉപയോഗിക്കാൻ ഒരു പ്രധാന അപ്ഡേറ്റ് ആവശ്യമാണ്.',
+        'required_hint':
+            'തുടരാൻ ദയവായി ആപ്പ് സ്റ്റോറിൽ നിന്ന് അപ്ഡേറ്റ് ചെയ്യൂ.',
+        'available_title': 'അപ്ഡേറ്റ് ലഭ്യമാണ്',
+        'available_body':
+            'മെച്ചപ്പെടുത്തലുകളും ബഗ് പരിഹാരങ്ങളുമായി ആപ്പിന്റെ പുതിയ പതിപ്പ് ലഭ്യമാണ്.',
+        'current_version': 'നിലവിലെ പതിപ്പ്',
+        'required_version': 'ആവശ്യമായ പതിപ്പ്',
+        'latest_version': 'ഏറ്റവും പുതിയ പതിപ്പ്',
+        'update_now': 'ഇപ്പോൾ അപ്ഡേറ്റ് ചെയ്യൂ',
+        'update': 'അപ്ഡേറ്റ്',
+        'later': 'പിന്നീട്',
+      },
+      'offline': {
+        'offline': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ് · സേവ് ചെയ്ത ഉള്ളടക്കം കാണിക്കുന്നു',
+        'back_online': 'വീണ്ടും ഓൺലൈൻ · സിങ്ക് ചെയ്യുന്നു',
+      },
+      'notify_prompt': {
+        'eyebrow': 'അറിയിപ്പുകൾ',
+      },
+    },
     // Memory recall practice modes (flip card, progressive reveal,
     // first letter hints, type it out).
     'memory_recall_modes': {
@@ -6388,6 +6633,7 @@ class AppTranslations {
       'invalid_email': 'ദയവായി സാധുവായ ഇമെയിൽ വിലാസം നൽകുക',
       'resend': 'ലഭിച്ചില്ലേ? വീണ്ടും ശ്രമിക്കുക',
       'error': 'റീസെറ്റ് ഇമെയിൽ അയക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'eyebrow': 'അക്കൗണ്ട് വീണ്ടെടുക്കൽ',
     },
     'email_verification': {
       'title': 'നിങ്ങളുടെ ഇമെയിൽ സ്ഥിരീകരിക്കുക',
@@ -6457,6 +6703,8 @@ class AppTranslations {
           'ഭാഷാ പ്രാപുല്യം സ്ഥാനീയമായി സംരക്ഷിച്ചു. ഓൺലൈൻ ആയാല്‍ സിങ്ക് ചെയ്യും.',
       'default_language_set':
           'ഡിഫോൾട്ട് ഭാഷ (ഇംഗ്ലീഷ്) സെറ്റ് ചെയ്തു. ഓൺലൈൻ ആയാല്‍ സിങ്ക് ചെയ്യും.',
+      'language_save_failed':
+          'നിങ്ങളുടെ ഭാഷ സേവ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
     },
     'settings': {
       'title': 'സെറ്റിങ്സ്',
@@ -6603,7 +6851,38 @@ class AppTranslations {
       'bible_attribution': 'ബൈബിൾ പകർപ്പവകാശവും കടപ്പാടും',
       'bible_attribution_subtitle': 'തിരുവെഴുത്ത് API.Bible നൽകുന്നത്',
     },
+    'memory_add_feedback': {
+      'added':
+          'മെമ്മറി വചനങ്ങളിൽ ചേർത്തു! ഈ വചനം മനഃപാഠമാക്കാൻ ആവർത്തിക്കാൻ തുടങ്ങുക.',
+      'review_now': 'ഇപ്പോൾ ആവർത്തിക്കുക',
+      'already_exists': 'ഈ വചനം ഇതിനകം നിങ്ങളുടെ മെമ്മറി ശേഖരത്തിലുണ്ട്',
+      'review': 'ആവർത്തിക്കുക',
+    },
+    'streak_protection': {
+      'eyebrow': 'ഫ്രീസ് ദിനം',
+      'title': 'നിങ്ങളുടെ സ്ട്രീക്ക് സംരക്ഷിക്കുക',
+      'at_risk': 'നിങ്ങളുടെ {count} ദിവസത്തെ സ്ട്രീക്ക് അപകടത്തിലാണ്!',
+      'explanation':
+          'പരിശീലിക്കാൻ കഴിയാത്ത ദിവസം സ്ട്രീക്ക് സംരക്ഷിക്കാൻ ഒരു ഫ്രീസ് ദിനം ഉപയോഗിക്കുക.',
+      'available': 'ലഭ്യമായ ഫ്രീസ് ദിനങ്ങൾ',
+      'earn_more':
+          'തുടർച്ചയായ ഓരോ 7 ദിവസത്തെ പരിശീലനത്തിനും 1 ഫ്രീസ് ദിനം നേടുക (പരമാവധി 5).',
+      'cancel': 'റദ്ദാക്കുക',
+      'use': 'ഫ്രീസ് ദിനം ഉപയോഗിക്കുക',
+    },
+    'streak_milestone': {
+      'eyebrow': 'സ്ട്രീക്ക് നാഴികക്കല്ല്',
+      'title_days': '{count} ദിവസത്തെ സ്ട്രീക്ക്!',
+      'title_year': 'ഒരു വർഷത്തെ സ്ട്രീക്ക്!',
+      'message_10': 'നിങ്ങൾ ഒരു നല്ല ശീലം വളർത്തുന്നു! തുടരുക!',
+      'message_30': 'ഒരു മാസത്തെ സമർപ്പണം! നിങ്ങളുടെ പ്രതിബദ്ധത പ്രചോദനമാണ്!',
+      'message_100': 'അവിശ്വസനീയമായ സ്ഥിരോത്സാഹം! നിങ്ങൾ മനഃപാഠ ചാമ്പ്യനാണ്!',
+      'message_365': 'ഒരു വർഷം മുഴുവൻ വിശ്വസ്തത! നിങ്ങൾ അത്ഭുതമാണ്!',
+      'message_default': 'നിങ്ങളുടെ സമർപ്പണം പ്രചോദനമാണ്!',
+      'continue': 'തുടരുക',
+    },
     'questionnaire': {
+      'step_of': 'ഘട്ടം {current} / {total}',
       'your_journey': 'നിങ്ങളുടെ യാത്ര',
       'your_goals': 'നിങ്ങളുടെ ലക്ഷ്യങ്ങൾ',
       'your_time': 'നിങ്ങളുടെ സമയം',

@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/pages/memory_verses_home_page.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -235,7 +236,7 @@ void main() {
   /// the snackbar's full lifetime and leave it already gone by the time this
   /// helper returns, before the test ever gets to assert on it.
   Future<void> tapConfirm(WidgetTester tester) async {
-    await tester.tap(find.widgetWithText(FilledButton, _confirmLabel));
+    await tester.tap(find.widgetWithText(SettingsButton, _confirmLabel));
     await tester.pump(); // process the dialog pop and the bloc await chain
     await tester.pump(const Duration(milliseconds: 750)); // snackbar enters
   }

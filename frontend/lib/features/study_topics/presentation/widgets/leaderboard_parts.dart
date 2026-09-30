@@ -332,8 +332,8 @@ class LeaderboardUserRankBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.trending_up_rounded,
-                color: AppColors.success, size: 22),
+            Icon(Icons.trending_up_rounded,
+                color: context.appSuccess, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

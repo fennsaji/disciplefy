@@ -38,6 +38,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_e
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 import '../../helpers/text_fit.dart';
 
@@ -152,11 +153,15 @@ Future<void> _register({
     ..registerSingleton<UnifiedSavedGuidesBloc>(savedGuides);
 }
 
-Widget _app({required bool dark}) {
+Widget _app({required bool dark, Stream<StudyState>? studyStates}) {
   final tokenBloc = _MockTokenBloc();
   when(() => tokenBloc.state).thenReturn(const TokenInitial());
   final studyBloc = _MockStudyBloc();
-  when(() => studyBloc.state).thenReturn(StudyInitial());
+  if (studyStates != null) {
+    whenListen(studyBloc, studyStates, initialState: StudyInitial());
+  } else {
+    when(() => studyBloc.state).thenReturn(StudyInitial());
+  }
   final connectivity = _MockConnectivityBloc();
   when(() => connectivity.state).thenReturn(ConnectivityOnline());
 
@@ -318,5 +323,53 @@ void main() {
         expectNoTruncatedText(tester);
       });
     }
+  });
+
+  group('generation failed dialog', () {
+    setUpAll(loadAppFonts);
+
+    for (final language in AppLanguage.values) {
+      for (final dark in [true, false]) {
+        testWidgets('fits 320x640 ${language.code} ${dark ? 'dark' : 'light'}',
+            (tester) async {
+          await _register(language: language);
+          tester.view.physicalSize = const Size(320, 640);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+          await tester.pumpWidget(_app(
+            dark: dark,
+            studyStates: Stream.value(const StudyGenerationFailure(
+                failure: ServerFailure(message: 'Server hiccup'))),
+          ));
+          await tester.pumpAndSettle();
+
+          expect(find.byType(PopupDialog), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+          expect(find.byKey(const Key('generate_error_try_again')),
+              findsOneWidget);
+
+          await tester.tap(find.byKey(const Key('generate_error_ok')));
+          await tester.pumpAndSettle();
+          expect(find.byType(PopupDialog), findsNothing);
+        });
+      }
+    }
+
+    testWidgets('rate limit offers token management instead of retry',
+        (tester) async {
+      await _register();
+      _usePhone(tester);
+      await tester.pumpWidget(_app(
+        dark: true,
+        studyStates: Stream.value(
+            const StudyGenerationFailure(failure: RateLimitFailure())),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('generate_error_manage_tokens')),
+          findsOneWidget);
+      expect(find.byKey(const Key('generate_error_try_again')), findsNothing);
+    });
   });
 }

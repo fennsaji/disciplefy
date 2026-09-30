@@ -2,6 +2,8 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/widgets/destructive_confirm_dialog.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -87,8 +89,8 @@ void main() {
       (tester) async {
     await pumpHost(tester, results: []);
 
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Reset'),
+    final button = tester.widget<SettingsButton>(
+      find.widgetWithText(SettingsButton, 'Reset'),
     );
     expect(button.onPressed, isNull);
   });
@@ -100,8 +102,8 @@ void main() {
     await tester.enterText(find.byType(TextField), 'RESE');
     await tester.pump();
 
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Reset'),
+    final button = tester.widget<SettingsButton>(
+      find.widgetWithText(SettingsButton, 'Reset'),
     );
     expect(button.onPressed, isNull);
   });
@@ -114,12 +116,12 @@ void main() {
     await tester.enterText(find.byType(TextField), 'RESET');
     await tester.pump();
 
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Reset'),
+    final button = tester.widget<SettingsButton>(
+      find.widgetWithText(SettingsButton, 'Reset'),
     );
     expect(button.onPressed, isNotNull);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Reset'));
+    await tester.tap(find.widgetWithText(SettingsButton, 'Reset'));
     await tester.pumpAndSettle();
 
     expect(results, [true]);
@@ -133,7 +135,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '  reset ');
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Reset'));
+    await tester.tap(find.widgetWithText(SettingsButton, 'Reset'));
     await tester.pumpAndSettle();
 
     expect(results, [true]);
@@ -174,12 +176,12 @@ void main() {
     await tester.enterText(find.byType(TextField), 'reset');
     await tester.pump();
 
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Reset'),
+    final button = tester.widget<SettingsButton>(
+      find.widgetWithText(SettingsButton, 'Reset'),
     );
     expect(button.onPressed, isNotNull);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Reset'));
+    await tester.tap(find.widgetWithText(SettingsButton, 'Reset'));
     await tester.pumpAndSettle();
 
     expect(results, [true]);
@@ -209,5 +211,59 @@ void main() {
 
     expect(find.text('Reset memory verses?'), findsNothing);
     expect(results, [false]);
+  });
+
+  group('layout at 320x640', () {
+    const copies = {
+      'en': ('Reset memory verses?', 'All 42 verses will be deleted', 'Reset'),
+      'hi': (
+        'स्मृति वचन रीसेट करें?',
+        'सभी 42 वचन हटा दिए जाएंगे',
+        'रीसेट करें'
+      ),
+      'ml': (
+        'മനഃപാഠ വാക്യങ്ങൾ റീസെറ്റ് ചെയ്യണോ?',
+        'എല്ലാ 42 വാക്യങ്ങളും ഇല്ലാതാക്കും',
+        'റീസെറ്റ് ചെയ്യുക',
+      ),
+    };
+    for (final dark in [false, true]) {
+      for (final entry in copies.entries) {
+        testWidgets('${dark ? 'dark' : 'light'} ${entry.key}: no overflow',
+            (tester) async {
+          tester.view.physicalSize = const Size(320, 640);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final (title, line, label) = entry.value;
+          await tester.pumpWidget(
+            MockTranslationProvider(
+              child: MaterialApp(
+                theme: dark ? AppTheme.darkTheme : AppTheme.lightTheme,
+                home: Scaffold(
+                  body: Builder(
+                    builder: (context) => ElevatedButton(
+                      onPressed: () => DestructiveConfirmDialog.show(
+                        context,
+                        title: title,
+                        consequences: [line, line],
+                        confirmWord: 'RESET',
+                        confirmLabel: label,
+                      ),
+                      child: const Text('open'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.tap(find.text('open'));
+          await tester.pumpAndSettle();
+
+          expect(tester.takeException(), isNull);
+          expect(find.text(title), findsOneWidget);
+          expect(find.widgetWithText(SettingsButton, label), findsOneWidget);
+        });
+      }
+    }
   });
 }

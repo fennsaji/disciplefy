@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Opens a modal bottom sheet in the settings style. [builder] usually
@@ -206,25 +208,26 @@ class SettingsDialog extends StatelessWidget {
   }
 }
 
-/// Floating snackbar used across the settings screens.
+/// Floating snackbar used across the settings screens. Delegates to the
+/// app-wide [showAppSnackBar]; [backgroundColor] picks the tone (success
+/// green, error/red, warning amber, anything else neutral).
 void showSettingsSnackBar(
   BuildContext context,
   String message,
   Color backgroundColor,
 ) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        message,
-        style: AppFonts.inter(
-          fontWeight: FontWeight.w500,
-          color: Colors.white,
-        ),
-      ),
-      backgroundColor: backgroundColor,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-    ),
-  );
+  final errorColors = <Color>{
+    Theme.of(context).colorScheme.error,
+    AppColors.error,
+    AppColors.errorDark,
+    Colors.red,
+  };
+  final tone = backgroundColor == AppColors.success
+      ? AppSnackTone.success
+      : errorColors.contains(backgroundColor)
+          ? AppSnackTone.error
+          : backgroundColor == AppColors.warning
+              ? AppSnackTone.warning
+              : AppSnackTone.neutral;
+  showAppSnackBar(context, message, tone: tone);
 }

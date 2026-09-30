@@ -12,6 +12,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/study_topics_screen.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -191,7 +192,7 @@ void main() {
   /// helper returns, before the test ever gets to assert on it.
   Future<void> tapConfirm(WidgetTester tester) async {
     await tester.tap(
-      find.widgetWithText(FilledButton, _resetMenuLabel),
+      find.widgetWithText(SettingsButton, _resetMenuLabel),
     );
     await tester.pump(); // process the dialog pop and the bloc await chain
     await tester.pump(const Duration(milliseconds: 750)); // snackbar enters

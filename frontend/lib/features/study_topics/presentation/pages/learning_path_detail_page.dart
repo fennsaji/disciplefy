@@ -19,6 +19,15 @@ import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/path_icon_utils.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/photo_wash.dart';
+import '../../../../shared/widgets/popup.dart'
+    show PopupEyebrow, PopupPrimaryButton, kPopupRadius;
+import '../../../settings/presentation/widgets/settings_group.dart'
+    show
+        SettingsButton,
+        SettingsButtonKind,
+        SettingsButtonRow,
+        SettingsTone,
+        SettingsToneColors;
 import '../../../../core/utils/share_links.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
@@ -816,9 +825,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       useRootNavigator: true,
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (_) => _UnifiedDownloadSheet(
         path: path,
         initialModel: model,
@@ -1052,208 +1059,231 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final green = SettingsToneColors.of(context, SettingsTone.green);
     final done = _model.completedCount;
     final total = widget.path.topics.length;
+    // Indigo while downloading, green once settled.
+    final Color progressInk =
+        _isDownloading ? palette.accentIcon : green.foreground;
+    final Color progressFill = _isDownloading
+        ? AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1)
+        : green.fill;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.65,
       minChildSize: 0.4,
       maxChildSize: 0.92,
       expand: false,
-      builder: (_, controller) => Column(
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 4),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
+      builder: (_, controller) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(kPopupRadius)),
+          border: Border(top: BorderSide(color: palette.hairline)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: palette.outline,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
 
-          // ── Header ──────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _isDownloading
-                            ? context.tr(TranslationKeys
-                                .downloadsDownloadingOfflineGuides)
-                            : context
-                                .tr(TranslationKeys.downloadsOfflineGuides),
-                        style: AppFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _isDownloading
-                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                            : AppColors.success.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '$done / $total',
-                        style: AppFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _isDownloading
-                              ? theme.colorScheme.primary
-                              : AppColors.success,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: total > 0 ? done / total : 0,
-                    minHeight: 6,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _isDownloading
-                          ? theme.colorScheme.primary
-                          : AppColors.success,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _isDownloading
-                      ? context.tr(TranslationKeys.downloadsDownloadingProgress,
-                          {'done': done, 'total': total})
-                      : _missingCount > 0
-                          ? context.tr(
-                              TranslationKeys.downloadsPartlyDownloaded,
-                              {'done': done, 'missing': _missingCount})
-                          : context.tr(
-                              TranslationKeys.downloadsAllAvailableOffline,
-                              {'total': total}),
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 20),
-
-          // ── Topic list ───────────────────────────────────────────────────
-          Expanded(
-            child: ListView.builder(
-              controller: controller,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: widget.path.topics.length,
-              itemBuilder: (_, index) {
-                final topic = widget.path.topics[index];
-                final dl = _downloadMap[topic.topicId];
-                final isNotDownloaded =
-                    dl == null || dl.status != TopicDownloadStatus.done;
-                return _DownloadTopicCard(
-                  topic: topic,
-                  downloadInfo: dl,
-                  isCompleted: _isCompleted,
-                  onDelete: dl?.cachedGuideId != null
-                      ? () => widget.onDeleteTopic(dl!.cachedGuideId!)
-                      : null,
-                  onRetry: dl?.status == TopicDownloadStatus.failed
-                      ? () => widget.onRetryTopic(topic.topicId)
-                      : null,
-                  onDownloadSingle: isNotDownloaded &&
-                          dl?.status != TopicDownloadStatus.downloading &&
-                          dl?.status != TopicDownloadStatus.pending
-                      ? () => widget.onDownloadSingle(topic)
-                      : null,
-                );
-              },
-            ),
-          ),
-
-          // ── Actions ──────────────────────────────────────────────────────
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: _isDownloading
-                  ? Row(
+            // ── Header + topic list: scroll together so tall hi/ml copy
+            // never squeezes the pinned actions. ──────────────────────
+            Expanded(
+              child: ListView.builder(
+                controller: controller,
+                padding: EdgeInsets.zero,
+                itemCount: widget.path.topics.length + 1,
+                itemBuilder: (_, i) {
+                  if (i == 0) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: widget.onPause,
-                            icon: const Icon(Icons.pause_rounded, size: 18),
-                            label: Text(
-                                context.tr(TranslationKeys.downloadsPause)),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              PopupEyebrow(
+                                widget.path.title,
+                                textAlign: TextAlign.start,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _isDownloading
+                                          ? context.tr(TranslationKeys
+                                              .downloadsDownloadingOfflineGuides)
+                                          : context.tr(TranslationKeys
+                                              .downloadsOfflineGuides),
+                                      style: AppFonts.poppins(
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w600,
+                                        color: palette.text,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: progressFill,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '$done / $total',
+                                      style: AppFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: progressInk,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(3),
+                                child: LinearProgressIndicator(
+                                  value: total > 0 ? done / total : 0,
+                                  minHeight: 6,
+                                  backgroundColor: palette.raised,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    _isDownloading
+                                        ? palette.gold
+                                        : green.foreground,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _isDownloading
+                                    ? context.tr(
+                                        TranslationKeys
+                                            .downloadsDownloadingProgress,
+                                        {'done': done, 'total': total})
+                                    : _missingCount > 0
+                                        ? context.tr(
+                                            TranslationKeys
+                                                .downloadsPartlyDownloaded,
+                                            {
+                                                'done': done,
+                                                'missing': _missingCount
+                                              })
+                                        : context.tr(
+                                            TranslationKeys
+                                                .downloadsAllAvailableOffline,
+                                            {'total': total}),
+                                style: AppFonts.inter(
+                                    fontSize: 12, color: palette.muted),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: widget.onCancel,
-                            icon: const Icon(Icons.close_rounded, size: 18),
-                            label:
-                                Text(context.tr(TranslationKeys.commonCancel)),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: theme.colorScheme.error,
-                              side: BorderSide(color: theme.colorScheme.error),
-                            ),
-                          ),
-                        ),
+                        Divider(
+                            height: 24, thickness: 1, color: palette.hairline),
                       ],
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_missingCount > 0)
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: widget.onDownloadMore,
-                              icon:
-                                  const Icon(Icons.download_rounded, size: 18),
-                              label: Text(_missingCount == 1
+                    );
+                  }
+                  final index = i - 1;
+                  final topic = widget.path.topics[index];
+                  final dl = _downloadMap[topic.topicId];
+                  final isNotDownloaded =
+                      dl == null || dl.status != TopicDownloadStatus.done;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _DownloadTopicCard(
+                      topic: topic,
+                      downloadInfo: dl,
+                      isCompleted: _isCompleted,
+                      onDelete: dl?.cachedGuideId != null
+                          ? () => widget.onDeleteTopic(dl!.cachedGuideId!)
+                          : null,
+                      onRetry: dl?.status == TopicDownloadStatus.failed
+                          ? () => widget.onRetryTopic(topic.topicId)
+                          : null,
+                      onDownloadSingle: isNotDownloaded &&
+                              dl?.status != TopicDownloadStatus.downloading &&
+                              dl?.status != TopicDownloadStatus.pending
+                          ? () => widget.onDownloadSingle(topic)
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // ── Actions ───────────────────────────────────────────────────
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: _isDownloading
+                    ? SettingsButtonRow(
+                        buttons: [
+                          SettingsButton(
+                            key: const Key('download_sheet_pause'),
+                            label: context.tr(TranslationKeys.downloadsPause),
+                            icon: Icons.pause_rounded,
+                            kind: SettingsButtonKind.neutral,
+                            onPressed: widget.onPause,
+                          ),
+                          SettingsButton(
+                            key: const Key('download_sheet_cancel'),
+                            label: context.tr(TranslationKeys.commonCancel),
+                            icon: Icons.close_rounded,
+                            kind: SettingsButtonKind.destructive,
+                            onPressed: widget.onCancel,
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_missingCount > 0) ...[
+                            PopupPrimaryButton(
+                              key: const Key('download_sheet_download_more'),
+                              icon: Icons.download_rounded,
+                              label: _missingCount == 1
                                   ? context.tr(
                                       TranslationKeys.downloadsDownloadOneMore)
                                   : context.tr(
                                       TranslationKeys.downloadsDownloadMore,
-                                      {'count': _missingCount})),
+                                      {'count': _missingCount}),
+                              onPressed: widget.onDownloadMore,
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          SizedBox(
+                            width: double.infinity,
+                            child: SettingsButton(
+                              key: const Key('download_sheet_remove_all'),
+                              label: context
+                                  .tr(TranslationKeys.downloadsRemoveAll),
+                              icon: Icons.delete_outline_rounded,
+                              kind: SettingsButtonKind.destructive,
+                              onPressed: widget.onRemoveAll,
                             ),
                           ),
-                        if (_missingCount > 0) const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: widget.onRemoveAll,
-                            icon: const Icon(Icons.delete_outline_rounded,
-                                size: 18),
-                            label: Text(
-                                context.tr(TranslationKeys.downloadsRemoveAll)),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: theme.colorScheme.error,
-                              side: BorderSide(color: theme.colorScheme.error),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1278,7 +1308,9 @@ class _DownloadTopicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final green = SettingsToneColors.of(context, SettingsTone.green);
+    final red = SettingsToneColors.of(context, SettingsTone.red);
     final dl = downloadInfo;
     final status = dl?.status;
 
@@ -1293,44 +1325,43 @@ class _DownloadTopicCard extends StatelessWidget {
     final Widget indicatorChild;
 
     if (isDone) {
-      indicatorBg = AppColors.success;
+      indicatorBg = green.fill;
       indicatorChild =
-          const Icon(Icons.check_rounded, color: Colors.white, size: 18);
+          Icon(Icons.check_rounded, color: green.foreground, size: 18);
     } else if (isActivelyDownloading) {
-      indicatorBg = theme.colorScheme.primary.withValues(alpha: 0.15);
+      indicatorBg =
+          AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1);
       indicatorChild = SizedBox(
         width: 18,
         height: 18,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+          valueColor: AlwaysStoppedAnimation<Color>(palette.accentIcon),
         ),
       );
     } else if (isFailed) {
-      indicatorBg = theme.colorScheme.errorContainer;
-      indicatorChild = Icon(Icons.error_outline_rounded,
-          color: theme.colorScheme.error, size: 18);
+      indicatorBg = red.fill;
+      indicatorChild =
+          Icon(Icons.error_outline_rounded, color: red.foreground, size: 18);
     } else {
       // pending or not queued
-      indicatorBg = theme.colorScheme.outline.withValues(alpha: 0.15);
+      indicatorBg = palette.raised;
       indicatorChild = Icon(
         isNotQueued || isCompleted
             ? Icons.download_outlined
             : Icons.schedule_rounded,
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+        color: palette.dim,
         size: 16,
       );
     }
 
     final Color borderColor;
-    if (isDone) {
-      borderColor = AppColors.success.withValues(alpha: 0.4);
-    } else if (isActivelyDownloading) {
-      borderColor = theme.colorScheme.primary.withValues(alpha: 0.5);
+    if (isActivelyDownloading) {
+      borderColor = palette.accentIcon.withValues(alpha: 0.5);
     } else if (isFailed) {
-      borderColor = theme.colorScheme.error.withValues(alpha: 0.4);
+      borderColor = red.foreground.withValues(alpha: 0.4);
     } else {
-      borderColor = theme.colorScheme.outline.withValues(alpha: 0.15);
+      borderColor = palette.hairline;
     }
 
     final String subtitle;
@@ -1361,8 +1392,8 @@ class _DownloadTopicCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              color: palette.raised,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor),
             ),
             child: Row(
@@ -1373,7 +1404,7 @@ class _DownloadTopicCard extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: indicatorBg,
-                    borderRadius: BorderRadius.circular(18),
+                    shape: BoxShape.circle,
                   ),
                   child: Center(child: indicatorChild),
                 ),
@@ -1388,7 +1419,7 @@ class _DownloadTopicCard extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.onSurface,
+                          color: palette.text,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1397,11 +1428,10 @@ class _DownloadTopicCard extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 12,
                           color: isDone
-                              ? AppColors.success
+                              ? green.foreground
                               : isFailed
-                                  ? theme.colorScheme.error
-                                  : theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.5),
+                                  ? red.foreground
+                                  : palette.muted,
                         ),
                       ),
                     ],
@@ -1410,10 +1440,11 @@ class _DownloadTopicCard extends StatelessWidget {
                 // Trailing: delete for downloaded, download button for not downloaded
                 if (isDone && onDelete != null)
                   IconButton(
+                    tooltip: context.tr(TranslationKeys.commonDelete),
                     icon: Icon(
                       Icons.delete_outline_rounded,
                       size: 20,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      color: palette.dim,
                     ),
                     onPressed: onDelete,
                     padding: EdgeInsets.zero,
@@ -1424,10 +1455,12 @@ class _DownloadTopicCard extends StatelessWidget {
                   )
                 else if (onDownloadSingle != null)
                   IconButton(
+                    tooltip:
+                        context.tr(TranslationKeys.downloadsDownloadForOffline),
                     icon: Icon(
                       Icons.download_rounded,
                       size: 20,
-                      color: theme.colorScheme.primary,
+                      color: palette.accentIcon,
                     ),
                     onPressed: onDownloadSingle,
                     padding: EdgeInsets.zero,
