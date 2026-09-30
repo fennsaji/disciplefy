@@ -23,13 +23,18 @@ class LocaleService extends ChangeNotifier {
   Locale get currentLocale => _currentLocale;
   bool get isInitialized => _isInitialized;
 
-  /// Initialize the locale service by loading the current language preference.
+  /// Initialize the locale service from the language stored on this device.
+  ///
+  /// Runs before the first frame, so it never touches the network: the
+  /// server's language is reconciled later by [LanguagePreferenceService],
+  /// which announces any difference on [LanguagePreferenceService.languageChanges]
+  /// that this service is subscribed to.
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      // Load initial language preference
-      final language = await _languagePreferenceService.getSelectedLanguage();
+      final language =
+          _languagePreferenceService.getLocalLanguage() ?? AppLanguage.english;
       _currentLocale = Locale(language.code, '');
       Logger.debug(
           '🌐 [LOCALE_SERVICE] Initialized with locale: ${language.code}');

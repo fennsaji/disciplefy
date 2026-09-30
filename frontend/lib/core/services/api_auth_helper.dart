@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -16,9 +17,19 @@ class ApiAuthHelper {
   static const String _sessionIdKey = 'unauthenticated_session_id';
   static const Uuid _uuid = Uuid();
 
-  /// Completer to synchronize concurrent token refresh attempts
-  /// Prevents race condition where multiple API calls trigger simultaneous refreshes
-  static Completer<SessionRefreshOutcome>? _refreshCompleter;
+  /// The refresh currently running, shared by every concurrent caller.
+  ///
+  /// A cold start fires many requests at once; with an expiring token each of
+  /// them reaches [_refreshSessionIfNeeded], and they must all wait on one
+  /// refresh rather than each starting their own.
+  static Future<SessionRefreshOutcome>? _refreshInFlight;
+
+  /// Test seam: replaces the app-wide Supabase client.
+  @visibleForTesting
+  static SupabaseClient? clientOverride;
+
+  static SupabaseClient get _client =>
+      clientOverride ?? Supabase.instance.client;
 
   /// Get API headers with proper authentication
   /// Uses live Supabase session for authenticated users
@@ -39,7 +50,7 @@ class ApiAuthHelper {
       // Try to get session with retry logic for OAuth flow
       Session? session;
       for (int attempt = 1; attempt <= maxRetries; attempt++) {
-        session = Supabase.instance.client.auth.currentSession;
+        session = _client.auth.currentSession;
 
         if (session != null && session.accessToken.isNotEmpty) {
           // Session found
@@ -112,13 +123,13 @@ class ApiAuthHelper {
 
   /// Check if user is currently authenticated with live Supabase session
   static bool get isAuthenticated {
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = _client.auth.currentSession;
     return session != null && session.accessToken.isNotEmpty;
   }
 
   /// Get current authenticated user ID (if available)
   static String? get currentUserId {
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = _client.auth.currentSession;
     return session?.user.id;
   }
 
@@ -126,7 +137,7 @@ class ApiAuthHelper {
   /// Returns true if token exists and is valid, false otherwise
   static bool validateCurrentToken() {
     try {
-      final session = Supabase.instance.client.auth.currentSession;
+      final session = _client.auth.currentSession;
       if (session == null) {
         Logger.debug('🔐 [TOKEN_VALIDATION] No session found - token invalid');
         return false;
@@ -167,7 +178,7 @@ class ApiAuthHelper {
 
   /// Check if user requires authentication for API calls
   static bool requiresTokenValidation() {
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = _client.auth.currentSession;
     // If there's any session data, we should validate the token
     return session != null;
   }
@@ -279,28 +290,33 @@ class ApiAuthHelper {
   /// Returns true if session is valid (either already valid or successfully refreshed)
   /// Returns false if refresh failed
   ///
-  /// RACE CONDITION FIX: Uses Completer to ensure only one refresh happens at a time
-  /// If multiple API calls trigger refresh simultaneously, they all wait for the same refresh
-  static Future<SessionRefreshOutcome> _refreshSessionIfNeeded() async {
-    // If refresh already in progress, wait for it to complete
-    if (_refreshCompleter != null) {
+  /// Only one refresh runs at a time: concurrent callers all receive the
+  /// same Future, and the slot is released once it completes.
+  static Future<SessionRefreshOutcome> _refreshSessionIfNeeded() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) {
       Logger.debug(
           '🔐 [SESSION_REFRESH] ⏳ Refresh already in progress, waiting for completion...');
-      return await _refreshCompleter!.future;
+      return inFlight;
     }
 
-    // Start new refresh operation
-    _refreshCompleter = Completer<SessionRefreshOutcome>();
+    final refresh = _checkAndRefreshSession();
+    _refreshInFlight = refresh;
+    refresh.whenComplete(() {
+      if (identical(_refreshInFlight, refresh)) _refreshInFlight = null;
+    }).ignore();
+    return refresh;
+  }
 
+  static Future<SessionRefreshOutcome> _checkAndRefreshSession() async {
     try {
-      final session = Supabase.instance.client.auth.currentSession;
+      final session = _client.auth.currentSession;
 
       if (session == null) {
         // Nothing to refresh yet. On a cold start this is usually restoration
         // still running, not a signed-out user, so it is inconclusive rather
         // than a rejection.
         Logger.debug('🔐 [SESSION_REFRESH] No session to refresh');
-        _refreshCompleter!.complete(SessionRefreshOutcome.inconclusive);
         return SessionRefreshOutcome.inconclusive;
       }
 
@@ -311,7 +327,6 @@ class ApiAuthHelper {
             '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp found - assuming session is valid');
         Logger.debug(
             '🔐 [SESSION_REFRESH] ℹ️  Session may be persistent or long-lived');
-        _refreshCompleter!.complete(SessionRefreshOutcome.refreshed);
         return SessionRefreshOutcome.refreshed;
       }
 
@@ -324,7 +339,6 @@ class ApiAuthHelper {
       if (expiryTime.isAfter(expiresWithin5Min)) {
         Logger.debug(
             '🔐 [SESSION_REFRESH] Token is still valid (expires: $expiryTime) - no refresh needed');
-        _refreshCompleter!.complete(SessionRefreshOutcome.refreshed);
         return SessionRefreshOutcome.refreshed;
       }
 
@@ -334,7 +348,7 @@ class ApiAuthHelper {
       // Bounded: an offline refresh otherwise hangs on the socket timeout, and
       // with the retry loop above that left the app sitting on the splash
       // screen for ~40s before it gave up.
-      final response = await Supabase.instance.client.auth
+      final response = await _client.auth
           .refreshSession()
           .timeout(const Duration(seconds: 5));
 
@@ -350,7 +364,6 @@ class ApiAuthHelper {
                 '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
             Logger.debug(
                 '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
-            _refreshCompleter!.complete(SessionRefreshOutcome.rejected);
             return SessionRefreshOutcome.rejected;
           }
 
@@ -362,11 +375,9 @@ class ApiAuthHelper {
               '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp on refreshed session - assumed valid');
         }
 
-        _refreshCompleter!.complete(SessionRefreshOutcome.refreshed);
         return SessionRefreshOutcome.refreshed;
       } else {
         Logger.error('🔐 [SESSION_REFRESH] ❌ Session refresh returned null');
-        _refreshCompleter!.complete(SessionRefreshOutcome.rejected);
         return SessionRefreshOutcome.rejected;
       }
     } catch (e) {
@@ -377,17 +388,13 @@ class ApiAuthHelper {
       final outcome = classifySessionRefreshError(e);
       Logger.error(
           '🔐 [SESSION_REFRESH] ❌ Session refresh error (${outcome.name}): $e');
-      _refreshCompleter!.complete(outcome);
       return outcome;
-    } finally {
-      // Reset completer for next refresh cycle
-      _refreshCompleter = null;
     }
   }
 
   /// Debug helper to log current authentication state
   static void logAuthState() {
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = _client.auth.currentSession;
     if (session != null) {
       Logger.debug('🔐 [DEBUG] Authenticated user: ${session.user.id}');
       Logger.debug(

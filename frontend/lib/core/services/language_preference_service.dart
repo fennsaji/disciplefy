@@ -46,6 +46,17 @@ class LanguagePreferenceService {
   DateTime? _cacheTimestamp;
   static const Duration _cacheExpiry = Duration(minutes: 5);
 
+  // Selected-language cache. [_languageFetchedAt] is when the server value was
+  // last reconciled (or the user set a language); while it is younger than
+  // [_cacheExpiry] getSelectedLanguage() answers from memory. The generation
+  // is bumped on every language change, logout and user switch so a response
+  // that started before one of those is discarded instead of applied.
+  DateTime? _languageFetchedAt;
+  Future<AppLanguage?>? _languageFetchInFlight;
+  int _languageGeneration = 0;
+  bool _languageCacheAuthenticated = false;
+  String? _languageCacheUserId;
+
   LanguagePreferenceService({
     required SharedPreferences prefs,
     required AuthService authService,
@@ -71,71 +82,53 @@ class LanguagePreferenceService {
     _studyContentLanguageChangeController.close();
   }
 
-  /// Get the selected language preference with fallback logic
-  /// For authenticated users, checks database first, then local storage, then cache
-  /// Uses in-memory cache to prevent language loss during temporary API failures
+  /// Get the selected language preference.
+  ///
+  /// Served from memory while the last server reconcile is younger than
+  /// [_cacheExpiry]; otherwise the locally stored language is returned at once
+  /// and the server value is reconciled in the background (one shared request
+  /// however many callers ask). Only when there is no local value at all does
+  /// an authenticated caller wait for the server.
+  ///
+  /// A DB null never overwrites the local choice, and a server response that
+  /// started before a language change, logout or user switch is discarded.
   Future<AppLanguage> getSelectedLanguage() async {
     try {
-      // For authenticated users, check database first
-      if (_authStateProvider.isAuthenticated) {
-        final dbLanguageResult =
-            await _userProfileService.getLanguagePreference();
+      final isAuthenticated = _authStateProvider.isAuthenticated;
+      final userKey = isAuthenticated ? _authStateProvider.userId : null;
+      _resetLanguageCacheOnUserSwitch(isAuthenticated, userKey);
 
-        var dbHasNoPreference = false;
-        final dbLanguage = dbLanguageResult.fold<AppLanguage?>(
-          (failure) {
-            Logger.warning(
-                '⚠️ [LANGUAGE_SERVICE] Database call failed: ${failure.message}');
-            return null; // Failed to get from DB, fall back to local/cache
-          },
-          (language) {
-            // Profile exists but no language chosen yet (DB null) —
-            // keep the local choice instead of overwriting it.
-            if (language == null) dbHasNoPreference = true;
-            return language;
-          },
-        );
-
-        if (dbLanguage != null) {
-          // Sync local storage with database value and cache it
-          final previousCode = _prefs.getString(_languagePreferenceKey);
-          await _prefs.setString(_languagePreferenceKey, dbLanguage.code);
-          _cachedLanguage = dbLanguage;
-          if (previousCode != dbLanguage.code) {
-            // Converge every listener (LocaleService, TranslationService,
-            // content BLoCs) that may have resolved an older local value
-            // before the DB was reachable.
-            _languageChangeController.add(dbLanguage);
-          }
-          Logger.debug(
-              '✅ [LANGUAGE_SERVICE] Retrieved from DB and cached: ${dbLanguage.displayName}');
-          return dbLanguage;
-        }
-
-        if (dbHasNoPreference) {
-          _pushLocalLanguageToDatabase();
-        }
+      if (_isLanguageCacheFresh() && _cachedLanguage != null) {
+        return _cachedLanguage!;
       }
 
-      // Fallback to local storage (for DB failure or unauthenticated state)
-      final languageCode = _prefs.getString(_languagePreferenceKey);
-      if (languageCode != null) {
-        final language = AppLanguage.fromCode(languageCode);
-        _cachedLanguage = language;
-        Logger.debug(
-            '✅ [LANGUAGE_SERVICE] Retrieved from local storage and cached: ${language.displayName}');
-        return language;
+      final localLanguage = getLocalLanguage();
+
+      if (!isAuthenticated) {
+        if (localLanguage != null) {
+          _cachedLanguage = localLanguage;
+          return localLanguage;
+        }
+        return _cachedLanguage ?? AppLanguage.english;
       }
 
-      // Fallback to cached language before defaulting to English
-      // This prevents language loss during temporary API/storage failures
+      if (localLanguage != null) {
+        _cachedLanguage = localLanguage;
+        unawaited(_reconcileLanguageWithServer());
+        return localLanguage;
+      }
+
+      // Nothing stored locally (fresh install signing in): the server value is
+      // the only source, so this one call has to wait for it.
+      final serverLanguage = await _reconcileLanguageWithServer();
+      if (serverLanguage != null) return serverLanguage;
+
       if (_cachedLanguage != null) {
         Logger.debug(
             '✅ [LANGUAGE_SERVICE] Using cached language (API/storage failed): ${_cachedLanguage!.displayName}');
         return _cachedLanguage!;
       }
 
-      // Default to English only if all sources fail
       Logger.warning(
           '⚠️ [LANGUAGE_SERVICE] All sources failed, defaulting to English');
       return AppLanguage.english;
@@ -151,6 +144,112 @@ class LanguagePreferenceService {
 
       return AppLanguage.english;
     }
+  }
+
+  /// The language stored on this device, without any network access.
+  ///
+  /// Used on the startup path (before the first frame), where waiting for the
+  /// profile request would hold the splash screen. Returns null when the user
+  /// has never chosen a language on this device.
+  AppLanguage? getLocalLanguage() {
+    final languageCode = _prefs.getString(_languagePreferenceKey);
+    return languageCode != null ? AppLanguage.fromCode(languageCode) : null;
+  }
+
+  /// Fetches the profile language once for all concurrent callers and applies
+  /// it. Returns the server language, or null when it could not be used.
+  Future<AppLanguage?> _reconcileLanguageWithServer() {
+    final inFlight = _languageFetchInFlight;
+    if (inFlight != null) return inFlight;
+
+    final generation = _languageGeneration;
+    final future = _fetchAndApplyServerLanguage(generation);
+    _languageFetchInFlight = future;
+    future.whenComplete(() {
+      if (identical(_languageFetchInFlight, future)) {
+        _languageFetchInFlight = null;
+      }
+    });
+    return future;
+  }
+
+  Future<AppLanguage?> _fetchAndApplyServerLanguage(int generation) async {
+    try {
+      final dbLanguageResult =
+          await _userProfileService.getLanguagePreference();
+
+      // A language change, logout or user switch happened while the request
+      // was out: its answer describes a state that no longer exists.
+      if (generation != _languageGeneration) {
+        Logger.debug(
+            'ℹ️ [LANGUAGE_SERVICE] Discarding outdated server language response');
+        return null;
+      }
+
+      var dbHasNoPreference = false;
+      final dbLanguage = dbLanguageResult.fold<AppLanguage?>(
+        (failure) {
+          Logger.warning(
+              '⚠️ [LANGUAGE_SERVICE] Database call failed: ${failure.message}');
+          return null;
+        },
+        (language) {
+          // Profile exists but no language chosen yet (DB null) —
+          // keep the local choice instead of overwriting it.
+          if (language == null) dbHasNoPreference = true;
+          return language;
+        },
+      );
+
+      if (dbLanguage != null) {
+        final previousCode = _prefs.getString(_languagePreferenceKey);
+        // setString updates the in-memory store synchronously, so memory and
+        // storage move together here, with no await between the generation
+        // check above and the write.
+        final write = _prefs.setString(_languagePreferenceKey, dbLanguage.code);
+        _cachedLanguage = dbLanguage;
+        _languageFetchedAt = DateTime.now();
+        if (previousCode != dbLanguage.code) {
+          // Converge every listener (LocaleService, TranslationService,
+          // content BLoCs) that resolved the older local value first.
+          _languageChangeController.add(dbLanguage);
+        }
+        await write;
+        Logger.debug(
+            '✅ [LANGUAGE_SERVICE] Reconciled with DB: ${dbLanguage.displayName}');
+        return dbLanguage;
+      }
+
+      if (dbHasNoPreference) {
+        // The server state is known (no language yet); the local value stands.
+        _languageFetchedAt = DateTime.now();
+        _pushLocalLanguageToDatabase();
+      }
+      return null;
+    } catch (e) {
+      Logger.debug('Error fetching language from server: $e');
+      return null;
+    }
+  }
+
+  /// Drops the in-memory language state when the signed-in identity changes,
+  /// so one account's server language is never served to another.
+  void _resetLanguageCacheOnUserSwitch(bool isAuthenticated, String? userKey) {
+    if (isAuthenticated == _languageCacheAuthenticated &&
+        userKey == _languageCacheUserId) {
+      return;
+    }
+    _languageCacheAuthenticated = isAuthenticated;
+    _languageCacheUserId = userKey;
+    _languageFetchedAt = null;
+    _languageFetchInFlight = null;
+    _languageGeneration++;
+  }
+
+  bool _isLanguageCacheFresh() {
+    final fetchedAt = _languageFetchedAt;
+    if (fetchedAt == null) return false;
+    return DateTime.now().difference(fetchedAt) < _cacheExpiry;
   }
 
   // Guards the one-shot local→DB sync when the profile has no language yet,
@@ -190,11 +289,17 @@ class LanguagePreferenceService {
   /// Invalidates profile cache to ensure fresh data is fetched
   Future<void> saveLanguagePreference(AppLanguage language) async {
     try {
+      // Cache the language immediately to prevent loss during API failures.
+      // The user's choice is the newest truth: serve it from memory and drop
+      // any server response already in flight. Done before the first await so
+      // a response landing during the save cannot write the old value back.
+      _cachedLanguage = language;
+      _languageFetchedAt = DateTime.now();
+      _languageFetchInFlight = null;
+      _languageGeneration++;
+
       // Save to local storage first (always)
       await _prefs.setString(_languagePreferenceKey, language.code);
-
-      // Cache the language immediately to prevent loss during API failures
-      _cachedLanguage = language;
       Logger.debug(
           '💾 [LANGUAGE_SERVICE] Language cached: ${language.displayName}');
 
@@ -495,6 +600,9 @@ class LanguagePreferenceService {
     _cachedHasCompletedSelection = null;
     _cachedLanguage = null;
     _cacheTimestamp = null;
+    _languageFetchedAt = null;
+    _languageFetchInFlight = null;
+    _languageGeneration++;
     // This runs on sign-out too, so the one-shot local→DB sync has to be armed
     // again for whoever signs in next. Leaving it latched meant the second
     // account in one app run never got its null language_preference filled in.

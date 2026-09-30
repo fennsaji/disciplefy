@@ -13,6 +13,7 @@ import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../study_topics/data/models/learning_path_download_model.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_cache_scope.dart';
 import '../../../study_topics/data/services/learning_path_download_service.dart';
 import '../../../study_topics/domain/entities/learning_path.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
@@ -32,6 +33,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   late final StreamSubscription _topicsSubscription;
   late final StreamSubscription _studyGenerationSubscription;
   StreamSubscription<dynamic>? _languageChangeSubscription;
+  StreamSubscription<dynamic>? _contentLanguageChangeSubscription;
+
+  /// User + content language ([LearningCacheScope.scopeFor]) the active path
+  /// in the state belongs to. A path from another scope — another account
+  /// after a sign-in, or the old language after a switch — is never kept on
+  /// screen while the right one loads.
+  String? _activePathScope;
+
+  /// Content language the "For You" topics were last requested in.
+  String? _topicsLanguage;
+
+  /// Content language the last language-change reload was requested for.
+  String? _languageReloadRequestedFor;
 
   HomeBloc({
     required RecommendedTopicsBloc topicsBloc,
@@ -61,7 +75,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<GenerateStudyGuideFromVerse>(_onGenerateStudyGuideFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateStudyGuideFromTopic);
     on<ClearHomeError>(_onClearHomeError);
-    on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
+    // One at a time: the app-language and content-language streams can both
+    // fire for one change, and the second must see the first's request.
+    on<LanguagePreferenceChanged>(
+      _onLanguagePreferenceChanged,
+      transformer: (events, mapper) => events.asyncExpand(mapper),
+    );
     on<LoadActiveLearningPath>(_onLoadActiveLearningPath);
 
     // Register internal coordination events
@@ -207,6 +226,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       languageCode = 'en';
     }
 
+    _topicsLanguage = languageCode;
     _topicsBloc.add(topics_events.LoadForYouTopics(
       limit: event.limit,
       language: languageCode,
@@ -254,11 +274,27 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         .add(const generation_events.ClearHomeStudyGenerationError());
   }
 
-  /// Handle language preference change from settings
+  /// Handle a change of the app language or the study content language.
+  ///
+  /// Both streams can fire for one change (content on "Default" follows the
+  /// app language), so content already in the resolved content language is
+  /// not reloaded again.
   Future<void> _onLanguagePreferenceChanged(
     LanguagePreferenceChanged event,
     Emitter<HomeState> emit,
   ) async {
+    String languageCode = 'en';
+    try {
+      languageCode =
+          (await _languagePreferenceService.getStudyContentLanguage()).code;
+    } catch (_) {}
+    final alreadyInLanguage = _topicsLanguage == languageCode &&
+        _activePathScope == LearningCacheScope.scopeFor(languageCode);
+    if (alreadyInLanguage || _languageReloadRequestedFor == languageCode) {
+      return;
+    }
+    _languageReloadRequestedFor = languageCode;
+
     Logger.info(
       'Language preference changed, refreshing all home content',
       tag: 'HOME_BLOC',
@@ -280,15 +316,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// 1. Active (in-progress) path for authenticated users
   /// 2. Personalized path based on questionnaire
   /// 3. Featured path for all users (including anonymous)
+  ///
+  /// Stale-while-revalidate: the path already on screen (or, on a cold start,
+  /// the copy persisted for this user and language) is shown at once, and a
+  /// fresh one is always fetched — progress changes — and swapped in.
   Future<void> _onLoadActiveLearningPath(
     LoadActiveLearningPath event,
     Emitter<HomeState> emit,
   ) async {
     final currentState = state;
     if (currentState is HomeCombinedState) {
-      // Set loading state
-      emit(currentState.copyWith(isLoadingActivePath: true));
-
       // Get study content language preference (not app UI language)
       String languageCode = 'en';
       try {
@@ -302,14 +339,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         );
       }
 
-      // Fetch recommended learning path (works for all users)
+      await _showCachedActivePath(languageCode, emit);
+
+      // Fetch recommended learning path (works for all users). Always fresh:
+      // whatever is on screen came from a cache.
       Logger.info(
-        'Fetching recommended learning path with forceRefresh: ${event.forceRefresh}',
+        'Fetching recommended learning path (requested forceRefresh: ${event.forceRefresh})',
         tag: 'HOME_BLOC',
       );
       final result = await _learningPathsRepository.getRecommendedPath(
         language: languageCode,
-        forceRefresh: event.forceRefresh,
+        forceRefresh: true,
       );
 
       if (result.isLeft()) {
@@ -326,6 +366,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         final updatedState = state;
         if (updatedState is HomeCombinedState) {
           if (offlinePath != null) {
+            _activePathScope = LearningCacheScope.scopeFor(languageCode);
             emit(updatedState.copyWith(
               isLoadingActivePath: false,
               activeLearningPath: offlinePath,
@@ -333,6 +374,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
                   LearningPathRecommendationReason.offlineAvailable,
             ));
           } else {
+            _activePathScope = null;
             emit(updatedState.copyWith(
               isLoadingActivePath: false,
               clearActiveLearningPath: true,
@@ -377,6 +419,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
         final updatedState = state;
         if (updatedState is HomeCombinedState) {
+          _activePathScope = LearningCacheScope.scopeFor(languageCode);
           emit(updatedState.copyWith(
             isLoadingActivePath: false,
             activeLearningPath: path,
@@ -384,6 +427,49 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           ));
         }
       }
+    }
+  }
+
+  /// Puts the right path on screen before the network call: keeps the one
+  /// shown when it belongs to this user and [languageCode], else shows the
+  /// cached copy for them, else clears it (the loading indicator shows).
+  Future<void> _showCachedActivePath(
+    String languageCode,
+    Emitter<HomeState> emit,
+  ) async {
+    final scope = LearningCacheScope.scopeFor(languageCode);
+    final current = state;
+    if (current is! HomeCombinedState) return;
+
+    if (current.activeLearningPath != null && _activePathScope == scope) {
+      emit(current.copyWith(isLoadingActivePath: true));
+      return;
+    }
+
+    RecommendedPathResult? cached;
+    try {
+      cached = await _learningPathsRepository.getCachedRecommendedPath(
+        language: languageCode,
+      );
+    } catch (e) {
+      Logger.debug('Cached recommended path unavailable: $e');
+    }
+
+    final latest = state;
+    if (latest is! HomeCombinedState) return;
+    if (cached != null) {
+      _activePathScope = scope;
+      emit(latest.copyWith(
+        isLoadingActivePath: true,
+        activeLearningPath: cached.path,
+        learningPathReason: cached.reason,
+      ));
+    } else {
+      _activePathScope = null;
+      emit(latest.copyWith(
+        isLoadingActivePath: true,
+        clearActiveLearningPath: true,
+      ));
     }
   }
 
@@ -422,7 +508,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
-  /// Setup listener for language preference changes from settings
+  /// Setup listeners for app language and study content language changes.
+  /// Content on "Default" follows the app language, so either can change it.
   void _setupLanguageChangeListener() {
     _languageChangeSubscription =
         _languagePreferenceService.languageChanges.listen(
@@ -430,6 +517,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         // Trigger refresh when language changes
         add(const LanguagePreferenceChanged());
       },
+    );
+    _contentLanguageChangeSubscription =
+        _languagePreferenceService.studyContentLanguageChanges.listen(
+      (AppLanguage newLanguage) => add(const LanguagePreferenceChanged()),
     );
   }
 
@@ -439,6 +530,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     await _topicsSubscription.cancel();
     await _studyGenerationSubscription.cancel();
     await _languageChangeSubscription?.cancel();
+    await _contentLanguageChangeSubscription?.cancel();
 
     // Close child BLoCs
     await _topicsBloc.close();

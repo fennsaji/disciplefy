@@ -9,10 +9,36 @@
  * - Loading feature flags for unauthenticated users
  */
 
-import { getSystemConfig } from '../_shared/services/system-config-service.ts'
+import { getSystemConfig, getSystemConfigRows } from '../_shared/services/system-config-service.ts'
 import { getFeatureFlags, isTesterEmail, applyTesterBypass } from '../_shared/services/feature-flag-service.ts'
 import { MemoryVerseConfigService } from '../_shared/services/memory-verse-config-service.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+
+/**
+ * One memory verse config service per worker, so its 5-minute cache actually
+ * survives between requests. It reads the same cached get_system_configs rows
+ * as getSystemConfig, so the RPC runs once per TTL, not once per reader.
+ */
+let memoryVerseConfigService: MemoryVerseConfigService | null = null
+function getMemoryVerseConfigService(): MemoryVerseConfigService {
+  if (!memoryVerseConfigService) {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    memoryVerseConfigService = new MemoryVerseConfigService(supabaseClient, getSystemConfigRows)
+  }
+  return memoryVerseConfigService
+}
+
+/**
+ * The response is the same for every caller unless tester bypass applied, so
+ * it may be shared briefly; Vary keeps an authorised caller from being served
+ * an anonymous copy. A tester-specific response is never stored.
+ */
+const PUBLIC_CACHE_CONTROL = 'public, max-age=60, stale-while-revalidate=300'
+const PRIVATE_CACHE_CONTROL = 'private, no-store'
 
 // CORS headers for all responses
 const corsHeaders = {
@@ -39,11 +65,13 @@ Deno.serve(async (req) => {
   try {
     console.log('[SystemConfig] Fetching system configuration (public endpoint)')
 
-    // Fetch system config (uses 5-min cache)
-    const systemConfig = await getSystemConfig()
-
-    // Fetch feature flags (uses 5-min cache)
-    const featureFlags = await getFeatureFlags()
+    // System config, feature flags and memory verse config are independent
+    // (all 5-min cached); read them together rather than one after another.
+    const [systemConfig, featureFlags, memoryVerseConfig] = await Promise.all([
+      getSystemConfig(),
+      getFeatureFlags(),
+      getMemoryVerseConfigService().getMemoryVerseConfig(),
+    ])
 
     // Tester bypass: if the caller sent a valid JWT and their email is in the
     // feature_tester_emails allowlist, report allow_tester_bypass flags as enabled.
@@ -73,13 +101,6 @@ Deno.serve(async (req) => {
     }
 
     const resolvedFlags = applyTesterBypass(featureFlags, testerBypassActive)
-
-    // Fetch memory verse config (uses 5-min cache)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
-    const memoryVerseConfigService = new MemoryVerseConfigService(supabaseClient)
-    const memoryVerseConfig = await memoryVerseConfigService.getMemoryVerseConfig()
 
     // Transform feature flags into simple object
     const flagsObject: Record<string, any> = {}
@@ -123,7 +144,11 @@ Deno.serve(async (req) => {
         },
       }),
       {
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': testerBypassActive ? PRIVATE_CACHE_CONTROL : PUBLIC_CACHE_CONTROL,
+          'Vary': 'Authorization',
+        },
         status: 200,
       }
     )

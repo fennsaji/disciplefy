@@ -45,6 +45,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/c
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/for_you_learning_paths_section.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
@@ -103,6 +104,20 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     _setupLanguageChangeListener();
     _checkLearningPathsFeatureAccess();
     _loadGamificationStats();
+    StudyTopicsRefreshRequests.instance.addListener(_refreshInBackground);
+  }
+
+  /// The shell asks for this when the user switches back to this tab. The
+  /// blocs keep what they show and swap in the fresh data (progress) when it
+  /// lands. Skipped until the first load has been dispatched — that load
+  /// already fetches fresh data.
+  void _refreshInBackground() {
+    if (!mounted || !_dataLoadingStarted) return;
+    _learningPathsBloc
+      ..add(LoadLearningPaths(language: _currentLanguage, forceRefresh: true))
+      ..add(LoadPersonalizedPaths(language: _currentLanguage));
+    _continueLearningBloc
+        .add(RefreshContinueLearning(language: _currentLanguage));
   }
 
   /// The streak and rank tiles read the shared [GamificationBloc]; load it
@@ -265,6 +280,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
 
   @override
   void dispose() {
+    StudyTopicsRefreshRequests.instance.removeListener(_refreshInBackground);
     _languageSubscription?.cancel();
     _contentLanguageSubscription?.cancel();
     _learningPathsBloc.close();

@@ -43,8 +43,21 @@ export class MemoryVerseConfigService {
   private cacheTimestamp = 0
   private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
-  // deno-lint-ignore no-explicit-any
-  constructor(private supabaseClient: any) {}
+  /**
+   * @param supabaseClient - used to call get_system_configs when no loader is given
+   * @param rowsLoader - optional shared source of the same rows (with the time
+   *   they were read), so a caller that already reads get_system_configs does
+   *   not read it twice. A loader that throws falls back to the defaults, as an
+   *   RPC error does.
+   */
+  constructor(
+    // deno-lint-ignore no-explicit-any
+    private supabaseClient: any,
+    private readonly rowsLoader?: (forceRefresh: boolean) => Promise<{
+      rows: Array<{ key: string; value: string }>
+      fetchedAt: number
+    }>,
+  ) {}
 
   /**
    * Get complete memory verse configuration
@@ -61,12 +74,28 @@ export class MemoryVerseConfigService {
     }
 
     // Fetch fresh config from database
-    const { data, error } = await this.supabaseClient.rpc('get_system_configs')
+    // deno-lint-ignore no-explicit-any
+    let data: any[]
+    let fetchedAt = Date.now()
+    if (this.rowsLoader) {
+      try {
+        const loaded = await this.rowsLoader(forceRefresh)
+        data = loaded.rows
+        fetchedAt = loaded.fetchedAt
+      } catch (error) {
+        console.error('[MemoryVerseConfigService] Error fetching config:', error)
+        // Return default config on error
+        return this.getDefaultConfig()
+      }
+    } else {
+      const { data: rpcData, error } = await this.supabaseClient.rpc('get_system_configs')
 
-    if (error) {
-      console.error('[MemoryVerseConfigService] Error fetching config:', error)
-      // Return default config on error
-      return this.getDefaultConfig()
+      if (error) {
+        console.error('[MemoryVerseConfigService] Error fetching config:', error)
+        // Return default config on error
+        return this.getDefaultConfig()
+      }
+      data = rpcData
     }
 
     // Parse config from database response
@@ -120,7 +149,7 @@ export class MemoryVerseConfigService {
       },
     }
 
-    this.cacheTimestamp = Date.now()
+    this.cacheTimestamp = fetchedAt
     return this.cache
   }
 

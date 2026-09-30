@@ -26,8 +26,16 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   final LanguagePreferenceService languagePreferenceService;
   final StreakRepository streakRepository;
 
-  // Language change subscription
+  // Language change subscriptions
   StreamSubscription<dynamic>? _languageChangeSubscription;
+  StreamSubscription<dynamic>? _contentLanguageChangeSubscription;
+
+  /// Whether a non-forced [LoadTodaysVerse] is being handled. The app-wide
+  /// bloc is asked for today's verse by main.dart when it is created and by
+  /// Home when it mounts — usually in the same frame — so a second request
+  /// while one is in flight is dropped instead of loading (and marking the
+  /// verse viewed) twice.
+  bool _isLoadingTodaysVerse = false;
 
   DailyVerseBloc({
     required this.getDailyVerse,
@@ -77,7 +85,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       (_) => add(const LanguagePreferenceChanged()),
     );
     // Also reload when the study content language is changed independently.
-    languagePreferenceService.studyContentLanguageChanges.listen(
+    _contentLanguageChangeSubscription =
+        languagePreferenceService.studyContentLanguageChanges.listen(
       (_) => add(const LanguagePreferenceChanged()),
     );
   }
@@ -85,11 +94,28 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   @override
   Future<void> close() {
     _languageChangeSubscription?.cancel();
+    _contentLanguageChangeSubscription?.cancel();
     return super.close();
   }
 
   /// Load today's verse
   Future<void> _onLoadTodaysVerse(
+    LoadTodaysVerse event,
+    Emitter<DailyVerseState> emit,
+  ) async {
+    if (_isLoadingTodaysVerse && !event.forceRefresh) {
+      Logger.debug('[DAILY_VERSE] Today\'s verse already loading — skipped');
+      return;
+    }
+    _isLoadingTodaysVerse = true;
+    try {
+      await _loadTodaysVerse(event, emit);
+    } finally {
+      _isLoadingTodaysVerse = false;
+    }
+  }
+
+  Future<void> _loadTodaysVerse(
     LoadTodaysVerse event,
     Emitter<DailyVerseState> emit,
   ) async {
@@ -279,10 +305,33 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   ) async {
     // Only reload if we have a loaded or offline verse
     final currentState = state;
-    if (currentState is DailyVerseLoaded || currentState is DailyVerseOffline) {
-      // Reload today's verse with new language preference
-      add(const LoadTodaysVerse());
+    if (currentState is! DailyVerseLoaded &&
+        currentState is! DailyVerseOffline) {
+      return;
     }
+
+    // A verse carries every translation (and every reference translation),
+    // so today's verse is switched to the new language in place: no network
+    // call, no loading flash, and the streak stays as it is.
+    final language = await _getPreferredLanguageWithFallback();
+    final latest = state;
+    if (latest is DailyVerseLoaded && latest.verse.isToday) {
+      emit(latest.copyWith(
+        currentLanguage: language,
+        preferredLanguage: language,
+      ));
+      return;
+    }
+    if (latest is DailyVerseOffline && latest.verse.isToday) {
+      emit(latest.copyWith(
+        currentLanguage: language,
+        preferredLanguage: language,
+      ));
+      return;
+    }
+
+    // Reload today's verse with new language preference
+    add(const LoadTodaysVerse());
   }
 
   // ===== PRIVATE HELPER METHODS =====

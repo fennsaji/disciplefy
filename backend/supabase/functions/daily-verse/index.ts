@@ -14,6 +14,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { DailyVerseService } from './daily-verse-service.ts'
 import { isBibleContentEnabled } from '../_shared/services/bible-availability.ts'
+import { msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
 
 // Lazy singleton — created once per worker lifetime, not at module load
 let _dailyVerseService: DailyVerseService | null = null
@@ -153,11 +154,26 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
 
   return new Response(JSON.stringify(response), {
     status: 200,
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      'Cache-Control': `public, max-age=${dailyVerseMaxAgeSeconds(responseData)}`
     }
   })
+}
+
+/**
+ * How long a client may reuse this response.
+ *
+ * Today's verse is fixed until the date key (a UTC date) rolls over, so it can
+ * be reused until the next UTC midnight. Other dates, and a verse that could
+ * not be stored (no id), keep the previous one-hour limit.
+ */
+function dailyVerseMaxAgeSeconds(verse: DailyVerseData): number {
+  const oneHour = 3600
+  const untilMidnight = Math.max(0, Math.floor(msUntilNextUtcMidnight() / 1000))
+  const todayKey = new Date().toISOString().split('T')[0]
+  if (verse.date !== todayKey) return oneHour
+  return verse.id ? untilMidnight : Math.min(oneHour, untilMidnight)
 }
 
 // Create the function with the factory

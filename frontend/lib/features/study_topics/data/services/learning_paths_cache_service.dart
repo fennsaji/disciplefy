@@ -1,13 +1,24 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_cache_scope.dart';
 
 /// Persistent cache for learning paths API responses using Hive.
 ///
-/// Caches raw JSON response strings keyed by type + language (e.g., 'categories_en').
-/// Cache is valid for 24 hours and survives app restarts.
+/// Caches raw JSON response strings keyed by user + type + language
+/// (e.g., `'userId|categories_en'`). The responses carry the user's enrollment
+/// and progress, and this box survives logout, so the user id is part of the
+/// key: another account never reads them.
+///
+/// Entries are valid for 24 hours, except the recommended ("continue
+/// learning") path, which is kept for [_recommendedCacheDurationHours] — it is
+/// only ever shown while a fresh copy is being fetched.
 class LearningPathsCacheService {
   static const String _boxName = 'learning_paths_cache';
   static const int _cacheDurationHours = 24;
+  static const int _recommendedCacheDurationHours = 24 * 7;
+
+  /// Cache type of the recommended ("continue learning") path.
+  static const String recommendedType = 'recommended';
 
   // Never hold onto the Box. Logout calls a global `Hive.close()`
   // (LocalStoreRepositoryImpl.clearAll), which closes every box; a cached
@@ -42,6 +53,7 @@ class LearningPathsCacheService {
       await (await _box).put(key, {
         'response_body': responseBody,
         'cached_at': DateTime.now().toIso8601String(),
+        'ttl_hours': _ttlHours(type),
       });
       Logger.debug('✅ [LP_CACHE] Cached $key');
     } catch (e) {
@@ -61,7 +73,7 @@ class LearningPathsCacheService {
       if (data == null) return null;
 
       final cachedAt = DateTime.parse(data['cached_at'] as String);
-      if (DateTime.now().difference(cachedAt).inHours >= _cacheDurationHours) {
+      if (DateTime.now().difference(cachedAt).inHours >= _ttlHours(type)) {
         await (await _box).delete(key);
         Logger.debug('⏰ [LP_CACHE] Expired: $key');
         return null;
@@ -86,18 +98,23 @@ class LearningPathsCacheService {
     }
   }
 
-  String _cacheKey(String type, String language) => '${type}_$language';
+  String _cacheKey(String type, String language) =>
+      '${LearningCacheScope.currentUserKey()}|${type}_$language';
+
+  static int _ttlHours(String type) => type == recommendedType
+      ? _recommendedCacheDurationHours
+      : _cacheDurationHours;
 
   Future<void> _cleanupOldEntries() async {
     try {
-      final cutoff =
-          DateTime.now().subtract(const Duration(hours: _cacheDurationHours));
+      final now = DateTime.now();
       final toDelete = <dynamic>[];
       for (final key in (await _box).keys) {
         final data = (await _box).get(key);
         if (data?['cached_at'] != null) {
           final cachedAt = DateTime.parse(data!['cached_at'] as String);
-          if (cachedAt.isBefore(cutoff)) toDelete.add(key);
+          final ttl = (data['ttl_hours'] as int?) ?? _cacheDurationHours;
+          if (now.difference(cachedAt).inHours >= ttl) toDelete.add(key);
         }
       }
       for (final key in toDelete) {

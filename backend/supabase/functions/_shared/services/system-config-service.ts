@@ -89,16 +89,65 @@ function getCacheAge(entry: CacheEntry | null): number {
 // Database Fetch
 // ============================================================================
 
-async function fetchSystemConfigFromDB(): Promise<SystemConfig> {
-  const supabase = getSupabaseClient()
+/** One row of get_system_configs. */
+export interface SystemConfigRow {
+  key: string
+  value: string
+}
 
-  // Use the database function to get all active configs
-  const { data, error } = await supabase.rpc('get_system_configs')
+/** Raw config rows plus the time they were read. */
+export interface SystemConfigRows {
+  rows: SystemConfigRow[]
+  fetchedAt: number
+}
 
-  if (error) {
-    console.error('[SystemConfig] Error fetching config:', error)
-    throw new Error(`Failed to fetch system configuration: ${error.message}`)
+let rowsCache: SystemConfigRows | null = null
+let rowsInFlight: Promise<SystemConfigRows> | null = null
+
+/**
+ * The raw rows of get_system_configs, cached for five minutes per worker.
+ *
+ * Several readers parse different keys out of the same RPC (this service, the
+ * memory verse config). Sharing one cached read means a request that needs
+ * both makes a single round trip, and concurrent callers share one in-flight
+ * read instead of each starting their own. Throws when the RPC fails; a
+ * failure is never cached.
+ */
+export async function getSystemConfigRows(forceRefresh = false): Promise<SystemConfigRows> {
+  if (!forceRefresh && rowsCache && Date.now() - rowsCache.fetchedAt < CACHE_TTL_MS) {
+    return rowsCache
   }
+  if (!forceRefresh && rowsInFlight) return rowsInFlight
+
+  const read = (async (): Promise<SystemConfigRows> => {
+    const supabase = getSupabaseClient()
+
+    // Use the database function to get all active configs
+    const { data, error } = await supabase.rpc('get_system_configs')
+
+    if (error) {
+      console.error('[SystemConfig] Error fetching config:', error)
+      throw new Error(`Failed to fetch system configuration: ${error.message}`)
+    }
+
+    const result: SystemConfigRows = {
+      rows: (data ?? []) as SystemConfigRow[],
+      fetchedAt: Date.now(),
+    }
+    rowsCache = result
+    return result
+  })()
+
+  rowsInFlight = read
+  try {
+    return await read
+  } finally {
+    if (rowsInFlight === read) rowsInFlight = null
+  }
+}
+
+async function fetchSystemConfigFromDB(forceRefresh = false): Promise<{ config: SystemConfig; fetchedAt: number }> {
+  const { rows: data, fetchedAt } = await getSystemConfigRows(forceRefresh)
 
   if (!data || data.length === 0) {
     console.warn('[SystemConfig] No active system configs found, using defaults')
@@ -136,7 +185,7 @@ async function fetchSystemConfigFromDB(): Promise<SystemConfig> {
     },
   }
 
-  return config
+  return { config, fetchedAt }
 }
 
 // ============================================================================
@@ -168,11 +217,13 @@ export async function getSystemConfig(forceRefresh = false): Promise<SystemConfi
   const cacheStatus = configCache ? `expired (age: ${Math.floor(getCacheAge(configCache) / 1000)}s)` : 'empty'
   console.log(`[SystemConfig] Fetching from database (cache: ${cacheStatus})`)
 
-  const config = await fetchSystemConfigFromDB()
+  const { config, fetchedAt } = await fetchSystemConfigFromDB(forceRefresh)
 
+  // Age runs from when the rows were read, so sharing rows with another
+  // reader never stretches staleness past one TTL.
   configCache = {
     data: config,
-    timestamp: Date.now(),
+    timestamp: fetchedAt,
   }
 
   console.log('[SystemConfig] Config cached successfully')
@@ -233,6 +284,7 @@ export async function getTrialConfig() {
 export function clearSystemConfigCache(): void {
   const hadCache = configCache !== null
   configCache = null
+  rowsCache = null
 
   if (hadCache) {
     console.log('[SystemConfig] Cache cleared manually')

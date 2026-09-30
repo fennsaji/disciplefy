@@ -114,10 +114,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   bool _hasTriggeredStreakPrompt = false;
   bool _hasTriggeredStreakLostPrompt = false;
 
-  // Stream subscriptions for language changes (to be cancelled in dispose)
-  StreamSubscription<AppLanguage>? _languageSubscription;
-  StreamSubscription<AppLanguage>? _studyContentLanguageSubscription;
-
   // Usage stats bloc for soft paywall system
   late final UsageStatsBloc _usageStatsBloc;
   late final UsageThresholdService _usageThresholdService;
@@ -139,24 +135,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     _loadDailyVerse();
     _loadSubscriptionStatus();
     _loadUsageStats();
-    _setupLanguageChangeListener();
-    // Fire initial topics load once; HomeBloc is a singleton via DI
+    // Language changes (app and study content) are handled by HomeBloc.
     final homeBloc = sl<HomeBloc>();
-    final current = homeBloc.state;
-    if (current is! HomeCombinedState || current.topics.isEmpty) {
-      // Use LoadForYouTopics for authenticated users (bloc handles fallback)
-      homeBloc.add(const LoadForYouTopics());
-    }
-    // Load active learning path for the For You section
-    // Also re-fetch if the current path is completed (100%) so the next path is shown
-    if (current is! HomeCombinedState ||
-        current.activeLearningPath == null ||
-        (current.activeLearningPath?.isCompleted ?? false)) {
-      homeBloc.add(LoadActiveLearningPath(
-        forceRefresh: current is HomeCombinedState &&
-            (current.activeLearningPath?.isCompleted ?? false),
-      ));
-    }
+    // HomeBloc is a DI singleton that outlives a sign-out, so both loads run
+    // on every mount: "For You" is served from its per-user cache (network
+    // only on a miss), and the active path shows the cached copy for this
+    // user and language at once while a fresh one (progress) is fetched.
+    // Use LoadForYouTopics for authenticated users (bloc handles fallback)
+    homeBloc.add(const LoadForYouTopics());
+    homeBloc.add(const LoadActiveLearningPath());
   }
 
   /// Triggers the home screen walkthrough the first time the user sees this screen.
@@ -218,52 +205,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       ShowcaseKeys.homeDailyVerse,
       if (showMemoryVerses) ShowcaseKeys.homeMemoryVerses,
     ];
-  }
-
-  /// Listen for app language and study content language preference changes
-  /// Content on "Default" follows the app language, so an app-language change
-  /// can change it; a content-language change (Settings or the Topics menu)
-  /// always does.
-  void _setupLanguageChangeListener() {
-    final languageService = sl<LanguagePreferenceService>();
-
-    // Cancel any existing subscriptions before creating new ones
-    _languageSubscription?.cancel();
-    _studyContentLanguageSubscription?.cancel();
-
-    // Listen to app language changes (UI language)
-    _languageSubscription =
-        languageService.languageChanges.listen((newLanguage) {
-      Logger.debug(
-          '[HOME] App language changed to: ${newLanguage.displayName}');
-
-      // Refresh the "For You" topics in case content follows the app language
-      if (mounted) {
-        final homeBloc = sl<HomeBloc>();
-        homeBloc.add(const LoadForYouTopics(forceRefresh: true));
-        homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
-
-        Logger.debug(
-            '[HOME] "For You" content refreshed after app language change');
-      }
-    });
-
-    // Listen to study content language changes (study guides language)
-    _studyContentLanguageSubscription =
-        languageService.studyContentLanguageChanges.listen((newLanguage) {
-      Logger.debug(
-          '[HOME] Study content language changed to: ${newLanguage.displayName}');
-
-      // Refresh the "For You" topics with the new study content language
-      if (mounted) {
-        final homeBloc = sl<HomeBloc>();
-        homeBloc.add(const LoadForYouTopics(forceRefresh: true));
-        homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
-
-        Logger.debug(
-            '[HOME] "For You" content refreshed after study content language change');
-      }
-    });
   }
 
   /// Load subscription status for Standard plan banner
@@ -560,8 +501,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   @override
   void dispose() {
-    _languageSubscription?.cancel();
-    _studyContentLanguageSubscription?.cancel();
     _usageStatsBloc.close();
     super.dispose();
   }

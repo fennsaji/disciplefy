@@ -129,6 +129,7 @@ dev_dependencies:
   # Splash Screen Generation
   flutter_native_splash: ^2.4.3
 
+  supabase: any
 flutter:
   uses-material-design: true
 

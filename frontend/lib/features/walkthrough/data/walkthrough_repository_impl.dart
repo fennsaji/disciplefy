@@ -1,5 +1,6 @@
 // frontend/lib/features/walkthrough/data/walkthrough_repository_impl.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/logger.dart';
@@ -9,9 +10,25 @@ import '../domain/walkthrough_screen.dart';
 class WalkthroughRepositoryImpl implements WalkthroughRepository {
   static const _boxName = 'walkthrough';
   final SupabaseClient _supabase;
+  final Future<Map<String, dynamic>?> Function(String userId)?
+      _loadRemoteSeenOverride;
 
-  WalkthroughRepositoryImpl({required SupabaseClient supabase})
-      : _supabase = supabase;
+  WalkthroughRepositoryImpl({
+    required SupabaseClient supabase,
+    @visibleForTesting
+    Future<Map<String, dynamic>?> Function(String userId)? loadRemoteSeen,
+  })  : _supabase = supabase,
+        _loadRemoteSeenOverride = loadRemoteSeen;
+
+  Future<Map<String, dynamic>?> _loadRemoteSeen(String userId) {
+    final override = _loadRemoteSeenOverride;
+    if (override != null) return override(userId);
+    return _supabase
+        .from('user_profiles')
+        .select('walkthrough_seen')
+        .eq('id', userId)
+        .maybeSingle();
+  }
 
   // Never cache the Box (or its open-future): a global Hive.close() during
   // logout (LocalStoreRepositoryImpl.clearAll) closes every box, and a cached
@@ -89,16 +106,43 @@ class WalkthroughRepositoryImpl implements WalkthroughRepository {
 
   // ── syncFromRemote ────────────────────────────────────────────────────────
 
-  @override
-  Future<void> syncFromRemote() async {
-    if (_isAnonymous || _userId == null) return; // no-op for anonymous
+  /// User whose remote seen-list has already been merged this session.
+  /// Sign-in and Home both ask for the sync; the remote list only grows
+  /// through [markSeen], which writes Hive first, so one merge per user per
+  /// session is enough.
+  String? _syncedUserId;
 
+  /// The sync in flight, shared by concurrent callers.
+  Future<void>? _syncInFlight;
+  String? _syncInFlightUserId;
+
+  @override
+  Future<void> syncFromRemote() {
+    if (_isAnonymous || _userId == null) {
+      return Future.value(); // no-op for anonymous
+    }
+    final userId = _userId!;
+    if (_syncedUserId == userId) return Future.value();
+    if (_syncInFlight != null && _syncInFlightUserId == userId) {
+      return _syncInFlight!;
+    }
+    _syncInFlightUserId = userId;
+    final sync = _syncFromRemote(userId).whenComplete(() {
+      if (_syncInFlightUserId == userId) {
+        _syncInFlight = null;
+        _syncInFlightUserId = null;
+      }
+    });
+    _syncInFlight = sync;
+    return sync;
+  }
+
+  Future<void> _syncFromRemote(String userId) async {
     try {
-      final data = await _supabase
-          .from('user_profiles')
-          .select('walkthrough_seen')
-          .eq('id', _userId!)
-          .maybeSingle();
+      final data = await _loadRemoteSeen(userId);
+
+      // Fetched: this user needs no further sync this session.
+      _syncedUserId = userId;
 
       if (data == null) return;
 

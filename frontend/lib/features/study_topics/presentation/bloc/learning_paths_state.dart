@@ -59,6 +59,13 @@ class LearningPathsLoaded extends LearningPathsState {
   /// Empty if personalization has not loaded yet or failed.
   final List<LearningPath> personalizedPaths;
 
+  /// Counts listings fetched from the server; 0 for a listing painted from
+  /// the cache. Stays the same across load-more, search and personalization
+  /// updates, so a change means "a fresh listing just arrived" — what the
+  /// For You section re-resolves its fellowship path on. (A background
+  /// refresh goes Loaded → Loaded, with no loading state in between.)
+  final int listingRevision;
+
   const LearningPathsLoaded({
     required this.categories,
     this.enrolledPaths = const [],
@@ -71,6 +78,7 @@ class LearningPathsLoaded extends LearningPathsState {
     this.isSearching = false,
     this.searchFailed = false,
     this.personalizedPaths = const [],
+    this.listingRevision = 0,
   });
 
   @override
@@ -86,6 +94,7 @@ class LearningPathsLoaded extends LearningPathsState {
         isSearching,
         searchFailed,
         personalizedPaths,
+        listingRevision,
       ];
 
   /// Whether there are any paths to display
@@ -137,6 +146,7 @@ class LearningPathsLoaded extends LearningPathsState {
       isSearching: clearSearch ? false : (isSearching ?? this.isSearching),
       searchFailed: clearSearch ? false : (searchFailed ?? this.searchFailed),
       personalizedPaths: personalizedPaths ?? this.personalizedPaths,
+      listingRevision: listingRevision,
     );
   }
 }

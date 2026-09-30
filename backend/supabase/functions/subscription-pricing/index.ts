@@ -1,4 +1,15 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { TtlCache } from '../_shared/utils/ttl-cache.ts'
+
+/**
+ * Pricing is the same for every caller (no auth, no per-user fields), so a
+ * successful response body is held per worker for ten minutes and clients may
+ * reuse it for five. Errors and "no pricing" responses are never cached.
+ */
+const PRICING_CACHE_TTL_MS = 10 * 60 * 1000
+const PRICING_CACHE_KEY = 'pricing'
+const pricingCache = new TtlCache<string>(PRICING_CACHE_TTL_MS, 1)
+const PRICING_CACHE_CONTROL = 'public, max-age=300, stale-while-revalidate=3600'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,28 +70,47 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const cachedBody = pricingCache.get(PRICING_CACHE_KEY)
+    if (cachedBody) {
+      return new Response(cachedBody, {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': PRICING_CACHE_CONTROL },
+      })
+    }
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Fetch all pricing data from subscription_plan_providers
+    // Fetch all pricing data from subscription_plan_providers, and plan-level
+    // features (voice quota etc.) alongside it — the two reads are independent.
     // Only fetch active plans (no deprecation tracking for first release)
-    const { data: pricingData, error: pricingError } = await supabase
-      .from('subscription_plan_providers')
-      .select(`
-        provider,
-        base_price_minor,
-        currency,
-        region,
-        product_id,
-        subscription_plans!inner (
-          plan_code,
-          plan_name
-        )
-      `)
-      .eq('is_active', true)
-      .order('provider')
+    const [
+      { data: pricingData, error: pricingError },
+      { data: planFeatureData, error: featureError },
+    ] = await Promise.all([
+      supabase
+        .from('subscription_plan_providers')
+        .select(`
+          provider,
+          base_price_minor,
+          currency,
+          region,
+          product_id,
+          subscription_plans!inner (
+            plan_code,
+            plan_name
+          )
+        `)
+        .eq('is_active', true)
+        .order('provider'),
+      supabase
+        .from('subscription_plans')
+        .select('plan_code, features')
+        .in('plan_code', ['standard', 'plus', 'premium'])
+        .eq('is_active', true),
+    ])
 
     if (pricingError) {
       console.error('Error fetching pricing data:', pricingError)
@@ -99,13 +129,6 @@ Deno.serve(async (req) => {
         }
       )
     }
-
-    // Fetch plan-level features (voice quota etc.)
-    const { data: planFeatureData, error: featureError } = await supabase
-      .from('subscription_plans')
-      .select('plan_code, features')
-      .in('plan_code', ['standard', 'plus', 'premium'])
-      .eq('is_active', true)
 
     if (featureError) {
       console.warn('Warning: Could not fetch plan features:', featureError)
@@ -144,17 +167,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: formattedPricing,
-        plans: planFeatures,
-      } as PricingResponse),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+    const body = JSON.stringify({
+      success: true,
+      data: formattedPricing,
+      plans: planFeatures,
+    } as PricingResponse)
+
+    // A response missing plan features (feature read failed) is served but
+    // not cached, so the next request retries the read.
+    if (!featureError) pricingCache.set(PRICING_CACHE_KEY, body)
+
+    return new Response(body, {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': PRICING_CACHE_CONTROL },
+    })
   } catch (error) {
     console.error('Error in subscription-pricing endpoint:', error)
     return new Response(

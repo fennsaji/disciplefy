@@ -88,6 +88,21 @@ abstract class LearningPathsRepository {
   /// Clear cached learning paths data.
   void clearCache();
 
+  /// The current user's cached first page of categories in [language]
+  /// (in-memory, else persisted), or null. Never touches the network — used
+  /// to paint the listing at once while a fresh copy is fetched.
+  Future<LearningPathCategoriesResult?> getCachedLearningPathCategories({
+    String language = 'en',
+  });
+
+  /// The current user's cached recommended path in [language] (in-memory,
+  /// else persisted across launches), or null. Never touches the network —
+  /// callers show it at once and always fetch a fresh copy, since progress
+  /// changes.
+  Future<RecommendedPathResult?> getCachedRecommendedPath({
+    String language = 'en',
+  });
+
   /// Get the recommended learning path for the current user.
   ///
   /// Returns a learning path based on priority:

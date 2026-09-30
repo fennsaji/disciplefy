@@ -34,6 +34,18 @@ abstract class LearningPathsRemoteDataSource {
   /// Clears all persistent cache entries.
   Future<void> clearCache();
 
+  /// The persisted first page of categories for the current user in
+  /// [language], or null when none is stored. Never touches the network.
+  Future<LearningPathCategoriesResponseModel?> getCachedLearningPathCategories({
+    String language = 'en',
+  });
+
+  /// The last recommended path fetched for the current user in [language],
+  /// or null when none is stored. Never touches the network.
+  Future<RecommendedPathResponseModel?> getCachedRecommendedPath({
+    String language = 'en',
+  });
+
   /// Get more paths for a single category (per-category load more).
   Future<LearningPathCategoryPathsResponseModel> getLearningPathsForCategory({
     required String category,
@@ -556,7 +568,19 @@ class LearningPathsRemoteDataSourceImpl
       _logDebug('Recommended path API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        return _parseRecommendedPathResponse(response.body);
+        final parsed = _parseRecommendedPathResponse(response.body);
+        // Persisted so Home can show the path at once on the next launch
+        // while a fresh copy (progress changes) is fetched.
+        try {
+          await _cache.cacheResponse(
+            type: LearningPathsCacheService.recommendedType,
+            language: language,
+            responseBody: response.body,
+          );
+        } catch (e) {
+          _logDebug('Failed to persist recommended path: $e');
+        }
+        return parsed;
       } else {
         _logDebug('API error: ${response.statusCode} - ${response.body}');
         throw ServerException(
@@ -700,6 +724,39 @@ class LearningPathsRemoteDataSourceImpl
 
   @override
   Future<void> clearCache() => _cache.clearCache();
+
+  @override
+  Future<LearningPathCategoriesResponseModel?> getCachedLearningPathCategories({
+    String language = 'en',
+  }) async {
+    try {
+      final cached = await _cache.getCachedResponse(
+          type: 'categories', language: language);
+      if (cached == null) return null;
+      final result = _parseCategoriesResponse(cached);
+      // Same guard as getLearningPathCategories: an empty listing (e.g. from
+      // a DB outage) is never worth showing.
+      return result.categories.any((c) => c.paths.isNotEmpty) ? result : null;
+    } catch (e) {
+      _logDebug('Failed to read cached categories: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<RecommendedPathResponseModel?> getCachedRecommendedPath({
+    String language = 'en',
+  }) async {
+    try {
+      final cached = await _cache.getCachedResponse(
+          type: LearningPathsCacheService.recommendedType, language: language);
+      if (cached == null) return null;
+      return _parseRecommendedPathResponse(cached);
+    } catch (e) {
+      _logDebug('Failed to read cached recommended path: $e');
+      return null;
+    }
+  }
 
   void _logDebug(String message) {
     if (kDebugMode) Logger.debug('[LEARNING_PATHS] $message');

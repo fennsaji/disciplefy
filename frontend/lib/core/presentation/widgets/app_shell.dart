@@ -27,8 +27,7 @@ import '../../i18n/translation_keys.dart';
 import '../../theme/reader_palette.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../router/app_routes.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_verse_hero.dart';
 
 /// Main App Shell with Bottom Navigation
@@ -163,7 +162,8 @@ class _AppShellState extends State<AppShell>
     }
 
     // Refresh learning path when switching TO the home tab from another tab
-    // so completed paths get replaced by the next recommendation
+    // so completed paths get replaced by the next recommendation. Home keeps
+    // showing the current path while the fresh one loads.
     if (branchIndex == 0 && widget.navigationShell.currentIndex != 0) {
       sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
     }
@@ -171,10 +171,11 @@ class _AppShellState extends State<AppShell>
     // Same for Study Topics. Its branch is kept alive by the IndexedStack, so
     // the screen's initial load runs once and never again — a path finished
     // in the meantime kept its old progress in For You, and a completed one
-    // stayed in the recommendations.
+    // stayed in the recommendations. The screen owns its blocs (DI builds a
+    // new LearningPathsBloc per lookup), so it is asked to refresh them in
+    // the background rather than handed events here.
     if (branchIndex == 2 && widget.navigationShell.currentIndex != 2) {
-      sl<LearningPathsBloc>().add(const LoadLearningPaths(forceRefresh: true));
-      sl<LearningPathsBloc>().add(const LoadPersonalizedPaths());
+      StudyTopicsRefreshRequests.instance.request();
     }
 
     // Allow interrupting ongoing animation or loading with new tab selection

@@ -22,6 +22,16 @@ class ContinueLearningBloc
     on<ClearContinueLearningCache>(_onClearCache);
   }
 
+  /// Content language of the topics in the state, or null when the state
+  /// holds none.
+  String? _loadedLanguage;
+
+  /// Whether the state already holds a result (topics or "none in progress")
+  /// fetched in [language].
+  bool _hasResultIn(String language) =>
+      (state is ContinueLearningLoaded || state is ContinueLearningEmpty) &&
+      _loadedLanguage == language;
+
   Future<void> _onLoadContinueLearning(
     LoadContinueLearning event,
     Emitter<ContinueLearningState> emit,
@@ -30,49 +40,45 @@ class ContinueLearningBloc
     if (state is ContinueLearningLoaded && !event.forceRefresh) {
       return;
     }
-
-    emit(const ContinueLearningLoading());
-
-    final result = await _repository.getInProgressTopics(
-      language: event.language,
-      limit: event.limit,
-    );
-
-    result.fold(
-      (failure) => emit(ContinueLearningError(
-        message: ErrorMessageSanitizer.sanitize(failure),
-      )),
-      (topics) {
-        if (topics.isEmpty) {
-          emit(const ContinueLearningEmpty());
-        } else {
-          emit(ContinueLearningLoaded(topics: topics));
-        }
-      },
-    );
+    await _fetch(event.language, event.limit, emit);
   }
 
   Future<void> _onRefreshContinueLearning(
     RefreshContinueLearning event,
     Emitter<ContinueLearningState> emit,
-  ) async {
-    // Keep current state while refreshing if we have data
-    final previousState = state;
-    final hadData = previousState is ContinueLearningLoaded;
+  ) =>
+      _fetch(event.language, 5, emit);
 
+  /// Refreshes in the background when the state already holds a result in
+  /// [language] (it stays on screen, and a failed refresh keeps it);
+  /// otherwise — first load or a language switch — shows the loading state
+  /// so topics in another language never linger.
+  Future<void> _fetch(
+    String language,
+    int limit,
+    Emitter<ContinueLearningState> emit,
+  ) async {
+    final hadData = _hasResultIn(language);
     if (!hadData) {
+      _loadedLanguage = null;
       emit(const ContinueLearningLoading());
     }
 
     final result = await _repository.getInProgressTopics(
-      language: event.language,
+      language: language,
+      limit: limit,
     );
 
     result.fold(
-      (failure) => emit(ContinueLearningError(
-        message: ErrorMessageSanitizer.sanitize(failure),
-      )),
+      (failure) {
+        if (hadData && _hasResultIn(language)) return;
+        _loadedLanguage = null;
+        emit(ContinueLearningError(
+          message: ErrorMessageSanitizer.sanitize(failure),
+        ));
+      },
       (topics) {
+        _loadedLanguage = language;
         if (topics.isEmpty) {
           emit(const ContinueLearningEmpty());
         } else {
@@ -86,6 +92,7 @@ class ContinueLearningBloc
     ClearContinueLearningCache event,
     Emitter<ContinueLearningState> emit,
   ) {
+    _loadedLanguage = null;
     emit(const ContinueLearningInitial());
   }
 }
