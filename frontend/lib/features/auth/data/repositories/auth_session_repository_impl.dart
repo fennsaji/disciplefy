@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/repositories/auth_session_repository.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../user_profile/data/services/user_profile_cache.dart';
+import '../../../../core/cache/user_scoped_cache.dart';
 
 /// Implementation of AuthSessionRepository that wraps Supabase authentication
 /// Isolates Supabase SDK from domain layer following Clean Architecture
@@ -13,6 +14,7 @@ class AuthSessionRepositoryImpl implements AuthSessionRepository {
   Future<void> signOut() async {
     try {
       await UserProfileCache.instance.clearAll();
+      await UserScopedCache.instance.clearAll();
       await _supabase.auth.signOut();
       Logger.error('🔐 [AUTH SESSION] ✅ User signed out successfully');
     } catch (e) {
@@ -28,6 +30,7 @@ class AuthSessionRepositoryImpl implements AuthSessionRepository {
   Future<void> clearSession() async {
     try {
       await UserProfileCache.instance.clearAll();
+      await UserScopedCache.instance.clearAll();
       await _supabase.auth.signOut();
       Logger.error('🔐 [AUTH SESSION] ✅ Session cleared successfully');
     } catch (e) {

@@ -246,6 +246,15 @@ jobs:
                 ]
               },
               {
+                "source": "/firebase-messaging-sw.js",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                  }
+                ]
+              },
+              {
                 "source": "/main.dart.js",
                 "headers": [
                   {
@@ -259,7 +268,7 @@ jobs:
                 "headers": [
                   {
                     "key": "Cache-Control",
-                    "value": "public, max-age=0, must-revalidate, stale-while-revalidate=86400"
+                    "value": "no-cache"
                   }
                 ]
               },

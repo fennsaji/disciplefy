@@ -10,7 +10,7 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/wi
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 
 /// Photo behind the Generate screen's hero.
-const String generateHeroImage = 'assets/images/hero/snow_peaks.jpg';
+const String generateHeroImage = 'assets/images/hero/snow_peaks.webp';
 
 /// Photo behind the Generate tab's header, washed so the header text reads
 /// (dark shade in dark mode, light wash in light mode) and faded into the

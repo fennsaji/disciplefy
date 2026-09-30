@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../i18n/app_translations.dart';
 import '../models/app_language.dart';
 import 'language_preference_service.dart';
 import '../utils/logger.dart';
@@ -15,6 +16,7 @@ class LocaleService extends ChangeNotifier {
   Locale _currentLocale = const Locale('en', '');
   bool _isInitialized = false;
   StreamSubscription<AppLanguage>? _languageSubscription;
+  AppLanguage? _requestedLanguage;
 
   LocaleService({
     required LanguagePreferenceService languagePreferenceService,
@@ -36,6 +38,8 @@ class LocaleService extends ChangeNotifier {
       final language =
           _languagePreferenceService.getLocalLanguage() ?? AppLanguage.english;
       _currentLocale = Locale(language.code, '');
+      // Before the first frame, so a Hindi/Malayalam start is never English.
+      await _loadTranslations(language);
       Logger.debug(
           '🌐 [LOCALE_SERVICE] Initialized with locale: ${language.code}');
 
@@ -57,16 +61,42 @@ class LocaleService extends ChangeNotifier {
   void _onLanguageChanged(AppLanguage language) {
     Logger.debug(
         '🌐 [LOCALE_SERVICE] Language changed to: ${language.displayName}');
-    _currentLocale = Locale(language.code, '');
-    notifyListeners();
+    _applyLocale(language);
   }
 
   /// Manually update the locale (used when language is changed).
   void updateLocale(AppLanguage language) {
     Logger.debug(
         '🌐 [LOCALE_SERVICE] Manually updating locale to: ${language.displayName}');
+    _applyLocale(language);
+  }
+
+  /// Changes the locale once [language]'s translations are loaded (a deferred
+  /// chunk on web), so the rebuild the locale change triggers renders the new
+  /// language. Synchronous when already loaded; a newer request wins.
+  void _applyLocale(AppLanguage language) {
+    _requestedLanguage = language;
+    if (AppTranslations.isLoaded(language)) {
+      _setLocale(language);
+      return;
+    }
+    _loadTranslations(language).then((_) {
+      if (_requestedLanguage == language) _setLocale(language);
+    });
+  }
+
+  void _setLocale(AppLanguage language) {
     _currentLocale = Locale(language.code, '');
     notifyListeners();
+  }
+
+  Future<void> _loadTranslations(AppLanguage language) async {
+    try {
+      await AppTranslations.ensureLoaded(language);
+    } catch (e) {
+      // Offline web: switch anyway; strings fall back to English.
+      Logger.warning('🌐 [LOCALE_SERVICE] Translations not loaded: $e');
+    }
   }
 
   /// Refresh the locale from the language preference service.
@@ -74,6 +104,8 @@ class LocaleService extends ChangeNotifier {
     try {
       final language = await _languagePreferenceService.getSelectedLanguage();
       if (_currentLocale.languageCode != language.code) {
+        await _loadTranslations(language);
+        _requestedLanguage = language;
         _currentLocale = Locale(language.code, '');
         Logger.debug(
             '🌐 [LOCALE_SERVICE] Refreshed locale to: ${language.code}');

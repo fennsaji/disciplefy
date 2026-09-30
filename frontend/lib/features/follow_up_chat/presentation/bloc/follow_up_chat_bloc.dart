@@ -9,6 +9,7 @@ import '../../../../core/services/http_service.dart';
 import '../../../../core/services/api_auth_helper.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
+import '../../../tokens/domain/token_balance_changes.dart';
 import '../../data/services/conversation_service.dart';
 import 'follow_up_chat_event.dart';
 import 'follow_up_chat_state.dart';
@@ -436,6 +437,9 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
         ));
 
     _cleanupStream();
+
+    // The answer cost tokens: let the balance refresh everywhere.
+    TokenBalanceChanges.instance.notifyChanged();
   }
 
   /// Handles streaming errors

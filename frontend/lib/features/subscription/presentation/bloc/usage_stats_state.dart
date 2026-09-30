@@ -23,10 +23,14 @@ class UsageStatsLoading extends UsageStatsState {
 class UsageStatsLoaded extends UsageStatsState {
   final UsageStats usageStats;
 
-  const UsageStatsLoaded({required this.usageStats});
+  /// True while showing the last persisted stats before the fresh response
+  /// arrives. Nothing should be decided (e.g. a paywall) from cached stats.
+  final bool isCached;
+
+  const UsageStatsLoaded({required this.usageStats, this.isCached = false});
 
   @override
-  List<Object?> get props => [usageStats];
+  List<Object?> get props => [usageStats, isCached];
 }
 
 /// State when there's an error fetching usage statistics

@@ -27,7 +27,14 @@ class UsageStatsBloc extends Bloc<UsageStatsEvent, UsageStatsState> {
     FetchUsageStats event,
     Emitter<UsageStatsState> emit,
   ) async {
-    emit(const UsageStatsLoading());
+    // Stale-while-revalidate: show the last known stats (for this user only)
+    // immediately; the request below always runs and replaces them.
+    final cached = await repository.getCachedUserUsageStats();
+    if (cached != null) {
+      emit(UsageStatsLoaded(usageStats: cached, isCached: true));
+    } else {
+      emit(const UsageStatsLoading());
+    }
 
     Logger.info(
       'Fetching usage statistics',

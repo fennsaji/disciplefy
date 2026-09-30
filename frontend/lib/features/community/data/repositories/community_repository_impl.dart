@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import '../../../../core/cache/user_scoped_cache.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/blocked_user_entity.dart';
@@ -16,6 +17,8 @@ import '../../domain/fellowship_changes.dart';
 import '../../domain/repositories/community_repository.dart';
 import '../datasources/community_remote_datasource.dart';
 import '../models/daily_post_status_model.dart';
+import '../models/fellowship_model.dart';
+import '../models/public_fellowship_model.dart';
 
 /// [CommunityRemoteDatasource]-backed implementation of [CommunityRepository].
 ///
@@ -26,8 +29,61 @@ import '../models/daily_post_status_model.dart';
 class CommunityRepositoryImpl implements CommunityRepository {
   final CommunityRemoteDatasource _datasource;
 
-  CommunityRepositoryImpl({required CommunityRemoteDatasource datasource})
-      : _datasource = datasource;
+  final UserScopedCache? _cacheOverride;
+
+  CommunityRepositoryImpl({
+    required CommunityRemoteDatasource datasource,
+    UserScopedCache? cache,
+  })  : _datasource = datasource,
+        _cacheOverride = cache;
+
+  UserScopedCache get _cache => _cacheOverride ?? UserScopedCache.instance;
+
+  /// Membership or a fellowship's details changed: drop the persisted lists
+  /// (and discard any response already in flight) so they are never shown.
+  Future<void> _invalidateFellowshipCaches() async {
+    _fellowshipsInFlight.clear();
+    await Future.wait([
+      _cache.invalidate(UserScopedCache.fellowships),
+      _cache.invalidate(UserScopedCache.discoverFellowships),
+    ]);
+  }
+
+  @override
+  Future<List<FellowshipEntity>?> getCachedFellowships(String language) async {
+    final cached =
+        await _cache.read(UserScopedCache.fellowships, variant: language);
+    if (cached is! List) return null;
+    try {
+      return cached
+          .map((j) =>
+              FellowshipModel.fromJson(j as Map<String, dynamic>).toEntity())
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<DiscoverPage?> getCachedDiscoverFellowships({String? language}) async {
+    final cached = await _cache.read(UserScopedCache.discoverFellowships,
+        variant: language ?? '');
+    if (cached is! Map<String, dynamic>) return null;
+    try {
+      final list = cached['fellowships'] as List<dynamic>;
+      return DiscoverPage(
+        fellowships: list
+            .map((j) =>
+                PublicFellowshipModel.fromJson(j as Map<String, dynamic>)
+                    .toEntity())
+            .toList(),
+        hasMore: cached['has_more'] as bool? ?? false,
+        nextCursor: cached['next_cursor'] as String?,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Fellowship list
@@ -35,7 +91,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
 
   /// Concurrent `getFellowships` calls per language, sharing one request
   /// (Home's community section and meeting banner both ask at launch).
-  /// Only in-flight requests are shared; nothing is cached afterwards.
+  /// The last successful list is also persisted per user and language
+  /// ([getCachedFellowships]) for stale-while-revalidate screens.
   final Map<String, Future<Either<Failure, List<FellowshipEntity>>>>
       _fellowshipsInFlight = {};
 
@@ -57,7 +114,11 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, List<FellowshipEntity>>> _fetchFellowships(
       String language) async {
     try {
+      final ticket = _cache.ticket(UserScopedCache.fellowships);
       final models = await _datasource.getFellowships(language);
+      await _cache.write(ticket, UserScopedCache.fellowships,
+          models.map((m) => m.toJson()).toList(),
+          variant: language);
       return Right(models.map((m) => m.toEntity()).toList());
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -305,6 +366,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, String>> joinFellowship(String inviteToken) async {
     try {
       final id = await _datasource.joinFellowship(inviteToken);
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return Right(id);
     } on NetworkException catch (e) {
@@ -346,6 +408,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         disciplerAllowed: disciplerAllowed,
         dailyPostAllowed: dailyPostAllowed,
       );
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
@@ -375,6 +438,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         fellowshipId: fellowshipId,
         learningPathId: learningPathId,
       );
+      await _invalidateFellowshipCaches();
       return Right(title);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -394,6 +458,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
       String fellowshipId) async {
     try {
       final result = await _datasource.advanceStudy(fellowshipId);
+      await _invalidateFellowshipCaches();
       return Right(result);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -473,6 +538,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, void>> resetStudy(String fellowshipId) async {
     try {
       await _datasource.resetStudy(fellowshipId);
+      await _invalidateFellowshipCaches();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -491,6 +557,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, void>> leaveFellowship(String fellowshipId) async {
     try {
       await _datasource.leaveFellowship(fellowshipId);
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
@@ -506,6 +573,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, void>> deleteFellowship(String fellowshipId) async {
     try {
       await _datasource.deleteFellowship(fellowshipId);
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {
@@ -564,6 +632,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     try {
       await _datasource.removeMember(
           fellowshipId: fellowshipId, userId: userId);
+      await _invalidateFellowshipCaches();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -658,6 +727,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         disciplerActivityPush: disciplerActivityPush,
         notificationsMuted: notificationsMuted,
       );
+      await _invalidateFellowshipCaches();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -680,6 +750,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     try {
       await _datasource.promoteMember(
           fellowshipId: fellowshipId, userId: userId);
+      await _invalidateFellowshipCaches();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -698,6 +769,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     try {
       await _datasource.demoteMember(
           fellowshipId: fellowshipId, userId: userId);
+      await _invalidateFellowshipCaches();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -852,6 +924,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     try {
       await _datasource.transferMentor(
           fellowshipId: fellowshipId, newMentorUserId: newMentorUserId);
+      await _invalidateFellowshipCaches();
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -965,12 +1038,27 @@ class CommunityRepositoryImpl implements CommunityRepository {
     int limit = 10,
   }) async {
     try {
+      // Only the default first page (no search, no cursor) is persisted.
+      final cacheable = cursor == null && (search == null || search.isEmpty);
+      final ticket = _cache.ticket(UserScopedCache.discoverFellowships);
       final result = await _datasource.discoverFellowships(
         language: language,
         search: search,
         cursor: cursor,
         limit: limit,
       );
+      if (cacheable) {
+        await _cache.write(
+          ticket,
+          UserScopedCache.discoverFellowships,
+          {
+            'fellowships': result.fellowships.map((m) => m.toJson()).toList(),
+            'has_more': result.hasMore,
+            'next_cursor': result.nextCursor,
+          },
+          variant: language ?? '',
+        );
+      }
       return Right(DiscoverPage(
         fellowships: result.fellowships.map((m) => m.toEntity()).toList(),
         hasMore: result.hasMore,
@@ -994,6 +1082,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
       String fellowshipId) async {
     try {
       final name = await _datasource.joinPublicFellowship(fellowshipId);
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return Right(name);
     } on NetworkException catch (e) {
@@ -1055,6 +1144,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         googleAccessToken: googleAccessToken,
         googleRefreshToken: googleRefreshToken,
       );
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return Right(model.toEntity());
     } on NetworkException catch (e) {
@@ -1080,6 +1170,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         meetingId,
         googleAccessToken: googleAccessToken,
       );
+      await _invalidateFellowshipCaches();
       FellowshipChanges.instance.notifyChanged();
       return const Right(null);
     } on NetworkException catch (e) {

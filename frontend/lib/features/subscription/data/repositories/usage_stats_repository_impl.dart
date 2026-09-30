@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/usage_stats.dart';
 import '../../domain/repositories/usage_stats_repository.dart';
 import '../datasources/usage_stats_remote_data_source.dart';
+import '../models/usage_stats_model.dart';
+import '../../../../core/cache/user_scoped_cache.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -10,12 +12,32 @@ import '../../../../core/utils/logger.dart';
 class UsageStatsRepositoryImpl implements UsageStatsRepository {
   final UsageStatsRemoteDataSource remoteDataSource;
 
-  UsageStatsRepositoryImpl({required this.remoteDataSource});
+  final UserScopedCache? _cacheOverride;
+
+  UsageStatsRepositoryImpl({
+    required this.remoteDataSource,
+    UserScopedCache? cache,
+  }) : _cacheOverride = cache;
+
+  UserScopedCache get _cache => _cacheOverride ?? UserScopedCache.instance;
+
+  @override
+  Future<UsageStats?> getCachedUserUsageStats() async {
+    final cached = await _cache.read(UserScopedCache.usageStats);
+    if (cached is! Map<String, dynamic>) return null;
+    try {
+      return UsageStatsModel.fromJson(cached).toEntity();
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<Either<Failure, UsageStats>> getUserUsageStats() async {
     try {
+      final ticket = _cache.ticket(UserScopedCache.usageStats);
       final model = await remoteDataSource.getUserUsageStats();
+      await _cache.write(ticket, UserScopedCache.usageStats, model.toJson());
       return Right(model.toEntity());
     } on FunctionException catch (e) {
       Logger.error(

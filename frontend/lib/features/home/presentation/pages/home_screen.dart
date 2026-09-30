@@ -516,7 +516,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       bloc: _usageStatsBloc,
       listener: (context, state) {
         // Check and show soft paywall when usage stats load or update
-        if (state is UsageStatsLoaded) {
+        // Cached stats are only a placeholder: wait for the fresh response.
+        if (state is UsageStatsLoaded && !state.isCached) {
           _checkUsageThreshold(context, state.usageStats);
         }
       },
@@ -527,7 +528,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           // TokenLoaded — the first check is skipped, this retries it.
           if (state is TokenLoaded) {
             final usageState = _usageStatsBloc.state;
-            if (usageState is UsageStatsLoaded) {
+            if (usageState is UsageStatsLoaded && !usageState.isCached) {
               _checkUsageThreshold(context, usageState.usageStats);
             }
           }
@@ -893,7 +894,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       int purchasedTokens = 0;
       try {
         final tokenState = context.read<TokenBloc>().state;
-        if (tokenState is! TokenLoaded) {
+        // A refreshing state may still be the persisted balance: the
+        // listener re-runs this once the fresh status arrives.
+        if (tokenState is! TokenLoaded || tokenState.isRefreshing) {
           // TokenBloc not loaded yet — skip now; the BlocListener on TokenBloc
           // will re-trigger this check once the state is available.
           return;

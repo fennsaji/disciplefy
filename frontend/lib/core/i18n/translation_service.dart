@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_language.dart';
+import '../utils/logger.dart';
 import '../services/language_preference_service.dart';
 import 'app_translations.dart';
 
@@ -12,6 +13,7 @@ class TranslationService {
   final SharedPreferences _prefs;
 
   AppLanguage _currentLanguage = AppLanguage.english;
+  AppLanguage? _requestedLanguage;
   final _languageChangeController = StreamController<AppLanguage>.broadcast();
 
   TranslationService(this._languagePreferenceService, this._prefs) {
@@ -29,12 +31,7 @@ class TranslationService {
     _loadInitialLanguageSync();
 
     // Listen to language preference changes
-    _languagePreferenceService.languageChanges.listen((language) {
-      if (language != _currentLanguage) {
-        _currentLanguage = language;
-        _languageChangeController.add(_currentLanguage);
-      }
-    });
+    _languagePreferenceService.languageChanges.listen(_switchTo);
 
     // Also load from service asynchronously to ensure we have the latest from DB
     _loadInitialLanguage();
@@ -50,11 +47,38 @@ class TranslationService {
 
   Future<void> _loadInitialLanguage() async {
     final language = await _languagePreferenceService.getSelectedLanguage();
-    if (language != _currentLanguage) {
-      _currentLanguage = language;
-      _languageChangeController.add(_currentLanguage);
+    await _switchTo(language);
+  }
+
+  /// Switches to [language] once its translations are loaded, so listeners
+  /// never rebuild with a language whose strings are still downloading.
+  Future<void> _switchTo(AppLanguage language) async {
+    _requestedLanguage = language;
+    if (language == _currentLanguage) return;
+    if (!AppTranslations.isLoaded(language)) {
+      await _load(language);
+      // A newer switch arrived while this one was loading.
+      if (_requestedLanguage != language) return;
+    }
+    if (_languageChangeController.isClosed) return;
+    _currentLanguage = language;
+    _languageChangeController.add(_currentLanguage);
+  }
+
+  Future<void> _load(AppLanguage language) async {
+    try {
+      await AppTranslations.ensureLoaded(language);
+    } catch (e) {
+      // Chunk download failed (offline web): switch anyway; lookups fall back
+      // to English until a later switch loads the map.
+      Logger.warning('Failed to load translations for ${language.code}: $e');
     }
   }
+
+  /// Loads the current language's translations. Awaited before `runApp` so
+  /// the first frame in Hindi/Malayalam is already translated on web.
+  /// Never throws: a failed load leaves English fallbacks in place.
+  Future<void> ensureCurrentLanguageLoaded() => _load(_currentLanguage);
 
   /// Get translation for a key with optional arguments
   ///

@@ -77,6 +77,7 @@ class SubscriptionModel extends Subscription {
       'id': id,
       'user_id': userId,
       'razorpay_subscription_id': razorpaySubscriptionId,
+      'provider': provider,
       'status': status.name,
       'plan_type': planType,
       'amount_paise': amountPaise,

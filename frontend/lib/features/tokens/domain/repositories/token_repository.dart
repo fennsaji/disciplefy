@@ -16,6 +16,15 @@ abstract class TokenRepository {
   /// Returns [Failure] on error (network, server, authentication, etc.).
   Future<Either<Failure, TokenStatus>> getTokenStatus();
 
+  /// Last token status persisted for the signed-in user, or null.
+  ///
+  /// Only for showing something immediately; callers must still call
+  /// [getTokenStatus] to refresh it.
+  Future<TokenStatus?> getCachedTokenStatus();
+
+  /// Drops the persisted token status (after tokens are consumed or bought).
+  Future<void> invalidateCachedTokenStatus();
+
   /// Creates a payment order for token purchase (step 1 of new flow)
   ///
   /// [tokenAmount] - Number of tokens to purchase (must be positive)

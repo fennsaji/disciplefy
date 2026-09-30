@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import '../../../../core/cache/user_scoped_cache.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -12,17 +13,23 @@ import '../../domain/entities/token_usage_history.dart';
 import '../../domain/entities/usage_statistics.dart';
 import '../../domain/repositories/token_repository.dart';
 import '../datasources/token_remote_data_source.dart';
+import '../models/token_status_model.dart';
 
 /// Implementation of TokenRepository that handles data operations.
 class TokenRepositoryImpl implements TokenRepository {
   final TokenRemoteDataSource _remoteDataSource;
   final NetworkInfo _networkInfo;
+  final UserScopedCache? _cacheOverride;
 
   const TokenRepositoryImpl({
     required TokenRemoteDataSource remoteDataSource,
     required NetworkInfo networkInfo,
+    UserScopedCache? cache,
   })  : _remoteDataSource = remoteDataSource,
-        _networkInfo = networkInfo;
+        _networkInfo = networkInfo,
+        _cacheOverride = cache;
+
+  UserScopedCache get _cache => _cacheOverride ?? UserScopedCache.instance;
 
   /// Generic error handler that converts exceptions to failures
   Future<Either<Failure, T>> _execute<T>(
@@ -60,12 +67,30 @@ class TokenRepositoryImpl implements TokenRepository {
   Future<Either<Failure, TokenStatus>> getTokenStatus() async {
     return _execute<TokenStatus>(
       () async {
+        final ticket = _cache.ticket(UserScopedCache.tokenStatus);
         final tokenStatusModel = await _remoteDataSource.getTokenStatus();
+        await _cache.write(
+            ticket, UserScopedCache.tokenStatus, tokenStatusModel.toJson());
         return tokenStatusModel.toEntity();
       },
       'token status fetch',
     );
   }
+
+  @override
+  Future<TokenStatus?> getCachedTokenStatus() async {
+    final cached = await _cache.read(UserScopedCache.tokenStatus);
+    if (cached is! Map<String, dynamic>) return null;
+    try {
+      return TokenStatusModel.fromJson(cached).toEntity();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> invalidateCachedTokenStatus() =>
+      _cache.invalidate(UserScopedCache.tokenStatus);
 
   @override
   Future<Either<Failure, PaymentOrderResponse>> createPaymentOrder({
@@ -185,6 +210,9 @@ class TokenRepositoryImpl implements TokenRepository {
           signature: signature,
           tokenAmount: tokenAmount,
         );
+        // The balance changed: never show the pre-purchase balance again.
+        await invalidateCachedTokenStatus();
+        await _cache.invalidate(UserScopedCache.usageStats);
         return tokenStatusModel.toEntity();
       },
       'payment confirmation',

@@ -59,7 +59,9 @@ import '../../../settings/presentation/widgets/settings_group.dart'
     show SettingsButton, SettingsButtonKind;
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
-import '../../data/services/study_guide_pdf_service.dart';
+// Deferred: the pdf/printing packages load only when a PDF is exported (web).
+import '../../data/services/study_guide_pdf_service.dart'
+    deferred as pdf_export;
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../../gamification/presentation/bloc/gamification_state.dart';
@@ -3620,7 +3622,8 @@ $appLink
     await Future.delayed(const Duration(milliseconds: 200));
 
     try {
-      final pdfService = StudyGuidePdfService();
+      await pdf_export.loadLibrary();
+      final pdfService = pdf_export.StudyGuidePdfService();
       final savedPath = await pdfService.sharePdf(
         _currentStudyGuide!,
         context: context,
