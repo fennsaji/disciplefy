@@ -20,6 +20,7 @@ void showMentorContactSheet(
   required String fellowshipName,
 }) {
   showModalBottomSheet<void>(
+    useRootNavigator: true,
     context: parentContext,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

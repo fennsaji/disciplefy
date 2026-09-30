@@ -11,7 +11,7 @@ import 'package:disciplefy_bible_study/features/community/domain/entities/curren
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
-import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_photo_wash.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/daily_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
@@ -343,8 +343,8 @@ void main() {
       tester,
       const SizedBox(
         height: 500,
-        child: CommunityPhotoWash(
-          image: CommunityPhotoWash.communityTabImage,
+        child: PhotoWash(
+          image: PhotoWash.communityTabImage,
           child: Text('content'),
         ),
       ),

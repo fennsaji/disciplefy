@@ -40,7 +40,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/utils/sha
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/block_user_dialog.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_confirm_dialog.dart';
-import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_photo_wash.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_comments_sheet.dart';
@@ -522,6 +522,7 @@ class _FellowshipHomeContent extends StatelessWidget {
               onPressed: () {
                 final feedBloc = context.read<FellowshipFeedBloc>();
                 showModalBottomSheet<void>(
+                  useRootNavigator: true,
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
@@ -537,7 +538,7 @@ class _FellowshipHomeContent extends StatelessWidget {
         ),
         // Only this screen (with My fellowships and Discover) carries the
         // photo wash; each fellowship keeps its own tint.
-        body: CommunityPhotoWash.forKey(
+        body: PhotoWash.forKey(
           photoKey: fellowshipId,
           child: CustomScrollView(
             slivers: [
@@ -1002,6 +1003,7 @@ class _FeedPreviewSection extends StatelessWidget {
                         bloc.add(
                             FellowshipCommentsOpenRequested(postId: post.id));
                         showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -1019,6 +1021,7 @@ class _FeedPreviewSection extends StatelessWidget {
                       onReportTap: () {
                         final bloc = context.read<FellowshipFeedBloc>();
                         showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -1176,6 +1179,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
 
     final palette = ReaderPalette.of(context);
     await showModalBottomSheet(
+      useRootNavigator: true,
       context: context,
       backgroundColor: palette.card,
       shape: const RoundedRectangleBorder(
@@ -1260,6 +1264,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
     final parentContext = context;
 
     showModalBottomSheet(
+      useRootNavigator: true,
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -1627,14 +1632,12 @@ class _FellowshipMembersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     return Scaffold(
       backgroundColor: palette.page,
-      appBar: CommunityBackBar(
-        title: l10n.fellowshipTabMembers,
-        background: palette.page,
-      ),
+      // Back arrow only: the members screen draws its own heading (fellowship
+      // name eyebrow, "Members", member count) like the settings pages.
+      appBar: CommunityBackBar(background: palette.page),
       body: FellowshipMembersTabScreen(
         fellowshipId: fellowshipId,
         fellowshipName: fellowshipName,
@@ -1657,6 +1660,7 @@ class _FellowshipMeetingsPage extends StatelessWidget {
   void _showScheduleSheet(BuildContext context) {
     final bloc = context.read<FellowshipMeetingsBloc>();
     showModalBottomSheet<void>(
+      useRootNavigator: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(

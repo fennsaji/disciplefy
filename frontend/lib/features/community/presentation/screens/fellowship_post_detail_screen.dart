@@ -147,6 +147,7 @@ class _PostHeader extends StatelessWidget {
           onShareTap: () => sharePost(context, post, fellowshipName),
           onReportTap: () {
             showModalBottomSheet<void>(
+              useRootNavigator: true,
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,

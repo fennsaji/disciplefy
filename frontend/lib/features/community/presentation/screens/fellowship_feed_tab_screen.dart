@@ -110,6 +110,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
 
   void _openCreatePostSheet() {
     showModalBottomSheet<void>(
+      useRootNavigator: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -302,6 +303,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                               FellowshipCommentsOpenRequested(postId: post.id),
                             );
                         showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -318,6 +320,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       },
                       onReportTap: () {
                         showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,

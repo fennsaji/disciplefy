@@ -616,6 +616,7 @@ class _CommentTile extends StatelessWidget {
                         ));
                       } else if (value == 'report') {
                         await showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,

@@ -505,7 +505,8 @@ void main() {
           size: const Size(320, 1000),
         );
         _expectClean(tester);
-        expect(find.text('Fenn Saji'), findsOneWidget);
+        // The viewer's own row (u-fenn) is marked "(you)".
+        expect(find.textContaining('Fenn Saji'), findsOneWidget);
         expect(find.byType(DisciplerAvatar), findsOneWidget);
       });
     }

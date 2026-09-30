@@ -3841,6 +3841,97 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
   final TextEditingController _controller = TextEditingController();
   bool _isPosting = false;
 
+  /// Fellowships the post goes to. All of them until the user changes it.
+  late final Set<String> _selectedIds =
+      widget.userFellowships.map((f) => f.id).toSet();
+
+  List<FellowshipEntity> get _selectedFellowships =>
+      widget.userFellowships.where((f) => _selectedIds.contains(f.id)).toList();
+
+  /// Lets the user pick which fellowships the post goes to.
+  Future<void> _pickFellowships() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final palette = ReaderPalette.of(sheetContext);
+          return SafeArea(
+            top: false,
+            child: Container(
+              decoration: BoxDecoration(
+                color: palette.card,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: palette.outline,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Text(
+                      sheetContext.tr(TranslationKeys.communityPagesShareTo),
+                      style: AppFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final fellowship in widget.userFellowships)
+                          CheckboxListTile(
+                            key: ValueKey('share-pick-${fellowship.id}'),
+                            value: _selectedIds.contains(fellowship.id),
+                            activeColor: palette.accentIcon,
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            title: Text(
+                              fellowship.name,
+                              style: AppFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: palette.text,
+                              ),
+                            ),
+                            onChanged: (checked) {
+                              setSheetState(() {});
+                              setState(() {
+                                if (checked == true) {
+                                  _selectedIds.add(fellowship.id);
+                                } else {
+                                  _selectedIds.remove(fellowship.id);
+                                }
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -3872,6 +3963,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
             guideSummary: widget.guideSummary,
             fellowships: widget.userFellowships,
             content: text,
+            initialSelectedIds: _selectedIds,
           ),
         ),
       ),
@@ -3895,8 +3987,10 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
 
   /// "Name" for one fellowship, "Name +2" for several.
   String _fellowshipLabel() {
-    final fellowships = widget.userFellowships;
-    if (fellowships.isEmpty) return '';
+    final fellowships = _selectedFellowships;
+    if (fellowships.isEmpty) {
+      return context.tr(TranslationKeys.communityPagesShareSelect);
+    }
     final first = fellowships.first.name;
     return fellowships.length == 1
         ? first
@@ -3907,7 +4001,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final hasText = _controller.text.trim().isNotEmpty;
-    final canPost = hasText && !_isPosting;
+    final canPost = hasText && !_isPosting && _selectedIds.isNotEmpty;
     final label = _fellowshipLabel();
 
     return Column(
@@ -3967,42 +4061,53 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
         const SizedBox(height: 12),
         Row(
           children: [
-            // Where the post goes. The share sheet opened by Post is where the
-            // fellowships are actually picked.
+            // Where the post goes; tap to change the fellowships.
             Flexible(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
-                decoration: BoxDecoration(
-                  color: palette.raised,
+              child: Material(
+                color: palette.raised,
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  key: const ValueKey('share-fellowship-picker'),
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: palette.gold.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.group_rounded,
-                          size: 14, color: palette.gold),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: palette.text,
+                  onTap: widget.userFellowships.length > 1
+                      ? _pickFellowships
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: palette.gold.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.group_rounded,
+                              size: 14, color: palette.gold),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: palette.text,
+                            ),
+                          ),
+                        ),
+                        if (widget.userFellowships.length > 1) ...[
+                          const SizedBox(width: 4),
+                          Icon(Icons.expand_more_rounded,
+                              size: 18, color: palette.muted),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

@@ -95,6 +95,7 @@ Future<MentionCandidate?> showMentionSheet(
   ];
 
   return showModalBottomSheet<MentionCandidate>(
+    useRootNavigator: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

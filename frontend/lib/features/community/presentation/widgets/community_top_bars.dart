@@ -60,7 +60,7 @@ class CommunityIconAction extends StatelessWidget {
 }
 
 /// Large Poppins page title ("Community", 26/700) with icon actions on the
-/// right. Transparent, so it sits on a [CommunityPhotoWash].
+/// right. Transparent, so it sits on a [PhotoWash].
 class CommunityLargeTitleBar extends StatelessWidget {
   final String title;
   final List<Widget> actions;
@@ -207,7 +207,7 @@ class _UnderlineTab extends StatelessWidget {
 /// Back arrow + optional Poppins title + trailing actions, for inner
 /// community screens (Post, Meetings, Settings…).
 ///
-/// Transparent by default so it can sit on a [CommunityPhotoWash]; pass
+/// Transparent by default so it can sit on a [PhotoWash]; pass
 /// [background] to paint it.
 class CommunityBackBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;

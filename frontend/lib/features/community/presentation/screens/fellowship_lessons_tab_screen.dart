@@ -299,6 +299,9 @@ class _FellowshipLessonsTabScreenState
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      // Above the floating tab dock, which would otherwise cover the
+      // bottom of the list.
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider<LearningPathsBloc>(
         create: (_) => sl<LearningPathsBloc>()
@@ -1946,7 +1949,8 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
                         }
                         return ListView.builder(
                           controller: sheetController,
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                          padding: EdgeInsets.fromLTRB(16, 8, 16,
+                              24 + MediaQuery.paddingOf(context).bottom),
                           itemCount: results.length,
                           itemBuilder: (context, index) {
                             final path = results[index];
@@ -2006,7 +2010,8 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
                         },
                         child: ListView.builder(
                           controller: sheetController,
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                          padding: EdgeInsets.fromLTRB(16, 8, 16,
+                              24 + MediaQuery.paddingOf(context).bottom),
                           itemCount: itemCount,
                           itemBuilder: (context, index) {
                             // Footer spinner

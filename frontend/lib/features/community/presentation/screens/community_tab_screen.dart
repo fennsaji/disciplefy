@@ -28,7 +28,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
-import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_photo_wash.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
@@ -156,8 +156,8 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
     final palette = ReaderPalette.of(context);
     return Scaffold(
       backgroundColor: palette.page,
-      body: CommunityPhotoWash(
-        image: CommunityPhotoWash.communityTabImage,
+      body: PhotoWash(
+        image: PhotoWash.communityTabImage,
         child: SafeArea(
           bottom: false,
           child: Column(
@@ -1170,6 +1170,7 @@ bool _hideCreateFellowship(BuildContext context) {
 /// Upgrade sheet for users whose plan does not include creating a fellowship.
 void _showCreateFellowshipUpsell(BuildContext context) {
   showModalBottomSheet(
+    useRootNavigator: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

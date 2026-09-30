@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
@@ -16,10 +18,12 @@ import 'package:disciplefy_bible_study/features/community/presentation/screens/f
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/block_user_dialog.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_confirm_dialog.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 
@@ -69,22 +73,36 @@ class FellowshipMembersTabScreen extends StatelessWidget {
       ),
       body: BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
         builder: (context, state) {
+          final loaded = state.status == FellowshipMembersStatus.success;
+          final heading = _MembersHeading(
+            fellowshipName: fellowshipName,
+            memberCount: loaded ? state.members.length : null,
+          );
           switch (state.status) {
             case FellowshipMembersStatus.initial:
             case FellowshipMembersStatus.loading:
-              return Center(
-                child: CircularProgressIndicator(color: palette.accentIcon),
+              return _StateLayout(
+                heading: heading,
+                child: Center(
+                  child: CircularProgressIndicator(color: palette.accentIcon),
+                ),
               );
 
             case FellowshipMembersStatus.failure:
-              return _ErrorView(
-                message: state.errorMessage ?? l10n.membersLoadError,
-                fellowshipId: fellowshipId,
+              return _StateLayout(
+                heading: heading,
+                child: _ErrorView(
+                  message: state.errorMessage ?? l10n.membersLoadError,
+                  fellowshipId: fellowshipId,
+                ),
               );
 
             case FellowshipMembersStatus.success:
               if (state.members.isEmpty) {
-                return const _EmptyView();
+                return _StateLayout(
+                  heading: heading,
+                  child: const _EmptyView(),
+                );
               }
               return BlocBuilder<LearningPathsBloc, LearningPathsState>(
                 builder: (ctx, pathsState) {
@@ -94,6 +112,7 @@ class FellowshipMembersTabScreen extends StatelessWidget {
                     if (count > 0) totalTopics = count;
                   }
                   return _MemberList(
+                    heading: heading,
                     members: state.members,
                     isMentor: state.isMentor,
                     isAdmin: isAdmin,
@@ -127,10 +146,70 @@ class FellowshipMembersTabScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Page heading and state layout
+// ---------------------------------------------------------------------------
+
+/// Gold tracked fellowship-name eyebrow, the Poppins "Members" title and the
+/// member count ("5 members") once the roster has loaded.
+class _MembersHeading extends StatelessWidget {
+  final String? fellowshipName;
+
+  /// Null while loading or after a failure: the count is unknown then.
+  final int? memberCount;
+
+  const _MembersHeading({this.fellowshipName, this.memberCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final count = memberCount;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      child: CommunityPageHeading(
+        eyebrow: fellowshipName?.trim(),
+        title: l10n.fellowshipTabMembers,
+        subtitle: count == null
+            ? null
+            : '$count ${l10n.communityMembersCount(count)}',
+      ),
+    );
+  }
+}
+
+/// The heading above a loading / empty / error view that fills the rest of
+/// the screen and scrolls when the text runs taller than the viewport.
+class _StateLayout extends StatelessWidget {
+  final Widget heading;
+  final Widget child;
+
+  const _StateLayout({required this.heading, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(child: heading),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 24,
+              bottom: 24 + MediaQuery.paddingOf(context).bottom,
+            ),
+            child: child,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Member list
 // ---------------------------------------------------------------------------
 
 class _MemberList extends StatelessWidget {
+  final Widget heading;
   final List<FellowshipMemberEntity> members;
   final bool isMentor;
   final bool isAdmin;
@@ -140,6 +219,7 @@ class _MemberList extends StatelessWidget {
   final bool disciplerAllowed;
 
   const _MemberList({
+    required this.heading,
     required this.members,
     required this.isMentor,
     required this.currentUserId,
@@ -157,7 +237,6 @@ class _MemberList extends StatelessWidget {
       ..sort((a, b) => (a.isOwner == b.isOwner) ? 0 : (a.isOwner ? -1 : 1));
     final regularMembers = members.where((m) => m.role != 'mentor').toList();
 
-    Widget card(List<Widget> rows) => _MembersGroupCard(children: rows);
     _MemberCard memberCard(FellowshipMemberEntity m) => _MemberCard(
           member: m,
           isMentor: isMentor,
@@ -167,52 +246,43 @@ class _MemberList extends StatelessWidget {
           totalTopics: totalTopics,
         );
 
+    // The page floats under the tab dock: the bottom inset already includes
+    // the dock and the safe area. A mentor also has the invite pill floating
+    // above it, so the last row needs room to scroll clear of that too.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final bottomPadding = bottomInset + (isMentor ? 96 : 24);
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
+      padding: EdgeInsets.fromLTRB(0, 0, 0, bottomPadding),
       children: [
-        if (mentors.isNotEmpty) ...[
-          _SectionHeader(title: l10n.mentorsSection),
-          card([for (final m in mentors) memberCard(m)]),
-        ],
-        if (disciplerAllowed) ...[
-          _SectionHeader(title: l10n.helpersSection),
-          card(const [_DisciplerHelperRow()]),
-        ],
-        if (regularMembers.isNotEmpty) ...[
-          // Members get their own heading: without it they read as a
-          // continuation of the Helpers list, which is Discipler only.
-          _SectionHeader(title: l10n.membersSection),
-          card([for (final m in regularMembers) memberCard(m)]),
-        ],
+        heading,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (mentors.isNotEmpty) ...[
+                _SectionHeader(
+                    title: l10n.mentorsSection, count: mentors.length),
+                SettingsGroup(
+                    children: [for (final m in mentors) memberCard(m)]),
+              ],
+              if (disciplerAllowed) ...[
+                _SectionHeader(title: l10n.helpersSection, count: 1),
+                const SettingsGroup(children: [_DisciplerHelperRow()]),
+              ],
+              if (regularMembers.isNotEmpty) ...[
+                // Members get their own heading: without it they read as a
+                // continuation of the Helpers list, which is Discipler only.
+                _SectionHeader(
+                    title: l10n.membersSection, count: regularMembers.length),
+                SettingsGroup(
+                    children: [for (final m in regularMembers) memberCard(m)]),
+              ],
+            ],
+          ),
+        ),
       ],
-    );
-  }
-}
-
-/// Grouped card holding one section's rows, separated by hairlines.
-class _MembersGroupCard extends StatelessWidget {
-  final List<Widget> children;
-
-  const _MembersGroupCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = ReaderPalette.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: palette.hairline),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) Divider(height: 1, color: palette.hairline),
-            children[i],
-          ],
-        ],
-      ),
     );
   }
 }
@@ -221,16 +291,18 @@ class _MembersGroupCard extends StatelessWidget {
 // Section header
 // ---------------------------------------------------------------------------
 
+/// Gold tracked group label with its size: "MEMBERS · 4".
 class _SectionHeader extends StatelessWidget {
   final String title;
+  final int count;
 
-  const _SectionHeader({required this.title});
+  const _SectionHeader({required this.title, required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
-      child: CommunitySectionLabel(title),
+      padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
+      child: CommunitySectionLabel('$title · $count'),
     );
   }
 }
@@ -247,10 +319,10 @@ class _DisciplerHelperRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Row(
         children: [
-          const DisciplerAvatar(radius: 22),
+          const DisciplerAvatar(),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -264,19 +336,20 @@ class _DisciplerHelperRow extends StatelessWidget {
                     Text(
                       l10n.disciplerName,
                       style: AppFonts.inter(
-                        fontSize: 16,
+                        fontSize: 15.5,
                         fontWeight: FontWeight.w600,
                         color: palette.text,
+                        height: 1.3,
                       ),
                     ),
                     const DisciplerAiChip(),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   l10n.disciplerHelperSubtitle,
                   style: AppFonts.inter(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     color: palette.muted,
                     height: 1.4,
                   ),
@@ -412,85 +485,82 @@ class _MemberCard extends StatelessWidget {
     final canDemote = canChangeMentorRole && isMemberMentor && !member.isOwner;
     final showMenu = canAct || canBlock || canPromote || canDemote;
 
+    final isSelf = currentUserId != null && member.userId == currentUserId;
+    final nameText = isSelf
+        ? context.tr(TranslationKeys.communitySharedMentorYou,
+            {'name': member.displayName})
+        : member.displayName;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      // The menu button brings its own touch padding on the trailing side.
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 4, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Avatar ──────────────────────────────────────────────────────
-          MemberAvatar(
-            displayName: member.displayName,
-            avatarUrl: member.avatarUrl,
-            radius: 22,
+          // Profile photo (decoded at display size), else initials on a
+          // colour derived from the name so a member keeps one tint.
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: MemberAvatar(
+              displayName: member.displayName,
+              avatarUrl: member.avatarUrl,
+            ),
           ),
           const SizedBox(width: 12),
 
           // ── Info column ─────────────────────────────────────────────────
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Name + muted chip; the chip drops under a long name.
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      member.displayName,
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: palette.text,
-                        height: 1.3,
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nameText,
+                    style: AppFonts.inter(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      height: 1.3,
                     ),
-                    if (member.isMuted) const _MutedChip(),
-                  ],
-                ),
-                const SizedBox(height: 6),
+                  ),
+                  const SizedBox(height: 4),
 
-                // Role badge + join date
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _RoleBadge(
-                        isMentor: isMemberMentor, isOwner: member.isOwner),
-                    // Text.rich, not a Row: the label wraps under the icon
-                    // when "Joined" runs long instead of overflowing.
-                    Text.rich(
-                      TextSpan(children: [
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: Padding(
-                            padding: const EdgeInsetsDirectional.only(end: 4),
-                            child: Icon(Icons.calendar_today_outlined,
-                                size: 12, color: palette.dim),
+                  // Role pill (mentors only — the section already says the
+                  // rest are members), muted chip and join date. Wraps under
+                  // itself when the labels run long.
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (isMemberMentor) _RoleBadge(isOwner: member.isOwner),
+                      if (member.isMuted) const _MutedChip(),
+                      if (joinDate.isNotEmpty)
+                        Text(
+                          '${l10n.memberJoinedLabel} $joinDate',
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            color: palette.muted,
+                            height: 1.4,
                           ),
                         ),
-                        TextSpan(text: '${l10n.memberJoinedLabel} $joinDate'),
-                      ]),
-                      style: AppFonts.inter(
-                        fontSize: 12.5,
-                        color: palette.muted,
-                      ),
+                    ],
+                  ),
+
+                  // Progress bar — only shown to the mentor for all members
+                  if (isMentor &&
+                      totalTopics != null &&
+                      member.topicsCompleted != null) ...[
+                    const SizedBox(height: 10),
+                    _MemberProgressBar(
+                      completed: member.topicsCompleted!,
+                      total: totalTopics!,
                     ),
                   ],
-                ),
-
-                // Progress bar — only shown to the mentor for all members
-                if (isMentor &&
-                    totalTopics != null &&
-                    member.topicsCompleted != null) ...[
-                  const SizedBox(height: 10),
-                  _MemberProgressBar(
-                    completed: member.topicsCompleted!,
-                    total: totalTopics!,
-                  ),
                 ],
-              ],
+              ),
             ),
           ),
 
@@ -678,36 +748,31 @@ class _MutedChip extends StatelessWidget {
 // Role badge
 // ---------------------------------------------------------------------------
 
+/// Gold "Owner" / "Mentor" pill. Regular members get none: their section
+/// heading already says what they are, so a "Member" chip on every row was
+/// noise.
 class _RoleBadge extends StatelessWidget {
-  final bool isMentor;
   final bool isOwner;
 
-  const _RoleBadge({required this.isMentor, this.isOwner = false});
+  const _RoleBadge({this.isOwner = false});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
-    final label = isOwner
-        ? l10n.ownerLabel
-        : (isMentor ? l10n.mentorLabel : l10n.memberLabel);
-    final background = isMentor
-        ? palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.14)
-        : palette.raised;
-    final textColor = isMentor ? palette.gold : palette.muted;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
       decoration: BoxDecoration(
-        color: background,
+        color: palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.14),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        label,
+        isOwner ? l10n.ownerLabel : l10n.mentorLabel,
         style: AppFonts.inter(
-          fontSize: 12,
+          fontSize: 11.5,
           fontWeight: FontWeight.w600,
-          color: textColor,
+          color: palette.gold,
+          height: 1.4,
         ),
       ),
     );

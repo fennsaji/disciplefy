@@ -56,6 +56,10 @@ class ShareGuideSheet extends StatefulWidget {
   /// hidden and this value is used directly as the post content.
   final String? content;
 
+  /// Fellowships checked when the sheet opens (e.g. the ones picked on the
+  /// study guide). Empty: none checked.
+  final Set<String> initialSelectedIds;
+
   const ShareGuideSheet({
     required this.studyGuideId,
     required this.guideTitle,
@@ -65,6 +69,7 @@ class ShareGuideSheet extends StatefulWidget {
     this.guideSummary,
     required this.fellowships,
     this.content,
+    this.initialSelectedIds = const {},
     super.key,
   });
 
@@ -76,7 +81,7 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
   final _messageController = TextEditingController();
 
   /// IDs of the fellowships the user has checked.
-  final Set<String> _selectedIds = {};
+  late final Set<String> _selectedIds = {...widget.initialSelectedIds};
 
   bool _submitting = false;
 
