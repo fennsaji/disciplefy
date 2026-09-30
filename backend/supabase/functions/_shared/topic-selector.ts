@@ -389,6 +389,60 @@ export async function selectTopicForUser(
 // ============================================================================
 
 /**
+ * Localizes many topics with one query instead of one per topic.
+ *
+ * Mirrors getLocalizedTopicContent per topic: a translation row, when present,
+ * is used as-is; no row or a failed query falls back to the English content.
+ * Result order matches `topics`.
+ */
+export async function getLocalizedTopicsContent(
+  supabase: SupabaseClient,
+  topics: Topic[],
+  language: string
+): Promise<LocalizedContent[]> {
+  const english = topics.map((t) => ({ title: t.title, description: t.description }))
+  if (language === 'en' || topics.length === 0) return english
+
+  try {
+    const ids = [...new Set(topics.map((t) => t.id))]
+    const { data, error } = await supabase
+      .from('recommended_topics_translations')
+      .select('topic_id, title, description')
+      .in('topic_id', ids)
+      .eq('language_code', language)
+
+    if (error) {
+      console.error(`Translation batch fetch error for language ${language}:`, error)
+      return english
+    }
+
+    return mergeTopicTranslations(topics, data ?? [])
+  } catch (error) {
+    console.error('Error fetching topic translations:', error)
+    return english
+  }
+}
+
+/** Pure merge step of getLocalizedTopicsContent, exported for tests. */
+export function mergeTopicTranslations(
+  topics: Topic[],
+  rows: { topic_id: string; title: string; description: string }[]
+): LocalizedContent[] {
+  const byId = new Map<string, { title: string; description: string }>()
+  const duplicated = new Set<string>()
+  for (const row of rows) {
+    if (byId.has(row.topic_id)) duplicated.add(row.topic_id)
+    else byId.set(row.topic_id, { title: row.title, description: row.description })
+  }
+  return topics.map((t) => {
+    const row = byId.get(t.id)
+    // .single() errored on duplicates and fell back to English; keep that.
+    if (!row || duplicated.has(t.id)) return { title: t.title, description: t.description }
+    return { title: row.title, description: row.description }
+  })
+}
+
+/**
  * Gets localized content for a topic based on language preference
  * Fetches translations from recommended_topics_translations table
  * Falls back to English if translation not found
@@ -569,9 +623,12 @@ export async function selectTopicsForYou(
   supabaseUrl: string,
   supabaseServiceKey: string,
   userId: string,
-  limit: number = 4
+  limit: number = 4,
+  client?: SupabaseClient
 ): Promise<TopicsForYouResult> {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Reuse the caller's service client when given; a new client per call
+  // costs a fresh connection setup.
+  const supabase = client ?? createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // Get user's personalization data
@@ -737,9 +794,12 @@ export async function selectTopicsForYouWithLearningPath(
   supabaseUrl: string,
   supabaseServiceKey: string,
   userId: string,
-  limit: number = 4
+  limit: number = 4,
+  client?: SupabaseClient
 ): Promise<TopicsForYouWithPathResult> {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Reuse the caller's service client when given; a new client per call
+  // costs a fresh connection setup.
+  const supabase = client ?? createClient(supabaseUrl, supabaseServiceKey);
 
   console.log(`[TOPICS_FOR_YOU] Starting selectTopicsForYouWithLearningPath for user: ${userId}, limit: ${limit}`);
 
@@ -935,7 +995,8 @@ export async function selectTopicsForYouWithLearningPath(
       supabaseUrl,
       supabaseServiceKey,
       userId,
-      limit
+      limit,
+      supabase
     );
 
     return {

@@ -33,8 +33,28 @@ class CommunityRepositoryImpl implements CommunityRepository {
   // Fellowship list
   // ---------------------------------------------------------------------------
 
+  /// Concurrent `getFellowships` calls per language, sharing one request
+  /// (Home's community section and meeting banner both ask at launch).
+  /// Only in-flight requests are shared; nothing is cached afterwards.
+  final Map<String, Future<Either<Failure, List<FellowshipEntity>>>>
+      _fellowshipsInFlight = {};
+
   @override
   Future<Either<Failure, List<FellowshipEntity>>> getFellowships(
+      String language) {
+    final existing = _fellowshipsInFlight[language];
+    if (existing != null) return existing;
+    final request = _fetchFellowships(language);
+    _fellowshipsInFlight[language] = request;
+    request.whenComplete(() {
+      if (identical(_fellowshipsInFlight[language], request)) {
+        _fellowshipsInFlight.remove(language);
+      }
+    });
+    return request;
+  }
+
+  Future<Either<Failure, List<FellowshipEntity>>> _fetchFellowships(
       String language) async {
     try {
       final models = await _datasource.getFellowships(language);

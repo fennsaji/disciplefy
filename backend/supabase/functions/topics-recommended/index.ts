@@ -12,6 +12,7 @@ import { createFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { TtlCache, PUBLIC_CACHE_CONTROL } from '../_shared/utils/ttl-cache.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
@@ -75,6 +76,25 @@ const DEFAULT_OFFSET = 0 as const
 const MAX_LIMIT = 100 as const
 
 /**
+ * Topic lists are catalogue data, the same for every caller with the same
+ * filters, so they are kept per worker for five minutes. Progress is merged in
+ * afterwards and never cached.
+ */
+const TOPICS_CACHE_TTL_MS = 5 * 60 * 1000
+type FilteredTopics = Awaited<ReturnType<typeof getFilteredTopics>>
+const topicsCache = new TtlCache<FilteredTopics>(TOPICS_CACHE_TTL_MS, 500)
+
+function topicsCacheKey(params: TopicsQueryParams): string {
+  return JSON.stringify([
+    params.category ?? null,
+    params.categories ?? null,
+    params.language,
+    params.limit,
+    params.offset,
+  ])
+}
+
+/**
  * Main handler for recommended topics
  * Now supports optional progress data when include_progress=true and user is authenticated
  */
@@ -90,7 +110,12 @@ async function handleTopicsRecommended(
   const queryParams = parseQueryParameters(req.url)
 
   // Get filtered topics
-  const topicsData = await getFilteredTopics(services.topicsRepository, queryParams)
+  const cacheKey = topicsCacheKey(queryParams)
+  let topicsData = topicsCache.get(cacheKey)
+  if (!topicsData) {
+    topicsData = await getFilteredTopics(services.topicsRepository, queryParams)
+    topicsCache.set(cacheKey, topicsData)
+  }
 
   // If progress is requested and user is authenticated, fetch progress data
   let topicsWithProgress: TopicWithProgress[] = topicsData.topics.map((t) => ({ ...t }))
@@ -139,10 +164,13 @@ async function handleTopicsRecommended(
     },
   }
 
-  return new Response(JSON.stringify(response), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  // Without progress the body holds no user data and can be cached publicly.
+  // Keyed on the request, not the outcome: an anonymous include_progress=true
+  // response must not be reused for the same URL after sign-in.
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (!queryParams.include_progress) headers['Cache-Control'] = PUBLIC_CACHE_CONTROL
+
+  return new Response(JSON.stringify(response), { status: 200, headers })
 }
 
 /**
@@ -217,16 +245,15 @@ async function getFilteredTopics(
   total: number
 }> {
   // Use the enhanced getTopics method that handles both single and multi-category filtering
-  const topics = await repository.getTopics({
-    category: params.category,
-    categories: params.categories,
-    language: params.language,
-    limit: params.limit,
-    offset: params.offset
-  })
-
-  // Get categories and total count
-  const [categories, total] = await Promise.all([
+  // Topics, categories and total count are independent: fetch them together.
+  const [topics, categories, total] = await Promise.all([
+    repository.getTopics({
+      category: params.category,
+      categories: params.categories,
+      language: params.language,
+      limit: params.limit,
+      offset: params.offset
+    }),
     repository.getCategories(params.language),
     repository.getTopicsCount(params.category, params.language, params.categories)
   ])

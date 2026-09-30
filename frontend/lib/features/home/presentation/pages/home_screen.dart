@@ -64,6 +64,8 @@ import '../../../community/domain/entities/fellowship_entity.dart';
 import '../../../community/domain/entities/fellowship_meeting_entity.dart';
 import '../../../community/domain/fellowship_changes.dart';
 import '../../../community/domain/repositories/community_repository.dart';
+import '../../../../core/error/failures.dart';
+import 'package:dartz/dartz.dart' show Either;
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
@@ -1126,6 +1128,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 /// single nearest meeting as a compact banner card.
 ///
 /// Renders [SizedBox.shrink] when there are no meetings today.
+/// Meetings for each of [fellowships], requested concurrently; results are in
+/// the same order as [fellowships].
+@visibleForTesting
+Future<List<Either<Failure, List<FellowshipMeetingEntity>>>>
+    fetchMeetingsInParallel(
+  CommunityRepository repo,
+  List<FellowshipEntity> fellowships,
+) =>
+        Future.wait(fellowships.map((f) => repo.getMeetings(f.id)));
+
 class _UpcomingMeetingBanner extends StatefulWidget {
   const _UpcomingMeetingBanner();
 
@@ -1200,9 +1212,12 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
         String fellowshipId,
       })? closest;
 
-      // Fetch meetings for each fellowship; keep the nearest one ending after now.
-      for (final fellowship in fellowships) {
-        final result = await repo.getMeetings(fellowship.id);
+      // Fetch meetings for every fellowship in parallel; keep the nearest one
+      // ending after now (results are walked in list order, as before).
+      final results = await fetchMeetingsInParallel(repo, fellowships);
+      for (var i = 0; i < fellowships.length; i++) {
+        final fellowship = fellowships[i];
+        final result = results[i];
         result.fold(
           (_) {},
           (meetings) {

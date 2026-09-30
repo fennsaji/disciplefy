@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:dartz/dartz.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
@@ -9,6 +10,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../models/user_profile_model.dart';
+import 'user_profile_cache.dart';
 import '../../domain/entities/user_profile_entity.dart';
 
 /// API service for user profile operations
@@ -16,17 +18,24 @@ class UserProfileApiService {
   static const String _userProfileEndpoint = '/functions/v1/user-profile';
 
   final HttpService _httpService;
+  final UserProfileCache _cache;
 
-  UserProfileApiService({HttpService? httpService})
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+  UserProfileApiService({HttpService? httpService, UserProfileCache? cache})
+      : _httpService = httpService ?? HttpServiceProvider.instance,
+        _cache = cache ?? UserProfileCache.instance;
+
+  /// All profile reads go through the shared cache (one in-flight request,
+  /// session memory + persisted stale-while-revalidate).
+  Future<http.Response> _fetchProfile() => _cache.get(() async {
+        final headers = await _httpService.createHeaders();
+        const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
+        return _httpService.get(url, headers: headers);
+      });
 
   /// Get current user's profile
   Future<Either<Failure, UserProfileEntity>> getUserProfile() async {
     try {
-      final headers = await _httpService.createHeaders();
-      const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
-
-      final response = await _httpService.get(url, headers: headers);
+      final response = await _fetchProfile();
 
       if (response.statusCode == 200) {
         return _parseProfileResponse(response.body);
@@ -82,10 +91,7 @@ class UserProfileApiService {
   /// Returns null values as-is from the API (e.g., language_preference: null for new users).
   Future<Map<String, dynamic>?> getUserProfileRawMap() async {
     try {
-      final headers = await _httpService.createHeaders();
-      const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
-
-      final response = await _httpService.get(url, headers: headers);
+      final response = await _fetchProfile();
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -158,11 +164,14 @@ class UserProfileApiService {
         ..['Content-Type'] = 'application/json';
       const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
 
+      unawaited(_cache.invalidate());
       final response = await _httpService.put(
         url,
         headers: headers,
         body: json.encode(updates),
       );
+      // Drop anything fetched while the write was in flight.
+      unawaited(_cache.invalidate());
 
       if (response.statusCode == 200) {
         return _parseProfileResponse(response.body);
@@ -278,6 +287,7 @@ class UserProfileApiService {
         ..['Content-Type'] = 'application/json';
       const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
 
+      unawaited(_cache.invalidate());
       final response = method == 'POST'
           ? await _httpService.post(
               url,
@@ -289,6 +299,7 @@ class UserProfileApiService {
               headers: headers,
               body: json.encode(body),
             );
+      unawaited(_cache.invalidate());
 
       // Handle response status codes
       if (response.statusCode == 200) {

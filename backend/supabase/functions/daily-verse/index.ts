@@ -42,8 +42,6 @@ interface DailyVerseData {
     readonly hindi?: string
     readonly malayalam?: string
   }
-  readonly fromCache: boolean
-  readonly timestamp: string
 }
 
 /**
@@ -133,15 +131,17 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
       ...(verseData.translations.hi ? { hindi: verseData.translations.hi } : {}),
       ...(verseData.translations.ml ? { malayalam: verseData.translations.ml } : {})
     },
-    fromCache: verseData.fromCache ?? false,
-    timestamp: new Date().toISOString()
   }
+  // Not in the body: a per-request timestamp or cache flag would make every
+  // response for the same verse differ, defeating ETag / HTTP revalidation.
+  // No client reads either field; fromCache is still reported to analytics.
+  const fromCache = verseData.fromCache ?? false
 
   // Log analytics event
   await services.analyticsLogger.logEvent('daily_verse_accessed', {
     date: verseData.date,
     reference: verseData.reference,
-    from_cache: responseData.fromCache,
+    from_cache: fromCache,
     requested_date: requestDate,
     user_agent: req.headers.get('user-agent') || 'unknown'
   }, req.headers.get('x-forwarded-for'))

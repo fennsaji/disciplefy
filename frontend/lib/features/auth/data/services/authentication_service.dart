@@ -8,6 +8,7 @@ import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/utils/auth_validator.dart';
 import '../../../user_profile/data/services/user_profile_api_service.dart';
+import '../../../user_profile/data/services/user_profile_cache.dart';
 import '../../../../core/config/app_config.dart';
 import 'auth_storage_service.dart';
 import 'oauth_service.dart';
@@ -696,6 +697,8 @@ class AuthenticationService {
     try {
       // Sign out from OAuth providers
       await _oauthService.signOutFromGoogle();
+
+      await UserProfileCache.instance.clearAll();
 
       // Sign out from Supabase
       await _supabase.auth.signOut();

@@ -18,6 +18,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { TtlCache, PUBLIC_CACHE_CONTROL } from '../_shared/utils/ttl-cache.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
 
@@ -75,6 +76,15 @@ interface PromoCampaign {
   discount_value: number
 }
 
+/**
+ * Visible plan rows (with provider pricing) are global catalogue data, the
+ * same for every caller, so they are cached per worker for 5 minutes. Promo
+ * lookups are never cached.
+ */
+// deno-lint-ignore no-explicit-any -- raw supabase rows, shaped below
+const plansRowsCache = new TtlCache<any[]>(5 * 60 * 1000, 1)
+const PLANS_ROWS_KEY = 'visible_plans'
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -116,7 +126,10 @@ serve(async (req) => {
 
     // Fetch plans with provider pricing
     // Use LEFT JOIN to include Free plan (which has no provider pricing)
-    const { data: plansData, error: plansError } = await supabase
+    let plansData = plansRowsCache.get(PLANS_ROWS_KEY) ?? null
+    let plansError: unknown = null
+    if (!plansData) {
+    const plansResult = await supabase
       .from('subscription_plans')
       .select(`
         id,
@@ -141,6 +154,10 @@ serve(async (req) => {
       .eq('is_active', true)
       .eq('is_visible', true)
       .order('sort_order', { ascending: true })
+    plansData = plansResult.data
+    plansError = plansResult.error
+    if (!plansError && plansData) plansRowsCache.set(PLANS_ROWS_KEY, plansData)
+    }
 
     if (plansError) {
       console.error('[get-plans] Database error:', plansError)
@@ -186,7 +203,7 @@ serve(async (req) => {
 
     // Format plans with pricing
     // Filter and process plans based on provider availability
-    const plans: Plan[] = plansData
+    const plans: Plan[] = (plansData ?? [])
       .filter((plan: any) => {
         // Free plan has no provider pricing - always include it
         if (plan.plan_code === 'free') {
@@ -316,7 +333,11 @@ serve(async (req) => {
       JSON.stringify(response),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        // A promo response depends on the code and its validity window, so
+        // only the plain catalogue is publicly cacheable.
+        headers: promoCode
+          ? { ...corsHeaders, 'Content-Type': 'application/json' }
+          : { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': PUBLIC_CACHE_CONTROL }
       }
     )
   } catch (error) {

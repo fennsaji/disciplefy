@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { TokenService } from '../_shared/services/token-service.ts'
 import type { StudyMode } from '../_shared/services/llm-types.ts'
 import type { SupportedLanguage } from '../_shared/types/token-types.ts'
+import { PUBLIC_CACHE_CONTROL } from '../_shared/utils/ttl-cache.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -79,6 +80,8 @@ Deno.serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
+          // Cost depends only on language and mode (static config).
+          'Cache-Control': PUBLIC_CACHE_CONTROL,
         },
       }
     )

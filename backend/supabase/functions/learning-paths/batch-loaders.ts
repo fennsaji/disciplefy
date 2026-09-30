@@ -1,0 +1,130 @@
+/**
+ * Batched per-user lookups for a set of learning paths.
+ *
+ * The recommended-path handler used to ask, per candidate path, for its
+ * translation, whether the user is enrolled and how many of its topics the
+ * user has completed — several round trips per candidate, one after another.
+ * These helpers answer the same questions for every candidate at once.
+ */
+
+// deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
+type Client = any;
+
+/**
+ * Distinct completed topics per path for one user, in two queries.
+ *
+ * Returns null when either query fails, so the caller can fall back to its
+ * per-path lookup rather than treat a failed read as "nothing completed".
+ */
+export async function loadCompletedTopicCounts(
+  client: Client,
+  pathIds: string[],
+  userId: string,
+): Promise<Map<string, number> | null> {
+  const ids = [...new Set(pathIds.filter(Boolean))];
+  const counts = new Map<string, number>();
+  if (ids.length === 0) return counts;
+
+  const { data: pathTopics, error: topicsError } = await client
+    .from('learning_path_topics')
+    .select('learning_path_id, topic_id')
+    .in('learning_path_id', ids)
+    .eq('is_active', true);
+  if (topicsError) return null;
+
+  const rows = (pathTopics ?? []) as Array<{ learning_path_id: string; topic_id: string }>;
+  const topicIds = [...new Set(rows.map((r) => r.topic_id))];
+  let completed: Array<{ topic_id: string }> = [];
+  if (topicIds.length > 0) {
+    const { data, error } = await client
+      .from('user_topic_progress')
+      .select('topic_id')
+      .eq('user_id', userId)
+      .in('topic_id', topicIds)
+      .not('completed_at', 'is', null);
+    if (error) return null;
+    completed = (data ?? []) as Array<{ topic_id: string }>;
+  }
+
+  return countCompletedPerPath(ids, rows, completed);
+}
+
+/** Pure counting step of loadCompletedTopicCounts, exported for tests. */
+export function countCompletedPerPath(
+  pathIds: string[],
+  pathTopics: Array<{ learning_path_id: string; topic_id: string }>,
+  completed: Array<{ topic_id: string }>,
+): Map<string, number> {
+  const done = new Set(completed.map((r) => r.topic_id));
+  const perPath = new Map<string, Set<string>>();
+  for (const id of pathIds) perPath.set(id, new Set());
+  for (const row of pathTopics) {
+    if (done.has(row.topic_id)) perPath.get(row.learning_path_id)?.add(row.topic_id);
+  }
+  const counts = new Map<string, number>();
+  for (const [id, topics] of perPath) counts.set(id, topics.size);
+  return counts;
+}
+
+/**
+ * Ids of the given paths the user has a progress row for (enrolled), in one
+ * query. Null on error, so the caller can fall back to per-path lookups.
+ */
+export async function loadEnrolledPathIds(
+  client: Client,
+  pathIds: string[],
+  userId: string,
+): Promise<Set<string> | null> {
+  const ids = [...new Set(pathIds.filter(Boolean))];
+  if (ids.length === 0) return new Set();
+  const { data, error } = await client
+    .from('user_learning_path_progress')
+    .select('learning_path_id')
+    .eq('user_id', userId)
+    .in('learning_path_id', ids);
+  if (error) return null;
+  return new Set(((data ?? []) as Array<{ learning_path_id: string }>).map((r) => r.learning_path_id));
+}
+
+export type PathTranslation = { title: string | null; description: string | null } | null;
+
+/**
+ * Translations for many paths in one query. Paths with exactly one row map to
+ * it; paths with none (or, as `.single()` treated them, more than one) map to
+ * null. Returns null on a query error so nothing is remembered.
+ */
+export async function loadPathTranslations(
+  client: Client,
+  pathIds: string[],
+  language: string,
+): Promise<Map<string, PathTranslation> | null> {
+  const ids = [...new Set(pathIds.filter(Boolean))];
+  if (ids.length === 0) return new Map();
+  const { data, error } = await client
+    .from('learning_path_translations')
+    .select('learning_path_id, title, description')
+    .in('learning_path_id', ids)
+    .eq('lang_code', language);
+  if (error) return null;
+  return groupPathTranslations(
+    ids,
+    (data ?? []) as Array<{ learning_path_id: string; title: string | null; description: string | null }>,
+  );
+}
+
+/** Pure grouping step of loadPathTranslations, exported for tests. */
+export function groupPathTranslations(
+  pathIds: string[],
+  rows: Array<{ learning_path_id: string; title: string | null; description: string | null }>,
+): Map<string, PathTranslation> {
+  const seen = new Map<string, number>();
+  for (const row of rows) seen.set(row.learning_path_id, (seen.get(row.learning_path_id) ?? 0) + 1);
+  const result = new Map<string, PathTranslation>();
+  for (const id of pathIds) result.set(id, null);
+  for (const row of rows) {
+    if (seen.get(row.learning_path_id) === 1) {
+      result.set(row.learning_path_id, { title: row.title, description: row.description });
+    }
+  }
+  return result;
+}
