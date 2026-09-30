@@ -330,12 +330,16 @@ class HomeProgressRing extends StatelessWidget {
   final Color track;
   final double size;
 
+  /// Optional icon drawn in the middle of the ring.
+  final IconData? centerIcon;
+
   const HomeProgressRing({
     super.key,
     required this.progress,
     required this.color,
     required this.track,
     this.size = 36,
+    this.centerIcon,
   });
 
   @override
@@ -349,6 +353,11 @@ class HomeProgressRing extends StatelessWidget {
           color: color,
           track: track,
         ),
+        child: centerIcon == null
+            ? null
+            : Center(
+                child: Icon(centerIcon, size: size * 0.44, color: color),
+              ),
       ),
     );
   }
@@ -396,6 +405,9 @@ class HomePathRow extends StatelessWidget {
   final VoidCallback? onTap;
   final IconData? icon;
 
+  /// Icon shown inside the progress ring (e.g. the learning path's icon).
+  final IconData? ringIcon;
+
   const HomePathRow({
     super.key,
     required this.title,
@@ -404,6 +416,7 @@ class HomePathRow extends StatelessWidget {
     required this.accent,
     this.onTap,
     this.icon,
+    this.ringIcon,
   });
 
   @override
@@ -437,6 +450,8 @@ class HomePathRow extends StatelessWidget {
                           progress: progress,
                           color: accent,
                           track: c.ringTrack,
+                          size: ringIcon == null ? 36 : 40,
+                          centerIcon: ringIcon,
                         ),
                       const SizedBox(width: 12),
                       Expanded(

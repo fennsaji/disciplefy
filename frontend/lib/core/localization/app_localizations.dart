@@ -672,7 +672,7 @@ class AppLocalizations {
       'officialBadge': 'Official',
       'unlimitedMembers': 'Unlimited',
       // Home — closing community section
-      'homeRecentActivityTitle': 'Recent activity',
+      'homeRecentActivityTitle': 'Community activity',
       'homeRecentActivitySubtitle': 'The latest from your fellowships',
       'homeCommunityViewAll': 'View all',
       'homeCommunityBrowse': 'Browse',
@@ -1452,7 +1452,7 @@ class AppLocalizations {
       'officialBadge': 'आधिकारिक',
       'unlimitedMembers': 'असीमित',
       // Home — closing community section
-      'homeRecentActivityTitle': 'हाल की गतिविधि',
+      'homeRecentActivityTitle': 'समुदाय गतिविधि',
       'homeRecentActivitySubtitle': 'आपकी संगतियों से नवीनतम',
       'homeCommunityViewAll': 'सभी देखें',
       'homeCommunityBrowse': 'देखें',
@@ -2243,7 +2243,7 @@ class AppLocalizations {
       'officialBadge': 'ഔദ്യോഗികം',
       'unlimitedMembers': 'പരിധിയില്ലാത്തത്',
       // Home — closing community section
-      'homeRecentActivityTitle': 'സമീപകാല പ്രവർത്തനം',
+      'homeRecentActivityTitle': 'കമ്മ്യൂണിറ്റി പ്രവർത്തനങ്ങൾ',
       'homeRecentActivitySubtitle': 'നിങ്ങളുടെ കൂട്ടായ്മകളിൽ നിന്നുള്ള പുതിയവ',
       'homeCommunityViewAll': 'എല്ലാം കാണുക',
       'homeCommunityBrowse': 'കാണുക',

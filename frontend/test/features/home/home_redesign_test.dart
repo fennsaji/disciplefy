@@ -35,10 +35,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
+import 'package:disciplefy_bible_study/core/constants/discipler.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
+import 'package:go_router/go_router.dart';
+
 import 'home_redesign_test.mocks.dart';
 
 class _MockMemoryVerseBloc extends MockBloc<MemoryVerseEvent, MemoryVerseState>
     implements MemoryVerseBloc {}
+
+/// Resolves [key] against the real table for [language].
+String _translate(
+    AppLanguage language, String key, Map<String, dynamic>? args) {
+  dynamic node = AppTranslations.translations[language];
+  for (final part in key.split('.')) {
+    if (node is Map && node.containsKey(part)) {
+      node = node[part];
+    } else {
+      return key;
+    }
+  }
+  var text = node is String ? node : key;
+  args?.forEach((k, v) => text = text.replaceAll('{$k}', '$v'));
+  return text;
+}
 
 /// Resolves keys against the real English table, so a missing key shows up
 /// as the raw key in the rendered text and fails the assertions below.
@@ -707,7 +728,7 @@ void main() {
               fellowshipId: anyNamed('fellowshipId'), limit: anyNamed('limit')))
           .thenAnswer((_) async => const Right([]));
       await pumpSection(tester);
-      expect(find.text('Recent activity'), findsOneWidget);
+      expect(find.text('Community activity'), findsOneWidget);
       expect(find.text('No posts yet'), findsOneWidget);
     });
 
@@ -738,7 +759,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Find your fellowship'), findsNothing);
-      expect(find.text('Recent activity'), findsOneWidget);
+      expect(find.text('Community activity'), findsOneWidget);
     });
 
     testWidgets('lookup failure renders nothing (never invite a member)',
@@ -749,5 +770,309 @@ void main() {
       expect(find.byKey(const Key('home_activity_empty_row')), findsNothing);
       expect(find.text('Find your fellowship'), findsNothing);
     });
+  });
+
+  group('community activity', () {
+    late MockCommunityRepository repo;
+    late MockTranslationService translations;
+
+    const fellowship = FellowshipEntity(
+      id: 'f1',
+      name: "Fenn's Test Fellowship",
+      memberCount: 4,
+      userRole: 'member',
+      joinedAt: '2026-01-01T00:00:00Z',
+      createdAt: '2026-01-01T00:00:00Z',
+    );
+
+    FellowshipPostEntity post(
+      String id,
+      String type, {
+      String author = 'Priya Thomas',
+      String authorId = 'user-1',
+      String content = '',
+      int replies = 0,
+      Map<String, int> reactions = const {},
+      String? topicTitle,
+      String? guideTitle,
+      int minutesAgo = 5,
+    }) =>
+        FellowshipPostEntity(
+          id: id,
+          fellowshipId: 'f1',
+          authorUserId: authorId,
+          content: content,
+          postType: type,
+          reactionCounts: reactions,
+          isDeleted: false,
+          createdAt: DateTime.now()
+              .toUtc()
+              .subtract(Duration(minutes: minutesAgo))
+              .toIso8601String(),
+          authorDisplayName: author,
+          commentCount: replies,
+          topicTitle: topicTitle,
+          guideTitle: guideTitle,
+        );
+
+    final prayer = post('p1', 'prayer',
+        content: "Please pray for my mother's surgery on Friday — that the "
+            'doctors have wisdom and she recovers well.',
+        replies: 3,
+        reactions: const {'🙏': 5});
+    final daily = post('p2', 'daily',
+        author: 'Discipler',
+        authorId: kDisciplerUserId,
+        topicTitle: 'Confidence in Your Salvation',
+        content: '📖 Confidence in Your Salvation\n'
+            '✨ How can we be sure we belong to God?\n✝️ 1 John 5:13',
+        minutesAgo: 10);
+    final praise = post('p3', 'praise',
+        author: 'Joel Mathew',
+        content: "God provided the job I've been praying about for months.",
+        replies: 1,
+        reactions: const {'🙏': 6, '❤️': 2},
+        minutesAgo: 20);
+
+    setUp(() {
+      repo = MockCommunityRepository();
+      translations = sl<TranslationService>() as MockTranslationService;
+      final lang = MockLanguagePreferenceService();
+      when(lang.getStudyContentLanguage())
+          .thenAnswer((_) async => AppLanguage.english);
+      when(lang.getSelectedLanguage())
+          .thenAnswer((_) async => AppLanguage.english);
+      for (final unregister in [
+        () {
+          if (sl.isRegistered<CommunityRepository>()) {
+            sl.unregister<CommunityRepository>();
+          }
+        },
+        () {
+          if (sl.isRegistered<LanguagePreferenceService>()) {
+            sl.unregister<LanguagePreferenceService>();
+          }
+        },
+      ]) {
+        unregister();
+      }
+      sl.registerLazySingleton<CommunityRepository>(() => repo);
+      sl.registerLazySingleton<LanguagePreferenceService>(() => lang);
+      when(repo.getFellowships(any))
+          .thenAnswer((_) async => const Right([fellowship]));
+    });
+
+    tearDown(() {
+      // Restore the English table for the groups that follow.
+      when(translations.getTranslation(any, any)).thenAnswer((i) => _english(
+          i.positionalArguments[0] as String,
+          i.positionalArguments.length > 1
+              ? i.positionalArguments[1] as Map<String, dynamic>?
+              : null));
+    });
+
+    void usePosts(List<FellowshipPostEntity> posts) {
+      when(repo.getFellowshipPosts(
+              fellowshipId: anyNamed('fellowshipId'), limit: anyNamed('limit')))
+          .thenAnswer((_) async => Right(posts));
+    }
+
+    void useLanguage(AppLanguage language) {
+      when(translations.getTranslation(any, any)).thenAnswer((i) => _translate(
+          language,
+          i.positionalArguments[0] as String,
+          i.positionalArguments.length > 1
+              ? i.positionalArguments[1] as Map<String, dynamic>?
+              : null));
+    }
+
+    Future<void> pumpSection(
+      WidgetTester tester, {
+      ThemeData? theme,
+      Locale locale = const Locale('en'),
+      double width = 390,
+      double height = 900,
+    }) async {
+      tester.view.physicalSize = Size(width, height);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final router = GoRouter(routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => const Scaffold(
+            body: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: HomeCommunitySection(),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/community',
+          builder: (_, __) => const Text('community tab'),
+        ),
+        GoRoute(
+          path: '/community/:fid/post/:pid',
+          builder: (_, state) => Text(
+              'post ${state.pathParameters['fid']}/${state.pathParameters['pid']}'),
+        ),
+      ]);
+      await tester.pumpWidget(MaterialApp.router(
+        theme: theme ?? AppTheme.darkTheme,
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('title reads "Community activity" with preview and meta',
+        (tester) async {
+      usePosts([prayer, daily, praise]);
+      await pumpSection(tester);
+
+      expect(find.text('Community activity'), findsOneWidget);
+      expect(find.text('View all'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+      expect(find.textContaining("Please pray for my mother's surgery"),
+          findsOneWidget);
+      expect(
+          find.text('Confidence in Your Salvation — '
+              'How can we be sure we belong to God?'),
+          findsOneWidget);
+      expect(find.text('·  3 replies  ·  🙏 5'), findsOneWidget);
+      expect(find.text('·  1 reply  ·  🙏 8'), findsOneWidget);
+      expect(find.text('·  Start study'), findsOneWidget);
+      expect(find.text("Fenn's Test Fellowship"), findsNWidgets(3));
+    });
+
+    testWidgets('zero replies and reactions are omitted', (tester) async {
+      usePosts([post('q', 'question', content: 'Why?')]);
+      await pumpSection(tester);
+      expect(find.textContaining('·'), findsNothing);
+      expect(find.textContaining('replies'), findsNothing);
+    });
+
+    testWidgets('tapping a row opens that post', (tester) async {
+      usePosts([prayer, daily, praise]);
+      await pumpSection(tester);
+      await tester.tap(find.textContaining("Please pray for my mother's"));
+      await tester.pumpAndSettle();
+      expect(find.text('post f1/p1'), findsOneWidget);
+    });
+
+    testWidgets('tapping the daily study row opens that post too',
+        (tester) async {
+      usePosts([daily]);
+      await pumpSection(tester);
+      await tester.tap(find.text('·  Start study'));
+      await tester.pumpAndSettle();
+      expect(find.text('post f1/p2'), findsOneWidget);
+    });
+
+    for (final (label, theme) in [
+      ('dark', AppTheme.darkTheme),
+      ('light', AppTheme.lightTheme),
+    ]) {
+      testWidgets('$label: each type gets its chip label and colour',
+          (tester) async {
+        usePosts([
+          post('a', 'prayer', content: 'x'),
+          post('b', 'praise', content: 'x'),
+          post('c', 'question', content: 'x'),
+        ]);
+        await pumpSection(tester, theme: theme);
+        final isDark = theme.brightness == Brightness.dark;
+        for (final (type, text) in [
+          ('prayer', 'Prayer'),
+          ('praise', 'Praise'),
+          ('question', 'Question'),
+        ]) {
+          final chip = find.byWidgetPredicate(
+              (w) => w is PostTypeChip && w.postType == type);
+          expect(chip, findsOneWidget, reason: type);
+          final labelText = tester.widget<Text>(
+              find.descendant(of: chip, matching: find.text(text)));
+          expect(
+              labelText.style?.color, postTypeAccentColor(type, isDark: isDark),
+              reason: type);
+        }
+      });
+    }
+
+    testWidgets('shared guide and daily chips use the feed labels',
+        (tester) async {
+      usePosts([
+        post('g', 'shared_guide',
+            guideTitle: 'Romans 8', content: 'Worth reading together'),
+        daily,
+        post('d', 'study_note', content: 'x'),
+      ]);
+      await pumpSection(tester);
+      expect(
+          find.descendant(
+              of: find.byWidgetPredicate(
+                  (w) => w is PostTypeChip && w.postType == 'study_note'),
+              matching: find.text('Study Note')),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byWidgetPredicate(
+                  (w) => w is PostTypeChip && w.postType == 'shared_guide'),
+              matching: find.text('Study guide')),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byWidgetPredicate(
+                  (w) => w is PostTypeChip && w.postType == 'daily'),
+              matching: find.byType(Text)),
+          findsOneWidget);
+      expect(find.text('Romans 8 — Worth reading together'), findsOneWidget);
+    });
+
+    for (final (lang, locale) in [
+      (AppLanguage.english, const Locale('en')),
+      (AppLanguage.hindi, const Locale('hi')),
+      (AppLanguage.malayalam, const Locale('ml')),
+    ]) {
+      for (final (label, theme) in [
+        ('dark', AppTheme.darkTheme),
+        ('light', AppTheme.lightTheme),
+      ]) {
+        testWidgets(
+            '${locale.languageCode} $label: fits 320x640 without overflow',
+            (tester) async {
+          useLanguage(lang);
+          usePosts([
+            post('a', 'study_note',
+                author: 'Anjali Krishnamurthy Venkataraman',
+                content: 'A very long note ' * 20,
+                replies: 12,
+                reactions: const {'🙏': 120}),
+            daily,
+            post('c', 'shared_guide',
+                guideTitle: 'Romans 8', content: 'Read this', replies: 2),
+          ]);
+          await pumpSection(tester,
+              theme: theme, locale: locale, width: 320, height: 640);
+          expect(tester.takeException(), isNull);
+          final l10n = AppLocalizations(locale);
+          expect(find.text(l10n.homeRecentActivityTitle), findsOneWidget);
+          // Chip labels wrap rather than being cut.
+          for (final t in tester.widgetList<Text>(find.descendant(
+              of: find.byType(PostTypeChip), matching: find.byType(Text)))) {
+            expect(t.overflow, isNot(TextOverflow.ellipsis));
+            expect(t.maxLines, isNull);
+          }
+          // "Start study" never ellipsizes.
+          final start =
+              _translate(lang, TranslationKeys.communitySharedStartStudy, null);
+          final startFinder = find.text('·  $start');
+          expect(startFinder, findsOneWidget);
+          final para = tester.renderObject<RenderParagraph>(startFinder);
+          expect(para.didExceedMaxLines, isFalse);
+        });
+      }
+    }
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import '../../../../features/memory_verses/presentation/bloc/memory_verse_state.dart';
@@ -1194,6 +1195,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   subtitle: homePathSubtitle(context, path),
                   progress: path.progressPercentage / 100,
                   accent: homePathAccent(context, path),
+                  ringIcon: iconForPath(path.iconName, category: path.category),
                   onTap: () => _navigateToLearningPath(path.id),
                 ),
               )
