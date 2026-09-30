@@ -174,6 +174,8 @@ class FellowshipFeedBloc
       studyGuideId: event.studyGuideId,
       guideInputType: event.guideInputType,
       guideLanguage: event.guideLanguage,
+      guideStudyMode: event.guideStudyMode,
+      guideSummary: event.guideSummary,
       disciplerReplyOptOut: event.disciplerReplyOptOut,
       mentionedUserIds: event.mentionedUserIds,
     );

@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/discipler_activity_entity.dart';
-import '../bloc/discipler_activity/discipler_activity_bloc.dart';
-import '../bloc/discipler_activity/discipler_activity_event.dart';
-import '../bloc/discipler_activity/discipler_activity_state.dart';
-import '../widgets/discipler_badges.dart';
-import '../widgets/discipler_edit_dialog.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/discipler_activity_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/discipler_activity/discipler_activity_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/discipler_activity/discipler_activity_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/discipler_activity/discipler_activity_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_edit_dialog.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 
 /// Mentor-facing screen listing what the Discipler AI helper has done in a
 /// fellowship: drafted/answered replies, reactions, and daily study posts.
@@ -71,49 +75,38 @@ class _DisciplerActivityScreenState extends State<DisciplerActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
 
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        title: Text(
-          l10n.disciplerActivityTitle,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: context.appTextPrimary,
-          ),
-        ),
+      backgroundColor: palette.page,
+      appBar: CommunityBackBar(
+        title: l10n.disciplerActivityTitle,
+        background: palette.page,
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final tab in <({String? kind, String label})>[
-                    (kind: null, label: l10n.activityTabAll),
-                    (kind: 'draft', label: l10n.activityTabReview),
-                    (kind: 'reply', label: l10n.activityTabReplies),
-                    (kind: 'react', label: l10n.activityTabReactions),
-                    (kind: 'daily_post', label: l10n.activityTabDaily),
-                  ])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(tab.label),
-                        selected: _selectedKind == tab.kind,
-                        onSelected: (_) => _selectKind(tab.kind),
-                      ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+            child: Row(
+              children: [
+                for (final tab in <({String? kind, String label})>[
+                  (kind: null, label: l10n.activityTabAll),
+                  (kind: 'draft', label: l10n.activityTabReview),
+                  (kind: 'reply', label: l10n.activityTabReplies),
+                  (kind: 'react', label: l10n.activityTabReactions),
+                  (kind: 'daily_post', label: l10n.activityTabDaily),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: CommunityRaisedPill(
+                      label: tab.label,
+                      selected: _selectedKind == tab.kind,
+                      onPressed: () => _selectKind(tab.kind),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
           Expanded(
@@ -122,32 +115,21 @@ class _DisciplerActivityScreenState extends State<DisciplerActivityScreen> {
                 if (state.status == DisciplerActivityStatus.loading &&
                     state.items.isEmpty) {
                   return Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                    child: CircularProgressIndicator(color: palette.accentIcon),
                   );
                 }
                 if (state.status == DisciplerActivityStatus.failure &&
                     state.items.isEmpty) {
-                  return Center(
-                    child: Text(
-                      state.errorMessage ?? l10n.feedLoadError,
-                      style: TextStyle(color: context.appTextSecondary),
-                    ),
+                  return _ActivityMessage(
+                    text: state.errorMessage ?? l10n.feedLoadError,
                   );
                 }
                 if (state.items.isEmpty) {
-                  return Center(
-                    child: Text(
-                      l10n.feedEmptyReadOnly,
-                      style: TextStyle(color: context.appTextSecondary),
-                    ),
-                  );
+                  return _ActivityMessage(text: l10n.feedEmptyReadOnly);
                 }
                 return ListView.builder(
                   controller: _scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                   itemCount: state.items.length + (state.hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == state.items.length) {
@@ -155,14 +137,14 @@ class _DisciplerActivityScreenState extends State<DisciplerActivityScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
                           child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: palette.accentIcon,
                             strokeWidth: 2.5,
                           ),
                         ),
                       );
                     }
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: _ActivityCard(
                         item: state.items[index],
                         fellowshipId: widget.fellowshipId,
@@ -179,6 +161,38 @@ class _DisciplerActivityScreenState extends State<DisciplerActivityScreen> {
   }
 }
 
+class _ActivityMessage extends StatelessWidget {
+  final String text;
+
+  const _ActivityMessage({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const DisciplerAvatar(radius: 24),
+            const SizedBox(height: 14),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 15,
+                color: palette.muted,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // _ActivityCard
 // ---------------------------------------------------------------------------
@@ -189,36 +203,26 @@ class _ActivityCard extends StatelessWidget {
 
   const _ActivityCard({required this.item, required this.fellowshipId});
 
-  ({String label, Color color}) _badgeFor(
+  ({String label, SettingsTone tone}) _badgeFor(
     BuildContext context,
     String kind,
-    bool isDark,
   ) {
     final l10n = AppLocalizations.of(context)!;
     switch (kind) {
       case 'draft':
-        return (
-          label: l10n.activityKindDraft,
-          color: isDark ? AppColors.warningLighter : AppColors.warningDark,
-        );
+        return (label: l10n.activityKindDraft, tone: SettingsTone.amber);
       case 'reply':
-        return (
-          label: l10n.activityKindReplied,
-          color: isDark ? AppColors.successLighter : AppColors.successDark,
-        );
+        return (label: l10n.activityKindReplied, tone: SettingsTone.green);
       case 'react':
         return (
           label: '${l10n.activityKindReacted} 🙏',
-          color: context.appTextTertiary
+          tone: SettingsTone.indigo,
         );
       case 'daily_post':
       case 'daily':
-        return (
-          label: l10n.activityKindDaily,
-          color: isDark ? AppColors.warningLighter : AppColors.warningDark,
-        );
+        return (label: l10n.activityKindDaily, tone: SettingsTone.gold);
       default:
-        return (label: kind.toUpperCase(), color: context.appTextTertiary);
+        return (label: kind.toUpperCase(), tone: SettingsTone.indigo);
     }
   }
 
@@ -230,218 +234,236 @@ class _ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final badge = _badgeFor(context, item.kind, isDark);
+    final palette = ReaderPalette.of(context);
+    final badge = _badgeFor(context, item.kind);
+    final badgeColors = SettingsToneColors.of(context, badge.tone);
     final isDraft = item.kind == 'draft';
     final isReact = item.kind == 'react';
+    final red = SettingsToneColors.of(context, SettingsTone.red).foreground;
+    final green = SettingsToneColors.of(context, SettingsTone.green).foreground;
 
-    return GestureDetector(
-      onTap: item.postId != null && !item.postDeleted
-          ? () => _openPost(context)
-          : null,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: context.appSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.appBorder.withAlpha(50)),
+    final actions = <Widget>[
+      if (isDraft && item.commentPending) ...[
+        _CardAction(
+          label: l10n.approve,
+          color: green,
+          onTap: () => context.read<DisciplerActivityBloc>().add(
+                DisciplerActivityReviewed(
+                  commentId: item.commentId!,
+                  approve: true,
+                ),
+              ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const DisciplerAvatar(radius: 14),
-                const SizedBox(width: 8),
+        _CardAction(
+          label: l10n.discard,
+          color: red,
+          onTap: () => context.read<DisciplerActivityBloc>().add(
+                DisciplerActivityReviewed(
+                  commentId: item.commentId!,
+                  approve: false,
+                ),
+              ),
+        ),
+      ] else if (!isReact && !item.hasLiveContent) ...[
+        // Nothing left to edit or delete: the post was replaced by
+        // "Post again" or already removed, or the row never had one.
+        if (item.postId != null || item.commentId != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              l10n.dailyPostPostDeleted,
+              style: AppFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: palette.dim,
+              ),
+            ),
+          ),
+      ] else if (!isReact) ...[
+        if ((item.commentContent ?? item.postContent)?.isNotEmpty ?? false)
+          _CardAction(
+            label: l10n.editAction,
+            color: palette.accentIcon,
+            onTap: () async {
+              final bloc = context.read<DisciplerActivityBloc>();
+              final text = await showDisciplerEditDialog(
+                context,
+                initialText: item.commentContent ?? item.postContent!,
+                maxLength: item.commentId != null ? 2000 : 4000,
+              );
+              if (text == null) return;
+              bloc.add(DisciplerActivityEditRequested(
+                activityId: item.id,
+                postId: item.commentId == null ? item.postId : null,
+                commentId: item.commentId,
+                content: text,
+              ));
+            },
+          ),
+        _CardAction(
+          label: l10n.deleteAction,
+          color: red,
+          onTap: () => context.read<DisciplerActivityBloc>().add(
+                DisciplerActivityDeleteRequested(
+                  activityId: item.id,
+                  postId: item.commentId == null ? item.postId : null,
+                  commentId: item.commentId,
+                ),
+              ),
+        ),
+      ],
+    ];
+
+    return Material(
+      color: palette.card,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: item.postId != null && !item.postDeleted
+            ? () => _openPost(context)
+            : null,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: palette.hairline),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const DisciplerAvatar(radius: 15),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _Badge(
+                          label: badge.label,
+                          fill: badgeColors.fill,
+                          ink: badgeColors.foreground,
+                        ),
+                        if (item.language != null && item.language!.isNotEmpty)
+                          _Badge(
+                            label: item.language!.toUpperCase(),
+                            fill: palette.raised,
+                            ink: palette.muted,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                item.summary,
+                style: AppFonts.inter(
+                  fontSize: 14.5,
+                  color: palette.text,
+                  height: 1.45,
+                ),
+              ),
+              if (item.postContent != null && item.postContent!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '"${item.postContent}"',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    color: palette.muted,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+              if (item.commentContent != null &&
+                  item.commentContent!.isNotEmpty) ...[
+                const SizedBox(height: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: badge.color.withAlpha(30),
-                    borderRadius: BorderRadius.circular(6),
+                    color: palette.raised,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    badge.label,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: badge.color,
-                      letterSpacing: 0.3,
+                    item.commentContent!,
+                    style: AppFonts.inter(
+                      fontSize: 13.5,
+                      color: palette.text,
+                      height: 1.45,
                     ),
                   ),
                 ),
-                if (item.language != null && item.language!.isNotEmpty) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: context.appSurfaceVariant,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      item.language!.toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                  ),
-                ],
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              item.summary,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13.5,
-                color: context.appTextPrimary,
-              ),
-            ),
-            if (item.postContent != null && item.postContent!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                '"${item.postContent}"',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12.5,
-                  fontStyle: FontStyle.italic,
-                  color: context.appTextSecondary,
-                ),
-              ),
+              if (actions.isEmpty)
+                const SizedBox(height: 10)
+              else
+                Wrap(spacing: 4, children: actions),
             ],
-            if (item.commentContent != null &&
-                item.commentContent!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: context.appPrimary.withAlpha(isDark ? 40 : 18),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  item.commentContent!,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: context.appTextPrimary,
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                if (isDraft && item.commentPending) ...[
-                  GestureDetector(
-                    onTap: () => context.read<DisciplerActivityBloc>().add(
-                          DisciplerActivityReviewed(
-                            commentId: item.commentId!,
-                            approve: true,
-                          ),
-                        ),
-                    child: Text(
-                      l10n.approve,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.appSuccess,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  GestureDetector(
-                    onTap: () => context.read<DisciplerActivityBloc>().add(
-                          DisciplerActivityReviewed(
-                            commentId: item.commentId!,
-                            approve: false,
-                          ),
-                        ),
-                    child: Text(
-                      l10n.discard,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.appError,
-                      ),
-                    ),
-                  ),
-                ] else if (!isReact && !item.hasLiveContent) ...[
-                  // Nothing left to edit or delete: the post was replaced by
-                  // "Post again" or already removed, or the row never had one.
-                  if (item.postId != null || item.commentId != null)
-                    Text(
-                      l10n.dailyPostPostDeleted,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                ] else if (!isReact) ...[
-                  if ((item.commentContent ?? item.postContent)?.isNotEmpty ??
-                      false) ...[
-                    GestureDetector(
-                      onTap: () async {
-                        final bloc = context.read<DisciplerActivityBloc>();
-                        final text = await showDisciplerEditDialog(
-                          context,
-                          initialText: item.commentContent ?? item.postContent!,
-                          maxLength: item.commentId != null ? 2000 : 4000,
-                        );
-                        if (text == null) return;
-                        bloc.add(DisciplerActivityEditRequested(
-                          activityId: item.id,
-                          postId: item.commentId == null ? item.postId : null,
-                          commentId: item.commentId,
-                          content: text,
-                        ));
-                      },
-                      child: Text(
-                        l10n.editAction,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: context.appPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
-                  GestureDetector(
-                    onTap: () => context.read<DisciplerActivityBloc>().add(
-                          DisciplerActivityDeleteRequested(
-                            activityId: item.id,
-                            postId: item.commentId == null ? item.postId : null,
-                            commentId: item.commentId,
-                          ),
-                        ),
-                    child: Text(
-                      l10n.deleteAction,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.appError,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color fill;
+  final Color ink;
+
+  const _Badge({required this.label, required this.fill, required this.ink});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: AppFonts.inter(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          color: ink,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+}
+
+/// 44px-tall text action at the foot of an activity card.
+class _CardAction extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CardAction({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        minimumSize: const Size(44, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+      ),
+      child: Text(
+        label,
+        style: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }

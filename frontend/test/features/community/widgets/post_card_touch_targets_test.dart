@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/reaction_button.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+
+import '../../../helpers/welcome_test_harness.dart';
 
 /// Material's minimum comfortable touch target.
 const double kMinTarget = 44;
@@ -70,6 +74,10 @@ Future<void> _expectFooterPillsMatch(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(
+      () => sl.registerSingleton<TranslationService>(FakeTranslationService()));
+  tearDown(() async => sl.reset());
+
   testWidgets('the comment button is at least 44px tall', (tester) async {
     await _pumpCard(tester);
 
@@ -119,7 +127,7 @@ void main() {
 
     // The post has one comment and no reactions: a bare "1" on one pill and a
     // word on the other read as two different controls.
-    expect(find.textContaining('Reply'), findsOneWidget);
+    expect(find.text('1 reply'), findsOneWidget);
     expect(find.text('1'), findsNothing);
   });
 
@@ -172,8 +180,10 @@ void main() {
 
       expect(cardRight - shareRight, lessThan(40),
           reason: 'share belongs at the right edge of the card');
-      expect(replyRight, lessThan(cardRight / 2),
-          reason: 'the reply pill stays compact on the left');
+      // The daily card puts "Start study" first, so its replies button sits
+      // further right; it must still hug its label rather than stretch.
+      expect(replyRight, lessThan(cardRight * (daily ? 0.7 : 0.5)),
+          reason: 'the reply button stays compact on the left');
     });
   }
 
@@ -204,6 +214,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(PostTimestamp), findsOneWidget);
-    expect(find.text('21/3/2026'), findsOneWidget);
+    // A week-old post shows its date in the app locale ("Mar 21", with the
+    // year once it is not the current one).
+    expect(find.textContaining('Mar 21'), findsOneWidget);
   });
 }

@@ -3,13 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../bloc/fellowship_list/fellowship_list_bloc.dart';
-import '../bloc/fellowship_list/fellowship_list_event.dart';
-import '../bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Screen that allows a user to join a fellowship by entering an invite code.
 ///
@@ -176,7 +180,8 @@ class _JoinFellowshipConsumer extends StatelessWidget {
 // _JoinFellowshipBody
 // ---------------------------------------------------------------------------
 
-/// Stateless inner widget holding the Scaffold, AppBar, form field and button.
+/// Stateless inner widget holding the Scaffold, back bar, code entry and
+/// button.
 class _JoinFellowshipBody extends StatelessWidget {
   final TextEditingController tokenController;
   final FocusNode tokenFocusNode;
@@ -195,92 +200,49 @@ class _JoinFellowshipBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: context.appTextPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
-        ),
-        title: Text(
-          l10n.joinFellowshipTitle,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.appTextPrimary,
-          ),
-        ),
+      backgroundColor: palette.page,
+      appBar: CommunityBackBar(
+        title: l10n.joinFellowshipTitle,
+        background: palette.page,
+        onBack: () => context.pop(),
       ),
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Icon ──────────────────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.group_add_rounded,
-                    size: 44,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+              const Center(
+                child: PopupIconCircle(
+                  icon: Icons.group_add_rounded,
+                  size: 76,
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              // ── Heading ───────────────────────────────────────────────────
-              Center(
-                child: Text(
-                  l10n.joinFellowshipHeading,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: context.appTextPrimary,
-                    height: 1.3,
-                  ),
-                  textAlign: TextAlign.center,
+              const SizedBox(height: 24),
+              Text(
+                l10n.joinFellowshipHeading,
+                textAlign: TextAlign.center,
+                style: AppFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.3,
                 ),
               ),
-
               const SizedBox(height: 10),
-
-              Center(
-                child: Text(
-                  l10n.joinFellowshipInstructions,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    color: context.appTextSecondary,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
+              Text(
+                l10n.joinFellowshipInstructions,
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 14.5,
+                  color: palette.muted,
+                  height: 1.5,
                 ),
               ),
-
-              const SizedBox(height: 40),
-
-              // ── Invite code tiles ─────────────────────────────────────────
+              const SizedBox(height: 36),
               Center(
                 child: _CodeTileInput(
                   controller: tokenController,
@@ -289,125 +251,24 @@ class _JoinFellowshipBody extends StatelessWidget {
                   onSubmitted: onJoinPressed,
                 ),
               ),
-
-              const SizedBox(height: 36),
-
-              // ── Join button ───────────────────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: _JoinButton(
-                  isLoading: isLoading,
-                  isEnabled: hasInput && !isLoading,
-                  onPressed: onJoinPressed,
-                  label: l10n.joinFellowshipButton,
-                ),
+              const SizedBox(height: 32),
+              CommunityWideCta(
+                label: l10n.joinFellowshipButton,
+                icon: Icons.group_add_rounded,
+                loading: isLoading,
+                onPressed: hasInput && !isLoading ? onJoinPressed : null,
               ),
-
               const SizedBox(height: 20),
-
-              // ── Helper note ───────────────────────────────────────────────
-              Center(
-                child: Text(
-                  l10n.joinFellowshipHelper,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: context.appTextTertiary.withOpacity(0.8),
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
+              Text(
+                l10n.joinFellowshipHelper,
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 12.5,
+                  color: palette.dim,
+                  height: 1.45,
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _JoinButton
-// ---------------------------------------------------------------------------
-
-/// Gradient primary button for the join action.
-///
-/// Renders a gradient when enabled, a flat muted surface when disabled.
-class _JoinButton extends StatelessWidget {
-  final bool isLoading;
-  final bool isEnabled;
-  final VoidCallback onPressed;
-  final String label;
-
-  const _JoinButton({
-    required this.isLoading,
-    required this.isEnabled,
-    required this.onPressed,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (!isEnabled) {
-      // Disabled appearance — no gradient, muted color.
-      return Container(
-        decoration: BoxDecoration(
-          color: context.appBorder,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: context.appTextTertiary,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.group_add_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -426,13 +287,13 @@ class _LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Positioned.fill(
       child: ColoredBox(
-        color: AppColors.overlayLight,
+        color: palette.page.withValues(alpha: 0.55),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(palette.accentIcon),
           ),
         ),
       ),
@@ -463,8 +324,7 @@ class _CodeTileInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
+    final palette = ReaderPalette.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -525,39 +385,30 @@ class _CodeTileInput extends StatelessWidget {
 
                       return Container(
                         margin: i < _length - 1
-                            ? EdgeInsets.only(right: gap)
+                            ? const EdgeInsets.only(right: gap)
                             : null,
                         width: tileWidth,
                         height: tileHeight,
                         decoration: BoxDecoration(
-                          color: hasChar
-                              ? (isDark
-                                  ? primary.withOpacity(0.15)
-                                  : primary.withOpacity(0.08))
-                              : (isDark
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(12),
+                          color: hasChar ? palette.raised : palette.card,
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isActive
-                                ? primary
+                                ? palette.accentIcon
                                 : (hasChar
-                                    ? primary.withOpacity(0.4)
-                                    : (isDark
-                                        ? Colors.grey.shade600
-                                        : Colors.grey.shade300)),
-                            width: isActive ? 2 : 1.5,
+                                    ? palette.outline
+                                    : palette.hairline),
+                            width: isActive ? 2 : 1,
                           ),
                         ),
                         alignment: Alignment.center,
                         child: hasChar
                             ? Text(
                                 text[i],
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: tileWidth * 0.52,
-                                  fontWeight: FontWeight.w700,
-                                  color: primary,
+                                style: AppFonts.poppins(
+                                  fontSize: tileWidth * 0.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: palette.text,
                                   height: 1,
                                 ),
                               )
@@ -566,9 +417,7 @@ class _CodeTileInput extends StatelessWidget {
                                     '·',
                                     style: TextStyle(
                                       fontSize: 24,
-                                      color: isDark
-                                          ? Colors.grey.shade600
-                                          : Colors.grey.shade400,
+                                      color: palette.dim,
                                     ),
                                   )
                                 : null),

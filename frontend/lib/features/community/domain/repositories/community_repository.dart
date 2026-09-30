@@ -87,6 +87,8 @@ abstract class CommunityRepository {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    String? guideStudyMode,
+    String? guideSummary,
     bool disciplerReplyOptOut = false,
     List<String> mentionedUserIds = const [],
   });

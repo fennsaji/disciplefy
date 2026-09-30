@@ -40,6 +40,36 @@ void main() {
     }).toEntity();
     expect(p.mentionsDiscipler, false);
     expect(p.authorIsSystem, false);
+    // Older posts carry no study mode or summary.
+    expect(p.guideStudyMode, isNull);
+    expect(p.guideSummary, isNull);
+  });
+
+  test('post model reads the shared guide study mode and summary', () {
+    final p = FellowshipPostModel.fromJson({
+      'id': 'p',
+      'fellowship_id': 'f',
+      'author_user_id': 'u',
+      'content': '',
+      'post_type': 'shared_guide',
+      'reaction_counts': {},
+      'is_deleted': false,
+      'created_at': '2026-09-06T01:00:00Z',
+      'author_display_name': 'n',
+      'comment_count': 0,
+      'study_guide_id': 'g1',
+      'guide_title': 'Romans 8:28',
+      'guide_input_type': 'scripture',
+      'guide_language': 'en',
+      'guide_study_mode': 'standard',
+      'guide_summary': 'God works all things together for good.',
+    }).toEntity();
+    expect(p.guideStudyMode, 'standard');
+    expect(p.guideSummary, 'God works all things together for good.');
+    // Survives the reaction-toggle copy.
+    final copy = p.copyWith(reactionCounts: const {'fire': 1});
+    expect(copy.guideStudyMode, 'standard');
+    expect(copy.guideSummary, 'God works all things together for good.');
   });
 
   test('comment model reads pending, mention and guide fields', () {

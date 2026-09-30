@@ -27,7 +27,9 @@ void main() {
     expect(find.text('Do you know how strong your faith is?'), findsOneWidget);
     expect(find.text('Knowing who Jesus is changes your everyday faith.'),
         findsOneWidget);
-    expect(find.text('✝️ Philippians 2:5-11'), findsOneWidget);
+    // The reference becomes a chip, without the marker emoji.
+    expect(find.text('Philippians 2:5-11'), findsOneWidget);
+    expect(find.byType(ScriptureReferenceChip), findsOneWidget);
     expect(find.textContaining('fully God and fully man'), findsNothing);
   });
 

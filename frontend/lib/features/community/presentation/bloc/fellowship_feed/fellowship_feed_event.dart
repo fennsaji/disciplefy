@@ -128,6 +128,12 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
   /// Language code of the guide (e.g. `'en'`, `'hi'`, `'ml'`).
   final String? guideLanguage;
 
+  /// Study mode the guide was generated in (e.g. `'standard'`).
+  final String? guideStudyMode;
+
+  /// Short plain-text summary of the guide shown on the shared card.
+  final String? guideSummary;
+
   /// When true, Discipler leaves this question to the group. Mentors set it
   /// per post; an explicit `@Discipler` in the content still gets a reply.
   final bool disciplerReplyOptOut;
@@ -148,6 +154,8 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
+    this.guideStudyMode,
+    this.guideSummary,
   });
 
   @override
@@ -162,6 +170,8 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
         studyGuideId,
         guideInputType,
         guideLanguage,
+        guideStudyMode,
+        guideSummary,
         disciplerReplyOptOut,
         mentionedUserIds,
       ];

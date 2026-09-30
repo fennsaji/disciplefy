@@ -27,24 +27,36 @@ void main() {
     // expected here; the assertion is about which provider was handed over.
     tester.takeException();
 
+    // Decoded at the avatar's pixel size (ResizeImage), never full size.
     final avatar = tester.widget<CircleAvatar>(find.byType(CircleAvatar));
-    expect(avatar.backgroundImage, isA<NetworkImage>());
-    expect(find.text('F'), findsNothing);
+    expect(avatar.backgroundImage, isA<ResizeImage>());
+    expect((avatar.backgroundImage! as ResizeImage).imageProvider,
+        isA<NetworkImage>());
+    expect(find.text('FS'), findsNothing);
   });
 
-  testWidgets('a member without one falls back to their initial',
+  testWidgets('a member without one falls back to their initials',
       (tester) async {
     await pump(tester, null);
 
     final avatar = tester.widget<CircleAvatar>(find.byType(CircleAvatar));
     expect(avatar.backgroundImage, isNull);
-    expect(find.text('F'), findsOneWidget);
+    expect(find.text('FS'), findsOneWidget);
+    expect(avatar.backgroundColor, MemberAvatar.colorFor('Fenn Saji'),
+        reason: 'the colour follows the name, so a member looks the same '
+            'on every screen');
   });
 
   testWidgets('an empty url counts as no picture', (tester) async {
     await pump(tester, '');
 
-    expect(find.text('F'), findsOneWidget);
+    expect(find.text('FS'), findsOneWidget);
+  });
+
+  test('initials: one word gives one letter, more give two', () {
+    expect(MemberAvatar.initialsOf('Fenn'), 'F');
+    expect(MemberAvatar.initialsOf('priya thomas george'), 'PT');
+    expect(MemberAvatar.initialsOf('   '), '?');
   });
 
   testWidgets('a nameless member gets a placeholder rather than a crash',

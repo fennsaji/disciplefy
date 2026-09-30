@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/fellowship_comment_entity.dart';
-import '../../domain/entities/fellowship_post_entity.dart';
-import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
-import '../bloc/fellowship_feed/fellowship_feed_event.dart';
-import '../bloc/fellowship_feed/fellowship_feed_state.dart';
-import '../utils/auth_helpers.dart';
-import '../utils/feed_sort.dart';
-import '../utils/markdown_text.dart';
-import '../utils/mention_text.dart';
-import '../utils/share_helpers.dart';
-import '../widgets/block_user_dialog.dart';
-import '../widgets/discipler_badges.dart';
-import '../widgets/fellowship_post_card.dart';
-import '../widgets/mention_sheet.dart';
-import '../widgets/study_guide_chip.dart';
-import 'package:disciplefy_bible_study/core/theme/contrast.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
 
 /// Reports a post or comment to the fellowship's mentors.
 ///
@@ -67,6 +57,7 @@ class FellowshipReportSheetState extends State<FellowshipReportSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     return BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
       listenWhen: (prev, curr) => prev.reportStatus != curr.reportStatus,
       listener: (context, state) {
@@ -83,26 +74,33 @@ class FellowshipReportSheetState extends State<FellowshipReportSheet> {
             );
         }
       },
-      child: Padding(
+      // The sheet is shown on a transparent background, so it paints its
+      // own card surface.
+      child: Container(
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: palette.hairline)),
+        ),
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Drag handle
                   Center(
                     child: Container(
-                      width: 40,
+                      width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: context.appBorder,
+                        color: palette.outline,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -110,37 +108,42 @@ class FellowshipReportSheetState extends State<FellowshipReportSheet> {
                   const SizedBox(height: 20),
                   Text(
                     l10n.reportTitle,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: context.appTextPrimary,
+                    style: AppFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 16),
+                  // The label sits above the field: as a floating label it
+                  // is single-line and cut off in Hindi and Malayalam.
+                  Text(
+                    l10n.reportReasonLabel,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: palette.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _reasonController,
                     maxLength: 500,
                     maxLines: 4,
                     keyboardType: TextInputType.multiline,
                     textCapitalization: TextCapitalization.sentences,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      color: context.appTextPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: l10n.reportReasonLabel,
+                    style: AppFonts.inter(fontSize: 15, color: palette.text),
+                    decoration: communityInputDecoration(
+                      context,
                       hintText: l10n.reportReasonHint,
-                      filled: true,
-                      fillColor: context.appInputFill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      // As many lines as the field, so the hint never cuts.
+                      hintMaxLines: 4,
                     ),
                     validator: (v) {
                       if (v == null || v.trim().length < 5) {
-                        return 'Please provide at least 5 characters.';
+                        return context.tr(TranslationKeys
+                            .communityFellowshipReportReasonShort);
                       }
                       return null;
                     },
@@ -152,34 +155,12 @@ class FellowshipReportSheetState extends State<FellowshipReportSheet> {
                     builder: (context, state) {
                       final loading =
                           state.reportStatus == FellowshipReportStatus.loading;
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: loading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: context.appInteractive,
-                            foregroundColor: AppColors.onGradient,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: loading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.onGradient,
-                                  ),
-                                )
-                              : Text(
-                                  l10n.reportSubmit,
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                      return Center(
+                        child: CommunityCtaPill(
+                          label: l10n.reportSubmit,
+                          icon: Icons.flag_outlined,
+                          loading: loading,
+                          onPressed: _submit,
                         ),
                       );
                     },

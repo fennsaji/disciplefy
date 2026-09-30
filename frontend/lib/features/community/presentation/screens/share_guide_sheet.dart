@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/fellowship_entity.dart';
-import '../../domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
+    as auth_states;
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/guide_share_summary.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// A modal bottom sheet that lets users share a study guide to one or more of
@@ -26,6 +41,14 @@ class ShareGuideSheet extends StatefulWidget {
   /// `'en'`, `'hi'`, or `'ml'`.
   final String guideLanguage;
 
+  /// Study mode the guide was generated in (`'standard'`, `'deep'`…), or
+  /// null when unknown. Shown in the preview and stored on the post.
+  final String? guideStudyMode;
+
+  /// The guide's summary section as the guide screen has it; the first
+  /// sentence or two go on the post as its preview.
+  final String? guideSummary;
+
   /// The caller's fellowship memberships — the user picks from these.
   final List<FellowshipEntity> fellowships;
 
@@ -38,6 +61,8 @@ class ShareGuideSheet extends StatefulWidget {
     required this.guideTitle,
     required this.guideInputType,
     required this.guideLanguage,
+    this.guideStudyMode,
+    this.guideSummary,
     required this.fellowships,
     this.content,
     super.key,
@@ -65,26 +90,49 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  String _studyTypeLabel(String inputType) {
+  String _studyTypeLabel(BuildContext context, String inputType) {
     switch (inputType) {
       case 'topic':
-        return 'Topic study';
+        return context.tr(TranslationKeys.communityTopicStudyLabel);
       case 'scripture':
       default:
-        return 'Verse study';
+        return context.tr(TranslationKeys.communityVerseStudyLabel);
     }
   }
 
+  /// Native language names, so the chip reads the same in every app locale.
   String _languageLabel(String lang) {
     switch (lang) {
       case 'hi':
-        return 'Hindi';
+        return 'हिन्दी';
       case 'ml':
-        return 'Malayalam';
+        return 'മലയാളം';
       case 'en':
       default:
         return 'English';
     }
+  }
+
+  /// "Standard study guide · 8 min" when the study mode is known, otherwise
+  /// "{Verse/Topic study} · {language}".
+  String _previewSubtitle(BuildContext context) {
+    final mode = studyModeFromString(widget.guideStudyMode);
+    if (mode != null) {
+      final name = context.tr(TranslationKeys.communityPostModeStudyGuide,
+          {'mode': mode.localizedShortName(context)});
+      return '$name · ${mode.localizedDuration(context)}';
+    }
+    return '${_studyTypeLabel(context, widget.guideInputType)} · '
+        '${_languageLabel(widget.guideLanguage)}';
+  }
+
+  /// Signed-in user's id, for "(you)" on fellowships they mentor.
+  String? _currentUserId(BuildContext context) {
+    try {
+      final state = context.read<AuthBloc>().state;
+      if (state is auth_states.AuthenticatedState) return state.userId;
+    } catch (_) {}
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -100,6 +148,8 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
     final message = widget.content ?? _messageController.text.trim();
     final selectedFellowships =
         widget.fellowships.where((f) => _selectedIds.contains(f.id)).toList();
+    final studyMode = studyModeFromString(widget.guideStudyMode)?.name;
+    final summary = condenseGuideSummary(widget.guideSummary);
 
     bool hasError = false;
 
@@ -112,6 +162,8 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
         guideTitle: widget.guideTitle,
         guideInputType: widget.guideInputType,
         guideLanguage: widget.guideLanguage,
+        guideStudyMode: studyMode,
+        guideSummary: summary,
       );
 
       result.fold(
@@ -145,69 +197,108 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accentColor = theme.colorScheme.primary;
+    final palette = ReaderPalette.of(context);
+    final currentUserId = _currentUserId(context);
+    final selectedCount = _selectedIds.length;
+    final shareLabel = selectedCount == 0
+        ? context.tr(TranslationKeys.communityPagesShareSelect)
+        : selectedCount == 1
+            ? context.tr(TranslationKeys.communityPagesShareToOne)
+            : context.tr(TranslationKeys.communityPagesShareToMany,
+                {'count': selectedCount});
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: palette.card,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.10),
-            blurRadius: 24,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        border: Border(top: BorderSide(color: palette.hairline)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SheetScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _DragHandle(),
-            _SheetTitle(),
-            const SizedBox(height: 20),
-            _GuidePreviewCard(
-              title: widget.guideTitle,
-              typeLabel: _studyTypeLabel(widget.guideInputType),
-              languageLabel: _languageLabel(widget.guideLanguage),
-            ),
-            const SizedBox(height: 20),
-            _SectionLabel(
-              text: 'Share to fellowship',
-              color: context.appTextSecondary,
-            ),
-            const SizedBox(height: 8),
-            if (widget.fellowships.isEmpty)
-              _EmptyFellowshipsNotice()
-            else
-              _FellowshipList(
-                fellowships: widget.fellowships,
-                selectedIds: _selectedIds,
-                onToggle: (id) => setState(() {
-                  if (_selectedIds.contains(id)) {
-                    _selectedIds.remove(id);
-                  } else {
-                    _selectedIds.add(id);
-                  }
-                }),
+      child: SafeArea(
+        top: false,
+        child: SheetScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: palette.outline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            if (widget.content == null) ...[
-              const SizedBox(height: 16),
-              _MessageField(controller: _messageController),
+              Text(
+                context.tr(TranslationKeys.communityPagesShareTitle),
+                style: AppFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _GuidePreviewCard(
+                title: widget.guideTitle,
+                subtitle: _previewSubtitle(context),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: CommunitySectionLabel(
+                  context.tr(TranslationKeys.communityPagesShareTo),
+                  color: palette.muted,
+                ),
+              ),
+              if (widget.fellowships.isEmpty)
+                const _EmptyFellowshipsNotice()
+              else
+                SettingsSheetGroup(
+                  children: [
+                    for (final fellowship in widget.fellowships)
+                      _FellowshipRow(
+                        fellowship: fellowship,
+                        currentUserId: currentUserId,
+                        isSelected: _selectedIds.contains(fellowship.id),
+                        onToggle: () => setState(() {
+                          if (!_selectedIds.remove(fellowship.id)) {
+                            _selectedIds.add(fellowship.id);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+              if (widget.content == null) ...[
+                const SizedBox(height: 18),
+                CommunityFieldLabel(context
+                    .tr(TranslationKeys.communityPagesShareMessageLabel)),
+                TextFormField(
+                  controller: _messageController,
+                  maxLines: 3,
+                  maxLength: 500,
+                  style: communityInputStyle(context),
+                  decoration: communityInputDecoration(
+                    context,
+                    hintText: context
+                        .tr(TranslationKeys.communityPagesShareMessageHint),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              CommunityWideCta(
+                label: shareLabel,
+                icon: Icons.send_outlined,
+                loading: _submitting,
+                onPressed: selectedCount > 0 && !_submitting ? _submit : null,
+              ),
             ],
-            const SizedBox(height: 24),
-            _ShareButton(
-              selectedCount: _selectedIds.length,
-              submitting: _submitting,
-              onSubmit: _submit,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -218,94 +309,39 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
 // Private sub-widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _DragHandle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 36,
-        height: 4,
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: context.appBorder,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetTitle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      'Share Guide',
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: context.appTextPrimary,
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _SectionLabel({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: color,
-      ),
-    );
-  }
-}
-
-/// Read-only card summarising the guide being shared.
+/// Read-only row summarising the guide being shared: book tile, title and
+/// a subtitle ("Standard study guide · 8 min").
 class _GuidePreviewCard extends StatelessWidget {
   final String title;
-  final String typeLabel;
-  final String languageLabel;
+  final String subtitle;
 
   const _GuidePreviewCard({
     required this.title,
-    required this.typeLabel,
-    required this.languageLabel,
+    required this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: context.appSurfaceVariant,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.appBorder),
+        color: palette.isDark ? palette.raised : palette.page,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.hairline),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.brandPrimary
+                  .withValues(alpha: palette.isDark ? 0.22 : 0.10),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(Icons.menu_book_outlined,
+                size: 20, color: palette.accentIcon),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -314,22 +350,21 @@ class _GuidePreviewCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
+                  style: AppFonts.inter(
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w600,
-                    color: context.appTextPrimary,
+                    color: palette.text,
+                    height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    _MetaChip(label: typeLabel),
-                    const SizedBox(width: 6),
-                    _MetaChip(label: languageLabel),
-                  ],
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: AppFonts.inter(
+                    fontSize: 13.5,
+                    color: palette.muted,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -340,275 +375,135 @@ class _GuidePreviewCard extends StatelessWidget {
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  final String label;
-
-  const _MetaChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: context.appSurfaceVariant,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: context.appBorder),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: context.appTextSecondary,
-        ),
-      ),
-    );
-  }
-}
-
 class _EmptyFellowshipsNotice extends StatelessWidget {
+  const _EmptyFellowshipsNotice();
+
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.appInputFill,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.appBorder),
+        color: palette.isDark ? palette.raised : palette.page,
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Center(
-        child: Text(
-          "You don't belong to any fellowship yet.",
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 13,
-            color: context.appTextSecondary,
-          ),
-        ),
+      child: Text(
+        context.tr(TranslationKeys.communityPagesShareNone),
+        textAlign: TextAlign.center,
+        style: AppFonts.inter(fontSize: 14, color: palette.muted, height: 1.4),
       ),
     );
   }
 }
 
-class _FellowshipList extends StatelessWidget {
-  final List<FellowshipEntity> fellowships;
-  final Set<String> selectedIds;
-  final ValueChanged<String> onToggle;
-
-  const _FellowshipList({
-    required this.fellowships,
-    required this.selectedIds,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appInputFill,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.appBorder),
-      ),
-      child: Column(
-        children: List.generate(fellowships.length, (index) {
-          final fellowship = fellowships[index];
-          final isSelected = selectedIds.contains(fellowship.id);
-          final isLast = index == fellowships.length - 1;
-
-          return Column(
-            children: [
-              _FellowshipRow(
-                fellowship: fellowship,
-                isSelected: isSelected,
-                onToggle: () => onToggle(fellowship.id),
-              ),
-              if (!isLast)
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: context.appDivider,
-                  indent: 16,
-                  endIndent: 16,
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-}
-
+/// One fellowship to share to: mentor avatar, name, "Mentor: X · N members"
+/// and a rounded-square checkbox on the right.
 class _FellowshipRow extends StatelessWidget {
   final FellowshipEntity fellowship;
+  final String? currentUserId;
   final bool isSelected;
   final VoidCallback onToggle;
 
   const _FellowshipRow({
     required this.fellowship,
+    required this.currentUserId,
     required this.isSelected,
     required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.brandPrimary : Colors.transparent,
-                border: Border.all(
-                  color:
-                      isSelected ? AppColors.brandPrimary : context.appBorder,
-                  width: 2,
+    final palette = ReaderPalette.of(context);
+    final mentor = FellowshipMentorInfo.forFellowship(
+      fellowship,
+      currentUserId: currentUserId,
+    );
+    return Semantics(
+      checked: isSelected,
+      child: InkWell(
+        onTap: onToggle,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 58),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                _MentorAvatar(mentor: mentor, fellowshipName: fellowship.name),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fellowship.name,
+                        style: AppFonts.inter(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        fellowshipMentorLine(
+                            context, mentor, fellowship.memberCount),
+                        style: AppFonts.inter(
+                          fontSize: 13,
+                          color: palette.muted,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: isSelected
-                  ? const Icon(Icons.check, color: Colors.white, size: 14)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    fellowship.name,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: context.appTextPrimary,
+                const SizedBox(width: 12),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ReaderPalette.selectedFill
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected
+                          ? ReaderPalette.selectedFill
+                          : palette.outline,
+                      width: 1.6,
                     ),
+                    borderRadius: BorderRadius.circular(7),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${fellowship.memberCount} '
-                    '${fellowship.memberCount == 1 ? 'member' : 'members'}',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: context.appTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle_rounded,
-                color: context.appBrandAccent,
-                size: 18,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageField extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _MessageField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      maxLines: 3,
-      maxLength: 500,
-      decoration: InputDecoration(
-        labelText: 'Add a message (optional)',
-        hintText: "What's on your heart?",
-        filled: true,
-        fillColor: context.appInputFill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: context.appBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.brandPrimary, width: 2),
-        ),
-      ),
-    );
-  }
-}
-
-class _ShareButton extends StatelessWidget {
-  final int selectedCount;
-  final bool submitting;
-  final VoidCallback onSubmit;
-
-  const _ShareButton({
-    required this.selectedCount,
-    required this.submitting,
-    required this.onSubmit,
-  });
-
-  String get _label {
-    if (selectedCount == 0) return 'Select a fellowship';
-    if (selectedCount == 1) return 'Share to 1 Fellowship';
-    return 'Share to $selectedCount Fellowships';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEnabled = selectedCount > 0 && !submitting;
-
-    return SizedBox(
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: isEnabled ? AppColors.primaryGradient : null,
-          color: isEnabled ? null : context.appBorder,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: ElevatedButton(
-          onPressed: isEnabled ? onSubmit : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            disabledBackgroundColor: Colors.transparent,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+                  child: isSelected
+                      ? const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 16)
+                      : null,
+                ),
+              ],
             ),
           ),
-          child: submitting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(
-                  _label,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: isEnabled ? Colors.white : context.appTextTertiary,
-                  ),
-                ),
         ),
       ),
+    );
+  }
+}
+
+/// The fellowship mentor's avatar: the Discipler mark for official and
+/// Discipler-mentored fellowships, otherwise the mentor's photo or initials
+/// (the fellowship's initials when the mentor is unknown).
+class _MentorAvatar extends StatelessWidget {
+  final FellowshipMentorInfo mentor;
+  final String fellowshipName;
+
+  const _MentorAvatar({required this.mentor, required this.fellowshipName});
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = 16.0;
+    if (mentor.isDiscipler) return const DisciplerAvatar(radius: radius);
+    final name = mentor.name;
+    return MemberAvatar(
+      displayName: name != null && name.isNotEmpty ? name : fellowshipName,
+      avatarUrl: mentor.avatarUrl,
+      radius: radius,
     );
   }
 }

@@ -1972,6 +1972,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     guideTitle: _getDisplayTitle(),
                     guideInputType: _currentStudyGuide!.inputType,
                     guideLanguage: _currentStudyGuide!.language,
+                    guideStudyMode:
+                        _currentStudyGuide!.studyMode ?? widget.studyMode.name,
+                    guideSummary: _currentStudyGuide!.summary,
                     fellowships: _userFellowships!,
                   ),
                 );
@@ -2356,6 +2359,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         guideTitle: _getDisplayTitle(),
                         guideInputType: _currentStudyGuide!.inputType,
                         guideLanguage: _currentStudyGuide!.language,
+                        guideStudyMode: _currentStudyGuide!.studyMode ??
+                            widget.studyMode.name,
+                        guideSummary: _currentStudyGuide!.summary,
                         fellowships: _userFellowships!,
                       ),
                     );
@@ -2945,6 +2951,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                       guideTitle: _getDisplayTitle(),
                       guideInputType: guide.inputType,
                       guideLanguage: guide.language,
+                      guideStudyMode: guide.studyMode ?? widget.studyMode.name,
+                      guideSummary: guide.summary,
                       userFellowships: _userFellowships!,
                     ),
                   ),
@@ -3620,6 +3628,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     guideTitle: _getDisplayTitle(),
                     guideInputType: _currentStudyGuide!.inputType,
                     guideLanguage: _currentStudyGuide!.language,
+                    guideStudyMode:
+                        _currentStudyGuide!.studyMode ?? widget.studyMode.name,
+                    guideSummary: _currentStudyGuide!.summary,
                     fellowships: _userFellowships!,
                   ),
                 );
@@ -3806,6 +3817,8 @@ class _FellowshipShareSection extends StatefulWidget {
   final String guideTitle;
   final String guideInputType;
   final String guideLanguage;
+  final String? guideStudyMode;
+  final String? guideSummary;
   final List<FellowshipEntity> userFellowships;
 
   const _FellowshipShareSection({
@@ -3814,6 +3827,8 @@ class _FellowshipShareSection extends StatefulWidget {
     required this.guideTitle,
     required this.guideInputType,
     required this.guideLanguage,
+    this.guideStudyMode,
+    this.guideSummary,
     required this.userFellowships,
   });
 
@@ -3853,6 +3868,8 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
             guideTitle: widget.guideTitle,
             guideInputType: widget.guideInputType,
             guideLanguage: widget.guideLanguage,
+            guideStudyMode: widget.guideStudyMode,
+            guideSummary: widget.guideSummary,
             fellowships: widget.userFellowships,
             content: text,
           ),

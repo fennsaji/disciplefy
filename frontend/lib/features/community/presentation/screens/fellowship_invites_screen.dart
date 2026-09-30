@@ -3,12 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/utils/share_links.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../bloc/fellowship_members/fellowship_members_bloc.dart';
-import '../bloc/fellowship_members/fellowship_members_event.dart';
-import '../bloc/fellowship_members/fellowship_members_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/share_links.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_members/fellowship_members_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_members/fellowship_members_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_members/fellowship_members_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 
 /// Full-screen invite-link management for fellowship mentors.
 ///
@@ -48,21 +52,12 @@ class _FellowshipInvitesScreenState extends State<FellowshipInvitesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          l10n.inviteManageTitle,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: context.appTextPrimary,
-          ),
-        ),
+      backgroundColor: palette.page,
+      appBar: CommunityBackBar(
+        title: l10n.inviteManageTitle,
+        background: palette.page,
       ),
       body: BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
         buildWhen: (prev, curr) =>
@@ -75,15 +70,16 @@ class _FellowshipInvitesScreenState extends State<FellowshipInvitesScreen> {
                   state.invitesList.isEmpty;
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                 child: Text(
                   l10n.inviteManageSubtitle,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: context.appTextSecondary,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    color: palette.muted,
+                    height: 1.45,
                   ),
                 ),
               ),
@@ -143,21 +139,17 @@ class _InviteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final primary = Theme.of(context).colorScheme.primary;
+    final palette = ReaderPalette.of(context);
     final useCount = (invite['use_count'] as num?)?.toInt() ?? 0;
     final maxUses = (invite['max_uses'] as num?)?.toInt();
 
     final usageLabel = maxUses == null
         ? '$useCount ${l10n.inviteJoinedSuffix} · ${l10n.inviteUnlimited}'
         : '$useCount / $maxUses';
+    final meta = AppFonts.inter(fontSize: 13, color: palette.muted);
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.appSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.appBorder),
-      ),
+    return CommunityFormCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -165,16 +157,18 @@ class _InviteCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  _token.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 3,
-                    color: primary,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    _token.toUpperCase(),
+                    maxLines: 1,
+                    style: AppFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 4,
+                      color: palette.text,
+                    ),
                   ),
                 ),
               ),
@@ -186,16 +180,14 @@ class _InviteCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
           // ── Full link (visible for reference; shared via Invite) ────────
-          Text(
-            _joinUrl,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: context.appTextTertiary,
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              _joinUrl,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.inter(fontSize: 12.5, color: palette.dim),
             ),
           ),
           const SizedBox(height: 10),
@@ -208,37 +200,26 @@ class _InviteCard extends StatelessWidget {
             spacing: 4,
             runSpacing: 6,
             children: [
-              Icon(Icons.group_outlined, size: 14, color: primary),
-              Text(
-                usageLabel,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.appTextSecondary,
-                ),
-              ),
+              Icon(Icons.group_outlined, size: 15, color: palette.gold),
+              Text(usageLabel,
+                  style: meta.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(width: 8),
-              Icon(Icons.schedule_rounded,
-                  size: 13, color: context.appTextTertiary),
-              Text(
-                l10n.inviteExpires,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  color: context.appTextTertiary,
-                ),
-              ),
+              Icon(Icons.schedule_rounded, size: 14, color: palette.dim),
+              Text(l10n.inviteExpires, style: meta),
             ],
           ),
-          const Divider(height: 22),
+          const SizedBox(height: 6),
+          Container(height: 1, color: palette.hairline),
           // ── Actions ────────────────────────────────────────────────────
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
               _TextAction(
-                icon: Icons.share_outlined,
+                icon: Icons.ios_share_rounded,
                 label: l10n.membersInvite,
-                color: primary,
+                color: palette.accentIcon,
                 onTap: () {
                   final name = fellowshipName?.isNotEmpty == true
                       ? fellowshipName!
@@ -246,11 +227,11 @@ class _InviteCard extends StatelessWidget {
                   Share.share('Join $name on Disciplefy:\n$_joinUrl');
                 },
               ),
-              const Spacer(),
               _TextAction(
                 icon: Icons.link_off_rounded,
                 label: l10n.inviteRevoke,
-                color: AppColors.error,
+                color:
+                    SettingsToneColors.of(context, SettingsTone.red).foreground,
                 onTap: () {
                   final inviteId = invite['id'] as String? ?? '';
                   context.read<FellowshipMembersBloc>().add(
@@ -285,54 +266,29 @@ class _GenerateBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   error!,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
+                  style: AppFonts.inter(
                     fontSize: 13,
-                    color: context.appError,
+                    color: SettingsToneColors.of(context, SettingsTone.red)
+                        .foreground,
                   ),
                 ),
               ),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: generating
-                    ? null
-                    : () => context.read<FellowshipMembersBloc>().add(
-                          const FellowshipMembersInviteRequested(),
-                        ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.appInteractive,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: generating
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.add_link_rounded),
-                label: Text(
-                  l10n.inviteGenerateLink,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+            SettingsButton(
+              label: l10n.inviteGenerateLink,
+              icon: Icons.add_link_rounded,
+              loading: generating,
+              onPressed: generating
+                  ? null
+                  : () => context.read<FellowshipMembersBloc>().add(
+                        const FellowshipMembersInviteRequested(),
+                      ),
             ),
           ],
         ),
@@ -352,31 +308,32 @@ class _EmptyLinks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.link_rounded, size: 56, color: context.appTextTertiary),
-            const SizedBox(height: 16),
+            Icon(Icons.link_rounded, size: 48, color: palette.dim),
+            const SizedBox(height: 14),
             Text(
               l10n.inviteNoLinks,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 16,
+              textAlign: TextAlign.center,
+              style: AppFonts.poppins(
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: context.appTextSecondary,
+                color: palette.text,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               l10n.inviteNoLinksDescription,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Inter',
+              style: AppFonts.inter(
                 fontSize: 14,
-                color: context.appTextTertiary,
+                color: palette.muted,
+                height: 1.45,
               ),
             ),
           ],
@@ -409,16 +366,13 @@ class _TextAction extends StatelessWidget {
       onPressed: onTap,
       style: TextButton.styleFrom(
         foregroundColor: color,
+        minimumSize: const Size(44, 44),
         padding: const EdgeInsets.symmetric(horizontal: 8),
       ),
       icon: Icon(icon, size: 18),
       label: Text(
         label,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
+        style: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -460,14 +414,17 @@ class _CopyIconButtonState extends State<_CopyIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return IconButton(
       onPressed: _copy,
       tooltip: widget.tooltip,
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       icon: Icon(
-        _copied ? Icons.check_circle_outline : Icons.copy_outlined,
-        color:
-            _copied ? AppColors.success : Theme.of(context).colorScheme.primary,
-        size: 22,
+        _copied ? Icons.check_circle_outline : Icons.copy_rounded,
+        color: _copied
+            ? SettingsToneColors.of(context, SettingsTone.green).foreground
+            : palette.accentIcon,
+        size: 21,
       ),
     );
   }

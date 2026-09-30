@@ -3,16 +3,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../../../features/auth/presentation/bloc/auth_state.dart'
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
     as auth_states;
-import '../bloc/fellowship_list/fellowship_list_bloc.dart';
-import '../bloc/fellowship_list/fellowship_list_event.dart';
-import '../bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Screen that allows a mentor/admin/paid user to create a new fellowship.
 ///
@@ -277,267 +284,184 @@ class _CreateFellowshipBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
 
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: context.appTextPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
-        ),
-        title: Text(
-          l10n.createFellowshipTitle,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.appTextPrimary,
-          ),
-        ),
+      backgroundColor: palette.page,
+      appBar: CommunityBackBar(
+        title: l10n.createFellowshipTitle,
+        background: palette.page,
+        onBack: () => context.pop(),
       ),
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
           child: Form(
             key: formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Icon ────────────────────────────────────────────────────
-                Center(
-                  child: Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.groups_2_rounded,
-                      size: 44,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                const Center(
+                  child:
+                      PopupIconCircle(icon: Icons.groups_2_rounded, size: 72),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  l10n.createFellowshipHeading,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.3,
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // ── Heading ──────────────────────────────────────────────────
-                Center(
-                  child: Text(
-                    l10n.createFellowshipHeading,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: context.appTextPrimary,
-                      height: 1.3,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
                 const SizedBox(height: 8),
-
-                Center(
-                  child: Text(
-                    l10n.createFellowshipSubtitle,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      color: context.appTextSecondary,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
+                Text(
+                  l10n.createFellowshipSubtitle,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.inter(
+                    fontSize: 14.5,
+                    color: palette.muted,
+                    height: 1.5,
                   ),
                 ),
-
-                const SizedBox(height: 32),
-
-                // ── Name field ───────────────────────────────────────────────
-                _FieldLabel(label: l10n.createFellowshipNameLabel),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: nameController,
-                  enabled: !isLoading,
-                  textInputAction: TextInputAction.next,
-                  autocorrect: false,
-                  maxLength: 60,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    color: context.appTextPrimary,
-                  ),
-                  decoration: _inputDecoration(
-                    context: context,
-                    hintText: l10n.createFellowshipNameHint,
-                    prefixIcon: Icons.group_rounded,
-                  ),
-                  validator: (v) {
-                    final s = v?.trim() ?? '';
-                    if (s.length < 3 || s.length > 60) {
-                      return l10n.createFellowshipNameError;
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Description field ────────────────────────────────────────
-                _FieldLabel(label: l10n.createFellowshipDescLabel),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: descController,
-                  enabled: !isLoading,
-                  textInputAction: TextInputAction.next,
-                  maxLength: 500,
-                  maxLines: 3,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    color: context.appTextPrimary,
-                  ),
-                  decoration: _inputDecoration(
-                    context: context,
-                    hintText: l10n.createFellowshipDescHint,
-                    prefixIcon: null,
-                  ),
-                  validator: (v) {
-                    final s = v?.trim() ?? '';
-                    if (s.length > 500) return l10n.createFellowshipDescError;
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Max members (+ admin-only unlimited toggle) ──────────────
-                BlocBuilder<AuthBloc, auth_states.AuthState>(
-                  builder: (context, authState) {
-                    final isAdmin =
-                        authState is auth_states.AuthenticatedState &&
-                            authState.isAdmin;
-                    final hideMaxField = isAdmin && unlimitedMembers;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!hideMaxField) ...[
-                          _FieldLabel(label: l10n.createFellowshipMaxLabel),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: maxController,
-                            enabled: !isLoading,
-                            textInputAction: TextInputAction.done,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
-                            ],
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 15,
-                              color: context.appTextPrimary,
-                            ),
-                            decoration: _inputDecoration(
-                              context: context,
-                              hintText: '12',
-                              prefixIcon: Icons.people_rounded,
-                            ),
-                            validator: (v) {
-                              if (hideMaxField) return null;
-                              final n = int.tryParse(v?.trim() ?? '');
-                              if (n == null || n < 2 || n > 50) {
-                                return l10n.createFellowshipMaxError;
-                              }
-                              return null;
-                            },
-                            onFieldSubmitted: (_) {
-                              if (!isLoading && hasName) onCreatePressed();
-                            },
-                          ),
-                        ],
-                        // Unlimited members — admin only, grouped with the cap.
-                        if (isAdmin) ...[
-                          const SizedBox(height: 12),
-                          Row(
+                CommunityGroupLabel(
+                    context.tr(TranslationKeys.communityPagesAbout)),
+                CommunityFormCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ── Name ────────────────────────────────────────────
+                      CommunityFieldLabel(l10n.createFellowshipNameLabel),
+                      TextFormField(
+                        controller: nameController,
+                        enabled: !isLoading,
+                        textInputAction: TextInputAction.next,
+                        autocorrect: false,
+                        maxLength: 60,
+                        style: communityInputStyle(context),
+                        decoration: communityInputDecoration(
+                          context,
+                          hintText: l10n.createFellowshipNameHint,
+                          prefixIcon: Icons.group_rounded,
+                        ),
+                        validator: (v) {
+                          final s = v?.trim() ?? '';
+                          if (s.length < 3 || s.length > 60) {
+                            return l10n.createFellowshipNameError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // ── Description ─────────────────────────────────────
+                      CommunityFieldLabel(l10n.createFellowshipDescLabel),
+                      TextFormField(
+                        controller: descController,
+                        enabled: !isLoading,
+                        textInputAction: TextInputAction.next,
+                        maxLength: 500,
+                        maxLines: 3,
+                        style: communityInputStyle(context),
+                        decoration: communityInputDecoration(
+                          context,
+                          hintText: l10n.createFellowshipDescHint,
+                        ),
+                        validator: (v) {
+                          final s = v?.trim() ?? '';
+                          if (s.length > 500) {
+                            return l10n.createFellowshipDescError;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // ── Max members (+ admin-only unlimited toggle) ─────
+                      BlocBuilder<AuthBloc, auth_states.AuthState>(
+                        builder: (context, authState) {
+                          final isAdmin =
+                              authState is auth_states.AuthenticatedState &&
+                                  authState.isAdmin;
+                          final hideMaxField = isAdmin && unlimitedMembers;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.createFellowshipUnlimitedLabel,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: context.appTextPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      l10n.createFellowshipUnlimitedHint,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 13,
-                                        color: context.appTextSecondary,
-                                      ),
-                                    ),
+                              if (!hideMaxField) ...[
+                                CommunityFieldLabel(
+                                    l10n.createFellowshipMaxLabel),
+                                TextFormField(
+                                  controller: maxController,
+                                  enabled: !isLoading,
+                                  textInputAction: TextInputAction.done,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
                                   ],
+                                  style: communityInputStyle(context),
+                                  decoration: communityInputDecoration(
+                                    context,
+                                    hintText: '12',
+                                    prefixIcon: Icons.people_rounded,
+                                  ),
+                                  validator: (v) {
+                                    if (hideMaxField) return null;
+                                    final n = int.tryParse(v?.trim() ?? '');
+                                    if (n == null || n < 2 || n > 50) {
+                                      return l10n.createFellowshipMaxError;
+                                    }
+                                    return null;
+                                  },
+                                  onFieldSubmitted: (_) {
+                                    if (!isLoading && hasName) {
+                                      onCreatePressed();
+                                    }
+                                  },
                                 ),
-                              ),
-                              Switch(
-                                value: unlimitedMembers,
-                                activeColor:
-                                    Theme.of(context).colorScheme.primary,
-                                onChanged:
-                                    isLoading ? null : onUnlimitedChanged,
-                              ),
+                              ],
+                              // Unlimited members — admin only, grouped with
+                              // the cap.
+                              if (isAdmin) ...[
+                                const SizedBox(height: 8),
+                                _FormSwitch(
+                                  title: l10n.createFellowshipUnlimitedLabel,
+                                  subtitle: l10n.createFellowshipUnlimitedHint,
+                                  value: unlimitedMembers,
+                                  onChanged:
+                                      isLoading ? null : onUnlimitedChanged,
+                                ),
+                              ],
                             ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // ── Who can post (any creator can choose) ───────────
+                      CommunityFieldLabel(l10n.createFellowshipWhoCanPostLabel),
+                      CommunitySegmented<String>(
+                        segments: [
+                          CommunitySegment(
+                            'all_members',
+                            l10n.createFellowshipPostEveryone,
+                            icon: Icons.groups_rounded,
+                          ),
+                          CommunitySegment(
+                            'mentor_only',
+                            l10n.createFellowshipPostAdminsOnly,
+                            icon: Icons.shield_outlined,
                           ),
                         ],
-                      ],
-                    );
-                  },
+                        selected: postingPermission,
+                        onChanged:
+                            isLoading ? null : onPostingPermissionChanged,
+                      ),
+                    ],
+                  ),
                 ),
 
-                const SizedBox(height: 20),
-
-                // ── Who can post (any creator can choose) ────────────────────
-                _FieldLabel(label: l10n.createFellowshipWhoCanPostLabel),
-                const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(
-                      value: 'all_members',
-                      label: Text(l10n.createFellowshipPostEveryone),
-                      icon: const Icon(Icons.groups_rounded, size: 18),
-                    ),
-                    ButtonSegment(
-                      value: 'mentor_only',
-                      label: Text(l10n.createFellowshipPostAdminsOnly),
-                      icon: const Icon(Icons.shield_rounded, size: 18),
-                    ),
-                  ],
-                  selected: {postingPermission},
-                  showSelectedIcon: false,
-                  onSelectionChanged: isLoading
-                      ? null
-                      : (s) => onPostingPermissionChanged(s.first),
-                ),
-
-                // ── Admin-only fields ─────────────────────────────────────────
+                // ── Admin-only fields ─────────────────────────────────────
                 BlocBuilder<AuthBloc, auth_states.AuthState>(
                   builder: (context, authState) {
                     if (authState is! auth_states.AuthenticatedState ||
@@ -545,166 +469,70 @@ class _CreateFellowshipBody extends StatelessWidget {
                       return const SizedBox.shrink();
                     }
                     return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: 20),
-                        // Language dropdown
-                        DropdownButtonFormField<String>(
-                          value: language,
-                          decoration: InputDecoration(
-                            labelText: l10n.createFellowshipLanguageLabel,
-                            labelStyle: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: context.appTextSecondary,
-                            ),
-                            filled: true,
-                            fillColor: context.appInputFill,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: context.appBorder),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: context.appBorder),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 15,
-                            color: context.appTextPrimary,
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                                value: 'en', child: Text('English')),
-                            DropdownMenuItem(value: 'hi', child: Text('Hindi')),
-                            DropdownMenuItem(
-                                value: 'ml', child: Text('Malayalam')),
-                          ],
-                          onChanged: isLoading
-                              ? null
-                              : (v) => onLanguageChanged(v ?? 'en'),
-                        ),
-                        const SizedBox(height: 16),
-                        // Public toggle
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    l10n.createFellowshipMakePublicLabel,
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: context.appTextPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    l10n.createFellowshipMakePublicHint,
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 13,
-                                      color: context.appTextSecondary,
-                                    ),
-                                  ),
+                        CommunityGroupLabel(l10n.adminOptionsLabel),
+                        CommunityFormCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              CommunityFieldLabel(
+                                  l10n.createFellowshipLanguageLabel),
+                              CommunitySegmented<String>(
+                                segments: const [
+                                  CommunitySegment('en', 'English'),
+                                  CommunitySegment('hi', 'हिन्दी'),
+                                  CommunitySegment('ml', 'മലയാളം'),
                                 ],
+                                selected: language,
+                                onChanged: isLoading ? null : onLanguageChanged,
                               ),
-                            ),
-                            Switch(
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SettingsGroup(
+                          children: [
+                            CommunitySwitchRow(
+                              title: l10n.createFellowshipMakePublicLabel,
+                              subtitle: l10n.createFellowshipMakePublicHint,
                               value: isPublic,
-                              activeColor:
-                                  Theme.of(context).colorScheme.primary,
                               onChanged: isLoading ? null : onIsPublicChanged,
                             ),
+                            CommunitySwitchRow(
+                              title: l10n.createFellowshipOfficial,
+                              value: isOfficial,
+                              onChanged: isLoading ? null : onIsOfficialChanged,
+                            ),
+                            CommunitySwitchRow(
+                              title: l10n.createFellowshipDisciplerAllowed,
+                              value: disciplerAllowed,
+                              onChanged: (isLoading || !isOfficial)
+                                  ? null
+                                  : onDisciplerAllowedChanged,
+                            ),
+                            CommunitySwitchRow(
+                              title: l10n.createFellowshipDailyAllowed,
+                              value: dailyPostAllowed,
+                              onChanged: (isLoading || !isOfficial)
+                                  ? null
+                                  : onDailyPostAllowedChanged,
+                            ),
                           ],
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          l10n.adminOptionsLabel,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: context.appTextPrimary,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            l10n.createFellowshipOfficial,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: context.appTextPrimary,
-                            ),
-                          ),
-                          value: isOfficial,
-                          activeColor: Theme.of(context).colorScheme.primary,
-                          onChanged: isLoading ? null : onIsOfficialChanged,
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            l10n.createFellowshipDisciplerAllowed,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: context.appTextPrimary,
-                            ),
-                          ),
-                          value: disciplerAllowed,
-                          activeColor: Theme.of(context).colorScheme.primary,
-                          onChanged: (isLoading || !isOfficial)
-                              ? null
-                              : onDisciplerAllowedChanged,
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            l10n.createFellowshipDailyAllowed,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: context.appTextPrimary,
-                            ),
-                          ),
-                          value: dailyPostAllowed,
-                          activeColor: Theme.of(context).colorScheme.primary,
-                          onChanged: (isLoading || !isOfficial)
-                              ? null
-                              : onDailyPostAllowedChanged,
                         ),
                       ],
                     );
                   },
                 ),
 
-                const SizedBox(height: 36),
+                const SizedBox(height: 28),
 
-                // ── Create button ────────────────────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: _CreateButton(
-                    isLoading: isLoading,
-                    isEnabled: hasName && !isLoading,
-                    onPressed: onCreatePressed,
-                    label: l10n.createFellowshipButton,
-                  ),
+                // ── Create button ─────────────────────────────────────────
+                CommunityWideCta(
+                  label: l10n.createFellowshipButton,
+                  icon: Icons.groups_2_rounded,
+                  loading: isLoading,
+                  onPressed: hasName && !isLoading ? onCreatePressed : null,
                 ),
               ],
             ),
@@ -713,162 +541,59 @@ class _CreateFellowshipBody extends StatelessWidget {
       ),
     );
   }
-
-  InputDecoration _inputDecoration({
-    required BuildContext context,
-    required String hintText,
-    required IconData? prefixIcon,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 14,
-        color: context.appTextTertiary,
-        fontWeight: FontWeight.w400,
-      ),
-      filled: true,
-      fillColor: context.appInputFill,
-      counterStyle: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 12,
-        color: context.appTextTertiary,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: context.appBorder),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: context.appBorder),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary, width: 1.5),
-      ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: context.appBorder),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-      ),
-      prefixIcon: prefixIcon != null
-          ? Icon(prefixIcon, size: 20, color: context.appTextTertiary)
-          : null,
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
-// _FieldLabel
+// _FormSwitch — switch row inside a form card (no card chrome of its own)
 // ---------------------------------------------------------------------------
 
-class _FieldLabel extends StatelessWidget {
-  final String label;
-  const _FieldLabel({required this.label});
+class _FormSwitch extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
 
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: context.appTextPrimary,
-        letterSpacing: 0.3,
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _CreateButton
-// ---------------------------------------------------------------------------
-
-class _CreateButton extends StatelessWidget {
-  final bool isLoading;
-  final bool isEnabled;
-  final VoidCallback onPressed;
-  final String label;
-
-  const _CreateButton({
-    required this.isLoading,
-    required this.isEnabled,
-    required this.onPressed,
-    required this.label,
+  const _FormSwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (!isEnabled) {
-      return Container(
-        decoration: BoxDecoration(
-          color: context.appBorder,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: context.appTextTertiary,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+    final palette = ReaderPalette.of(context);
+    return MergeSemantics(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.groups_2_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
                 Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                  title,
+                  style: AppFonts.inter(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w500,
+                    color: palette.text,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    color: palette.muted,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(width: 10),
+          SettingsSwitch(value: value, onChanged: onChanged),
+        ],
       ),
     );
   }
@@ -883,13 +608,13 @@ class _LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Positioned.fill(
       child: ColoredBox(
-        color: AppColors.overlayLight,
+        color: palette.page.withValues(alpha: 0.55),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(palette.accentIcon),
           ),
         ),
       ),

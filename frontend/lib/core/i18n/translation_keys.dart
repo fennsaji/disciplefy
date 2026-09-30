@@ -3068,4 +3068,206 @@ class TranslationKeys {
       'voice_buddy.limit_dialog.upgrade_heading';
   static const voiceLimitViewPlans = 'voice_buddy.limit_dialog.view_plans';
   static const voiceLimitMaybeLater = 'voice_buddy.limit_dialog.maybe_later';
+
+  // Community shared widgets (fellowship cards, posts, Community tab)
+  /// "Mentor: {name}".
+  static const communitySharedMentor = 'community_shared.mentor';
+
+  /// "{name} (you)".
+  static const communitySharedMentorYou = 'community_shared.mentor_you';
+
+  /// "Lesson {number}".
+  static const communitySharedLesson = 'community_shared.lesson';
+
+  /// "Lesson {number} of {total}".
+  static const communitySharedLessonOf = 'community_shared.lesson_of';
+
+  /// "{current} of {total}".
+  static const communitySharedProgress = 'community_shared.progress';
+  static const communitySharedDailyStudy = 'community_shared.daily_study';
+  static const communitySharedStartStudy = 'community_shared.start_study';
+  static const communitySharedReplyOne = 'community_shared.reply_one';
+
+  /// "{count} replies".
+  static const communitySharedReplies = 'community_shared.replies';
+  static const communitySharedDiscoverTab = 'community_shared.discover_tab';
+  static const communitySharedSearchHint = 'community_shared.search_hint';
+  static const communitySharedJoinWithCode = 'community_shared.join_with_code';
+  static const communitySharedCreateLocked = 'community_shared.create_locked';
+  static const communitySharedOfflineTitle = 'community_shared.offline_title';
+  static const communitySharedOfflineBody = 'community_shared.offline_body';
+  static const communitySharedLoadErrorBody =
+      'community_shared.load_error_body';
+  static const communitySharedMoreOptions = 'community_shared.more_options';
+
+  // Fellowship lessons path (status markers, summary card).
+  static const communityLessonsStatusDone = 'community_lessons.status_done';
+  static const communityLessonsStatusUpcoming =
+      'community_lessons.status_upcoming';
+  static const communityLessonsStatusLocked = 'community_lessons.status_locked';
+
+  /// "{done} of {total} done".
+  static const communityLessonsGroupDone = 'community_lessons.group_done';
+
+  /// "+{xp} XP earned".
+  static const communityLessonsXpEarned = 'community_lessons.xp_earned';
+
+  // Community post cards (shared-guide card, study-note chip).
+  /// "Open study guide".
+  static const communityPostOpenGuide = 'community_post.open_guide';
+
+  /// "On: {title}".
+  static const communityPostOnTopic = 'community_post.on_topic';
+  static const communityPostInputScripture = 'community_post.input_scripture';
+  static const communityPostInputTopic = 'community_post.input_topic';
+  static const communityPostInputQuestion = 'community_post.input_question';
+
+  /// "{mode} study guide", e.g. "Standard study guide".
+  static const communityPostModeStudyGuide = 'community_post.mode_study_guide';
+
+  // Post timestamps: "Just now", "5m ago", "2h ago", "Yesterday",
+  // "3 days ago"; older posts show a localized date.
+  static const communityPostTimeJustNow = 'community_post.time_just_now';
+  static const communityPostTimeMinutesAgo = 'community_post.time_minutes_ago';
+  static const communityPostTimeHoursAgo = 'community_post.time_hours_ago';
+  static const communityPostTimeYesterday = 'community_post.time_yesterday';
+  static const communityPostTimeDaysAgo = 'community_post.time_days_ago';
+
+  // Reaction pill labels. The stored reaction keys stay the same; these are
+  // only how each one reads on the pill.
+  static const communityPostReactionAmen = 'community_post.reaction_amen';
+  static const communityPostReactionPrayed = 'community_post.reaction_prayed';
+  static const communityPostReactionPraise = 'community_post.reaction_praise';
+  static const communityPostReactionHelpful = 'community_post.reaction_helpful';
+  static const communityPostReactionLove = 'community_post.reaction_love';
+  static const communityPostReactionFire = 'community_post.reaction_fire';
+
+  // Community inner pages (meetings, schedule sheet, fellowship settings,
+  // daily post, lesson discussion, share-guide sheet).
+  static const communityPagesThisWeek = 'community_pages.this_week';
+  static const communityPagesNextWeek = 'community_pages.next_week';
+  static const communityPagesLater = 'community_pages.later';
+  static const communityPagesJoin = 'community_pages.join';
+  static const communityPagesNoLink = 'community_pages.no_link';
+  static const communityPagesOnline = 'community_pages.online';
+  static const communityPagesLoadError = 'community_pages.load_error';
+  static const communityPagesCancelMeeting = 'community_pages.cancel_meeting';
+
+  /// "Cancel \"{title}\"? …".
+  static const communityPagesCancelBody = 'community_pages.cancel_body';
+  static const communityPagesKeep = 'community_pages.keep';
+  static const communityPagesOneTime = 'community_pages.one_time';
+  static const communityPagesDaily = 'community_pages.daily';
+  static const communityPagesWeekly = 'community_pages.weekly';
+  static const communityPagesMonthly = 'community_pages.monthly';
+  static const communityPagesScheduleTitle = 'community_pages.schedule_title';
+  static const communityPagesTitleLabel = 'community_pages.title_label';
+  static const communityPagesTitleHint = 'community_pages.title_hint';
+  static const communityPagesTitleRequired = 'community_pages.title_required';
+  static const communityPagesDescriptionLabel =
+      'community_pages.description_label';
+  static const communityPagesDateTime = 'community_pages.date_time';
+  static const communityPagesMeetingType = 'community_pages.meeting_type';
+  static const communityPagesInPerson = 'community_pages.in_person';
+  static const communityPagesLocationLabel = 'community_pages.location_label';
+  static const communityPagesLocationHint = 'community_pages.location_hint';
+  static const communityPagesLocationRequired =
+      'community_pages.location_required';
+  static const communityPagesDuration = 'community_pages.duration';
+
+  /// "{count} min".
+  static const communityPagesMinutes = 'community_pages.minutes';
+
+  /// "{count} hr".
+  static const communityPagesHours = 'community_pages.hours';
+
+  /// "{hours} hr {minutes} min".
+  static const communityPagesHoursMinutes = 'community_pages.hours_minutes';
+  static const communityPagesRepeat = 'community_pages.repeat';
+  static const communityPagesSubmit = 'community_pages.submit';
+  static const communityPagesCalendarTitle = 'community_pages.calendar_title';
+  static const communityPagesCalendarBody = 'community_pages.calendar_body';
+  static const communityPagesCalendarSkip = 'community_pages.calendar_skip';
+  static const communityPagesContinue = 'community_pages.continue';
+  static const communityPagesCalendarFailedTitle =
+      'community_pages.calendar_failed_title';
+  static const communityPagesCalendarFailedBody =
+      'community_pages.calendar_failed_body';
+  static const communityPagesCreateAnyway = 'community_pages.create_anyway';
+  static const communityPagesYouAreMentor = 'community_pages.you_are_mentor';
+  static const communityPagesAbout = 'community_pages.about';
+  static const communityPagesByDiscipler = 'community_pages.by_discipler';
+  static const communityPagesDiscussion = 'community_pages.discussion';
+  static const communityPagesDiscussionSubtitle =
+      'community_pages.discussion_subtitle';
+  static const communityPagesDiscussionEmpty =
+      'community_pages.discussion_empty';
+  static const communityPagesOpenGuide = 'community_pages.open_guide';
+  static const communityPagesMilestone = 'community_pages.milestone';
+  static const communityPagesReplyHint = 'community_pages.reply_hint';
+  static const communityPagesReflectionHint = 'community_pages.reflection_hint';
+  static const communityPagesSend = 'community_pages.send';
+  static const communityPagesShareTitle = 'community_pages.share_title';
+  static const communityPagesShareTo = 'community_pages.share_to';
+  static const communityPagesShareNone = 'community_pages.share_none';
+  static const communityPagesShareMessageLabel =
+      'community_pages.share_message_label';
+  static const communityPagesShareMessageHint =
+      'community_pages.share_message_hint';
+  static const communityPagesShareSelect = 'community_pages.share_select';
+  static const communityPagesShareToOne = 'community_pages.share_to_one';
+
+  /// "Share to {count} fellowships".
+  static const communityPagesShareToMany = 'community_pages.share_to_many';
+  static const communityPagesMemberOne = 'community_pages.member_one';
+
+  /// "{count} members".
+  static const communityPagesMembers = 'community_pages.members';
+
+  // Fellowship home, feed, post detail, members and lessons screens
+  static const communityFellowshipPostTitle = 'community_fellowship.post_title';
+  static const communityFellowshipPostUnavailable =
+      'community_fellowship.post_unavailable';
+  static const communityFellowshipCommentsEmpty =
+      'community_fellowship.comments_empty';
+  static const communityFellowshipCommentsLoadFailed =
+      'community_fellowship.comments_load_failed';
+  static const communityFellowshipCommentHint =
+      'community_fellowship.comment_hint';
+  static const communityFellowshipSend = 'community_fellowship.send';
+  static const communityFellowshipMention = 'community_fellowship.mention';
+  static const communityFellowshipStudyingTogether =
+      'community_fellowship.studying_together';
+  static const communityFellowshipGroupProgress =
+      'community_fellowship.group_progress';
+  static const communityFellowshipViewAllPosts =
+      'community_fellowship.view_all_posts';
+  static const communityFellowshipNow = 'community_fellowship.now';
+  static const communityFellowshipPathActive =
+      'community_fellowship.path_active';
+  static const communityFellowshipAssignFailed =
+      'community_fellowship.assign_failed';
+  static const communityFellowshipAdvanceFailed =
+      'community_fellowship.advance_failed';
+  static const communityFellowshipResetFailed =
+      'community_fellowship.reset_failed';
+  static const communityFellowshipNoPaths = 'community_fellowship.no_paths';
+  static const communityFellowshipReportReasonShort =
+      'community_fellowship.report_reason_short';
+  static const communityFellowshipPostHintGeneral =
+      'community_fellowship.post_hint_general';
+  static const communityFellowshipPostHintPrayer =
+      'community_fellowship.post_hint_prayer';
+  static const communityFellowshipPostHintPraise =
+      'community_fellowship.post_hint_praise';
+  static const communityFellowshipPostHintQuestion =
+      'community_fellowship.post_hint_question';
+  static const communityFellowshipTypeDescGeneral =
+      'community_fellowship.type_desc_general';
+  static const communityFellowshipTypeDescPrayer =
+      'community_fellowship.type_desc_prayer';
+  static const communityFellowshipTypeDescPraise =
+      'community_fellowship.type_desc_praise';
+  static const communityFellowshipTypeDescQuestion =
+      'community_fellowship.type_desc_question';
 }

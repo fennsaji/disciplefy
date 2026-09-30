@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/config/app_config.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/fellowship_meeting_entity.dart';
-import '../bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
-import '../bloc/fellowship_meetings/fellowship_meetings_event.dart';
-import '../bloc/fellowship_meetings/fellowship_meetings_state.dart';
-import 'google_calendar_auth_stub.dart'
-    if (dart.library.js_interop) 'google_calendar_auth_web.dart'
-    if (dart.library.io) 'google_calendar_auth_mobile.dart';
+import 'package:disciplefy_bible_study/core/config/app_config.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_meeting_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 
+import 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_stub.dart'
+    if (dart.library.js_interop) 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_web.dart'
+    if (dart.library.io) 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_mobile.dart';
+
+/// Body of the fellowship Meetings page: the calendar-sync banner (mentors),
+/// then upcoming meetings grouped into This week / Next week / Later.
+///
+/// The page chrome (back bar, schedule action) belongs to the host page.
 class FellowshipMeetingsTabScreen extends StatelessWidget {
   final String fellowshipId;
   final bool isMentor;
@@ -24,6 +38,30 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
     super.key,
   });
 
+  /// Asks Google for a calendar token when the user signed in with Google.
+  static Future<String?> _googleTokenIfGoogleUser() async {
+    final supabaseUser = Supabase.instance.client.auth.currentUser;
+    final isGoogleUser =
+        supabaseUser?.identities?.any((id) => id.provider == 'google') ?? false;
+    if (!isGoogleUser) return null;
+    return requestCalendarAccessToken(
+      AppConfig.googleClientId,
+      userEmail: supabaseUser?.email,
+    );
+  }
+
+  void _showSnack(BuildContext context, String message, Color color) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<FellowshipMeetingsBloc, FellowshipMeetingsState>(
@@ -33,74 +71,36 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
           prev.syncRequiresReconnect != curr.syncRequiresReconnect,
       listener: (context, state) {
         if (state.successMessage != null) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(state.successMessage!),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ));
+          _showSnack(context, state.successMessage!, AppColors.success);
         } else if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ));
+          _showSnack(context, state.errorMessage!, AppColors.error);
         } else if (state.syncRequiresReconnect) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.meetingsSyncReconnect),
-              backgroundColor: AppColors.brandPrimary,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ));
+          _showSnack(
+            context,
+            AppLocalizations.of(context)!.meetingsSyncReconnect,
+            AppColors.brandPrimary,
+          );
         }
       },
       builder: (context, state) {
         Future<void> syncCalendar() async {
-          final supabaseUser = Supabase.instance.client.auth.currentUser;
-          final isGoogleUser =
-              supabaseUser?.identities?.any((id) => id.provider == 'google') ??
-                  false;
-          final googleAccessToken = isGoogleUser
-              ? await requestCalendarAccessToken(AppConfig.googleClientId,
-                  userEmail: supabaseUser?.email)
-              : null;
+          final token = await _googleTokenIfGoogleUser();
           if (!context.mounted) return;
           context.read<FellowshipMeetingsBloc>().add(
                 FellowshipMeetingsSyncCalendarRequested(
                   fellowshipId,
-                  googleAccessToken: googleAccessToken,
+                  googleAccessToken: token,
                 ),
               );
         }
 
         Future<void> cancelMeeting(String meetingId) async {
-          final supabaseUser = Supabase.instance.client.auth.currentUser;
-          final isGoogleUser =
-              supabaseUser?.identities?.any((id) => id.provider == 'google') ??
-                  false;
-          final googleAccessToken = isGoogleUser
-              ? await requestCalendarAccessToken(AppConfig.googleClientId,
-                  userEmail: supabaseUser?.email)
-              : null;
+          final token = await _googleTokenIfGoogleUser();
           if (!context.mounted) return;
           context.read<FellowshipMeetingsBloc>().add(
                 FellowshipMeetingCancelRequested(
                   meetingId,
-                  googleAccessToken: googleAccessToken,
+                  googleAccessToken: token,
                 ),
               );
         }
@@ -109,73 +109,124 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (state.status == FellowshipMeetingsStatus.failure) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Failed to load meetings',
-                  style: TextStyle(color: context.appTextSecondary),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => context
-                      .read<FellowshipMeetingsBloc>()
-                      .add(FellowshipMeetingsLoadRequested(fellowshipId)),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
+          return _MeetingsMessage(
+            icon: Icons.cloud_off_rounded,
+            message: context.tr(TranslationKeys.communityPagesLoadError),
+            actionLabel: AppLocalizations.of(context)!.retryButton,
+            onAction: () => context
+                .read<FellowshipMeetingsBloc>()
+                .add(FellowshipMeetingsLoadRequested(fellowshipId)),
           );
         }
         if (state.meetings.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.video_call_outlined,
-                    size: 56, color: context.appTextTertiary),
-                const SizedBox(height: 12),
-                Text(
-                  isMentor
-                      ? 'No upcoming meetings.\nTap + to schedule one.'
-                      : 'No upcoming meetings.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    color: context.appTextSecondary,
-                  ),
-                ),
-              ],
-            ),
+          final l10n = AppLocalizations.of(context)!;
+          return _MeetingsMessage(
+            icon: Icons.event_available_outlined,
+            message: l10n.meetingsNoUpcoming,
+            detail: isMentor ? l10n.meetingsSchedulePrompt : null,
           );
         }
-        return Column(
+
+        final groups = groupMeetingsByWeek(state.meetings, DateTime.now());
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
           children: [
             if (isMentor && state.showSyncBanner)
-              _SyncCalendarBanner(
-                isSyncing: state.isSyncingCalendar,
-                onSync: syncCalendar,
-              ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                itemCount: state.meetings.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _MeetingCard(
-                  meeting: state.meetings[index],
-                  isMentor: isMentor,
-                  onCancel: () => cancelMeeting(state.meetings[index].id),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _SyncCalendarBanner(
+                  isSyncing: state.isSyncingCalendar,
+                  onSync: syncCalendar,
                 ),
               ),
-            ),
+            for (final group in groups) ...[
+              CommunityGroupLabel(context.tr(group.labelKey)),
+              for (final meeting in group.meetings) ...[
+                _MeetingCard(
+                  meeting: meeting,
+                  isMentor: isMentor,
+                  onCancel: () => cancelMeeting(meeting.id),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
           ],
         );
       },
     );
   }
 }
+
+/// Meetings of one week bucket, in the order the bloc gave them.
+@immutable
+class MeetingWeekGroup {
+  /// Translation key of the section label.
+  final String labelKey;
+  final List<FellowshipMeetingEntity> meetings;
+
+  const MeetingWeekGroup(this.labelKey, this.meetings);
+}
+
+/// Splits [meetings] into This week / Next week / Later relative to [now],
+/// with weeks starting on Sunday. Anything before this week (a meeting that
+/// is running now) counts as this week. Empty buckets are dropped.
+List<MeetingWeekGroup> groupMeetingsByWeek(
+  List<FellowshipMeetingEntity> meetings,
+  DateTime now,
+) {
+  final today = DateTime(now.year, now.month, now.day);
+  // DateTime.weekday: Monday = 1 … Sunday = 7.
+  final weekStart = today.subtract(Duration(days: today.weekday % 7));
+  final nextWeekStart = DateTime(weekStart.year, weekStart.month,
+      weekStart.day + 7); // DST-safe day arithmetic.
+  final laterStart =
+      DateTime(weekStart.year, weekStart.month, weekStart.day + 14);
+
+  final thisWeek = <FellowshipMeetingEntity>[];
+  final nextWeek = <FellowshipMeetingEntity>[];
+  final later = <FellowshipMeetingEntity>[];
+  for (final meeting in meetings) {
+    final start = DateTime.tryParse(meeting.startsAt)?.toLocal();
+    if (start == null || start.isBefore(nextWeekStart)) {
+      thisWeek.add(meeting);
+    } else if (start.isBefore(laterStart)) {
+      nextWeek.add(meeting);
+    } else {
+      later.add(meeting);
+    }
+  }
+  return [
+    if (thisWeek.isNotEmpty)
+      MeetingWeekGroup(TranslationKeys.communityPagesThisWeek, thisWeek),
+    if (nextWeek.isNotEmpty)
+      MeetingWeekGroup(TranslationKeys.communityPagesNextWeek, nextWeek),
+    if (later.isNotEmpty)
+      MeetingWeekGroup(TranslationKeys.communityPagesLater, later),
+  ];
+}
+
+/// [DateFormat] for the current locale, falling back to English when the
+/// locale's date symbols are not loaded.
+DateFormat _dateFormat(BuildContext context, DateFormat Function(String) make) {
+  final code = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+  try {
+    return make(code);
+  } catch (_) {
+    return make('en');
+  }
+}
+
+/// Translation key for a meeting recurrence value, or null when unknown.
+String? meetingRecurrenceKey(String? recurrence) => switch (recurrence) {
+      'daily' => TranslationKeys.communityPagesDaily,
+      'weekly' => TranslationKeys.communityPagesWeekly,
+      'monthly' => TranslationKeys.communityPagesMonthly,
+      _ => null,
+    };
+
+// ---------------------------------------------------------------------------
+// Meeting card
+// ---------------------------------------------------------------------------
 
 class _MeetingCard extends StatelessWidget {
   final FellowshipMeetingEntity meeting;
@@ -188,41 +239,6 @@ class _MeetingCard extends StatelessWidget {
     required this.onCancel,
   });
 
-  String _formatDateTime(String iso) {
-    final dt = DateTime.parse(iso).toLocal();
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final dayName = days[dt.weekday - 1];
-    final month = months[dt.month - 1];
-    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    final amPm = dt.hour >= 12 ? 'PM' : 'AM';
-    final minute = dt.minute.toString().padLeft(2, '0');
-    return '$dayName, ${dt.day} $month · $hour:$minute $amPm';
-  }
-
-  String _duration() {
-    final start = DateTime.parse(meeting.startsAt);
-    final end = DateTime.parse(meeting.endsAt);
-    final minutes = end.difference(start).inMinutes;
-    if (minutes < 60) return '$minutes min';
-    final hrs = minutes ~/ 60;
-    final rem = minutes % 60;
-    return rem == 0 ? '$hrs hr' : '$hrs hr $rem min';
-  }
-
   Future<void> _joinMeeting() async {
     final uri = Uri.parse(meeting.meetLink);
     if (uri.scheme != 'https') return;
@@ -231,385 +247,426 @@ class _MeetingCard extends StatelessWidget {
     }
   }
 
+  String _timeRange(BuildContext context) {
+    final start = DateTime.tryParse(meeting.startsAt)?.toLocal();
+    final end = DateTime.tryParse(meeting.endsAt)?.toLocal();
+    if (start == null) return '';
+    final format = _dateFormat(context, (code) => DateFormat.jm(code));
+    if (end == null || !end.isAfter(start)) return format.format(start);
+    return '${format.format(start)} – ${format.format(end)}';
+  }
+
+  String _place(BuildContext context) {
+    if (meeting.isInPerson) return meeting.location!;
+    if (meeting.meetLink.contains('meet.google.com')) return 'Google Meet';
+    return context.tr(TranslationKeys.communityPagesOnline);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF8F7FF);
-    final dateBg = isDark ? const Color(0xFF2A2A3E) : const Color(0xFFEEECFA);
-    final dateTextColor =
-        isDark ? const Color(0xFF9B9BB8) : const Color(0xFF6B6890);
+    final palette = ReaderPalette.of(context);
+    final start = DateTime.tryParse(meeting.startsAt)?.toLocal();
+    final recurrenceKey = meetingRecurrenceKey(meeting.recurrence);
+    final hasLink = !meeting.isInPerson && meeting.meetLink.isNotEmpty;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.brandPrimary.withValues(alpha: isDark ? 0.15 : 0.1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandPrimary.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+    final joinPill = hasLink
+        ? CommunityCtaPill(
+            label: context.tr(TranslationKeys.communityPagesJoin),
+            onPressed: _joinMeeting,
+          )
+        : null;
+    final cancelButton = isMentor
+        ? IconButton(
+            onPressed: () => _showCancelConfirm(context),
+            tooltip: context.tr(TranslationKeys.communityPagesCancelMeeting),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              size: 21,
+              color:
+                  SettingsToneColors.of(context, SettingsTone.red).foreground,
+            ),
+          )
+        : null;
+
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          meeting.title,
+          style: AppFonts.inter(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w600,
+            color: palette.text,
+            height: 1.3,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+        ),
+        const SizedBox(height: 5),
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header: icon + title + recurrence ────────────────────────
-            Row(
-              children: [
-                // Soft icon badge
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandSecondary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Icon(
-                    meeting.isInPerson
-                        ? Icons.location_on_rounded
-                        : Icons.videocam_rounded,
-                    color: AppColors.brandPrimaryLight,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        meeting.title,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
-                          height: 1.2,
-                        ),
-                      ),
-                      if (meeting.description != null &&
-                          meeting.description!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          meeting.description!,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            color: context.appTextSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (meeting.recurrence != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.brandSecondary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _capitalize(meeting.recurrence!),
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF9898B8),
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            // ── Date / duration row ───────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: dateBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 12,
-                    color: AppColors.brandPrimaryLight.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    _formatDateTime(meeting.startsAt),
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: dateTextColor,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 7),
-                    child: Container(
-                      width: 3,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: dateTextColor.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.schedule_rounded,
-                    size: 12,
-                    color: dateTextColor,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _duration(),
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: dateTextColor,
-                    ),
-                  ),
-                ],
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(
+                meeting.isInPerson
+                    ? Icons.place_outlined
+                    : Icons.videocam_outlined,
+                size: 16,
+                color: palette.muted,
               ),
             ),
-            const SizedBox(height: 14),
-            // ── Action row ────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: meeting.isInPerson
-                      ? _LocationPill(
-                          location: meeting.location ?? '',
-                          isDark: isDark,
-                        )
-                      : DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.brandPrimary,
-                                AppColors.brandSecondary,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ElevatedButton.icon(
-                            onPressed: meeting.meetLink.isNotEmpty
-                                ? _joinMeeting
-                                : null,
-                            icon:
-                                const Icon(Icons.play_arrow_rounded, size: 17),
-                            label: Text(
-                              meeting.meetLink.isNotEmpty
-                                  ? 'Join Meeting'
-                                  : 'No link yet',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 11),
-                              textStyle: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                [_timeRange(context), _place(context)]
+                    .where((s) => s.isNotEmpty)
+                    .join(' · '),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color: palette.muted,
+                  height: 1.35,
                 ),
-                if (isMentor) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => _showCancelConfirm(context),
-                    icon: Icon(
-                      Icons.delete_outline_rounded,
-                      color: AppColors.error.withValues(alpha: 0.7),
-                      size: 20,
-                    ),
-                    tooltip: 'Cancel meeting',
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.error.withValues(alpha: 0.07),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.all(10),
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
           ],
         ),
+        if (meeting.description != null && meeting.description!.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            meeting.description!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppFonts.inter(
+              fontSize: 13,
+              color: palette.dim,
+              height: 1.4,
+            ),
+          ),
+        ],
+        if (recurrenceKey != null || (!meeting.isInPerson && !hasLink)) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              if (recurrenceKey != null)
+                _SmallChip(
+                  icon: Icons.repeat_rounded,
+                  label: context.tr(recurrenceKey),
+                ),
+              if (!meeting.isInPerson && !hasLink)
+                _SmallChip(
+                  icon: Icons.link_off_rounded,
+                  label: context.tr(TranslationKeys.communityPagesNoLink),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+
+    return CommunityFormCard(
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Beside the details when there is room; under them on narrow
+          // phones so the title keeps a readable width.
+          final actionsBeside = constraints.maxWidth >= 300;
+          final actions = [
+            if (joinPill != null) joinPill,
+            if (cancelButton != null) cancelButton,
+          ];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  _DateTile(start: start),
+                  const SizedBox(width: 14),
+                  Expanded(child: details),
+                  if (actionsBeside && actions.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: actions,
+                    ),
+                  ],
+                ],
+              ),
+              if (!actionsBeside && actions.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (cancelButton != null) cancelButton,
+                    if (joinPill != null) ...[
+                      const SizedBox(width: 6),
+                      Flexible(child: joinPill),
+                    ],
+                  ],
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
 
-  void _showCancelConfirm(BuildContext context) {
-    showDialog<void>(
+  Future<void> _showCancelConfirm(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(
-          'Cancel Meeting',
-          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'Cancel "${meeting.title}"? All invitees will receive a cancellation email.',
-          style: const TextStyle(fontFamily: 'Inter'),
-        ),
+      builder: (dialogContext) => SettingsDialog(
+        title: dialogContext.tr(TranslationKeys.communityPagesCancelMeeting),
+        content: Text(dialogContext.tr(
+          TranslationKeys.communityPagesCancelBody,
+          {'title': meeting.title},
+        )),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Keep'),
+          SettingsButton(
+            label: dialogContext.tr(TranslationKeys.communityPagesKeep),
+            kind: SettingsButtonKind.neutral,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              onCancel();
-            },
+          SettingsButton(
+            label:
+                dialogContext.tr(TranslationKeys.communityPagesCancelMeeting),
+            kind: SettingsButtonKind.destructive,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) onCancel();
+  }
+}
+
+/// Raised tile with the gold short weekday over the day number.
+class _DateTile extends StatelessWidget {
+  final DateTime? start;
+
+  const _DateTile({required this.start});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final weekday = start == null
+        ? ''
+        : _dateFormat(context, (code) => DateFormat.E(code))
+            .format(start!)
+            .toUpperCase();
+    return Container(
+      width: 56,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
             child: Text(
-              'Cancel Meeting',
-              style: TextStyle(color: context.appError),
+              weekday,
+              maxLines: 1,
+              style: AppFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: palette.gold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            start == null ? '–' : '${start!.day}',
+            style: AppFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+              height: 1.2,
             ),
           ),
         ],
       ),
     );
   }
-
-  String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
-/// Shown at the top of the meetings list when the mentor has upcoming meetings
-/// whose Google Calendar events have not yet been synced with the full
-/// fellowship member list.  A single tap triggers [FellowshipMeetingsSyncCalendarRequested].
+class _SmallChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _SmallChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: palette.muted),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: palette.muted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Calendar sync banner
+// ---------------------------------------------------------------------------
+
+/// Shown above the list when the mentor has upcoming meetings whose Google
+/// Calendar events have not yet been synced with the full member list. A tap
+/// triggers [FellowshipMeetingsSyncCalendarRequested].
 class _SyncCalendarBanner extends StatelessWidget {
   final bool isSyncing;
   final VoidCallback onSync;
 
-  const _SyncCalendarBanner({
-    required this.isSyncing,
-    required this.onSync,
-  });
+  const _SyncCalendarBanner({required this.isSyncing, required this.onSync});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
       decoration: BoxDecoration(
-        color: AppColors.brandSecondary.withValues(alpha: isDark ? 0.15 : 0.12),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.brandSecondary
+            .withValues(alpha: palette.isDark ? 0.10 : 0.07),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.brandSecondary.withValues(alpha: 0.4),
+          color: palette.accentIcon.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.sync_rounded,
-            size: 18,
-            color: AppColors.brandPrimaryLight,
-          ),
-          const SizedBox(width: 10),
+          Icon(Icons.edit_calendar_outlined,
+              size: 22, color: palette.accentIcon),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               l10n.meetingsSyncBannerTitle,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                color: context.appTextPrimary,
+              style: AppFonts.inter(
+                fontSize: 14.5,
+                color: palette.text,
+                height: 1.35,
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          isSyncing
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : TextButton(
-                  onPressed: onSync,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.brandPrimaryLight,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    textStyle: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                  child: Text(l10n.meetingsSyncCalendar),
+          const SizedBox(width: 6),
+          if (isSyncing)
+            const Padding(
+              padding: EdgeInsets.all(13),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 120),
+              child: TextButton(
+                onPressed: onSync,
+                style: TextButton.styleFrom(
+                  foregroundColor: palette.accentIcon,
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
+                child: Text(
+                  l10n.meetingsSyncCalendar,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.inter(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: palette.accentIcon,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-/// Displays the physical location of an in-person meeting inside the card's
-/// action row — replaces the "Join Meeting" button for in-person events.
-class _LocationPill extends StatelessWidget {
-  final String location;
-  final bool isDark;
+// ---------------------------------------------------------------------------
+// Empty / error message
+// ---------------------------------------------------------------------------
 
-  const _LocationPill({required this.location, required this.isDark});
+class _MeetingsMessage extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String? detail;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _MeetingsMessage({
+    required this.icon,
+    required this.message,
+    this.detail,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.brandPrimary.withValues(alpha: 0.12)
-            : AppColors.brandPrimary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.brandPrimary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.location_on_rounded,
-            size: 16,
-            color: AppColors.brandPrimaryLight,
-          ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              location,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
+    final palette = ReaderPalette.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 48, color: palette.dim),
+            const SizedBox(height: 14),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppFonts.poppins(
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: context.appTextPrimary,
+                color: palette.text,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+            if (detail != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                detail!,
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color: palette.muted,
+                  height: 1.45,
+                ),
+              ),
+            ],
+            if (actionLabel != null) ...[
+              const SizedBox(height: 18),
+              CommunityCtaPill(label: actionLabel!, onPressed: onAction),
+            ],
+          ],
+        ),
       ),
     );
   }
