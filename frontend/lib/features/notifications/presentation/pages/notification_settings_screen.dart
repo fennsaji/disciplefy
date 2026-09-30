@@ -669,16 +669,73 @@ class _ReminderTimeRow extends StatelessWidget {
             context: context,
             initialTime: time,
             builder: (ctx, child) => Theme(
-              data: Theme.of(ctx).copyWith(
-                colorScheme: Theme.of(ctx).colorScheme.copyWith(
-                      primary: settingsPrimaryFill,
-                      onPrimary: Colors.white,
-                    ),
-              ),
+              data:
+                  reminderTimePickerTheme(Theme.of(ctx), ReaderPalette.of(ctx)),
               child: child!,
             ),
           );
           if (picked != null && picked != time) onPicked(picked);
         },
       );
+}
+
+/// Theme for the reminder time picker: palette card surface, raised dial,
+/// ctaFill selection and Poppins/Inter text so it matches the settings sheets.
+@visibleForTesting
+ThemeData reminderTimePickerTheme(ThemeData base, ReaderPalette palette) {
+  Color selected(Color on, Color off) => WidgetStateColor.resolveWith(
+      (states) => states.contains(WidgetState.selected) ? on : off);
+
+  final pill = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
+  return base.copyWith(
+    colorScheme: base.colorScheme.copyWith(
+      primary: palette.ctaFill,
+      onPrimary: palette.ctaInk,
+      surface: palette.card,
+      onSurface: palette.text,
+      surfaceTint: Colors.transparent,
+    ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: palette.card,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: palette.hairline),
+      ),
+      helpTextStyle: AppFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.4,
+        color: palette.gold,
+      ),
+      hourMinuteShape: pill,
+      hourMinuteColor: selected(palette.ctaFill, palette.raised),
+      hourMinuteTextColor: selected(palette.ctaInk, palette.text),
+      hourMinuteTextStyle:
+          AppFonts.poppins(fontSize: 44, fontWeight: FontWeight.w600),
+      dayPeriodShape: pill,
+      dayPeriodBorderSide: BorderSide(color: palette.outline),
+      dayPeriodColor: selected(palette.ctaFill, Colors.transparent),
+      dayPeriodTextColor: selected(palette.ctaInk, palette.muted),
+      dayPeriodTextStyle:
+          AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+      dialBackgroundColor: palette.raised,
+      dialHandColor: palette.ctaFill,
+      dialTextColor: selected(palette.ctaInk, palette.text),
+      dialTextStyle: AppFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+      entryModeIconColor: palette.muted,
+      cancelButtonStyle: TextButton.styleFrom(
+        foregroundColor: palette.muted,
+        textStyle: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+      ),
+      confirmButtonStyle: TextButton.styleFrom(
+        backgroundColor: palette.ctaFill,
+        foregroundColor: palette.ctaInk,
+        textStyle: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+      ),
+    ),
+  );
 }

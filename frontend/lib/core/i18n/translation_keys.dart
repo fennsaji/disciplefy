@@ -1,8 +1,6 @@
 /// Translation key constants for type-safe translation access
 class TranslationKeys {
   // App status: maintenance, error page, exit/join prompts, shell toasts.
-  static const appStatusNavigationRestricted =
-      'app_status.navigation_restricted';
   static const appStatusMaintenanceEyebrow = 'app_status.maintenance_eyebrow';
   static const appStatusMaintenanceTitle = 'app_status.maintenance_title';
   static const appStatusMaintenanceCheck = 'app_status.maintenance_check';
@@ -474,6 +472,59 @@ class TranslationKeys {
       'auth_notices.profile_select_age_group';
   static const profileSetupSelectInterest =
       'auth_notices.profile_select_interest';
+
+  // Phone sign-in and profile setup screens
+  static const phoneAuthEyebrow = 'phone_auth.eyebrow';
+  static const phoneAuthTitle = 'phone_auth.title';
+  static const phoneAuthSubtitle = 'phone_auth.subtitle';
+  static const phoneAuthPhoneLabel = 'phone_auth.phone_label';
+  static const phoneAuthPhoneHint = 'phone_auth.phone_hint';
+  static const phoneAuthCountryCode = 'phone_auth.country_code';
+  static const phoneAuthPhoneRequired = 'phone_auth.phone_required';
+  static const phoneAuthPhoneTooShort = 'phone_auth.phone_too_short';
+  static const phoneAuthSecureTitle = 'phone_auth.secure_title';
+  static const phoneAuthSecureBody = 'phone_auth.secure_body';
+  static const phoneAuthSendCode = 'phone_auth.send_code';
+  static const phoneAuthOtpEyebrow = 'phone_auth.otp_eyebrow';
+  static const phoneAuthOtpTitle = 'phone_auth.otp_title';
+  static const phoneAuthOtpSentTo = 'phone_auth.otp_sent_to';
+  static const phoneAuthOtpLabel = 'phone_auth.otp_label';
+  static const phoneAuthOtpDigit = 'phone_auth.otp_digit';
+  static const phoneAuthOtpExpiresIn = 'phone_auth.otp_expires_in';
+  static const phoneAuthOtpResend = 'phone_auth.otp_resend';
+  static const phoneAuthOtpResendIn = 'phone_auth.otp_resend_in';
+  static const phoneAuthOtpHelp = 'phone_auth.otp_help';
+  static const phoneAuthOtpVerify = 'phone_auth.otp_verify';
+  static const profileSetupEyebrow = 'profile_setup.eyebrow';
+  static const profileSetupTitle = 'profile_setup.title';
+  static const profileSetupSubtitle = 'profile_setup.subtitle';
+  static const profileSetupAddPhoto = 'profile_setup.add_photo';
+  static const profileSetupName = 'profile_setup.name';
+  static const profileSetupFirstName = 'profile_setup.first_name';
+  static const profileSetupLastName = 'profile_setup.last_name';
+  static const profileSetupFirstNameRequired =
+      'profile_setup.first_name_required';
+  static const profileSetupLastNameRequired =
+      'profile_setup.last_name_required';
+  static const profileSetupAgeGroup = 'profile_setup.age_group';
+  static const profileSetupInterests = 'profile_setup.interests';
+  static const profileSetupInterestsHint = 'profile_setup.interests_hint';
+  static const profileSetupContinue = 'profile_setup.continue';
+  static const profileSetupInterestPrayer = 'profile_setup.interest_prayer';
+  static const profileSetupInterestWorship = 'profile_setup.interest_worship';
+  static const profileSetupInterestCommunity =
+      'profile_setup.interest_community';
+  static const profileSetupInterestBibleStudy =
+      'profile_setup.interest_bible_study';
+  static const profileSetupInterestTheology = 'profile_setup.interest_theology';
+  static const profileSetupInterestMissions = 'profile_setup.interest_missions';
+  static const profileSetupInterestYouthMinistry =
+      'profile_setup.interest_youth_ministry';
+  static const profileSetupInterestFamily = 'profile_setup.interest_family';
+  static const profileSetupInterestLeadership =
+      'profile_setup.interest_leadership';
+  static const profileSetupInterestEvangelism =
+      'profile_setup.interest_evangelism';
 
   // Password Reset Screen
   static const passwordResetTitle = 'password_reset.title';
@@ -1586,6 +1637,7 @@ class TranslationKeys {
   static const learningPathsLoadingDetails = 'learning_paths.loading_details';
   static const learningPathsEnrolling = 'learning_paths.enrolling';
   static const learningPathsFailedToLoad = 'learning_paths.failed_to_load';
+  static const learningPathsOfflineTitle = 'learning_paths.offline_title';
   static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
   static const learningPathsPercentComplete = 'learning_paths.percent_complete';
 

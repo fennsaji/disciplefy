@@ -21,7 +21,12 @@ import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../shared/widgets/photo_wash.dart';
 import '../../../../shared/widgets/popup.dart'
-    show PopupEyebrow, PopupPrimaryButton, kPopupRadius;
+    show
+        PopupEyebrow,
+        PopupIconCircle,
+        PopupPrimaryButton,
+        PopupTone,
+        kPopupRadius;
 import '../../../settings/presentation/widgets/settings_group.dart'
     show
         SettingsButton,
@@ -513,7 +518,6 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   }
 
   Widget _buildErrorState(BuildContext context, LearningPathsError state) {
-    final theme = Theme.of(context);
     final palette = ReaderPalette.of(context);
     final isOffline =
         context.read<ConnectivityBloc>().state is ConnectivityOffline;
@@ -522,18 +526,17 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       children: [
         _buildTopBar(),
         PathDetailStatusView(
-          leading: Icon(
-            isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
+          leading: PopupIconCircle(
+            icon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
+            tone: isOffline ? PopupTone.indigo : PopupTone.gold,
             size: 64,
-            color: isOffline ? palette.muted : theme.colorScheme.error,
           ),
           title: isOffline
-              ? "You're offline"
+              ? context.tr(TranslationKeys.learningPathsOfflineTitle)
               : context.tr(TranslationKeys.learningPathsFailedToLoad),
           message: isOffline
               ? context.tr(TranslationKeys.downloadsNotDownloadedOffline)
               : context.tr(TranslationKeys.studyTopicsSomethingWentWrong),
-          messageColor: isOffline ? palette.muted : theme.colorScheme.error,
           action: !isOffline
               ? FilledButton(
                   onPressed: _loadPathDetails,

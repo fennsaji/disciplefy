@@ -5,6 +5,8 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/reset_progress_result.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
@@ -308,5 +310,47 @@ void main() {
         findsNothing,
       );
     });
+  });
+
+  group('overflow menu', () {
+    for (final dark in [true, false]) {
+      testWidgets(
+          'sits on the palette card at 320px (${dark ? 'dark' : 'light'})',
+          (tester) async {
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+            home: BlocProvider<LearningPathsBloc>.value(
+              value: learningPathsBloc,
+              child: const Scaffold(
+                appBar: StudyTopicsAppBar(),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
+
+        final palette =
+            ReaderPalette.of(tester.element(find.byIcon(Icons.more_vert)));
+        final menu = tester.widget<Material>(find
+            .ancestor(
+                of: find.text(_resetMenuLabel), matching: find.byType(Material))
+            .last);
+        expect(menu.color, palette.card);
+        expect(tester.takeException(), isNull);
+
+        // The destructive item still opens the reset confirmation.
+        await tester.tap(find.text(_resetMenuLabel));
+        await tester.pumpAndSettle();
+        expect(find.byType(TextField), findsOneWidget);
+      });
+    }
   });
 }

@@ -598,7 +598,6 @@ class PathDetailStatusView extends StatelessWidget {
   final Widget leading;
   final String title;
   final String? message;
-  final Color? messageColor;
   final Widget? action;
 
   const PathDetailStatusView({
@@ -606,7 +605,6 @@ class PathDetailStatusView extends StatelessWidget {
     required this.leading,
     required this.title,
     this.message,
-    this.messageColor,
     this.action,
   });
 
@@ -635,7 +633,7 @@ class PathDetailStatusView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppFonts.inter(
                 fontSize: 14,
-                color: messageColor ?? palette.muted,
+                color: palette.muted,
               ),
             ),
           ],

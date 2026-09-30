@@ -1,21 +1,24 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/phone_auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/phone_auth_event.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/phone_auth_state.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
-import '../bloc/phone_auth_bloc.dart';
-import '../bloc/phone_auth_event.dart';
-import '../bloc/phone_auth_state.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/services/auth_aware_navigation_service.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_form.dart';
 
 /// OTP verification screen for phone authentication
 class OTPVerificationScreen extends StatefulWidget {
@@ -200,10 +203,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               Logger.info(
                 'OTP resent successfully',
                 tag: 'PHONE_AUTH',
-                context: {
-                  'phone_number': state.formattedPhoneNumber,
-                  'expires_in': state.expiresIn,
-                },
+                context: {'expires_in': state.expiresIn},
               );
 
               showAppSnackBar(
@@ -222,269 +222,157 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           },
         ),
       ],
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-            onPressed: () => context.pop(),
+      child: WelcomeFormPage(
+        photo: WelcomePhotos.wheatDawn,
+        backKey: const Key('otp_back'),
+        eyebrow: context.tr(TranslationKeys.phoneAuthOtpEyebrow),
+        title: context.tr(TranslationKeys.phoneAuthOtpTitle),
+        subtitle: _buildSentToLine(context),
+        children: [
+          _buildOTPInputSection(context),
+          const SizedBox(height: 20),
+          _buildTimerSection(context),
+          const SizedBox(height: 20),
+          WelcomeInfoCard(
+            icon: Icons.info_outline_rounded,
+            body: context.tr(TranslationKeys.phoneAuthOtpHelp),
           ),
-          title: Text(
-            'Verify Phone',
-            style: AppFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          centerTitle: true,
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header section
-                _buildHeaderSection(context),
-
-                const SizedBox(height: 32),
-
-                // OTP input section
-                _buildOTPInputSection(context),
-
-                const SizedBox(height: 24),
-
-                // Timer and resend section
-                _buildTimerSection(context),
-
-                const SizedBox(height: 32),
-
-                // Info section
-                _buildInfoSection(context),
-
-                const Spacer(),
-
-                // Verify button
-                _buildVerifyButton(context),
-              ],
-            ),
-          ),
-        ),
+          const SizedBox(height: 36),
+          _buildVerifyButton(context),
+        ],
       ),
     );
   }
 
-  /// Builds the header section with title and phone number
-  Widget _buildHeaderSection(BuildContext context) {
-    final theme = Theme.of(context);
+  /// "We sent a code to {phone}" with the number emphasised.
+  Widget _buildSentToLine(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     final formattedPhone = '${widget.countryCode} ${widget.phoneNumber}';
+    final sentence = context.tr(TranslationKeys.phoneAuthOtpSentTo,
+        {'phone': '\u0000'}).split('\u0000');
+    final style = welcomeSubtitleStyle(context);
+
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          TextSpan(text: sentence.first),
+          TextSpan(
+            text: formattedPhone,
+            style: style.copyWith(
+              fontWeight: FontWeight.w600,
+              color: palette.isDark ? Colors.white : palette.text,
+            ),
+          ),
+          if (sentence.length > 1) TextSpan(text: sentence.sublist(1).join()),
+        ],
+      ),
+    );
+  }
+
+  /// Six single-digit fields that advance focus as digits are typed.
+  Widget _buildOTPInputSection(BuildContext context) {
+    final palette = ReaderPalette.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Enter verification code',
-          style: AppFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onBackground,
-          ),
-        ),
-        const SizedBox(height: 8),
-        RichText(
-          text: TextSpan(
-            style: AppFonts.inter(
-              fontSize: 16,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-              height: 1.5,
-            ),
-            children: [
-              const TextSpan(text: 'We sent a code to '),
-              TextSpan(
-                text: formattedPhone,
-                style: AppFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+        WelcomeFieldLabel(context.tr(TranslationKeys.phoneAuthOtpLabel)),
+        Row(
+          children: [
+            for (var index = 0; index < 6; index++) ...[
+              if (index > 0) const SizedBox(width: 8),
+              Expanded(
+                child: Semantics(
+                  label: context.tr(
+                    TranslationKeys.phoneAuthOtpDigit,
+                    {'n': '${index + 1}'},
+                  ),
+                  child: TextFormField(
+                    key: Key('otp_digit_$index'),
+                    controller: _otpControllers[index],
+                    focusNode: _otpFocusNodes[index],
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    autofillHints:
+                        index == 0 ? const [AutofillHints.oneTimeCode] : null,
+                    maxLength: 1,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    decoration: welcomeFieldDecoration(
+                      context,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    style: AppFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        // State update to trigger button rebuild
+                      });
+
+                      if (value.isNotEmpty && index < 5) {
+                        // Move to next field
+                        _otpFocusNodes[index + 1].requestFocus();
+                      } else if (value.isEmpty && index > 0) {
+                        // Move to previous field
+                        _otpFocusNodes[index - 1].requestFocus();
+                      }
+
+                      // Auto-verify when all fields are filled
+                      if (index == 5 && value.isNotEmpty) {
+                        final otp = _getOTPCode();
+                        if (otp.length == 6) {
+                          _verifyOTP();
+                        }
+                      }
+                    },
+                  ),
                 ),
               ),
             ],
-          ),
+          ],
         ),
       ],
     );
   }
 
-  /// Builds the OTP input section with 6 digit fields
-  Widget _buildOTPInputSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Verification Code',
-          style: AppFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(6, (index) {
-            return SizedBox(
-              width: 48,
-              height: 56,
-              child: TextFormField(
-                controller: _otpControllers[index],
-                focusNode: _otpFocusNodes[index],
-                textAlign: TextAlign.center,
-                keyboardType: TextInputType.number,
-                maxLength: 1,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                decoration: InputDecoration(
-                  counterText: '',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.5),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.5),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-                style: AppFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    // State update to trigger button rebuild
-                  });
-
-                  if (value.isNotEmpty && index < 5) {
-                    // Move to next field
-                    _otpFocusNodes[index + 1].requestFocus();
-                  } else if (value.isEmpty && index > 0) {
-                    // Move to previous field
-                    _otpFocusNodes[index - 1].requestFocus();
-                  }
-
-                  // Auto-verify when all fields are filled
-                  if (index == 5 && value.isNotEmpty) {
-                    final otp = _getOTPCode();
-                    if (otp.length == 6) {
-                      _verifyOTP();
-                    }
-                  }
-                },
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the timer and resend section
+  /// Expiry countdown and the resend link.
   Widget _buildTimerSection(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final time = _formatTime(_remainingSeconds);
 
     return Center(
       child: Column(
         children: [
           if (!_canResend) ...[
             Text(
-              'Code expires in ${_formatTime(_remainingSeconds)}',
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
+              context.tr(TranslationKeys.phoneAuthOtpExpiresIn, {'time': time}),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(fontSize: 14, color: palette.muted),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
           ],
           TextButton(
+            key: const Key('otp_resend'),
             onPressed: _canResend ? _resendOTP : null,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              foregroundColor: palette.accentIcon,
+            ),
             child: Text(
               _canResend
-                  ? 'Resend Code'
-                  : 'Resend in ${_formatTime(_remainingSeconds)}',
+                  ? context.tr(TranslationKeys.phoneAuthOtpResend)
+                  : context
+                      .tr(TranslationKeys.phoneAuthOtpResendIn, {'time': time}),
+              textAlign: TextAlign.center,
               style: AppFonts.inter(
-                fontSize: 14,
+                fontSize: 14.5,
                 fontWeight: FontWeight.w600,
-                color: _canResend
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the info section
-  Widget _buildInfoSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 20,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Didn\'t receive the code? Check your spam folder or try resending.',
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                height: 1.4,
+                color: _canResend ? palette.accentIcon : palette.dim,
               ),
             ),
           ),
@@ -497,44 +385,12 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   Widget _buildVerifyButton(BuildContext context) {
     return BlocBuilder<PhoneAuthBloc, PhoneAuthState>(
       builder: (context, state) {
-        final isLoading = state is PhoneAuthLoadingState;
-        final theme = Theme.of(context);
-        final otpCode = _getOTPCode();
-        final isOTPComplete = otpCode.length == 6;
-
-        return SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: (isLoading || !isOTPComplete) ? null : _verifyOTP,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.appInteractive,
-              foregroundColor: theme.colorScheme.onPrimary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              disabledBackgroundColor:
-                  theme.colorScheme.primary.withOpacity(0.5),
-            ),
-            child: isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.colorScheme.onPrimary),
-                    ),
-                  )
-                : Text(
-                    'Verify Code',
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
+        final isOTPComplete = _getOTPCode().length == 6;
+        return WelcomePrimaryButton(
+          key: const Key('otp_verify'),
+          label: context.tr(TranslationKeys.phoneAuthOtpVerify),
+          isLoading: state is PhoneAuthLoadingState,
+          onPressed: isOTPComplete ? _verifyOTP : null,
         );
       },
     );
@@ -578,7 +434,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       tag: 'PHONE_AUTH',
       context: {
         'country_code': widget.countryCode,
-        'phone_number': widget.phoneNumber,
         'otp_length': otpCode.length,
       },
     );
@@ -597,10 +452,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     Logger.info(
       'Resending OTP',
       tag: 'PHONE_AUTH',
-      context: {
-        'country_code': widget.countryCode,
-        'phone_number': widget.phoneNumber,
-      },
+      context: {'country_code': widget.countryCode},
     );
 
     context.read<PhoneAuthBloc>().add(

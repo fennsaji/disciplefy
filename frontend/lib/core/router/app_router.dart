@@ -12,8 +12,6 @@ import '../screens/maintenance_screen.dart';
 import '../services/system_config_service.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
-import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
-import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/presentation/screens/study_guide_open_screen.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
@@ -166,16 +164,6 @@ class AppRouter {
         builder: (context, state) =>
             const MaxWidthWrapper(child: ProfileSetupScreen()),
       ),
-      // GoRoute(
-      //   path: AppRoutes.onboardingLanguage,
-      //   name: 'onboarding_language',
-      //   builder: (context, state) => const OnboardingLanguagePage(),
-      // ),
-      // GoRoute(
-      //   path: AppRoutes.onboardingPurpose,
-      //   name: 'onboarding_purpose',
-      //   builder: (context, state) => const OnboardingPurposePage(),
-      // ),
 
       // Main App Routes (using StatefulShellRoute for proper navigation)
       StatefulShellRoute.indexedStack(
@@ -1306,8 +1294,6 @@ class AppRouter {
 // Navigation Extensions
 extension AppRouterExtension on GoRouter {
   void goToOnboarding() => go(AppRoutes.onboarding);
-  // void goToOnboardingLanguage() => go(AppRoutes.onboardingLanguage);
-  // void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
   void goToGenerateStudy() => go(AppRoutes.generateStudy);
   void goToStudyGuideWithExtra(Map<String, dynamic> extra) =>

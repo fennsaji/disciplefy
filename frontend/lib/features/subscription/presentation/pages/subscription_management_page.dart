@@ -451,6 +451,7 @@ class _SubscriptionManagementPageState
           style: TextButton.styleFrom(
             foregroundColor: context.appError,
             minimumSize: const Size.fromHeight(44),
+            shape: const StadiumBorder(),
           ),
           child: Text(
             context.tr(TranslationKeys.subscriptionCancelImmediately),

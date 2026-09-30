@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Opens a modal bottom sheet in the settings style. [builder] usually
@@ -133,7 +134,8 @@ class SettingsSheetGroup extends StatelessWidget {
   }
 }
 
-/// Dialog in the settings style: card fill, 22 radius, Poppins title, pill actions.
+/// Dialog in the settings style on the shared [PopupDialog] shell: card fill,
+/// hairline border, left-aligned Poppins title, muted body and pill actions.
 class SettingsDialog extends StatelessWidget {
   final String title;
   final Color? titleColor;
@@ -151,59 +153,44 @@ class SettingsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    return Dialog(
-      backgroundColor: palette.card,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-        side: BorderSide(color: palette.hairline),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                title,
-                style: AppFonts.poppins(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor ?? palette.text,
-                ),
-              ),
-              const SizedBox(height: 12),
-              DefaultTextStyle.merge(
-                style: AppFonts.inter(
-                  fontSize: 14.5,
-                  color: palette.muted,
-                  height: 1.5,
-                ),
-                child: content,
-              ),
-              const SizedBox(height: 22),
-              // Pill actions stack when a label would not fit side by side.
-              if (actions.every((a) => a is SettingsButton))
-                SettingsButtonRow(
-                  buttons: actions.cast<SettingsButton>(),
-                )
-              else
-                Row(
-                  children: [
-                    for (var i = 0; i < actions.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 10),
-                      Expanded(child: actions[i]),
-                    ],
-                  ],
-                ),
-            ],
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      maxWidth: 420,
+      children: [
+        Text(
+          title,
+          style: AppFonts.poppins(
+            fontSize: 19,
+            fontWeight: FontWeight.w600,
+            color: titleColor ?? palette.text,
           ),
         ),
-      ),
+        const SizedBox(height: 12),
+        DefaultTextStyle.merge(
+          style: AppFonts.inter(
+            fontSize: 14.5,
+            color: palette.muted,
+            height: 1.5,
+          ),
+          child: content,
+        ),
+        const SizedBox(height: 22),
+        // Pill actions stack when a label would not fit side by side.
+        if (actions.every((a) => a is SettingsButton))
+          SettingsButtonRow(
+            buttons: actions.cast<SettingsButton>(),
+          )
+        else
+          Row(
+            children: [
+              for (var i = 0; i < actions.length; i++) ...[
+                if (i > 0) const SizedBox(width: 10),
+                Expanded(child: actions[i]),
+              ],
+            ],
+          ),
+      ],
     );
   }
 }

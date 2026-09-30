@@ -22,6 +22,8 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/learning_path_detail_page.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_detail_parts.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart'
+    show PopupIconCircle;
 
 import '../../../../helpers/welcome_test_harness.dart';
 import '../../../settings/text_fit.dart';
@@ -266,6 +268,31 @@ void main() {
         find.text(translations.getTranslation(TranslationKeys.commonRetry)));
     verify(() => bloc.add(any(that: isA<LoadLearningPathDetails>())))
         .called(greaterThanOrEqualTo(1));
+  });
+
+  group('error and offline states fit 320x640', () {
+    for (final offline in [false, true]) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [true, false]) {
+          testWidgets(
+              '${offline ? 'offline' : 'error'} ${language.code} '
+              '${dark ? 'dark' : 'light'}', (tester) async {
+            when(() => connectivity.state).thenReturn(
+                offline ? ConnectivityOffline() : ConnectivityOnline());
+            await pump(tester, const LearningPathsError(message: 'boom'),
+                dark: dark, language: language);
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+            // Palette icon disc, not a bare colorScheme.error icon.
+            expect(find.byType(PopupIconCircle), findsOneWidget);
+            final title = translations.getTranslation(offline
+                ? TranslationKeys.learningPathsOfflineTitle
+                : TranslationKeys.learningPathsFailedToLoad);
+            expect(find.text(title), findsOneWidget);
+          });
+        }
+      }
+    }
   });
 
   testWidgets('topic rows: locked rows ignore taps', (tester) async {

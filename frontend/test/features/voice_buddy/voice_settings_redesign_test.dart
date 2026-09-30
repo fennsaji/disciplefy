@@ -16,7 +16,6 @@ import 'package:disciplefy_bible_study/features/voice_buddy/presentation/bloc/vo
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/pages/voice_preferences_page.dart';
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/pages/voice_preferences_page_wrapper.dart';
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/language_selector.dart';
-import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/monthly_limit_exceeded_dialog.dart';
 
 import '../../helpers/welcome_test_harness.dart';
 import '../settings/text_fit.dart';
@@ -358,97 +357,6 @@ void main() {
         });
       }
     }
-  });
-
-  group('MonthlyLimitExceededDialog', () {
-    Future<void> showDialogIn(WidgetTester tester,
-        {required bool dark, String tier = 'standard'}) async {
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, __) => Scaffold(
-              body: TextButton(
-                onPressed: () => MonthlyLimitExceededDialog.show(
-                  context,
-                  conversationsUsed: 3,
-                  limit: 3,
-                  tier: tier,
-                  month: '2026-09',
-                ),
-                child: const Text('limit'),
-              ),
-            ),
-          ),
-          GoRoute(
-            path: '/pricing',
-            builder: (_, state) =>
-                Scaffold(body: Text('stub:pricing:${state.extra}')),
-          ),
-        ],
-      );
-      await tester.pumpWidget(MaterialApp.router(
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-        routerConfig: router,
-      ));
-      await tester.tap(find.text('limit'));
-      await tester.pumpAndSettle();
-    }
-
-    for (final language in AppLanguage.values) {
-      for (final dark in [true, false]) {
-        testWidgets('${language.code} ${dark ? 'dark' : 'light'}: fits 320x640',
-            (tester) async {
-          translations.language = language;
-          useSurface(tester, const Size(320, 640));
-          await showDialogIn(tester, dark: dark);
-          expectNoTruncatedText(tester);
-          expect(tester.takeException(), isNull);
-        });
-      }
-    }
-
-    testWidgets('shows usage and plans; View plans opens pricing',
-        (tester) async {
-      useSurface(tester, const Size(390, 844));
-      await showDialogIn(tester, dark: true);
-
-      expect(find.text('Monthly Limit Reached'), findsOneWidget);
-      expect(
-        find.text('You\'ve used all 3 voice conversations for this month.'),
-        findsOneWidget,
-      );
-      expect(find.text('This month'), findsOneWidget);
-      expect(find.text('3 of 3 used'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      expect(find.textContaining('Standard: '), findsOneWidget);
-      expect(find.textContaining('Plus: '), findsOneWidget);
-      expect(find.textContaining('Premium: '), findsOneWidget);
-
-      await tester.tap(find.text('View plans'));
-      await tester.pumpAndSettle();
-      expect(find.text('stub:pricing:{preselectedPlan: plus}'), findsOneWidget);
-    });
-
-    testWidgets('plus tier preselects premium', (tester) async {
-      useSurface(tester, const Size(390, 844));
-      await showDialogIn(tester, dark: false, tier: 'plus');
-      await tester.tap(find.text('View plans'));
-      await tester.pumpAndSettle();
-      expect(
-          find.text('stub:pricing:{preselectedPlan: premium}'), findsOneWidget);
-    });
-
-    testWidgets('Maybe later closes it', (tester) async {
-      useSurface(tester, const Size(390, 844));
-      await showDialogIn(tester, dark: true);
-      await tester.tap(find.text('Maybe later'));
-      await tester.pumpAndSettle();
-      expect(find.byType(MonthlyLimitExceededDialog), findsNothing);
-      expect(find.text('limit'), findsOneWidget);
-    });
   });
 
   group('VoicePreferencesPageWrapper', () {

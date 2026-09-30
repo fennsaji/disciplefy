@@ -57,7 +57,6 @@ import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../shared/widgets/popup.dart';
 import '../../../settings/presentation/widgets/settings_group.dart'
     show SettingsButton, SettingsButtonKind;
-import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
@@ -3803,25 +3802,18 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: Container(
-          color: Theme.of(context).colorScheme.surface,
-          child: ShareGuideSheet(
-            studyGuideId: widget.studyGuideId,
-            guideTitle: widget.guideTitle,
-            guideInputType: widget.guideInputType,
-            guideLanguage: widget.guideLanguage,
-            guideStudyMode: widget.guideStudyMode,
-            guideSummary: widget.guideSummary,
-            fellowships: widget.userFellowships,
-            content: text,
-            initialSelectedIds: _selectedIds,
-          ),
-        ),
+      // ShareGuideSheet paints its own palette surface, matching the other
+      // call sites that open it on a transparent sheet.
+      builder: (_) => ShareGuideSheet(
+        studyGuideId: widget.studyGuideId,
+        guideTitle: widget.guideTitle,
+        guideInputType: widget.guideInputType,
+        guideLanguage: widget.guideLanguage,
+        guideStudyMode: widget.guideStudyMode,
+        guideSummary: widget.guideSummary,
+        fellowships: widget.userFellowships,
+        content: text,
+        initialSelectedIds: _selectedIds,
       ),
     );
 

@@ -1170,15 +1170,18 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       initialValue: _isLanguageDefault ? null : _selectedLanguage,
       onSelected: _switchLanguage,
       offset: const Offset(0, 44),
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: ReaderPalette.of(context).card,
+      surfaceTintColor: Colors.transparent,
+      elevation: 6,
       tooltip: context.tr(TranslationKeys.generateStudyLanguage),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: ReaderPalette.of(context).hairline),
       ),
       itemBuilder: (context) => [
         _buildLanguageMenuItem(null,
             context.tr(TranslationKeys.generateStudyDefaultLanguageOption)),
-        const PopupMenuDivider(),
+        PopupMenuDivider(color: ReaderPalette.of(context).hairline),
         _buildLanguageMenuItem(StudyLanguage.english, 'English'),
         _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
         _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
@@ -1234,6 +1237,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     final isSelected = language == null
         ? _isLanguageDefault
         : (!_isLanguageDefault && _selectedLanguage == language);
+    final palette = ReaderPalette.of(context);
     return PopupMenuItem<StudyLanguage?>(
       value: language,
       child: Row(
@@ -1244,15 +1248,12 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onBackground,
+                color: isSelected ? palette.accentIcon : palette.text,
               ),
             ),
           ),
           if (isSelected)
-            Icon(Icons.check,
-                color: Theme.of(context).colorScheme.primary, size: 18),
+            Icon(Icons.check_rounded, color: palette.accentIcon, size: 18),
         ],
       ),
     );

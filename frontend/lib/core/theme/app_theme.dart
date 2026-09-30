@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'reader_palette.dart';
 // Note: Using bundled fonts directly from pubspec.yaml instead of GoogleFonts
 // to avoid AssetManifest.json issues when allowRuntimeFetching = false
 
@@ -138,6 +139,8 @@ class AppTheme {
         snackBarTheme: _snackBarTheme(isDark: false),
         dialogTheme: _dialogTheme(isDark: false),
         bottomSheetTheme: _bottomSheetTheme(isDark: false),
+        timePickerTheme: _timePickerTheme(_lightPalette),
+        datePickerTheme: _datePickerTheme(_lightPalette),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(_inputRadius),
@@ -291,6 +294,8 @@ class AppTheme {
         snackBarTheme: _snackBarTheme(isDark: true),
         dialogTheme: _dialogTheme(isDark: true),
         bottomSheetTheme: _bottomSheetTheme(isDark: true),
+        timePickerTheme: _timePickerTheme(_darkPalette),
+        datePickerTheme: _datePickerTheme(_darkPalette),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(_inputRadius),
@@ -454,5 +459,115 @@ class AppTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
         ),
+      );
+
+  static ReaderPalette get _lightPalette =>
+      ReaderPalette.resolve(isDark: false, page: AppColors.lightScaffold);
+
+  static ReaderPalette get _darkPalette =>
+      ReaderPalette.resolve(isDark: true, page: AppColors.darkScaffold);
+
+  static WidgetStateColor _selectedColor(Color on, Color off) =>
+      WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? on : off);
+
+  static TextStyle _inter(double size, FontWeight weight, [Color? color]) =>
+      TextStyle(
+        fontFamily: 'Inter',
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+      );
+
+  static ButtonStyle _pickerCancelStyle(ReaderPalette p) =>
+      TextButton.styleFrom(
+        foregroundColor: p.muted,
+        textStyle: _inter(14, FontWeight.w600),
+        shape: const StadiumBorder(),
+      );
+
+  static ButtonStyle _pickerConfirmStyle(ReaderPalette p) =>
+      TextButton.styleFrom(
+        backgroundColor: p.ctaFill,
+        foregroundColor: p.ctaInk,
+        textStyle: _inter(14, FontWeight.w600),
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+      );
+
+  static RoundedRectangleBorder _pickerShape(ReaderPalette p) =>
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: p.hairline),
+      );
+
+  /// Stock time picker on the palette card: raised dial, ctaFill selection,
+  /// gold eyebrow help text and pill actions.
+  static TimePickerThemeData _timePickerTheme(ReaderPalette p) {
+    final segment =
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
+    return TimePickerThemeData(
+      backgroundColor: p.card,
+      elevation: 0,
+      shape: _pickerShape(p),
+      helpTextStyle:
+          _inter(11, FontWeight.w700, p.gold).copyWith(letterSpacing: 1.4),
+      hourMinuteShape: segment,
+      hourMinuteColor: _selectedColor(p.ctaFill, p.raised),
+      hourMinuteTextColor: _selectedColor(p.ctaInk, p.text),
+      hourMinuteTextStyle: const TextStyle(
+        fontFamily: 'Poppins',
+        fontSize: 44,
+        fontWeight: FontWeight.w600,
+      ),
+      dayPeriodShape: segment,
+      dayPeriodBorderSide: BorderSide(color: p.outline),
+      dayPeriodColor: _selectedColor(p.ctaFill, Colors.transparent),
+      dayPeriodTextColor: _selectedColor(p.ctaInk, p.muted),
+      dayPeriodTextStyle: _inter(14, FontWeight.w600),
+      dialBackgroundColor: p.raised,
+      dialHandColor: p.ctaFill,
+      dialTextColor: _selectedColor(p.ctaInk, p.text),
+      dialTextStyle: _inter(15, FontWeight.w500),
+      entryModeIconColor: p.muted,
+      cancelButtonStyle: _pickerCancelStyle(p),
+      confirmButtonStyle: _pickerConfirmStyle(p),
+    );
+  }
+
+  /// Stock date picker on the palette card with ctaFill selection and a gold
+  /// today ring.
+  static DatePickerThemeData _datePickerTheme(ReaderPalette p) =>
+      DatePickerThemeData(
+        backgroundColor: p.card,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: _pickerShape(p),
+        headerBackgroundColor: p.card,
+        headerForegroundColor: p.text,
+        headerHelpStyle:
+            _inter(11, FontWeight.w700, p.gold).copyWith(letterSpacing: 1.4),
+        headerHeadlineStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 28,
+          fontWeight: FontWeight.w600,
+        ),
+        dividerColor: p.hairline,
+        weekdayStyle: _inter(12, FontWeight.w600, p.muted),
+        dayStyle: _inter(14, FontWeight.w500),
+        dayForegroundColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return p.ctaInk;
+          if (states.contains(WidgetState.disabled)) return p.dim;
+          return p.text;
+        }),
+        dayBackgroundColor: _selectedColor(p.ctaFill, Colors.transparent),
+        todayForegroundColor: _selectedColor(p.ctaInk, p.gold),
+        todayBackgroundColor: _selectedColor(p.ctaFill, Colors.transparent),
+        todayBorder: BorderSide(color: p.gold),
+        yearStyle: _inter(14, FontWeight.w500),
+        yearForegroundColor: _selectedColor(p.ctaInk, p.text),
+        yearBackgroundColor: _selectedColor(p.ctaFill, Colors.transparent),
+        cancelButtonStyle: _pickerCancelStyle(p),
+        confirmButtonStyle: _pickerConfirmStyle(p),
       );
 }

@@ -73,11 +73,19 @@ class ReaderPalette {
 
   factory ReaderPalette.of(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    return ReaderPalette.resolve(
+      isDark: theme.brightness == Brightness.dark,
+      page: theme.scaffoldBackgroundColor,
+    );
+  }
+
+  /// Palette for a brightness without a [BuildContext], for building theme
+  /// data. [page] is the scaffold background of that theme.
+  factory ReaderPalette.resolve({required bool isDark, required Color page}) {
     if (isDark) {
       return ReaderPalette._(
         isDark: true,
-        page: theme.scaffoldBackgroundColor,
+        page: page,
         card: _darkCard,
         raised: _darkRaised,
         hairline: Colors.white.withValues(alpha: 0.07),
@@ -93,7 +101,7 @@ class ReaderPalette {
     }
     return ReaderPalette._(
       isDark: false,
-      page: theme.scaffoldBackgroundColor,
+      page: page,
       card: Colors.white,
       raised: _lightRaised,
       hairline: _lightInk.withValues(alpha: 0.08),

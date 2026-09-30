@@ -525,15 +525,10 @@ class _LevelCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: palette.isDark
-              ? [
-                  settingsPrimaryFill.withValues(alpha: 0.22),
-                  palette.card,
-                ]
-              : [
-                  const Color(0xFFE6E4FC),
-                  palette.card,
-                ],
+          colors: [
+            settingsPrimaryFill.withValues(alpha: palette.isDark ? 0.22 : 0.12),
+            palette.card,
+          ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: palette.hairline),
@@ -583,8 +578,7 @@ class _LevelCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: level.progressToNextLevel,
                 minHeight: 7,
-                backgroundColor:
-                    palette.isDark ? palette.raised : const Color(0xFFE4E4EA),
+                backgroundColor: palette.raised,
                 valueColor:
                     const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
               ),
@@ -791,8 +785,7 @@ class _AchievementsProgressBar extends StatelessWidget {
         child: LinearProgressIndicator(
           value: total > 0 ? unlocked / total : 0,
           minHeight: 6,
-          backgroundColor:
-              palette.isDark ? palette.raised : const Color(0xFFE4E4EA),
+          backgroundColor: palette.raised,
           valueColor: const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
         ),
       ),
@@ -900,9 +893,7 @@ class _AchievementRow extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: achievement.getProgress(current),
                               minHeight: 5,
-                              backgroundColor: palette.isDark
-                                  ? palette.raised
-                                  : const Color(0xFFE4E4EA),
+                              backgroundColor: palette.raised,
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                   settingsPrimaryFill),
                             ),

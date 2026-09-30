@@ -872,6 +872,13 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: palette.text),
             tooltip: context.tr(TranslationKeys.moreOptionsTooltip),
+            color: palette.card,
+            surfaceTintColor: Colors.transparent,
+            elevation: 6,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: palette.hairline),
+            ),
             onSelected: (value) {
               if (value == 'language') {
                 _showLanguageSelector(context, onLanguageChange);
@@ -886,11 +893,16 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'language',
                 child: Row(
                   children: [
-                    const Icon(Icons.language),
+                    Icon(Icons.language, color: palette.accentIcon),
                     const SizedBox(width: 12),
                     Flexible(
-                      child: Text(context
-                          .tr(TranslationKeys.studyTopicsContentLanguage)),
+                      child: Text(
+                        context.tr(TranslationKeys.studyTopicsContentLanguage),
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          color: palette.text,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -899,16 +911,21 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'study_mode',
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome),
+                    Icon(Icons.auto_awesome, color: palette.accentIcon),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
-                          context.tr(TranslationKeys.studyModePreferenceTitle)),
+                        context.tr(TranslationKeys.studyModePreferenceTitle),
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          color: palette.text,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const PopupMenuDivider(),
+              PopupMenuDivider(color: palette.hairline),
               PopupMenuItem<String>(
                 value: 'reset_progress',
                 child: Row(

@@ -56,7 +56,6 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
             context.navigateAfterAuth();
           } else if (state is auth_states.AuthErrorState) {
             // Show error message
-            final theme = Theme.of(context);
             showAppSnackBar(context, state.message, tone: AppSnackTone.error);
           }
         },

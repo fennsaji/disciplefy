@@ -250,52 +250,6 @@ class HomeScreenProtection extends StatelessWidget {
   }
 }
 
-/// A specialized version for critical authenticated screens
-class CriticalAuthScreen extends StatelessWidget {
-  final Widget child;
-  final VoidCallback? onUnauthorizedAccess;
-  final bool enableLogging;
-
-  const CriticalAuthScreen({
-    super.key,
-    required this.child,
-    this.onUnauthorizedAccess,
-    this.enableLogging = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AuthProtectedScreen(
-      canPop: false, // Never allow back navigation
-      onBackPressed: () {
-        if (enableLogging) {
-          Logger.warning(
-            'Unauthorized back navigation attempt on critical screen',
-            tag: 'SECURITY',
-            context: {
-              'screen_type': 'critical_auth',
-              'action': 'blocked',
-            },
-          );
-        }
-
-        if (onUnauthorizedAccess != null) {
-          onUnauthorizedAccess!();
-        } else {
-          // Default: show warning and stay on screen
-          showAppSnackBar(
-            context,
-            context.tr(TranslationKeys.appStatusNavigationRestricted),
-            tone: AppSnackTone.warning,
-          );
-        }
-      },
-      enableLogging: enableLogging,
-      child: child,
-    );
-  }
-}
-
 /// Extension to easily wrap widgets with auth protection
 extension AuthProtectionExtension on Widget {
   /// Wraps the widget with basic auth protection
@@ -317,18 +271,6 @@ extension AuthProtectionExtension on Widget {
   /// Wraps the widget with home screen protection (exit confirmation)
   Widget withHomeProtection({bool enableLogging = true}) {
     return HomeScreenProtection(
-      enableLogging: enableLogging,
-      child: this,
-    );
-  }
-
-  /// Wraps the widget with critical auth screen protection
-  Widget withCriticalAuthProtection({
-    VoidCallback? onUnauthorizedAccess,
-    bool enableLogging = true,
-  }) {
-    return CriticalAuthScreen(
-      onUnauthorizedAccess: onUnauthorizedAccess,
       enableLogging: enableLogging,
       child: this,
     );

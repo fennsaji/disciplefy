@@ -372,7 +372,7 @@ class FellowshipCommentsBodyState extends State<FellowshipCommentsBody> {
   }
 }
 
-/// Round indigo send button of the comment composer.
+/// Round ctaFill send button of the comment composer.
 class _SendButton extends StatelessWidget {
   final bool submitting;
   final VoidCallback onPressed;
@@ -381,6 +381,7 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Tooltip(
       message: context.tr(TranslationKeys.communityFellowshipSend),
       child: SizedBox(
@@ -389,20 +390,20 @@ class _SendButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: submitting ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.brandPrimary,
-            disabledBackgroundColor:
-                AppColors.brandPrimary.withValues(alpha: 0.6),
-            foregroundColor: Colors.white,
+            backgroundColor: palette.ctaFill,
+            disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.6),
+            foregroundColor: palette.ctaInk,
+            disabledForegroundColor: palette.ctaInk,
             elevation: 0,
             padding: EdgeInsets.zero,
             shape: const CircleBorder(),
           ),
           child: submitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: palette.ctaInk,
                     strokeWidth: 2,
                   ),
                 )
