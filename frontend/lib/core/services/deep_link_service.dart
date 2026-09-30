@@ -9,6 +9,8 @@ import '../di/injection_container.dart';
 import '../extensions/translation_extension.dart';
 import '../i18n/translation_keys.dart';
 import '../utils/logger.dart';
+import '../../shared/widgets/app_snackbar.dart';
+import '../../shared/widgets/popup.dart';
 import '../../features/community/domain/repositories/community_repository.dart';
 
 /// Listens for incoming deep links (Android App Links) and navigates
@@ -196,27 +198,31 @@ class DeepLinkService {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title:
-            Text(dialogContext.tr(TranslationKeys.fellowshipJoinPromptTitle)),
-        content: Text(
-          dialogContext.tr(
-            TranslationKeys.fellowshipJoinPromptBody,
-            {
-              'name':
-                  name ?? dialogContext.tr(TranslationKeys.fellowshipThisGroup)
-            },
+      builder: (dialogContext) => PopupDialog(
+        children: [
+          PopupHeader(
+            icon: const PopupIconCircle(icon: Icons.groups_rounded),
+            title: dialogContext.tr(TranslationKeys.fellowshipJoinPromptTitle),
+            body: dialogContext.tr(
+              TranslationKeys.fellowshipJoinPromptBody,
+              {
+                'name': name ??
+                    dialogContext.tr(TranslationKeys.fellowshipThisGroup)
+              },
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(dialogContext.tr(TranslationKeys.commonCancel)),
-          ),
-          FilledButton(
+          const SizedBox(height: 24),
+          PopupPrimaryButton(
+            key: const Key('deep_link_join_confirm'),
+            label:
+                dialogContext.tr(TranslationKeys.fellowshipJoinPromptConfirm),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(
-                dialogContext.tr(TranslationKeys.fellowshipJoinPromptConfirm)),
+          ),
+          const SizedBox(height: 4),
+          PopupTextButton(
+            key: const Key('deep_link_join_cancel'),
+            label: dialogContext.tr(TranslationKeys.commonCancel),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
           ),
         ],
       ),
@@ -240,12 +246,7 @@ class DeepLinkService {
     final context = _router.routerDelegate.navigatorKey.currentContext;
     if (context == null || !context.mounted) return;
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(context.tr(translationKey)),
-        behavior: SnackBarBehavior.floating,
-      ));
+    showAppSnackBar(context, context.tr(translationKey));
   }
 
   void dispose() {

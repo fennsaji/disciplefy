@@ -3,24 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../tokens/domain/entities/purchase_history.dart';
-import '../../domain/entities/purchase_issue_entity.dart';
-import '../bloc/purchase_issue_bloc.dart';
-import '../bloc/purchase_issue_event.dart';
-import '../bloc/purchase_issue_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/purchase_issue/domain/entities/purchase_issue_entity.dart';
+import 'package:disciplefy_bible_study/features/purchase_issue/presentation/bloc/purchase_issue_bloc.dart';
+import 'package:disciplefy_bible_study/features/purchase_issue/presentation/bloc/purchase_issue_event.dart';
+import 'package:disciplefy_bible_study/features/purchase_issue/presentation/bloc/purchase_issue_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/purchase_history.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 // Conditional import for web image picker
 import '../utils/issue_image_picker_stub.dart'
     if (dart.library.html) '../utils/issue_image_picker_web.dart';
 
-/// Bottom sheet widget for reporting purchase issues
+/// Bottom sheet for reporting an issue with a purchase: transaction summary,
+/// issue type, description, optional screenshots and a submit pill.
 class ReportIssueBottomSheet extends StatefulWidget {
   final PurchaseHistory purchase;
 
@@ -37,6 +40,9 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
   final TextEditingController _descriptionController = TextEditingController();
   PurchaseIssueType _selectedIssueType = PurchaseIssueType.other;
 
+  static const int _minChars = 10;
+  static const int _maxChars = 2000;
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -45,14 +51,15 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final palette = ReaderPalette.of(context);
     final dateFormatter = DateFormat('MMM dd, yyyy • hh:mm a');
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        color: palette.card,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(kPopupRadius)),
+        border: Border(top: BorderSide(color: palette.hairline)),
       ),
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * 0.85,
@@ -60,13 +67,10 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
       child: BlocConsumer<PurchaseIssueBloc, PurchaseIssueState>(
         listener: (context, state) {
           if (state is PurchaseIssueSubmitSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppTheme.successColor,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 3),
-              ),
+            showAppSnackBar(
+              context,
+              state.message,
+              tone: AppSnackTone.success,
             );
             Future.delayed(const Duration(milliseconds: 500), () {
               if (context.mounted) {
@@ -74,49 +78,47 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
               }
             });
           } else if (state is PurchaseIssueSubmitFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                backgroundColor: AppTheme.errorColor,
-                behavior: SnackBarBehavior.floating,
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(TranslationKeys.commonErrorTryAgain),
+              tone: AppSnackTone.error,
             );
           } else if (state is PurchaseIssueFormReady &&
               state.uploadError != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.uploadError!),
-                backgroundColor: AppTheme.errorColor,
-                behavior: SnackBarBehavior.floating,
-              ),
+            showAppSnackBar(
+              context,
+              state.uploadError!,
+              tone: AppSnackTone.error,
             );
           }
         },
         builder: (context, state) {
           return SheetScrollView(
             padding: EdgeInsets.fromLTRB(
-              24,
-              16,
-              24,
-              MediaQuery.of(context).viewInsets.bottom + 24,
+              20,
+              12,
+              20,
+              MediaQuery.viewInsetsOf(context).bottom +
+                  MediaQuery.paddingOf(context).bottom +
+                  20,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHandle(colorScheme),
+                _buildHandle(palette),
                 const SizedBox(height: 20),
-                _buildHeader(colorScheme),
+                _buildHeader(context),
                 const SizedBox(height: 20),
-                _buildTransactionDetails(theme, dateFormatter),
+                _buildTransactionDetails(palette, dateFormatter),
                 const SizedBox(height: 20),
-                _buildIssueTypeDropdown(theme, state),
+                _buildIssueTypeDropdown(palette),
                 const SizedBox(height: 16),
-                _buildDescriptionInput(theme, state),
+                _buildDescriptionInput(palette),
                 const SizedBox(height: 16),
-                _buildScreenshotSection(theme, state),
+                _buildScreenshotSection(palette, state),
                 const SizedBox(height: 24),
-                _buildSubmitButton(state),
+                _buildSubmitButton(palette, state),
               ],
             ),
           );
@@ -125,85 +127,69 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
     );
   }
 
-  Widget _buildHandle(ColorScheme colorScheme) => Center(
+  Widget _buildHandle(ReaderPalette palette) => Center(
         child: Container(
-          width: 40,
+          width: 36,
           height: 4,
           decoration: BoxDecoration(
-            color: colorScheme.onSurface.withOpacity(0.3),
+            color: palette.outline,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
       );
 
-  Widget _buildHeader(ColorScheme colorScheme) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.report_problem_outlined,
-                color: AppColors.warningDark,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Report Issue',
-                style: AppFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Describe the issue with your purchase. Our team will review and respond within 24-48 hours.',
-            style: AppFonts.inter(
-              fontSize: 14,
-              color: colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-        ],
+  Widget _buildHeader(BuildContext context) => PopupHeader(
+        centered: false,
+        icon: const PopupIconCircle(
+          icon: Icons.report_problem_outlined,
+          tone: PopupTone.gold,
+          size: 48,
+        ),
+        eyebrow: context.tr(TranslationKeys.reportIssueEyebrow),
+        title: context.tr(TranslationKeys.reportIssueTitle),
+        body: context.tr(TranslationKeys.reportIssueBody),
       );
 
-  Widget _buildTransactionDetails(ThemeData theme, DateFormat dateFormatter) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
+  Widget _sectionLabel(ReaderPalette palette, String text) => Text(
+        text,
+        style: AppFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: palette.text,
         ),
-      ),
+      );
+
+  Widget _buildTransactionDetails(
+    ReaderPalette palette,
+    DateFormat dateFormatter,
+  ) {
+    return PopupPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Transaction Details',
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary,
-            ),
+          PopupEyebrow(
+            context.tr(TranslationKeys.reportIssueTransactionDetails),
+            textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 12),
-          _buildDetailRow(theme, 'Tokens', '${widget.purchase.tokenAmount}'),
+          const SizedBox(height: 10),
           _buildDetailRow(
-            theme,
-            'Amount',
+            palette,
+            context.tr(TranslationKeys.reportIssueTokens),
+            '${widget.purchase.tokenAmount}',
+          ),
+          _buildDetailRow(
+            palette,
+            context.tr(TranslationKeys.reportIssueAmount),
             '₹${widget.purchase.costRupees.toStringAsFixed(2)}',
           ),
           _buildDetailRow(
-            theme,
-            'Date',
+            palette,
+            context.tr(TranslationKeys.reportIssueDate),
             dateFormatter.format(widget.purchase.purchasedAt),
           ),
           _buildDetailRow(
-            theme,
-            'Payment ID',
+            palette,
+            context.tr(TranslationKeys.reportIssuePaymentId),
             widget.purchase.paymentId,
             isMonospace: true,
           ),
@@ -213,7 +199,7 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
   }
 
   Widget _buildDetailRow(
-    ThemeData theme,
+    ReaderPalette palette,
     String label,
     String value, {
     bool isMonospace = false,
@@ -224,22 +210,20 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
+            width: 104,
             child: Text(
               label,
-              style: AppFonts.inter(
-                fontSize: 13,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
+              style: AppFonts.inter(fontSize: 13, color: palette.muted),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
+                color: palette.text,
               ).copyWith(
                 fontFamily: isMonospace ? 'monospace' : null,
               ),
@@ -250,33 +234,27 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
     );
   }
 
-  Widget _buildIssueTypeDropdown(ThemeData theme, PurchaseIssueState state) {
+  Widget _buildIssueTypeDropdown(ReaderPalette palette) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Issue Type',
-          style: AppFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
+        _sectionLabel(palette, context.tr(TranslationKeys.reportIssueType)),
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.3),
-            ),
-            borderRadius: BorderRadius.circular(12),
+            color: palette.raised,
+            border: Border.all(color: palette.hairline),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<PurchaseIssueType>(
               value: _selectedIssueType,
-              dropdownColor: theme.colorScheme.surface,
-              style: theme.textTheme.bodyMedium,
+              dropdownColor: palette.card,
+              borderRadius: BorderRadius.circular(14),
+              iconEnabledColor: palette.muted,
+              style: AppFonts.inter(fontSize: 14, color: palette.text),
               isExpanded: true,
               onChanged: (value) {
                 if (value != null) {
@@ -289,7 +267,11 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
               items: PurchaseIssueType.values
                   .map((type) => DropdownMenuItem(
                         value: type,
-                        child: Text(type.label),
+                        child: Text(
+                          context.tr(
+                            TranslationKeys.reportIssueTypeLabel(type.value),
+                          ),
+                        ),
                       ))
                   .toList(),
             ),
@@ -299,31 +281,32 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
     );
   }
 
-  Widget _buildDescriptionInput(ThemeData theme, PurchaseIssueState state) {
+  Widget _buildDescriptionInput(ReaderPalette palette) {
     final charCount = _descriptionController.text.length;
-    final isValid = charCount >= 10 && charCount <= 2000;
+    final isValid = charCount >= _minChars && charCount <= _maxChars;
+
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: color),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Description',
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+            Expanded(
+              child: _sectionLabel(
+                palette,
+                context.tr(TranslationKeys.reportIssueDescription),
               ),
             ),
             Text(
-              '$charCount/2000',
+              '$charCount/$_maxChars',
               style: AppFonts.inter(
                 fontSize: 12,
-                color: isValid || charCount == 0
-                    ? theme.colorScheme.onSurface.withOpacity(0.5)
-                    : AppTheme.errorColor,
+                color:
+                    isValid || charCount == 0 ? palette.dim : AppColors.error,
               ),
             ),
           ],
@@ -332,8 +315,9 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
         TextField(
           controller: _descriptionController,
           maxLines: 4,
-          maxLength: 2000,
-          style: theme.textTheme.bodyMedium,
+          maxLength: _maxChars,
+          style: AppFonts.inter(fontSize: 14, color: palette.text),
+          cursorColor: palette.accentIcon,
           onChanged: (value) {
             setState(() {}); // Update character count
             context
@@ -341,46 +325,34 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
                 .add(DescriptionChanged(description: value));
           },
           decoration: InputDecoration(
-            hintText:
-                'Please describe the issue in detail (minimum 10 characters)',
-            hintStyle: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
-            ),
+            hintText: context.tr(TranslationKeys.reportIssueDescriptionHint),
+            hintMaxLines: 3,
+            hintStyle: AppFonts.inter(fontSize: 14, color: palette.dim),
             counterText: '',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.3),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.3),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.primary),
-            ),
+            filled: true,
+            fillColor: palette.raised,
+            contentPadding: const EdgeInsets.all(14),
+            border: border(palette.hairline),
+            enabledBorder: border(palette.hairline),
+            focusedBorder: border(palette.accentIcon),
           ),
         ),
-        if (charCount > 0 && charCount < 10)
+        if (charCount > 0 && charCount < _minChars)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'Please enter at least 10 characters',
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: AppTheme.errorColor,
-              ),
+              context.tr(TranslationKeys.reportIssueDescriptionTooShort),
+              style: AppFonts.inter(fontSize: 12, color: AppColors.error),
             ),
           ),
       ],
     );
   }
 
-  Widget _buildScreenshotSection(ThemeData theme, PurchaseIssueState state) {
+  Widget _buildScreenshotSection(
+    ReaderPalette palette,
+    PurchaseIssueState state,
+  ) {
     final formState = state is PurchaseIssueFormReady ? state : null;
     final screenshots = formState?.screenshotUrls ?? [];
     final isUploading = formState?.isUploadingScreenshot ?? false;
@@ -390,22 +362,16 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Screenshots (optional)',
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+            Expanded(
+              child: _sectionLabel(
+                palette,
+                context.tr(TranslationKeys.reportIssueScreenshots),
               ),
             ),
             Text(
               '${screenshots.length}/3',
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
+              style: AppFonts.inter(fontSize: 12, color: palette.dim),
             ),
           ],
         ),
@@ -416,12 +382,13 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
           children: [
             ...screenshots.asMap().entries.map((entry) {
               return _buildScreenshotThumbnail(
-                theme,
+                palette,
                 entry.key,
                 entry.value,
               );
             }),
-            if (canAdd) _buildAddScreenshotButton(theme, isUploading),
+            if (canAdd || isUploading)
+              _buildAddScreenshotButton(palette, isUploading),
           ],
         ),
       ],
@@ -429,31 +396,31 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
   }
 
   Widget _buildScreenshotThumbnail(
-    ThemeData theme,
+    ReaderPalette palette,
     int index,
     String url,
   ) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Container(
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.3),
-            ),
+            color: palette.raised,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: palette.hairline),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             child: Image.network(
               url,
               fit: BoxFit.cover,
+              cacheWidth: 240,
               errorBuilder: (context, error, stackTrace) {
                 return Icon(
-                  Icons.image,
-                  color: theme.colorScheme.primary,
+                  Icons.image_outlined,
+                  color: palette.accentIcon,
                   size: 32,
                 );
               },
@@ -471,8 +438,8 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
             },
             child: Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppTheme.errorColor,
+              decoration: const BoxDecoration(
+                color: AppColors.error,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -487,61 +454,65 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
     );
   }
 
-  Widget _buildAddScreenshotButton(ThemeData theme, bool isUploading) {
-    return GestureDetector(
-      onTap: isUploading ? null : _pickImage,
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
+  Widget _buildAddScreenshotButton(ReaderPalette palette, bool isUploading) {
+    return Material(
+      color: palette.raised,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: palette.outline),
+      ),
+      child: InkWell(
+        onTap: isUploading ? null : _pickImage,
+        customBorder: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: isUploading
-            ? Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
+        child: SizedBox(
+          width: 80,
+          height: 80,
+          child: isUploading
+              ? Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: palette.gold,
                     ),
                   ),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: palette.accentIcon,
+                      size: 26,
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        context.tr(TranslationKeys.reportIssueAddScreenshot),
+                        textAlign: TextAlign.center,
+                        style: AppFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: palette.accentIcon,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate_outlined,
-                    color: theme.colorScheme.primary,
-                    size: 28,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Add',
-                    style: AppFonts.inter(
-                      fontSize: 11,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
+        ),
       ),
     );
   }
 
   Future<void> _pickImage() async {
     if (!kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image upload is only supported on web'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.reportIssueUploadWebOnly),
       );
       return;
     }
@@ -551,12 +522,10 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
 
     if (result.containsKey('error')) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] as String),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-          ),
+        showAppSnackBar(
+          context,
+          result['error'] as String,
+          tone: AppSnackTone.error,
         );
       }
       return;
@@ -577,58 +546,57 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
     }
   }
 
-  Widget _buildSubmitButton(PurchaseIssueState state) {
+  Widget _buildSubmitButton(ReaderPalette palette, PurchaseIssueState state) {
     final isSubmitting = state is PurchaseIssueSubmitting;
-    final isValid = _descriptionController.text.trim().length >= 10;
+    final isValid = _descriptionController.text.trim().length >= _minChars;
+    final label = context.tr(TranslationKeys.reportIssueSubmit);
 
+    if (!isSubmitting) {
+      return PopupPrimaryButton(
+        label: label,
+        onPressed: isValid
+            ? () => context
+                .read<PurchaseIssueBloc>()
+                .add(const SubmitPurchaseIssueRequested())
+            : null,
+      );
+    }
+
+    // Same pill, holding a spinner while the report is sent.
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isSubmitting || !isValid
-            ? null
-            : () {
-                context
-                    .read<PurchaseIssueBloc>()
-                    .add(const SubmitPurchaseIssueRequested());
-              },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: context.appInteractive,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          disabledBackgroundColor:
-              Theme.of(context).colorScheme.primary.withOpacity(0.5),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      child: FilledButton(
+        onPressed: null,
+        style: FilledButton.styleFrom(
+          disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.6),
+          minimumSize: const Size.fromHeight(50),
+          shape: const StadiumBorder(),
+          elevation: 0,
+        ),
+        child: Semantics(
+          label: label,
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: palette.ctaInk,
+            ),
           ),
         ),
-        child: isSubmitting
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(
-                'Submit Report',
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
       ),
     );
   }
 }
 
-/// Helper function to show report issue bottom sheet
+/// Shows [ReportIssueBottomSheet] for [purchase] above the floating dock.
 void showReportIssueBottomSheet(
     BuildContext context, PurchaseHistory purchase) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    useRootNavigator: true,
     builder: (context) {
       return BlocProvider(
         create: (context) => sl<PurchaseIssueBloc>()

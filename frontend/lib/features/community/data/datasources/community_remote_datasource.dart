@@ -50,6 +50,8 @@ abstract class CommunityRemoteDatasource {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    String? guideStudyMode,
+    String? guideSummary,
     bool disciplerReplyOptOut = false,
     List<String> mentionedUserIds = const [],
   });
@@ -728,6 +730,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    String? guideStudyMode,
+    String? guideSummary,
     bool disciplerReplyOptOut = false,
     List<String> mentionedUserIds = const [],
   }) async {
@@ -744,6 +748,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         if (studyGuideId != null) 'study_guide_id': studyGuideId,
         if (guideInputType != null) 'guide_input_type': guideInputType,
         if (guideLanguage != null) 'guide_language': guideLanguage,
+        if (guideStudyMode != null) 'guide_study_mode': guideStudyMode,
+        if (guideSummary != null) 'guide_summary': guideSummary,
         if (disciplerReplyOptOut) 'discipler_reply_opt_out': true,
         if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
       });

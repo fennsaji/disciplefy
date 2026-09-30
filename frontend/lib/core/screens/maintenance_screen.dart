@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/widgets/app_snackbar.dart';
+import '../../shared/widgets/popup.dart';
+import '../constants/app_fonts.dart';
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
 import '../services/system_config_service.dart';
-import '../theme/app_colors.dart';
+import '../theme/reader_palette.dart';
+import '../utils/logger.dart';
+import '../widgets/status_message_view.dart';
 
 /// Maintenance Screen
 ///
@@ -58,12 +66,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       }
     } catch (e) {
       // Error fetching config - show snackbar but keep on maintenance screen
+      Logger.error('[MaintenanceScreen] Status check failed', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to check status: $e'),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.appStatusMaintenanceCheckFailed),
+          tone: AppSnackTone.error,
         );
       }
     } finally {
@@ -77,107 +85,38 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return PopScope(
       // Prevent back button from dismissing maintenance screen
       canPop: false,
       child: Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Maintenance Icon
-                  Icon(
-                    Icons.build_circle_rounded,
-                    size: 100,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Title
-                  Text(
-                    'Maintenance Mode',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Message
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: colorScheme.primary.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Text(
-                      widget.configService.maintenanceModeMessage,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Retry Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isRetrying ? null : _handleRetry,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: _isRetrying
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.onPrimary,
-                                ),
-                              ),
-                            )
-                          : const Icon(Icons.refresh_rounded),
-                      label: Text(
-                        _isRetrying ? 'Checking...' : 'Check Status',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Info text
-                  Text(
-                    'We\'ll be back online shortly. Thank you for your patience!',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+        backgroundColor: ReaderPalette.of(context).page,
+        body: StatusMessageView(
+          icon: Icons.build_circle_outlined,
+          tone: PopupTone.gold,
+          eyebrow: context.tr(TranslationKeys.appStatusMaintenanceEyebrow),
+          title: context.tr(TranslationKeys.appStatusMaintenanceTitle),
+          detail: StatusDetailCard(
+            widget.configService.maintenanceModeMessage,
+          ),
+          actions: [
+            PopupPrimaryButton(
+              key: const Key('maintenance_check_status'),
+              label: _isRetrying
+                  ? context.tr(TranslationKeys.appStatusMaintenanceChecking)
+                  : context.tr(TranslationKeys.appStatusMaintenanceCheck),
+              icon: _isRetrying ? null : Icons.refresh_rounded,
+              onPressed: _isRetrying ? null : _handleRetry,
+            ),
+            Text(
+              context.tr(TranslationKeys.appStatusMaintenanceBackSoon),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 13,
+                color: ReaderPalette.of(context).muted,
+                height: 1.45,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

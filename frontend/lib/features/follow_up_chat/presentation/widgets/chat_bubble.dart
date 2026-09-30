@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../bloc/follow_up_chat_state.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 
 /// A chat bubble widget for displaying messages in the follow-up chat
 class ChatBubble extends StatelessWidget {
@@ -108,7 +110,7 @@ class ChatBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMessageText(theme, isUser),
+          _buildMessageText(context, theme, isUser),
           if (_shouldShowStatusIndicator()) ...[
             const SizedBox(height: AppConstants.EXTRA_SMALL_PADDING),
             _buildStatusIndicator(context, theme),
@@ -119,8 +121,13 @@ class ChatBubble extends StatelessWidget {
   }
 
   /// Builds the message text with streaming support and proper formatting
-  Widget _buildMessageText(ThemeData theme, bool isUser) {
+  Widget _buildMessageText(BuildContext context, ThemeData theme, bool isUser) {
     final content = message.content;
+    final bodyStyle = AppFonts.inter(
+      fontSize: 15,
+      color: _getTextColor(theme, isUser),
+      height: 1.5,
+    );
 
     // During streaming, show plain text to avoid incomplete markdown parsing issues
     if (message.status == ChatMessageStatus.streaming) {
@@ -128,10 +135,7 @@ class ChatBubble extends StatelessWidget {
         key: ValueKey('${message.id}_streaming_container'),
         child: SelectableText(
           content.isEmpty ? '...' : content,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            height: 1.5,
-          ),
+          style: bodyStyle,
         ),
       );
     }
@@ -164,116 +168,8 @@ class ChatBubble extends StatelessWidget {
           key: ValueKey('${message.id}_${message.status}_markdown'),
           data: fixedContent,
           selectable: true,
-          styleSheet: MarkdownStyleSheet(
-            // Paragraph styling with proper line height
-            p: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              height: 1.6,
-            ),
-            // Heading styles with proper spacing
-            h1: theme.textTheme.headlineMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-            h2: theme.textTheme.headlineSmall?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-            h3: theme.textTheme.titleLarge?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.w600,
-              height: 1.4,
-            ),
-            h4: theme.textTheme.titleMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.w600,
-              height: 1.4,
-            ),
-            h5: theme.textTheme.titleSmall?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.w600,
-              height: 1.4,
-            ),
-            h6: theme.textTheme.titleSmall?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-            ),
-            // Text formatting
-            strong: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.bold,
-            ),
-            em: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontStyle: FontStyle.italic,
-            ),
-            // Blockquote with border and padding
-            blockquote: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser).withOpacity(0.8),
-              fontStyle: FontStyle.italic,
-              height: 1.5,
-            ),
-            blockquotePadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
-            blockquoteDecoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              border: Border(
-                left: BorderSide(
-                  color: theme.colorScheme.primary.withOpacity(0.3),
-                  width: 3,
-                ),
-              ),
-            ),
-            // Inline code styling
-            code: theme.textTheme.bodySmall?.copyWith(
-              color: _getTextColor(theme, isUser),
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-              fontFamily: 'Courier',
-              fontSize: 14,
-            ),
-            // Code block styling
-            codeblockPadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
-            codeblockDecoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius:
-                  BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
-              border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
-              ),
-            ),
-            // List styling
-            listBullet: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              height: 1.5,
-            ),
-            listIndent: AppConstants.DEFAULT_PADDING,
-            // Table styling
-            tableHead: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-              fontWeight: FontWeight.w600,
-            ),
-            tableBody: theme.textTheme.bodyMedium?.copyWith(
-              color: _getTextColor(theme, isUser),
-            ),
-            tableBorder: TableBorder.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
-            ),
-            // Horizontal rule
-            horizontalRuleDecoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: theme.colorScheme.outline.withOpacity(0.3),
-                ),
-              ),
-            ),
-            // Link styling
-            a: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.primary,
-              decoration: TextDecoration.underline,
-            ),
-          ),
+          styleSheet:
+              _markdownStyleSheet(context, _getTextColor(theme, isUser)),
           onTapLink: (text, href, title) {
             // Handle link taps if needed
           },
@@ -282,20 +178,78 @@ class ChatBubble extends StatelessWidget {
     }
 
     // For user messages, use SelectableText
-    return SelectableText(
-      content,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: _getTextColor(theme, isUser),
-        height: 1.5,
+    return SelectableText(content, style: bodyStyle);
+  }
+
+  /// Markdown styles for a Discipler reply: Inter body, Poppins headings,
+  /// lavender (dark) / indigo (light) accents, raised code and quote fills.
+  MarkdownStyleSheet _markdownStyleSheet(BuildContext context, Color ink) {
+    final palette = ReaderPalette.of(context);
+    TextStyle body({FontWeight? weight, FontStyle? style, Color? color}) =>
+        AppFonts.inter(
+          fontSize: 15,
+          fontWeight: weight,
+          fontStyle: style,
+          color: color ?? ink,
+          height: 1.6,
+        );
+    TextStyle heading(double size, FontWeight weight) => AppFonts.poppins(
+          fontSize: size,
+          fontWeight: weight,
+          color: ink,
+          height: 1.3,
+        );
+
+    return MarkdownStyleSheet(
+      p: body(),
+      h1: heading(20, FontWeight.w700),
+      h2: heading(18, FontWeight.w700),
+      h3: heading(17, FontWeight.w600),
+      h4: heading(16, FontWeight.w600),
+      h5: heading(15, FontWeight.w600),
+      h6: heading(15, FontWeight.w500),
+      strong: body(weight: FontWeight.w700),
+      em: body(style: FontStyle.italic),
+      blockquote: body(style: FontStyle.italic, color: palette.muted),
+      blockquotePadding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+      blockquoteDecoration: BoxDecoration(
+        color: palette.raised,
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+        border: Border(
+          left: BorderSide(color: palette.accentIcon, width: 3),
+        ),
+      ),
+      code: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: 14,
+        color: ink,
+        backgroundColor: palette.raised,
+      ),
+      codeblockPadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
+      codeblockDecoration: BoxDecoration(
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: palette.hairline),
+      ),
+      listBullet: body(color: palette.accentIcon),
+      listIndent: AppConstants.DEFAULT_PADDING,
+      tableHead: body(weight: FontWeight.w600),
+      tableBody: body(),
+      tableBorder: TableBorder.all(color: palette.outline),
+      horizontalRuleDecoration: BoxDecoration(
+        border: Border(top: BorderSide(color: palette.outline)),
+      ),
+      a: body(weight: FontWeight.w600, color: palette.accentIcon).copyWith(
+        decoration: TextDecoration.underline,
+        decorationColor: palette.accentIcon.withValues(alpha: 0.6),
       ),
     );
   }
 
   /// Builds the status indicator for streaming/failed messages
   Widget _buildStatusIndicator(BuildContext context, ThemeData theme) {
-    switch (message.status) {
-      case ChatMessageStatus.streaming:
-        return Row(
+    final palette = ReaderPalette.of(context);
+    Widget pending(String label) => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
@@ -303,63 +257,42 @@ class ChatBubble extends StatelessWidget {
               height: 12,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  theme.colorScheme.primary.withOpacity(0.6),
-                ),
+                color: palette.accentIcon,
               ),
             ),
-            const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatResponding),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: _getTextColor(theme, message.isUser).withOpacity(0.7),
-                fontStyle: FontStyle.italic,
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: AppFonts.inter(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: _getTextColor(theme, message.isUser)
+                      .withValues(alpha: 0.7),
+                ),
               ),
             ),
           ],
         );
+    switch (message.status) {
+      case ChatMessageStatus.streaming:
+        return pending(context.tr(TranslationKeys.followUpChatResponding));
       case ChatMessageStatus.failed:
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 16,
-              color: theme.colorScheme.error,
-            ),
-            const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatFailedToSend),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
+            Icon(Icons.error_outline, size: 16, color: context.appError),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                context.tr(TranslationKeys.followUpChatFailedToSend),
+                style: AppFonts.inter(fontSize: 12, color: context.appError),
               ),
             ),
           ],
         );
       case ChatMessageStatus.sending:
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  theme.colorScheme.primary.withOpacity(0.6),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatSending),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: _getTextColor(theme, message.isUser).withOpacity(0.7),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        );
+        return pending(context.tr(TranslationKeys.followUpChatSending));
       default:
         return const SizedBox.shrink();
     }
@@ -384,40 +317,33 @@ class ChatBubble extends StatelessWidget {
   Widget _buildTimestamp(ThemeData theme) {
     return Builder(
       builder: (context) {
+        final palette = ReaderPalette.of(context);
         final timeString = _formatTimeWithContext(context, message.timestamp);
 
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              timeString,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.55),
-                fontSize: 12,
+            Flexible(
+              child: Text(
+                timeString,
+                style: AppFonts.inter(fontSize: 12, color: palette.dim),
               ),
             ),
             if (message.tokensConsumed != null &&
                 message.tokensConsumed! > 0) ...[
-              const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.EXTRA_SMALL_PADDING,
-                  vertical: 1,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
-                    width: 0.5,
-                  ),
+                  color: palette.raised,
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   '${message.tokensConsumed} ${context.tr(TranslationKeys.followUpChatTokens)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
+                  style: AppFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
+                    color: palette.accentIcon,
                   ),
                 ),
               ),
@@ -452,9 +378,9 @@ class ChatBubble extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
         child: Icon(
-          Icons.copy,
+          Icons.copy_rounded,
           size: 16,
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: ReaderPalette.of(context).muted,
         ),
       ),
     );
@@ -468,9 +394,9 @@ class ChatBubble extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
         child: Icon(
-          Icons.refresh,
+          Icons.refresh_rounded,
           size: 16,
-          color: theme.colorScheme.error,
+          color: context.appError,
         ),
       ),
     );
@@ -480,7 +406,7 @@ class ChatBubble extends StatelessWidget {
   /// User: white pill on dark, indigo pill on light. Reply: a card.
   Color _getBackgroundColor(ThemeData theme, bool isUser) {
     if (message.status == ChatMessageStatus.failed) {
-      return theme.colorScheme.error.withOpacity(0.1);
+      return AppColors.error.withValues(alpha: 0.1);
     }
     final isDark = theme.brightness == Brightness.dark;
     if (isUser) {
@@ -492,7 +418,7 @@ class ChatBubble extends StatelessWidget {
   /// Border only where a fill alone would not separate from the page.
   Color? _getBorderColor(ThemeData theme, bool isUser) {
     if (message.status == ChatMessageStatus.failed) {
-      return theme.colorScheme.error.withOpacity(0.3);
+      return AppColors.error.withValues(alpha: 0.3);
     }
     if (isUser) return null;
     return theme.brightness == Brightness.dark
@@ -503,7 +429,7 @@ class ChatBubble extends StatelessWidget {
   /// Gets the text color based on message type
   Color _getTextColor(ThemeData theme, bool isUser) {
     if (message.status == ChatMessageStatus.failed) {
-      return theme.colorScheme.error;
+      return AppColors.error;
     }
     final isDark = theme.brightness == Brightness.dark;
     if (isUser) return isDark ? AppColors.brandPrimaryInk : Colors.white;
@@ -550,11 +476,10 @@ class ChatBubble extends StatelessWidget {
     await Clipboard.setData(ClipboardData(text: message.content));
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.followUpChatMessageCopied)),
-          duration: const Duration(seconds: 2),
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.followUpChatMessageCopied),
+        tone: AppSnackTone.success,
       );
     }
   }

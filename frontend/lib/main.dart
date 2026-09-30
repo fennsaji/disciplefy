@@ -17,7 +17,7 @@ import 'features/memory_verses/data/datasources/memory_verse_local_datasource.da
 import 'core/router/app_router.dart';
 import 'core/services/deep_link_service.dart';
 import 'core/theme/app_theme.dart';
-import 'core/theme/app_colors.dart';
+import 'core/widgets/status_message_view.dart';
 import 'core/localization/app_localizations.dart';
 import 'features/study_generation/presentation/bloc/study_bloc.dart';
 import 'features/saved_guides/data/models/saved_guide_model.dart';
@@ -642,42 +642,20 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
 class ErrorApp extends StatelessWidget {
   const ErrorApp({super.key});
 
+  // Strings stay in English: this screen is shown when initialisation failed,
+  // so the translation runtime may not be available.
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'Disciplefy | Bible Study App - Error',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.error,
-          ),
-        ),
-        home: Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 80,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'App failed to initialize',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Please check your configuration and try again.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        home: const Scaffold(
+          body: StatusMessageView(
+            icon: Icons.error_outline_rounded,
+            eyebrow: 'SOMETHING WENT WRONG',
+            title: 'App failed to initialize',
+            message: 'Please check your configuration and try again.',
           ),
         ),
       );

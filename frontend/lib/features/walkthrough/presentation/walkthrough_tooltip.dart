@@ -5,13 +5,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/constants/app_fonts.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/reader_palette.dart';
 import '../domain/walkthrough_screen.dart';
 import '../domain/walkthrough_video_config.dart';
 
 /// Wraps a widget with a Showcase tooltip using Disciplefy's visual style.
 ///
-/// Renders a white bubble with gold border highlight, "Got it →" button,
+/// Renders a palette card bubble (dark/light) with a gold step eyebrow, a
+/// gold border highlight on the target, "Got it →" button,
 /// optional "▶ Watch video" button (omitted when no video URL exists), and
 /// a step counter (e.g. "1 / 3").
 ///
@@ -173,20 +176,19 @@ class _TooltipContent extends StatelessWidget {
     this.arrowAlignment = Alignment.center,
   });
 
-  static const _mutedGrey = Color(0xFF9CA3AF);
-  static const _arrowColor = Colors.white;
-
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     final bubble = Container(
       width: maxWidth,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: palette.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.hairline),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1A000000),
+            color: Color(0x33000000),
             blurRadius: 16,
             offset: Offset(0, 4),
           ),
@@ -196,33 +198,33 @@ class _TooltipContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row with step counter
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Color(0xFF1E1E1E),
-                  ),
-                ),
-              ),
-              Text(
-                '$stepNumber / $totalSteps',
-                style: const TextStyle(fontSize: 11, color: _mutedGrey),
-              ),
-            ],
+          // Gold step eyebrow
+          Text(
+            '$stepNumber / $totalSteps',
+            style: AppFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+              color: palette.gold,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: AppFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: palette.text,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 4),
           // Description
           Text(
             description,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF555555),
+            style: AppFonts.inter(
+              fontSize: 12.5,
+              color: palette.muted,
               height: 1.4,
             ),
           ),
@@ -242,10 +244,10 @@ class _TooltipContent extends StatelessWidget {
       ),
     );
 
-    // Arrow pointing toward the target widget
+    // Arrow pointing toward the target widget, in the bubble's own fill.
     final arrowShape = CustomPaint(
       size: const Size(20, 10),
-      painter: const _DownArrowPainter(color: _arrowColor),
+      painter: _DownArrowPainter(color: palette.card),
     );
 
     // Wrap in Align so the arrow can be offset horizontally (e.g. right-aligned
@@ -304,23 +306,12 @@ class _GotItButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final palette = ReaderPalette.of(context);
+    return _TooltipPill(
+      label: label,
+      fill: palette.ctaFill,
+      ink: palette.ctaInk,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4F46E5),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
     );
   }
 }
@@ -333,25 +324,60 @@ class _WatchVideoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final palette = ReaderPalette.of(context);
+    return _TooltipPill(
+      // The localized label already starts with a play glyph.
+      label: label,
+      fill: palette.raised,
+      ink: palette.text,
+      borderColor: palette.outline,
       onTap: () async {
         final uri = Uri.parse(videoUrl);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         }
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0E7FF),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF4F46E5),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+    );
+  }
+}
+
+/// Compact stadium button used inside the tooltip bubble.
+class _TooltipPill extends StatelessWidget {
+  final String label;
+  final Color fill;
+  final Color ink;
+  final Color? borderColor;
+  final VoidCallback onTap;
+
+  const _TooltipPill({
+    required this.label,
+    required this.fill,
+    required this.ink,
+    required this.onTap,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: fill,
+      shape: StadiumBorder(
+        side: borderColor == null
+            ? BorderSide.none
+            : BorderSide(color: borderColor!),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            label,
+            style: AppFonts.inter(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: ink,
+            ),
           ),
         ),
       ),

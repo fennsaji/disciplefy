@@ -132,7 +132,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
             {
               ...preferences.toJson(),
               'user_id': user.id,
-              'updated_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
             },
             onConflict: 'user_id',
           )
@@ -285,7 +285,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
 
       // Create conversation
       final sessionId = '${user.id}_${DateTime.now().millisecondsSinceEpoch}';
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
 
       final response = await _supabaseClient
           .from('voice_conversations')
@@ -535,7 +535,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
             'llm_model_used': llmModelUsed,
             'llm_tokens_used': llmTokensUsed,
             'scripture_references': scriptureReferences,
-            'created_at': DateTime.now().toIso8601String(),
+            'created_at': DateTime.now().toUtc().toIso8601String(),
           })
           .select()
           .single();
@@ -544,7 +544,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
       await _supabaseClient.from('voice_conversations').update({
         'total_messages': messageOrder + 1,
         'total_duration_seconds': await _calculateTotalDuration(conversationId),
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', conversationId);
 
       Logger.debug('🎙️ [VOICE_API] Added message: ${response['id']}');

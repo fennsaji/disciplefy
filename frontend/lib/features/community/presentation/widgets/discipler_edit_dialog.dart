@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Lets a mentor rewrite something the Discipler posted or replied.
 ///
@@ -52,11 +54,19 @@ class _DisciplerEditDialogState extends State<_DisciplerEditDialog> {
     final text = _controller.text.trim();
     final canSave = text.isNotEmpty && text != widget.initialText.trim();
 
-    return AlertDialog(
-      title: Text(l10n.disciplerEditTitle),
-      content: SizedBox(
-        width: 520,
-        child: TextField(
+    return PopupDialog(
+      maxWidth: 520,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The hint sits under the title rather than as field helper text, where
+        // the character counter squeezed it until it cut off on small phones.
+        PopupHeader(
+          title: l10n.disciplerEditTitle,
+          body: l10n.disciplerEditHint,
+          centered: false,
+        ),
+        const SizedBox(height: 16),
+        TextField(
           controller: _controller,
           autofocus: true,
           minLines: 4,
@@ -64,21 +74,18 @@ class _DisciplerEditDialogState extends State<_DisciplerEditDialog> {
           maxLength: widget.maxLength,
           keyboardType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            helperText: l10n.disciplerEditHint,
-            helperMaxLines: 2,
-            border: const OutlineInputBorder(),
-          ),
+          style: communityInputStyle(context),
+          decoration: communityInputDecoration(context),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
+        const SizedBox(height: 20),
+        PopupPrimaryButton(
+          label: l10n.editFellowshipSave,
           onPressed: canSave ? () => Navigator.of(context).pop(text) : null,
-          child: Text(l10n.editFellowshipSave),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          label: l10n.cancel,
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );

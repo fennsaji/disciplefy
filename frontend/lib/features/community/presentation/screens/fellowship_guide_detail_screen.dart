@@ -3,22 +3,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../features/study_generation/domain/entities/study_mode.dart';
-import '../../../../features/study_topics/domain/entities/learning_path.dart';
-import '../../domain/entities/fellowship_comment_entity.dart';
-import '../../domain/entities/fellowship_post_entity.dart';
-import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
-import '../bloc/fellowship_feed/fellowship_feed_event.dart';
-import '../bloc/fellowship_feed/fellowship_feed_state.dart';
-import '../utils/markdown_text.dart';
-import '../widgets/daily_post_card.dart';
-import '../widgets/discipler_badges.dart';
-import '../widgets/member_avatar.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_comment_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/markdown_text.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/daily_post_card.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 
 // ============================================================================
 // Entry point
@@ -213,24 +219,11 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
 
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        title: Text(
-          _topic.title,
-          style: TextStyle(
-            color: context.appTextPrimary,
-            fontFamily: 'Inter',
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        iconTheme: IconThemeData(color: context.appTextPrimary),
-      ),
+      backgroundColor: palette.page,
+      appBar: CommunityBackBar(title: _topic.title, background: palette.page),
       body: Column(
         children: [
           Expanded(
@@ -239,11 +232,10 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
                 // Guide info card + Open button
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                     child: _GuideInfoCard(
                       topic: _topic,
                       pathTitle: widget.pathTitle,
-                      isDark: isDark,
                       isLoading: _isOpeningStudyGuide,
                       onOpenStudyGuide: _openStudyGuide,
                     ),
@@ -253,37 +245,26 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
                 // Discussion header
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 16, 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Discussion',
-                          style: TextStyle(
-                            color: context.appTextPrimary,
-                            fontFamily: 'Inter',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        CommunitySectionHeader(
+                          title: context
+                              .tr(TranslationKeys.communityPagesDiscussion),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Share your reflections on this lesson',
-                          style: TextStyle(
-                            color: context.appTextTertiary,
-                            fontFamily: 'Inter',
-                            fontSize: 12,
+                          context.tr(
+                              TranslationKeys.communityPagesDiscussionSubtitle),
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            color: palette.muted,
+                            height: 1.4,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                    child: Divider(height: 1, color: context.appDivider),
                   ),
                 ),
 
@@ -301,35 +282,38 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
                     if (feedState.posts.isEmpty) {
                       return SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(Icons.chat_bubble_outline,
-                                    size: 40, color: context.appTextTertiary),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No discussion yet.\nBe the first to share!',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: context.appTextTertiary,
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                  ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 40, horizontal: 32),
+                          child: Column(
+                            children: [
+                              Icon(Icons.chat_bubble_outline_rounded,
+                                  size: 40, color: palette.dim),
+                              const SizedBox(height: 12),
+                              Text(
+                                context.tr(TranslationKeys
+                                    .communityPagesDiscussionEmpty),
+                                textAlign: TextAlign.center,
+                                style: AppFonts.inter(
+                                  color: palette.muted,
+                                  fontSize: 14.5,
+                                  height: 1.45,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       );
                     }
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) => _PostCard(
-                          post: feedState.posts[i],
-                          isDark: isDark,
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (ctx, i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _PostCard(post: feedState.posts[i]),
+                          ),
+                          childCount: feedState.posts.length,
                         ),
-                        childCount: feedState.posts.length,
                       ),
                     );
                   },
@@ -344,7 +328,6 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
           _CommentInputBar(
             controller: _controller,
             focusNode: _focusNode,
-            isDark: isDark,
             onSubmit: _submitPost,
           ),
         ],
@@ -360,176 +343,115 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
 class _GuideInfoCard extends StatelessWidget {
   final LearningPathTopic topic;
   final String pathTitle;
-  final bool isDark;
   final bool isLoading;
   final VoidCallback onOpenStudyGuide;
 
   const _GuideInfoCard({
     required this.topic,
     required this.pathTitle,
-    required this.isDark,
     required this.onOpenStudyGuide,
     this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final brandColor = isDark
-        ? AppColors.brandPrimaryLight
-        : Theme.of(context).colorScheme.primary;
+    final palette = ReaderPalette.of(context);
+    final gold = SettingsToneColors.of(context, SettingsTone.gold);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appBorder),
-      ),
+    return CommunityFormCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Guide header row
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${topic.position + 1}',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: brandColor,
-                      ),
-                    ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: palette.raised,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  '${topic.position + 1}',
+                  style: AppFonts.poppins(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    color: palette.gold,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        topic.title,
-                        style: TextStyle(
-                          color: context.appTextPrimary,
-                          fontFamily: 'Inter',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (pathTitle.isNotEmpty) ...[
+                      CommunitySectionLabel(pathTitle, fontSize: 11),
                       const SizedBox(height: 4),
-                      Text(
-                        pathTitle,
-                        style: TextStyle(
-                          color: context.appTextTertiary,
-                          fontFamily: 'Inter',
-                          fontSize: 12,
+                    ],
+                    Text(
+                      topic.title,
+                      style: AppFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                        height: 1.3,
+                      ),
+                    ),
+                    if (topic.isMilestone) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: gold.fill,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flag_rounded,
+                                size: 13, color: gold.foreground),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                context.tr(
+                                    TranslationKeys.communityPagesMilestone),
+                                style: AppFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: gold.foreground,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-                if (topic.isMilestone)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.warningLight,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.flag,
-                            size: 12, color: AppColors.warningDark),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Milestone',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.warningDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-
           if (topic.description.isNotEmpty) ...[
-            Divider(height: 1, color: context.appDivider),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(
-                topic.description,
-                style: TextStyle(
-                  color: context.appTextSecondary,
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  height: 1.5,
-                ),
+            const SizedBox(height: 12),
+            Text(
+              topic.description,
+              style: AppFonts.inter(
+                color: palette.muted,
+                fontSize: 14,
+                height: 1.5,
               ),
             ),
           ],
-
-          Divider(height: 1, color: context.appDivider),
-
-          // Open Study Guide button
-          InkWell(
-            onTap: isLoading ? null : onOpenStudyGuide,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isLoading) ...[
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(brandColor),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ] else ...[
-                    Icon(Icons.menu_book_rounded, size: 18, color: brandColor),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    'Open Study Guide',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: brandColor,
-                    ),
-                  ),
-                  if (!isLoading) ...[
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios, size: 14, color: brandColor),
-                  ],
-                ],
-              ),
-            ),
+          const SizedBox(height: 16),
+          CommunityWideCta(
+            label: context.tr(TranslationKeys.communityPagesOpenGuide),
+            icon: Icons.menu_book_rounded,
+            loading: isLoading,
+            onPressed: onOpenStudyGuide,
           ),
         ],
       ),
@@ -543,9 +465,8 @@ class _GuideInfoCard extends StatelessWidget {
 
 class _PostCard extends StatefulWidget {
   final FellowshipPostEntity post;
-  final bool isDark;
 
-  const _PostCard({required this.post, required this.isDark});
+  const _PostCard({required this.post});
 
   @override
   State<_PostCard> createState() => _PostCardState();
@@ -558,71 +479,39 @@ class _PostCardState extends State<_PostCard> {
   Widget build(BuildContext context) {
     final post = widget.post;
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     final isSystem = post.authorIsSystem;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          child: Row(
+    return CommunityFormCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isSystem)
-                const DisciplerAvatar(radius: 17)
+                const DisciplerAvatar(radius: 18)
               else
                 MemberAvatar(
                   displayName: post.authorDisplayName,
-                  accentColor: Theme.of(context).colorScheme.primary,
                   avatarUrl: post.authorAvatarUrl,
-                  radius: 17,
+                  radius: 18,
                 ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Author + time
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            isSystem
-                                ? l10n.disciplerName
-                                : post.authorDisplayName,
-                            style: TextStyle(
-                              color: context.appTextPrimary,
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isSystem) ...[
-                          const SizedBox(width: 6),
-                          const DisciplerAiChip(),
-                        ],
-                        const SizedBox(width: 6),
-                        Text(
-                          '·',
-                          style: TextStyle(
-                              color: context.appTextTertiary, fontSize: 11),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _timeAgo(post.createdAt),
-                          style: TextStyle(
-                            color: context.appTextTertiary,
-                            fontFamily: 'Inter',
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
+                    _AuthorLine(
+                      name: isSystem
+                          ? l10n.disciplerName
+                          : post.authorDisplayName,
+                      isSystem: isSystem,
+                      createdAt: post.createdAt,
+                      fontSize: 14.5,
                     ),
-                    const SizedBox(height: 5),
-                    // Content
+                    const SizedBox(height: 6),
                     if (post.isDaily)
                       DailyPostBody(
                         content: post.content,
@@ -633,10 +522,9 @@ class _PostCardState extends State<_PostCard> {
                         isSystem
                             ? stripEmphasisMarkers(post.content)
                             : post.content,
-                        style: TextStyle(
-                          color: context.appTextPrimary,
-                          fontFamily: 'Inter',
-                          fontSize: 14,
+                        style: AppFonts.inter(
+                          color: palette.text,
+                          fontSize: 15,
                           height: 1.5,
                         ),
                       ),
@@ -644,123 +532,139 @@ class _PostCardState extends State<_PostCard> {
                       const SizedBox(height: 8),
                       const DisciplerFooterNote(),
                     ],
-                    const SizedBox(height: 8),
-                    // Reply action
-                    GestureDetector(
-                      onTap: () {
-                        setState(() => _showReplies = !_showReplies);
-                        if (_showReplies) {
-                          context.read<FellowshipFeedBloc>().add(
-                                FellowshipCommentsOpenRequested(
-                                    postId: post.id),
-                              );
-                        }
-                      },
-                      behavior: HitTestBehavior.opaque,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 13,
-                            color: context.appTextTertiary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            post.commentCount > 0
-                                ? '${post.commentCount} ${post.commentCount == 1 ? 'reply' : 'replies'}'
-                                : 'Reply',
-                            style: TextStyle(
-                              color: context.appTextTertiary,
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                            ),
-                          ),
-                          if (post.commentCount > 0) ...[
-                            const SizedBox(width: 2),
-                            Icon(
-                              _showReplies
-                                  ? Icons.keyboard_arrow_up_rounded
-                                  : Icons.keyboard_arrow_down_rounded,
-                              size: 14,
-                              color: context.appTextTertiary,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                   ],
                 ),
               ),
             ],
           ),
-        ),
-
-        // Expanded replies + inline reply input
-        if (_showReplies)
+          // Reply toggle
           Padding(
-            padding: const EdgeInsets.only(left: 60),
-            child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-              builder: (ctx, feedState) {
-                final isActive = feedState.activePostId == post.id;
-                final loading = isActive &&
-                    feedState.commentsStatus ==
-                        FellowshipCommentsStatus.loading;
-                final comments =
-                    isActive ? feedState.comments : const <dynamic>[];
-
-                if (loading) {
-                  return const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
+            padding: const EdgeInsets.only(left: 38),
+            child: TextButton(
+              onPressed: () {
+                setState(() => _showReplies = !_showReplies);
+                if (_showReplies) {
+                  context.read<FellowshipFeedBloc>().add(
+                        FellowshipCommentsOpenRequested(postId: post.id),
+                      );
                 }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...comments.map((c) => _CommentRow(comment: c)),
-                    _InlineReplyInput(
-                      isDark: widget.isDark,
-                      onSubmit: (text) {
-                        context.read<FellowshipFeedBloc>()
-                          ..add(
-                              FellowshipCommentsOpenRequested(postId: post.id))
-                          ..add(
-                              FellowshipCommentCreateRequested(content: text));
-                      },
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: palette.muted,
+                minimumSize: const Size(44, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      postRepliesLabel(context, post.commentCount),
+                      style: AppFonts.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (post.commentCount > 0) ...[
+                    const SizedBox(width: 2),
+                    Icon(
+                      _showReplies
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      size: 18,
                     ),
                   ],
-                );
-              },
+                ],
+              ),
             ),
           ),
 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Divider(height: 1, color: context.appDivider),
-        ),
-      ],
+          // Expanded replies + inline reply input
+          if (_showReplies)
+            Padding(
+              padding: const EdgeInsets.only(left: 46),
+              child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+                builder: (ctx, feedState) {
+                  final isActive = feedState.activePostId == post.id;
+                  final loading = isActive &&
+                      feedState.commentsStatus ==
+                          FellowshipCommentsStatus.loading;
+                  final comments = isActive
+                      ? feedState.comments
+                      : const <FellowshipCommentEntity>[];
+
+                  if (loading) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...comments.map((c) => _CommentRow(comment: c)),
+                      _InlineReplyInput(
+                        onSubmit: (text) {
+                          context.read<FellowshipFeedBloc>()
+                            ..add(FellowshipCommentsOpenRequested(
+                                postId: post.id))
+                            ..add(FellowshipCommentCreateRequested(
+                                content: text));
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
+}
 
-  String _timeAgo(String iso) {
-    try {
-      final diff = DateTime.now().difference(DateTime.parse(iso).toLocal());
-      if (diff.inMinutes < 1) return 'just now';
-      if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-      if (diff.inDays < 1) return '${diff.inHours}h ago';
-      if (diff.inDays < 7) return '${diff.inDays}d ago';
-      final dt = DateTime.parse(iso).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return '';
-    }
+/// Name (+ Discipler AI chip) and relative time, wrapping on narrow widths.
+class _AuthorLine extends StatelessWidget {
+  final String name;
+  final bool isSystem;
+  final String createdAt;
+  final double fontSize;
+
+  const _AuthorLine({
+    required this.name,
+    required this.isSystem,
+    required this.createdAt,
+    required this.fontSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Wrap(
+      spacing: 6,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          name,
+          style: AppFonts.inter(
+            color: palette.text,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (isSystem) const DisciplerAiChip(),
+        PostTimestamp(createdAt: createdAt),
+      ],
+    );
   }
 }
 
@@ -775,75 +679,43 @@ class _CommentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     final isSystem = comment.authorIsSystem;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 16, bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isSystem)
-            const DisciplerAvatar(radius: 13)
+            const DisciplerAvatar(radius: 14)
           else
             MemberAvatar(
               displayName: comment.authorDisplayName,
-              accentColor: Theme.of(context).colorScheme.primary,
               avatarUrl: comment.authorAvatarUrl,
-              radius: 13,
+              radius: 14,
             ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        isSystem
-                            ? l10n.disciplerName
-                            : comment.authorDisplayName,
-                        style: TextStyle(
-                          color: context.appTextPrimary,
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isSystem) ...[
-                      const SizedBox(width: 6),
-                      const DisciplerAiChip(),
-                    ],
-                    const SizedBox(width: 6),
-                    Text(
-                      '·',
-                      style: TextStyle(
-                          color: context.appTextTertiary, fontSize: 11),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _timeAgo(comment.createdAt),
-                      style: TextStyle(
-                        color: context.appTextTertiary,
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+                _AuthorLine(
+                  name:
+                      isSystem ? l10n.disciplerName : comment.authorDisplayName,
+                  isSystem: isSystem,
+                  createdAt: comment.createdAt,
+                  fontSize: 13.5,
                 ),
                 const SizedBox(height: 3),
                 Text(
                   isSystem
                       ? stripEmphasisMarkers(comment.content)
                       : comment.content,
-                  style: TextStyle(
-                    color: context.appTextPrimary,
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    height: 1.4,
+                  style: AppFonts.inter(
+                    color: palette.text,
+                    fontSize: 14,
+                    height: 1.45,
                   ),
                 ),
                 if (isSystem) ...[
@@ -857,30 +729,43 @@ class _CommentRow extends StatelessWidget {
       ),
     );
   }
-
-  String _timeAgo(String iso) {
-    try {
-      final diff = DateTime.now().difference(DateTime.parse(iso).toLocal());
-      if (diff.inMinutes < 1) return 'just now';
-      if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-      if (diff.inDays < 1) return '${diff.inHours}h ago';
-      if (diff.inDays < 7) return '${diff.inDays}d ago';
-      final dt = DateTime.parse(iso).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return '';
-    }
-  }
 }
 
 // ============================================================================
-// Inline reply input
+// Round send button + inline reply input
 // ============================================================================
 
+class _SendButton extends StatelessWidget {
+  final VoidCallback? onTap;
+  final double size;
+
+  const _SendButton({required this.onTap, this.size = 44});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: context.tr(TranslationKeys.communityPagesSend),
+      child: Material(
+        color: ReaderPalette.selectedFill,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Icon(Icons.send_rounded,
+                size: size * 0.42, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _InlineReplyInput extends StatefulWidget {
-  final bool isDark;
   final void Function(String text) onSubmit;
-  const _InlineReplyInput({required this.isDark, required this.onSubmit});
+  const _InlineReplyInput({required this.onSubmit});
 
   @override
   State<_InlineReplyInput> createState() => _InlineReplyInputState();
@@ -895,59 +780,41 @@ class _InlineReplyInputState extends State<_InlineReplyInput> {
     super.dispose();
   }
 
+  void _send() {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty) return;
+    widget.onSubmit(text);
+    _ctrl.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.only(right: 16, bottom: 14),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _ctrl,
-              style: TextStyle(
-                  color: context.appTextPrimary,
-                  fontFamily: 'Inter',
-                  fontSize: 13),
+              style: AppFonts.inter(color: palette.text, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Add a reply…',
-                hintStyle: TextStyle(
-                    color: context.appTextTertiary,
-                    fontFamily: 'Inter',
-                    fontSize: 13),
+                hintText: context.tr(TranslationKeys.communityPagesReplyHint),
+                hintStyle: AppFonts.inter(color: palette.dim, fontSize: 14),
                 isDense: true,
                 filled: true,
-                fillColor: context.appInputFill,
+                fillColor: communityWellFill(palette),
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(22),
                   borderSide: BorderSide.none,
                 ),
               ),
             ),
           ),
           const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              final text = _ctrl.text.trim();
-              if (text.isEmpty) return;
-              widget.onSubmit(text);
-              _ctrl.clear();
-            },
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: context.appInteractive,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.send_rounded,
-                size: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          _SendButton(onTap: _send, size: 40),
         ],
       ),
     );
@@ -961,31 +828,32 @@ class _InlineReplyInputState extends State<_InlineReplyInput> {
 class _CommentInputBar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
-  final bool isDark;
   final VoidCallback onSubmit;
 
   const _CommentInputBar({
     required this.controller,
     required this.focusNode,
-    required this.isDark,
     required this.onSubmit,
   });
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
       buildWhen: (p, c) => p.submitting != c.submitting,
       builder: (ctx, state) {
         return Container(
           padding: EdgeInsets.only(
             left: 16,
-            right: 16,
+            right: 12,
             top: 10,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 10,
+            bottom: MediaQuery.of(context).viewInsets.bottom +
+                MediaQuery.of(context).padding.bottom +
+                10,
           ),
           decoration: BoxDecoration(
-            color: context.appSurface,
-            border: Border(top: BorderSide(color: context.appBorder)),
+            color: palette.card,
+            border: Border(top: BorderSide(color: palette.hairline)),
           ),
           child: Row(
             children: [
@@ -995,21 +863,15 @@ class _CommentInputBar extends StatelessWidget {
                   focusNode: focusNode,
                   maxLines: 4,
                   minLines: 1,
-                  style: TextStyle(
-                    color: context.appTextPrimary,
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                  ),
+                  style: AppFonts.inter(color: palette.text, fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: 'Share your reflection…',
-                    hintStyle: TextStyle(
-                        color: context.appTextTertiary,
-                        fontFamily: 'Inter',
-                        fontSize: 14),
+                    hintText: context
+                        .tr(TranslationKeys.communityPagesReflectionHint),
+                    hintStyle: AppFonts.inter(color: palette.dim, fontSize: 15),
                     filled: true,
-                    fillColor: context.appInputFill,
+                    fillColor: palette.raised,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                        horizontal: 16, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -1018,28 +880,17 @@ class _CommentInputBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              state.submitting
-                  ? const SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : GestureDetector(
-                      onTap: onSubmit,
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: context.appInteractive,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.send_rounded,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+              if (state.submitting)
+                const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                _SendButton(onTap: onSubmit),
             ],
           ),
         );

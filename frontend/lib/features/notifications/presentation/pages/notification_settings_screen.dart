@@ -17,6 +17,7 @@ import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/
 import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_state.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/utils/time_of_day_extensions.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
@@ -42,24 +43,16 @@ Future<void> _showPermissionDeniedSnackbar(BuildContext context) async {
       await sl<NotificationService>().isPermissionPermanentlyDenied();
   if (!context.mounted) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-          context.tr(TranslationKeys.notificationsSettingsPermissionsDenied)),
-      backgroundColor: AppColors.warning,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // persist:false — since Flutter 3.44 a SnackBar with an action
-      // defaults to persist:true, so it never times out AND blocks every
-      // later snackbar behind it in the app-wide queue.
-      persist: false,
-      action: permanentlyDenied
-          ? SnackBarAction(
-              label: context.tr(TranslationKeys.commonOpenSettings),
-              onPressed: sl<NotificationService>().openPermissionSettings,
-            )
-          : null,
-    ),
+  showAppSnackBar(
+    context,
+    context.tr(TranslationKeys.notificationsSettingsPermissionsDenied),
+    tone: AppSnackTone.warning,
+    actionLabel: permanentlyDenied
+        ? context.tr(TranslationKeys.commonOpenSettings)
+        : null,
+    onAction: permanentlyDenied
+        ? sl<NotificationService>().openPermissionSettings
+        : null,
   );
 }
 
@@ -86,42 +79,28 @@ class _NotificationSettingsView extends StatelessWidget {
         body: BlocConsumer<NotificationBloc, NotificationState>(
           listener: (context, state) {
             if (state is NotificationError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(TranslationKeys.commonErrorTryAgain),
+                tone: AppSnackTone.error,
               );
             } else if (state is NotificationPreferencesUpdated) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.tr(
-                      TranslationKeys.notificationsSettingsPreferencesUpdated)),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  duration: const Duration(seconds: 2),
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(
+                    TranslationKeys.notificationsSettingsPreferencesUpdated),
+                tone: AppSnackTone.success,
               );
               context
                   .read<NotificationBloc>()
                   .add(const LoadNotificationPreferences());
             } else if (state is NotificationPermissionResult) {
               if (state.granted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr(TranslationKeys
-                        .notificationsSettingsPermissionsGranted)),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
+                showAppSnackBar(
+                  context,
+                  context.tr(
+                      TranslationKeys.notificationsSettingsPermissionsGranted),
+                  tone: AppSnackTone.success,
                 );
               } else {
                 _showPermissionDeniedSnackbar(context);
@@ -690,16 +669,73 @@ class _ReminderTimeRow extends StatelessWidget {
             context: context,
             initialTime: time,
             builder: (ctx, child) => Theme(
-              data: Theme.of(ctx).copyWith(
-                colorScheme: Theme.of(ctx).colorScheme.copyWith(
-                      primary: settingsPrimaryFill,
-                      onPrimary: Colors.white,
-                    ),
-              ),
+              data:
+                  reminderTimePickerTheme(Theme.of(ctx), ReaderPalette.of(ctx)),
               child: child!,
             ),
           );
           if (picked != null && picked != time) onPicked(picked);
         },
       );
+}
+
+/// Theme for the reminder time picker: palette card surface, raised dial,
+/// ctaFill selection and Poppins/Inter text so it matches the settings sheets.
+@visibleForTesting
+ThemeData reminderTimePickerTheme(ThemeData base, ReaderPalette palette) {
+  Color selected(Color on, Color off) => WidgetStateColor.resolveWith(
+      (states) => states.contains(WidgetState.selected) ? on : off);
+
+  final pill = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
+  return base.copyWith(
+    colorScheme: base.colorScheme.copyWith(
+      primary: palette.ctaFill,
+      onPrimary: palette.ctaInk,
+      surface: palette.card,
+      onSurface: palette.text,
+      surfaceTint: Colors.transparent,
+    ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: palette.card,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: palette.hairline),
+      ),
+      helpTextStyle: AppFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.4,
+        color: palette.gold,
+      ),
+      hourMinuteShape: pill,
+      hourMinuteColor: selected(palette.ctaFill, palette.raised),
+      hourMinuteTextColor: selected(palette.ctaInk, palette.text),
+      hourMinuteTextStyle:
+          AppFonts.poppins(fontSize: 44, fontWeight: FontWeight.w600),
+      dayPeriodShape: pill,
+      dayPeriodBorderSide: BorderSide(color: palette.outline),
+      dayPeriodColor: selected(palette.ctaFill, Colors.transparent),
+      dayPeriodTextColor: selected(palette.ctaInk, palette.muted),
+      dayPeriodTextStyle:
+          AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+      dialBackgroundColor: palette.raised,
+      dialHandColor: palette.ctaFill,
+      dialTextColor: selected(palette.ctaInk, palette.text),
+      dialTextStyle: AppFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+      entryModeIconColor: palette.muted,
+      cancelButtonStyle: TextButton.styleFrom(
+        foregroundColor: palette.muted,
+        textStyle: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+      ),
+      confirmButtonStyle: TextButton.styleFrom(
+        backgroundColor: palette.ctaFill,
+        foregroundColor: palette.ctaInk,
+        textStyle: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+      ),
+    ),
+  );
 }

@@ -46,47 +46,16 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
 
   Future<void> _navigate() async {
     if (_loading) return;
-
-    final id = widget.studyGuideId;
-    final inputType = widget.inputType ?? 'topic';
-    final inputValue = widget.inputValue ?? widget.title;
-    final language = widget.language ?? 'en';
-
-    if (id != null && id.isNotEmpty) {
-      setState(() => _loading = true);
-      final data = await fetchSavedGuide(id);
-      if (!mounted) return;
-      setState(() => _loading = false);
-
-      if (data != null) {
-        context.push(
-          '${AppRoutes.studyGuide}?source=fellowship',
-          extra: {
-            // Forward the whole fetched row: the viewer reads summary,
-            // context, interpretation and the rest straight off this map, so
-            // a hand-built stub renders every section blank. `title` is added
-            // because the row stores it as `input_value`, which the viewer
-            // does not look for.
-            'study_guide': {
-              ...data,
-              'title': widget.title,
-              'type': inputType,
-              'input_value': inputValue,
-              'language': language,
-            },
-          },
-        );
-        return;
-      }
-    }
-
-    if (!mounted) return;
-    context.push(
-      '${AppRoutes.studyGuideV2}'
-      '?input=${Uri.encodeComponent(inputValue)}'
-      '&type=${Uri.encodeComponent(inputType)}'
-      '&language=${Uri.encodeComponent(language)}'
-      '&source=discipler',
+    await openFellowshipStudyGuide(
+      context,
+      studyGuideId: widget.studyGuideId,
+      title: widget.title,
+      inputType: widget.inputType,
+      inputValue: widget.inputValue,
+      language: widget.language,
+      onLoadingChanged: (loading) {
+        if (mounted) setState(() => _loading = loading);
+      },
     );
   }
 
@@ -239,4 +208,63 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
       ),
     );
   }
+}
+
+/// Opens a study guide from a fellowship surface (the [StudyGuideChip] and the
+/// daily post's "Start study" button).
+///
+/// If [studyGuideId] is set, the full saved guide is fetched by id first so
+/// the destination screen can load it directly without regenerating;
+/// [onLoadingChanged] reports that fetch. Otherwise navigation falls back to
+/// generating/looking up the guide by its input parameters.
+Future<void> openFellowshipStudyGuide(
+  BuildContext context, {
+  String? studyGuideId,
+  required String title,
+  String? inputType,
+  String? inputValue,
+  String? language,
+  ValueChanged<bool>? onLoadingChanged,
+}) async {
+  final id = studyGuideId;
+  final type = inputType ?? 'topic';
+  final value = inputValue ?? title;
+  final lang = language ?? 'en';
+
+  if (id != null && id.isNotEmpty) {
+    onLoadingChanged?.call(true);
+    final data = await fetchSavedGuide(id);
+    onLoadingChanged?.call(false);
+    if (!context.mounted) return;
+
+    if (data != null) {
+      context.push(
+        '${AppRoutes.studyGuide}?source=fellowship',
+        extra: {
+          // Forward the whole fetched row: the viewer reads summary,
+          // context, interpretation and the rest straight off this map, so
+          // a hand-built stub renders every section blank. `title` is added
+          // because the row stores it as `input_value`, which the viewer
+          // does not look for.
+          'study_guide': {
+            ...data,
+            'title': title,
+            'type': type,
+            'input_value': value,
+            'language': lang,
+          },
+        },
+      );
+      return;
+    }
+  }
+
+  if (!context.mounted) return;
+  context.push(
+    '${AppRoutes.studyGuideV2}'
+    '?input=${Uri.encodeComponent(value)}'
+    '&type=${Uri.encodeComponent(type)}'
+    '&language=${Uri.encodeComponent(lang)}'
+    '&source=discipler',
+  );
 }

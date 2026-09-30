@@ -86,7 +86,11 @@ void main() {
   });
 
   test('only a mentor is offered the invite button', () {
-    expect(home.contains('if (isMentor || membersState.isMentor)'), true,
+    expect(
+        home.contains('final canInvite = isMentor || membersState.isMentor;'),
+        true,
         reason: 'creating an invite is mentor-only server-side');
+    expect(home.contains('if (canInvite)'), true,
+        reason: 'the invite button must be gated on the mentor check');
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/utils/plan_features_extractor.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/subscription_legal_links.dart';
@@ -395,5 +396,5 @@ class PlanInfoNotice extends StatelessWidget {
 
 /// Violet of the Plus tier, lifted on dark so it reads as text.
 Color plusTierColor(BuildContext context) => ReaderPalette.of(context).isDark
-    ? const Color(0xFFA78BFA)
-    : const Color(0xFF7C3AED);
+    ? AppColors.tierPlusOnDark
+    : AppColors.tierPlus;

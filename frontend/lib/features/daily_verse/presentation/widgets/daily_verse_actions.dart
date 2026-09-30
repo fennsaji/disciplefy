@@ -11,6 +11,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/share_links.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
@@ -98,19 +99,10 @@ class DailyVerseActions extends StatelessWidget {
   void _copy(BuildContext context) {
     Clipboard.setData(ClipboardData(text: dailyVerseShareMessage(state)));
 
-    final theme = Theme.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.tr(TranslationKeys.dailyVerseCopied),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onPrimary,
-          ),
-        ),
-        backgroundColor: context.appInteractive,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.dailyVerseCopied),
+      tone: AppSnackTone.success,
     );
   }
 }
@@ -207,64 +199,35 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
   }
 
   void _showAddedSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Row(children: [
-        Icon(Icons.check_circle, color: Colors.white),
-        SizedBox(width: 8),
-        Expanded(
-            child: Text(
-                'Added to Memory Verses! Start reviewing to memorize this verse.')),
-      ]),
-      backgroundColor: AppColors.success,
-      duration: const Duration(seconds: 3),
-      // persist:false — since Flutter 3.44 a SnackBar with an action
-      // defaults to persist:true, so it never times out AND blocks every
-      // later snackbar behind it in the app-wide queue.
-      persist: false,
-      action: SnackBarAction(
-        label: 'Review Now',
-        textColor: Colors.white,
-        onPressed: () => GoRouter.of(context).go(AppRoutes.memoryVerses),
-      ),
-    ));
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.memoryAddFeedbackAdded),
+      tone: AppSnackTone.success,
+      actionLabel: context.tr(TranslationKeys.memoryAddFeedbackReviewNow),
+      onAction: () => GoRouter.of(context).go(AppRoutes.memoryVerses),
+    );
   }
 
   void _showErrorSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-      backgroundColor: AppColors.error,
-      duration: const Duration(seconds: 3),
-    ));
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.commonErrorTryAgain),
+      tone: AppSnackTone.error,
+    );
   }
 
   void _showAlreadyExistsSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Row(children: [
-        Icon(Icons.bookmark, color: Colors.white),
-        SizedBox(width: 8),
-        Expanded(child: Text('Verse already in your memory deck')),
-      ]),
-      backgroundColor: AppColors.warning,
-      // persist:false — see _showAddedSnackBar.
-      persist: false,
-      action: SnackBarAction(
-        label: 'Review',
-        textColor: Colors.white,
-        onPressed: () => GoRouter.of(context).go(AppRoutes.memoryVerses),
-      ),
-    ));
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.memoryAddFeedbackAlreadyExists),
+      tone: AppSnackTone.warning,
+      actionLabel: context.tr(TranslationKeys.memoryAddFeedbackReview),
+      onAction: () => GoRouter.of(context).go(AppRoutes.memoryVerses),
+    );
   }
 
   void _showQueuedSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const Icon(Icons.cloud_off, color: Colors.white),
-        const SizedBox(width: 8),
-        Expanded(child: Text(message)),
-      ]),
-      backgroundColor: AppColors.warning,
-      duration: const Duration(seconds: 3),
-    ));
+    showAppSnackBar(context, message, tone: AppSnackTone.warning);
   }
 
   @override

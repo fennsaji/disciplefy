@@ -161,7 +161,7 @@ async function handleList(req: Request, services: ServiceContainer): Promise<Res
         const u = userData.user
         const displayName: string =
           u.user_metadata?.full_name ?? u.user_metadata?.name ??
-          u.user_metadata?.display_name ?? u.email ?? 'Unknown Member'
+          u.user_metadata?.display_name ?? 'Unknown Member'
         return {
           user_id: row.blocked_id,
           display_name: displayName,

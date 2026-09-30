@@ -24,6 +24,7 @@ import { handleDisciplerReply } from './discipler-reply.ts'
 import { handleDailyTeaser } from './daily-teaser.ts'
 import { handleNotify } from './notify.ts'
 import { handleFlushPushes } from './flush-pushes.ts'
+import { parseGuideStudyMode, parseGuideSummary } from './guide-fields.ts'
 
 // ---------------------------------------------------------------------------
 // List posts  GET /fellowship-posts
@@ -93,7 +94,7 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
 
   let query = db
     .from('fellowship_posts')
-    .select('id, fellowship_id, topic_id, topic_title, guide_title, lesson_index, study_guide_id, guide_input_type, guide_language, content, post_type, reaction_counts, author_user_id, is_deleted, created_at, mentions_discipler')
+    .select('id, fellowship_id, topic_id, topic_title, guide_title, lesson_index, study_guide_id, guide_input_type, guide_language, guide_study_mode, guide_summary, content, post_type, reaction_counts, author_user_id, is_deleted, created_at, mentions_discipler')
     .eq('fellowship_id', fellowshipId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
@@ -134,7 +135,7 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
           const u = userData.user
           const displayName: string =
             u.user_metadata?.full_name ?? u.user_metadata?.name ??
-            u.user_metadata?.display_name ?? u.email ?? 'Unknown Member'
+            u.user_metadata?.display_name ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? 'Unknown Member'
           const avatarUrl: string | null = u.user_metadata?.avatar_url ?? null
           return { userId, displayName, avatarUrl }
         } catch {
@@ -177,6 +178,8 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
       study_guide_id: post.study_guide_id ?? null,
       guide_input_type: post.guide_input_type ?? null,
       guide_language: post.guide_language ?? null,
+      guide_study_mode: post.guide_study_mode ?? null,
+      guide_summary: post.guide_summary ?? null,
       content: post.content,
       post_type: post.post_type,
       reaction_counts: post.reaction_counts ?? {},
@@ -214,6 +217,10 @@ interface CreatePostRequest {
   study_guide_id?: string | null
   guide_input_type?: string | null
   guide_language?: string | null
+  /** shared_guide only: study mode the guide was generated in. */
+  guide_study_mode?: string | null
+  /** shared_guide only: short plain-text preview of the guide. */
+  guide_summary?: string | null
 }
 
 async function handleCreatePost(req: Request, services: ServiceContainer): Promise<Response> {
@@ -250,6 +257,11 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   if (body.content && body.content.length > 2000) {
     throw new AppError('VALIDATION_ERROR', 'content exceeds 2000 characters', 400)
   }
+
+  // Optional preview fields for a shared guide. Older clients omit them and
+  // other post types ignore them.
+  const guideStudyMode = postType === 'shared_guide' ? parseGuideStudyMode(body.guide_study_mode) : null
+  const guideSummary = postType === 'shared_guide' ? parseGuideSummary(body.guide_summary) : null
 
   const db = services.supabaseServiceClient
 
@@ -299,7 +311,9 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       ...(body.lesson_index   != null ? { lesson_index: body.lesson_index } : {}),
       ...(body.study_guide_id  ? { study_guide_id:   body.study_guide_id }  : {}),
       ...(body.guide_input_type ? { guide_input_type: body.guide_input_type } : {}),
-      ...(body.guide_language   ? { guide_language:   body.guide_language }  : {})
+      ...(body.guide_language   ? { guide_language:   body.guide_language }  : {}),
+      ...(guideStudyMode        ? { guide_study_mode: guideStudyMode }       : {}),
+      ...(guideSummary          ? { guide_summary:    guideSummary }         : {})
     })
     .select()
     .single()
@@ -318,7 +332,10 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   const authorUser = authorResult.data?.user
   const authorDisplayName: string =
     authorUser?.user_metadata?.full_name ?? authorUser?.user_metadata?.name ??
-    authorUser?.user_metadata?.display_name ?? authorUser?.email ?? 'Unknown Member'
+    authorUser?.user_metadata?.display_name ??
+    authorUser?.user_metadata?.full_name ??
+    authorUser?.user_metadata?.name ??
+    'Unknown Member'
   const authorAvatarUrl: string | null = authorUser?.user_metadata?.avatar_url ?? null
 
   if (membersResult.error) console.error('[fellowship-posts/create] Members fetch error:', membersResult.error)
@@ -409,6 +426,8 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         study_guide_id: post.study_guide_id ?? null,
         guide_input_type: post.guide_input_type ?? null,
         guide_language: post.guide_language ?? null,
+        guide_study_mode: post.guide_study_mode ?? null,
+        guide_summary: post.guide_summary ?? null,
         author_user_id: post.author_user_id,
         content: post.content,
         post_type: post.post_type,

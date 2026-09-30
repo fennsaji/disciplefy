@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/practice_mode_entity.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_mode_entity.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Bottom sheet showing step-by-step "How it works" instructions
 /// for a specific practice mode.
@@ -18,16 +20,15 @@ class PracticeModeInfoSheet extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => PracticeModeInfoSheet._(modeType: modeType),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final l10n = AppLocalizations.of(context)!;
     final entity = PracticeModeEntity(
       modeType: modeType,
@@ -35,138 +36,90 @@ class PracticeModeInfoSheet extends StatelessWidget {
       successRate: 0,
       isFavorite: false,
     );
-    final difficultyColor = entity.difficultyColor;
     final steps = _getSteps(l10n);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return PopupSheet(
+      children: [
+        // Header: icon + name + difficulty badge
+        Row(
           children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant
-                      .withAlpha((0.3 * 255).round()),
-                  borderRadius: BorderRadius.circular(2),
+            PopupIconCircle(icon: entity.icon, size: 44),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                entity.displayName,
+                style: AppFonts.poppins(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.25,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(width: 8),
+            _DifficultyPill(
+              label: entity.difficultyLabel,
+              color: entity.difficultyColor,
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Divider(height: 1, color: palette.hairline),
+        const SizedBox(height: 18),
 
-            // Header: icon + name + difficulty badge
-            Row(
+        // "How it works" section
+        PopupEyebrow(l10n.practiceModeInfoHowItWorks,
+            textAlign: TextAlign.start),
+        const SizedBox(height: 12),
+
+        // Steps list
+        for (var i = 0; i < steps.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: difficultyColor.withAlpha((0.1 * 255).round()),
-                    borderRadius: BorderRadius.circular(12),
+                    color: palette.raised,
+                    shape: BoxShape.circle,
                   ),
-                  child: Icon(entity.icon, color: difficultyColor, size: 24),
+                  child: Text(
+                    '${i + 1}',
+                    style: AppFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: palette.gold,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    entity.displayName,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    steps[i],
+                    style: AppFonts.inter(
+                      fontSize: 14.5,
+                      color: palette.text,
+                      height: 1.45,
                     ),
                   ),
-                ),
-                _DifficultyPill(
-                  label: entity.difficultyLabel,
-                  color: difficultyColor,
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
+          ),
 
-            // "How it works" section
-            Text(
-              l10n.practiceModeInfoHowItWorks,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
+        const SizedBox(height: 12),
 
-            // Steps list
-            ...steps.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final step = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: difficultyColor.withAlpha((0.15 * 255).round()),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '${idx + 1}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: difficultyColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        step,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-
-            const SizedBox(height: 20),
-
-            // Got it button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  l10n.practiceModeInfoGotIt,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        // Got it button
+        PopupPrimaryButton(
+          key: const Key('practice_mode_info_got_it'),
+          label: l10n.practiceModeInfoGotIt,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
+      ],
     );
   }
 
@@ -232,20 +185,19 @@ class _DifficultyPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withAlpha((0.12 * 255).round()),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withAlpha((0.4 * 255).round())),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
+        style: AppFonts.inter(
+          fontSize: 11,
           color: color,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
       ),
     );

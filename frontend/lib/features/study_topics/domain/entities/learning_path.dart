@@ -170,6 +170,7 @@ class LearningPathDetail extends LearningPath {
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,
+    super.category,
     this.topicsCompleted = 0,
     this.enrolledAt,
     this.topics = const [],

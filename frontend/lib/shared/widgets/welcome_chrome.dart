@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
+
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
@@ -15,6 +17,7 @@ class WelcomePhotos {
   static const String wheatDawn = 'assets/images/hero/wheat_dawn.jpg';
   static const String greenHills = 'assets/images/hero/green_hills.jpg';
   static const String valleyMist = 'assets/images/hero/valley_mist.jpg';
+  static const String winterSunset = 'assets/images/hero/winter_sunset.jpg';
 }
 
 /// Decode width for a 2000px-wide 3:2 photo covering a [width] x [height]
@@ -120,10 +123,14 @@ class WelcomePhotoBackdrop extends StatelessWidget {
   /// Where the photo is anchored inside the box.
   final Alignment alignment;
 
+  /// Blur the photo into a soft colour wash (decoded tiny, then upscaled).
+  final bool blurred;
+
   const WelcomePhotoBackdrop({
     super.key,
     required this.asset,
     this.alignment = Alignment.center,
+    this.blurred = false,
   });
 
   @override
@@ -153,8 +160,10 @@ class WelcomePhotoBackdrop extends StatelessWidget {
               asset,
               fit: BoxFit.cover,
               alignment: alignment,
-              cacheWidth:
-                  welcomePhotoCacheWidth(context, box.maxWidth, box.maxHeight),
+              cacheWidth: blurred
+                  ? photoWashDecodeWidth
+                  : welcomePhotoCacheWidth(
+                      context, box.maxWidth, box.maxHeight),
               errorBuilder: (_, __, ___) => ColoredBox(color: page),
             ),
             DecoratedBox(

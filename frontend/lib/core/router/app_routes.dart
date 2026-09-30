@@ -8,8 +8,6 @@ class AppRoutes {
 
   static const String onboarding = '/onboarding';
   static const String languageSelection = '/language-selection';
-  // static const String onboardingLanguage = '/onboarding/language';
-  // static const String onboardingPurpose = '/onboarding/purpose';
   static const String home = '/';
   static const String generateStudy = '/generate-study';
   static const String studyGuide = '/study-guide';
@@ -75,6 +73,16 @@ class AppRoutes {
 
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';
+
+  /// Every path in one category ("See all" on the Study Topics tab).
+  static const String learningPathCategory =
+      '/learning-paths/category/:category';
+
+  /// Location of [learningPathCategory] for [category].
+  static String learningPathCategoryLocation(String category,
+          {String? language}) =>
+      '/learning-paths/category/${Uri.encodeComponent(category)}'
+      '${language != null ? '?language=${Uri.encodeQueryComponent(language)}' : ''}';
 
   // Shared links
   static const String dailyVerseShared = '/daily-verse';

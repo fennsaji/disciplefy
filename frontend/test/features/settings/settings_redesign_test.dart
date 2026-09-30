@@ -223,6 +223,26 @@ void main() {
         expect(find.text('Delete Account'), findsOneWidget);
         expect(find.text('2.4.0'), findsOneWidget);
       });
+
+      testWidgets('$theme: failed load shows a status view whose Retry reloads',
+          (tester) async {
+        useSurface(tester, const Size(320, 640));
+        whenListen(settingsBloc, const Stream<SettingsState>.empty(),
+            initialState: const SettingsError(message: 'boom'));
+        await tester.pumpWidget(app(const SettingsScreen(), dark: dark));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('settings_load_failed')), findsOneWidget);
+        expect(find.text(tr(TranslationKeys.settingsFailedToLoad)),
+            findsOneWidget);
+        expect(find.text('boom'), findsNothing);
+        expectNoTruncatedText(tester);
+
+        await tester.tap(find.byKey(const Key('settings_load_retry')));
+        await tester.pump();
+        verify(() => settingsBloc.add(any(that: isA<LoadSettings>())))
+            .called(1);
+      });
     }
 
     for (final language in AppLanguage.values) {

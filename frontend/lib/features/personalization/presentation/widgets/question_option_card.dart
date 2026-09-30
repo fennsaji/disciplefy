@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// A card widget for selecting questionnaire options
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+
+/// Single-choice answer card in the personalization questionnaire.
+///
+/// Same look as the onboarding language cards: card fill, 18 radius,
+/// hairline border, leading icon in a tinted circle and a round mark that
+/// fills with a check when selected.
 class QuestionOptionCard extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -16,89 +24,17 @@ class QuestionOptionCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: isSelected
-            ? colorScheme.primaryContainer
-            : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.outline.withValues(alpha: 0.3),
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        isSelected ? colorScheme.primary : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.outline,
-                      width: 2,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          size: 16,
-                          color: colorScheme.onPrimary,
-                        )
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _OptionCard(
+        label: label,
+        isSelected: isSelected,
+        onTap: onTap,
+        icon: icon,
+        multiSelect: false,
+      );
 }
 
-/// A card widget for multi-select options (with checkbox style)
+/// Multi-choice answer card: like [QuestionOptionCard] with a rounded-square
+/// check mark instead of a round one.
 class MultiSelectOptionCard extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -114,84 +50,131 @@ class MultiSelectOptionCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  Widget build(BuildContext context) => _OptionCard(
+        label: label,
+        isSelected: isSelected,
+        onTap: onTap,
+        icon: icon,
+        multiSelect: true,
+      );
+}
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: isSelected
-            ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-            : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.outline.withValues(alpha: 0.3),
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    size: 22,
+class _OptionCard extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final IconData? icon;
+  final bool multiSelect;
+
+  const _OptionCard({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.icon,
+    required this.multiSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    const accent = ReaderPalette.selectedFill;
+    final radius = BorderRadius.circular(18);
+
+    final fill = isSelected
+        ? accent.withValues(alpha: palette.isDark ? 0.14 : 0.07)
+        : palette.card;
+    final border = isSelected
+        ? const BorderSide(color: accent, width: 1.5)
+        : BorderSide(color: palette.hairline);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        checked: multiSelect ? isSelected : null,
+        inMutuallyExclusiveGroup: !multiSelect,
+        child: Material(
+          color: fill,
+          shape: RoundedRectangleBorder(borderRadius: radius, side: border),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: RoundedRectangleBorder(borderRadius: radius),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              child: Row(
+                children: [
+                  if (icon != null) ...[
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected
+                            ? accent
+                            : AppColors.brandPrimary.withValues(
+                                alpha: palette.isDark ? 0.18 : 0.08),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 20,
+                        color: isSelected ? Colors.white : palette.accentIcon,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                  ],
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        height: 1.35,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: palette.text,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
+                  _CheckMark(isSelected: isSelected, square: multiSelect),
                 ],
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color:
-                        isSelected ? colorScheme.primary : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.outline,
-                      width: 2,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          size: 14,
-                          color: colorScheme.onPrimary,
-                        )
-                      : null,
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Empty ring (or rounded square) that fills with a white check.
+class _CheckMark extends StatelessWidget {
+  final bool isSelected;
+  final bool square;
+
+  const _CheckMark({required this.isSelected, required this.square});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: square ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: square ? BorderRadius.circular(7) : null,
+        color: isSelected ? ReaderPalette.selectedFill : Colors.transparent,
+        border: isSelected
+            ? null
+            : Border.all(color: palette.dim.withValues(alpha: 0.8), width: 1.5),
+      ),
+      child: isSelected
+          ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+          : null,
     );
   }
 }

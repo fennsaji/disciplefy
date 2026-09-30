@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
 import '../navigation/route_observer.dart';
+import '../../shared/widgets/app_snackbar.dart';
 import '../animations/page_transitions.dart';
 import '../presentation/widgets/max_width_wrapper.dart';
 import '../screens/maintenance_screen.dart';
 import '../services/system_config_service.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
-import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
-import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/presentation/screens/study_guide_open_screen.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
@@ -78,6 +79,7 @@ import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
 import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
+import '../../features/study_topics/presentation/pages/learning_path_category_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../widgets/locked_feature_wrapper.dart';
@@ -162,16 +164,6 @@ class AppRouter {
         builder: (context, state) =>
             const MaxWidthWrapper(child: ProfileSetupScreen()),
       ),
-      // GoRoute(
-      //   path: AppRoutes.onboardingLanguage,
-      //   name: 'onboarding_language',
-      //   builder: (context, state) => const OnboardingLanguagePage(),
-      // ),
-      // GoRoute(
-      //   path: AppRoutes.onboardingPurpose,
-      //   name: 'onboarding_purpose',
-      //   builder: (context, state) => const OnboardingPurposePage(),
-      // ),
 
       // Main App Routes (using StatefulShellRoute for proper navigation)
       StatefulShellRoute.indexedStack(
@@ -387,11 +379,12 @@ class AppRouter {
                             // back rather than crash on a null fellowship.
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context)
-                                  ..hideCurrentSnackBar()
-                                  ..showSnackBar(const SnackBar(
-                                      content:
-                                          Text('Could not open settings.')));
+                                showAppSnackBar(
+                                  context,
+                                  context.tr(TranslationKeys
+                                      .appStatusSettingsOpenFailed),
+                                  tone: AppSnackTone.error,
+                                );
                                 context.pop();
                               }
                             });
@@ -887,6 +880,40 @@ class AppRouter {
         },
       ),
 
+      // All paths in one category ("See all"). Shares the Topics tab's
+      // LearningPathsBloc when passed as `extra`, so loaded pages carry over;
+      // a direct link gets its own bloc and loads from scratch.
+      GoRoute(
+        path: AppRoutes.learningPathCategory,
+        name: 'learning_path_category',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          var category = state.pathParameters['category'] ?? '';
+          if (category.contains('%')) {
+            try {
+              category = Uri.decodeComponent(category);
+            } catch (_) {}
+          }
+          final language = state.uri.queryParameters['language'];
+          final page = LearningPathCategoryPage(
+            category: category,
+            language: language,
+          );
+          final extra = state.extra;
+          return MaxWidthWrapper(
+            child: LockedFeatureWrapper(
+              featureKey: 'learning_paths',
+              child: extra is LearningPathsBloc && !extra.isClosed
+                  ? BlocProvider.value(value: extra, child: page)
+                  : BlocProvider(
+                      create: (context) => sl<LearningPathsBloc>(),
+                      child: page,
+                    ),
+            ),
+          );
+        },
+      ),
+
       // Leaderboard Route
       GoRoute(
         path: AppRoutes.leaderboard,
@@ -1267,8 +1294,6 @@ class AppRouter {
 // Navigation Extensions
 extension AppRouterExtension on GoRouter {
   void goToOnboarding() => go(AppRoutes.onboarding);
-  // void goToOnboardingLanguage() => go(AppRoutes.onboardingLanguage);
-  // void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
   void goToGenerateStudy() => go(AppRoutes.generateStudy);
   void goToStudyGuideWithExtra(Map<String, dynamic> extra) =>

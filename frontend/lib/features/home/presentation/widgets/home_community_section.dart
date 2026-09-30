@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../community/domain/entities/fellowship_entity.dart';
-import '../../../community/domain/entities/fellowship_post_entity.dart';
-import '../../../community/domain/entities/public_fellowship_entity.dart';
-import '../../../community/domain/fellowship_changes.dart';
-import '../../../community/domain/repositories/community_repository.dart';
-import '../../../community/presentation/widgets/discipler_badges.dart';
-import 'home_sections.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/public_fellowship_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/fellowship_changes.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_sections.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 // ---------------------------------------------------------------------------
 // Pure helpers (unit-tested in test/features/home/)
@@ -25,7 +31,7 @@ import 'home_sections.dart';
 /// them all in full. A home row only ever needs the title.
 const String kDailyTitleTag = '📖';
 
-/// One row of the home "Recent activity" list: a post plus the name of the
+/// One row of the home "Community activity" list: a post plus the name of the
 /// fellowship it came from.
 class RecentActivityItem {
   final FellowshipPostEntity post;
@@ -37,8 +43,7 @@ class RecentActivityItem {
 /// Collapses all runs of whitespace (including newlines) into single spaces.
 String _flatten(String value) => value.replaceAll(RegExp(r'\s+'), ' ').trim();
 
-/// What kind of post a row points at. Rows are pointers, not previews, so the
-/// kind — rather than the body — is what tells a reader whether to tap.
+/// What kind of post a row shows: drives its type chip and accessible label.
 enum RecentActivityKind {
   daily,
   prayer,
@@ -49,7 +54,7 @@ enum RecentActivityKind {
   general,
 }
 
-/// Maps a post onto the label its row should carry.
+/// Maps a post onto the kind its row should carry.
 RecentActivityKind recentActivityKind(FellowshipPostEntity post) {
   if (post.isDaily) return RecentActivityKind.daily;
   switch (post.postType) {
@@ -72,8 +77,8 @@ RecentActivityKind recentActivityKind(FellowshipPostEntity post) {
 ///
 /// Prefers the structured `topicTitle` / `guideTitle` the backend attaches;
 /// falls back to the `📖` line of the emoji-tagged body when they are absent.
-/// Returns null when there is nothing worth naming, in which case the row
-/// shows only "Today's study".
+/// Returns null when there is nothing worth naming, in which case the row's
+/// preview falls back to the lesson's opening line alone.
 String? dailyLessonTitle(FellowshipPostEntity post) {
   for (final candidate in [post.topicTitle, post.guideTitle]) {
     if (candidate == null) continue;
@@ -88,6 +93,62 @@ String? dailyLessonTitle(FellowshipPostEntity post) {
   }
   return null;
 }
+
+/// Leading emoji tags the daily-post formatter puts on its structured lines.
+const List<String> _dailyLineTags = ['📖', '✨', '✝️', '✝', '💬'];
+
+/// Opening line of a daily study post under its title: the `✨` hook when
+/// there is one, otherwise the first untagged body line. Null when neither
+/// exists.
+String? _dailyIntro(String content) {
+  String? firstPlain;
+  for (final raw in content.split('\n')) {
+    final line = raw.trim();
+    if (line.isEmpty) continue;
+    if (line.startsWith('✨')) {
+      final hook = _flatten(line.substring('✨'.length));
+      if (hook.isNotEmpty) return hook;
+      continue;
+    }
+    if (_dailyLineTags.any(line.startsWith)) continue;
+    firstPlain ??= _flatten(line);
+  }
+  return (firstPlain?.isEmpty ?? true) ? null : firstPlain;
+}
+
+/// Joins the non-empty parts with an em dash.
+String _joinDash(List<String?> parts) => parts
+    .whereType<String>()
+    .map(_flatten)
+    .where((p) => p.isNotEmpty)
+    .join(' — ');
+
+/// One-paragraph preview a home row shows under the author line.
+///
+/// - Daily study: lesson title, then its opening hook.
+/// - Shared guide: guide title, then the sharer's message (or the guide's
+///   summary when they wrote none).
+/// - Everything else: the post body, whitespace collapsed.
+///
+/// Returns an empty string when the post has nothing to preview.
+String recentActivityPreview(FellowshipPostEntity post) {
+  if (post.isDaily) {
+    return _joinDash([dailyLessonTitle(post), _dailyIntro(post.content)]);
+  }
+  if (post.postType == 'shared_guide') {
+    final message = _flatten(post.content);
+    return _joinDash([
+      post.guideTitle,
+      message.isNotEmpty ? message : post.guideSummary,
+    ]);
+  }
+  return _flatten(post.content);
+}
+
+/// Total reactions across every emoji on [post]; negative counts are ignored.
+int recentActivityReactionTotal(FellowshipPostEntity post) =>
+    post.reactionCounts.values
+        .fold<int>(0, (sum, count) => sum + (count > 0 ? count : 0));
 
 /// Merges the per-fellowship post lists into a single newest-first list.
 ///
@@ -191,7 +252,7 @@ class HomeCommunitySection extends StatefulWidget {
 }
 
 class _HomeCommunitySectionState extends State<HomeCommunitySection> {
-  static const int _maxRows = 4;
+  static const int _maxRows = 3;
 
   bool _loaded = false;
 
@@ -335,7 +396,6 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     if (_joiningId != null) return;
     setState(() => _joiningId = fellowship.id);
     final l10n = AppLocalizations.of(context)!;
-    final messenger = ScaffoldMessenger.of(context);
 
     bool ok = false;
     try {
@@ -350,12 +410,14 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     setState(() => _joiningId = null);
 
     if (ok) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.homeJoinedFellowship(fellowship.name))),
+      showAppSnackBar(
+        context,
+        l10n.homeJoinedFellowship(fellowship.name),
+        tone: AppSnackTone.success,
       );
       context.push('/community/${fellowship.id}');
     } else {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.homeJoinFailed)));
+      showAppSnackBar(context, l10n.homeJoinFailed, tone: AppSnackTone.error);
     }
   }
 
@@ -478,8 +540,9 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
 // Presentation pieces
 // ---------------------------------------------------------------------------
 
-/// Section title + trailing text action, shared with the other home sections
-/// so every heading under the hero looks the same.
+/// Section title + trailing text action, built on the shared home header so
+/// every heading under the hero lines up. The action is drawn in the brand
+/// accent: this is the one section whose "View all" leaves the home tab.
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -494,129 +557,85 @@ class _SectionHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => HomeSectionHeader(
-        title: title,
-        subtitle: subtitle,
-        actionLabel: actionLabel,
-        onAction: onAction,
-      );
-}
-
-/// Rounded container the rows sit inside. One panel of hairline-separated
-/// rows reads as a single closing block, where three stacked cards at the
-/// bottom of a long scroll would read as more page still to come.
-class _Panel extends StatelessWidget {
-  final List<Widget> children;
-
-  const _Panel({required this.children});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: context.appSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.appBorder),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: children,
-        ),
-      );
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 53),
-        child: Container(height: 1, color: context.appDivider),
-      );
-}
-
-/// Circular avatar for a human poster: their picture when they have one,
-/// coloured initials otherwise.
-class _MemberAvatar extends StatelessWidget {
-  final String name;
-  final String? avatarUrl;
-
-  const _MemberAvatar({required this.name, this.avatarUrl});
-
-  static const List<Color> _palette = [
-    Color(0xFF6A4FB6),
-    Color(0xFF3B82F6),
-    Color(0xFF10B981),
-    Color(0xFFF59E0B),
-    Color(0xFFEF4444),
-    Color(0xFF8B5CF6),
-    Color(0xFF06B6D4),
-    Color(0xFFEC4899),
-  ];
-
-  String get _initials {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return '?';
-    final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.length >= 2 && parts[1].isNotEmpty) {
-      return '${parts[0].characters.first}${parts[1].characters.first}'
-          .toUpperCase();
-    }
-    return parts[0].characters.first.toUpperCase();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final hash = name.codeUnits.fold<int>(0, (a, b) => a + b);
-    final url = avatarUrl;
-    if (url != null && url.isNotEmpty) {
-      return CircleAvatar(
-        radius: 16,
-        backgroundColor: _palette[hash % _palette.length],
-        foregroundImage: NetworkImage(url),
-        // Shown while the image loads and if it fails, so the row never
-        // collapses to an empty disc.
-        child: Text(
-          _initials,
-          style: AppFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
+    final palette = ReaderPalette.of(context);
+    return HomeSectionHeader(
+      title: title,
+      subtitle: subtitle,
+      trailing: TextButton(
+        onPressed: onAction,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-      );
-    }
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor: _palette[hash % _palette.length],
-      child: Text(
-        _initials,
-        style: AppFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+        child: Text(
+          actionLabel,
+          style: AppFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: palette.accentIcon,
+          ),
         ),
       ),
     );
   }
 }
 
-/// One compact activity row: who posted, in which group, what kind of post,
-/// and how long ago. Deliberately no body preview — the row is a pointer, and
-/// tapping it opens the post itself.
+/// Rounded card the rows sit inside. One panel of hairline-separated rows
+/// reads as a single closing block, where three stacked cards at the bottom
+/// of a long scroll would read as more page still to come.
+class _Panel extends StatelessWidget {
+  final List<Widget> children;
+
+  const _Panel({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.hairline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+}
+
+/// Hairline between panel rows, inset to the rows' horizontal padding.
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Container(
+          height: 1,
+          color: ReaderPalette.of(context).hairline,
+        ),
+      );
+}
+
+/// One activity item: who posted and when, what kind of post, a short
+/// preview of what was said, and which group it was said in. The whole row
+/// opens the post.
 class _ActivityRow extends StatelessWidget {
   final RecentActivityItem item;
 
   const _ActivityRow({required this.item});
 
+  /// Accessible name of the post kind, including general posts, which carry
+  /// no visible chip.
   String _kindLabel(AppLocalizations l10n) {
     switch (recentActivityKind(item.post)) {
       case RecentActivityKind.daily:
-        // The Discipler avatar and AI chip on the line above already say this
-        // is the daily study, so the lesson title is the more useful half of
-        // the label in the width a row has. Only unnamed lessons fall back to
-        // the generic "Today's study".
-        return dailyLessonTitle(item.post) ?? l10n.postTypeDaily;
+        return l10n.postTypeDaily;
       case RecentActivityKind.prayer:
         return l10n.postTypePrayer;
       case RecentActivityKind.praise:
@@ -635,113 +654,220 @@ class _ActivityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     final post = item.post;
     final isDiscipler = post.authorIsSystem;
     final authorName =
         isDiscipler ? l10n.disciplerName : post.authorDisplayName;
     final time = recentActivityTimeLabel(l10n, post.createdAt);
+    final preview = recentActivityPreview(post);
 
     return Semantics(
       button: true,
-      label: '$authorName · ${item.fellowshipName}',
+      label: '$authorName · ${_kindLabel(l10n)} · ${item.fellowshipName}',
       child: InkWell(
         onTap: () =>
             context.push('/community/${post.fellowshipId}/post/${post.id}'),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Discipler keeps its own mark so the daily study is
-              // recognisable here without dragging the full gold card down to
-              // this size.
-              isDiscipler
-                  ? const DisciplerAvatar(radius: 15)
-                  : _MemberAvatar(
-                      name: authorName,
-                      avatarUrl: post.authorAvatarUrl,
-                    ),
-              const SizedBox(width: 11),
+              // The Discipler keeps its own gold mark so the daily study is
+              // recognisable at a glance.
+              if (isDiscipler)
+                const DisciplerAvatar(radius: 18)
+              else
+                MemberAvatar(
+                  displayName: authorName,
+                  avatarUrl: post.authorAvatarUrl,
+                  radius: 18,
+                ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            authorName,
-                            style: AppFonts.inter(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              height: 1.25,
-                              color: context.appTextPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isDiscipler) ...[
-                          const SizedBox(width: 6),
-                          const DisciplerAiChip(),
-                        ],
-                        const SizedBox(width: 8),
-                        Text(
-                          time,
-                          style: AppFonts.inter(
-                            fontSize: 11,
-                            height: 1.25,
-                            color: context.appTextTertiary,
-                          ),
-                        ),
-                      ],
+                    _ActivityHeadline(
+                      authorName: authorName,
+                      time: time,
+                      postType: post.postType,
                     ),
-                    const SizedBox(height: 2),
-                    // Group first and in the accent colour: at a glance the
-                    // reader sees which room the voice is in, then what was
-                    // said there.
-                    // One greedy line: the group leads, the label follows.
-                    // A proportional two-column split would ellipsize a long
-                    // group name even when the rest of the line is empty, so
-                    // the line is laid out as a single run and only its tail
-                    // is trimmed when it genuinely runs out of room.
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: item.fellowshipName,
-                            style: AppFonts.inter(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
-                              color: context.appBrandAccent,
-                            ),
-                          ),
-                          TextSpan(
-                            text: '  ·  ${_kindLabel(l10n)}',
-                            style: AppFonts.inter(
-                              fontSize: 11.5,
-                              height: 1.3,
-                              color: context.appTextTertiary,
-                            ),
-                          ),
-                        ],
+                    if (preview.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        preview,
+                        key: const Key('home_activity_preview'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.inter(
+                          fontSize: 13.5,
+                          height: 1.45,
+                          color: context.appTextSecondary,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ],
+                    const SizedBox(height: 6),
+                    _ActivityMeta(
+                      fellowshipName: item.fellowshipName,
+                      post: post,
+                      palette: palette,
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: context.appTextTertiary,
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Name, time and — on the right — the post-type chip.
+class _ActivityHeadline extends StatelessWidget {
+  final String authorName;
+  final String time;
+  final String postType;
+
+  const _ActivityHeadline({
+    required this.authorName,
+    required this.time,
+    required this.postType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      authorName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                        color: context.appTextPrimary,
+                      ),
+                    ),
+                  ),
+                  if (time.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      time,
+                      maxLines: 1,
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        height: 1.3,
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Capped so a long localized label wraps inside the chip rather
+            // than squeezing the author's name to nothing; never cut.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.5),
+              child: PostTypeChip(postType: postType),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Group name in gold, then reply and reaction counts — or, for the daily
+/// study, the invitation to start it.
+class _ActivityMeta extends StatelessWidget {
+  final String fellowshipName;
+  final FellowshipPostEntity post;
+  final ReaderPalette palette;
+
+  const _ActivityMeta({
+    required this.fellowshipName,
+    required this.post,
+    required this.palette,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final metaStyle = AppFonts.inter(
+      fontSize: 12,
+      height: 1.35,
+      color: context.appTextTertiary,
+    );
+
+    final Widget? trailing;
+    if (post.isDaily) {
+      trailing = Text(
+        '·  ${context.tr(TranslationKeys.communitySharedStartStudy)}',
+        style: AppFonts.inter(
+          fontSize: 12,
+          height: 1.35,
+          fontWeight: FontWeight.w600,
+          color: palette.accentIcon,
+        ),
+      );
+    } else {
+      final replies = post.commentCount;
+      final reactions = recentActivityReactionTotal(post);
+      final parts = [
+        if (replies > 0) postRepliesLabel(context, replies),
+        if (reactions > 0) '🙏 $reactions',
+      ];
+      trailing = parts.isEmpty
+          ? null
+          : Text('·  ${parts.join('  ·  ')}', style: metaStyle);
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // A wrap, not a row: when the group name and the counts do not both
+        // fit, the counts drop to the next line instead of being cut.
+        return Wrap(
+          spacing: 6,
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.people_outline_rounded,
+                      size: 14, color: palette.gold),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      fellowshipName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                        color: palette.gold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        );
+      },
     );
   }
 }
@@ -832,7 +958,7 @@ class _SuggestionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            _JoinButton(
+            HomeJoinPill(
               label: l10n.homeJoinFellowshipCta,
               isJoining: isJoining,
               onPressed: isBusy ? null : onJoin,
@@ -872,54 +998,59 @@ class _OfficialPill extends StatelessWidget {
   }
 }
 
-class _JoinButton extends StatelessWidget {
+/// "Join" pill on a public-fellowship suggestion: primary CTA colours,
+/// with a spinner while the join is in flight.
+class HomeJoinPill extends StatelessWidget {
   final String label;
   final bool isJoining;
   final VoidCallback? onPressed;
 
-  const _JoinButton({
+  const HomeJoinPill({
+    super.key,
     required this.label,
     required this.isJoining,
     required this.onPressed,
   });
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 32,
-        child: ElevatedButton(
-          onPressed: isJoining ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor:
-                context.appInteractive.withValues(alpha: 0.5),
-            disabledForegroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: isJoining
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 32),
+      child: FilledButton(
+        onPressed: isJoining ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.ctaFill,
+          foregroundColor: palette.ctaInk,
+          disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.5),
+          disabledForegroundColor: palette.ctaInk,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          minimumSize: const Size(0, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: const StadiumBorder(),
         ),
-      );
+        child: isJoining
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(palette.ctaInk),
+                ),
+              )
+            : Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: palette.ctaInk,
+                ),
+              ),
+      ),
+    );
+  }
 }
 
 /// Single call-to-action row for the empty activity panel.

@@ -39,6 +39,8 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/widge
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/suggested_verses_sheet.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/verse_limit_exceeded_dialog.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/widgets/notification_enable_prompt.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
@@ -46,6 +48,7 @@ import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_r
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Memory verses deck: streak and counts, today's review goal, Champions
 /// and Statistics links, language filter, then the verses due for review and the ones coming up, as quiet
@@ -283,12 +286,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 }
                 // Handle streak freeze used
                 else if (state is StreakFreezeUsed) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: AppColors.info,
-                    ),
-                  );
+                  showAppSnackBar(context, state.message);
                   // Reload streak to show updated freeze days
                   context
                       .read<MemoryVerseBloc>()
@@ -297,30 +295,12 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   final isOffline = context.read<ConnectivityBloc>().state
                       is ConnectivityOffline;
                   if (!isOffline) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            const Icon(Icons.error,
-                                color: Colors.white, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(context
-                                  .tr(TranslationKeys.commonErrorTryAgain)),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: AppColors.error,
-                        // persist:false — since Flutter 3.44 a SnackBar with an action
-                        // defaults to persist:true, so it never times out AND blocks every
-                        // later snackbar behind it in the app-wide queue.
-                        persist: false,
-                        action: SnackBarAction(
-                          label: context.tr(TranslationKeys.commonRetry),
-                          textColor: Colors.white,
-                          onPressed: _loadVerses,
-                        ),
-                      ),
+                    showAppSnackBar(
+                      context,
+                      context.tr(TranslationKeys.commonErrorTryAgain),
+                      tone: AppSnackTone.error,
+                      actionLabel: context.tr(TranslationKeys.commonRetry),
+                      onAction: _loadVerses,
                     );
                   }
                 } else if (state is PracticeSessionSubmitted) {
@@ -328,37 +308,21 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   // reflect the just-completed practice session.
                   _loadVerses(forceRefresh: true);
                 } else if (state is VerseAdded) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
+                  showAppSnackBar(context, state.message,
+                      tone: AppSnackTone.success);
                   _loadVerses(forceRefresh: true);
                   // Check memory achievements when verse is added
                   sl<GamificationBloc>().add(const CheckMemoryAchievements());
                   // Show notification prompt for memory verse reminder after adding first verse
                   _showMemoryVerseReminderPrompt();
                 } else if (state is OperationQueued) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.cloud_off, color: Colors.white),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(state.message)),
-                        ],
-                      ),
-                      backgroundColor: AppColors.warning,
-                    ),
-                  );
+                  showAppSnackBar(context, state.message,
+                      tone: AppSnackTone.warning);
                 } else if (state is VerseDeleted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content:
-                          Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
-                      backgroundColor: AppColors.success,
-                    ),
+                  showAppSnackBar(
+                    context,
+                    context.tr(TranslationKeys.memoryDeleteSuccess),
+                    tone: AppSnackTone.success,
                   );
                   _loadVerses(forceRefresh: true);
                 }
@@ -822,11 +786,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           context, dailyVerseState.verse, dailyVerseState.currentLanguage);
     } else {
       // Daily verse not loaded yet
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.memoryDailyVerseNotLoaded)),
-          backgroundColor: AppColors.warning,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.memoryDailyVerseNotLoaded),
+        tone: AppSnackTone.warning,
       );
     }
   }
@@ -972,7 +935,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   Future<void> _handleResetProgress(BuildContext context) async {
     final bloc = context.read<MemoryVerseBloc>();
     final gamificationBloc = sl<GamificationBloc>();
-    final messenger = ScaffoldMessenger.of(context);
     final successMessage = context.tr(TranslationKeys.memoryResetSuccess);
 
     final confirmed = await DestructiveConfirmDialog.show(
@@ -1012,7 +974,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     if (!context.mounted) return;
 
     if (outcome is MemoryProgressResetSuccess) {
-      messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+      showAppSnackBar(context, successMessage, tone: AppSnackTone.success);
       // Clear the stale-while-revalidate snapshot so the builder cannot
       // re-render the just-deleted deck while the reload below is in
       // flight.
@@ -1034,7 +996,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         isNetworkError: outcome.isNetworkError,
         fallbackMessage: outcome.message,
       );
-      messenger.showSnackBar(SnackBar(content: Text(errorMessage)));
+      showAppSnackBar(context, errorMessage, tone: AppSnackTone.error);
     }
   }
 
@@ -1071,11 +1033,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   void _startReviewAll(BuildContext context, List<MemoryVerseEntity> verses) {
     if (verses.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.memoryNoVersesToReview)),
-          backgroundColor: AppColors.warning,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.memoryNoVersesToReview),
+        tone: AppSnackTone.warning,
       );
       return;
     }
@@ -1093,38 +1054,39 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   void _showDeleteConfirmation(BuildContext context, MemoryVerseEntity verse) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr(TranslationKeys.memoryDeleteTitle)),
+      builder: (dialogContext) => SettingsDialog(
+        title: context.tr(TranslationKeys.memoryDeleteTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               verse.verseReference,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+              style: AppFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: ReaderPalette.of(dialogContext).gold,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(context.tr(TranslationKeys.memoryDeleteConfirmation)),
           ],
         ),
         actions: [
-          TextButton(
+          SettingsButton(
+            key: const Key('memory_delete_cancel'),
+            label: context.tr(TranslationKeys.memoryDeleteCancel),
+            kind: SettingsButtonKind.neutral,
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.tr(TranslationKeys.memoryDeleteCancel)),
           ),
-          ElevatedButton(
+          SettingsButton(
+            key: const Key('memory_delete_confirm'),
+            label: context.tr(TranslationKeys.memoryDeleteConfirm),
+            kind: SettingsButtonKind.destructive,
             onPressed: () {
               Navigator.pop(dialogContext);
               context.read<MemoryVerseBloc>().add(DeleteVerse(verse.id));
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(context.tr(TranslationKeys.memoryDeleteConfirm)),
           ),
         ],
       ),

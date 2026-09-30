@@ -36,8 +36,12 @@ import 'package:disciplefy_bible_study/features/settings/presentation/bloc/setti
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_profile_card.dart';
+import 'package:disciplefy_bible_study/core/widgets/status_message_view.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_event.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
@@ -169,14 +173,19 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                           _buildSettingsList(context, state),
                     );
                   }
-                  return Center(
-                    child: Text(
-                      context.tr(TranslationKeys.settingsFailedToLoad),
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.error,
+                  return StatusMessageView(
+                    key: const Key('settings_load_failed'),
+                    icon: Icons.cloud_off_rounded,
+                    title: context.tr(TranslationKeys.settingsFailedToLoad),
+                    actions: [
+                      PopupPrimaryButton(
+                        key: const Key('settings_load_retry'),
+                        label: context.tr(TranslationKeys.commonRetry),
+                        icon: Icons.refresh_rounded,
+                        onPressed: () =>
+                            context.read<SettingsBloc>().add(LoadSettings()),
                       ),
-                    ),
+                    ],
                   );
                 },
               ),
@@ -184,11 +193,9 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             // Loading overlay while delete-account API is in-flight.
             if (_isDeletingAccount)
               Positioned.fill(
-                child: Container(
+                child: ColoredBox(
                   color: Colors.black.withValues(alpha: 0.5),
-                  child: const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
+                  child: const SettingsLoaderCard(),
                 ),
               ),
           ],
@@ -573,33 +580,26 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
   /// Replay app walkthrough by resetting all walkthrough seen states.
   Future<void> _replayWalkthrough(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    unawaited(showSettingsLoader(context));
 
     try {
       await sl<WalkthroughRepository>().resetAll();
 
       if (context.mounted) {
-        Navigator.of(context).pop(); // dismiss loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                context.tr(TranslationKeys.settingsReplayWalkthroughSuccess)),
-          ),
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.settingsReplayWalkthroughSuccess),
+          tone: AppSnackTone.success,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // dismiss loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                context.tr(TranslationKeys.settingsReplayWalkthroughError)),
-            backgroundColor: Colors.red,
-          ),
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.settingsReplayWalkthroughError),
+          tone: AppSnackTone.error,
         );
       }
     }
@@ -715,16 +715,19 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
       context.read<AuthBloc>().add(const RefreshUserProfileRequested());
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsEditNameSuccess)),
-      ));
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.settingsEditNameSuccess),
+        tone: AppSnackTone.success,
+      );
     } catch (e) {
       Logger.error('Failed to update display name', error: e);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsEditNameFailed)),
-        backgroundColor: AppColors.error,
-      ));
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.settingsEditNameFailed),
+        tone: AppSnackTone.error,
+      );
     }
   }
 

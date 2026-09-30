@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../features/settings/presentation/widgets/settings_group.dart';
+import '../../shared/widgets/popup.dart';
+import '../constants/app_fonts.dart';
 import '../extensions/translation_extension.dart';
 import '../i18n/translation_keys.dart';
+import '../theme/reader_palette.dart';
 
 /// Confirmation dialog for irreversible destructive actions.
 ///
@@ -100,69 +104,109 @@ class _DestructiveConfirmDialogState extends State<DestructiveConfirmDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
+    final palette = ReaderPalette.of(context);
+    final red = SettingsToneColors.of(context, SettingsTone.red);
+    final bodyStyle = AppFonts.inter(
+      fontSize: 14,
+      color: palette.muted,
+      height: 1.45,
+    );
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: errorColor),
-          const SizedBox(width: 12),
-          Expanded(child: Text(widget.title)),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return PopupDialog(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+      children: [
+        Row(
           children: [
-            for (final consequence in widget.consequences)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('•  '),
-                    Expanded(child: Text(consequence)),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.resetProgressIrreversible),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: errorColor,
-                fontWeight: FontWeight.w600,
+            Container(
+              width: 44,
+              height: 44,
+              decoration:
+                  BoxDecoration(color: red.fill, shape: BoxShape.circle),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: red.foreground,
+                size: 22,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: context
-                    .tr(TranslationKeys.resetProgressTypeToConfirm)
-                    .replaceAll('{word}', widget.confirmWord),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.title,
+                style: AppFonts.poppins(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.3,
+                ),
               ),
             ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(context.tr(TranslationKeys.resetProgressCancel)),
-        ),
-        FilledButton(
-          onPressed: _canConfirm ? () => Navigator.of(context).pop(true) : null,
-          style: FilledButton.styleFrom(
-            backgroundColor: errorColor,
-            foregroundColor: theme.colorScheme.onError,
+        const SizedBox(height: 16),
+        for (final consequence in widget.consequences)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('•  ', style: bodyStyle),
+                Expanded(child: Text(consequence, style: bodyStyle)),
+              ],
+            ),
           ),
-          child: Text(widget.confirmLabel),
+        const SizedBox(height: 4),
+        Text(
+          context.tr(TranslationKeys.resetProgressIrreversible),
+          style: AppFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: red.foreground,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          autocorrect: false,
+          enableSuggestions: false,
+          style: AppFonts.inter(fontSize: 15, color: palette.text),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: palette.raised,
+            labelText: context
+                .tr(TranslationKeys.resetProgressTypeToConfirm)
+                .replaceAll('{word}', widget.confirmWord),
+            labelStyle: AppFonts.inter(fontSize: 14, color: palette.muted),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: palette.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: palette.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: red.foreground, width: 1.5),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        SettingsButtonRow(
+          buttons: [
+            SettingsButton(
+              label: context.tr(TranslationKeys.resetProgressCancel),
+              kind: SettingsButtonKind.neutral,
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            SettingsButton(
+              label: widget.confirmLabel,
+              kind: SettingsButtonKind.destructive,
+              onPressed:
+                  _canConfirm ? () => Navigator.of(context).pop(true) : null,
+            ),
+          ],
         ),
       ],
     );

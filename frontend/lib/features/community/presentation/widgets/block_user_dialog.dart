@@ -1,33 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_confirm_dialog.dart';
 
 /// Shows the block confirmation dialog.
 ///
 /// Returns true when the user confirms. The copy states that the block is
 /// mutual and global, which is what App Review looks for.
-Future<bool> showBlockUserConfirmation(BuildContext context) async {
+Future<bool> showBlockUserConfirmation(BuildContext context) {
   final l10n = AppLocalizations.of(context)!;
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(l10n.blockUserConfirmTitle),
-      content: Text(l10n.blockUserConfirmBody),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: Text(l10n.blockUserCancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text(
-            l10n.blockUserConfirmAction,
-            style: TextStyle(color: context.appError),
-          ),
-        ),
-      ],
-    ),
+  return showCommunityConfirmDialog(
+    context,
+    icon: Icons.block,
+    title: l10n.blockUserConfirmTitle,
+    body: l10n.blockUserConfirmBody,
+    confirmLabel: l10n.blockUserConfirmAction,
+    cancelLabel: l10n.blockUserCancel,
+    destructive: true,
   );
-  return confirmed ?? false;
 }

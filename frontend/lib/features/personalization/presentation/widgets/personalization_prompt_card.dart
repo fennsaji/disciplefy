@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
 
 /// Invitation to take the personalization questionnaire.
 ///
@@ -23,20 +23,17 @@ class PersonalizationPromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final surface = dark ? const Color(0xFF17171C) : Colors.white;
-    final border = dark ? const Color(0x0DFFFFFF) : const Color(0xFFE9E5DB);
-    final textPrimary =
-        dark ? const Color(0xFFF2F2F4) : const Color(0xFF1A1917);
-    final textMuted = dark ? const Color(0xFF9CA3AF) : const Color(0xFF6F6B61);
-    final accent = dark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary;
+    final palette = ReaderPalette.of(context);
+    final textPrimary = palette.text;
+    final textMuted = palette.muted;
+    final accent = palette.accentIcon;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
-        color: surface,
+        color: palette.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
+        border: Border.all(color: palette.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,8 +104,8 @@ class PersonalizationPromptCard extends StatelessWidget {
               FilledButton(
                 onPressed: onGetStarted,
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.brandPrimary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: palette.ctaFill,
+                  foregroundColor: palette.ctaInk,
                   shape: const StadiumBorder(),
                   minimumSize: const Size(0, 40),
                   padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -121,7 +118,7 @@ class PersonalizationPromptCard extends StatelessWidget {
                       style: AppFonts.inter(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: palette.ctaInk,
                       ),
                     ),
                     const SizedBox(width: 6),

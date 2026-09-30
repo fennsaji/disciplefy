@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_fonts.dart';
 import '../../core/constants/bible_books.dart';
 import '../../core/constants/bible_translation_citation.dart';
 import '../../core/extensions/translation_extension.dart';
@@ -10,11 +11,16 @@ import '../../core/i18n/translation_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/services/language_preference_service.dart';
 import '../../core/services/system_config_service.dart';
+import '../../core/theme/reader_palette.dart';
 import '../../core/utils/share_links.dart';
 import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/entities/fetched_verse_entity.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
+import '../../features/settings/presentation/widgets/settings_group.dart'
+    show SettingsButton, SettingsButtonKind, SettingsButtonRow;
+import 'app_snackbar.dart';
+import 'popup.dart' show PopupEyebrow, PopupPrimaryButton, kPopupRadius;
 import 'sheet_scroll_view.dart';
 
 /// A bottom sheet widget for displaying scripture verse text.
@@ -38,6 +44,7 @@ class ScriptureVerseSheet extends StatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (context) => ScriptureVerseSheet(reference: reference),
     );
@@ -56,10 +63,17 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   String? _langCode; // language of the fetched verse, for in-context citation
   List<VerseItem>? _verses; // null = single verse, list = range
 
+  bool _fetchStarted = false;
+
   @override
-  void initState() {
-    super.initState();
-    _fetchVerseText();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Started here, not in initState: the kill-switch and parse-error paths
+    // read translations synchronously, which needs inherited widgets.
+    if (!_fetchStarted) {
+      _fetchStarted = true;
+      _fetchVerseText();
+    }
   }
 
   Future<void> _fetchVerseText() async {
@@ -216,26 +230,27 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         link: ShareLinks.download,
       );
       Clipboard.setData(ClipboardData(text: textToCopy));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.verseSheetCopied)),
-          duration: const Duration(seconds: 2),
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.verseSheetCopied),
+        tone: AppSnackTone.success,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final palette = ReaderPalette.of(context);
+    final screenHeight = MediaQuery.sizeOf(context).height;
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: palette.card,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(kPopupRadius)),
+        border: Border(top: BorderSide(color: palette.hairline)),
       ),
-      // ✅ FIX: Add max height constraint to allow scrolling for long verses
+      // Max height so long passages scroll inside the sheet.
       constraints: BoxConstraints(
         maxHeight: screenHeight * 0.85, // Max 85% of screen height
       ),
@@ -246,17 +261,17 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
             // Handle bar - fixed at top
             Center(
               child: Container(
-                width: 40,
+                width: 36,
                 height: 4,
-                margin: const EdgeInsets.only(top: 16, bottom: 20),
+                margin: const EdgeInsets.only(top: 12, bottom: 20),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: palette.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
 
-            // ✅ FIX: Scrollable content area
+            // Scrollable content area
             Flexible(
               child: SheetScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -264,41 +279,36 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Reference header
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.menu_book_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _citedReference(),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Reference header: gold eyebrow over a Poppins title
+                    PopupEyebrow(
+                      context.tr(TranslationKeys.guideFeedbackVerseEyebrow),
+                      textAlign: TextAlign.start,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 6),
+                    Text(
+                      _citedReference(),
+                      style: AppFonts.poppins(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
 
                     // Content area
                     if (_isLoading)
-                      _buildLoadingState(theme)
+                      _buildLoadingState(palette)
                     else if (_errorMessage != null)
-                      _buildErrorState(theme)
+                      _buildErrorState(palette)
                     else
-                      _buildVerseContent(theme),
+                      _buildVerseContent(palette),
 
                     const SizedBox(height: 20),
 
                     // Action buttons (only show when verse is loaded)
                     if (!_isLoading && _verseText != null)
-                      _buildActionButtons(theme),
+                      _buildActionButtons(),
 
                     const SizedBox(height: 20),
                   ],
@@ -311,22 +321,24 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     );
   }
 
-  Widget _buildLoadingState(ThemeData theme) {
+  Widget _buildLoadingState(ReaderPalette palette) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Column(
           children: [
-            CircularProgressIndicator(
-              color: theme.colorScheme.primary,
-              strokeWidth: 2,
+            SizedBox(
+              width: 26,
+              height: 26,
+              child: CircularProgressIndicator(
+                color: palette.accentIcon,
+                strokeWidth: 2,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
               context.tr(TranslationKeys.verseSheetLoading),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: AppFonts.inter(fontSize: 14, color: palette.muted),
             ),
           ],
         ),
@@ -334,26 +346,25 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     );
   }
 
-  Widget _buildErrorState(ThemeData theme) {
+  Widget _buildErrorState(ReaderPalette palette) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: theme.colorScheme.error,
-            size: 24,
-          ),
+          Icon(Icons.error_outline_rounded, color: palette.muted, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              _errorMessage ?? 'An error occurred',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.error,
+              _errorMessage ?? context.tr(TranslationKeys.commonErrorTryAgain),
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: palette.text,
+                height: 1.45,
               ),
             ),
           ),
@@ -362,23 +373,23 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     );
   }
 
-  Widget _buildVerseContent(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
+  TextStyle _verseStyle(ReaderPalette palette) => AppFonts.inter(
+        fontSize: 17,
+        height: 1.7,
+        letterSpacing: 0.2,
+        color: palette.text,
+      );
+
+  Widget _buildVerseContent(ReaderPalette palette) {
     final hasMultipleVerses = _verses != null && _verses!.length > 1;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainerHighest
-            : theme.colorScheme.secondary.withOpacity(0.15),
+        color: palette.raised,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? theme.colorScheme.outline.withOpacity(0.3)
-              : theme.colorScheme.secondary.withOpacity(0.3),
-        ),
+        border: Border.all(color: palette.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,32 +397,24 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
           // Opening quote mark
           Text(
             '"',
-            style: theme.textTheme.displaySmall?.copyWith(
-              color: theme.colorScheme.primary.withOpacity(isDark ? 0.6 : 0.3),
-              fontWeight: FontWeight.bold,
+            style: AppFonts.poppins(
+              fontSize: 36,
+              color: palette.gold.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w700,
               height: 0.5,
             ),
           ),
           const SizedBox(height: 8),
           if (hasMultipleVerses)
-            ..._verses!.map((verse) => _buildVerseRow(verse, theme))
+            ..._verses!.map((verse) => _buildVerseRow(verse, palette))
           else
-            Text(
-              _verseText ?? '',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                height: 1.7,
-                fontSize: 17,
-                letterSpacing: 0.2,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
+            Text(_verseText ?? '', style: _verseStyle(palette)),
         ],
       ),
     );
   }
 
-  Widget _buildVerseRow(VerseItem verse, ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
+  Widget _buildVerseRow(VerseItem verse, ReaderPalette palette) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -422,26 +425,17 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
             width: 28,
             child: Text(
               '${verse.number}',
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color:
-                    theme.colorScheme.primary.withOpacity(isDark ? 0.8 : 0.6),
-                height: 1.9,
+                color: palette.gold,
+                height: 2.2,
               ),
             ),
           ),
           // Verse text
           Expanded(
-            child: Text(
-              verse.text,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                height: 1.7,
-                fontSize: 17,
-                letterSpacing: 0.2,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
+            child: Text(verse.text, style: _verseStyle(palette)),
           ),
         ],
       ),
@@ -480,80 +474,56 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       setState(() => _isAddingToMemory = false);
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  '${context.tr(TranslationKeys.verseSheetFailedToAdd)}: ${failure.message}'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
+          showAppSnackBar(
+            context,
+            '${context.tr(TranslationKeys.verseSheetFailedToAdd)}: ${failure.message}',
+            tone: AppSnackTone.error,
           );
         },
         (_) {
+          // Resolve the message before the sheet's context goes away.
+          final message = context.tr(TranslationKeys.verseSheetAddedToMemory);
+          final messengerContext =
+              Navigator.of(context, rootNavigator: true).context;
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text(context.tr(TranslationKeys.verseSheetAddedToMemory)),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          showAppSnackBar(messengerContext, message,
+              tone: AppSnackTone.success);
         },
       );
     }
   }
 
-  Widget _buildActionButtons(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildActionButtons() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Study button
-        _ActionButton(
+        // Study: the main action
+        PopupPrimaryButton(
+          key: const Key('verse_sheet_study'),
           icon: Icons.auto_stories_rounded,
           label: context.tr(TranslationKeys.verseSheetStudy),
-          onTap: _generateStudyGuide,
-          theme: theme,
+          onPressed: _generateStudyGuide,
         ),
-        const SizedBox(width: 24),
-        // Memory button
-        _ActionButton(
-          icon: Icons.psychology_outlined,
-          iconWidget: Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  Icons.psychology_outlined,
-                  size: 24,
-                  color: theme.colorScheme.primary,
-                ),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: Text(
-                    '+',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.primary.withOpacity(0.85),
-                      height: 1,
-                    ),
-                  ),
-                ),
-              ],
+        const SizedBox(height: 10),
+        // Memory and Copy side by side, stacked when the labels don't fit.
+        SettingsButtonRow(
+          buttons: [
+            SettingsButton(
+              key: const Key('verse_sheet_memory'),
+              icon: Icons.psychology_outlined,
+              label: context.tr(TranslationKeys.verseSheetMemory),
+              kind: SettingsButtonKind.neutral,
+              loading: _isAddingToMemory,
+              onPressed: _addToMemoryVerses,
             ),
-          ),
-          label: context.tr(TranslationKeys.verseSheetMemory),
-          onTap: _isAddingToMemory ? null : _addToMemoryVerses,
-          isLoading: _isAddingToMemory,
-          theme: theme,
-        ),
-        const SizedBox(width: 24),
-        // Copy button
-        _ActionButton(
-          icon: Icons.copy_rounded,
-          label: context.tr(TranslationKeys.verseSheetCopy),
-          onTap: _copyToClipboard,
-          theme: theme,
+            SettingsButton(
+              key: const Key('verse_sheet_copy'),
+              icon: Icons.copy_rounded,
+              label: context.tr(TranslationKeys.verseSheetCopy),
+              kind: SettingsButtonKind.neutral,
+              onPressed: _copyToClipboard,
+            ),
+          ],
         ),
       ],
     );
@@ -573,69 +543,4 @@ class _ParsedReference {
     required this.verseStart,
     this.verseEnd,
   });
-}
-
-/// Action button widget with icon and label.
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final Widget? iconWidget;
-  final String label;
-  final VoidCallback? onTap;
-  final ThemeData theme;
-  final bool isLoading;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.theme,
-    this.isLoading = false,
-    this.iconWidget,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: isLoading
-                  ? Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : iconWidget ??
-                      Icon(
-                        icon,
-                        size: 24,
-                        color: theme.colorScheme.primary,
-                      ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -1,17 +1,20 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/theme/app_colors.dart';
 
-import '../../../../core/services/http_service.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../../core/config/app_config.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/config/app_config.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/http_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_form.dart';
 
 // Platform-conditional import for image picker
 import '../../utils/profile_image_picker_stub.dart'
@@ -42,18 +45,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   // Available age groups
   final List<String> _ageGroups = ['13-17', '18-25', '26-35', '36-50', '51+'];
 
-  // Available interests
-  final Map<String, String> _interests = {
-    'prayer': 'Prayer',
-    'worship': 'Worship',
-    'community': 'Community',
-    'bible_study': 'Bible Study',
-    'theology': 'Theology',
-    'missions': 'Missions',
-    'youth_ministry': 'Youth Ministry',
-    'family': 'Family',
-    'leadership': 'Leadership',
-    'evangelism': 'Evangelism'
+  // Available interests: API value -> label translation key
+  static const Map<String, String> _interests = {
+    'prayer': TranslationKeys.profileSetupInterestPrayer,
+    'worship': TranslationKeys.profileSetupInterestWorship,
+    'community': TranslationKeys.profileSetupInterestCommunity,
+    'bible_study': TranslationKeys.profileSetupInterestBibleStudy,
+    'theology': TranslationKeys.profileSetupInterestTheology,
+    'missions': TranslationKeys.profileSetupInterestMissions,
+    'youth_ministry': TranslationKeys.profileSetupInterestYouthMinistry,
+    'family': TranslationKeys.profileSetupInterestFamily,
+    'leadership': TranslationKeys.profileSetupInterestLeadership,
+    'evangelism': TranslationKeys.profileSetupInterestEvangelism,
   };
 
   @override
@@ -65,167 +68,114 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.colorScheme.onBackground,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Setup Profile',
-          style: AppFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onBackground,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                _buildHeader(theme),
-                const SizedBox(height: 32),
-
-                // Profile Image Section
-                _buildProfileImageSection(theme),
-                const SizedBox(height: 32),
-
-                // Name Fields
-                _buildNameSection(theme),
-                const SizedBox(height: 24),
-
-                // Age Group Section
-                _buildAgeGroupSection(theme),
-                const SizedBox(height: 24),
-
-                // Interests Section
-                _buildInterestsSection(theme),
-                const SizedBox(height: 40),
-
-                // Continue Button
-                _buildContinueButton(theme),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return WelcomeFormPage(
+      photo: WelcomePhotos.greenHills,
+      backKey: const Key('profile_setup_back'),
+      eyebrow: context.tr(TranslationKeys.profileSetupEyebrow),
+      title: context.tr(TranslationKeys.profileSetupTitle),
+      subtitle:
+          WelcomeSubtitle(context.tr(TranslationKeys.profileSetupSubtitle)),
       children: [
-        Text(
-          'Tell us about yourself',
-          style: AppFonts.poppins(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onBackground,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Help us personalize your Bible study experience by sharing a bit about yourself.',
-          style: AppFonts.inter(
-            fontSize: 16,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
-            height: 1.5,
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildProfileImageSection(context),
+              const SizedBox(height: 28),
+              _buildNameSection(context),
+              const SizedBox(height: 24),
+              _buildAgeGroupSection(context),
+              const SizedBox(height: 24),
+              _buildInterestsSection(context),
+              const SizedBox(height: 36),
+              WelcomePrimaryButton(
+                key: const Key('profile_setup_continue'),
+                label: context.tr(TranslationKeys.profileSetupContinue),
+                isLoading: _isLoading,
+                onPressed: _handleContinue,
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildProfileImageSection(ThemeData theme) {
+  Widget _buildProfileImageSection(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+
     return Center(
       child: Column(
         children: [
-          Stack(
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.surface,
-                  border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
-                    width: 2,
-                  ),
-                ),
-                child: _profileImageData != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(60),
-                        child: Image.memory(
-                          _profileImageData!,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Icon(
-                        Icons.person,
-                        size: 48,
-                        color: theme.colorScheme.onSurface.withOpacity(0.3),
-                      ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: _isImageUploading ? null : _pickImage,
-                  child: Container(
-                    width: 36,
-                    height: 36,
+          Semantics(
+            button: true,
+            label: context.tr(TranslationKeys.profileSetupAddPhoto),
+            child: GestureDetector(
+              key: const Key('profile_setup_photo'),
+              onTap: _isImageUploading ? null : _pickImage,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 112,
+                    height: 112,
                     decoration: BoxDecoration(
-                      color: context.appInteractive,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.scaffoldBackgroundColor,
-                        width: 3,
-                      ),
+                      color: palette.card,
+                      border: Border.all(color: palette.outline, width: 1.5),
                     ),
-                    child: _isImageUploading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _profileImageData != null
+                        ? Image.memory(
+                            _profileImageData!,
+                            fit: BoxFit.cover,
+                            cacheWidth: 336,
                           )
-                        : const Icon(
-                            Icons.camera_alt,
-                            size: 18,
-                            color: Colors.white,
+                        : Icon(
+                            Icons.person_outline_rounded,
+                            size: 48,
+                            color: palette.dim,
                           ),
                   ),
-                ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: palette.ctaFill,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: palette.page, width: 3),
+                      ),
+                      child: _isImageUploading
+                          ? Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    palette.ctaInk),
+                              ),
+                            )
+                          : Icon(
+                              Icons.camera_alt_outlined,
+                              size: 17,
+                              color: palette.ctaInk,
+                            ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 12),
           Text(
-            'Add Profile Photo',
+            context.tr(TranslationKeys.profileSetupAddPhoto),
+            textAlign: TextAlign.center,
             style: AppFonts.inter(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              color: palette.accentIcon,
             ),
           ),
         ],
@@ -233,229 +183,133 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
   }
 
-  Widget _buildNameSection(ThemeData theme) {
+  Widget _buildNameField(
+    BuildContext context, {
+    required Key key,
+    required TextEditingController controller,
+    required String label,
+    required String requiredMessage,
+    required List<String> autofillHints,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Name',
-          style: AppFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
+        WelcomeFieldLabel(label),
+        TextFormField(
+          key: key,
+          controller: controller,
+          keyboardType: TextInputType.name,
+          textInputAction: TextInputAction.next,
+          textCapitalization: TextCapitalization.words,
+          autofillHints: autofillHints,
+          style: welcomeFieldTextStyle(context),
+          decoration: welcomeFieldDecoration(context, hint: label),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return requiredMessage;
+            }
+            return null;
+          },
         ),
-        const SizedBox(height: 12),
-        Row(
+      ],
+    );
+  }
+
+  /// First and last name, side by side when there is room.
+  Widget _buildNameSection(BuildContext context) {
+    final first = _buildNameField(
+      context,
+      key: const Key('profile_setup_first_name'),
+      controller: _firstNameController,
+      label: context.tr(TranslationKeys.profileSetupFirstName),
+      requiredMessage:
+          context.tr(TranslationKeys.profileSetupFirstNameRequired),
+      autofillHints: const [AutofillHints.givenName],
+    );
+    final last = _buildNameField(
+      context,
+      key: const Key('profile_setup_last_name'),
+      controller: _lastNameController,
+      label: context.tr(TranslationKeys.profileSetupLastName),
+      requiredMessage: context.tr(TranslationKeys.profileSetupLastNameRequired),
+      autofillHints: const [AutofillHints.familyName],
+    );
+
+    return AutofillGroup(
+      child: LayoutBuilder(
+        builder: (context, box) => box.maxWidth < 400
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [first, const SizedBox(height: 18), last],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: first),
+                  const SizedBox(width: 14),
+                  Expanded(child: last),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildAgeGroupSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        WelcomeFieldLabel(context.tr(TranslationKeys.profileSetupAgeGroup)),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            Expanded(
-              child: TextFormField(
-                controller: _firstNameController,
-                decoration: InputDecoration(
-                  labelText: 'First Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'First name is required';
-                  }
-                  return null;
-                },
+            for (final ageGroup in _ageGroups)
+              WelcomeChoiceChip(
+                key: Key('profile_setup_age_$ageGroup'),
+                label: ageGroup,
+                selected: _selectedAgeGroup == ageGroup,
+                onTap: () => setState(() => _selectedAgeGroup = ageGroup),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _lastNameController,
-                decoration: InputDecoration(
-                  labelText: 'Last Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Last name is required';
-                  }
-                  return null;
-                },
-              ),
-            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildAgeGroupSection(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Age Group',
-          style: AppFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _ageGroups.map((ageGroup) {
-            final isSelected = _selectedAgeGroup == ageGroup;
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedAgeGroup = ageGroup;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outline.withOpacity(0.3),
-                  ),
-                ),
-                child: Text(
-                  ageGroup,
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color:
-                        isSelected ? Colors.white : theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+  Widget _buildInterestsSection(BuildContext context) {
+    final palette = ReaderPalette.of(context);
 
-  Widget _buildInterestsSection(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        WelcomeFieldLabel(context.tr(TranslationKeys.profileSetupInterests)),
         Text(
-          'Interests',
+          context.tr(TranslationKeys.profileSetupInterestsHint),
           style: AppFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Select topics you\'re interested in learning about (select at least one)',
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            fontSize: 13,
+            height: 1.4,
+            color: palette.dim,
           ),
         ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _interests.entries.map((entry) {
-            final isSelected = _selectedInterests.contains(entry.key);
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedInterests.remove(entry.key);
-                  } else {
+          children: [
+            for (final entry in _interests.entries)
+              WelcomeChoiceChip(
+                key: Key('profile_setup_interest_${entry.key}'),
+                label: context.tr(entry.value),
+                selected: _selectedInterests.contains(entry.key),
+                onTap: () => setState(() {
+                  if (!_selectedInterests.remove(entry.key)) {
                     _selectedInterests.add(entry.key);
                   }
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.1)
-                      : theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outline.withOpacity(0.3),
-                  ),
-                ),
-                child: Text(
-                  entry.value,
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface,
-                  ),
-                ),
+                }),
               ),
-            );
-          }).toList(),
+          ],
         ),
       ],
-    );
-  }
-
-  Widget _buildContinueButton(ThemeData theme) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleContinue,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: context.appInteractive,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          disabledBackgroundColor: theme.colorScheme.primary.withOpacity(0.5),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(
-                'Continue',
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
     );
   }
 
@@ -471,10 +325,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       } else {
         // Mobile implementation would go here
         // For now, show an error that image picking is only supported on web
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image upload is currently only supported on web'),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.profileSetupImageWebOnly),
         );
       }
     } catch (e) {
@@ -485,11 +338,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to select image. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.profileSetupImageFailed),
+          tone: AppSnackTone.error,
         );
       }
     } finally {
@@ -540,7 +392,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         context: {
           'headers_keys': headers.keys.toList(),
           'has_authorization': headers.containsKey('Authorization'),
-          'file_name': fileName,
           'file_type': fileType,
         },
       );
@@ -550,7 +401,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         headers: headers,
         body: jsonEncode({
           'action': 'upload_image',
-          'file_name': fileName,
           'file_type': fileType,
           'image_data': 'data:$fileType;base64,$imageData',
         }),
@@ -561,7 +411,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         tag: 'PROFILE_SETUP',
         context: {
           'status_code': response.statusCode,
-          'response_body': response.body,
         },
       );
 
@@ -575,7 +424,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         Logger.info(
           'Profile image uploaded successfully',
           tag: 'PROFILE_SETUP',
-          context: {'image_url': _profileImageUrl},
         );
       } else {
         throw Exception(responseData['error'] ?? 'Upload failed');
@@ -588,11 +436,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     }
@@ -604,21 +451,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     if (_selectedAgeGroup == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select your age group'),
-          backgroundColor: Colors.red,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.profileSetupSelectAgeGroup),
+        tone: AppSnackTone.warning,
       );
       return;
     }
 
     if (_selectedInterests.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one interest'),
-          backgroundColor: Colors.red,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.profileSetupSelectInterest),
+        tone: AppSnackTone.warning,
       );
       return;
     }
@@ -654,8 +499,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           'Profile setup completed successfully',
           tag: 'PROFILE_SETUP',
           context: {
-            'user_name':
-                '${_firstNameController.text} ${_lastNameController.text}',
             'age_group': _selectedAgeGroup,
             'interests_count': _selectedInterests.length,
           },
@@ -676,11 +519,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     } finally {

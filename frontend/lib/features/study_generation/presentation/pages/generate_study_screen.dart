@@ -52,7 +52,9 @@ import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
@@ -398,13 +400,10 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         Logger.debug(
             '⏱️ [GENERATE_STUDY] Study generation timeout - resetting loading state');
         _resetLoadingState();
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Study generation is taking longer than expected. Please try again.'),
-            backgroundColor: AppColors.warning,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.studyUiGenerationTimeout),
+          tone: AppSnackTone.warning,
         );
       }
     });
@@ -1171,15 +1170,18 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       initialValue: _isLanguageDefault ? null : _selectedLanguage,
       onSelected: _switchLanguage,
       offset: const Offset(0, 44),
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: ReaderPalette.of(context).card,
+      surfaceTintColor: Colors.transparent,
+      elevation: 6,
       tooltip: context.tr(TranslationKeys.generateStudyLanguage),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: ReaderPalette.of(context).hairline),
       ),
       itemBuilder: (context) => [
         _buildLanguageMenuItem(null,
             context.tr(TranslationKeys.generateStudyDefaultLanguageOption)),
-        const PopupMenuDivider(),
+        PopupMenuDivider(color: ReaderPalette.of(context).hairline),
         _buildLanguageMenuItem(StudyLanguage.english, 'English'),
         _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
         _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
@@ -1235,6 +1237,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     final isSelected = language == null
         ? _isLanguageDefault
         : (!_isLanguageDefault && _selectedLanguage == language);
+    final palette = ReaderPalette.of(context);
     return PopupMenuItem<StudyLanguage?>(
       value: language,
       child: Row(
@@ -1245,15 +1248,12 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onBackground,
+                color: isSelected ? palette.accentIcon : palette.text,
               ),
             ),
           ),
           if (isSelected)
-            Icon(Icons.check,
-                color: Theme.of(context).colorScheme.primary, size: 18),
+            Icon(Icons.check_rounded, color: palette.accentIcon, size: 18),
         ],
       ),
     );
@@ -1814,75 +1814,43 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 
   Widget _buildOfflineGenerateOverlay(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final radius = BorderRadius.circular(GenerateStudyButton.height / 2);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(GenerateStudyButton.height / 2),
+      borderRadius: radius,
       child: Material(
-        color: Colors.transparent,
+        color: palette.raised,
         child: InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Connect to internet to generate a study guide'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(GenerateStudyButton.height / 2),
+          onTap: () => showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.studyUiOfflineGenerate),
+            tone: AppSnackTone.warning,
+          ),
+          borderRadius: radius,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius:
-                  BorderRadius.circular(GenerateStudyButton.height / 2),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.shadowMedium,
-                  AppColors.shadowLight,
-                ],
-              ),
+              borderRadius: radius,
+              border: Border.all(color: palette.outline),
             ),
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: context.appInteractive,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.appInteractive.withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.wifi_off_rounded,
-                      color: AppColors.onGradient,
-                      size: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.wifi_off_rounded, color: palette.muted, size: 18),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    context
+                        .tr(TranslationKeys.appChromeLockNotAvailableOffline),
+                    textAlign: TextAlign.center,
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: context.appInteractive,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Not available offline',
-                      style: TextStyle(
-                        color: AppColors.onGradient,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -2061,140 +2029,72 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
   void _showErrorDialog(
       BuildContext context, String message, bool isRetryable, Failure failure) {
-    final theme = Theme.of(context);
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: theme.dialogBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 8,
-        shadowColor: theme.shadowColor.withOpacity(0.1),
-        title: Row(
+      builder: (BuildContext dialogContext) {
+        final palette = ReaderPalette.of(dialogContext);
+        final isRateLimited = failure is RateLimitFailure;
+        return PopupDialog(
           children: [
-            Icon(
-              Icons.error_outline,
-              color: theme.colorScheme.error,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              context.tr(TranslationKeys.generateStudyGenerationFailed),
-              style: AppFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+            PopupHeader(
+              icon: PopupIconCircle(
+                icon: isRateLimited
+                    ? Icons.hourglass_bottom_rounded
+                    : Icons.error_outline_rounded,
+                tone: isRateLimited ? PopupTone.gold : PopupTone.indigo,
               ),
+              title: dialogContext
+                  .tr(TranslationKeys.generateStudyGenerationFailed),
+              body: message,
             ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message,
-              style: AppFonts.inter(
-                fontSize: 16,
-                color: theme.colorScheme.onSurface,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
+            const SizedBox(height: 16),
+            PopupPanel(
               child: Text(
-                context
+                dialogContext
                     .tr(TranslationKeys.generateStudyGenerationFailedMessage),
+                textAlign: TextAlign.center,
                 style: AppFonts.inter(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                  color: palette.muted,
                   fontStyle: FontStyle.italic,
+                  height: 1.45,
                 ),
               ),
+            ),
+            const SizedBox(height: 22),
+            // Show different buttons based on failure type
+            if (isRateLimited) ...[
+              PopupPrimaryButton(
+                key: const Key('generate_error_manage_tokens'),
+                label:
+                    dialogContext.tr(TranslationKeys.generateStudyManageTokens),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _navigateToTokenManagement();
+                },
+              ),
+              const SizedBox(height: 4),
+            ] else if (isRetryable) ...[
+              PopupPrimaryButton(
+                key: const Key('generate_error_try_again'),
+                label:
+                    dialogContext.tr(TranslationKeys.studyGuideErrorTryAgain),
+                icon: Icons.refresh_rounded,
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _generateStudyGuide();
+                },
+              ),
+              const SizedBox(height: 4),
+            ],
+            PopupTextButton(
+              key: const Key('generate_error_ok'),
+              label: dialogContext.tr(TranslationKeys.guideFeedbackOk),
+              onPressed: () => Navigator.of(dialogContext).pop(),
             ),
           ],
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: theme.colorScheme.onSurfaceVariant,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'OK',
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          // Show different buttons based on failure type
-          if (failure is RateLimitFailure) ...[
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _navigateToTokenManagement();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.appInteractive,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.generateStudyManageTokens),
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ] else if (isRetryable) ...[
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _generateStudyGuide();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.appInteractive,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Try Again',
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }

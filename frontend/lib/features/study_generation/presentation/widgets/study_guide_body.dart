@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_reading_tracker.dart';
 import 'package:disciplefy_bible_study/shared/widgets/markdown_with_scripture.dart';
 import 'package:disciplefy_bible_study/shared/widgets/numbered_section_header.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 
 /// Layout values shared by the streaming (loading) and the finished study
 /// guide views. Both render the full-bleed [StudyGuideBody], which pads its
@@ -746,16 +747,10 @@ const double _sectionBottomGap = 22;
 
 void _copySection(BuildContext context, String text) {
   Clipboard.setData(ClipboardData(text: text));
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-        style: AppFonts.inter(color: Colors.white),
-      ),
-      backgroundColor: context.appInteractive,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-    ),
+  showAppSnackBar(
+    context,
+    context.tr(TranslationKeys.studyGuideCopiedToClipboard),
+    tone: AppSnackTone.success,
   );
 }
 

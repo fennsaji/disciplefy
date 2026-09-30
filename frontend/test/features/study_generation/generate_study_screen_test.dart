@@ -18,6 +18,7 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/usecases/usecase.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/saved_guides_event.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/saved_guides_state.dart';
@@ -38,6 +39,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_e
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 import '../../helpers/text_fit.dart';
 
@@ -70,6 +72,12 @@ class _FakeLanguageService extends Fake implements LanguagePreferenceService {
 
   @override
   Future<bool> isStudyContentLanguageDefault() async => true;
+
+  final List<AppLanguage?> savedContentLanguages = [];
+
+  @override
+  Future<void> saveStudyContentLanguage(AppLanguage? language) async =>
+      savedContentLanguages.add(language);
 }
 
 class _FakeDefaultLanguage extends Fake implements GetDefaultStudyLanguage {
@@ -152,11 +160,15 @@ Future<void> _register({
     ..registerSingleton<UnifiedSavedGuidesBloc>(savedGuides);
 }
 
-Widget _app({required bool dark}) {
+Widget _app({required bool dark, Stream<StudyState>? studyStates}) {
   final tokenBloc = _MockTokenBloc();
   when(() => tokenBloc.state).thenReturn(const TokenInitial());
   final studyBloc = _MockStudyBloc();
-  when(() => studyBloc.state).thenReturn(StudyInitial());
+  if (studyStates != null) {
+    whenListen(studyBloc, studyStates, initialState: StudyInitial());
+  } else {
+    when(() => studyBloc.state).thenReturn(StudyInitial());
+  }
   final connectivity = _MockConnectivityBloc();
   when(() => connectivity.state).thenReturn(ConnectivityOnline());
 
@@ -302,6 +314,37 @@ void main() {
     expect(find.text('Talk to Discipler'), findsNothing);
   });
 
+  group('language menu', () {
+    for (final dark in [true, false]) {
+      testWidgets(
+          'uses the palette card and still switches language '
+          '(${dark ? 'dark' : 'light'})', (tester) async {
+        await _register();
+        _usePhone(tester);
+        await tester.pumpWidget(_app(dark: dark));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('generate_language_pill')));
+        await tester.pumpAndSettle();
+
+        final palette = ReaderPalette.of(
+            tester.element(find.byKey(const Key('generate_language_pill'))));
+        final menu = tester.widget<Material>(find
+            .ancestor(of: find.text('हिन्दी'), matching: find.byType(Material))
+            .last);
+        expect(menu.color, palette.card);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.text('हिन्दी'));
+        await tester.pumpAndSettle();
+        expect(find.text('हिं'), findsOneWidget);
+        final service =
+            GetIt.instance<LanguagePreferenceService>() as _FakeLanguageService;
+        expect(service.savedContentLanguages, [AppLanguage.hindi]);
+      });
+    }
+  });
+
   group('no cut-off text at 320px', () {
     setUpAll(loadAppFonts);
 
@@ -318,5 +361,53 @@ void main() {
         expectNoTruncatedText(tester);
       });
     }
+  });
+
+  group('generation failed dialog', () {
+    setUpAll(loadAppFonts);
+
+    for (final language in AppLanguage.values) {
+      for (final dark in [true, false]) {
+        testWidgets('fits 320x640 ${language.code} ${dark ? 'dark' : 'light'}',
+            (tester) async {
+          await _register(language: language);
+          tester.view.physicalSize = const Size(320, 640);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+          await tester.pumpWidget(_app(
+            dark: dark,
+            studyStates: Stream.value(const StudyGenerationFailure(
+                failure: ServerFailure(message: 'Server hiccup'))),
+          ));
+          await tester.pumpAndSettle();
+
+          expect(find.byType(PopupDialog), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+          expect(find.byKey(const Key('generate_error_try_again')),
+              findsOneWidget);
+
+          await tester.tap(find.byKey(const Key('generate_error_ok')));
+          await tester.pumpAndSettle();
+          expect(find.byType(PopupDialog), findsNothing);
+        });
+      }
+    }
+
+    testWidgets('rate limit offers token management instead of retry',
+        (tester) async {
+      await _register();
+      _usePhone(tester);
+      await tester.pumpWidget(_app(
+        dark: true,
+        studyStates: Stream.value(
+            const StudyGenerationFailure(failure: RateLimitFailure())),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('generate_error_manage_tokens')),
+          findsOneWidget);
+      expect(find.byKey(const Key('generate_error_try_again')), findsNothing);
+    });
   });
 }

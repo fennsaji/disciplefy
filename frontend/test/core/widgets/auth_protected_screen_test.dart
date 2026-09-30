@@ -203,72 +203,6 @@ void main() {
     });
   });
 
-  group('CriticalAuthScreen', () {
-    testWidgets('should never allow back navigation', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: CriticalAuthScreen(
-            child: Scaffold(
-              body: Center(child: Text('Critical Content')),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Critical Content'), findsOneWidget);
-
-      // Should prevent all navigation
-      final popScope = tester.widget<PopScope>(find.byType(PopScope));
-      expect(popScope.canPop, isFalse);
-    });
-
-    testWidgets('should call custom unauthorized access handler',
-        (tester) async {
-      bool unauthorizedHandlerCalled = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: CriticalAuthScreen(
-            onUnauthorizedAccess: () {
-              unauthorizedHandlerCalled = true;
-            },
-            child: const Scaffold(
-              body: Center(child: Text('Critical Content')),
-            ),
-          ),
-        ),
-      );
-
-      // Trigger back press
-      final popScope = tester.widget<PopScope>(find.byType(PopScope));
-      popScope.onPopInvokedWithResult?.call(false, null);
-
-      expect(unauthorizedHandlerCalled, isTrue);
-    });
-
-    testWidgets('should show default security warning when no custom handler',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: CriticalAuthScreen(
-            child: Scaffold(
-              body: Center(child: Text('Critical Content')),
-            ),
-          ),
-        ),
-      );
-
-      // Trigger back press
-      final popScope = tester.widget<PopScope>(find.byType(PopScope));
-      popScope.onPopInvokedWithResult?.call(false, null);
-
-      await tester.pumpAndSettle();
-
-      // Should show security warning snackbar
-      expect(find.text('Navigation restricted for security'), findsOneWidget);
-    });
-  });
-
   group('AuthProtection Extension Methods', () {
     testWidgets('withAuthProtection should wrap widget correctly',
         (tester) async {
@@ -301,20 +235,6 @@ void main() {
 
       expect(find.text('Home Content'), findsOneWidget);
       expect(find.byType(HomeScreenProtection), findsOneWidget);
-    });
-
-    testWidgets('withCriticalAuthProtection should wrap widget correctly',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: Center(child: Text('Critical Content')),
-          ).withCriticalAuthProtection(),
-        ),
-      );
-
-      expect(find.text('Critical Content'), findsOneWidget);
-      expect(find.byType(CriticalAuthScreen), findsOneWidget);
     });
   });
 

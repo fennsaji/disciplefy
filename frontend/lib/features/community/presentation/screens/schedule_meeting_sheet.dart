@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/config/app_config.dart';
-import 'google_calendar_auth_stub.dart'
-    if (dart.library.js_interop) 'google_calendar_auth_web.dart'
-    if (dart.library.io) 'google_calendar_auth_mobile.dart';
-
-import '../../../../core/theme/app_colors.dart';
-import '../bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
-import '../bloc/fellowship_meetings/fellowship_meetings_event.dart';
-import '../bloc/fellowship_meetings/fellowship_meetings_state.dart';
+import 'package:disciplefy_bible_study/core/config/app_config.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_meetings_tab_screen.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
+import 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_stub.dart'
+    if (dart.library.js_interop) 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_web.dart'
+    if (dart.library.io) 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_mobile.dart';
+
 /// A modal bottom sheet that allows a fellowship mentor to schedule a new
-/// Google Meet session for the group.
+/// Google Meet session (or an in-person gathering) for the group.
 ///
 /// Dispatches [FellowshipMeetingCreateRequested] and closes itself once the
 /// [FellowshipMeetingsBloc] emits a [FellowshipMeetingsState.successMessage].
@@ -43,6 +53,9 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
 
   /// `null` represents a one-time (non-recurring) meeting.
   String? _recurrence;
+
+  static const _durations = [30, 60, 90, 120];
+  static const _recurrences = <String?>[null, 'daily', 'weekly', 'monthly'];
 
   @override
   void dispose() {
@@ -94,24 +107,14 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
     if (picked != null) setState(() => _selectedTime = picked);
   }
 
-  /// Returns a human-readable date string, e.g. `"10 Mar 2026"`.
+  /// Returns a human-readable date, e.g. `"Mar 10, 2026"` in the app locale.
   String _formatDate() {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${_selectedDate.day} ${months[_selectedDate.month - 1]} '
-        '${_selectedDate.year}';
+    final code = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+    try {
+      return DateFormat.yMMMd(code).format(_selectedDate);
+    } catch (_) {
+      return DateFormat.yMMMd('en').format(_selectedDate);
+    }
   }
 
   /// Returns a best-effort IANA timezone string for the device.
@@ -125,45 +128,45 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
   /// UTC offset already embedded in [_isoStartsAt] to keep the time correct.
   String _getIanaTimezone() {
     final name = DateTime.now().timeZoneName;
-    // IANA zone IDs always contain at least one slash.
     if (name.contains('/')) return name;
-    // Fall back to UTC — the ISO string already carries the correct offset.
     return 'UTC';
   }
 
-  /// Shows a dialog explaining the Google Calendar permission request.
-  /// Returns true if the user wants to proceed, false to skip.
+  String _durationLabel(int mins) {
+    if (mins < 60) {
+      return context.tr(TranslationKeys.communityPagesMinutes, {'count': mins});
+    }
+    final hours = mins ~/ 60;
+    final remainder = mins % 60;
+    if (remainder == 0) {
+      return context.tr(TranslationKeys.communityPagesHours, {'count': hours});
+    }
+    return context.tr(TranslationKeys.communityPagesHoursMinutes,
+        {'hours': hours, 'minutes': remainder});
+  }
+
+  String _recurrenceLabel(String? recurrence) {
+    final key = meetingRecurrenceKey(recurrence);
+    return context.tr(key ?? TranslationKeys.communityPagesOneTime);
+  }
+
+  /// Explains the Google Calendar permission request. True to proceed.
   Future<bool> _showCalendarPermissionDialog(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Text('📅', style: TextStyle(fontSize: 22)),
-            SizedBox(width: 10),
-            Text(
-              'Connect Google Calendar',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-        content: const Text(
-          'To generate a Google Meet link for this meeting, we need brief access to your Google Calendar.\n\nGoogle will open to confirm — it only takes a moment.',
-          style: TextStyle(fontSize: 14, height: 1.5),
-        ),
+      builder: (ctx) => SettingsDialog(
+        title: ctx.tr(TranslationKeys.communityPagesCalendarTitle),
+        content: Text(ctx.tr(TranslationKeys.communityPagesCalendarBody)),
         actions: [
-          TextButton(
+          SettingsButton(
+            label: ctx.tr(TranslationKeys.communityPagesCalendarSkip),
+            kind: SettingsButtonKind.neutral,
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Skip — no Meet link'),
           ),
-          FilledButton(
+          SettingsButton(
+            label: ctx.tr(TranslationKeys.communityPagesContinue),
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.brandPrimary,
-            ),
-            child: const Text('Continue'),
           ),
         ],
       ),
@@ -184,7 +187,6 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
     // Any user (not just Google sign-in users) can connect Google Calendar to
     // generate a Meet link — they may have a separate Google account.
     if (!_isInPerson) {
-      // Show explanation dialog so the user knows why Google is opening.
       final proceed = await _showCalendarPermissionDialog(context);
       if (!context.mounted) return;
       if (proceed) {
@@ -197,22 +199,19 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
           // Auth failed — inform user and let them decide whether to continue.
           final continueAnyway = await showDialog<bool>(
             context: context,
-            builder: (ctx) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text('Could not connect Google Calendar'),
-              content: const Text(
-                'We couldn\'t get access to your Google Calendar. The meeting will be created without a Google Meet link.\n\nYou can share a custom link with members after creating the meeting.',
-              ),
+            builder: (ctx) => SettingsDialog(
+              title: ctx.tr(TranslationKeys.communityPagesCalendarFailedTitle),
+              content: Text(
+                  ctx.tr(TranslationKeys.communityPagesCalendarFailedBody)),
               actions: [
-                TextButton(
+                SettingsButton(
+                  label: AppLocalizations.of(ctx)!.cancel,
+                  kind: SettingsButtonKind.neutral,
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Cancel'),
                 ),
-                FilledButton(
+                SettingsButton(
+                  label: ctx.tr(TranslationKeys.communityPagesCreateAnyway),
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Create anyway'),
                 ),
               ],
             ),
@@ -243,81 +242,169 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return BlocListener<FellowshipMeetingsBloc, FellowshipMeetingsState>(
       // Detect the submitting → done transition that carries a success message.
       listenWhen: (prev, curr) =>
           prev.submitting && !curr.submitting && curr.successMessage != null,
       listener: (context, state) => Navigator.of(context).pop(),
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: SheetScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _DragHandle(),
-                Text(
-                  'Schedule Meeting',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: context.appTextPrimary,
+        child: SafeArea(
+          top: false,
+          child: SheetScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _DragHandle(),
+                  Text(
+                    context.tr(TranslationKeys.communityPagesScheduleTitle),
+                    style: AppFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                _TitleField(controller: _titleController),
-                const SizedBox(height: 12),
-                _DescriptionField(controller: _descController),
-                const SizedBox(height: 16),
-                _DateTimeRow(
-                  dateLabel: _formatDate(),
-                  timeLabel: _selectedTime.format(context),
-                  onPickDate: _pickDate,
-                  onPickTime: _pickTime,
-                ),
-                const SizedBox(height: 16),
-                _SectionLabel(
-                  text: 'Meeting Type',
-                  color: context.appTextSecondary,
-                ),
-                const SizedBox(height: 8),
-                _MeetingTypeToggle(
-                  isInPerson: _isInPerson,
-                  onChanged: (val) => setState(() => _isInPerson = val),
-                ),
-                if (_isInPerson) ...[
-                  const SizedBox(height: 12),
-                  _LocationField(controller: _locationController),
+                  const SizedBox(height: 20),
+                  CommunityFieldLabel(
+                      context.tr(TranslationKeys.communityPagesTitleLabel)),
+                  TextFormField(
+                    controller: _titleController,
+                    style: communityInputStyle(context),
+                    decoration: communityInputDecoration(
+                      context,
+                      hintText:
+                          context.tr(TranslationKeys.communityPagesTitleHint),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? context
+                            .tr(TranslationKeys.communityPagesTitleRequired)
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CommunityFieldLabel(context
+                      .tr(TranslationKeys.communityPagesDescriptionLabel)),
+                  TextFormField(
+                    controller: _descController,
+                    maxLines: 2,
+                    maxLength: 500,
+                    style: communityInputStyle(context),
+                    decoration: communityInputDecoration(context),
+                  ),
+                  const SizedBox(height: 10),
+                  CommunityFieldLabel(
+                      context.tr(TranslationKeys.communityPagesDateTime)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PickerTile(
+                          icon: Icons.calendar_today_rounded,
+                          label: _formatDate(),
+                          onTap: _pickDate,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _PickerTile(
+                          icon: Icons.access_time_rounded,
+                          label: _selectedTime.format(context),
+                          onTap: _pickTime,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  CommunityFieldLabel(
+                      context.tr(TranslationKeys.communityPagesMeetingType)),
+                  CommunitySegmented<bool>(
+                    segments: [
+                      CommunitySegment(
+                        false,
+                        context.tr(TranslationKeys.communityPagesOnline),
+                        icon: Icons.videocam_outlined,
+                      ),
+                      CommunitySegment(
+                        true,
+                        context.tr(TranslationKeys.communityPagesInPerson),
+                        icon: Icons.place_outlined,
+                      ),
+                    ],
+                    selected: _isInPerson,
+                    onChanged: (val) => setState(() => _isInPerson = val),
+                  ),
+                  if (_isInPerson) ...[
+                    const SizedBox(height: 14),
+                    CommunityFieldLabel(context
+                        .tr(TranslationKeys.communityPagesLocationLabel)),
+                    TextFormField(
+                      controller: _locationController,
+                      style: communityInputStyle(context),
+                      decoration: communityInputDecoration(
+                        context,
+                        hintText: context
+                            .tr(TranslationKeys.communityPagesLocationHint),
+                        prefixIcon: Icons.place_outlined,
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? context.tr(
+                              TranslationKeys.communityPagesLocationRequired)
+                          : null,
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  CommunityFieldLabel(
+                      context.tr(TranslationKeys.communityPagesDuration)),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final mins in _durations)
+                        CommunityRaisedPill(
+                          label: _durationLabel(mins),
+                          selected: _durationMinutes == mins,
+                          onPressed: () =>
+                              setState(() => _durationMinutes = mins),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  CommunityFieldLabel(
+                      context.tr(TranslationKeys.communityPagesRepeat)),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final rec in _recurrences)
+                        CommunityRaisedPill(
+                          label: _recurrenceLabel(rec),
+                          selected: _recurrence == rec,
+                          onPressed: () => setState(() => _recurrence = rec),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 26),
+                  BlocBuilder<FellowshipMeetingsBloc, FellowshipMeetingsState>(
+                    buildWhen: (prev, curr) =>
+                        prev.submitting != curr.submitting,
+                    builder: (context, state) => SettingsButton(
+                      label: context.tr(TranslationKeys.communityPagesSubmit),
+                      icon: Icons.send_rounded,
+                      loading: state.submitting,
+                      onPressed: () => _submit(context),
+                    ),
+                  ),
                 ],
-                const SizedBox(height: 16),
-                _SectionLabel(
-                  text: 'Duration',
-                  color: context.appTextSecondary,
-                ),
-                const SizedBox(height: 8),
-                _DurationChips(
-                  selected: _durationMinutes,
-                  onSelected: (mins) => setState(() => _durationMinutes = mins),
-                ),
-                const SizedBox(height: 16),
-                _SectionLabel(
-                  text: 'Repeat',
-                  color: context.appTextSecondary,
-                ),
-                const SizedBox(height: 8),
-                _RecurrenceChips(
-                  selected: _recurrence,
-                  onSelected: (rec) => setState(() => _recurrence = rec),
-                ),
-                const SizedBox(height: 24),
-                _SubmitButton(onSubmit: () => _submit(context)),
-              ],
+              ),
             ),
           ),
         ),
@@ -331,15 +418,17 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
 // ──────────────────────────────────────────────────────────────────────────────
 
 class _DragHandle extends StatelessWidget {
+  const _DragHandle();
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Container(
         width: 36,
         height: 4,
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 18),
         decoration: BoxDecoration(
-          color: context.appBorder,
+          color: ReaderPalette.of(context).outline,
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -347,360 +436,7 @@ class _DragHandle extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _SectionLabel({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: color,
-        letterSpacing: 1.1,
-      ),
-    );
-  }
-}
-
-class _TitleField extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _TitleField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: 'Meeting title *',
-        hintText: 'e.g. Weekly Prayer Session',
-        filled: true,
-        fillColor: context.appInputFill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      validator: (v) =>
-          (v == null || v.trim().isEmpty) ? 'Title is required' : null,
-    );
-  }
-}
-
-class _DescriptionField extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _DescriptionField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      maxLines: 2,
-      maxLength: 500,
-      decoration: InputDecoration(
-        labelText: 'Description (optional)',
-        filled: true,
-        fillColor: context.appInputFill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-}
-
-class _DateTimeRow extends StatelessWidget {
-  final String dateLabel;
-  final String timeLabel;
-  final VoidCallback onPickDate;
-  final VoidCallback onPickTime;
-
-  const _DateTimeRow({
-    required this.dateLabel,
-    required this.timeLabel,
-    required this.onPickDate,
-    required this.onPickTime,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _PickerTile(
-            icon: Icons.calendar_today_rounded,
-            label: dateLabel,
-            onTap: onPickDate,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _PickerTile(
-            icon: Icons.access_time_rounded,
-            label: timeLabel,
-            onTap: onPickTime,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DurationChips extends StatelessWidget {
-  final int selected;
-  final ValueChanged<int> onSelected;
-
-  const _DurationChips({required this.selected, required this.onSelected});
-
-  static String _label(int mins) {
-    if (mins < 60) return '$mins min';
-    final hours = mins ~/ 60;
-    final remainder = mins % 60;
-    if (remainder == 0) return '$hours hr';
-    return '$hours hr $remainder min';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      children: [30, 60, 90, 120].map((mins) {
-        final isSelected = selected == mins;
-        return ChoiceChip(
-          label: Text(_label(mins)),
-          selected: isSelected,
-          onSelected: (_) => onSelected(mins),
-          selectedColor: AppColors.brandPrimary,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : context.appTextPrimary,
-            fontFamily: 'Inter',
-            fontSize: 13,
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _RecurrenceChips extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String?> onSelected;
-
-  const _RecurrenceChips({required this.selected, required this.onSelected});
-
-  static const _options = <String?>[null, 'daily', 'weekly', 'monthly'];
-
-  static String _label(String? rec) {
-    if (rec == null) return 'One-time';
-    return rec[0].toUpperCase() + rec.substring(1);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      children: _options.map((rec) {
-        final isSelected = selected == rec;
-        return ChoiceChip(
-          label: Text(_label(rec)),
-          selected: isSelected,
-          onSelected: (_) => onSelected(rec),
-          selectedColor: AppColors.brandPrimary,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : context.appTextPrimary,
-            fontFamily: 'Inter',
-            fontSize: 13,
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _SubmitButton extends StatelessWidget {
-  final VoidCallback onSubmit;
-
-  const _SubmitButton({required this.onSubmit});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<FellowshipMeetingsBloc, FellowshipMeetingsState>(
-      buildWhen: (prev, curr) => prev.submitting != curr.submitting,
-      builder: (context, state) {
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: state.submitting
-                ? null
-                : const LinearGradient(
-                    colors: [AppColors.brandPrimary, AppColors.brandSecondary],
-                  ),
-            color: state.submitting ? AppColors.brandPrimary : null,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: state.submitting
-                ? null
-                : [
-                    BoxShadow(
-                      color: AppColors.brandPrimary.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: state.submitting ? null : onSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shadowColor: Colors.transparent,
-                disabledBackgroundColor:
-                    AppColors.brandPrimary.withValues(alpha: 0.6),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: state.submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Schedule & Send Invites',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _MeetingTypeToggle extends StatelessWidget {
-  final bool isInPerson;
-  final ValueChanged<bool> onChanged;
-
-  const _MeetingTypeToggle({required this.isInPerson, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _TypeChip(
-          label: 'Online',
-          icon: Icons.videocam_rounded,
-          selected: !isInPerson,
-          onTap: () => onChanged(false),
-        ),
-        const SizedBox(width: 8),
-        _TypeChip(
-          label: 'In-person',
-          icon: Icons.location_on_rounded,
-          selected: isInPerson,
-          onTap: () => onChanged(true),
-        ),
-      ],
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TypeChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.brandPrimary : context.appInputFill,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.brandPrimary : context.appBorder,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: selected ? Colors.white : context.appTextSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : context.appTextPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationField extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _LocationField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: 'Location *',
-        hintText: 'e.g. Community Hall, Room 3',
-        prefixIcon: const Icon(Icons.location_on_rounded, size: 18),
-        filled: true,
-        fillColor: context.appInputFill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      validator: (v) =>
-          (v == null || v.trim().isEmpty) ? 'Please enter a location' : null,
-    );
-  }
-}
-
-/// A tappable tile used to display and trigger date/time pickers.
+/// A tappable well showing the chosen date or time; opens its picker.
 class _PickerTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -714,38 +450,37 @@ class _PickerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.appInputFill,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.brandPrimary.withValues(alpha: 0.15),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: AppColors.brandPrimaryLight),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: context.appTextPrimary,
+    final palette = ReaderPalette.of(context);
+    return Material(
+      color: communityWellFill(palette),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 50),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(icon, size: 17, color: palette.accentIcon),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppFonts.inter(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w500,
+                      color: palette.text,
+                      height: 1.3,
+                    ),
+                  ),
                 ),
-                overflow: TextOverflow.ellipsis,
-              ),
+                const SizedBox(width: 4),
+                Icon(Icons.expand_more_rounded, size: 18, color: palette.dim),
+              ],
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.expand_more_rounded,
-                size: 14,
-                color: AppColors.brandPrimaryLight.withValues(alpha: 0.6)),
-          ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Streak protection dialog.
 ///
@@ -43,150 +49,103 @@ class StreakProtectionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final warning = palette.isDark ? AppColors.warning : AppColors.warningDark;
+    final canUse = freezeDaysAvailable > 0;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.info.withAlpha((0.1 * 255).round()),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.ac_unit,
-              color: context.appInfo,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'Protect Your Streak',
-              style: TextStyle(fontSize: 20),
-            ),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Warning message
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withAlpha((0.1 * 255).round()),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.warning,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.warning,
-                  color: context.appWarning,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Your $currentStreak-day streak is at risk!',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.warningDark,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Explanation
-          Text(
-            'Use a freeze day to protect your streak on a day you couldn\'t practice.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Available freeze days
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.info.withAlpha((0.05 * 255).round()),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Available Freeze Days:',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.ac_unit,
-                      color: context.appInfo,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$freezeDaysAvailable',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: context.appInfo,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // How to earn more
-          Text(
-            'Earn 1 freeze day for every 7 consecutive days of practice (max 5).',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+    return PopupDialog(
+      children: [
+        PopupHeader(
+          icon: const PopupIconCircle(icon: Icons.ac_unit_rounded),
+          eyebrow: context.tr(TranslationKeys.streakProtectionEyebrow),
+          title: context.tr(TranslationKeys.streakProtectionTitle),
+          body: context.tr(TranslationKeys.streakProtectionExplanation),
         ),
-        ElevatedButton.icon(
-          onPressed: freezeDaysAvailable > 0
+        const SizedBox(height: 18),
+
+        // Streak at risk
+        PopupPanel(
+          child: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: warning, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  context.tr(
+                    TranslationKeys.streakProtectionAtRisk,
+                    {'count': '$currentStreak'},
+                  ),
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: warning,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Available freeze days
+        PopupPanel(
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.tr(TranslationKeys.streakProtectionAvailable),
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(Icons.ac_unit_rounded, color: palette.accentIcon, size: 18),
+              const SizedBox(width: 4),
+              Text(
+                '$freezeDaysAvailable',
+                key: const Key('streak_protection_count'),
+                style: AppFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // How to earn more
+        Text(
+          context.tr(TranslationKeys.streakProtectionEarnMore),
+          textAlign: TextAlign.center,
+          style: AppFonts.inter(
+            fontSize: 12.5,
+            color: palette.dim,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 22),
+        PopupPrimaryButton(
+          key: const Key('streak_protection_use'),
+          label: context.tr(TranslationKeys.streakProtectionUse),
+          icon: Icons.ac_unit_rounded,
+          onPressed: canUse
               ? () {
                   onConfirm();
                   Navigator.of(context).pop(true);
                 }
               : null,
-          icon: const Icon(Icons.ac_unit),
-          label: const Text('Use Freeze Day'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.info,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.lightBorder,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          key: const Key('streak_protection_cancel'),
+          label: context.tr(TranslationKeys.streakProtectionCancel),
+          onPressed: () => Navigator.of(context).pop(false),
         ),
       ],
     );

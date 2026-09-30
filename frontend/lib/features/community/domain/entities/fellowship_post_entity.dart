@@ -74,6 +74,15 @@ class FellowshipPostEntity extends Equatable {
   /// (`'en'`, `'hi'`, or `'ml'`).
   final String? guideLanguage;
 
+  /// For `shared_guide` posts: the study mode the guide was generated in
+  /// (`'quick'`, `'standard'`, `'deep'`, `'lectio'` or `'sermon'`), or null
+  /// for posts shared before the mode was recorded.
+  final String? guideStudyMode;
+
+  /// For `shared_guide` posts: a short plain-text summary of the guide, or
+  /// null for posts shared before summaries were recorded.
+  final String? guideSummary;
+
   /// True when the post content mentions the Discipler AI helper.
   final bool mentionsDiscipler;
 
@@ -97,6 +106,8 @@ class FellowshipPostEntity extends Equatable {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
+    this.guideStudyMode,
+    this.guideSummary,
     this.mentionsDiscipler = false,
   });
 
@@ -139,6 +150,8 @@ class FellowshipPostEntity extends Equatable {
       studyGuideId: studyGuideId,
       guideInputType: guideInputType,
       guideLanguage: guideLanguage,
+      guideStudyMode: guideStudyMode,
+      guideSummary: guideSummary,
       mentionsDiscipler: mentionsDiscipler,
     );
   }
@@ -164,6 +177,8 @@ class FellowshipPostEntity extends Equatable {
         studyGuideId,
         guideInputType,
         guideLanguage,
+        guideStudyMode,
+        guideSummary,
         mentionsDiscipler,
       ];
 }

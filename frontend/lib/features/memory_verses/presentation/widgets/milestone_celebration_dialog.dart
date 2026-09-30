@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-import '../../../../core/theme/app_colors.dart';
+
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/shared/widgets/gold_marks.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Milestone celebration dialog.
 ///
-/// Displays animated celebration when user reaches a streak milestone.
-/// Shows:
-/// - Animated confetti/celebration
-/// - Milestone days (10, 30, 100, 365)
-/// - Congratulatory message
-/// - XP reward earned
-/// - Motivational message
+/// Shown when the user reaches a streak milestone (10, 30, 100, 365 days):
+/// gold "STREAK MILESTONE" eyebrow, a per-milestone icon in a soft gold
+/// circle, the milestone title, a motivational line, the XP reward and one
+/// primary pill. Same popup style as the achievement unlock dialog.
 class MilestoneCelebrationDialog extends StatelessWidget {
   final int milestoneDays;
   final int xpEarned;
@@ -37,181 +37,74 @@ class MilestoneCelebrationDialog extends StatelessWidget {
     );
   }
 
-  String _getMilestoneTitle() {
-    switch (milestoneDays) {
-      case 10:
-        return '10-Day Streak!';
-      case 30:
-        return '30-Day Streak!';
-      case 100:
-        return '100-Day Streak!';
-      case 365:
-        return 'Full Year Streak!';
-      default:
-        return '$milestoneDays-Day Streak!';
+  String _getMilestoneTitle(BuildContext context) {
+    if (milestoneDays == 365) {
+      return context.tr(TranslationKeys.streakMilestoneTitleYear);
     }
+    return context.tr(
+      TranslationKeys.streakMilestoneTitleDays,
+      {'count': '$milestoneDays'},
+    );
   }
 
-  String _getMotivationalMessage() {
-    switch (milestoneDays) {
-      case 10:
-        return 'You\'re building a great habit! Keep going!';
-      case 30:
-        return 'A month of dedication! Your commitment is inspiring!';
-      case 100:
-        return 'Incredible persistence! You\'re a memorization champion!';
-      case 365:
-        return 'An entire year of faithfulness! You\'re amazing!';
-      default:
-        return 'Your dedication is inspiring!';
-    }
+  String _getMotivationalMessage(BuildContext context) {
+    final key = switch (milestoneDays) {
+      10 => TranslationKeys.streakMilestoneMessage10,
+      30 => TranslationKeys.streakMilestoneMessage30,
+      100 => TranslationKeys.streakMilestoneMessage100,
+      365 => TranslationKeys.streakMilestoneMessage365,
+      _ => TranslationKeys.streakMilestoneMessageDefault,
+    };
+    return context.tr(key);
   }
 
   IconData _getMilestoneIcon() {
     switch (milestoneDays) {
       case 10:
-        return Icons.stars;
+        return Icons.stars_rounded;
       case 30:
-        return Icons.emoji_events;
+        return Icons.emoji_events_outlined;
       case 100:
-        return Icons.military_tech;
+        return Icons.military_tech_outlined;
       case 365:
-        return Icons.workspace_premium;
+        return Icons.workspace_premium_outlined;
       default:
-        return Icons.celebration;
-    }
-  }
-
-  Color _getMilestoneColor(BuildContext context) {
-    switch (milestoneDays) {
-      case 10:
-        return AppColors.info;
-      case 30:
-        return AppColors.masteryAdvanced;
-      case 100:
-        return AppColors.warning;
-      case 365:
-        return context.appStreakAccent;
-      default:
-        return AppColors.success;
+        return Icons.celebration_outlined;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final milestoneColor = _getMilestoneColor(context);
-
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Milestone icon with animation
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    milestoneColor.withAlpha((0.3 * 255).round()),
-                    milestoneColor.withAlpha((0.1 * 255).round()),
-                  ],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _getMilestoneIcon(),
-                size: 80,
-                color: milestoneColor,
-              ),
+    return PopupDialog(
+      children: [
+        PopupHeader(
+          // One short settle-in of the icon; no looping animation.
+          icon: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.8, end: 1),
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.easeOutBack,
+            builder: (context, scale, child) =>
+                Transform.scale(scale: scale, child: child),
+            child: PopupIconCircle(
+              icon: _getMilestoneIcon(),
+              tone: PopupTone.gold,
+              size: 72,
             ),
-            const SizedBox(height: 24),
-
-            // Milestone title
-            Text(
-              _getMilestoneTitle(),
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: milestoneColor,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-
-            // Motivational message
-            Text(
-              _getMotivationalMessage(),
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-
-            // XP reward
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.success.withAlpha((0.1 * 255).round()),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.success,
-                  width: 2,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.stars,
-                    color: context.appSuccess,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '+$xpEarned XP',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: context.appSuccess,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Continue button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: milestoneColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
+          eyebrow: context.tr(TranslationKeys.streakMilestoneEyebrow),
+          title: _getMilestoneTitle(context),
+          body: _getMotivationalMessage(context),
         ),
-      ),
+        const SizedBox(height: 16),
+        XpRewardPill(xp: xpEarned),
+        const SizedBox(height: 24),
+        PopupPrimaryButton(
+          key: const Key('milestone_celebration_continue'),
+          label: context.tr(TranslationKeys.streakMilestoneContinue),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

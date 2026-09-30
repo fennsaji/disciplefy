@@ -207,6 +207,8 @@ class AppColors {
   static const Color tierFree = Color(0xFF6B7280); // Gray-500
   static const Color tierStandard = brandPrimary; // matches brand indigo
   static const Color tierPlus = Color(0xFF7C3AED); // Violet-600
+  /// [tierPlus] lifted for use as text and accents on dark surfaces.
+  static const Color tierPlusOnDark = Color(0xFFA78BFA); // Violet-400
   static const Color tierPremium = Color(0xFF7C4DFF); // Violet-500
   static const Color tierGold = Color(0xFFF59E0B); // Amber = warning
 

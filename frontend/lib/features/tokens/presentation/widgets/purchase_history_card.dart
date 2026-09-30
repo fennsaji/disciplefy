@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/purchase_issue/presentation/widgets/report_issue_bottom_sheet.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/purchase_history.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// One credit-pack purchase as a ledger entry: credits and status pill,
 /// date · method and amount, the receipt, and "Report an issue".
@@ -184,12 +185,10 @@ class _CopyText extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
       onTap: () {
         Clipboard.setData(ClipboardData(text: text));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.ledgerCopied)),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.ledgerCopied),
+          tone: AppSnackTone.success,
         );
       },
       // IDs wrap rather than being cut so they can be read in full.

@@ -7,6 +7,9 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
+import '../../../../shared/widgets/popup.dart';
+import '../../../settings/presentation/widgets/settings_group.dart'
+    show SettingsButton, SettingsButtonKind;
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -263,7 +266,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   }
 
   Widget _buildLoadingState() {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -271,16 +274,19 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(palette.accentIcon),
+              ),
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
               context.tr(TranslationKeys.followUpChatStartingConversation),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(fontSize: 14, color: palette.muted),
             ),
           ],
         ),
@@ -288,309 +294,172 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     );
   }
 
-  Widget _buildErrorState(FollowUpChatError state) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: AppConstants.ICON_SIZE_40,
-              color: theme.colorScheme.error,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatError),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppConstants.SMALL_PADDING),
-            Text(
-              context.tr(TranslationKeys.commonErrorTryAgain),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            ElevatedButton(
-              onPressed: () {
-                context.read<FollowUpChatBloc>().add(
-                      StartConversationEvent(
-                        studyGuideId: widget.studyGuideId,
-                        studyGuideTitle: widget.studyGuideTitle,
-                      ),
-                    );
-              },
-              child: Text(context.tr(TranslationKeys.followUpChatTryAgain)),
-            ),
-          ],
-        ),
-      ),
-    );
+  /// Restarts the conversation; also how the paywall states are dismissed.
+  void _restartConversation() {
+    context.read<FollowUpChatBloc>().add(
+          StartConversationEvent(
+            studyGuideId: widget.studyGuideId,
+            studyGuideTitle: widget.studyGuideTitle,
+          ),
+        );
   }
 
-  Widget _buildInsufficientTokensState(FollowUpChatInsufficientTokens state) {
-    final theme = Theme.of(context);
+  /// A centred status card: tinted icon, Poppins title, muted message, an
+  /// optional note and up to two pills (primary on top, quieter one below).
+  Widget _buildStatusCard({
+    required IconData icon,
+    PopupTone tone = PopupTone.indigo,
+    required String title,
+    String? message,
+    String? note,
+    String? primaryLabel,
+    Key? primaryKey,
+    VoidCallback? onPrimary,
+    String? secondaryLabel,
+    Key? secondaryKey,
+    VoidCallback? onSecondary,
+  }) {
+    final palette = ReaderPalette.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.token,
-              size: AppConstants.ICON_SIZE_40,
-              color: theme.colorScheme.secondary,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopupIconCircle(icon: icon, tone: tone, size: 52),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppFonts.poppins(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+              height: 1.3,
             ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
+          ),
+          if (message != null && message.isNotEmpty) ...[
+            const SizedBox(height: 6),
             Text(
-              context.tr(TranslationKeys.followUpChatInsufficientTokens),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppConstants.SMALL_PADDING),
-            Text(
-              context
-                  .tr(TranslationKeys.followUpChatInsufficientTokensMessage, {
-                'required': state.required,
-                'available': state.available,
-              }),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
+              message,
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            // Wrap, not Row: the two buttons overflow a 320pt phone in the
-            // longer languages.
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppConstants.SMALL_PADDING,
-              runSpacing: AppConstants.SMALL_PADDING,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    // Dismiss and reload conversation
-                    context.read<FollowUpChatBloc>().add(
-                          StartConversationEvent(
-                            studyGuideId: widget.studyGuideId,
-                            studyGuideTitle: widget.studyGuideTitle,
-                          ),
-                        );
-                  },
-                  child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    context.push(AppRoutes.tokenManagement);
-                  },
-                  child: Text(
-                      context.tr(TranslationKeys.followUpChatGetMoreTokens)),
-                ),
-              ],
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: palette.muted,
+                height: 1.45,
+              ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureNotAvailableState(FollowUpChatFeatureNotAvailable state) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.lock,
-              size: AppConstants.ICON_SIZE_40,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
+          if (note != null) ...[
+            const SizedBox(height: 10),
             Text(
-              context.tr(TranslationKeys.followUpChatNotAvailable),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
+              note,
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.SMALL_PADDING),
-            Text(
-              state.message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatUpgradeMessage),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
+              style: AppFonts.inter(
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
+                color: palette.accentIcon,
+                height: 1.4,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            // Wrap, not Row: the two buttons overflow a 320pt phone in the
-            // longer languages.
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppConstants.SMALL_PADDING,
-              runSpacing: AppConstants.SMALL_PADDING,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    // Dismiss
-                    context.read<FollowUpChatBloc>().add(
-                          StartConversationEvent(
-                            studyGuideId: widget.studyGuideId,
-                            studyGuideTitle: widget.studyGuideTitle,
-                          ),
-                        );
-                  },
-                  child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate to token management page for upgrade
-                    context.push(AppRoutes.tokenManagement);
-                  },
-                  child:
-                      Text(context.tr(TranslationKeys.followUpChatUpgradePlan)),
-                ),
-              ],
             ),
           ],
-        ),
+          if (primaryLabel != null) ...[
+            const SizedBox(height: 18),
+            PopupPrimaryButton(
+              key: primaryKey,
+              label: primaryLabel,
+              onPressed: onPrimary,
+            ),
+          ],
+          if (secondaryLabel != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: SettingsButton(
+                key: secondaryKey,
+                label: secondaryLabel,
+                kind: SettingsButtonKind.neutral,
+                onPressed: onSecondary,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildLimitExceededState(FollowUpChatLimitExceeded state) {
-    final theme = Theme.of(context);
+  Widget _buildErrorState(FollowUpChatError state) => _buildStatusCard(
+        icon: Icons.error_outline_rounded,
+        title: context.tr(TranslationKeys.followUpChatError),
+        message: context.tr(TranslationKeys.commonErrorTryAgain),
+        primaryLabel: context.tr(TranslationKeys.followUpChatTryAgain),
+        primaryKey: const Key('follow_up_chat_try_again'),
+        onPrimary: _restartConversation,
+      );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.block,
-              size: AppConstants.ICON_SIZE_40,
-              color: theme.colorScheme.error,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatLimitReached),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppConstants.SMALL_PADDING),
-            Text(
-              state.message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatLimitMessage),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            // Wrap, not Row: the two buttons overflow a 320pt phone in the
-            // longer languages.
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppConstants.SMALL_PADDING,
-              runSpacing: AppConstants.SMALL_PADDING,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    // Dismiss and reload conversation
-                    context.read<FollowUpChatBloc>().add(
-                          StartConversationEvent(
-                            studyGuideId: widget.studyGuideId,
-                            studyGuideTitle: widget.studyGuideTitle,
-                          ),
-                        );
-                  },
-                  child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate to generate study guide page
-                    context.go(AppRoutes.generateStudy);
-                  },
-                  child: Text(
-                      context.tr(TranslationKeys.followUpChatGenerateNewStudy)),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildInsufficientTokensState(FollowUpChatInsufficientTokens state) =>
+      _buildStatusCard(
+        icon: Icons.token_outlined,
+        tone: PopupTone.gold,
+        title: context.tr(TranslationKeys.followUpChatInsufficientTokens),
+        message:
+            context.tr(TranslationKeys.followUpChatInsufficientTokensMessage, {
+          'required': state.required,
+          'available': state.available,
+        }),
+        primaryLabel: context.tr(TranslationKeys.followUpChatGetMoreTokens),
+        primaryKey: const Key('follow_up_chat_get_tokens'),
+        onPrimary: () => context.push(AppRoutes.tokenManagement),
+        // Dismiss and reload conversation
+        secondaryLabel: context.tr(TranslationKeys.followUpChatDismiss),
+        secondaryKey: const Key('follow_up_chat_dismiss'),
+        onSecondary: _restartConversation,
+      );
 
-  Widget _buildInitialState() {
-    final theme = Theme.of(context);
+  Widget _buildFeatureNotAvailableState(
+          FollowUpChatFeatureNotAvailable state) =>
+      _buildStatusCard(
+        icon: Icons.lock_outline_rounded,
+        tone: PopupTone.gold,
+        title: context.tr(TranslationKeys.followUpChatNotAvailable),
+        message: state.message,
+        note: context.tr(TranslationKeys.followUpChatUpgradeMessage),
+        // Navigate to token management page for upgrade
+        primaryLabel: context.tr(TranslationKeys.followUpChatUpgradePlan),
+        primaryKey: const Key('follow_up_chat_upgrade'),
+        onPrimary: () => context.push(AppRoutes.tokenManagement),
+        secondaryLabel: context.tr(TranslationKeys.followUpChatDismiss),
+        secondaryKey: const Key('follow_up_chat_dismiss'),
+        onSecondary: _restartConversation,
+      );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: AppConstants.ICON_SIZE_40,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: AppConstants.DEFAULT_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatInitialTitle),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppConstants.SMALL_PADDING),
-            Text(
-              context.tr(TranslationKeys.followUpChatInitialMessage),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildLimitExceededState(FollowUpChatLimitExceeded state) =>
+      _buildStatusCard(
+        icon: Icons.block_rounded,
+        title: context.tr(TranslationKeys.followUpChatLimitReached),
+        message: state.message,
+        note: context.tr(TranslationKeys.followUpChatLimitMessage),
+        // Navigate to generate study guide page
+        primaryLabel: context.tr(TranslationKeys.followUpChatGenerateNewStudy),
+        primaryKey: const Key('follow_up_chat_new_study'),
+        onPrimary: () => context.go(AppRoutes.generateStudy),
+        // Dismiss and reload conversation
+        secondaryLabel: context.tr(TranslationKeys.followUpChatDismiss),
+        secondaryKey: const Key('follow_up_chat_dismiss'),
+        onSecondary: _restartConversation,
+      );
+
+  Widget _buildInitialState() => _buildStatusCard(
+        icon: Icons.chat_bubble_outline_rounded,
+        title: context.tr(TranslationKeys.followUpChatInitialTitle),
+        message: context.tr(TranslationKeys.followUpChatInitialMessage),
+      );
 
   Widget _buildLoadedState(FollowUpChatLoaded state) {
     final screenHeight = MediaQuery.sizeOf(context).height;

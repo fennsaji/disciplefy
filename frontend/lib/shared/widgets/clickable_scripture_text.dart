@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'scripture_verse_sheet.dart';
 import '../../core/constants/bible_books.dart';
+import '../../core/theme/reader_palette.dart';
 
 /// A widget that renders text with clickable scripture references.
 ///
@@ -79,11 +80,10 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
   /// Handles block-level markdown (headings, bullets) and inline markdown (bold, italic).
   List<InlineSpan> _buildTextSpans(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final baseStyle = widget.style ?? theme.textTheme.bodyMedium;
 
-    // Full-opacity primary so links match the AppBar title brightness exactly.
-    final scriptureColor = theme.colorScheme.primary;
+    // Lavender on dark, brand indigo on light: readable on both pages.
+    final scriptureColor = ReaderPalette.of(context).accentIcon;
 
     // Split text into lines to handle block-level markdown
     final lines = widget.text.split('\n');
@@ -255,8 +255,8 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
           fontWeight: FontWeight.w600,
           decoration: TextDecoration.underline,
           decorationColor: dark
-              ? scriptureColor.withOpacity(0.6)
-              : scriptureColor.withOpacity(0.5),
+              ? scriptureColor.withValues(alpha: 0.6)
+              : scriptureColor.withValues(alpha: 0.5),
           decorationStyle:
               dark ? TextDecorationStyle.solid : TextDecorationStyle.dotted,
         );
@@ -292,8 +292,7 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
           // Code
           styledText = styledText.copyWith(
             fontFamily: 'monospace',
-            backgroundColor:
-                Theme.of(context).colorScheme.surfaceContainerHighest,
+            backgroundColor: ReaderPalette.of(context).raised,
             fontSize: (styledText.fontSize ?? 14) * 0.9,
           );
         }

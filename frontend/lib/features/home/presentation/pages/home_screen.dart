@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import '../../../../features/memory_verses/presentation/bloc/memory_verse_state.dart';
@@ -13,6 +14,8 @@ import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
@@ -39,7 +42,6 @@ import '../../../subscription/presentation/bloc/subscription_state.dart';
 import '../../../subscription/presentation/bloc/usage_stats_bloc.dart';
 import '../../../subscription/presentation/bloc/usage_stats_event.dart';
 import '../../../subscription/presentation/bloc/usage_stats_state.dart';
-import '../../../subscription/presentation/widgets/standard_subscription_banner.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_sheet.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
@@ -52,7 +54,6 @@ import '../../../tokens/domain/entities/token_status.dart';
 import '../widgets/home_community_section.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/home_verse_hero.dart';
-import '../widgets/usage_meter_widget.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -105,8 +106,6 @@ class _HomeScreenContent extends StatefulWidget {
 }
 
 class _HomeScreenContentState extends State<_HomeScreenContent> {
-  final bool _hasResumeableStudy = false;
-
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;
 
@@ -463,11 +462,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       }
     } else {
       // Show error if verse is not loaded
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.homeVerseNotLoaded)),
-          backgroundColor: AppColors.error,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.homeVerseNotLoaded),
+        tone: AppSnackTone.error,
       );
     }
   }
@@ -662,15 +660,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       ),
 
                       const SizedBox(height: 26),
-
-                      // Resume Last Study (conditional)
-                      if (_hasResumeableStudy) ...[
-                        Padding(
-                          padding: sectionPadding,
-                          child: _buildResumeStudyBanner(),
-                        ),
-                        const SizedBox(height: 26),
-                      ],
 
                       HomeEntrance(
                         index: 1,
@@ -953,37 +942,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  /// Build usage meter widget (shows token usage for free users)
-  Widget _buildUsageMeter() {
-    return BlocBuilder<UsageStatsBloc, UsageStatsState>(
-      bloc: _usageStatsBloc,
-      builder: (context, state) {
-        // Only show for loaded state
-        if (state is! UsageStatsLoaded) {
-          return const SizedBox.shrink();
-        }
-
-        final usageStats = state.usageStats;
-
-        // Only show usage meter for free users
-        final isFree = usageStats.currentPlan == 'free';
-        if (!isFree) {
-          return const SizedBox.shrink();
-        }
-
-        // For free plan, show daily token usage
-        final tokensUsed = usageStats.tokensUsed;
-        final tokensTotal = usageStats.tokensTotal;
-
-        return UsageMeterWidget(
-          tokensUsed: tokensUsed,
-          tokensTotal: tokensTotal,
-          onUpgrade: () => context.go('/pricing'),
-        );
-      },
-    );
-  }
-
   /// Check usage threshold and show soft paywall if needed
   void _checkUsageThreshold(BuildContext context, dynamic usageStats) {
     // Use post-frame callback to avoid showing dialog during build
@@ -1026,56 +984,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       }
     });
   }
-
-  Widget _buildResumeStudyBanner() => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.accentColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.accentColor.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.bookmark,
-              color: AppTheme.accentColor,
-              size: 24,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr(TranslationKeys.homeResumeLastStudy),
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: context.appTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    context.tr(TranslationKeys.homeContinueStudying,
-                        {'topic': 'Faith in Trials'}),
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      color: AppTheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: AppTheme.accentColor,
-              size: 16,
-            ),
-          ],
-        ),
-      );
 
   /// Verse of the day inside the hero. Hidden entirely by the
   /// bible_content_enabled kill-switch; greyed and locked like every other
@@ -1145,7 +1053,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         final homeState =
             state is HomeCombinedState ? state : const HomeCombinedState();
         final path = homeState.activeLearningPath;
-        final dark = Theme.of(context).brightness == Brightness.dark;
+        final accentIcon = ReaderPalette.of(context).accentIcon;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1194,13 +1102,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   subtitle: homePathSubtitle(context, path),
                   progress: path.progressPercentage / 100,
                   accent: homePathAccent(context, path),
+                  ringIcon: iconForPath(path.iconName, category: path.category),
                   onTap: () => _navigateToLearningPath(path.id),
                 ),
               )
             else if (_isLearningPathsLocked())
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
-                child: _buildPlaceholderLearningPathCard(),
+                child: const HomeLockedPathsCard(),
               )
             else
               HomePathRow(
@@ -1209,32 +1118,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 subtitle: context.tr(TranslationKeys.homeBrowsePathsHint),
                 progress: 0,
                 icon: Icons.explore_outlined,
-                accent: dark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary,
+                accent: accentIcon,
                 onTap: () => context.go(AppRoutes.studyTopics),
               ),
           ],
         );
       },
-    );
-  }
-
-  /// Show Standard subscription bottom sheet
-  void _showStandardSubscriptionSheet(BuildContext context) {
-    final state = sl<SubscriptionBloc>().state;
-
-    if (state is! UserSubscriptionStatusLoaded) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading subscription status...'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-
-    StandardSubscriptionSheet.show(
-      context,
-      status: state.subscriptionStatus,
     );
   }
 
@@ -1286,81 +1175,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final systemConfigService = sl<SystemConfigService>();
     return systemConfigService.isFeatureLocked('learning_paths', userPlan);
-  }
-
-  /// Build a placeholder learning path card to show with lock overlay
-  Widget _buildPlaceholderLearningPathCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color:
-              isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.route_outlined,
-                  color: context.appBrandAccent,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.learningPathsTitle),
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      context.tr(TranslationKeys.learningPathsSubtitle),
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.6)
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Unlock structured learning journeys designed to deepen your faith and biblical understanding.',
-            style: AppFonts.inter(
-              fontSize: 13,
-              color: isDark
-                  ? Colors.white.withOpacity(0.7)
-                  : const Color(0xFF6B7280),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -1509,17 +1323,14 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
             : context.tr(TranslationKeys.homeMeetingTodayAt,
                 {'time': timeFormat.format(start)});
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
     final isOnline = meeting.meetLink.isNotEmpty;
-    final accent = isDark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary;
-    final surface = isDark ? const Color(0xFF17171C) : Colors.white;
-    final border = isHappeningNow
-        ? accent.withValues(alpha: 0.6)
-        : (isDark ? const Color(0x0DFFFFFF) : const Color(0xFFE9E5DB));
-    final textPrimary =
-        isDark ? const Color(0xFFF2F2F4) : const Color(0xFF1A1917);
-    final textMuted =
-        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6F6B61);
+    final accent = palette.accentIcon;
+    final surface = palette.card;
+    final border =
+        isHappeningNow ? accent.withValues(alpha: 0.6) : palette.hairline;
+    final textPrimary = palette.text;
+    final textMuted = palette.muted;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),

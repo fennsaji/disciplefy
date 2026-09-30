@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/fellowship_entity.dart';
-import '../../domain/entities/fellowship_member_entity.dart';
-import 'discipler_badges.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
 
 /// A single row in the `@mention` picker sheet — either the Discipler AI
 /// helper or a fellowship mentor.
@@ -92,6 +95,7 @@ Future<MentionCandidate?> showMentionSheet(
   ];
 
   return showModalBottomSheet<MentionCandidate>(
+    useRootNavigator: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -146,6 +150,7 @@ class _MentionSheetState extends State<_MentionSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     final matches = filterMentionCandidates(widget.candidates, _query);
     return Padding(
       // Lift the sheet above the keyboard the search field opens.
@@ -154,10 +159,13 @@ class _MentionSheetState extends State<_MentionSheet> {
       // A Material, not a decorated box: the rows are ListTiles, which paint
       // their ink splashes on the nearest Material ancestor.
       child: Material(
-        color: context.appSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: palette.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          side: BorderSide(color: palette.hairline),
+        ),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(8, 12, 8, 24),
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
           // A fellowship can have more members than fit on screen. Without a
           // bound the list overflowed and the sheet clipped its own top,
           // hiding Discipler — the row people reach for most.
@@ -171,11 +179,11 @@ class _MentionSheetState extends State<_MentionSheet> {
               children: [
                 Center(
                   child: Container(
-                    width: 40,
+                    width: 36,
                     height: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: context.appBorder,
+                      color: palette.outline,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -186,45 +194,24 @@ class _MentionSheetState extends State<_MentionSheet> {
                     controller: _search,
                     autofocus: true,
                     onChanged: (value) => setState(() => _query = value),
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      color: context.appTextPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      prefixIcon: Icon(Icons.alternate_email_rounded,
-                          size: 18, color: context.appTextTertiary),
+                    style: AppFonts.inter(fontSize: 15, color: palette.text),
+                    decoration: communityInputDecoration(
+                      context,
+                      pill: true,
                       hintText: l10n.mentionSearchHint,
-                      hintStyle: TextStyle(
-                        fontFamily: 'Inter',
-                        color: context.appTextTertiary,
-                      ),
-                      filled: true,
-                      fillColor: context.appScaffold,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: context.appBorder),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: context.appBorder),
-                      ),
+                      prefixIcon: Icon(Icons.alternate_email_rounded,
+                          size: 18, color: palette.muted),
                     ),
                   ),
                 ),
                 if (matches.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 24, horizontal: 16),
                     child: Text(
                       l10n.mentionNoMatches,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        color: context.appTextTertiary,
-                      ),
+                      textAlign: TextAlign.center,
+                      style: AppFonts.inter(fontSize: 14, color: palette.muted),
                     ),
                   )
                 else
@@ -253,38 +240,26 @@ class _MentionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = candidate;
+    final palette = ReaderPalette.of(context);
     return ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      minVerticalPadding: 10,
       leading: c.isDiscipler
-          ? const DisciplerAvatar(radius: 18)
-          : CircleAvatar(
-              radius: 18,
-              backgroundColor: context.appPrimary.withAlpha(36),
-              backgroundImage: c.avatarUrl != null && c.avatarUrl!.isNotEmpty
-                  ? NetworkImage(c.avatarUrl!)
-                  : null,
-              child: c.avatarUrl == null || c.avatarUrl!.isEmpty
-                  ? Text(
-                      c.display.isNotEmpty ? c.display[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        color: context.appPrimary,
-                      ),
-                    )
-                  : null,
+          ? const DisciplerAvatar()
+          : MemberAvatar(
+              displayName: c.display,
+              avatarUrl: c.avatarUrl,
             ),
       title: Row(
         children: [
           Flexible(
             child: Text(
               c.display,
-              style: TextStyle(
-                fontFamily: 'Inter',
+              style: AppFonts.inter(
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: context.appTextPrimary,
+                color: palette.text,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (c.isDiscipler) ...[
@@ -295,11 +270,7 @@ class _MentionRow extends StatelessWidget {
       ),
       subtitle: Text(
         c.subtitle,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 12,
-          color: context.appTextTertiary,
-        ),
+        style: AppFonts.inter(fontSize: 13, color: palette.muted),
       ),
       onTap: () => Navigator.of(context).pop(c),
     );

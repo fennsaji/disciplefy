@@ -10,6 +10,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// A persistent banner prompting users to verify their email address.
 ///
@@ -37,19 +38,17 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
       listener: (context, state) {
         if (state is VerificationEmailSentState) {
           setState(() => _isResending = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.emailVerificationSent)),
-              backgroundColor: AppColors.success,
-            ),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.emailVerificationSent),
+            tone: AppSnackTone.success,
           );
         } else if (state is AuthErrorState) {
           setState(() => _isResending = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-              backgroundColor: AppColors.error,
-            ),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.commonErrorTryAgain),
+            tone: AppSnackTone.error,
           );
         }
       },

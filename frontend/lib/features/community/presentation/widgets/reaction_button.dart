@@ -1,19 +1,89 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/fellowship_post_entity.dart';
-import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
-import '../bloc/fellowship_feed/fellowship_feed_event.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 
 // ---------------------------------------------------------------------------
 // Reaction button (tap = toggle amen, long-press = emoji picker)
 // ---------------------------------------------------------------------------
 
+/// Reaction key a tap on the pill toggles for each post type. These are the
+/// stored keys; how each reads comes from [reactionDisplayFor].
+String defaultReactionFor(String postType) {
+  switch (postType) {
+    case 'prayer':
+      return 'i_prayed';
+    case 'praise':
+      return 'hands';
+    case 'question':
+      return 'heart';
+    case 'daily':
+      return 'fire';
+    case 'study_note':
+    case 'shared_guide':
+    default: // general
+      return 'amen';
+  }
+}
+
+/// Emoji and label key for one reaction.
+typedef ReactionDisplay = ({String emoji, String labelKey});
+
+/// Every reaction, in picker order. The pill and the long-press picker both
+/// read from this list, so a reaction looks the same everywhere.
+const List<({String type, String emoji, String labelKey})> reactionOptions = [
+  (
+    type: 'i_prayed',
+    emoji: '🙏',
+    labelKey: TranslationKeys.communityPostReactionPrayed,
+  ),
+  (
+    type: 'amen',
+    emoji: '🙌',
+    labelKey: TranslationKeys.communityPostReactionAmen,
+  ),
+  (
+    type: 'heart',
+    emoji: '❤️',
+    labelKey: TranslationKeys.communityPostReactionLove,
+  ),
+  (
+    type: 'fire',
+    emoji: '🔥',
+    labelKey: TranslationKeys.communityPostReactionFire,
+  ),
+  (
+    type: 'hands',
+    emoji: '🎉',
+    labelKey: TranslationKeys.communityPostReactionPraise,
+  ),
+];
+
+/// How the pill reads on a [postType] post given the viewer's
+/// [userReaction] (null when they have not reacted): the viewer's reaction,
+/// or the post type's default one, shown with the same emoji and name the
+/// picker uses.
+ReactionDisplay reactionDisplayFor(String postType, String? userReaction) {
+  final key = userReaction ?? defaultReactionFor(postType);
+  final option = reactionOptions.firstWhere(
+    (o) => o.type == key,
+    orElse: () => reactionOptions[1],
+  );
+  return (emoji: option.emoji, labelKey: option.labelKey);
+}
+
 /// Reaction button shared by [FellowshipPostCard] and [DailyPostCard].
 ///
 /// Tapping toggles the default reaction for the post's type; long-pressing
-/// opens a Facebook-style emoji picker. Reads [FellowshipFeedBloc] from
+/// opens a Facebook-style emoji picker. The pill shows a line icon and a
+/// translated label ([reactionDisplayFor]). Reads [FellowshipFeedBloc] from
 /// context.
 class FellowshipReactionButton extends StatefulWidget {
   final FellowshipPostEntity post;
@@ -33,65 +103,17 @@ class FellowshipReactionButton extends StatefulWidget {
 class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
   OverlayEntry? _pickerOverlay;
 
-  static const _kReactions = [
-    (type: 'amen', emoji: '🙏', label: 'Amen'),
-    (type: 'i_prayed', emoji: '🕊️', label: 'I Prayed'),
-    (type: 'heart', emoji: '❤️', label: 'Love'),
-    (type: 'fire', emoji: '🔥', label: 'Fire'),
-    (type: 'hands', emoji: '👐', label: 'Praise'),
+  /// Reactions offered by the long-press picker, by stored key.
+  static final _kReactions = [
+    for (final o in reactionOptions) (type: o.type, emoji: o.emoji),
   ];
-
-  /// Default reaction (emoji + type + label) based on post type.
-  static ({String type, String emoji, String label}) _defaultForType(
-      String postType) {
-    switch (postType) {
-      case 'praise':
-        return (type: 'amen', emoji: '🙏', label: 'Amen');
-      case 'prayer':
-        return (type: 'i_prayed', emoji: '🕊️', label: 'I Prayed');
-      case 'question':
-        return (type: 'heart', emoji: '❤️', label: 'Love');
-      case 'study_note':
-      case 'shared_guide':
-      case 'daily':
-        return (type: 'fire', emoji: '🔥', label: 'Fire');
-      default: // general
-        return (type: 'amen', emoji: '🙏', label: 'Amen');
-    }
-  }
 
   int get _totalCount =>
       widget.post.reactionCounts.values.fold(0, (s, c) => s + c);
 
-  String get _activeEmoji {
-    final active = widget.post.userReaction;
-    if (active == null) return _defaultForType(widget.post.postType).emoji;
-    return _kReactions
-        .firstWhere((r) => r.type == active, orElse: () => _kReactions.first)
-        .emoji;
-  }
-
-  /// Label for whichever reaction is showing.
-  ///
-  /// The emoji already follows the user's own reaction, so the label has to
-  /// as well — otherwise picking 🔥 on a prayer left the button reading
-  /// "🔥 Amen".
-  String get _activeLabel {
-    final active = widget.post.userReaction;
-    if (active == null) return _defaultForType(widget.post.postType).label;
-    return _kReactions
-        .firstWhere((r) => r.type == active,
-            orElse: () => (
-                  type: 'amen',
-                  emoji: '🙏',
-                  label: _defaultForType(widget.post.postType).label
-                ))
-        .label;
-  }
-
   void _onTap() {
     final type =
-        widget.post.userReaction ?? _defaultForType(widget.post.postType).type;
+        widget.post.userReaction ?? defaultReactionFor(widget.post.postType);
     context.read<FellowshipFeedBloc>().add(
           FellowshipReactionToggleRequested(
             postId: widget.post.id,
@@ -128,45 +150,65 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     final total = _totalCount;
     final isActive = widget.post.userReaction != null;
-    return GestureDetector(
-      onTap: _onTap,
-      onLongPressStart: (d) => _showPicker(d.globalPosition),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        // Matches the comment button's 44px minimum touch target.
-        constraints: const BoxConstraints(minHeight: 44),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? widget.accentColor.withAlpha(26)
-              : context.appSurfaceVariant,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
+    final display = reactionDisplayFor(
+      widget.post.postType,
+      widget.post.userReaction,
+    );
+    final name = context.tr(display.labelKey);
+    // Same rule as the replies button: the label always shows, with the count
+    // appended, so a bare number never stands in for the action.
+    final label = total > 0 ? '$name $total' : name;
+    final ink = isActive ? widget.accentColor : palette.text;
+    return Semantics(
+      button: true,
+      toggled: isActive,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: _onTap,
+        onLongPressStart: (d) => _showPicker(d.globalPosition),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          // Matches the replies button's 44px minimum touch target. No
+          // alignment: the pill hugs its content, and the row below centres
+          // it vertically within the 44px.
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
             color: isActive
-                ? widget.accentColor.withAlpha(102)
-                : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_activeEmoji, style: const TextStyle(fontSize: 17)),
-            const SizedBox(width: 5),
-            Text(
-              // Same rule as the reply pill: the label always shows, with the
-              // count appended, so the two buttons stay a matching pair.
-              total > 0 ? '$_activeLabel $total' : _activeLabel,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isActive ? widget.accentColor : context.appTextSecondary,
-              ),
+                ? widget.accentColor.withAlpha(palette.isDark ? 36 : 26)
+                : (palette.isDark
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : palette.raised),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isActive
+                  ? widget.accentColor.withAlpha(110)
+                  : Colors.transparent,
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(display.emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              // Wraps rather than truncating when the footer caps the pill's
+              // width (long Hindi/Malayalam labels on narrow screens).
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: ink,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -180,7 +222,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
 class _ReactionPickerOverlay extends StatefulWidget {
   final String postId;
   final FellowshipFeedBloc bloc;
-  final List<({String type, String emoji, String label})> reactions;
+  final List<({String type, String emoji})> reactions;
   final Offset tapPosition;
   final String? userReaction;
   final VoidCallback onDismiss;
@@ -258,7 +300,7 @@ class _ReactionPickerOverlayState extends State<_ReactionPickerOverlay>
             child: Material(
               elevation: 10,
               borderRadius: BorderRadius.circular(32),
-              color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+              color: isDark ? ReaderPalette.of(context).raised : Colors.white,
               shadowColor: Colors.black38,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),

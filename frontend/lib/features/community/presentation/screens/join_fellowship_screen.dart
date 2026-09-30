@@ -3,13 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../bloc/fellowship_list/fellowship_list_bloc.dart';
-import '../bloc/fellowship_list/fellowship_list_event.dart';
-import '../bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 
 /// Screen that allows a user to join a fellowship by entering an invite code.
 ///
@@ -36,6 +41,13 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
   // True when a deep-link token was provided and hasn't been submitted yet.
   bool _shouldAutoSubmit = false;
 
+  // Why the last join attempt failed, shown under the code cells until the
+  // code is edited.
+  String? _joinError;
+
+  // Code the last join attempt used, so the error clears only on a real edit.
+  String _submittedToken = '';
+
   @override
   void initState() {
     super.initState();
@@ -48,9 +60,18 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
 
   void _onTextChanged() {
     final nonEmpty = _tokenController.text.trim().isNotEmpty;
-    if (nonEmpty != _hasInput) {
-      setState(() => _hasInput = nonEmpty);
+    final clearError = _joinError != null &&
+        _tokenController.text.trim().toUpperCase() != _submittedToken;
+    if (nonEmpty != _hasInput || clearError) {
+      setState(() {
+        _hasInput = nonEmpty;
+        if (clearError) _joinError = null;
+      });
     }
+  }
+
+  void _onJoinFailed(String message) {
+    setState(() => _joinError = message);
   }
 
   @override
@@ -64,6 +85,7 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
   void _onJoinPressed(BuildContext context) {
     final token = _tokenController.text.trim().toUpperCase();
     if (token.isEmpty) return;
+    _submittedToken = token;
     context.read<FellowshipListBloc>().add(
           FellowshipJoinRequested(inviteToken: token),
         );
@@ -87,7 +109,9 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
             tokenController: _tokenController,
             tokenFocusNode: _tokenFocusNode,
             hasInput: _hasInput,
+            errorText: _joinError,
             onJoinPressed: _onJoinPressed,
+            onJoinFailed: _onJoinFailed,
           );
         },
       ),
@@ -103,13 +127,17 @@ class _JoinFellowshipConsumer extends StatelessWidget {
   final TextEditingController tokenController;
   final FocusNode tokenFocusNode;
   final bool hasInput;
+  final String? errorText;
   final void Function(BuildContext) onJoinPressed;
+  final ValueChanged<String> onJoinFailed;
 
   const _JoinFellowshipConsumer({
     required this.tokenController,
     required this.tokenFocusNode,
     required this.hasInput,
+    required this.errorText,
     required this.onJoinPressed,
+    required this.onJoinFailed,
   });
 
   @override
@@ -133,19 +161,8 @@ class _JoinFellowshipConsumer extends StatelessWidget {
           }
         } else if (state.joinStatus == FellowshipJoinStatus.failure) {
           final message = state.joinError ?? l10n.communityJoinFailed;
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(message),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
+          onJoinFailed(message);
+          showAppSnackBar(context, message, tone: AppSnackTone.error);
         }
       },
       buildWhen: (previous, current) =>
@@ -160,6 +177,7 @@ class _JoinFellowshipConsumer extends StatelessWidget {
               tokenFocusNode: tokenFocusNode,
               isLoading: isLoading,
               hasInput: hasInput,
+              errorText: errorText,
               onJoinPressed: () => onJoinPressed(context),
             ),
             // Loading overlay — blocks interaction while the join request
@@ -176,12 +194,14 @@ class _JoinFellowshipConsumer extends StatelessWidget {
 // _JoinFellowshipBody
 // ---------------------------------------------------------------------------
 
-/// Stateless inner widget holding the Scaffold, AppBar, form field and button.
+/// Page layout: photo wash, back arrow, gold eyebrow, title and subtitle,
+/// the code cells with any error under them, the join pill and a helper line.
 class _JoinFellowshipBody extends StatelessWidget {
   final TextEditingController tokenController;
   final FocusNode tokenFocusNode;
   final bool isLoading;
   final bool hasInput;
+  final String? errorText;
   final VoidCallback onJoinPressed;
 
   const _JoinFellowshipBody({
@@ -189,226 +209,105 @@ class _JoinFellowshipBody extends StatelessWidget {
     required this.tokenFocusNode,
     required this.isLoading,
     required this.hasInput,
+    required this.errorText,
     required this.onJoinPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
+    final error = errorText;
+    // Clears the system inset and, when shown inside the tab shell, the
+    // floating dock (the shell adds its height to this padding).
+    final bottom = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: context.appTextPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
-        ),
-        title: Text(
-          l10n.joinFellowshipTitle,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.appTextPrimary,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Icon ──────────────────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.group_add_rounded,
-                    size: 44,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+      backgroundColor: palette.page,
+      body: PhotoWash(
+        image: PhotoWash.communityTabImage,
+        height: 360,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CommunityBackBar(onBack: () => context.pop()),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24, 8, 24, bottom + 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CommunitySectionLabel(l10n.joinFellowshipTitle),
+                    const SizedBox(height: 10),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        l10n.joinFellowshipHeading,
+                        style: AppFonts.poppins(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: palette.text,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.joinFellowshipInstructions,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        color: palette.muted,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    _CodeTileInput(
+                      controller: tokenController,
+                      focusNode: tokenFocusNode,
+                      enabled: !isLoading,
+                      hasError: error != null,
+                      onSubmitted: onJoinPressed,
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 12),
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          error,
+                          key: const Key('join_fellowship_error'),
+                          textAlign: TextAlign.center,
+                          style: AppFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
+                            color:
+                                SettingsToneColors.of(context, SettingsTone.red)
+                                    .foreground,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+                    CommunityWideCta(
+                      label: l10n.joinFellowshipButton,
+                      icon: Icons.group_add_rounded,
+                      loading: isLoading,
+                      onPressed: hasInput && !isLoading ? onJoinPressed : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.joinFellowshipHelper,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.inter(
+                        fontSize: 13.5,
+                        color: palette.muted,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              // ── Heading ───────────────────────────────────────────────────
-              Center(
-                child: Text(
-                  l10n.joinFellowshipHeading,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: context.appTextPrimary,
-                    height: 1.3,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Center(
-                child: Text(
-                  l10n.joinFellowshipInstructions,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    color: context.appTextSecondary,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // ── Invite code tiles ─────────────────────────────────────────
-              Center(
-                child: _CodeTileInput(
-                  controller: tokenController,
-                  focusNode: tokenFocusNode,
-                  enabled: !isLoading,
-                  onSubmitted: onJoinPressed,
-                ),
-              ),
-
-              const SizedBox(height: 36),
-
-              // ── Join button ───────────────────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: _JoinButton(
-                  isLoading: isLoading,
-                  isEnabled: hasInput && !isLoading,
-                  onPressed: onJoinPressed,
-                  label: l10n.joinFellowshipButton,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ── Helper note ───────────────────────────────────────────────
-              Center(
-                child: Text(
-                  l10n.joinFellowshipHelper,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: context.appTextTertiary.withOpacity(0.8),
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _JoinButton
-// ---------------------------------------------------------------------------
-
-/// Gradient primary button for the join action.
-///
-/// Renders a gradient when enabled, a flat muted surface when disabled.
-class _JoinButton extends StatelessWidget {
-  final bool isLoading;
-  final bool isEnabled;
-  final VoidCallback onPressed;
-  final String label;
-
-  const _JoinButton({
-    required this.isLoading,
-    required this.isEnabled,
-    required this.onPressed,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (!isEnabled) {
-      // Disabled appearance — no gradient, muted color.
-      return Container(
-        decoration: BoxDecoration(
-          color: context.appBorder,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: context.appTextTertiary,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.group_add_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -426,13 +325,13 @@ class _LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Positioned.fill(
       child: ColoredBox(
-        color: AppColors.overlayLight,
+        color: palette.page.withValues(alpha: 0.55),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(palette.accentIcon),
           ),
         ),
       ),
@@ -450,12 +349,14 @@ class _CodeTileInput extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool enabled;
+  final bool hasError;
   final VoidCallback? onSubmitted;
 
   const _CodeTileInput({
     required this.controller,
     required this.focusNode,
     required this.enabled,
+    this.hasError = false,
     this.onSubmitted,
   });
 
@@ -463,8 +364,7 @@ class _CodeTileInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
+    final palette = ReaderPalette.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -476,10 +376,14 @@ class _CodeTileInput extends StatelessWidget {
         final tileHeight = tileWidth * 1.2;
         final rowWidth = tileWidth * _length + gap * (_length - 1);
 
-        return ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            final text = value.text.toUpperCase();
+        final errorInk =
+            SettingsToneColors.of(context, SettingsTone.red).foreground;
+        // Rebuilds on typing and on focus changes, so the gold focus ring
+        // follows the keyboard.
+        return ListenableBuilder(
+          listenable: Listenable.merge([controller, focusNode]),
+          builder: (context, _) {
+            final text = controller.text.toUpperCase();
             final isFocused = focusNode.hasFocus;
 
             return Stack(
@@ -521,57 +425,42 @@ class _CodeTileInput extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: List.generate(_length, (i) {
                       final hasChar = i < text.length;
-                      final isActive = enabled && isFocused && i == text.length;
+                      // The next empty cell, or the last one once the code is full.
+                      final isActive = enabled &&
+                          isFocused &&
+                          i ==
+                              (text.length < _length
+                                  ? text.length
+                                  : _length - 1);
 
                       return Container(
                         margin: i < _length - 1
-                            ? EdgeInsets.only(right: gap)
+                            ? const EdgeInsets.only(right: gap)
                             : null,
                         width: tileWidth,
                         height: tileHeight,
                         decoration: BoxDecoration(
-                          color: hasChar
-                              ? (isDark
-                                  ? primary.withOpacity(0.15)
-                                  : primary.withOpacity(0.08))
-                              : (isDark
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(12),
+                          color: palette.card,
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isActive
-                                ? primary
-                                : (hasChar
-                                    ? primary.withOpacity(0.4)
-                                    : (isDark
-                                        ? Colors.grey.shade600
-                                        : Colors.grey.shade300)),
-                            width: isActive ? 2 : 1.5,
+                                ? palette.gold
+                                : (hasError ? errorInk : palette.hairline),
+                            width: isActive ? 1.5 : 1,
                           ),
                         ),
                         alignment: Alignment.center,
                         child: hasChar
                             ? Text(
                                 text[i],
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: tileWidth * 0.52,
-                                  fontWeight: FontWeight.w700,
-                                  color: primary,
+                                style: AppFonts.poppins(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                  color: palette.text,
                                   height: 1,
                                 ),
                               )
-                            : (i == 0 && text.isEmpty && !isFocused
-                                ? Text(
-                                    '·',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      color: isDark
-                                          ? Colors.grey.shade600
-                                          : Colors.grey.shade400,
-                                    ),
-                                  )
-                                : null),
+                            : null,
                       );
                     }),
                   ),

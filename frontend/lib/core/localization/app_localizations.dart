@@ -301,13 +301,17 @@ class AppLocalizations {
       'lessonsComing': 'Lessons coming soon',
       'lessonsDescription': 'Your fellowship study guides will appear here.',
       'lessonsAssignPath': 'Assign Learning Path',
-      'lessonsChangePath': 'Change Learning Path',
+      'lessonsChangePath': 'Change learning path',
       'lessonsNoPathMentor':
           'No learning path assigned yet.\nTap below to assign one.',
       'lessonsNoPathMember': "Your mentor hasn't assigned a learning path yet.",
       'lessonsCurrentStudy': 'Current Study',
       'lessonsSelectPath': 'Select a Learning Path',
       'lessonsPickPathTitle': 'Pick a Learning Path for Your Fellowship',
+      'lessonsChoosePathTitle': 'Choose a learning path',
+      'lessonsChoosePathSubtitle':
+          'Everyone studies it together, one lesson at a time.',
+      'lessonsCurrentPathTag': 'Current',
       'searchPathsHint': 'Search learning paths...',
       'searchNoResults': 'No paths match your search',
       'lessonsGuide': 'Guide',
@@ -354,7 +358,7 @@ class AppLocalizations {
       'inviteLinkCopied': 'Invite link copied',
       'inviteCopyCode': 'Copy code',
       'inviteCodeCopied': 'Invite code copied',
-      'lessonsAdvanceGuide': 'Advance to Next Guide',
+      'lessonsAdvanceGuide': 'Advance to next lesson',
       'lessonsFinishPath': 'Finish Path',
       'lessonsResetProgress': 'Reset Progress',
       'lessonsGroupLanguage': 'Group language',
@@ -672,7 +676,7 @@ class AppLocalizations {
       'officialBadge': 'Official',
       'unlimitedMembers': 'Unlimited',
       // Home — closing community section
-      'homeRecentActivityTitle': 'Recent activity',
+      'homeRecentActivityTitle': 'Community activity',
       'homeRecentActivitySubtitle': 'The latest from your fellowships',
       'homeCommunityViewAll': 'View all',
       'homeCommunityBrowse': 'Browse',
@@ -1091,6 +1095,9 @@ class AppLocalizations {
       'lessonsCurrentStudy': 'वर्तमान अध्ययन',
       'lessonsSelectPath': 'एक लर्निंग पथ चुनें',
       'lessonsPickPathTitle': 'अपनी संगति के लिए एक लर्निंग पथ चुनें',
+      'lessonsChoosePathTitle': 'एक लर्निंग पथ चुनें',
+      'lessonsChoosePathSubtitle': 'सब मिलकर इसे पढ़ते हैं, एक बार में एक पाठ।',
+      'lessonsCurrentPathTag': 'वर्तमान',
       'searchPathsHint': 'लर्निंग पथ खोजें...',
       'searchNoResults': 'कोई पथ मेल नहीं खाता',
       'lessonsGuide': 'मार्गदर्शिका',
@@ -1137,7 +1144,7 @@ class AppLocalizations {
       'inviteLinkCopied': 'आमंत्रण लिंक कॉपी किया गया',
       'inviteCopyCode': 'कोड कॉपी करें',
       'inviteCodeCopied': 'आमंत्रण कोड कॉपी किया गया',
-      'lessonsAdvanceGuide': 'अगले गाइड पर जाएं',
+      'lessonsAdvanceGuide': 'अगले पाठ पर जाएं',
       'lessonsFinishPath': 'पाठ पूर्ण करें',
       'lessonsResetProgress': 'प्रगति रीसेट करें',
       'lessonsGroupLanguage': 'समूह की भाषा',
@@ -1452,7 +1459,7 @@ class AppLocalizations {
       'officialBadge': 'आधिकारिक',
       'unlimitedMembers': 'असीमित',
       // Home — closing community section
-      'homeRecentActivityTitle': 'हाल की गतिविधि',
+      'homeRecentActivityTitle': 'समुदाय गतिविधि',
       'homeRecentActivitySubtitle': 'आपकी संगतियों से नवीनतम',
       'homeCommunityViewAll': 'सभी देखें',
       'homeCommunityBrowse': 'देखें',
@@ -1877,6 +1884,10 @@ class AppLocalizations {
       'lessonsSelectPath': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
       'lessonsPickPathTitle':
           'നിങ്ങളുടെ കൂട്ടായ്മക്കായി ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'lessonsChoosePathTitle': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'lessonsChoosePathSubtitle':
+          'എല്ലാവരും ഒരുമിച്ച് പഠിക്കുന്നു, ഒരു സമയം ഒരു പാഠം.',
+      'lessonsCurrentPathTag': 'നിലവിലുള്ളത്',
       'searchPathsHint': 'ലേണിംഗ് പാത്തുകൾ തിരയുക...',
       'searchNoResults': 'തിരയലുമായി പൊരുത്തപ്പെടുന്ന പാത്തുകൾ ഇല്ല',
       'lessonsGuide': 'ഗൈഡ്',
@@ -1923,7 +1934,7 @@ class AppLocalizations {
       'inviteLinkCopied': 'ക്ഷണ ലിങ്ക് പകർത്തി',
       'inviteCopyCode': 'കോഡ് പകർത്തുക',
       'inviteCodeCopied': 'ക്ഷണ കോഡ് പകർത്തി',
-      'lessonsAdvanceGuide': 'അടുത്ത ഗൈഡിലേക്ക് മുന്നേറുക',
+      'lessonsAdvanceGuide': 'അടുത്ത പാഠത്തിലേക്ക് നീങ്ങുക',
       'lessonsFinishPath': 'പഠനം പൂർത്തിയാക്കുക',
       'lessonsResetProgress': 'പുരോഗതി പുനഃക്രമീകരിക്കുക',
       'lessonsGroupLanguage': 'ഗ്രൂപ്പിന്റെ ഭാഷ',
@@ -2243,7 +2254,7 @@ class AppLocalizations {
       'officialBadge': 'ഔദ്യോഗികം',
       'unlimitedMembers': 'പരിധിയില്ലാത്തത്',
       // Home — closing community section
-      'homeRecentActivityTitle': 'സമീപകാല പ്രവർത്തനം',
+      'homeRecentActivityTitle': 'കമ്മ്യൂണിറ്റി പ്രവർത്തനങ്ങൾ',
       'homeRecentActivitySubtitle': 'നിങ്ങളുടെ കൂട്ടായ്മകളിൽ നിന്നുള്ള പുതിയവ',
       'homeCommunityViewAll': 'എല്ലാം കാണുക',
       'homeCommunityBrowse': 'കാണുക',
@@ -2710,6 +2721,12 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsSelectPath']!;
   String get lessonsPickPathTitle =>
       _localizedValues[locale.languageCode]!['lessonsPickPathTitle']!;
+  String get lessonsChoosePathTitle =>
+      _localizedValues[locale.languageCode]!['lessonsChoosePathTitle']!;
+  String get lessonsChoosePathSubtitle =>
+      _localizedValues[locale.languageCode]!['lessonsChoosePathSubtitle']!;
+  String get lessonsCurrentPathTag =>
+      _localizedValues[locale.languageCode]!['lessonsCurrentPathTag']!;
   String get searchPathsHint =>
       _localizedValues[locale.languageCode]!['searchPathsHint']!;
   String get searchNoResults =>

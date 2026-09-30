@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_fonts.dart';
-import '../bloc/phone_auth_bloc.dart';
-import '../bloc/phone_auth_event.dart';
-import '../bloc/phone_auth_state.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/phone_auth_bloc.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/phone_auth_event.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/phone_auth_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+import 'package:disciplefy_bible_study/shared/widgets/welcome_form.dart';
 
 /// Phone number input screen for phone authentication
 class PhoneNumberInputScreen extends StatefulWidget {
@@ -53,10 +57,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
           Logger.info(
             'OTP sent successfully - navigating to verification',
             tag: 'PHONE_AUTH',
-            context: {
-              'phone_number': state.formattedPhoneNumber,
-              'expires_in': state.expiresIn,
-            },
+            context: {'expires_in': state.expiresIn},
           );
 
           // Navigate to OTP verification screen
@@ -77,224 +78,118 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
             },
           );
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              // persist:false — since Flutter 3.44 a SnackBar with an action
-              // defaults to persist:true, so it never times out AND blocks every
-              // later snackbar behind it in the app-wide queue.
-              persist: false,
-              action: state.errorType == PhoneAuthErrorType.networkError
-                  ? SnackBarAction(
-                      label: 'Retry',
-                      onPressed: () => _sendOTP(),
-                    )
-                  : null,
-            ),
+          final canRetry = state.errorType == PhoneAuthErrorType.networkError;
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.commonErrorTryAgain),
+            tone: AppSnackTone.error,
+            actionLabel:
+                canRetry ? context.tr(TranslationKeys.commonRetry) : null,
+            onAction: canRetry ? _sendOTP : null,
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-            onPressed: () => context.pop(),
+      child: WelcomeFormPage(
+        photo: WelcomePhotos.wheatDawn,
+        backKey: const Key('phone_auth_back'),
+        eyebrow: context.tr(TranslationKeys.phoneAuthEyebrow),
+        title: context.tr(TranslationKeys.phoneAuthTitle),
+        subtitle:
+            WelcomeSubtitle(context.tr(TranslationKeys.phoneAuthSubtitle)),
+        children: [
+          Form(
+            key: _formKey,
+            child: _buildPhoneInputSection(context),
           ),
-          title: Text(
-            'Phone Number',
-            style: AppFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
+          const SizedBox(height: 20),
+          WelcomeInfoCard(
+            icon: Icons.shield_outlined,
+            title: context.tr(TranslationKeys.phoneAuthSecureTitle),
+            body: context.tr(TranslationKeys.phoneAuthSecureBody),
           ),
-          centerTitle: true,
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header section
-                _buildHeaderSection(context),
-
-                const SizedBox(height: 32),
-
-                // Phone input form
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildPhoneInputSection(context),
-                        const SizedBox(height: 24),
-                        _buildInfoSection(context),
-                        const Spacer(),
-                        _buildSendOTPButton(context),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+          const SizedBox(height: 36),
+          _buildSendOTPButton(context),
+        ],
       ),
     );
   }
 
-  /// Builds the header section with title and description
-  Widget _buildHeaderSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Enter your phone number',
-          style: AppFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onBackground,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'We\'ll send you a verification code to confirm your number',
-          style: AppFonts.inter(
-            fontSize: 16,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
-            height: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the phone input section with country code dropdown
+  /// Country code picker and phone number field.
   Widget _buildPhoneInputSection(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Phone Number',
-          style: AppFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
+        WelcomeFieldLabel(context.tr(TranslationKeys.phoneAuthPhoneLabel)),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Country code dropdown
-            Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: theme.colorScheme.outline.withOpacity(0.5),
+            Semantics(
+              label: context.tr(TranslationKeys.phoneAuthCountryCode),
+              child: Container(
+                key: const Key('phone_auth_country_code'),
+                height: 56,
+                padding: const EdgeInsets.only(left: 14, right: 6),
+                decoration: BoxDecoration(
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: palette.outline),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedCountryCode,
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        _selectedCountryCode = newValue;
-                      });
-                    }
-                  },
-                  items: _countryCodes.entries.map((entry) {
-                    return DropdownMenuItem<String>(
-                      value: entry.key,
-                      child: Text(
-                        '${entry.value.split(' ')[0]} ${entry.key}',
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedCountryCode,
+                    dropdownColor: palette.card,
+                    borderRadius: BorderRadius.circular(16),
+                    iconEnabledColor: palette.muted,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedCountryCode = newValue;
+                        });
+                      }
+                    },
+                    items: _countryCodes.entries.map((entry) {
+                      return DropdownMenuItem<String>(
+                        value: entry.key,
+                        child: Text(
+                          '${entry.value.split(' ')[0]} ${entry.key}',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: palette.text,
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ),
-
-            const SizedBox(width: 12),
-
-            // Phone number input
+            const SizedBox(width: 10),
             Expanded(
               child: TextFormField(
+                key: const Key('phone_auth_number'),
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.telephoneNumberNational],
+                onFieldSubmitted: (_) => _sendOTP(),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(15),
                 ],
-                decoration: InputDecoration(
-                  hintText: 'Enter phone number',
-                  hintStyle: AppFonts.inter(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.5),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.5),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
+                style: welcomeFieldTextStyle(context),
+                decoration: welcomeFieldDecoration(
+                  context,
+                  hint: context.tr(TranslationKeys.phoneAuthPhoneHint),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
+                    return context.tr(TranslationKeys.phoneAuthPhoneRequired);
                   }
                   if (value.length < 7) {
-                    return 'Phone number is too short';
+                    return context.tr(TranslationKeys.phoneAuthPhoneTooShort);
                   }
                   return null;
                 },
@@ -312,96 +207,15 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
     );
   }
 
-  /// Builds the info section with security and privacy notes
-  Widget _buildInfoSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.security,
-                size: 16,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Secure Verification',
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Your phone number will be used only for authentication and will not be shared with third parties.',
-            style: AppFonts.inter(
-              fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Builds the send OTP button
   Widget _buildSendOTPButton(BuildContext context) {
     return BlocBuilder<PhoneAuthBloc, PhoneAuthState>(
-      builder: (context, state) {
-        final isLoading = state is PhoneAuthLoadingState;
-        final theme = Theme.of(context);
-
-        return SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : _sendOTP,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.appInteractive,
-              foregroundColor: theme.colorScheme.onPrimary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              disabledBackgroundColor:
-                  theme.colorScheme.primary.withOpacity(0.5),
-            ),
-            child: isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.colorScheme.onPrimary),
-                    ),
-                  )
-                : Text(
-                    'Send Verification Code',
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        );
-      },
+      builder: (context, state) => WelcomePrimaryButton(
+        key: const Key('phone_auth_send'),
+        label: context.tr(TranslationKeys.phoneAuthSendCode),
+        isLoading: state is PhoneAuthLoadingState,
+        onPressed: _sendOTP,
+      ),
     );
   }
 

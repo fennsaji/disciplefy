@@ -6,6 +6,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Opens [url] in the platform browser, silently doing nothing if no handler
 /// exists. Mirrors [SubscriptionLegalLinks]'s behaviour.
@@ -25,24 +26,24 @@ Future<void> _launchLegalUrl(String url) async {
 class LegalLinksLine extends StatelessWidget {
   const LegalLinksLine({super.key, this.textColor, this.linkColor});
 
-  /// Colour of the surrounding sentence. Defaults to muted on-surface.
+  /// Colour of the surrounding sentence. Defaults to the palette muted ink.
   final Color? textColor;
 
-  /// Colour of the two links. Defaults to the theme primary, underlined;
+  /// Colour of the two links. Defaults to the palette accent, underlined;
   /// when set, links are drawn in this colour without an underline.
   final Color? linkColor;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final baseStyle = AppFonts.inter(
       fontSize: 12,
-      color: textColor ?? theme.colorScheme.onSurface.withOpacity(0.6),
+      color: textColor ?? palette.muted,
       height: 1.4,
     );
     final linkStyle = linkColor == null
         ? baseStyle.copyWith(
-            color: theme.colorScheme.primary,
+            color: palette.accentIcon,
             fontWeight: FontWeight.w600,
             decoration: TextDecoration.underline,
           )

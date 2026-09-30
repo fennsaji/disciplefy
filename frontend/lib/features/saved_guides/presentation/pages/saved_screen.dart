@@ -17,6 +17,7 @@ import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/u
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/widgets/empty_state_widget.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/widgets/guide_list_item.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/widgets/library_continue_card.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 
 /// "Your library": Saved and Recent study guides.
 ///
@@ -237,21 +238,16 @@ class _SavedScreenContent extends StatelessWidget {
                 child: BlocConsumer<UnifiedSavedGuidesBloc, SavedGuidesState>(
                   listener: (context, state) {
                     if (state is SavedGuidesError) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              context.tr(TranslationKeys.commonErrorTryAgain)),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      showAppSnackBar(
+                        context,
+                        context.tr(TranslationKeys.commonErrorTryAgain),
+                        tone: AppSnackTone.error,
                       );
                     } else if (state is SavedGuidesActionSuccess) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.message),
-                          backgroundColor: AppColors.success,
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      showAppSnackBar(
+                        context,
+                        state.message,
+                        tone: AppSnackTone.success,
                       );
                     }
                   },

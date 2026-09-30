@@ -4,53 +4,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/constants/study_mode_preferences.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/models/app_language.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../../core/services/system_config_service.dart';
-import '../../../../core/widgets/locked_feature_wrapper.dart';
-import '../../../../core/widgets/upgrade_dialog.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../../core/services/auth_state_provider.dart';
-import '../../../../core/utils/reset_progress_error_localizer.dart';
-import '../../../../core/widgets/destructive_confirm_dialog.dart';
-import '../../../tokens/presentation/bloc/token_bloc.dart';
-import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../home/presentation/bloc/home_bloc.dart';
-import '../../../gamification/presentation/bloc/gamification_bloc.dart';
-import '../../../gamification/presentation/bloc/gamification_event.dart';
-import '../../../user_profile/data/services/user_profile_service.dart';
-import '../../../user_profile/data/models/user_profile_model.dart';
-import '../../../study_generation/domain/entities/study_mode.dart';
-import '../../../subscription/domain/repositories/subscription_repository.dart';
-import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
-import '../../../walkthrough/domain/walkthrough_repository.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../domain/entities/learning_path.dart';
-import '../bloc/learning_paths_bloc.dart';
-import '../bloc/learning_paths_event.dart';
-import '../bloc/learning_paths_state.dart';
-import '../widgets/for_you_learning_paths_section.dart';
-import '../widgets/learning_path_card.dart';
-import '../widgets/learning_paths_section.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/constants/study_mode_preferences.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/router/app_router.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
+import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
+import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
+import 'package:disciplefy_bible_study/core/utils/reset_progress_error_localizer.dart';
+import 'package:disciplefy_bible_study/core/widgets/destructive_confirm_dialog.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
+import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_service.dart';
+import 'package:disciplefy_bible_study/features/user_profile/data/models/user_profile_model.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/repositories/subscription_repository.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/mode_selection_sheet.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/continue_learning_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/continue_learning_event.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/continue_learning_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/for_you_learning_paths_section.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_header_cards.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
-/// Screen for browsing study topics with For You and Learning Paths sections.
+/// Screen for browsing study topics and learning paths.
 ///
-/// Layout (top to bottom):
-/// 1. For You — personalised paths (in-progress → featured → any)
-/// 2. Learning Paths — all curated journeys
+/// Layout (top to bottom), over a photo wash:
+/// 1. Header — "Study Topics" and the overflow menu
+/// 2. Continue card — the path in progress and its next topic
+/// 3. Study streak and Leaderboard tiles
+/// 4. For you — personalised paths (fellowship → in-progress → recommended)
+/// 5. Learning paths — search, level filters and category rows
 class StudyTopicsScreen extends StatefulWidget {
   /// Optional topic ID from deep link (e.g., from notification)
   final String? topicId;
@@ -66,6 +80,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   bool _languageLoaded = false;
   bool _dataLoadingStarted = false; // Track if BLoC events have been dispatched
   late LearningPathsBloc _learningPathsBloc;
+  late ContinueLearningBloc _continueLearningBloc;
   late LanguagePreferenceService _languageService;
   late SystemConfigService _systemConfigService;
   late SubscriptionRepository _subscriptionRepository;
@@ -80,12 +95,27 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     super.initState();
     // Create BLoCs without dispatching events yet
     _learningPathsBloc = sl<LearningPathsBloc>();
+    _continueLearningBloc = sl<ContinueLearningBloc>();
     _languageService = sl<LanguagePreferenceService>();
     _systemConfigService = sl<SystemConfigService>();
     _subscriptionRepository = sl<SubscriptionRepository>();
     _loadLanguageAndInitialize();
     _setupLanguageChangeListener();
     _checkLearningPathsFeatureAccess();
+    _loadGamificationStats();
+  }
+
+  /// The streak and rank tiles read the shared [GamificationBloc]; load it
+  /// if nothing else has yet.
+  void _loadGamificationStats() {
+    try {
+      final gamification = sl<GamificationBloc>();
+      if (gamification.state.status == GamificationStatus.initial) {
+        gamification.add(const LoadGamificationStats());
+      }
+    } catch (e) {
+      Logger.debug('[STUDY_TOPICS] Gamification stats unavailable: $e');
+    }
   }
 
   /// Checks if Learning Paths and Leaderboard features are enabled based on feature flags and user's plan
@@ -187,6 +217,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     setState(() => _currentLanguage = code);
     _learningPathsBloc.add(RefreshLearningPaths(language: code));
     _learningPathsBloc.add(LoadPersonalizedPaths(language: code));
+    _continueLearningBloc
+        .add(LoadContinueLearning(language: code, forceRefresh: true));
   }
 
   Future<void> _loadLanguageAndInitialize() async {
@@ -216,6 +248,12 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         language: _currentLanguage,
       ));
 
+      // The Continue card's current topic.
+      _continueLearningBloc.add(LoadContinueLearning(
+        language: _currentLanguage,
+        forceRefresh: true,
+      ));
+
       // Mark that data loading has started
       if (!_dataLoadingStarted) {
         setState(() {
@@ -230,6 +268,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     _languageSubscription?.cancel();
     _contentLanguageSubscription?.cancel();
     _learningPathsBloc.close();
+    _continueLearningBloc.close();
     super.dispose();
   }
 
@@ -238,6 +277,9 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         providers: [
           BlocProvider.value(
             value: _learningPathsBloc,
+          ),
+          BlocProvider.value(
+            value: _continueLearningBloc,
           ),
           BlocProvider.value(
             value: sl<HomeBloc>(),
@@ -295,6 +337,9 @@ class _StudyTopicsScreenContent extends StatefulWidget {
 }
 
 class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
+  /// Scenery behind the top of the tab.
+  static const String _washImage = 'assets/images/hero/green_hills.jpg';
+
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;
   final ScrollController _scrollController = ScrollController();
@@ -420,6 +465,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return ShowCaseWidget(
       enableAutoScroll: true,
       onFinish: () =>
@@ -427,29 +473,48 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       builder: (showcaseContext) {
         _showcaseContext = showcaseContext;
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _buildAppBar(context),
-          body: RefreshIndicator(
-            onRefresh: () async {
-              context
-                  .read<LearningPathsBloc>()
-                  .add(RefreshLearningPaths(language: widget.currentLanguage));
-              // Wait for the refresh to complete
-              await Future.delayed(const Duration(milliseconds: 500));
-            },
-            child: _buildBody(context),
+          backgroundColor: palette.page,
+          body: PhotoWash(
+            image: _washImage,
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StudyTopicsAppBar(
+                    onLanguageChange: _handleStudyLanguageChange,
+                    language: widget.currentLanguage,
+                  ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: _buildBody(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return StudyTopicsAppBar(
-      onLanguageChange: _handleStudyLanguageChange,
-      showLeaderboard: widget.isLeaderboardFeatureEnabled,
-      language: widget.currentLanguage,
-    );
+  Future<void> _refresh() async {
+    context
+        .read<LearningPathsBloc>()
+        .add(RefreshLearningPaths(language: widget.currentLanguage));
+    context
+        .read<ContinueLearningBloc>()
+        .add(RefreshContinueLearning(language: widget.currentLanguage));
+    try {
+      sl<GamificationBloc>()
+          .add(const LoadGamificationStats(forceRefresh: true));
+    } catch (e) {
+      Logger.debug('[STUDY_TOPICS] Gamification refresh skipped: $e');
+    }
+    // Wait for the refresh to complete
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   /// Handle study content language change and refresh content.
@@ -474,20 +539,32 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     return ListView(
       controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       // The floating dock overlaps the page; its height is in the bottom
       // inset, so the last card scrolls clear of it.
       padding: EdgeInsets.fromLTRB(
-          16, 20, 16, 16 + MediaQuery.paddingOf(context).bottom),
+          0, 8, 0, 16 + MediaQuery.paddingOf(context).bottom),
       children: [
-        // Section 1: For You — in-progress paths first, then recommended
+        // Continue card — the path in progress and its next topic
+        _buildContinueCard(context),
+
+        // Study streak + Leaderboard
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildStatTiles(context),
+        ),
+
+        const SizedBox(height: 28),
+
+        // For You — personalised paths
         ForYouLearningPathsSection(
           onPathTap: _navigateToLearningPath,
           onNext: _showcaseContext != null ? _onNext : null,
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
 
-        // Section 2: Learning Paths (Curated Learning Journeys)
+        // Learning Paths (Curated Learning Journeys)
         LockedFeatureWrapper(
           featureKey: 'learning_paths',
           child: Column(
@@ -499,6 +576,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 LearningPathsSection(
                   language: widget.currentLanguage,
                   onPathTap: _navigateToLearningPath,
+                  onCategorySeeAll: _navigateToCategory,
                   onRetry: () => context.read<LearningPathsBloc>().add(
                       RefreshLearningPaths(language: widget.currentLanguage)),
                   onNext: _showcaseContext != null ? _onNext : null,
@@ -511,73 +589,116 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     );
   }
 
+  /// The Continue card, or nothing when no path is in progress.
+  Widget _buildContinueCard(BuildContext context) {
+    return BlocBuilder<LearningPathsBloc, LearningPathsState>(
+      buildWhen: (previous, current) =>
+          current is LearningPathsLoaded || previous is LearningPathsLoaded,
+      builder: (context, pathsState) {
+        return BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
+          builder: (context, continueState) {
+            final paths = pathsState is LearningPathsLoaded
+                ? {
+                    for (final p in [
+                      ...pathsState.enrolledPaths,
+                      ...pathsState.allPaths,
+                    ])
+                      p.id: p,
+                  }.values.toList()
+                : const <LearningPath>[];
+            final data = TopicsContinueData.resolve(
+              inProgressTopics: continueState is ContinueLearningLoaded
+                  ? continueState.topics
+                  : const [],
+              paths: paths,
+            );
+            if (data == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: LockedFeatureWrapper(
+                featureKey: 'learning_paths',
+                child: TopicsContinueCard(
+                  data: data,
+                  onTap: () => _navigateToPathId(data.pathId),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Study streak and (when the feature is visible) Leaderboard tiles.
+  Widget _buildStatTiles(BuildContext context) {
+    return BlocBuilder<GamificationBloc, GamificationState>(
+      bloc: sl<GamificationBloc>(),
+      builder: (context, state) {
+        final stats = state.stats;
+        final streak = stats?.studyCurrentStreak;
+        final rank = stats?.leaderboardRank;
+        final streakTile = TopicsStatTile(
+          key: const Key('topics_streak_tile'),
+          icon: Icons.local_fire_department_outlined,
+          value: streak == null
+              ? null
+              : context.tr(
+                  streak == 1
+                      ? TranslationKeys.topicsHubStreakValueOne
+                      : TranslationKeys.topicsHubStreakValue,
+                  {'count': streak},
+                ),
+          label: context.tr(TranslationKeys.topicsHubStreakLabel),
+        );
+        if (!widget.isLeaderboardFeatureEnabled) return streakTile;
+        final leaderboardTile = TopicsStatTile(
+          key: const Key('topics_leaderboard_tile'),
+          icon: Icons.emoji_events_outlined,
+          value: rank != null && rank > 0 ? '#$rank' : null,
+          label: context.tr(TranslationKeys.topicsHubLeaderboardLabel),
+          onTap: () => openLeaderboardWithAccessCheck(context),
+        );
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: streakTile),
+              const SizedBox(width: 10),
+              Expanded(child: leaderboardTile),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// Build loading state for Learning Paths section
   Widget _buildLearningPathsLoadingState(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.route_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.learningPathsTitle),
-                      style: AppFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      context.tr(TranslationKeys.learningPathsSubtitle),
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          child: Text(
+            context.tr(TranslationKeys.learningPathsTitle),
+            style: AppFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+            ),
           ),
         ),
         const SizedBox(height: 14),
-        // Loading skeletons
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: const [
-              LearningPathCardSkeleton(compact: false),
-              SizedBox(height: 12),
-              LearningPathCardSkeleton(compact: false),
+        const SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              LearningPathCardSkeleton(),
+              SizedBox(width: 12),
+              LearningPathCardSkeleton(),
             ],
           ),
         ),
@@ -603,6 +724,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
   }
 
+  Future<void> _navigateToLearningPath(LearningPath path) {
+    Logger.debug(
+        '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
+    return _navigateToPathId(path.id);
+  }
+
   /// Navigate to learning path detail page.
   ///
   /// Uses `push`, not `go`: the detail route sits on the root navigator as a
@@ -611,36 +738,101 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// category pagination and loaded bloc state, forcing a full reload on the
   /// way back. `push` keeps the shell mounted underneath (and still updates the
   /// browser URL on web).
-  Future<void> _navigateToLearningPath(LearningPath path) async {
+  Future<void> _navigateToPathId(String pathId) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    Logger.debug(
-        '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
-
     // Include source=studyTopics so a directly-opened deep link still has a
     // sensible back target.
-    final progressChanged = await context
-        .push<bool>('/learning-path/${path.id}?source=studyTopics');
+    final progressChanged =
+        await context.push<bool>('/learning-path/$pathId?source=studyTopics');
 
     _isNavigating = false;
 
     // Only refetch when the detail page reports progress actually changed;
     // otherwise the preserved state stands and there is no visible reload.
     if (!mounted || progressChanged != true) return;
+    _reloadAfterProgressChange();
+  }
+
+  void _reloadAfterProgressChange() {
     context.read<LearningPathsBloc>()
       ..add(LoadLearningPaths(
         forceRefresh: true,
         language: widget.currentLanguage,
       ))
       ..add(LoadPersonalizedPaths(language: widget.currentLanguage));
+    context
+        .read<ContinueLearningBloc>()
+        .add(RefreshContinueLearning(language: widget.currentLanguage));
+  }
+
+  /// Opens every path of [category]. Pushed (like the detail page) and given
+  /// this tab's bloc so already-loaded paths show at once and pages loaded
+  /// there are kept here.
+  Future<void> _navigateToCategory(String category) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
+    await context.push<void>(
+      AppRoutes.learningPathCategoryLocation(category,
+          language: widget.currentLanguage),
+      extra: context.read<LearningPathsBloc>(),
+    );
+    _isNavigating = false;
+    if (!mounted) return;
+    // The category page refetches paths itself after progress changes;
+    // keep the Continue card in step with it.
+    context
+        .read<ContinueLearningBloc>()
+        .add(RefreshContinueLearning(language: widget.currentLanguage));
   }
 }
 
-/// App bar widget for the Study Topics screen.
+/// Opens the leaderboard, or the upgrade sheet when the user's plan does
+/// not include it.
+void openLeaderboardWithAccessCheck(BuildContext context) {
+  // Check if user has access to leaderboard feature
+  final tokenBloc = sl<TokenBloc>();
+  final tokenState = tokenBloc.state;
+
+  String userPlan = 'free';
+  if (tokenState is TokenLoaded) {
+    userPlan = tokenState.tokenStatus.userPlan.name;
+  }
+
+  final systemConfigService = sl<SystemConfigService>();
+  final hasAccess =
+      systemConfigService.isFeatureEnabled('leaderboard', userPlan);
+
+  if (!hasAccess) {
+    // Show upgrade dialog
+    final requiredPlans = systemConfigService.getRequiredPlans('leaderboard');
+    final upgradePlan =
+        systemConfigService.getUpgradePlan('leaderboard', userPlan);
+
+    showModalBottomSheet(
+      useRootNavigator: true,
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => UpgradeDialog(
+        featureKey: 'leaderboard',
+        currentPlan: userPlan,
+        requiredPlans: requiredPlans,
+        upgradePlan: upgradePlan,
+      ),
+    );
+    return;
+  }
+
+  // User has access - navigate to leaderboard
+  AppRouter.router.goToLeaderboard();
+}
+
+/// Header of the Study Topics screen: large "Study Topics" title and the
+/// overflow menu (content language, study mode, reset progress).
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLanguageChange;
-  final bool showLeaderboard;
 
   /// The user's current study-content language code (e.g. 'en', 'hi', 'ml').
   ///
@@ -652,48 +844,41 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   const StudyTopicsAppBar({
     super.key,
     this.onLanguageChange,
-    this.showLeaderboard = true,
     this.language = 'en',
   });
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
-        // Move leaderboard icon to the left side - only show if feature is enabled
-        leading: showLeaderboard
-            ? IconButton(
-                icon: const Icon(Icons.emoji_events_outlined),
-                tooltip: context.tr(TranslationKeys.leaderboardTooltip),
-                onPressed: () => _handleLeaderboardTap(context),
-                // A trophy is an achievement mark, and this is the one door to
-                // the leaderboard — gold, like XP and streaks.
-                color: context.appGoldMark,
-              )
-            : null,
-        centerTitle: true,
-        title: Text(
-          context.tr(TranslationKeys.studyTopicsTitle),
-          overflow: TextOverflow.ellipsis,
-          style: AppFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        // Add 3-dot menu to the right side
-        actions: [
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: Theme.of(context).colorScheme.onSurface,
+      padding: const EdgeInsets.fromLTRB(20, 8, 4, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                context.tr(TranslationKeys.studyTopicsTitle),
+                maxLines: 2,
+                style: AppFonts.poppins(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: palette.text,
+                  height: 1.2,
+                ),
+              ),
             ),
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: palette.text),
             tooltip: context.tr(TranslationKeys.moreOptionsTooltip),
+            color: palette.card,
+            surfaceTintColor: Colors.transparent,
+            elevation: 6,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: palette.hairline),
+            ),
             onSelected: (value) {
               if (value == 'language') {
                 _showLanguageSelector(context, onLanguageChange);
@@ -708,10 +893,17 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'language',
                 child: Row(
                   children: [
-                    const Icon(Icons.language),
+                    Icon(Icons.language, color: palette.accentIcon),
                     const SizedBox(width: 12),
-                    Text(
-                        context.tr(TranslationKeys.studyTopicsContentLanguage)),
+                    Flexible(
+                      child: Text(
+                        context.tr(TranslationKeys.studyTopicsContentLanguage),
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          color: palette.text,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -719,26 +911,34 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'study_mode',
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome),
+                    Icon(Icons.auto_awesome, color: palette.accentIcon),
                     const SizedBox(width: 12),
-                    Text(context.tr(TranslationKeys.studyModePreferenceTitle)),
+                    Flexible(
+                      child: Text(
+                        context.tr(TranslationKeys.studyModePreferenceTitle),
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          color: palette.text,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const PopupMenuDivider(),
+              PopupMenuDivider(color: palette.hairline),
               PopupMenuItem<String>(
                 value: 'reset_progress',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.restart_alt,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    Icon(Icons.restart_alt, color: context.appError),
                     const SizedBox(width: 12),
-                    Text(
-                      context.tr(TranslationKeys.studyTopicsResetProgress),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                    Flexible(
+                      child: Text(
+                        context.tr(TranslationKeys.studyTopicsResetProgress),
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          color: context.appError,
+                        ),
                       ),
                     ),
                   ],
@@ -746,7 +946,6 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
-          const SizedBox(width: 8),
         ],
       ),
     );
@@ -754,17 +953,21 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// Confirms and then dispatches a full learning-progress reset.
   ///
-  /// `LeaderboardBloc` and `ContinueLearningBloc` are intentionally not
-  /// refreshed here: neither is provided above this widget in the tree
-  /// (`LeaderboardBloc` is only provided on the dedicated /leaderboard
-  /// route, and `ContinueLearningBloc` has no `BlocProvider` anywhere),
-  /// so `context.read` for either would throw `ProviderNotFoundException`.
+  /// `LeaderboardBloc` is intentionally not refreshed here: it is only
+  /// provided on the dedicated /leaderboard route. `ContinueLearningBloc` is
+  /// provided by the screen (not when this bar is used on its own), so it is
+  /// looked up optionally.
   /// `GamificationBloc` is a registered `LazySingleton`, so it is reached
   /// directly via `sl<GamificationBloc>()` rather than `context.read`,
   /// which also sidesteps any `BuildContext`-across-an-`await` concern.
   Future<void> _handleResetProgress(BuildContext context) async {
     final bloc = context.read<LearningPathsBloc>();
-    final messenger = ScaffoldMessenger.of(context);
+    ContinueLearningBloc? continueBloc;
+    try {
+      continueBloc = context.read<ContinueLearningBloc>();
+    } catch (_) {
+      continueBloc = null;
+    }
     final successMessage = context.tr(TranslationKeys.studyTopicsResetSuccess);
 
     final confirmed = await DestructiveConfirmDialog.show(
@@ -812,7 +1015,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (!context.mounted) return;
 
     if (outcome is LearningPathsResetSuccess) {
-      messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+      showAppSnackBar(context, successMessage, tone: AppSnackTone.success);
 
       // Everything derived from the deleted rows must be refetched: the
       // path list (in the user's actual study-content language — passing
@@ -825,6 +1028,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
       bloc.add(LoadLearningPaths(forceRefresh: true, language: language));
       bloc.add(LoadPersonalizedPaths(language: language));
       sl<GamificationBloc>().add(const RefreshGamificationStats());
+      continueBloc?.add(RefreshContinueLearning(language: language));
     } else if (outcome is LearningPathsResetError) {
       final errorMessage = localizeResetProgressError(
         context,
@@ -832,7 +1036,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         isNetworkError: outcome.isNetworkError,
         fallbackMessage: outcome.message,
       );
-      messenger.showSnackBar(SnackBar(content: Text(errorMessage)));
+      showAppSnackBar(context, errorMessage, tone: AppSnackTone.error);
     }
   }
 
@@ -856,105 +1060,118 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
     final parentContext = context;
 
     showModalBottomSheet(
+      useRootNavigator: true,
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: SheetScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+      builder: (sheetContext) {
+        void choose(String value) =>
+            _chooseLearningPathMode(sheetContext, parentContext, value);
+        final recommended =
+            sheetContext.tr(TranslationKeys.settingsUseRecommended);
+        final ask = sheetContext.tr(TranslationKeys.settingsAskEveryTime);
+        return SettingsSheetFrame(
+          title: sheetContext
+              .tr(TranslationKeys.settingsLearningPathStudyModePreference),
+          description: sheetContext
+              .tr(TranslationKeys.settingsLearningPathStudyModeDescription),
+          children: [
+            SettingsSheetGroup(
+              children: [
+                SettingsRadioRow(
+                  icon: Icons.stars_outlined,
+                  tone: SettingsTone.gold,
+                  title: recommended,
+                  subtitle: sheetContext
+                      .tr(TranslationKeys.settingsUseRecommendedSubtitle),
+                  selected: currentMode == StudyModePreferences.recommended,
+                  onTap: () => choose(StudyModePreferences.recommended),
+                ),
+                SettingsRadioRow(
+                  icon: Icons.help_outline,
+                  title: ask,
+                  subtitle: sheetContext
+                      .tr(TranslationKeys.settingsAskEveryTimeSubtitle),
+                  selected:
+                      currentMode == StudyModePreferences.learningPathDefault,
+                  onTap: () => choose(StudyModePreferences.learningPathDefault),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SettingsSheetGroup(
+              children: [
+                for (final mode in StudyMode.values)
+                  SettingsRadioRow(
+                    icon: mode.iconData,
+                    title: _getStudyModeTranslatedName(mode, sheetContext),
+                    subtitle: '${mode.durationText} • '
+                        '${_getStudyModeTranslatedDescription(mode, sheetContext)}',
+                    selected: currentMode == mode.value,
+                    onTap: () => choose(mode.value),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                context.tr(
-                    TranslationKeys.settingsLearningPathStudyModePreference),
-                style: AppFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(builderContext).colorScheme.onBackground,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr(
-                    TranslationKeys.settingsLearningPathStudyModeDescription),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: Theme.of(builderContext)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Option: Use Recommended
-              _buildLearningPathModeOption(
-                builderContext,
-                parentContext,
-                'recommended',
-                context.tr(TranslationKeys.settingsUseRecommended),
-                Icons.stars,
-                context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
-                currentMode,
-              ),
-              const SizedBox(height: 12),
-
-              // Option: Always Ask
-              _buildLearningPathModeOption(
-                builderContext,
-                parentContext,
-                'ask',
-                context.tr(TranslationKeys.settingsAskEveryTime),
-                Icons.help_outline,
-                context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
-                currentMode,
-              ),
-              const SizedBox(height: 12),
-
-              // Divider
-              Divider(
-                  color: context.appBrandAccent.withOpacity(0.2), height: 24),
-
-              // Specific modes (Quick, Standard, Deep, Lectio, Sermon)
-              ...StudyMode.values.map((mode) => Column(
-                    children: [
-                      _buildLearningPathModeOption(
-                        builderContext,
-                        parentContext,
-                        mode.value,
-                        _getStudyModeTranslatedName(mode, context),
-                        mode.iconData,
-                        '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
-                        currentMode,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  )),
-            ],
-          ),
-        ),
-      ),
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
+        );
+      },
     );
+  }
+
+  /// Saves the learning-path study mode, refreshes the cached profile and
+  /// closes the sheet, reporting the outcome on the page.
+  Future<void> _chooseLearningPathMode(
+    BuildContext sheetContext,
+    BuildContext parentContext,
+    String value,
+  ) async {
+    try {
+      final userProfileService = sl<UserProfileService>();
+      final authProvider = sl<AuthStateProvider>();
+
+      final result =
+          await userProfileService.updateLearningPathStudyModePreference(value);
+
+      if (!parentContext.mounted) return;
+      result.fold(
+        (failure) {
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+          showAppSnackBar(
+            parentContext,
+            parentContext.tr(TranslationKeys.errorUpdatingPreference),
+            tone: AppSnackTone.error,
+          );
+        },
+        (profile) {
+          // Update AuthStateProvider cache with new profile
+          final userId = authProvider.userId;
+          if (userId != null) {
+            final profileMap = UserProfileModel.fromEntity(profile).toJson();
+            authProvider.cacheProfile(userId, profileMap);
+          }
+
+          // Close sheet AFTER cache is updated
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+
+          showAppSnackBar(
+            parentContext,
+            parentContext.tr(TranslationKeys.preferenceUpdatedSuccessfully),
+            tone: AppSnackTone.success,
+          );
+        },
+      );
+    } catch (e) {
+      // Close sheet even on error
+      if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+      if (parentContext.mounted) {
+        showAppSnackBar(
+          parentContext,
+          parentContext.tr(TranslationKeys.errorUpdatingPreference),
+          tone: AppSnackTone.error,
+        );
+      }
+    }
   }
 
   /// Get translated display name for study mode enum
@@ -988,227 +1205,6 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
       case StudyMode.sermon:
         return context.tr(TranslationKeys.studyModeSermonDescription);
     }
-  }
-
-  /// Build learning path mode option tile
-  Widget _buildLearningPathModeOption(
-    BuildContext sheetContext,
-    BuildContext parentContext,
-    String value,
-    String label,
-    IconData icon,
-    String subtitle,
-    String? currentMode,
-  ) {
-    final isSelected = value == currentMode;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          // Update user profile with learning path study mode preference
-          try {
-            final userProfileService = sl<UserProfileService>();
-            final authProvider = sl<AuthStateProvider>();
-
-            final result = await userProfileService
-                .updateLearningPathStudyModePreference(value);
-
-            if (parentContext.mounted) {
-              result.fold(
-                (failure) {
-                  // Close sheet on failure
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        parentContext
-                            .tr(TranslationKeys.errorUpdatingPreference),
-                      ),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.error,
-                    ),
-                  );
-                },
-                (profile) {
-                  // Update AuthStateProvider cache with new profile
-                  final userId = authProvider.userId;
-                  if (userId != null) {
-                    final profileMap =
-                        UserProfileModel.fromEntity(profile).toJson();
-                    authProvider.cacheProfile(userId, profileMap);
-                  }
-
-                  // Close sheet AFTER cache is updated
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        parentContext
-                            .tr(TranslationKeys.preferenceUpdatedSuccessfully),
-                      ),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.primary,
-                    ),
-                  );
-                },
-              );
-            }
-          } catch (e) {
-            // Close sheet even on error
-            if (sheetContext.mounted) {
-              Navigator.of(sheetContext).pop();
-            }
-
-            if (parentContext.mounted) {
-              ScaffoldMessenger.of(parentContext).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    parentContext.tr(TranslationKeys.errorUpdatingPreference),
-                  ),
-                  backgroundColor: Theme.of(parentContext).colorScheme.error,
-                ),
-              );
-            }
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? parentContext.appBrandAccent
-                  : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? parentContext.appBrandAccent.withOpacity(0.15)
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected
-                      ? parentContext.appBrandAccent
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? parentContext.appBrandAccent
-                            : Theme.of(sheetContext).colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: sheetContext.appBrandAccent,
-                  size: 22,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Handle leaderboard icon tap - check access and show upgrade dialog if needed
-  void _handleLeaderboardTap(BuildContext context) {
-    // Check if user has access to leaderboard feature
-    final tokenBloc = sl<TokenBloc>();
-    final tokenState = tokenBloc.state;
-
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
-
-    final systemConfigService = sl<SystemConfigService>();
-    final hasAccess =
-        systemConfigService.isFeatureEnabled('leaderboard', userPlan);
-
-    if (!hasAccess) {
-      // Show upgrade dialog
-      final requiredPlans = systemConfigService.getRequiredPlans('leaderboard');
-      final upgradePlan =
-          systemConfigService.getUpgradePlan('leaderboard', userPlan);
-
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => UpgradeDialog(
-          featureKey: 'leaderboard',
-          currentPlan: userPlan,
-          requiredPlans: requiredPlans,
-          upgradePlan: upgradePlan,
-        ),
-      );
-      return;
-    }
-
-    // User has access - navigate to leaderboard
-    AppRouter.router.goToLeaderboard();
   }
 
   @override

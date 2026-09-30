@@ -44,6 +44,7 @@ import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
+import '../widgets/guide_share_prompts.dart';
 import '../widgets/streaming_study_content.dart';
 import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
@@ -52,7 +53,10 @@ import '../widgets/study_reading_tracker.dart';
 import '../../data/services/reading_progress_store.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
-import '../widgets/tts_control_button.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
+import '../../../../shared/widgets/popup.dart';
+import '../../../settings/presentation/widgets/settings_group.dart'
+    show SettingsButton, SettingsButtonKind;
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
@@ -923,14 +927,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
           // Show snackbar notification
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                    Text('Study generation completed while you were away!'),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 3),
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(TranslationKeys.guideFeedbackCompletedWhileAway),
+              tone: AppSnackTone.success,
             );
           }
         }
@@ -1868,36 +1868,24 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 '   First completion: ${completionResult.isFirstCompletion}');
           }
 
-          // Show fellowship advance notification first so the XP snackbar
-          // (shown below) is the last message visible when both fire together.
+          final earnedXp = completionResult.isFirstCompletion &&
+              completionResult.xpEarned > 0;
+
+          // One snackbar replaces the previous, so when the fellowship
+          // advanced and XP was earned too, both go in a single message.
           if (completionResult.fellowshipAdvanced) {
             _whenAtBottom(() {
-              final msg = completionResult.studyCompleted
-                  ? 'Your fellowship has completed the entire study path!'
-                  : 'Your fellowship has moved to the next guide!';
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      msg,
-                      style: const TextStyle(fontFamily: 'Inter'),
-                    ),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 3),
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
+              if (!mounted) return;
+              final advanced = context.tr(completionResult.studyCompleted
+                  ? TranslationKeys.guideFeedbackFellowshipPathComplete
+                  : TranslationKeys.guideFeedbackFellowshipNextGuide);
+              final message = earnedXp
+                  ? '$advanced  ·  ${_xpEarnedText(completionResult.xpEarned)}'
+                  : advanced;
+              showAppSnackBar(context, message, tone: AppSnackTone.success);
             });
-          }
-
-          // Show XP earned feedback if this is the first completion
-          if (completionResult.isFirstCompletion &&
-              completionResult.xpEarned > 0) {
+          } else if (earnedXp) {
+            // Show XP earned feedback if this is the first completion
             _whenAtBottom(
                 () => _showXpEarnedFeedback(completionResult.xpEarned));
           }
@@ -1910,12 +1898,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
   /// Show feedback when user earns XP for completing a topic.
   void _showXpEarnedFeedback(int xpEarned) {
-    _showSnackBar(
-      '+$xpEarned XP earned!',
-      AppColors.success,
-      icon: Icons.star,
-    );
+    if (!mounted) return;
+    _showSnackBar(_xpEarnedText(xpEarned), AppSnackTone.success);
   }
+
+  String _xpEarnedText(int xpEarned) => context
+      .tr(TranslationKeys.guideFeedbackXpEarned)
+      .replaceAll('{xp}', '$xpEarned');
 
   // _maybeShowLearningPathSheet() has been replaced by _startInactivityCountdown()
   // and _cancelInactivityCountdown() above.  The new approach verifies both the
@@ -1972,6 +1961,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     guideTitle: _getDisplayTitle(),
                     guideInputType: _currentStudyGuide!.inputType,
                     guideLanguage: _currentStudyGuide!.language,
+                    guideStudyMode:
+                        _currentStudyGuide!.studyMode ?? widget.studyMode.name,
+                    guideSummary: _currentStudyGuide!.summary,
                     fellowships: _userFellowships!,
                   ),
                 );
@@ -2101,11 +2093,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     _loadedNotes = state.savedNotes;
                   }
                 });
-                _showSnackBar(
-                  state.message,
-                  AppColors.success,
-                  icon: Icons.check_circle,
-                );
+                _showSnackBar(state.message, AppSnackTone.success);
                 if (state.guideSaved) {
                   _setupAutoSave();
                   // Check saved achievements when guide is saved
@@ -2137,13 +2125,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               } else if (state is StudyPersonalNotesSuccess) {
                 _showSnackBar(
                   state.isAutoSave
-                      ? 'Notes saved'
-                      : (state.message ?? 'Personal notes saved!'),
-                  AppColors.success,
-                  icon: state.isAutoSave ? Icons.check : Icons.note_add,
-                  duration: state.isAutoSave
-                      ? const Duration(milliseconds: 1500)
-                      : const Duration(seconds: 3),
+                      ? context.tr(TranslationKeys.guideFeedbackNotesSaved)
+                      : (state.message ??
+                          context.tr(TranslationKeys.guideFeedbackNotesSaved)),
+                  AppSnackTone.success,
                 );
                 if (!mounted) return;
                 setState(() {
@@ -2160,8 +2145,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 if (!state.isAutoSave) {
                   _showSnackBar(
                     context.tr(TranslationKeys.commonErrorTryAgain),
-                    Theme.of(context).colorScheme.error,
-                    icon: Icons.error_outline,
+                    AppSnackTone.error,
                   );
                 }
               }
@@ -2356,6 +2340,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         guideTitle: _getDisplayTitle(),
                         guideInputType: _currentStudyGuide!.inputType,
                         guideLanguage: _currentStudyGuide!.language,
+                        guideStudyMode: _currentStudyGuide!.studyMode ??
+                            widget.studyMode.name,
+                        guideSummary: _currentStudyGuide!.summary,
                         fellowships: _userFellowships!,
                       ),
                     );
@@ -2616,34 +2603,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildPartialContentWithError(StudyGenerationStreamingFailed state) {
     return Column(
       children: [
-        // Error banner
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.error.withOpacity(0.1),
-          child: Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Generation interrupted. Partial content shown below.',
-                  style: AppFonts.inter(
-                    color: Theme.of(context).colorScheme.error,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (state.canRetry)
-                TextButton(
-                  onPressed: _retryGeneration,
-                  child: const Text('Retry'),
-                ),
-            ],
-          ),
+        GenerationInterruptedBanner(
+          onRetry: state.canRetry ? _retryGeneration : null,
         ),
         // Partial content
         Expanded(
@@ -2713,148 +2674,88 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  Widget _buildErrorScreen() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _isInsufficientTokensError
-                    ? context.tr(TranslationKeys.studyGuideErrorTitleNoTokens)
-                    : context.tr(TranslationKeys.studyGuideErrorTitle),
-                style: AppFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onBackground,
+  Widget _buildErrorScreen() {
+    final palette = ReaderPalette.of(context);
+    final noTokens = _isInsufficientTokensError;
+    return ColoredBox(
+      color: palette.page,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PopupIconCircle(
+                  icon: noTokens ? Icons.token_outlined : Icons.error_outline,
+                  tone: noTokens ? PopupTone.gold : PopupTone.indigo,
+                  size: 64,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _isInsufficientTokensError
-                    ? context
-                        .tr(TranslationKeys.studyGuideErrorInsufficientTokens)
-                    : (_errorMessage.isEmpty
-                        ? context
-                            .tr(TranslationKeys.studyGuideErrorDefaultMessage)
-                        : _errorMessage),
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  height: 1.5,
+                const SizedBox(height: 20),
+                Text(
+                  noTokens
+                      ? context.tr(TranslationKeys.studyGuideErrorTitleNoTokens)
+                      : context.tr(TranslationKeys.studyGuideErrorTitle),
+                  style: AppFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.25,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Builder(
-                builder: (context) {
-                  final theme = Theme.of(context);
-                  final isDark = theme.brightness == Brightness.dark;
-                  final accentColor = isDark
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.primary;
-
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: OutlinedButton.icon(
-                          onPressed: _handleBackNavigation,
-                          icon: const Icon(Icons.arrow_back),
-                          label: Text(
-                            context.tr(TranslationKeys.studyGuideErrorGoBack),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: accentColor,
-                            side: BorderSide(
-                              color: accentColor,
-                              width: 2,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 16,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Show different button based on error type
-                      if (_isInsufficientTokensError)
-                        Flexible(
-                          child: ElevatedButton.icon(
-                            onPressed: () => context.push('/token-management'),
-                            icon: const Icon(Icons.token),
-                            label: Text(
-                              context.tr(TranslationKeys.studyGuideErrorMyPlan),
-                              style: AppFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: accentColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                          ),
-                        )
-                      else
-                        Flexible(
-                          child: ElevatedButton.icon(
-                            onPressed: _retryGeneration,
-                            icon: const Icon(Icons.refresh),
-                            label: Text(
-                              context
-                                  .tr(TranslationKeys.studyGuideErrorTryAgain),
-                              style: AppFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: accentColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  noTokens
+                      ? context
+                          .tr(TranslationKeys.studyGuideErrorInsufficientTokens)
+                      : (_errorMessage.isEmpty
+                          ? context
+                              .tr(TranslationKeys.studyGuideErrorDefaultMessage)
+                          : _errorMessage),
+                  style: AppFonts.inter(
+                    fontSize: 15,
+                    color: palette.muted,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                // Primary action first, going back as the quieter pill below.
+                if (noTokens)
+                  PopupPrimaryButton(
+                    key: const Key('study_error_get_credits'),
+                    label: context.tr(TranslationKeys.studyGuideErrorMyPlan),
+                    icon: Icons.token_outlined,
+                    onPressed: () => context.push('/token-management'),
+                  )
+                else
+                  PopupPrimaryButton(
+                    key: const Key('study_error_try_again'),
+                    label: context.tr(TranslationKeys.studyGuideErrorTryAgain),
+                    icon: Icons.refresh,
+                    onPressed: _retryGeneration,
+                  ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: SettingsButton(
+                    key: const Key('study_error_go_back'),
+                    label: context.tr(TranslationKeys.studyGuideErrorGoBack),
+                    icon: Icons.arrow_back,
+                    kind: SettingsButtonKind.neutral,
+                    onPressed: _handleBackNavigation,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _buildStudyGuideContent() {
     if (_currentStudyGuide == null) return const SizedBox.shrink();
@@ -2945,6 +2846,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                       guideTitle: _getDisplayTitle(),
                       guideInputType: guide.inputType,
                       guideLanguage: guide.language,
+                      guideStudyMode: guide.studyMode ?? widget.studyMode.name,
+                      guideSummary: guide.summary,
                       userFellowships: _userFellowships!,
                     ),
                   ),
@@ -3041,9 +2944,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   ) async {
     if (_currentStudyGuide == null) {
       _showSnackBar(
-        'Cannot save reflection: Study guide not loaded',
-        AppColors.error,
-        icon: Icons.error,
+        context.tr(TranslationKeys.guideFeedbackReflectionNotLoaded),
+        AppSnackTone.error,
       );
       return;
     }
@@ -3077,9 +2979,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       });
 
       _showSnackBar(
-        'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
-        AppColors.success,
-        icon: Icons.check_circle,
+        context
+            .tr(TranslationKeys.guideFeedbackReflectionSaved)
+            .replaceAll('{minutes}', '${timeSpent ~/ 60}'),
+        AppSnackTone.success,
       );
     } catch (e) {
       Logger.error('❌ [REFLECTION] Error saving reflection: $e');
@@ -3092,9 +2995,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       });
 
       _showSnackBar(
-        'Failed to save reflection. Please try again.',
-        AppColors.error,
-        icon: Icons.error,
+        context.tr(TranslationKeys.guideFeedbackReflectionFailed),
+        AppSnackTone.error,
       );
     }
   }
@@ -3480,11 +3382,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Handle enhanced save operation errors from BLoC
   void _handleEnhancedSaveError(StudyEnhancedSaveFailure state) {
     String message;
-    Color backgroundColor = Theme.of(context).colorScheme.error;
-    IconData icon = Icons.error_outline;
+    AppSnackTone tone = AppSnackTone.error;
 
     if (state.guideSaveSuccess && !state.notesSaveSuccess) {
-      message = 'Study guide saved, but failed to save personal notes.';
+      message = context.tr(TranslationKeys.guideFeedbackSavedNotesFailed);
+      tone = AppSnackTone.warning;
       if (mounted) {
         setState(() {
           _isSaved = true;
@@ -3493,13 +3395,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       _setupAutoSave();
     } else {
       if (state.primaryFailure.code == 'UNAUTHORIZED') {
-        message = 'Authentication expired. Please sign in again.';
+        message = context.tr(TranslationKeys.guideFeedbackAuthExpired);
       } else if (state.primaryFailure.code == 'NETWORK_ERROR') {
-        message = 'Network error. Please check your connection.';
+        message = context.tr(TranslationKeys.guideFeedbackNetworkError);
       } else if (state.primaryFailure.code == 'ALREADY_SAVED') {
-        message = 'This study guide is already saved!';
-        backgroundColor = Theme.of(context).colorScheme.primary;
-        icon = Icons.check_circle;
+        message = context.tr(TranslationKeys.guideFeedbackAlreadySaved);
+        tone = AppSnackTone.neutral;
         if (mounted) {
           setState(() {
             _isSaved = true;
@@ -3511,7 +3412,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       }
     }
 
-    _showSnackBar(message, backgroundColor, icon: icon);
+    _showSnackBar(message, tone);
   }
 
   /// Show enhanced authentication required dialog
@@ -3529,37 +3430,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  /// Show snackbar with consistent styling
-  void _showSnackBar(String message, Color backgroundColor,
-      {IconData? icon, Duration duration = const Duration(seconds: 3)}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: Text(
-                message,
-                style: AppFonts.inter(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        duration: duration,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
+  /// Show the app-wide snackbar with the given [tone].
+  void _showSnackBar(String message, AppSnackTone tone) {
+    if (!mounted) return;
+    showAppSnackBar(context, message, tone: tone);
   }
 
   /// Shows recommended topic notification prompt after completing a study guide
@@ -3602,8 +3476,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _showShareOnScreenshotPrompt() {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ScreenshotShareSheet(
+      builder: (ctx) => ScreenshotShareSheet(
         onShareText: () {
           Navigator.of(ctx).pop();
           _shareStudyGuide();
@@ -3613,6 +3489,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 Navigator.of(ctx).pop();
                 showModalBottomSheet<void>(
                   context: context,
+                  useRootNavigator: true,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
                   builder: (_) => ShareGuideSheet(
@@ -3620,6 +3497,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     guideTitle: _getDisplayTitle(),
                     guideInputType: _currentStudyGuide!.inputType,
                     guideLanguage: _currentStudyGuide!.language,
+                    guideStudyMode:
+                        _currentStudyGuide!.studyMode ?? widget.studyMode.name,
+                    guideSummary: _currentStudyGuide!.summary,
                     fellowships: _userFellowships!,
                   ),
                 );
@@ -3689,58 +3569,47 @@ $appLink
           builder: (ctx, setDialogState) {
             updateDialog = setDialogState;
             final fraction = pdfTotal > 0 ? pdfStep / pdfTotal : 0.0;
-            final primary = Theme.of(ctx).colorScheme.primary;
-            return AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 4),
-                  // Static icon — no animation (main thread is busy rendering)
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.picture_as_pdf_outlined,
-                        color: primary, size: 28),
+            final palette = ReaderPalette.of(ctx);
+            return PopupDialog(
+              children: [
+                // Static icon — no animation (main thread is busy rendering)
+                const PopupIconCircle(icon: Icons.picture_as_pdf_outlined),
+                const SizedBox(height: 16),
+                PopupEyebrow(
+                    context.tr(TranslationKeys.studyGuideMenuDownloadPdf)),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr(TranslationKeys.studyGuideGeneratingPdf),
+                  style: AppFonts.poppins(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.3,
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.tr(TranslationKeys.studyGuideGeneratingPdf),
-                    style: Theme.of(ctx).textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 14),
-                  // Determinate bar — snaps between sections (no animation needed)
-                  LinearProgressIndicator(
-                    value: pdfTotal > 0 ? fraction.clamp(0.0, 1.0) : null,
-                    backgroundColor: primary.withOpacity(0.12),
-                    valueColor: AlwaysStoppedAnimation<Color>(primary),
-                    minHeight: 6,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    pdfTotal > 0 && pdfStep < pdfTotal
-                        ? '$pdfStep / $pdfTotal'
-                        : pdfTotal > 0 && pdfStep == pdfTotal
-                            ? context
-                                .tr(TranslationKeys.studyGuidePdfFinalizing)
-                            : context
-                                .tr(TranslationKeys.studyGuidePdfWaitMessage),
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(ctx)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.5),
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 18),
+                // Determinate bar — snaps between sections (no animation needed)
+                LinearProgressIndicator(
+                  value: pdfTotal > 0 ? fraction.clamp(0.0, 1.0) : null,
+                  backgroundColor: palette.raised,
+                  valueColor: AlwaysStoppedAnimation<Color>(palette.gold),
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  pdfTotal > 0 && pdfStep < pdfTotal
+                      ? '$pdfStep / $pdfTotal'
+                      : pdfTotal > 0 && pdfStep == pdfTotal
+                          ? context.tr(TranslationKeys.studyGuidePdfFinalizing)
+                          : context
+                              .tr(TranslationKeys.studyGuidePdfWaitMessage),
+                  style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+              ],
             );
           },
         ),
@@ -3770,11 +3639,10 @@ $appLink
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     } finally {
@@ -3784,9 +3652,7 @@ $appLink
         // After the progress dialog is gone, so the snackbar is visible.
         final message = savedPdfMessage;
         if (message != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
+          showAppSnackBar(context, message, tone: AppSnackTone.success);
         }
       }
     }
@@ -3806,6 +3672,8 @@ class _FellowshipShareSection extends StatefulWidget {
   final String guideTitle;
   final String guideInputType;
   final String guideLanguage;
+  final String? guideStudyMode;
+  final String? guideSummary;
   final List<FellowshipEntity> userFellowships;
 
   const _FellowshipShareSection({
@@ -3814,6 +3682,8 @@ class _FellowshipShareSection extends StatefulWidget {
     required this.guideTitle,
     required this.guideInputType,
     required this.guideLanguage,
+    this.guideStudyMode,
+    this.guideSummary,
     required this.userFellowships,
   });
 
@@ -3825,6 +3695,97 @@ class _FellowshipShareSection extends StatefulWidget {
 class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
   final TextEditingController _controller = TextEditingController();
   bool _isPosting = false;
+
+  /// Fellowships the post goes to. All of them until the user changes it.
+  late final Set<String> _selectedIds =
+      widget.userFellowships.map((f) => f.id).toSet();
+
+  List<FellowshipEntity> get _selectedFellowships =>
+      widget.userFellowships.where((f) => _selectedIds.contains(f.id)).toList();
+
+  /// Lets the user pick which fellowships the post goes to.
+  Future<void> _pickFellowships() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final palette = ReaderPalette.of(sheetContext);
+          return SafeArea(
+            top: false,
+            child: Container(
+              decoration: BoxDecoration(
+                color: palette.card,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: palette.outline,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Text(
+                      sheetContext.tr(TranslationKeys.communityPagesShareTo),
+                      style: AppFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final fellowship in widget.userFellowships)
+                          CheckboxListTile(
+                            key: ValueKey('share-pick-${fellowship.id}'),
+                            value: _selectedIds.contains(fellowship.id),
+                            activeColor: palette.accentIcon,
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            title: Text(
+                              fellowship.name,
+                              style: AppFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: palette.text,
+                              ),
+                            ),
+                            onChanged: (checked) {
+                              setSheetState(() {});
+                              setState(() {
+                                if (checked == true) {
+                                  _selectedIds.add(fellowship.id);
+                                } else {
+                                  _selectedIds.remove(fellowship.id);
+                                }
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -3841,22 +3802,18 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: Container(
-          color: Theme.of(context).colorScheme.surface,
-          child: ShareGuideSheet(
-            studyGuideId: widget.studyGuideId,
-            guideTitle: widget.guideTitle,
-            guideInputType: widget.guideInputType,
-            guideLanguage: widget.guideLanguage,
-            fellowships: widget.userFellowships,
-            content: text,
-          ),
-        ),
+      // ShareGuideSheet paints its own palette surface, matching the other
+      // call sites that open it on a transparent sheet.
+      builder: (_) => ShareGuideSheet(
+        studyGuideId: widget.studyGuideId,
+        guideTitle: widget.guideTitle,
+        guideInputType: widget.guideInputType,
+        guideLanguage: widget.guideLanguage,
+        guideStudyMode: widget.guideStudyMode,
+        guideSummary: widget.guideSummary,
+        fellowships: widget.userFellowships,
+        content: text,
+        initialSelectedIds: _selectedIds,
       ),
     );
 
@@ -3865,21 +3822,20 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
     if (result == true) {
       _controller.clear();
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Shared to fellowship feed!'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.guideFeedbackSharedToFellowship),
+        tone: AppSnackTone.success,
       );
     }
   }
 
   /// "Name" for one fellowship, "Name +2" for several.
   String _fellowshipLabel() {
-    final fellowships = widget.userFellowships;
-    if (fellowships.isEmpty) return '';
+    final fellowships = _selectedFellowships;
+    if (fellowships.isEmpty) {
+      return context.tr(TranslationKeys.communityPagesShareSelect);
+    }
     final first = fellowships.first.name;
     return fellowships.length == 1
         ? first
@@ -3890,7 +3846,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final hasText = _controller.text.trim().isNotEmpty;
-    final canPost = hasText && !_isPosting;
+    final canPost = hasText && !_isPosting && _selectedIds.isNotEmpty;
     final label = _fellowshipLabel();
 
     return Column(
@@ -3950,42 +3906,53 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
         const SizedBox(height: 12),
         Row(
           children: [
-            // Where the post goes. The share sheet opened by Post is where the
-            // fellowships are actually picked.
+            // Where the post goes; tap to change the fellowships.
             Flexible(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
-                decoration: BoxDecoration(
-                  color: palette.raised,
+              child: Material(
+                color: palette.raised,
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  key: const ValueKey('share-fellowship-picker'),
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: palette.gold.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.group_rounded,
-                          size: 14, color: palette.gold),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: palette.text,
+                  onTap: widget.userFellowships.length > 1
+                      ? _pickFellowships
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: palette.gold.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.group_rounded,
+                              size: 14, color: palette.gold),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: palette.text,
+                            ),
+                          ),
+                        ),
+                        if (widget.userFellowships.length > 1) ...[
+                          const SizedBox(width: 4),
+                          Icon(Icons.expand_more_rounded,
+                              size: 18, color: palette.muted),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -4030,128 +3997,6 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
           ],
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Screenshot share prompt sheet
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ScreenshotShareSheet extends StatelessWidget {
-  final VoidCallback onShareText;
-  final VoidCallback? onShareFellowship;
-
-  const _ScreenshotShareSheet({
-    required this.onShareText,
-    this.onShareFellowship,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Icon + headline
-          Icon(
-            Icons.screenshot_monitor_rounded,
-            size: 36,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Share your study guide',
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'You took a screenshot — want to share it?',
-            style: AppFonts.inter(
-              fontSize: 13,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Share buttons
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: onShareText,
-                    icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text('Share'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                if (onShareFellowship != null) ...[
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onShareFellowship,
-                      icon: const Icon(Icons.group_rounded, size: 18),
-                      label: const Text('Share to Fellowship'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'Dismiss',
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
     );
   }
 }

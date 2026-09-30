@@ -1,5 +1,54 @@
 /// Translation key constants for type-safe translation access
 class TranslationKeys {
+  // App status: maintenance, error page, exit/join prompts, shell toasts.
+  static const appStatusMaintenanceEyebrow = 'app_status.maintenance_eyebrow';
+  static const appStatusMaintenanceTitle = 'app_status.maintenance_title';
+  static const appStatusMaintenanceCheck = 'app_status.maintenance_check';
+  static const appStatusMaintenanceChecking = 'app_status.maintenance_checking';
+  static const appStatusMaintenanceBackSoon =
+      'app_status.maintenance_back_soon';
+  static const appStatusMaintenanceCheckFailed =
+      'app_status.maintenance_check_failed';
+  static const appStatusErrorEyebrow = 'app_status.error_eyebrow';
+  static const appStatusErrorTryLater = 'app_status.error_try_later';
+  static const appStatusErrorReport = 'app_status.error_report';
+  static const appStatusErrorNoEmailApp = 'app_status.error_no_email_app';
+  static const appStatusSubscriptionActivated =
+      'app_status.subscription_activated';
+  static const appStatusPurchaseValidationFailed =
+      'app_status.purchase_validation_failed';
+  static const appStatusSettingsOpenFailed = 'app_status.settings_open_failed';
+  static const appStatusLockedPathsBody = 'app_status.locked_paths_body';
+
+  // App chrome: lock overlay, update dialogs, offline banner,
+  // notification prompt eyebrow.
+  static const appChromeLockTapToUpgrade = 'app_chrome.lock.tap_to_upgrade';
+  static const appChromeLockNotAvailableOffline =
+      'app_chrome.lock.not_available_offline';
+  static const appChromeLockConnectToUpgrade =
+      'app_chrome.lock.connect_to_upgrade';
+  static const appChromeUpdateEyebrow = 'app_chrome.update.eyebrow';
+  static const appChromeUpdateRequiredTitle =
+      'app_chrome.update.required_title';
+  static const appChromeUpdateRequiredBody = 'app_chrome.update.required_body';
+  static const appChromeUpdateRequiredHint = 'app_chrome.update.required_hint';
+  static const appChromeUpdateAvailableTitle =
+      'app_chrome.update.available_title';
+  static const appChromeUpdateAvailableBody =
+      'app_chrome.update.available_body';
+  static const appChromeUpdateCurrentVersion =
+      'app_chrome.update.current_version';
+  static const appChromeUpdateRequiredVersion =
+      'app_chrome.update.required_version';
+  static const appChromeUpdateLatestVersion =
+      'app_chrome.update.latest_version';
+  static const appChromeUpdateUpdateNow = 'app_chrome.update.update_now';
+  static const appChromeUpdateUpdate = 'app_chrome.update.update';
+  static const appChromeUpdateLater = 'app_chrome.update.later';
+  static const appChromeOfflineOffline = 'app_chrome.offline.offline';
+  static const appChromeOfflineBackOnline = 'app_chrome.offline.back_online';
+  static const appChromeNotifyPromptEyebrow =
+      'app_chrome.notify_prompt.eyebrow';
   // Memory recall practice modes (flip card, progressive reveal,
   // first letter hints, type it out)
   static const memoryRecallFlipFront = 'memory_recall_modes.flip_card.front';
@@ -413,6 +462,70 @@ class TranslationKeys {
   static const emailAuthSignUpTitle = 'email_auth.sign_up_title';
   static const emailAuthNewPasswordHint = 'email_auth.new_password_hint';
 
+  // Auth / profile-setup notices
+  static const authSignInCancelled = 'auth_notices.sign_in_cancelled';
+  static const authOtpCodeSent = 'auth_notices.otp_code_sent';
+  static const authOtpIncomplete = 'auth_notices.otp_incomplete';
+  static const profileSetupImageWebOnly = 'auth_notices.profile_image_web_only';
+  static const profileSetupImageFailed = 'auth_notices.profile_image_failed';
+  static const profileSetupSelectAgeGroup =
+      'auth_notices.profile_select_age_group';
+  static const profileSetupSelectInterest =
+      'auth_notices.profile_select_interest';
+
+  // Phone sign-in and profile setup screens
+  static const phoneAuthEyebrow = 'phone_auth.eyebrow';
+  static const phoneAuthTitle = 'phone_auth.title';
+  static const phoneAuthSubtitle = 'phone_auth.subtitle';
+  static const phoneAuthPhoneLabel = 'phone_auth.phone_label';
+  static const phoneAuthPhoneHint = 'phone_auth.phone_hint';
+  static const phoneAuthCountryCode = 'phone_auth.country_code';
+  static const phoneAuthPhoneRequired = 'phone_auth.phone_required';
+  static const phoneAuthPhoneTooShort = 'phone_auth.phone_too_short';
+  static const phoneAuthSecureTitle = 'phone_auth.secure_title';
+  static const phoneAuthSecureBody = 'phone_auth.secure_body';
+  static const phoneAuthSendCode = 'phone_auth.send_code';
+  static const phoneAuthOtpEyebrow = 'phone_auth.otp_eyebrow';
+  static const phoneAuthOtpTitle = 'phone_auth.otp_title';
+  static const phoneAuthOtpSentTo = 'phone_auth.otp_sent_to';
+  static const phoneAuthOtpLabel = 'phone_auth.otp_label';
+  static const phoneAuthOtpDigit = 'phone_auth.otp_digit';
+  static const phoneAuthOtpExpiresIn = 'phone_auth.otp_expires_in';
+  static const phoneAuthOtpResend = 'phone_auth.otp_resend';
+  static const phoneAuthOtpResendIn = 'phone_auth.otp_resend_in';
+  static const phoneAuthOtpHelp = 'phone_auth.otp_help';
+  static const phoneAuthOtpVerify = 'phone_auth.otp_verify';
+  static const profileSetupEyebrow = 'profile_setup.eyebrow';
+  static const profileSetupTitle = 'profile_setup.title';
+  static const profileSetupSubtitle = 'profile_setup.subtitle';
+  static const profileSetupAddPhoto = 'profile_setup.add_photo';
+  static const profileSetupName = 'profile_setup.name';
+  static const profileSetupFirstName = 'profile_setup.first_name';
+  static const profileSetupLastName = 'profile_setup.last_name';
+  static const profileSetupFirstNameRequired =
+      'profile_setup.first_name_required';
+  static const profileSetupLastNameRequired =
+      'profile_setup.last_name_required';
+  static const profileSetupAgeGroup = 'profile_setup.age_group';
+  static const profileSetupInterests = 'profile_setup.interests';
+  static const profileSetupInterestsHint = 'profile_setup.interests_hint';
+  static const profileSetupContinue = 'profile_setup.continue';
+  static const profileSetupInterestPrayer = 'profile_setup.interest_prayer';
+  static const profileSetupInterestWorship = 'profile_setup.interest_worship';
+  static const profileSetupInterestCommunity =
+      'profile_setup.interest_community';
+  static const profileSetupInterestBibleStudy =
+      'profile_setup.interest_bible_study';
+  static const profileSetupInterestTheology = 'profile_setup.interest_theology';
+  static const profileSetupInterestMissions = 'profile_setup.interest_missions';
+  static const profileSetupInterestYouthMinistry =
+      'profile_setup.interest_youth_ministry';
+  static const profileSetupInterestFamily = 'profile_setup.interest_family';
+  static const profileSetupInterestLeadership =
+      'profile_setup.interest_leadership';
+  static const profileSetupInterestEvangelism =
+      'profile_setup.interest_evangelism';
+
   // Password Reset Screen
   static const passwordResetTitle = 'password_reset.title';
   static const passwordResetSubtitle = 'password_reset.subtitle';
@@ -426,6 +539,7 @@ class TranslationKeys {
   static const passwordResetInvalidEmail = 'password_reset.invalid_email';
   static const passwordResetResend = 'password_reset.resend';
   static const passwordResetError = 'password_reset.error';
+  static const passwordResetEyebrow = 'password_reset.eyebrow';
 
   // Email Verification Banner
   static const emailVerificationTitle = 'email_verification.title';
@@ -444,6 +558,7 @@ class TranslationKeys {
   static const onboardingLanguageSavedLocally =
       'onboarding.language_saved_locally';
   static const onboardingDefaultLanguageSet = 'onboarding.default_language_set';
+  static const onboardingLanguageSaveFailed = 'onboarding.language_save_failed';
   static const onboardingSkipIntro = 'onboarding.skip_intro';
   static const onboardingGetStarted = 'onboarding.get_started';
   static const onboardingLanguageEyebrow = 'onboarding.language_eyebrow';
@@ -647,6 +762,36 @@ class TranslationKeys {
   static const questionnaireSkipTitle = 'questionnaire.skip_title';
   static const questionnaireSkipMessage = 'questionnaire.skip_message';
   static const questionnaireCancel = 'questionnaire.cancel';
+  static const questionnaireStepOf = 'questionnaire.step_of';
+
+  // Memory verse add feedback (Home verse bookmark snackbars)
+  static const memoryAddFeedbackAdded = 'memory_add_feedback.added';
+  static const memoryAddFeedbackReviewNow = 'memory_add_feedback.review_now';
+  static const memoryAddFeedbackAlreadyExists =
+      'memory_add_feedback.already_exists';
+  static const memoryAddFeedbackReview = 'memory_add_feedback.review';
+
+  // Streak protection (freeze day) dialog
+  static const streakProtectionEyebrow = 'streak_protection.eyebrow';
+  static const streakProtectionTitle = 'streak_protection.title';
+  static const streakProtectionAtRisk = 'streak_protection.at_risk';
+  static const streakProtectionExplanation = 'streak_protection.explanation';
+  static const streakProtectionAvailable = 'streak_protection.available';
+  static const streakProtectionEarnMore = 'streak_protection.earn_more';
+  static const streakProtectionCancel = 'streak_protection.cancel';
+  static const streakProtectionUse = 'streak_protection.use';
+
+  // Streak milestone celebration dialog
+  static const streakMilestoneEyebrow = 'streak_milestone.eyebrow';
+  static const streakMilestoneTitleDays = 'streak_milestone.title_days';
+  static const streakMilestoneTitleYear = 'streak_milestone.title_year';
+  static const streakMilestoneMessage10 = 'streak_milestone.message_10';
+  static const streakMilestoneMessage30 = 'streak_milestone.message_30';
+  static const streakMilestoneMessage100 = 'streak_milestone.message_100';
+  static const streakMilestoneMessage365 = 'streak_milestone.message_365';
+  static const streakMilestoneMessageDefault =
+      'streak_milestone.message_default';
+  static const streakMilestoneContinue = 'streak_milestone.continue';
 
   // Question 1: Faith Stage
   static const questionnaireFaithStageTitle = 'questionnaire.faith_stage.title';
@@ -1002,6 +1147,54 @@ class TranslationKeys {
   static const premiumSubscriptionActivated = 'premium.subscription_activated';
   static const premiumPaymentCompletedHint = 'premium.payment_completed_hint';
   static const premiumCheckStatus = 'premium.check_status';
+
+  // Payments feedback: checkout / invoice snackbars and the report-issue sheet
+  static const payFeedbackSubscriptionCreated =
+      'payments_feedback.subscription_created';
+  static const payFeedbackPurchaseReceived =
+      'payments_feedback.purchase_received';
+  static const payFeedbackAwaitingApproval =
+      'payments_feedback.payment_awaiting_approval';
+  static const payFeedbackPlanActivated = 'payments_feedback.plan_activated';
+  static const payFeedbackOpenPaymentUrlFailed =
+      'payments_feedback.open_payment_url_failed';
+  static const payFeedbackOpenPaymentPageFailed =
+      'payments_feedback.open_payment_page_failed';
+  static const payFeedbackStoreOpenFailedAndroid =
+      'payments_feedback.store_open_failed_android';
+  static const payFeedbackStoreOpenFailedIos =
+      'payments_feedback.store_open_failed_ios';
+  static const payFeedbackGeneratingPdf = 'payments_feedback.generating_pdf';
+  static const payFeedbackInvoiceDownloaded =
+      'payments_feedback.invoice_downloaded';
+  static const payFeedbackInvoiceSavedTo = 'payments_feedback.invoice_saved_to';
+  static const payFeedbackOk = 'payments_feedback.ok';
+  static const payFeedbackSavePreferenceFailed =
+      'payments_feedback.save_preference_failed';
+  static const reportIssueEyebrow = 'payments_feedback.report_eyebrow';
+  static const reportIssueTitle = 'payments_feedback.report_title';
+  static const reportIssueBody = 'payments_feedback.report_body';
+  static const reportIssueTransactionDetails =
+      'payments_feedback.transaction_details';
+  static const reportIssueTokens = 'payments_feedback.tokens';
+  static const reportIssueAmount = 'payments_feedback.amount';
+  static const reportIssueDate = 'payments_feedback.date';
+  static const reportIssuePaymentId = 'payments_feedback.payment_id';
+  static const reportIssueType = 'payments_feedback.issue_type';
+
+  /// Label for a purchase issue type, keyed by its API value
+  /// (e.g. `wrong_amount`).
+  static String reportIssueTypeLabel(String value) =>
+      'payments_feedback.issue_$value';
+  static const reportIssueDescription = 'payments_feedback.description';
+  static const reportIssueDescriptionHint =
+      'payments_feedback.description_hint';
+  static const reportIssueDescriptionTooShort =
+      'payments_feedback.description_too_short';
+  static const reportIssueScreenshots = 'payments_feedback.screenshots';
+  static const reportIssueAddScreenshot = 'payments_feedback.add_screenshot';
+  static const reportIssueUploadWebOnly = 'payments_feedback.upload_web_only';
+  static const reportIssueSubmit = 'payments_feedback.submit';
 
   // Token Purchase Dialog
   static const tokenPurchaseDialogTitle = 'tokens.purchase_dialog.title';
@@ -1444,6 +1637,7 @@ class TranslationKeys {
   static const learningPathsLoadingDetails = 'learning_paths.loading_details';
   static const learningPathsEnrolling = 'learning_paths.enrolling';
   static const learningPathsFailedToLoad = 'learning_paths.failed_to_load';
+  static const learningPathsOfflineTitle = 'learning_paths.offline_title';
   static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
   static const learningPathsPercentComplete = 'learning_paths.percent_complete';
 
@@ -1488,6 +1682,26 @@ class TranslationKeys {
 
   static const discipleLevelFollower = 'disciple_level.follower';
 
+  // Study Topics tab (header cards, For you, Learning paths, category page)
+  static const topicsHubContinueEyebrow = 'topics_hub.continue_eyebrow';
+  static const topicsHubNextTopic = 'topics_hub.next_topic';
+  static const topicsHubStreakValue = 'topics_hub.streak_value';
+  static const topicsHubStreakValueOne = 'topics_hub.streak_value_one';
+  static const topicsHubStreakLabel = 'topics_hub.streak_label';
+  static const topicsHubLeaderboardLabel = 'topics_hub.leaderboard_label';
+  static const topicsHubForYou = 'topics_hub.for_you';
+  static const topicsHubBasedOnGoals = 'topics_hub.based_on_goals';
+  static const topicsHubSearchPaths = 'topics_hub.search_paths';
+  static const topicsHubSeeAll = 'topics_hub.see_all';
+  static const topicsHubPathsCount = 'topics_hub.paths_count';
+  static const topicsHubPathsCountOne = 'topics_hub.paths_count_one';
+  static const topicsHubLevelRange = 'topics_hub.level_range';
+  static const topicsHubOfflineMessage = 'topics_hub.offline_message';
+  static const topicsHubRetry = 'topics_hub.retry';
+  static const topicsHubNoSearchResults = 'topics_hub.no_search_results';
+  static const topicsHubNoFilterResults = 'topics_hub.no_filter_results';
+  static const topicsHubAllLevels = 'topics_hub.all_levels';
+
   // Continue Learning
   static const continueLearningTitle = 'continue_learning.title';
   static const continueLearningEmpty = 'continue_learning.empty';
@@ -1506,6 +1720,9 @@ class TranslationKeys {
   static const leaderboardXpPoints = 'leaderboard.xp_points';
   static const leaderboardClose = 'leaderboard.close';
   static const leaderboardError = 'leaderboard.error';
+
+  // Leaderboard page redesign
+  static const leaderboardXpToPass = 'leaderboard.xp_to_pass';
 
   // Pricing Page (Public)
   static const pricingTitle = 'pricing.title';
@@ -2897,6 +3114,43 @@ class TranslationKeys {
       'voice_buddy.mic_permission.type_instead';
   static const micPermissionAllow = 'voice_buddy.mic_permission.allow';
 
+  // ==========================================================================
+  // Discipler tab: start screen, chat and voice session
+  // ==========================================================================
+
+  static const voiceSessionHeadline = 'voice_buddy.session.headline';
+
+  /// Takes `{language}`.
+  static const voiceSessionSpeakingLanguage =
+      'voice_buddy.session.speaking_language';
+  static const voiceSessionChangeLanguage =
+      'voice_buddy.session.change_language';
+  static const voiceSessionStartTalking = 'voice_buddy.session.start_talking';
+  static const voiceSessionType = 'voice_buddy.session.type';
+  static const voiceSessionTryAsking = 'voice_buddy.session.try_asking';
+  static const voiceSessionSuggestion1 = 'voice_buddy.session.suggestion_1';
+  static const voiceSessionSuggestion2 = 'voice_buddy.session.suggestion_2';
+  static const voiceSessionSuggestion3 = 'voice_buddy.session.suggestion_3';
+
+  /// Takes `{remaining}` and `{limit}`.
+  static const voiceSessionQuotaLeft = 'voice_buddy.session.quota_left';
+  static const voiceSessionStatusReady = 'voice_buddy.session.status_ready';
+  static const voiceSessionStatusListening =
+      'voice_buddy.session.status_listening';
+  static const voiceSessionStatusThinking =
+      'voice_buddy.session.status_thinking';
+  static const voiceSessionStatusSpeaking =
+      'voice_buddy.session.status_speaking';
+  static const voiceSessionYou = 'voice_buddy.session.you';
+  static const voiceSessionYouAsked = 'voice_buddy.session.you_asked';
+  static const voiceSessionVoiceMode = 'voice_buddy.session.voice_mode';
+  static const voiceSessionTypingMode = 'voice_buddy.session.typing_mode';
+  static const voiceSessionSend = 'voice_buddy.session.send';
+  static const voiceSessionKeepTalking = 'voice_buddy.session.keep_talking';
+
+  /// Takes `{count}`.
+  static const voiceSessionRateStars = 'voice_buddy.session.rate_stars';
+
   // Credits / plans (quiet ledger)
   static const ledgerCreditsTitle = 'ledger.credits_title';
   static const ledgerPlanName = 'ledger.plan_name';
@@ -3013,4 +3267,272 @@ class TranslationKeys {
   static const ledgerPaisePerCredit = 'ledger.paise_per_credit';
   static const ledgerStandardTagline = 'ledger.standard_tagline';
   static const ledgerPlusTagline = 'ledger.plus_tagline';
+
+  // Discipler voice settings: language sheet and monthly limit dialog
+  static const voiceLanguageSheetTitle = 'voice_buddy.language_sheet.title';
+
+  /// "Uses your app language ({language})".
+  static const voiceLanguageSheetDefaultSubtitle =
+      'voice_buddy.language_sheet.default_subtitle';
+  static const voiceLimitMessageOne = 'voice_buddy.limit_dialog.message_one';
+  static const voiceLimitMessageOther =
+      'voice_buddy.limit_dialog.message_other';
+  static const voiceLimitThisMonth = 'voice_buddy.limit_dialog.this_month';
+
+  /// "{used} of {limit} used".
+  static const voiceLimitUsed = 'voice_buddy.limit_dialog.used';
+  static const voiceLimitUpgradeHeading =
+      'voice_buddy.limit_dialog.upgrade_heading';
+  static const voiceLimitViewPlans = 'voice_buddy.limit_dialog.view_plans';
+  static const voiceLimitMaybeLater = 'voice_buddy.limit_dialog.maybe_later';
+
+  // Community shared widgets (fellowship cards, posts, Community tab)
+  /// "Mentor: {name}".
+  static const communitySharedMentor = 'community_shared.mentor';
+
+  /// "{name} (you)".
+  static const communitySharedMentorYou = 'community_shared.mentor_you';
+
+  /// "Lesson {number}".
+  static const communitySharedLesson = 'community_shared.lesson';
+
+  /// "Lesson {number} of {total}".
+  static const communitySharedLessonOf = 'community_shared.lesson_of';
+
+  /// "{current} of {total}".
+  static const communitySharedProgress = 'community_shared.progress';
+  static const communitySharedDailyStudy = 'community_shared.daily_study';
+  static const communitySharedStartStudy = 'community_shared.start_study';
+  static const communitySharedReplyOne = 'community_shared.reply_one';
+
+  /// "{count} replies".
+  static const communitySharedReplies = 'community_shared.replies';
+  static const communitySharedDiscoverTab = 'community_shared.discover_tab';
+  static const communitySharedSearchHint = 'community_shared.search_hint';
+  static const communitySharedJoinWithCode = 'community_shared.join_with_code';
+  static const communitySharedCreateLocked = 'community_shared.create_locked';
+  static const communitySharedOfflineTitle = 'community_shared.offline_title';
+  static const communitySharedOfflineBody = 'community_shared.offline_body';
+  static const communitySharedLoadErrorBody =
+      'community_shared.load_error_body';
+  static const communitySharedMoreOptions = 'community_shared.more_options';
+
+  // Fellowship lessons path (status markers, summary card).
+  static const communityLessonsStatusDone = 'community_lessons.status_done';
+  static const communityLessonsStatusUpcoming =
+      'community_lessons.status_upcoming';
+  static const communityLessonsStatusLocked = 'community_lessons.status_locked';
+
+  /// "{done} of {total} done".
+  static const communityLessonsGroupDone = 'community_lessons.group_done';
+
+  /// "+{xp} XP earned".
+  static const communityLessonsXpEarned = 'community_lessons.xp_earned';
+
+  /// "Moves everyone to lesson {number}" (mentor advance hint).
+  static const communityLessonsAdvanceHint = 'community_lessons.advance_hint';
+
+  /// "{count} of {total} caught up" (mentor member progress).
+  static const communityLessonsCaughtUp = 'community_lessons.caught_up';
+
+  // Community post cards (shared-guide card, study-note chip).
+  /// "Open study guide".
+  static const communityPostOpenGuide = 'community_post.open_guide';
+
+  /// "On: {title}".
+  static const communityPostOnTopic = 'community_post.on_topic';
+  static const communityPostInputScripture = 'community_post.input_scripture';
+  static const communityPostInputTopic = 'community_post.input_topic';
+  static const communityPostInputQuestion = 'community_post.input_question';
+
+  /// "{mode} study guide", e.g. "Standard study guide".
+  static const communityPostModeStudyGuide = 'community_post.mode_study_guide';
+
+  // Post timestamps: "Just now", "5m ago", "2h ago", "Yesterday",
+  // "3 days ago"; older posts show a localized date.
+  static const communityPostTimeJustNow = 'community_post.time_just_now';
+  static const communityPostTimeMinutesAgo = 'community_post.time_minutes_ago';
+  static const communityPostTimeHoursAgo = 'community_post.time_hours_ago';
+  static const communityPostTimeYesterday = 'community_post.time_yesterday';
+  static const communityPostTimeDaysAgo = 'community_post.time_days_ago';
+
+  // Reaction pill labels. The stored reaction keys stay the same; these are
+  // only how each one reads on the pill.
+  static const communityPostReactionAmen = 'community_post.reaction_amen';
+  static const communityPostReactionPrayed = 'community_post.reaction_prayed';
+  static const communityPostReactionPraise = 'community_post.reaction_praise';
+  static const communityPostReactionHelpful = 'community_post.reaction_helpful';
+  static const communityPostReactionLove = 'community_post.reaction_love';
+  static const communityPostReactionFire = 'community_post.reaction_fire';
+
+  // Community inner pages (meetings, schedule sheet, fellowship settings,
+  // daily post, lesson discussion, share-guide sheet).
+  static const communityPagesThisWeek = 'community_pages.this_week';
+  static const communityPagesNextWeek = 'community_pages.next_week';
+  static const communityPagesLater = 'community_pages.later';
+  static const communityPagesJoin = 'community_pages.join';
+  static const communityPagesNoLink = 'community_pages.no_link';
+  static const communityPagesOnline = 'community_pages.online';
+  static const communityPagesLoadError = 'community_pages.load_error';
+  static const communityPagesCancelMeeting = 'community_pages.cancel_meeting';
+
+  /// "Cancel \"{title}\"? …".
+  static const communityPagesCancelBody = 'community_pages.cancel_body';
+  static const communityPagesKeep = 'community_pages.keep';
+  static const communityPagesOneTime = 'community_pages.one_time';
+  static const communityPagesDaily = 'community_pages.daily';
+  static const communityPagesWeekly = 'community_pages.weekly';
+  static const communityPagesMonthly = 'community_pages.monthly';
+  static const communityPagesScheduleTitle = 'community_pages.schedule_title';
+  static const communityPagesTitleLabel = 'community_pages.title_label';
+  static const communityPagesTitleHint = 'community_pages.title_hint';
+  static const communityPagesTitleRequired = 'community_pages.title_required';
+  static const communityPagesDescriptionLabel =
+      'community_pages.description_label';
+  static const communityPagesDateTime = 'community_pages.date_time';
+  static const communityPagesMeetingType = 'community_pages.meeting_type';
+  static const communityPagesInPerson = 'community_pages.in_person';
+  static const communityPagesLocationLabel = 'community_pages.location_label';
+  static const communityPagesLocationHint = 'community_pages.location_hint';
+  static const communityPagesLocationRequired =
+      'community_pages.location_required';
+  static const communityPagesDuration = 'community_pages.duration';
+
+  /// "{count} min".
+  static const communityPagesMinutes = 'community_pages.minutes';
+
+  /// "{count} hr".
+  static const communityPagesHours = 'community_pages.hours';
+
+  /// "{hours} hr {minutes} min".
+  static const communityPagesHoursMinutes = 'community_pages.hours_minutes';
+  static const communityPagesRepeat = 'community_pages.repeat';
+  static const communityPagesSubmit = 'community_pages.submit';
+  static const communityPagesCalendarTitle = 'community_pages.calendar_title';
+  static const communityPagesCalendarBody = 'community_pages.calendar_body';
+  static const communityPagesCalendarSkip = 'community_pages.calendar_skip';
+  static const communityPagesContinue = 'community_pages.continue';
+  static const communityPagesCalendarFailedTitle =
+      'community_pages.calendar_failed_title';
+  static const communityPagesCalendarFailedBody =
+      'community_pages.calendar_failed_body';
+  static const communityPagesCreateAnyway = 'community_pages.create_anyway';
+  static const communityPagesYouAreMentor = 'community_pages.you_are_mentor';
+  static const communityPagesAbout = 'community_pages.about';
+  static const communityPagesByDiscipler = 'community_pages.by_discipler';
+  static const communityPagesDiscussion = 'community_pages.discussion';
+  static const communityPagesDiscussionSubtitle =
+      'community_pages.discussion_subtitle';
+  static const communityPagesDiscussionEmpty =
+      'community_pages.discussion_empty';
+  static const communityPagesOpenGuide = 'community_pages.open_guide';
+  static const communityPagesMilestone = 'community_pages.milestone';
+  static const communityPagesReplyHint = 'community_pages.reply_hint';
+  static const communityPagesReflectionHint = 'community_pages.reflection_hint';
+  static const communityPagesSend = 'community_pages.send';
+  static const communityPagesShareTitle = 'community_pages.share_title';
+  static const communityPagesShareTo = 'community_pages.share_to';
+  static const communityPagesShareNone = 'community_pages.share_none';
+  static const communityPagesShareMessageLabel =
+      'community_pages.share_message_label';
+  static const communityPagesShareMessageHint =
+      'community_pages.share_message_hint';
+  static const communityPagesShareSelect = 'community_pages.share_select';
+  static const communityPagesShareToOne = 'community_pages.share_to_one';
+
+  /// "Share to {count} fellowships".
+  static const communityPagesShareToMany = 'community_pages.share_to_many';
+  static const communityPagesMemberOne = 'community_pages.member_one';
+
+  /// "{count} members".
+  static const communityPagesMembers = 'community_pages.members';
+
+  // Fellowship home, feed, post detail, members and lessons screens
+  static const communityFellowshipPostTitle = 'community_fellowship.post_title';
+  static const communityFellowshipPostUnavailable =
+      'community_fellowship.post_unavailable';
+  static const communityFellowshipCommentsEmpty =
+      'community_fellowship.comments_empty';
+  static const communityFellowshipCommentsLoadFailed =
+      'community_fellowship.comments_load_failed';
+  static const communityFellowshipCommentHint =
+      'community_fellowship.comment_hint';
+  static const communityFellowshipSend = 'community_fellowship.send';
+  static const communityFellowshipMention = 'community_fellowship.mention';
+  static const communityFellowshipStudyingTogether =
+      'community_fellowship.studying_together';
+  static const communityFellowshipGroupProgress =
+      'community_fellowship.group_progress';
+  static const communityFellowshipViewAllPosts =
+      'community_fellowship.view_all_posts';
+  static const communityFellowshipNow = 'community_fellowship.now';
+  static const communityFellowshipPathActive =
+      'community_fellowship.path_active';
+  static const communityFellowshipAssignFailed =
+      'community_fellowship.assign_failed';
+  static const communityFellowshipAdvanceFailed =
+      'community_fellowship.advance_failed';
+  static const communityFellowshipResetFailed =
+      'community_fellowship.reset_failed';
+  static const communityFellowshipNoPaths = 'community_fellowship.no_paths';
+  static const communityFellowshipReportReasonShort =
+      'community_fellowship.report_reason_short';
+  static const communityFellowshipPostHintGeneral =
+      'community_fellowship.post_hint_general';
+  static const communityFellowshipPostHintPrayer =
+      'community_fellowship.post_hint_prayer';
+  static const communityFellowshipPostHintPraise =
+      'community_fellowship.post_hint_praise';
+  static const communityFellowshipPostHintQuestion =
+      'community_fellowship.post_hint_question';
+  static const communityFellowshipTypeDescGeneral =
+      'community_fellowship.type_desc_general';
+  static const communityFellowshipTypeDescPrayer =
+      'community_fellowship.type_desc_prayer';
+  static const communityFellowshipTypeDescPraise =
+      'community_fellowship.type_desc_praise';
+  static const communityFellowshipTypeDescQuestion =
+      'community_fellowship.type_desc_question';
+
+  // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
+  static const guideFeedbackCompletedWhileAway =
+      'guide_feedback.completed_while_away';
+  static const guideFeedbackFellowshipPathComplete =
+      'guide_feedback.fellowship_path_complete';
+  static const guideFeedbackFellowshipNextGuide =
+      'guide_feedback.fellowship_next_guide';
+  static const guideFeedbackXpEarned = 'guide_feedback.xp_earned';
+  static const guideFeedbackNotesSaved = 'guide_feedback.notes_saved';
+  static const guideFeedbackReflectionNotLoaded =
+      'guide_feedback.reflection_not_loaded';
+  static const guideFeedbackReflectionSaved = 'guide_feedback.reflection_saved';
+  static const guideFeedbackReflectionFailed =
+      'guide_feedback.reflection_failed';
+  static const guideFeedbackSavedNotesFailed =
+      'guide_feedback.saved_notes_failed';
+  static const guideFeedbackAuthExpired = 'guide_feedback.auth_expired';
+  static const guideFeedbackNetworkError = 'guide_feedback.network_error';
+  static const guideFeedbackAlreadySaved = 'guide_feedback.already_saved';
+  static const guideFeedbackSharedToFellowship =
+      'guide_feedback.shared_to_fellowship';
+  static const guideFeedbackOk = 'guide_feedback.ok';
+  static const guideFeedbackTtsPrevSection = 'guide_feedback.tts_prev_section';
+  static const guideFeedbackTtsNextSection = 'guide_feedback.tts_next_section';
+  static const guideFeedbackTtsPlay = 'guide_feedback.tts_play';
+  static const guideFeedbackTtsReplay = 'guide_feedback.tts_replay';
+  static const guideFeedbackTtsProgress = 'guide_feedback.tts_progress';
+  static const guideFeedbackVerseEyebrow = 'guide_feedback.verse_eyebrow';
+
+  // Study screens: screenshot share prompt, interrupted generation, offline
+  // Generate button, download picker.
+  static const studyUiScreenshotEyebrow = 'study_ui.screenshot.eyebrow';
+  static const studyUiScreenshotTitle = 'study_ui.screenshot.title';
+  static const studyUiScreenshotBody = 'study_ui.screenshot.body';
+  static const studyUiScreenshotShareFellowship =
+      'study_ui.screenshot.share_fellowship';
+  static const studyUiDismiss = 'study_ui.dismiss';
+  static const studyUiGenerationInterrupted = 'study_ui.generation_interrupted';
+  static const studyUiGenerationTimeout = 'study_ui.generation_timeout';
+  static const studyUiOfflineGenerate = 'study_ui.offline_generate';
+  static const studyUiTokensPerGuide = 'study_ui.tokens_per_guide';
 }

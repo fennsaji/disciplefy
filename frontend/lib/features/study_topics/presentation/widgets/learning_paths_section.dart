@@ -3,33 +3,46 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/connectivity/connectivity_bloc.dart';
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../walkthrough/domain/walkthrough_screen.dart';
-import '../../../walkthrough/presentation/showcase_keys.dart';
-import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
-import '../../data/models/learning_path_download_model.dart';
-import '../../data/services/learning_path_download_service.dart';
-import '../../domain/entities/learning_path.dart';
-import '../bloc/learning_paths_bloc.dart';
-import '../bloc/learning_paths_event.dart';
-import '../bloc/learning_paths_state.dart';
-import 'learning_path_card.dart';
+import 'package:disciplefy_bible_study/core/connectivity/connectivity_bloc.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_list_row.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
+
+/// Disciple levels always offered as filter chips, in journey order.
+/// Levels found in the data but not listed here are appended after them.
+const List<String> kPathLevelOrder = [
+  'seeker',
+  'follower',
+  'disciple',
+  'leader'
+];
 
 /// Displays learning paths grouped by category.
 ///
-/// Each category row is always expanded and horizontally scrollable
-/// (max 3 paths shown per category, with a load-more ghost card when
-/// more paths exist). Initially 4 categories are shown; "Show More"
-/// loads the next page of categories from the server.
+/// Each category has a gold header with "See all" and lists the paths it
+/// has loaded as rows; the rest of a category is on its "See all" page.
+/// More categories are loaded by the screen's infinite scroll.
 class LearningPathsSection extends StatefulWidget {
   final void Function(LearningPath path) onPathTap;
   final VoidCallback? onSeeAllTap;
   final VoidCallback? onRetry;
+
+  /// Opens the full list of one category ("See all" on a category header).
+  final void Function(String category)? onCategorySeeAll;
 
   /// Content language code used for search API calls (e.g. 'en', 'hi', 'ml').
   final String language;
@@ -43,6 +56,7 @@ class LearningPathsSection extends StatefulWidget {
     required this.onPathTap,
     this.onSeeAllTap,
     this.onRetry,
+    this.onCategorySeeAll,
     this.language = 'en',
     this.onNext,
   });
@@ -61,44 +75,6 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   String? _selectedLevel; // null = all levels
   bool _featuredOnly = false;
 
-  // Per-category horizontal scroll controllers for auto-load-more
-  final Map<String, ScrollController> _scrollControllers = {};
-
-  /// Categories already pre-loaded for wide-screen fill.
-  final Set<String> _preloadedCategories = {};
-
-  ScrollController _scrollControllerFor(String category) {
-    return _scrollControllers.putIfAbsent(
-      category,
-      () => ScrollController(),
-    );
-  }
-
-  /// On tablet/desktop screens the initial 3 paths per category don't fill
-  /// the viewport, so there is no scroll overflow to trigger the lazy-load
-  /// listener. This method pre-fetches more paths for every category that
-  /// still has more, so the row overflows the screen and users can scroll.
-  void _preloadWideScreenCategories(
-      BuildContext context, LearningPathsLoaded state) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Only needed when the screen is wide enough that 3 cards fit without overflow
-    if (screenWidth <= 700) return;
-
-    for (final cat in state.categories) {
-      if (cat.hasMoreInCategory &&
-          !_preloadedCategories.contains(cat.name) &&
-          !state.loadingCategories.contains(cat.name)) {
-        _preloadedCategories.add(cat.name);
-        context.read<LearningPathsBloc>().add(
-              LoadMorePathsForCategory(
-                category: cat.name,
-                language: widget.language,
-              ),
-            );
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -109,9 +85,6 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   void dispose() {
     _searchController.dispose();
     _debounce?.cancel();
-    for (final sc in _scrollControllers.values) {
-      sc.dispose();
-    }
     super.dispose();
   }
 
@@ -198,18 +171,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<LearningPathsBloc, LearningPathsState>(
-      listener: (context, state) {
-        if (state is LearningPathsLoading || state is LearningPathsInitial) {
-          _preloadedCategories.clear();
-        }
-        if (state is LearningPathsLoaded) {
-          // Schedule after the frame so MediaQuery and layout are ready.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _preloadWideScreenCategories(context, state);
-          });
-        }
-      },
+    return BlocBuilder<LearningPathsBloc, LearningPathsState>(
       // A progress reset emits LearningPathsResetting / LearningPathsResetSuccess
       // / LearningPathsResetError as siblings of LearningPathsLoaded on the same
       // bloc — ignore them here so the currently displayed categories don't
@@ -242,48 +204,32 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   // -------------------------------------------------------------------------
 
   Widget _buildSection(BuildContext context, {required Widget child}) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     final headerRow = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.route_outlined,
-              color: theme.colorScheme.primary,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.tr(TranslationKeys.learningPathsTitle),
-                  style: AppFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
+                Semantics(
+                  header: true,
+                  child: Text(
+                    context.tr(TranslationKeys.learningPathsTitle),
+                    style: AppFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
                 Text(
                   context.tr(TranslationKeys.learningPathsSubtitle),
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.inter(fontSize: 13, color: palette.muted),
                 ),
               ],
             ),
@@ -291,29 +237,13 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           if (widget.onSeeAllTap != null)
             TextButton(
               onPressed: widget.onSeeAllTap,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'See All',
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 12,
-                    color: theme.colorScheme.primary,
-                  ),
-                ],
+              child: Text(
+                context.tr(TranslationKeys.topicsHubSeeAll),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: palette.accentIcon,
+                ),
               ),
             ),
         ],
@@ -324,7 +254,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         headerRow,
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         child,
       ],
     );
@@ -340,16 +270,15 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCategorySkeletonRow(context, label: 'Foundations'),
-          _buildCategorySkeletonRow(context, label: 'Growth'),
+          _buildCategorySkeletonRow(context),
+          _buildCategorySkeletonRow(context),
         ],
       ),
     );
   }
 
-  Widget _buildCategorySkeletonRow(BuildContext context,
-      {required String label}) {
-    final theme = Theme.of(context);
+  Widget _buildCategorySkeletonRow(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -358,21 +287,21 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
-              width: 100,
-              height: 14,
+              width: 110,
+              height: 12,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                color: palette.raised,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
+          const SizedBox(height: 12),
+          const SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Row(
-              children: const [
+              children: [
                 LearningPathCardSkeleton(),
                 SizedBox(width: 12),
                 LearningPathCardSkeleton(),
@@ -386,8 +315,10 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
 
   Widget _buildErrorState(BuildContext context, LearningPathsError state) {
     final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final isOffline =
         context.read<ConnectivityBloc>().state is ConnectivityOffline;
+    final color = isOffline ? palette.muted : theme.colorScheme.error;
     return _buildSection(
       context,
       child: Container(
@@ -395,44 +326,41 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isOffline
-              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+              ? palette.raised
               : theme.colorScheme.errorContainer.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              isOffline ? Icons.wifi_off : Icons.error_outline,
-              color: isOffline
-                  ? theme.colorScheme.onSurfaceVariant
-                  : theme.colorScheme.error,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                isOffline
-                    ? 'You\'re offline. Learning Paths require an internet connection.'
-                    : context.tr(TranslationKeys.commonErrorTryAgain),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: isOffline
-                      ? theme.colorScheme.onSurfaceVariant
-                      : theme.colorScheme.error,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(isOffline ? Icons.wifi_off : Icons.error_outline,
+                    color: color, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isOffline
+                        ? context.tr(TranslationKeys.topicsHubOfflineMessage)
+                        : context.tr(TranslationKeys.commonErrorTryAgain),
+                    style: AppFonts.inter(fontSize: 14, color: color),
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              ],
             ),
             if (!isOffline && widget.onRetry != null)
-              TextButton(
-                onPressed: widget.onRetry,
-                child: Text(
-                  'Retry',
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: widget.onRetry,
+                  child: Text(
+                    context.tr(TranslationKeys.topicsHubRetry),
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: palette.accentIcon,
+                    ),
                   ),
                 ),
               ),
@@ -443,47 +371,36 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     return _buildSection(
       context,
       child: Container(
+        width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color:
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+          color: palette.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: palette.hairline),
         ),
         child: Column(
           children: [
-            Icon(
-              Icons.route_outlined,
-              size: 48,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
+            Icon(Icons.route_outlined, size: 44, color: palette.dim),
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.learningPathsEmpty),
+              textAlign: TextAlign.center,
               style: AppFonts.inter(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w600,
+                color: palette.text,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
               context.tr(TranslationKeys.learningPathsEmptyMessage),
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
               textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+              style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
             ),
           ],
         ),
@@ -502,11 +419,12 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         state.searchQuery != null && state.searchQuery!.isNotEmpty;
     final displayCats = _displayCategories(state);
 
-    // Derive available discipline levels from all loaded paths
-    final availableLevels = {
+    // Fixed journey levels first, then any other level present in the data.
+    final loadedLevels = {
       ...state.categories.expand((c) => c.paths).map((p) => p.discipleLevel),
-    }.toList()
+    }.where((l) => l.isNotEmpty && !kPathLevelOrder.contains(l)).toList()
       ..sort();
+    final availableLevels = [...kPathLevelOrder, ...loadedLevels];
 
     return _buildSection(
       context,
@@ -514,11 +432,10 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Search bar ──────────────────────────────────────────────────
-          _buildSearchBar(context),
+          _buildSearchBar(context, state),
           // ── Filter chips ────────────────────────────────────────────────
-          if (availableLevels.isNotEmpty)
-            _buildFilterChips(context, availableLevels),
-          const SizedBox(height: 8),
+          _buildFilterChips(context, availableLevels),
+          const SizedBox(height: 18),
 
           // ── Content ─────────────────────────────────────────────────────
           if (state.isSearching)
@@ -539,6 +456,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 category: displayCats[catIndex],
                 state: state,
                 isFirstCategory: catIndex == 0,
+                showSeeAll: !isSearchActive,
               ),
 
             // Spinner while infinite-scroll loads more categories
@@ -553,39 +471,46 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
-    final theme = Theme.of(context);
+  /// "Search N paths" when every category is loaded (so N is exact),
+  /// otherwise the generic search hint.
+  String _searchHint(BuildContext context, LearningPathsLoaded state) {
+    if (state.hasMoreCategories) {
+      return AppLocalizations.of(context)!.searchPathsHint;
+    }
+    final total =
+        state.categories.fold<int>(0, (sum, c) => sum + c.totalInCategory);
+    if (total <= 0) return AppLocalizations.of(context)!.searchPathsHint;
+    return context.tr(TranslationKeys.topicsHubSearchPaths, {'count': total});
+  }
+
+  Widget _buildSearchBar(BuildContext context, LearningPathsLoaded state) {
+    final palette = ReaderPalette.of(context);
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: palette.hairline),
+    );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: TextField(
+        key: const Key('learning_paths_search_field'),
         controller: _searchController,
         onChanged: _onSearchChanged,
-        style: AppFonts.inter(
-          fontSize: 14,
-          color: theme.colorScheme.onSurface,
-        ),
+        style: AppFonts.inter(fontSize: 15, color: palette.text),
         decoration: InputDecoration(
           isDense: true,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintText: AppLocalizations.of(context)!.searchPathsHint,
-          hintStyle: AppFonts.inter(
-            fontSize: 14,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            size: 20,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          hintText: _searchHint(context, state),
+          hintStyle: AppFonts.inter(fontSize: 14, color: palette.dim),
+          // Long translations wrap rather than cut off.
+          hintMaxLines: 2,
+          prefixIcon: Icon(Icons.search, size: 21, color: palette.muted),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    size: 18,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
+                  icon: Icon(Icons.clear, size: 18, color: palette.muted),
+                  tooltip:
+                      MaterialLocalizations.of(context).deleteButtonTooltip,
                   onPressed: () {
                     _searchController.clear();
                     _onSearchChanged('');
@@ -593,20 +518,11 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 )
               : null,
           filled: true,
-          fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: theme.colorScheme.primary.withValues(alpha: 0.6),
-            ),
+          fillColor: palette.card,
+          border: border,
+          enabledBorder: border,
+          focusedBorder: border.copyWith(
+            borderSide: BorderSide(color: palette.accentIcon),
           ),
         ),
       ),
@@ -614,31 +530,36 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   }
 
   Widget _buildFilterChips(BuildContext context, List<String> levels) {
-    final theme = Theme.of(context);
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          // Featured chip
-          _FilterChip(
-            label: '⭐ ${context.tr(TranslationKeys.learningPathsFeatured)}',
-            selected: _featuredOnly,
-            onSelected: (v) => setState(() => _featuredOnly = v),
-            theme: theme,
+          PathFilterChip(
+            key: const Key('learning_paths_chip_all'),
+            label: context.tr(TranslationKeys.topicsHubAllLevels),
+            selected: !_featuredOnly && _selectedLevel == null,
+            onSelected: (_) => setState(() {
+              _featuredOnly = false;
+              _selectedLevel = null;
+            }),
           ),
           const SizedBox(width: 8),
-          // Level chips
+          PathFilterChip(
+            key: const Key('learning_paths_chip_featured'),
+            label: context.tr(TranslationKeys.learningPathsFeatured),
+            selected: _featuredOnly,
+            onSelected: (v) => setState(() => _featuredOnly = v),
+          ),
           for (final level in levels) ...[
-            _FilterChip(
-              label: context.tr('disciple_level.$level'),
+            const SizedBox(width: 8),
+            PathFilterChip(
+              key: Key('learning_paths_chip_$level'),
+              label: discipleLevelLabel(context, level),
               selected: _selectedLevel == level,
               onSelected: (v) =>
                   setState(() => _selectedLevel = v ? level : null),
-              theme: theme,
             ),
-            const SizedBox(width: 8),
           ],
         ],
       ),
@@ -650,7 +571,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     bool isSearchActive, {
     bool searchFailed = false,
   }) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
@@ -660,12 +581,10 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           searchFailed
               ? context.tr(TranslationKeys.studyTopicsSomethingWentWrong)
               : isSearchActive
-                  ? 'No paths found for "${_searchController.text}"'
-                  : 'No paths match the selected filters',
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
+                  ? context.tr(TranslationKeys.topicsHubNoSearchResults,
+                      {'query': _searchController.text})
+                  : context.tr(TranslationKeys.topicsHubNoFilterResults),
+          style: AppFonts.inter(fontSize: 14, color: palette.muted),
           textAlign: TextAlign.center,
         ),
       ),
@@ -681,20 +600,19 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     required LearningPathCategory category,
     required LearningPathsLoaded state,
     bool isFirstCategory = false,
+    bool showSeeAll = true,
   }) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final hasActive = category.paths.any((p) => p.isInProgress || p.isEnrolled);
-    final isLoadingMore = state.loadingCategories.contains(category.name);
-    final scrollController = _scrollControllerFor(category.name);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Category label row
+          // Category header: gold tracked name + "See all"
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(left: 16, right: 4),
             child: Row(
               children: [
                 if (hasActive) ...[
@@ -702,101 +620,76 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                     width: 7,
                     height: 7,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
+                      color: palette.accentIcon,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 6),
                 ],
-                Text(
-                  AppLocalizations.of(context)!
-                      .translateLearningPathCategory(category.name),
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: hasActive
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                    letterSpacing: 0.3,
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      AppLocalizations.of(context)!
+                          .translateLearningPathCategory(category.name)
+                          .toUpperCase(),
+                      style: AppFonts.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.6,
+                        color: palette.gold,
+                      ),
+                    ),
                   ),
                 ),
+                if (showSeeAll && widget.onCategorySeeAll != null)
+                  TextButton(
+                    key: Key('learning_paths_see_all_${category.name}'),
+                    onPressed: () => widget.onCategorySeeAll!(category.name),
+                    child: Text(
+                      context.tr(TranslationKeys.topicsHubSeeAll),
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: palette.accentIcon,
+                      ),
+                    ),
+                  )
+                else
+                  const SizedBox(height: 40),
               ],
             ),
           ),
-          const SizedBox(height: 10),
-
-          NotificationListener<ScrollNotification>(
-            onNotification: (notification) {
-              if (notification is ScrollUpdateNotification &&
-                  category.hasMoreInCategory &&
-                  !isLoadingMore) {
-                final pos = scrollController.position;
-                if (pos.pixels >= pos.maxScrollExtent - 80) {
-                  context.read<LearningPathsBloc>().add(
-                        LoadMorePathsForCategory(
-                          category: category.name,
-                          language: widget.language,
-                        ),
-                      );
-                }
-              }
-              return false;
-            },
-            child: SingleChildScrollView(
-              controller: scrollController,
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (int i = 0; i < category.paths.length; i++) ...[
-                    if (isFirstCategory && i == 0 && widget.onNext != null)
-                      WalkthroughTooltip(
-                        showcaseKey: ShowcaseKeys.topicsPathCard,
-                        title: AppLocalizations.of(context)!
-                            .walkthroughLearningPathsTitle,
-                        description: AppLocalizations.of(context)!
-                            .walkthroughLearningPathsDesc,
-                        screen: WalkthroughScreen.learningPaths,
-                        stepNumber: 2,
-                        totalSteps: 2,
-                        onNext: widget.onNext!,
-                        child: LearningPathCard(
-                          path: category.paths[i],
-                          onTap: () => widget.onPathTap(category.paths[i]),
-                        ),
-                      )
-                    else if (isFirstCategory && i == 0)
-                      LearningPathCard(
-                        path: category.paths[i],
-                        onTap: () => widget.onPathTap(category.paths[i]),
-                      )
-                    else
-                      LearningPathCard(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                for (int i = 0; i < category.paths.length; i++) ...[
+                  if (i > 0)
+                    Divider(height: 1, thickness: 1, color: palette.hairline),
+                  if (isFirstCategory && i == 0 && widget.onNext != null)
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.topicsPathCard,
+                      title: AppLocalizations.of(context)!
+                          .walkthroughLearningPathsTitle,
+                      description: AppLocalizations.of(context)!
+                          .walkthroughLearningPathsDesc,
+                      screen: WalkthroughScreen.learningPaths,
+                      stepNumber: 2,
+                      totalSteps: 2,
+                      onNext: widget.onNext!,
+                      child: PathListRow(
                         path: category.paths[i],
                         onTap: () => widget.onPathTap(category.paths[i]),
                       ),
-                    const SizedBox(width: 12),
-                  ],
-
-                  // Inline loading spinner while fetching more
-                  if (isLoadingMore)
-                    SizedBox(
-                      width: 56,
-                      child: Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
+                    )
+                  else
+                    PathListRow(
+                      path: category.paths[i],
+                      onTap: () => widget.onPathTap(category.paths[i]),
                     ),
                 ],
-              ),
+              ],
             ),
           ),
         ],
@@ -806,48 +699,44 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Private helper widget — themed filter chip
+// Filter chip (also used by the category page)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _FilterChip extends StatelessWidget {
+/// Pill-shaped level/featured filter. Selected: CTA fill; otherwise raised.
+class PathFilterChip extends StatelessWidget {
   final String label;
   final bool selected;
   final ValueChanged<bool> onSelected;
-  final ThemeData theme;
 
-  const _FilterChip({
+  const PathFilterChip({
+    super.key,
     required this.label,
     required this.selected,
     required this.onSelected,
-    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onSelected(!selected),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurface.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface.withValues(alpha: 0.15),
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+    final palette = ReaderPalette.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? palette.ctaFill : palette.raised,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: () => onSelected(!selected),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            child: Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? palette.ctaInk : palette.muted,
+              ),
+            ),
           ),
         ),
       ),

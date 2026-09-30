@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../community/presentation/widgets/discipler_badges.dart';
 
-/// A chat bubble widget for displaying conversation messages.
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/shared/widgets/clickable_scripture_text.dart';
+
+/// Fill of the user's own bubbles: indigo-tinted in both themes.
+Color userBubbleFill(ReaderPalette palette) => palette.isDark
+    ? AppColors.brandPrimary.withValues(alpha: 0.28)
+    : AppColors.brandPrimary.withValues(alpha: 0.1);
+
+/// A chat bubble for one message of a Discipler conversation.
 ///
-/// Supports both user and assistant messages with different styling,
-/// including scripture reference chips for assistant responses.
+/// The user's messages sit on the right on an indigo tint. Discipler's sit on
+/// the left as a hairline card with its avatar beside them; scripture
+/// references inside the text are tappable, and the references the reply
+/// cites are listed below it as gold chips.
 class ConversationBubble extends StatelessWidget {
   /// The message content to display.
   final String content;
@@ -19,11 +30,8 @@ class ConversationBubble extends StatelessWidget {
   /// The timestamp of the message.
   final DateTime? timestamp;
 
-  /// Callback when a scripture reference is tapped.
+  /// Callback when a scripture reference chip is tapped.
   final ValueChanged<String>? onScriptureReferenceTap;
-
-  /// Optional URL to user's profile picture (for user messages).
-  final String? userProfilePictureUrl;
 
   const ConversationBubble({
     super.key,
@@ -32,135 +40,86 @@ class ConversationBubble extends StatelessWidget {
     this.scriptureReferences,
     this.timestamp,
     this.onScriptureReferenceTap,
-    this.userProfilePictureUrl,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
+    final textStyle = AppFonts.inter(
+      fontSize: 15.5,
+      height: 1.55,
+      color: palette.text,
+    );
+    final references = scriptureReferences ?? const <String>[];
 
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: EdgeInsets.only(
-          bottom: 12,
-          left: isUser ? 64 : 0,
-          right: isUser ? 0 : 64,
+    final bubble = Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: isUser ? userBubbleFill(palette) : palette.card,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: Radius.circular(isUser ? 20 : 6),
+          bottomRight: Radius.circular(isUser ? 6 : 20),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment:
-              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Assistant avatar (left side)
-            if (!isUser) ...[
-              const DisciplerAvatar(radius: 16),
-              const SizedBox(width: 8),
-            ],
-
-            // Message bubble
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isUser
-                      ? theme.colorScheme.primary.withAlpha((0.1 * 255).round())
-                      : theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isUser ? 16 : 4),
-                    bottomRight: Radius.circular(isUser ? 4 : 16),
-                  ),
-                  border: isUser
-                      ? Border.all(
-                          color: theme.colorScheme.primary,
-                        )
-                      : null,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Message content
-                    Text(
-                      content,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        height: 1.6,
-                        letterSpacing: 0.2,
-                        fontSize: 16,
-                      ),
-                    ),
-
-                    // Scripture references (for assistant messages)
-                    if (!isUser &&
-                        scriptureReferences != null &&
-                        scriptureReferences!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: scriptureReferences!.map((ref) {
-                          final isDark = theme.brightness == Brightness.dark;
-                          return InkWell(
-                            onTap: () => onScriptureReferenceTap?.call(ref),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF4A3B8C)
-                                    : theme.colorScheme.secondary
-                                        .withAlpha((0.3 * 255).round()),
-                                borderRadius: BorderRadius.circular(12),
-                                border: isDark
-                                    ? Border.all(
-                                        color: const Color(0xFF9D8FD9),
-                                      )
-                                    : null,
-                              ),
-                              child: Text(
-                                ref,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: isDark
-                                      ? const Color(0xFFB8A9F0)
-                                      : theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-
-                    // Timestamp
-                    if (timestamp != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatTime(timestamp!),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withAlpha((0.5 * 255).round()),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+        border: isUser ? null : Border.all(color: palette.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isUser)
+            Text(content, style: textStyle)
+          else
+            ClickableScriptureText(
+              text: content,
+              style: textStyle,
+              selectable: false,
             ),
-
-            // User avatar (right side)
-            if (isUser) ...[
-              const SizedBox(width: 8),
-              _buildUserAvatar(theme),
-            ],
+          if (!isUser && references.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final ref in references)
+                  ScriptureReferenceChip(
+                    reference: ref,
+                    onTap: onScriptureReferenceTap == null
+                        ? null
+                        : () => onScriptureReferenceTap!(ref),
+                  ),
+              ],
+            ),
           ],
-        ),
+          if (timestamp != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              _formatTime(timestamp!),
+              style: AppFonts.inter(fontSize: 11, color: palette.dim),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: 14,
+        left: isUser ? 48 : 0,
+        right: isUser ? 0 : 32,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            const DisciplerAvatar(radius: 14),
+            const SizedBox(width: 8),
+          ],
+          Flexible(child: bubble),
+        ],
       ),
     );
   }
@@ -168,95 +127,78 @@ class ConversationBubble extends StatelessWidget {
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
+}
 
-  /// Build user avatar with dynamic profile picture support
-  Widget _buildUserAvatar(ThemeData theme) {
-    // If profile picture URL is available, use network image
-    if (userProfilePictureUrl != null && userProfilePictureUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 16,
-        backgroundColor:
-            theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
-        child: ClipOval(
-          child: Image.network(
-            userProfilePictureUrl!,
-            width: 32,
-            height: 32,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
-                    ),
+/// Gold-tinted pill naming one scripture reference; tapping opens the verse.
+class ScriptureReferenceChip extends StatelessWidget {
+  final String reference;
+  final VoidCallback? onTap;
+
+  const ScriptureReferenceChip({
+    super.key,
+    required this.reference,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Material(
+      color: palette.gold.withValues(alpha: palette.isDark ? 0.14 : 0.12),
+      shape: const StadiumBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.menu_book_outlined, size: 15, color: palette.gold),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  reference,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: palette.gold,
                   ),
                 ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              // Fallback to icon on image load error
-              return Icon(
-                Icons.person,
-                size: 18,
-                color: theme.colorScheme.primary,
-              );
-            },
+              ),
+            ],
           ),
         ),
-      );
-    }
-
-    // Fallback to icon (no profile picture)
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor: AppColors.brandSecondary,
-      child: const Icon(
-        Icons.person,
-        color: Colors.white,
-        size: 18,
       ),
     );
   }
 }
 
-/// A loading bubble to show when the AI is "thinking".
+/// Discipler's "typing" bubble shown while a reply is being prepared.
 class ThinkingBubble extends StatelessWidget {
   const ThinkingBubble({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12, right: 64),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const DisciplerAvatar(radius: 16),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                  bottomLeft: Radius.circular(4),
-                  bottomRight: Radius.circular(16),
-                ),
-              ),
-              child: const _ThinkingDots(),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const DisciplerAvatar(radius: 14),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: palette.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: palette.hairline),
             ),
-          ],
-        ),
+            child: const _ThinkingDots(),
+          ),
+        ],
       ),
     );
   }
@@ -290,7 +232,7 @@ class _ThinkingDotsState extends State<_ThinkingDots>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final color = ReaderPalette.of(context).accentIcon;
 
     return AnimatedBuilder(
       animation: _controller,
@@ -298,19 +240,16 @@ class _ThinkingDotsState extends State<_ThinkingDots>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (index) {
-            final delay = index * 0.2;
-            final value = (_controller.value + delay) % 1.0;
+            final value = (_controller.value + index * 0.2) % 1.0;
             final opacity =
                 0.3 + 0.7 * (value < 0.5 ? value * 2 : (1 - value) * 2);
-
             return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
               width: 8,
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary
-                    .withAlpha((opacity * 255).round()),
+                color: color.withValues(alpha: opacity),
               ),
             );
           }),

@@ -11,8 +11,9 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
+import '../../../../shared/widgets/popup.dart';
 import '../../domain/entities/notification_preferences.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
@@ -301,6 +302,7 @@ Future<bool?> showNotificationEnablePrompt({
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (context) => _NotificationEnableSheet(
       type: type,
@@ -347,158 +349,49 @@ class _NotificationEnableSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[700] : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(isDark ? 0.2 : 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  config.icon,
-                  size: 40,
-                  color: context.appBrandAccent,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Title
-              Text(
-                config.title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : null,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-
-              // Description
-              Text(
-                config.description,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      height: 1.5,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-
-              // Buttons
-              Row(
-                children: [
-                  // Not Now button
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        onInteraction();
-                        Navigator.pop(context, false);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(
-                          color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        _getNotNowText(languageCode),
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Enable button
-                  Expanded(
-                    child: BlocConsumer<NotificationBloc, NotificationState>(
-                      listener: (context, state) {
-                        if (state is NotificationPreferencesUpdated) {
-                          Navigator.pop(context, true);
-                        } else if (state is NotificationError) {
-                          // Show error feedback and close with false
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _getErrorText(languageCode),
-                              ),
-                              backgroundColor: AppColors.errorDark,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                          Navigator.pop(context, false);
-                        }
-                      },
-                      builder: (context, state) {
-                        final isLoading = state is NotificationLoading;
-
-                        return ElevatedButton(
-                          onPressed: isLoading
-                              ? null
-                              : () => _enableNotification(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  ),
-                                )
-                              : Text(
-                                  _getEnableText(languageCode),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return PopupSheet(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+      children: [
+        PopupHeader(
+          icon: PopupIconCircle(icon: config.icon, size: 64),
+          eyebrow: context.tr(TranslationKeys.appChromeNotifyPromptEyebrow),
+          title: config.title,
+          body: config.description,
         ),
-      ),
+        const SizedBox(height: 24),
+        BlocConsumer<NotificationBloc, NotificationState>(
+          listener: (context, state) {
+            if (state is NotificationPreferencesUpdated) {
+              Navigator.pop(context, true);
+            } else if (state is NotificationError) {
+              // Show error feedback and close with false
+              showAppSnackBar(
+                context,
+                _getErrorText(languageCode),
+                tone: AppSnackTone.error,
+              );
+              Navigator.pop(context, false);
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is NotificationLoading;
+            return _EnablePill(
+              label: _getEnableText(languageCode),
+              loading: isLoading,
+              onPressed: () => _enableNotification(context),
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          label: _getNotNowText(languageCode),
+          onPressed: () {
+            onInteraction();
+            Navigator.pop(context, false);
+          },
+        ),
+      ],
     );
   }
 
@@ -532,20 +425,12 @@ class _NotificationEnableSheet extends StatelessWidget {
           .catchError((_) => false);
       if (!context.mounted) return;
       if (permanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context
-                .tr(TranslationKeys.notificationsSettingsPermissionsDenied)),
-            behavior: SnackBarBehavior.floating,
-            // persist:false — since Flutter 3.44 a SnackBar with an action
-            // defaults to persist:true, so it never times out AND blocks every
-            // later snackbar behind it in the app-wide queue.
-            persist: false,
-            action: SnackBarAction(
-              label: context.tr(TranslationKeys.commonOpenSettings),
-              onPressed: notificationService.openPermissionSettings,
-            ),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.notificationsSettingsPermissionsDenied),
+          tone: AppSnackTone.warning,
+          actionLabel: context.tr(TranslationKeys.commonOpenSettings),
+          onAction: notificationService.openPermissionSettings,
         );
       }
     }
@@ -613,5 +498,47 @@ class _NotificationEnableSheet extends StatelessWidget {
       default:
         return 'Something went wrong. Please try again.';
     }
+  }
+}
+
+/// Full-width primary pill that swaps its label for a spinner while the
+/// preference is being saved.
+class _EnablePill extends StatelessWidget {
+  final String label;
+  final bool loading;
+  final VoidCallback onPressed;
+
+  const _EnablePill({
+    required this.label,
+    required this.loading,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!loading) {
+      return PopupPrimaryButton(label: label, onPressed: onPressed);
+    }
+    final palette = ReaderPalette.of(context);
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: null,
+        style: FilledButton.styleFrom(
+          disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.7),
+          minimumSize: const Size.fromHeight(50),
+          shape: const StadiumBorder(),
+          elevation: 0,
+        ),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(palette.ctaInk),
+          ),
+        ),
+      ),
+    );
   }
 }

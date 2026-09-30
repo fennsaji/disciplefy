@@ -91,7 +91,7 @@ async function handleListComments(req: Request, services: ServiceContainer): Pro
         const u = userData.user
         const displayName: string =
           u.user_metadata?.full_name ?? u.user_metadata?.name ??
-          u.user_metadata?.display_name ?? u.email ?? 'Unknown Member'
+          u.user_metadata?.display_name ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? 'Unknown Member'
         const avatarUrl: string | null = u.user_metadata?.avatar_url ?? null
         return { userId, displayName, avatarUrl }
       } catch {
@@ -204,7 +204,10 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
   const authorUser = authorResult.data?.user
   const authorDisplayName: string =
     authorUser?.user_metadata?.full_name ?? authorUser?.user_metadata?.name ??
-    authorUser?.user_metadata?.display_name ?? authorUser?.email ?? 'Unknown Member'
+    authorUser?.user_metadata?.display_name ??
+    authorUser?.user_metadata?.full_name ??
+    authorUser?.user_metadata?.name ??
+    'Unknown Member'
   const authorAvatarUrl: string | null = authorUser?.user_metadata?.avatar_url ?? null
 
   // Notify post author + other thread commenters about the new comment

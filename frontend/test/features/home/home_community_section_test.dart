@@ -23,6 +23,8 @@ FellowshipPostEntity _post({
   bool isDeleted = false,
   String? topicTitle,
   String? guideTitle,
+  String? guideSummary,
+  Map<String, int> reactionCounts = const {},
 }) =>
     FellowshipPostEntity(
       id: id,
@@ -30,13 +32,14 @@ FellowshipPostEntity _post({
       authorUserId: authorUserId,
       content: content,
       postType: postType,
-      reactionCounts: const {},
+      reactionCounts: reactionCounts,
       isDeleted: isDeleted,
       createdAt: createdAt,
       authorDisplayName: 'Ann',
       commentCount: 0,
       topicTitle: topicTitle,
       guideTitle: guideTitle,
+      guideSummary: guideSummary,
     );
 
 PublicFellowshipEntity _public({
@@ -130,6 +133,71 @@ void main() {
     test('ignores a 📖 line that is empty after the tag', () {
       final post = _post(id: '1', postType: 'daily', content: '📖   \n✨ Hook');
       expect(dailyLessonTitle(post), isNull);
+    });
+  });
+
+  group('recentActivityPreview', () {
+    test('daily: lesson title then the hook', () {
+      final post = _post(
+        id: '1',
+        postType: 'daily',
+        topicTitle: 'Living Water',
+        content: '📖 Living Water\n✨ Who is thirsty?\n✝️ John 4:14\n💬 Q?',
+      );
+      expect(recentActivityPreview(post), 'Living Water — Who is thirsty?');
+    });
+
+    test('daily: falls back to the first untagged line, or the title alone',
+        () {
+      expect(
+        recentActivityPreview(_post(
+            id: '1', postType: 'daily', content: '📖 Title\nBody  text\n')),
+        'Title — Body text',
+      );
+      expect(
+        recentActivityPreview(
+            _post(id: '2', postType: 'daily', content: '📖 Title\n💬 Q?')),
+        'Title',
+      );
+    });
+
+    test('shared guide: title then message, else the summary', () {
+      expect(
+        recentActivityPreview(_post(
+            id: '1',
+            postType: 'shared_guide',
+            guideTitle: 'Romans 8',
+            content: 'Read this')),
+        'Romans 8 — Read this',
+      );
+      expect(
+        recentActivityPreview(_post(
+            id: '2',
+            postType: 'shared_guide',
+            guideTitle: 'Romans 8',
+            content: ' ',
+            guideSummary: 'No condemnation')),
+        'Romans 8 — No condemnation',
+      );
+    });
+
+    test('other posts: body with whitespace collapsed', () {
+      expect(
+        recentActivityPreview(
+            _post(id: '1', postType: 'prayer', content: 'Pray\n\n for  me')),
+        'Pray for me',
+      );
+    });
+  });
+
+  group('recentActivityReactionTotal', () {
+    test('sums every emoji and ignores negatives', () {
+      expect(
+        recentActivityReactionTotal(
+            _post(id: '1', reactionCounts: const {'🙏': 3, '❤️': 2, 'x': -1})),
+        5,
+      );
+      expect(recentActivityReactionTotal(_post(id: '2')), 0);
     });
   });
 

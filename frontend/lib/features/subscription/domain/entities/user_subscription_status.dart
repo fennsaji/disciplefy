@@ -152,11 +152,6 @@ class UserSubscriptionStatus extends Equatable {
       isNewUserWithoutTrial ||
       isOnHold;
 
-  /// Whether to show the Premium trial banner
-  /// Shows when user can start Premium trial or is in Premium trial
-  bool get shouldShowPremiumTrialBanner =>
-      canStartPremiumTrial || isInPremiumTrial;
-
   /// Get a user-friendly message about their subscription status
   String get statusMessage {
     if (isOnHold) {

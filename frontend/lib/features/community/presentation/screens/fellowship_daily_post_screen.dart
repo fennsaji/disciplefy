@@ -4,12 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/daily_post_status_entity.dart';
-import '../bloc/fellowship_daily_post/fellowship_daily_post_bloc.dart';
-import '../bloc/fellowship_daily_post/fellowship_daily_post_event.dart';
-import '../bloc/fellowship_daily_post/fellowship_daily_post_state.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/daily_post_status_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_daily_post/fellowship_daily_post_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_daily_post/fellowship_daily_post_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_daily_post/fellowship_daily_post_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Mentor controls for the Discipler daily post: when the next post goes out,
 /// the schedule (time, skip, pause), the lesson queue, and — when an admin has
@@ -22,23 +33,10 @@ class FellowshipDailyPostScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     return Scaffold(
-      backgroundColor: context.appScaffold,
-      appBar: AppBar(
-        backgroundColor: context.appScaffold,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        title: Text(
-          l10n.dailyPostScreenTitle,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: context.appTextPrimary,
-          ),
-        ),
-      ),
+      backgroundColor: palette.page,
+      appBar: CommunityBackBar(background: palette.page),
       body: BlocConsumer<FellowshipDailyPostBloc, FellowshipDailyPostState>(
         listenWhen: (previous, current) =>
             current.notice != null && current.notice != previous.notice,
@@ -77,19 +75,28 @@ class FellowshipDailyPostScreen extends StatelessWidget {
     } else {
       message = notice.error ?? l10n.dailyPostError;
     }
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(message),
-        backgroundColor: notice.success ? AppColors.success : context.appError,
-        behavior: SnackBarBehavior.floating,
-      ));
+    showAppSnackBar(
+      context,
+      message,
+      tone: notice.success ? AppSnackTone.success : AppSnackTone.error,
+    );
   }
 }
 
 // ---------------------------------------------------------------------------
 // Formatting
 // ---------------------------------------------------------------------------
+
+String _localeCode(BuildContext context) =>
+    Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+
+DateFormat _safeFormat(BuildContext context, DateFormat Function(String) make) {
+  try {
+    return make(_localeCode(context));
+  } catch (_) {
+    return make('en');
+  }
+}
 
 String _dateLabel(BuildContext context, String isoDate, String today) {
   final l10n = AppLocalizations.of(context)!;
@@ -100,8 +107,7 @@ String _dateLabel(BuildContext context, String isoDate, String today) {
   if (now != null && date.difference(now).inDays == 1) {
     return l10n.dailyPostTomorrow;
   }
-  return DateFormat.MMMd(Localizations.localeOf(context).languageCode)
-      .format(date);
+  return _safeFormat(context, (code) => DateFormat.MMMd(code)).format(date);
 }
 
 String _timeLabel(BuildContext context, String hhmm) {
@@ -109,7 +115,7 @@ String _timeLabel(BuildContext context, String hhmm) {
   final hour = int.tryParse(parts.first);
   final minute = parts.length > 1 ? int.tryParse(parts[1]) : 0;
   if (hour == null || minute == null) return hhmm;
-  return DateFormat.jm(Localizations.localeOf(context).languageCode)
+  return _safeFormat(context, (code) => DateFormat.jm(code))
       .format(DateTime(2000, 1, 1, hour, minute));
 }
 
@@ -121,6 +127,10 @@ String _dayAfter(String isoDate) {
   final date = DateTime.tryParse(isoDate);
   return date == null ? isoDate : _isoDate(date.add(const Duration(days: 1)));
 }
+
+bool _isPaused(DailyPostStatusEntity data) =>
+    data.settings.pausedUntil != null &&
+    data.settings.pausedUntil!.compareTo(data.today) >= 0;
 
 // ---------------------------------------------------------------------------
 // Body
@@ -136,101 +146,41 @@ class _DailyPostBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final bloc = context.read<FellowshipDailyPostBloc>();
+    final eyebrow = [
+      if (data.pathTitle != null && data.pathTitle!.trim().isNotEmpty)
+        data.pathTitle!,
+      context.tr(TranslationKeys.communityPagesByDiscipler),
+    ].join(' · ');
 
     return RefreshIndicator(
       onRefresh: () async =>
           bloc.add(const FellowshipDailyPostRefreshRequested()),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
-          _NextPostCard(data: data),
-          if (data.settings.postNowAllowed) ...[
-            const SizedBox(height: 12),
-            _PostNowSection(data: data, saving: saving),
-          ],
-          const SizedBox(height: 28),
-          _SectionTitle(
-              icon: Icons.schedule_rounded, text: l10n.dailyPostScheduleTitle),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: CommunityPageHeading(
+              eyebrow: eyebrow,
+              title: l10n.dailyPostScreenTitle,
+            ),
+          ),
+          const SizedBox(height: 6),
+          CommunityGroupLabel(l10n.dailyPostNextTitle),
+          _NextPostCard(data: data, saving: saving),
+          CommunityGroupLabel(l10n.dailyPostScheduleTitle),
           _ScheduleSection(data: data, saving: saving),
-          const SizedBox(height: 28),
-          _SectionTitle(
-              icon: Icons.format_list_numbered_rounded,
-              text: l10n.dailyPostUpNextTitle),
+          CommunityGroupLabel(l10n.dailyPostUpNextTitle),
           _UpNextSection(data: data, saving: saving),
           if (data.settings.previewAllowed) ...[
-            const SizedBox(height: 28),
-            _SectionTitle(
-                icon: Icons.visibility_outlined,
-                text: l10n.dailyPostPreviewTitle),
+            CommunityGroupLabel(l10n.dailyPostPreviewTitle),
             _PreviewSection(data: data, saving: saving),
           ],
-          const SizedBox(height: 28),
-          _SectionTitle(
-              icon: Icons.history_rounded, text: l10n.dailyPostHistoryTitle),
+          CommunityGroupLabel(l10n.dailyPostHistoryTitle),
           _HistorySection(data: data, saving: saving),
         ],
       ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _SectionTitle({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: context.appTextSecondary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: context.appTextPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Panel extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final Color? color;
-  final Color? borderColor;
-
-  const _Panel({
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.color,
-    this.borderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: color ?? scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor ?? scheme.outlineVariant),
-      ),
-      child: child,
     );
   }
 }
@@ -279,7 +229,7 @@ class _WorkingTextState extends State<_WorkingText> {
     final l10n = AppLocalizations.of(context)!;
     return Text(
       _slow ? l10n.dailyPostWorkingLong : l10n.dailyPostWorking,
-      style: TextStyle(fontSize: 13, color: widget.color),
+      style: AppFonts.inter(fontSize: 13.5, color: widget.color, height: 1.4),
     );
   }
 }
@@ -291,13 +241,13 @@ class _WorkingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
@@ -305,12 +255,11 @@ class _WorkingRow extends StatelessWidget {
             width: 16,
             height: 16,
             child: CircularProgressIndicator(
-                strokeWidth: 2, color: scheme.primary),
+                strokeWidth: 2, color: palette.accentIcon),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _WorkingText(
-                startedAt: startedAt, color: context.appTextPrimary),
+            child: _WorkingText(startedAt: startedAt, color: palette.text),
           ),
         ],
       ),
@@ -318,27 +267,30 @@ class _WorkingRow extends StatelessWidget {
   }
 }
 
-/// Small rounded label, e.g. "Posts next".
+/// Small raised label, e.g. "Posts next" or a date.
 class _Pill extends StatelessWidget {
   final String text;
+  final bool gold;
 
-  const _Pill(this.text);
+  const _Pill(this.text, {this.gold = false});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
+    final colors = SettingsToneColors.of(
+        context, gold ? SettingsTone.gold : SettingsTone.indigo);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.1),
+        color: colors.fill,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: AppFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: scheme.primary,
+          color: gold ? palette.gold : colors.foreground,
         ),
       ),
     );
@@ -346,21 +298,21 @@ class _Pill extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Next post
+// Next post (Discipler card) + Post now
 // ---------------------------------------------------------------------------
 
 class _NextPostCard extends StatelessWidget {
   final DailyPostStatusEntity data;
+  final bool saving;
 
-  const _NextPostCard({required this.data});
+  const _NextPostCard({required this.data, required this.saving});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     final settings = data.settings;
-    final paused = settings.pausedUntil != null &&
-        settings.pausedUntil!.compareTo(data.today) >= 0;
+    final paused = _isPaused(data);
     final active = settings.dailyPostOn && !paused;
 
     final String headline;
@@ -380,82 +332,92 @@ class _NextPostCard extends StatelessWidget {
 
     final nextLesson = data.upcoming.isNotEmpty ? data.upcoming.first : null;
     final secondary =
-        TextStyle(fontSize: 13, height: 1.4, color: context.appTextSecondary);
+        AppFonts.inter(fontSize: 13.5, height: 1.45, color: palette.muted);
 
-    return _Panel(
-      padding: const EdgeInsets.all(18),
-      color: active ? scheme.primary.withValues(alpha: 0.06) : null,
-      borderColor: active ? scheme.primary.withValues(alpha: 0.25) : null,
+    return CommunityFormCard(
+      borderColor:
+          active ? palette.gold.withValues(alpha: 0.45) : palette.hairline,
+      tint: active
+          ? LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color.alphaBlend(
+                  palette.gold.withValues(alpha: palette.isDark ? 0.10 : 0.08),
+                  palette.card,
+                ),
+                palette.card,
+              ],
+              stops: const [0, 0.6],
+            )
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: active
-                      ? scheme.primary
-                      : scheme.onSurface.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  active ? Icons.event_available_rounded : Icons.pause_rounded,
-                  size: 20,
-                  color: active ? scheme.onPrimary : context.appTextSecondary,
+              const DisciplerAvatar(radius: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.disciplerName,
+                  style: AppFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: palette.text,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(child: Text(l10n.dailyPostNextTitle, style: secondary)),
+              if (!active)
+                Icon(Icons.pause_circle_outline_rounded,
+                    size: 20, color: palette.muted),
             ],
           ),
-          const SizedBox(height: 14),
-          Text(
-            headline,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: active ? 22 : 16,
-              height: 1.25,
-              fontWeight: FontWeight.w700,
-              color: active ? scheme.primary : context.appTextPrimary,
+          const SizedBox(height: 12),
+          if (active)
+            CommunitySectionLabel(headline)
+          else
+            Text(
+              headline,
+              style: AppFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+                height: 1.4,
+              ),
             ),
-          ),
           if (active) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               nextLesson?.title ?? l10n.dailyPostNothingNext,
-              style: TextStyle(
-                fontSize: 15,
+              style: AppFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
                 height: 1.35,
-                fontWeight: FontWeight.w500,
-                color: context.appTextPrimary,
               ),
             ),
           ],
-          if (data.pathTitle != null || data.lastPost?.topicTitle != null) ...[
-            const SizedBox(height: 14),
-            Divider(height: 1, color: scheme.outlineVariant),
-            const SizedBox(height: 12),
-          ],
+          if (data.pathTitle != null || data.lastPost?.topicTitle != null)
+            const SizedBox(height: 10),
           if (data.pathTitle != null)
             Text('${l10n.dailyPostPath}: ${data.pathTitle}', style: secondary),
           if (data.lastPost?.topicTitle != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               '${l10n.dailyPostLastPost}: ${data.lastPost!.topicTitle} (${_dateLabel(context, data.lastPost!.postDate, data.today)})',
               style: secondary,
             ),
+          ],
+          if (settings.postNowAllowed) ...[
+            const SizedBox(height: 14),
+            _PostNowSection(data: data, saving: saving),
           ],
         ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Post now (admin-gated)
-// ---------------------------------------------------------------------------
 
 class _PostNowSection extends StatelessWidget {
   final DailyPostStatusEntity data;
@@ -466,6 +428,7 @@ class _PostNowSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     final request = data.request('post_now');
     final working = request?.isOpen ?? false;
 
@@ -474,34 +437,28 @@ class _PostNowSection extends StatelessWidget {
     // Once today's post is out there is nothing to press: say so instead of
     // showing a greyed-out button.
     if (data.postedToday) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Row(
-          children: [
-            Icon(Icons.check_circle_rounded,
-                size: 18, color: context.appSuccess),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.dailyPostPostedToday,
-                style: TextStyle(fontSize: 13, color: context.appTextSecondary),
-              ),
+      return Row(
+        children: [
+          Icon(Icons.check_circle_rounded,
+              size: 18,
+              color: SettingsToneColors.of(context, SettingsTone.green)
+                  .foreground),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.dailyPostPostedToday,
+              style: AppFonts.inter(fontSize: 13.5, color: palette.muted),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        icon: const Icon(Icons.send_rounded, size: 18),
-        label: Text(l10n.dailyPostPostNow),
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: CommunityCtaPill(
+        label: l10n.dailyPostPostNow,
+        icon: Icons.send_rounded,
         onPressed: saving ? null : () => _confirm(context),
       ),
     );
@@ -512,16 +469,18 @@ class _PostNowSection extends StatelessWidget {
     final bloc = context.read<FellowshipDailyPostBloc>();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => SettingsDialog(
+        title: l10n.dailyPostPostNow,
         content: Text(l10n.dailyPostPostNowConfirm),
         actions: [
-          TextButton(
+          SettingsButton(
+            label: l10n.dailyPostCancel,
+            kind: SettingsButtonKind.neutral,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.dailyPostCancel),
           ),
-          FilledButton(
+          SettingsButton(
+            label: l10n.dailyPostPostNow,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.dailyPostPostNow),
           ),
         ],
       ),
@@ -545,7 +504,6 @@ class _ScheduleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
     final bloc = context.read<FellowshipDailyPostBloc>();
     final settings = data.settings;
     // A skip for today no longer applies once today's post has gone out.
@@ -553,195 +511,140 @@ class _ScheduleSection extends StatelessWidget {
     final skipActive = skipDate != null &&
         (skipDate.compareTo(data.today) > 0 ||
             (skipDate == data.today && !data.postedToday));
-    final paused = settings.pausedUntil != null &&
-        settings.pausedUntil!.compareTo(data.today) >= 0;
+    final paused = _isPaused(data);
+    final scheduleEditable = !saving && settings.dailyPostOn;
 
-    return _Panel(
-      padding: const EdgeInsets.fromLTRB(16, 16, 12, 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              l10n.disciplerDailyToggle,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            value: settings.dailyPostOn,
-            onChanged: saving
-                ? null
-                : (v) => bloc
-                    .add(FellowshipDailyPostSettingsChanged(dailyPostOn: v)),
-          ),
-          Divider(height: 1, color: scheme.outlineVariant),
-          const SizedBox(height: 14),
-          Text(
-            l10n.dailyPostFrequency,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: context.appTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          // Chips like the posting time below, so long labels never wrap
-          // inside a segment.
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final (days, label) in [
-                (1, l10n.frequencyDaily),
-                (2, l10n.frequencyEveryTwoDays),
-                (7, l10n.frequencyWeekly),
-              ])
-                ChoiceChip(
-                  label: Text(label),
-                  selected: days == settings.frequencyDays,
-                  showCheckmark: false,
-                  selectedColor: scheme.primary,
-                  labelStyle: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: days == settings.frequencyDays
-                        ? scheme.onPrimary
-                        : context.appTextPrimary,
-                  ),
-                  onSelected: saving || !settings.dailyPostOn
-                      ? null
-                      : (_) {
-                          if (days != settings.frequencyDays) {
-                            bloc.add(FellowshipDailyPostSettingsChanged(
-                                frequencyDays: days));
-                          }
-                        },
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            l10n.dailyPostTimeLabel,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: context.appTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final time in settings.times)
-                ChoiceChip(
-                  label: Text(_timeLabel(context, time)),
-                  selected: time == settings.time,
-                  showCheckmark: false,
-                  selectedColor: scheme.primary,
-                  labelStyle: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: time == settings.time
-                        ? scheme.onPrimary
-                        : context.appTextPrimary,
-                  ),
-                  // Kept enabled when selected: a null handler greys the
-                  // chosen time out so it reads as unavailable. Disabled with
-                  // the rest of the schedule while daily posts are off.
-                  onSelected: saving || !settings.dailyPostOn
-                      ? null
-                      : (_) {
-                          if (time != settings.time) {
-                            bloc.add(
-                                FellowshipDailyPostScheduleChanged(time: time));
-                          }
-                        },
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Divider(height: 1, color: scheme.outlineVariant),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              l10n.disciplerAdvancesLessons,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-            subtitle: Text(l10n.disciplerAdvancesLessonsSubtitle),
-            value: settings.autoAdvance,
-            onChanged: saving || !settings.dailyPostOn
-                ? null
-                : (v) => bloc
-                    .add(FellowshipDailyPostSettingsChanged(autoAdvance: v)),
-          ),
-          Divider(height: 1, color: scheme.outlineVariant),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              l10n.disciplerAdvancesPath,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-            subtitle: Text(l10n.disciplerAdvancesPathSubtitle),
-            value: settings.autoAdvancePath,
-            onChanged: saving || !settings.dailyPostOn
-                ? null
-                : (v) => bloc.add(
-                    FellowshipDailyPostSettingsChanged(autoAdvancePath: v)),
-          ),
-          Divider(height: 1, color: scheme.outlineVariant),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              l10n.dailyPostSkipNext,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-            subtitle: Text(skipActive
-                ? l10n
-                    .dailyPostSkipped(_dateLabel(context, skipDate, data.today))
-                : l10n.dailyPostSkipNextSubtitle),
-            value: skipActive,
-            onChanged: saving || !settings.dailyPostOn
-                ? null
-                : (v) =>
-                    bloc.add(FellowshipDailyPostScheduleChanged(skipNext: v)),
-          ),
-          Divider(height: 1, color: scheme.outlineVariant),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              paused
+    final frequencies = [
+      CommunitySegment(1, l10n.frequencyDaily),
+      CommunitySegment(2, l10n.frequencyEveryTwoDays),
+      CommunitySegment(7, l10n.frequencyWeekly),
+    ];
+    String? frequencyLabel;
+    for (final option in frequencies) {
+      if (option.value == settings.frequencyDays) frequencyLabel = option.label;
+    }
+
+    return SettingsGroup(
+      children: [
+        CommunitySwitchRow(
+          title: l10n.disciplerDailyToggle,
+          value: settings.dailyPostOn,
+          onChanged: saving
+              ? null
+              : (v) =>
+                  bloc.add(FellowshipDailyPostSettingsChanged(dailyPostOn: v)),
+        ),
+        CommunitySettingRow(
+          title: l10n.dailyPostFrequency,
+          value: frequencyLabel,
+          enabled: scheduleEditable,
+          onTap: () async {
+            final picked = await showCommunityChoiceSheet(
+              context: context,
+              title: l10n.dailyPostFrequency,
+              options: frequencies,
+              selected: settings.frequencyDays,
+            );
+            if (picked != null && picked != settings.frequencyDays) {
+              bloc.add(
+                  FellowshipDailyPostSettingsChanged(frequencyDays: picked));
+            }
+          },
+        ),
+        CommunitySettingRow(
+          title: l10n.dailyPostTimeLabel,
+          value: _timeLabel(context, settings.time),
+          enabled: scheduleEditable,
+          onTap: settings.times.isEmpty
+              ? null
+              : () async {
+                  final picked = await showCommunityChoiceSheet(
+                    context: context,
+                    title: l10n.dailyPostTimeLabel,
+                    options: [
+                      for (final time in settings.times)
+                        CommunitySegment(time, _timeLabel(context, time)),
+                    ],
+                    selected: settings.time,
+                  );
+                  if (picked != null && picked != settings.time) {
+                    bloc.add(FellowshipDailyPostScheduleChanged(time: picked));
+                  }
+                },
+        ),
+        CommunitySwitchRow(
+          title: l10n.disciplerAdvancesLessons,
+          subtitle: l10n.disciplerAdvancesLessonsSubtitle,
+          value: settings.autoAdvance,
+          onChanged: scheduleEditable
+              ? (v) =>
+                  bloc.add(FellowshipDailyPostSettingsChanged(autoAdvance: v))
+              : null,
+        ),
+        CommunitySwitchRow(
+          title: l10n.disciplerAdvancesPath,
+          subtitle: l10n.disciplerAdvancesPathSubtitle,
+          value: settings.autoAdvancePath,
+          onChanged: scheduleEditable
+              ? (v) => bloc
+                  .add(FellowshipDailyPostSettingsChanged(autoAdvancePath: v))
+              : null,
+        ),
+        CommunitySwitchRow(
+          title: l10n.dailyPostSkipNext,
+          subtitle: skipActive
+              ? l10n.dailyPostSkipped(_dateLabel(context, skipDate, data.today))
+              : l10n.dailyPostSkipNextSubtitle,
+          value: skipActive,
+          onChanged: scheduleEditable
+              ? (v) => bloc.add(FellowshipDailyPostScheduleChanged(skipNext: v))
+              : null,
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CommunitySettingRow(
+              title: paused
                   ? l10n.dailyPostPausedUntil(
                       _dateLabel(context, settings.pausedUntil!, data.today))
                   : l10n.dailyPostPause,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              subtitle: paused
+                  ? l10n.dailyPostResumesOn(_dateLabel(
+                      context, _dayAfter(settings.pausedUntil!), data.today))
+                  : l10n.dailyPostPauseSubtitle,
             ),
-            subtitle: Text(paused
-                ? l10n.dailyPostResumesOn(_dateLabel(
-                    context, _dayAfter(settings.pausedUntil!), data.today))
-                : l10n.dailyPostPauseSubtitle),
-          ),
-          // Under the text rather than trailing: in Malayalam a trailing
-          // button squeezed the title to one word per line.
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: paused
-                ? OutlinedButton.icon(
-                    onPressed: saving
-                        ? null
-                        : () => bloc.add(
-                            const FellowshipDailyPostScheduleChanged(
-                                clearPause: true)),
-                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                    label: Text(l10n.dailyPostResume),
-                  )
-                : OutlinedButton.icon(
-                    onPressed: saving || !settings.dailyPostOn
-                        ? null
-                        : () => _pickPauseDate(context),
-                    icon: const Icon(Icons.calendar_today_outlined, size: 16),
-                    label: Text(l10n.dailyPostPickDate),
-                  ),
-          ),
-        ],
-      ),
+            // Under the text rather than trailing: in Malayalam a trailing
+            // button squeezed the title to one word per line.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: paused
+                    ? SettingsButton(
+                        label: l10n.dailyPostResume,
+                        icon: Icons.play_arrow_rounded,
+                        kind: SettingsButtonKind.neutral,
+                        height: 44,
+                        onPressed: saving
+                            ? null
+                            : () => bloc.add(
+                                const FellowshipDailyPostScheduleChanged(
+                                    clearPause: true)),
+                      )
+                    : SettingsButton(
+                        label: l10n.dailyPostPickDate,
+                        icon: Icons.calendar_today_outlined,
+                        kind: SettingsButtonKind.neutral,
+                        height: 44,
+                        onPressed: scheduleEditable
+                            ? () => _pickPauseDate(context)
+                            : null,
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -774,95 +677,96 @@ class _UpNextSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     final bloc = context.read<FellowshipDailyPostBloc>();
 
     if (data.upcoming.isEmpty) {
-      return _Panel(
+      return CommunityFormCard(
         child: Text(
           l10n.dailyPostUpNextEmpty,
-          style: TextStyle(
-              fontSize: 14, height: 1.4, color: context.appTextSecondary),
+          style:
+              AppFonts.inter(fontSize: 14, height: 1.45, color: palette.muted),
         ),
       );
     }
 
-    return _Panel(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Column(
-        children: [
-          for (var i = 0; i < data.upcoming.length; i++) ...[
-            if (i > 0) Divider(height: 1, color: scheme.outlineVariant),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
+    return SettingsGroup(
+      children: [
+        for (var i = 0; i < data.upcoming.length; i++)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: i == 0 ? palette.gold : palette.raised,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${data.upcoming[i].position + 1}',
+                    style: AppFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: i == 0
-                          ? scheme.primary
-                          : scheme.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '${data.upcoming[i].position + 1}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: i == 0 ? scheme.onPrimary : scheme.primary,
-                      ),
+                          ? (palette.isDark ? palette.page : Colors.white)
+                          : palette.muted,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          data.upcoming[i].title,
-                          style: TextStyle(
-                            fontSize: 15,
-                            height: 1.35,
-                            fontWeight:
-                                i == 0 ? FontWeight.w600 : FontWeight.w500,
-                            color: context.appTextPrimary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data.upcoming[i].title,
+                        style: AppFonts.inter(
+                          fontSize: 15.5,
+                          height: 1.35,
+                          fontWeight:
+                              i == 0 ? FontWeight.w600 : FontWeight.w500,
+                          color: palette.text,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      if (i == 0)
+                        _Pill(l10n.dailyPostPostsNext, gold: true)
+                      else
+                        // Below the title rather than beside it: a long
+                        // translated label beside the title squeezed it
+                        // to one letter per line.
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: palette.accentIcon,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            minimumSize: const Size(0, 44),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: saving
+                              ? null
+                              : () => bloc.add(
+                                  FellowshipDailyPostScheduleChanged(
+                                      nextLearningPathTopicId: data
+                                          .upcoming[i].learningPathTopicId)),
+                          child: Text(
+                            l10n.dailyPostPostThisNext,
+                            style: AppFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        if (i == 0)
-                          _Pill(l10n.dailyPostPostsNext)
-                        else
-                          // Below the title rather than beside it: a long
-                          // translated label beside the title squeezed it
-                          // to one letter per line.
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            onPressed: saving
-                                ? null
-                                : () => bloc.add(
-                                    FellowshipDailyPostScheduleChanged(
-                                        nextLearningPathTopicId: data
-                                            .upcoming[i].learningPathTopicId)),
-                            child: Text(l10n.dailyPostPostThisNext),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -880,7 +784,7 @@ class _PreviewSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     final bloc = context.read<FellowshipDailyPostBloc>();
     final preview = data.preview;
     final previewRequest = data.request('preview');
@@ -893,7 +797,7 @@ class _PreviewSection extends StatelessWidget {
     final working = openRequest != null;
     final regenerationsLeft = preview?.regenerationsLeft ?? 0;
 
-    return _Panel(
+    return CommunityFormCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -903,30 +807,27 @@ class _PreviewSection extends StatelessWidget {
               // A gentle amber note, not an error: the preview is only out of
               // date, and previewing again fixes it.
               Builder(builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final noteBackground =
-                    isDark ? const Color(0xFF3A2E12) : const Color(0xFFFFF4DB);
-                final noteForeground =
-                    isDark ? const Color(0xFFF3D38B) : const Color(0xFF7A5200);
+                final amber =
+                    SettingsToneColors.of(context, SettingsTone.amber);
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: noteBackground,
-                    borderRadius: BorderRadius.circular(12),
+                    color: amber.fill,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(Icons.info_outline_rounded,
-                          size: 18, color: noteForeground),
+                          size: 18, color: amber.foreground),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           l10n.dailyPostPreviewStale,
-                          style: TextStyle(
+                          style: AppFonts.inter(
                             fontSize: 13,
                             height: 1.4,
-                            color: noteForeground,
+                            color: amber.foreground,
                           ),
                         ),
                       ),
@@ -937,16 +838,16 @@ class _PreviewSection extends StatelessWidget {
               const SizedBox(height: 14),
             ],
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
                     preview.topicTitle,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 15,
+                    style: AppFonts.poppins(
+                      fontSize: 16,
                       height: 1.35,
-                      fontWeight: FontWeight.w700,
-                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
                     ),
                   ),
                 ),
@@ -959,18 +860,18 @@ class _PreviewSection extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
               decoration: BoxDecoration(
-                color: scheme.onSurface.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(12),
+                color: communityWellFill(palette),
+                borderRadius: BorderRadius.circular(14),
                 border: Border(
-                  left: BorderSide(color: scheme.primary, width: 3),
+                  left: BorderSide(color: palette.gold, width: 3),
                 ),
               ),
               child: Text(
                 preview.content,
-                style: TextStyle(
+                style: AppFonts.inter(
                   fontSize: 14,
                   height: 1.5,
-                  color: context.appTextPrimary,
+                  color: palette.text,
                 ),
               ),
             ),
@@ -980,11 +881,13 @@ class _PreviewSection extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              OutlinedButton.icon(
-                icon: const Icon(Icons.visibility_outlined, size: 18),
-                label: Text(preview == null
+              SettingsButton(
+                label: preview == null
                     ? l10n.dailyPostPreviewGenerate
-                    : l10n.dailyPostPreviewAgain),
+                    : l10n.dailyPostPreviewAgain,
+                icon: Icons.visibility_outlined,
+                kind: SettingsButtonKind.neutral,
+                height: 44,
                 onPressed: saving || working
                     ? null
                     : () => bloc.add(
@@ -993,11 +896,13 @@ class _PreviewSection extends StatelessWidget {
               if (data.settings.regenerateAllowed &&
                   preview != null &&
                   preview.isCurrent)
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-                  label: Text(data.settings.noLimits
+                SettingsButton(
+                  label: data.settings.noLimits
                       ? l10n.dailyPostRegenerate
-                      : l10n.dailyPostRegenerateLeft(regenerationsLeft)),
+                      : l10n.dailyPostRegenerateLeft(regenerationsLeft),
+                  icon: Icons.auto_awesome_outlined,
+                  kind: SettingsButtonKind.neutral,
+                  height: 44,
                   onPressed: saving ||
                           working ||
                           (!data.settings.noLimits && regenerationsLeft <= 0)
@@ -1026,83 +931,82 @@ class _HistorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     if (data.history.isEmpty) {
-      return _Panel(
+      return CommunityFormCard(
         child: Text(
           l10n.dailyPostHistoryEmpty,
-          style: TextStyle(fontSize: 14, color: context.appTextSecondary),
+          style: AppFonts.inter(fontSize: 14, color: palette.muted),
         ),
       );
     }
-    final meta = TextStyle(fontSize: 13, color: context.appTextSecondary);
-    return _Panel(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Column(
-        children: [
-          for (var i = 0; i < data.history.length; i++) ...[
-            if (i > 0) Divider(height: 1, color: scheme.outlineVariant),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.history[i].topicTitle ?? '',
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.35,
-                      fontWeight: FontWeight.w500,
-                      color: context.appTextPrimary,
+    final meta = AppFonts.inter(fontSize: 13, color: palette.muted);
+    return SettingsGroup(
+      children: [
+        for (final item in data.history)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.topicTitle ?? '',
+                        style: AppFonts.inter(
+                          fontSize: 15.5,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                          color: palette.text,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 14,
-                    runSpacing: 4,
-                    children: [
-                      Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.event_outlined,
-                            size: 14, color: context.appTextSecondary),
-                        const SizedBox(width: 4),
-                        Text(
-                          _dateLabel(
-                              context, data.history[i].postDate, data.today),
+                    const SizedBox(width: 12),
+                    Text(
+                      _dateLabel(context, item.postDate, data.today),
+                      style: AppFonts.inter(
+                        fontSize: 13.5,
+                        color: palette.dim,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 4,
+                  children: [
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.check_circle_outline_rounded,
+                          size: 14, color: palette.muted),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          l10n.dailyPostCompletedCount(item.completedCount),
                           style: meta,
                         ),
-                      ]),
+                      ),
+                    ]),
+                    if (item.postDeleted)
                       Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.check_circle_outline_rounded,
-                            size: 14, color: context.appTextSecondary),
+                        Icon(Icons.delete_outline_rounded,
+                            size: 14, color: palette.muted),
                         const SizedBox(width: 4),
-                        Text(
-                          l10n.dailyPostCompletedCount(
-                              data.history[i].completedCount),
-                          style: meta,
+                        Flexible(
+                          child: Text(l10n.dailyPostPostDeleted, style: meta),
                         ),
                       ]),
-                      if (data.history[i].postDeleted)
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.delete_outline_rounded,
-                              size: 14, color: context.appTextSecondary),
-                          const SizedBox(width: 4),
-                          Text(l10n.dailyPostPostDeleted, style: meta),
-                        ]),
-                    ],
-                  ),
-                  if (data.settings.postNowAllowed &&
-                      data.history[i].dailyPostId != null)
-                    _RepostButton(
-                      data: data,
-                      item: data.history[i],
-                      saving: saving,
-                    ),
-                ],
-              ),
+                  ],
+                ),
+                if (data.settings.postNowAllowed && item.dailyPostId != null)
+                  _RepostButton(data: data, item: item, saving: saving),
+              ],
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -1123,7 +1027,7 @@ class _RepostButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final palette = ReaderPalette.of(context);
     final reposting = data.isReposting(item.dailyPostId!);
     final anyRepostOpen = data.request('repost')?.isOpen ?? false;
 
@@ -1136,13 +1040,13 @@ class _RepostButton extends StatelessWidget {
               width: 14,
               height: 14,
               child: CircularProgressIndicator(
-                  strokeWidth: 2, color: scheme.primary),
+                  strokeWidth: 2, color: palette.accentIcon),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _WorkingText(
                 startedAt: data.request('repost')?.createdAt,
-                color: context.appTextSecondary,
+                color: palette.muted,
               ),
             ),
           ],
@@ -1154,16 +1058,19 @@ class _RepostButton extends StatelessWidget {
       alignment: AlignmentDirectional.centerStart,
       child: TextButton.icon(
         style: TextButton.styleFrom(
-          padding: EdgeInsets.zero,
-          minimumSize: const Size(0, 36),
+          foregroundColor: palette.accentIcon,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          minimumSize: const Size(0, 44),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
         ),
         icon: const Icon(Icons.refresh_rounded, size: 18),
         // The count explains a greyed-out button once today's limit is used.
-        label: Text(data.settings.noLimits
-            ? l10n.dailyPostRepost
-            : l10n.dailyPostRepostLeft(data.repostsLeftToday)),
+        label: Text(
+          data.settings.noLimits
+              ? l10n.dailyPostRepost
+              : l10n.dailyPostRepostLeft(data.repostsLeftToday),
+          style: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
         onPressed: saving ||
                 anyRepostOpen ||
                 (!data.settings.noLimits && data.repostsLeftToday <= 0)
@@ -1178,19 +1085,20 @@ class _RepostButton extends StatelessWidget {
     final bloc = context.read<FellowshipDailyPostBloc>();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.dailyPostRepost),
+      builder: (dialogContext) => SettingsDialog(
+        title: l10n.dailyPostRepost,
         content: Text(item.postDeleted
             ? l10n.dailyPostRepostConfirmDeleted
             : l10n.dailyPostRepostConfirm),
         actions: [
-          TextButton(
+          SettingsButton(
+            label: l10n.dailyPostCancel,
+            kind: SettingsButtonKind.neutral,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.dailyPostCancel),
           ),
-          FilledButton(
+          SettingsButton(
+            label: l10n.dailyPostRepost,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.dailyPostRepost),
           ),
         ],
       ),
@@ -1210,21 +1118,25 @@ class _LoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(Icons.cloud_off_rounded, size: 44, color: palette.dim),
+            const SizedBox(height: 14),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 15, color: context.appTextPrimary),
+              style: AppFonts.inter(
+                  fontSize: 15, color: palette.text, height: 1.45),
             ),
-            const SizedBox(height: 16),
-            FilledButton(
+            const SizedBox(height: 18),
+            CommunityCtaPill(
+              label: AppLocalizations.of(context)!.dailyPostRetry,
               onPressed: onRetry,
-              child: Text(AppLocalizations.of(context)!.dailyPostRetry),
             ),
           ],
         ),

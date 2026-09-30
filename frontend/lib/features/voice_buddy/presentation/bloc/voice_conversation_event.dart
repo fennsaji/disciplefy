@@ -60,6 +60,12 @@ class StopListening extends VoiceConversationEvent {
 }
 
 /// Process transcribed speech text.
+/// Turn the mic off and throw away whatever was heard, without sending it
+/// (e.g. the user switched to typing mid-sentence).
+class CancelListening extends VoiceConversationEvent {
+  const CancelListening();
+}
+
 class ProcessSpeechText extends VoiceConversationEvent {
   final String text;
   final double? confidence;

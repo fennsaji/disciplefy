@@ -1,33 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/fellowship_comment_entity.dart';
-import '../widgets/fellowship_comments_sheet.dart';
-import '../widgets/fellowship_report_sheet.dart';
-import 'fellowship_post_detail_screen.dart';
-import '../../domain/entities/fellowship_post_entity.dart';
-import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
-import '../bloc/fellowship_feed/fellowship_feed_event.dart';
-import '../bloc/fellowship_feed/fellowship_feed_state.dart';
-import '../utils/auth_helpers.dart';
-import '../utils/feed_sort.dart';
-import '../utils/markdown_text.dart';
-import '../utils/mention_text.dart';
-import '../utils/share_helpers.dart';
-import '../widgets/block_user_dialog.dart';
-import '../widgets/discipler_badges.dart';
-import '../widgets/fellowship_post_card.dart';
-import '../widgets/mention_sheet.dart';
-import '../widgets/study_guide_chip.dart';
-import 'package:disciplefy_bible_study/core/theme/contrast.dart';
-import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
-import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/contrast.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_post_detail_screen.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/auth_helpers.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/feed_sort.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/mention_text.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/share_helpers.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/block_user_dialog.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_comments_sheet.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_report_sheet.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/mention_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Real implementation of the Fellowship Feed tab.
 ///
@@ -112,6 +111,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
 
   void _openCreatePostSheet() {
     showModalBottomSheet<void>(
+      useRootNavigator: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -125,46 +125,31 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     return BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
       listenWhen: (prev, curr) => prev.blockStatus != curr.blockStatus,
       listener: (context, state) {
         if (state.blockStatus == FellowshipBlockStatus.success) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(content: Text(l10n.blockUserSuccess)),
-            );
+          showAppSnackBar(context, l10n.blockUserSuccess,
+              tone: AppSnackTone.success);
         } else if (state.blockStatus == FellowshipBlockStatus.failure) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage ?? l10n.feedLoadError),
-              ),
-            );
+          showAppSnackBar(context, state.errorMessage ?? l10n.feedLoadError,
+              tone: AppSnackTone.error);
         }
       },
       child: Scaffold(
-        backgroundColor: context.appScaffold,
+        backgroundColor: palette.page,
         floatingActionButton:
             BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
           buildWhen: (prev, curr) =>
               prev.canShowPostButton != curr.canShowPostButton,
           builder: (context, state) {
             if (!state.canShowPostButton) return const SizedBox.shrink();
-            return FloatingActionButton.extended(
+            return CommunityCtaPill(
+              large: true,
+              icon: Icons.add,
+              label: l10n.feedNewPost,
               onPressed: _openCreatePostSheet,
-              backgroundColor: context.appInteractive,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: Text(
-                l10n.feedNewPost,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
             );
           },
         ),
@@ -175,9 +160,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                     state.status == FellowshipFeedStatus.loading) &&
                 state.posts.isEmpty) {
               return Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                child: CircularProgressIndicator(color: palette.accentIcon),
               );
             }
 
@@ -193,31 +176,22 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       Icon(
                         Icons.wifi_off_rounded,
                         size: 48,
-                        color: context.appTextTertiary,
+                        color: palette.dim,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         state.errorMessage ?? l10n.feedLoadError,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
+                        style: AppFonts.inter(
                           fontSize: 15,
-                          color: context.appTextSecondary,
+                          color: palette.muted,
+                          height: 1.5,
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.appInteractive,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 12,
-                          ),
-                        ),
+                      CommunityCtaPill(
+                        icon: Icons.refresh_rounded,
+                        label: l10n.feedRetry,
                         onPressed: () {
                           context.read<FellowshipFeedBloc>().add(
                                 FellowshipFeedLoadRequested(
@@ -225,13 +199,6 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                                 ),
                               );
                         },
-                        child: Text(
-                          l10n.feedRetry,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -243,34 +210,26 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
             if (state.status == FellowshipFeedStatus.success &&
                 state.posts.isEmpty) {
               return RefreshIndicator(
-                color: Theme.of(context).colorScheme.primary,
+                color: palette.accentIcon,
                 onRefresh: _onRefresh,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   children: [
                     const SizedBox(height: 120),
-                    Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 56,
-                            color: context.appTextTertiary,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            state.canPost
-                                ? l10n.feedEmpty
-                                : l10n.feedEmptyReadOnly,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              color: context.appTextSecondary,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
+                    Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 56,
+                      color: palette.dim,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      state.canPost ? l10n.feedEmpty : l10n.feedEmptyReadOnly,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.inter(
+                        fontSize: 16,
+                        color: palette.muted,
+                        height: 1.5,
                       ),
                     ),
                   ],
@@ -282,7 +241,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
             final sortedPosts = sortFeed(state.posts);
             final isAdmin = isViewerAdmin(context);
             return RefreshIndicator(
-              color: Theme.of(context).colorScheme.primary,
+              color: palette.accentIcon,
               onRefresh: _onRefresh,
               child: ListView.builder(
                 controller: _scrollController,
@@ -296,10 +255,10 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                   if (index == sortedPosts.length) {
                     // Pagination loading indicator at the bottom.
                     return Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Center(
                         child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: palette.accentIcon,
                           strokeWidth: 2.5,
                         ),
                       ),
@@ -308,7 +267,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                   final post = sortedPosts[index];
                   return Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     child: FellowshipPostCard(
                       post: post,
                       fellowshipId: widget.fellowshipId,
@@ -337,6 +296,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                               FellowshipCommentsOpenRequested(postId: post.id),
                             );
                         showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -353,6 +313,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       },
                       onReportTap: () {
                         showModalBottomSheet<void>(
+                          useRootNavigator: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -390,21 +351,6 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
 }
 
 // ---------------------------------------------------------------------------
-// FellowshipCommentsSheet
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// _CommentTile
-// ---------------------------------------------------------------------------
-
-/// A single comment row in the comments sheet.
-///
-/// Renders Discipler-authored comments with the AI avatar, chip, tint, and
-/// disclosure footer; shows a study guide link when [FellowshipCommentEntity
-/// .hasGuide]; and shows an approve/discard review pill for pending-review
-/// Discipler drafts (mentors only).
-
-// ---------------------------------------------------------------------------
 // FellowshipCreatePostSheet (public — shared with home screen)
 // ---------------------------------------------------------------------------
 
@@ -438,16 +384,16 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   List<FellowshipMemberEntity> _members = const [];
 
   /// Returns contextual placeholder text based on the selected post type.
-  String _hintForType(String type) {
+  String _hintForType(BuildContext context, String type) {
     switch (type) {
       case 'prayer':
-        return 'Share a prayer request with your fellowship…';
+        return context.tr(TranslationKeys.communityFellowshipPostHintPrayer);
       case 'praise':
-        return 'Celebrate what God has done! Share your praise…';
+        return context.tr(TranslationKeys.communityFellowshipPostHintPraise);
       case 'question':
-        return 'Ask a question about faith or Scripture…';
+        return context.tr(TranslationKeys.communityFellowshipPostHintQuestion);
       default:
-        return "What's on your heart?";
+        return context.tr(TranslationKeys.communityFellowshipPostHintGeneral);
     }
   }
 
@@ -520,6 +466,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = ReaderPalette.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     final List<
@@ -533,32 +480,123 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
       (
         value: 'general',
         label: l10n.postTypeGeneral,
-        description: 'Share anything',
+        description:
+            context.tr(TranslationKeys.communityFellowshipTypeDescGeneral),
         icon: Icons.chat_rounded,
         accent: AppColors.brandPrimary,
       ),
       (
         value: 'prayer',
         label: l10n.postTypePrayer,
-        description: 'Prayer request',
+        description:
+            context.tr(TranslationKeys.communityFellowshipTypeDescPrayer),
         icon: Icons.volunteer_activism_rounded,
         accent: AppColors.info,
       ),
       (
         value: 'praise',
         label: l10n.postTypePraise,
-        description: 'Praise God',
+        description:
+            context.tr(TranslationKeys.communityFellowshipTypeDescPraise),
         icon: Icons.emoji_events_rounded,
         accent: AppColors.warning,
       ),
       (
         value: 'question',
         label: l10n.postTypeQuestion,
-        description: 'Ask anything',
+        description:
+            context.tr(TranslationKeys.communityFellowshipTypeDescQuestion),
         icon: Icons.help_outline_rounded,
         accent: AppColors.success,
       ),
     ];
+
+    Widget typeCard(
+        ({
+          String value,
+          String label,
+          String description,
+          IconData icon,
+          Color accent,
+        }) t) {
+      final isSelected = _selectedType == t.value;
+      // The raw accent is tuned as a fill, not as text: on the dark card
+      // #4F46E5 measures 2.6:1, well under the 4.5:1 minimum. Lift it
+      // against the surface it is actually drawn on; fills and borders keep
+      // the original.
+      final accent = t.accent;
+      final accentText = ensureContrast(accent, palette.raised);
+      return Semantics(
+        button: true,
+        selected: isSelected,
+        child: Material(
+          color: isSelected ? accent.withAlpha(26) : palette.raised,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isSelected ? accent : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: InkWell(
+            onTap: () => setState(() => _selectedType = t.value),
+            customBorder: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 56),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isSelected ? accent.withAlpha(51) : palette.card,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        t.icon,
+                        size: 18,
+                        // Same corrected colour as the label: the icon sits
+                        // on `accent.withAlpha(51)` over the card, so the raw
+                        // accent nearly matches its own background.
+                        color: isSelected ? accentText : palette.muted,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t.label,
+                            style: AppFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? accentText : palette.text,
+                            ),
+                          ),
+                          Text(
+                            t.description,
+                            style: AppFonts.inter(
+                              fontSize: 12,
+                              color: palette.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
       listenWhen: (prev, curr) =>
@@ -571,303 +609,182 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: context.appSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          color: palette.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: palette.hairline)),
         ),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
         child: SingleChildScrollView(
           padding: EdgeInsets.only(bottom: 24 + bottomInset),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Handle ────────────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── Title ─────────────────────────────────────────────────
-              Text(
-                l10n.feedCreateTitle,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: context.appTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── Post type selector ────────────────────────────────────
-              Text(
-                l10n.feedCreateTypeLabel,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.appTextSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 2×2 grid of type cards
-              for (int row = 0; row < 2; row++) ...[
-                if (row > 0) const SizedBox(height: 8),
-                Row(
-                  children: [
-                    for (int col = 0; col < 2; col++) ...[
-                      if (col > 0) const SizedBox(width: 8),
-                      Expanded(
-                        child: Builder(builder: (context) {
-                          final t = postTypes[row * 2 + col];
-                          final isSelected = _selectedType == t.value;
-                          // The raw accent is tuned as a fill, not as text: on
-                          // the dark card #4F46E5 measures 2.6:1, well under the
-                          // 4.5:1 minimum. Lift it against the surface it is
-                          // actually drawn on; fills and borders keep the
-                          // original.
-                          final accent = t.accent;
-                          final accentText =
-                              ensureContrast(accent, context.appSurfaceVariant);
-                          return GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedType = t.value),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? accent.withAlpha(26)
-                                    : context.appSurfaceVariant,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color:
-                                      isSelected ? accent : Colors.transparent,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? accent.withAlpha(51)
-                                          : context.appSurface,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      t.icon,
-                                      size: 18,
-                                      // Same corrected colour as the label: the
-                                      // icon sits on `accent.withAlpha(51)` over
-                                      // the card, so the raw accent nearly
-                                      // matches its own background.
-                                      color: isSelected
-                                          ? accentText
-                                          : context.appTextTertiary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          t.label,
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: isSelected
-                                                ? accentText
-                                                : context.appTextPrimary,
-                                          ),
-                                        ),
-                                        Text(
-                                          t.description,
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontSize: 10,
-                                            color: context.appTextTertiary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-              const SizedBox(height: 8),
-
-              // ── Content field ─────────────────────────────────────────
-              Row(
-                children: [
-                  Text(
-                    l10n.feedCreateContentLabel,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.appTextSecondary,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Handle ──────────────────────────────────────────────
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: palette.outline,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => _openMentionSheet(),
-                    icon: Icon(Icons.alternate_email_rounded,
-                        size: 18, color: context.appTextSecondary),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(height: 20),
+
+                // ── Title ───────────────────────────────────────────────
+                Text(
+                  l10n.feedCreateTitle,
+                  style: AppFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // ── Post type selector ──────────────────────────────────
+                CommunitySheetLabel(l10n.feedCreateTypeLabel),
+                const SizedBox(height: 10),
+                // 2×2 grid of type cards. IntrinsicHeight keeps both cards
+                // of a row the same height when one label wraps.
+                for (int row = 0; row < 2; row++) ...[
+                  if (row > 0) const SizedBox(height: 8),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (int col = 0; col < 2; col++) ...[
+                          if (col > 0) const SizedBox(width: 8),
+                          Expanded(child: typeCard(postTypes[row * 2 + col])),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _contentController,
-                maxLines: 5,
-                maxLength: 256,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                scrollPadding: const EdgeInsets.only(bottom: 120),
-                onChanged: _handleContentChanged,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  color: context.appTextPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: _hintForType(_selectedType),
-                  hintStyle: TextStyle(
-                    fontFamily: 'Inter',
-                    color: context.appTextTertiary,
-                  ),
-                  filled: true,
-                  fillColor: context.appScaffold,
-                  contentPadding: const EdgeInsets.all(14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: context.appBorder),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: context.appBorder),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-              // ── Discipler opt-out (mentors, question posts) ───────────
-              BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                buildWhen: (prev, curr) =>
-                    prev.isMentor != curr.isMentor ||
-                    prev.disciplerAllowed != curr.disciplerAllowed,
-                builder: (context, state) {
-                  if (!state.isMentor ||
-                      !state.disciplerAllowed ||
-                      _selectedType != 'question') {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: SwitchListTile.adaptive(
-                      value: _letDisciplerAnswer,
-                      onChanged: (v) => setState(() => _letDisciplerAnswer = v),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      title: Text(
-                        context
-                            .tr(TranslationKeys.fellowshipLetDisciplerAnswer),
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
-                        ),
-                      ),
-                      subtitle: Text(
-                        context.tr(
-                            TranslationKeys.fellowshipLetDisciplerAnswerHint),
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: context.appTextTertiary,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-              // ── Submit button ─────────────────────────────────────────
-              BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                buildWhen: (prev, curr) => prev.submitting != curr.submitting,
-                builder: (context, state) {
-                  final submitting = state.submitting;
-                  return SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: submitting ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.appInteractive,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            context.appInteractive.withAlpha(128),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                // ── Content field ───────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: CommunitySheetLabel(l10n.feedCreateContentLabel),
+                    ),
+                    IconButton(
+                      tooltip: context
+                          .tr(TranslationKeys.communityFellowshipMention),
+                      onPressed: () => _openMentionSheet(),
+                      icon: Icon(Icons.alternate_email_rounded,
+                          size: 20, color: palette.muted),
+                      constraints:
+                          const BoxConstraints(minWidth: 44, minHeight: 44),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: _contentController,
+                  maxLines: 5,
+                  maxLength: 256,
+                  keyboardType: TextInputType.multiline,
+                  textCapitalization: TextCapitalization.sentences,
+                  scrollPadding: const EdgeInsets.only(bottom: 120),
+                  onChanged: _handleContentChanged,
+                  style: AppFonts.inter(fontSize: 15, color: palette.text),
+                  decoration: communityInputDecoration(
+                    context,
+                    hintText: _hintForType(context, _selectedType),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                // ── Discipler opt-out (mentors, question posts) ─────────
+                BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+                  buildWhen: (prev, curr) =>
+                      prev.isMentor != curr.isMentor ||
+                      prev.disciplerAllowed != curr.disciplerAllowed,
+                  builder: (context, state) {
+                    if (!state.isMentor ||
+                        !state.disciplerAllowed ||
+                        _selectedType != 'question') {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: SwitchListTile.adaptive(
+                        value: _letDisciplerAnswer,
+                        onChanged: (v) =>
+                            setState(() => _letDisciplerAnswer = v),
+                        contentPadding: EdgeInsets.zero,
+                        activeTrackColor: AppColors.brandPrimary,
+                        title: Text(
+                          context
+                              .tr(TranslationKeys.fellowshipLetDisciplerAnswer),
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
+                        ),
+                        subtitle: Text(
+                          context.tr(
+                              TranslationKeys.fellowshipLetDisciplerAnswerHint),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: palette.muted,
+                          ),
                         ),
                       ),
-                      child: submitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // ── Submit button ───────────────────────────────────────
+                BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+                  buildWhen: (prev, curr) => prev.submitting != curr.submitting,
+                  builder: (context, state) {
+                    final submitting = state.submitting;
+                    return SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: submitting ? null : _submit,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: palette.ctaFill,
+                          foregroundColor: palette.ctaInk,
+                          disabledBackgroundColor:
+                              palette.ctaFill.withValues(alpha: 0.5),
+                          minimumSize: const Size.fromHeight(50),
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: submitting
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: palette.ctaInk,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : Text(
+                                l10n.feedCreatePost,
+                                textAlign: TextAlign.center,
+                                style: AppFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: palette.ctaInk,
+                                ),
                               ),
-                            )
-                          : Text(
-                              l10n.feedCreatePost,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  );
-                },
-              ),
-            ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -875,6 +792,21 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// FellowshipReportSheet
-// ---------------------------------------------------------------------------
+/// Small muted field label inside community sheets ("Post type", "Message").
+class CommunitySheetLabel extends StatelessWidget {
+  final String text;
+
+  const CommunitySheetLabel(this.text, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: AppFonts.inter(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: ReaderPalette.of(context).muted,
+      ),
+    );
+  }
+}

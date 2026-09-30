@@ -14,6 +14,7 @@ import 'package:disciplefy_bible_study/core/router/app_router.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/practice_result_params.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
@@ -26,6 +27,7 @@ import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_r
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Audio Practice Page for Memory Verses.
 ///
@@ -138,24 +140,17 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     final permission = await _speechService.requestMicrophonePermission();
     if (permission != MicPermission.granted) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(
-                permission == MicPermission.permanentlyDenied
-                    ? TranslationKeys.micPermissionBlockedMessage
-                    : TranslationKeys.micPermissionMessage)),
-            // persist:false — since Flutter 3.44 a SnackBar with an action
-            // defaults to persist:true, so it never times out AND blocks every
-            // later snackbar behind it in the app-wide queue.
-            persist: false,
-            action: permission == MicPermission.permanentlyDenied
-                ? SnackBarAction(
-                    label:
-                        context.tr(TranslationKeys.micPermissionOpenSettings),
-                    onPressed: _speechService.openPermissionSettings,
-                  )
-                : null,
-          ),
+        final blocked = permission == MicPermission.permanentlyDenied;
+        showAppSnackBar(
+          context,
+          context.tr(blocked
+              ? TranslationKeys.micPermissionBlockedMessage
+              : TranslationKeys.micPermissionMessage),
+          tone: AppSnackTone.warning,
+          actionLabel: blocked
+              ? context.tr(TranslationKeys.micPermissionOpenSettings)
+              : null,
+          onAction: blocked ? _speechService.openPermissionSettings : null,
         );
       }
       return false;
@@ -230,11 +225,11 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isRecording = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Speech recognition error: $e'),
-            backgroundColor: AppColors.error,
-          ),
+        Logger.error('Speech recognition failed to start', error: e);
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     }

@@ -119,6 +119,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    String? guideStudyMode,
+    String? guideSummary,
     bool disciplerReplyOptOut = false,
     List<String> mentionedUserIds = const [],
   }) async {
@@ -134,6 +136,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
         studyGuideId: studyGuideId,
         guideInputType: guideInputType,
         guideLanguage: guideLanguage,
+        guideStudyMode: guideStudyMode,
+        guideSummary: guideSummary,
         disciplerReplyOptOut: disciplerReplyOptOut,
         mentionedUserIds: mentionedUserIds,
       );

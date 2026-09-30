@@ -34,6 +34,9 @@ import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_paths_cache_service.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+
+import '../../helpers/welcome_test_harness.dart';
 
 import 'fellowship_lessons_completion_test.mocks.dart';
 
@@ -117,6 +120,7 @@ void main() {
         .thenAnswer((_) => Stream.value(const LearningPathsInitial()));
 
     // Register required singletons.
+    sl.registerSingleton<TranslationService>(FakeTranslationService());
     sl.registerLazySingleton<LanguagePreferenceService>(() => mockLangService);
     sl.registerLazySingleton<LearningPathsRepository>(() => mockPathsRepo);
     sl.registerLazySingleton<LearningPathsCacheService>(() => mockCacheService);
@@ -167,7 +171,9 @@ void main() {
       // Assert
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Path Complete!'), findsOneWidget);
-      expect(find.text('Romans Foundations'), findsOneWidget);
+      // The path title now lives in the page's top bar; the dialog body
+      // names it.
+      expect(find.textContaining('Romans Foundations'), findsOneWidget);
       expect(find.text('Later'), findsOneWidget);
       expect(find.text('Choose Next Path'), findsOneWidget);
     });

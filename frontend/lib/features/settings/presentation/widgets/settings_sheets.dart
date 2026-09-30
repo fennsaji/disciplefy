@@ -24,6 +24,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/user_profile/data/models/user_profile_model.dart';
 import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_service.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
 // ---------------------------------------------------------------------------
@@ -795,11 +796,7 @@ void showTipSheet(BuildContext context) {
   void showLoader() {
     if (loaderOpen || !context.mounted) return;
     loaderOpen = true;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    showSettingsLoader(context);
   }
 
   void dismissLoader() {
@@ -817,11 +814,10 @@ void showTipSheet(BuildContext context) {
     if (!wasInFlight || result.kind != ConsumableKind.tip || !context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsTipThanks)),
-        backgroundColor: AppColors.brandPrimary,
-      ),
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.settingsTipThanks),
+      tone: AppSnackTone.success,
     );
   };
   service.onError = (message) {
@@ -834,11 +830,9 @@ void showTipSheet(BuildContext context) {
     final wasInFlight = loaderOpen;
     dismissLoader();
     if (!wasInFlight || !context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.tr(TranslationKeys.commonPurchaseCancelled)),
-        duration: const Duration(seconds: 2),
-      ),
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.commonPurchaseCancelled),
     );
   };
 
@@ -856,9 +850,13 @@ void showTipSheet(BuildContext context) {
             future: tipProductsFuture,
             builder: (sheetContext, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const SizedBox(
+                return SizedBox(
                   height: 160,
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: ReaderPalette.of(sheetContext).gold,
+                    ),
+                  ),
                 );
               }
               final products = snapshot.data ?? {};

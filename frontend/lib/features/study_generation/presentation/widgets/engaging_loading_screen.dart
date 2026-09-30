@@ -4,9 +4,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/photo_wash.dart';
 
 /// Engaging loading screen with multi-stage progress, rotating historical facts,
 /// and smooth animations to keep users engaged during 30+ second AI generation.
@@ -202,28 +203,12 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final topPadding = screenHeight * 0.15;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final topPadding = screenHeight * 0.12;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDarkMode
-              ? [
-                  const Color(0xFF1E1E1E),
-                  const Color(0xFF2D2D2D),
-                ]
-              : [
-                  context.appBrandAccent.withOpacity(0.03),
-                  Colors.white,
-                ],
-        ),
-      ),
+    // Same scenery wash as the guide header, tied to what is being studied.
+    return PhotoWash.forKey(
+      photoKey: widget.topic ?? '',
       child: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -238,23 +223,23 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
                 // Animated loading circle with pulse effect
                 _buildAnimatedLoadingCircle(),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 36),
 
                 // Topic being generated (if provided)
                 if (widget.topic != null) ...[
                   _buildTopicDisplay(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                 ],
 
                 // Multi-stage progress indicator
                 _buildStageIndicator(),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 40),
 
                 // Rotating historical fact
                 _buildRotatingFact(),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
                 // Time estimate
                 _buildTimeEstimate(),
@@ -267,74 +252,62 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   }
 
   Widget _buildAnimatedLoadingCircle() {
+    final palette = ReaderPalette.of(context);
     return SizedBox(
-      width: 140,
-      height: 140,
+      width: 132,
+      height: 132,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer rotating ring
-          AnimatedBuilder(
-            animation: _rotationAnimation,
-            builder: (context, child) {
-              return Transform.rotate(
+          // Outer rotating ring: hairline track with a gold arc.
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _rotationAnimation,
+              builder: (context, child) => Transform.rotate(
                 angle: _rotationAnimation.value,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: context.appBrandAccent.withOpacity(0.2),
-                      width: 3,
-                    ),
-                  ),
-                  child: CustomPaint(
-                    painter: _ArcPainter(
-                      color: context.appBrandAccent,
-                      progress: 0.25,
-                    ),
-                  ),
+                child: child,
+              ),
+              child: Container(
+                width: 132,
+                height: 132,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: palette.hairline, width: 3),
                 ),
-              );
-            },
+                child: CustomPaint(
+                  painter: _ArcPainter(color: palette.gold, progress: 0.25),
+                ),
+              ),
+            ),
           ),
 
-          // Pulsing center circle
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value,
+          // Gently pulsing centre: flat tinted disc, no glow.
+          RepaintBoundary(
+            child: ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: palette.card,
+                  border: Border.all(color: palette.hairline),
+                ),
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  margin: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.primaryColor.withOpacity(0.8),
-                        AppTheme.primaryColor,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: context.appBrandAccent.withOpacity(0.3),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
+                    color: AppColors.brandPrimary
+                        .withValues(alpha: palette.isDark ? 0.24 : 0.1),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.auto_awesome,
-                    color: Colors.white,
-                    size: 40,
+                    color: palette.accentIcon,
+                    size: 34,
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ],
       ),
@@ -342,38 +315,31 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   }
 
   Widget _buildTopicDisplay() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? context.appBrandAccent.withOpacity(0.2)
-            : AppTheme.highlightColor.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode
-              ? context.appBrandAccent.withOpacity(0.5)
-              : AppTheme.highlightColor,
-          width: isDarkMode ? 1.5 : 1,
-        ),
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: palette.hairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.menu_book_rounded,
-            color: isDarkMode ? Colors.white : context.appBrandAccent,
-            size: 20,
+            color: palette.accentIcon,
+            size: 18,
           ),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
               widget.topic!,
               style: AppFonts.inter(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isDarkMode ? Colors.white : context.appBrandAccent,
+                color: palette.text,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -387,6 +353,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
   Widget _buildStageIndicator() {
     final stages = _getStages(context);
+    final palette = ReaderPalette.of(context);
 
     return Column(
       children: [
@@ -399,13 +366,12 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: index == _currentStage ? 32 : 8,
-                height: 8,
+                width: index == _currentStage ? 28 : 8,
+                height: 6,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: index == _currentStage
-                      ? context.appBrandAccent
-                      : context.appBrandAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(3),
+                  color:
+                      index == _currentStage ? palette.gold : palette.outline,
                 ),
               ),
             ),
@@ -432,10 +398,11 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
           child: Text(
             stages[_currentStage],
             key: ValueKey<int>(_currentStage),
-            style: AppFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface,
+            style: AppFonts.poppins(
+              fontSize: 19,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+              height: 1.3,
             ),
             textAlign: TextAlign.center,
           ),
@@ -459,7 +426,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
     }
 
     final currentFact = facts[_currentFactIndex];
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 600),
@@ -471,45 +438,31 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
       },
       child: Container(
         key: ValueKey<int>(_currentFactIndex),
-        padding: const EdgeInsets.all(24),
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? const Color(0xFF4A4A4A) // Lighter gray for dark mode contrast
-              : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: context.appBrandAccent.withOpacity(isDarkMode ? 0.5 : 0.1),
-            width: isDarkMode ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  context.appBrandAccent.withOpacity(isDarkMode ? 0.3 : 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: palette.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: palette.hairline),
         ),
         child: Column(
           children: [
             // Historical fact icon
             Icon(
               Icons.history_edu_rounded,
-              color: context.appBrandAccent.withOpacity(isDarkMode ? 0.7 : 0.4),
-              size: 32,
+              color: palette.gold,
+              size: 28,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // Historical fact text
             Text(
               currentFact,
               style: AppFonts.inter(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w400,
-                color: isDarkMode
-                    ? Colors.white.withOpacity(0.95)
-                    : Theme.of(context).colorScheme.onSurface,
+                color: palette.text,
                 height: 1.6,
               ),
               textAlign: TextAlign.center,
@@ -525,20 +478,18 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
     final locale = _resolveLocale(context, widget.language);
     final l10n = AppLocalizations(locale);
 
+    final palette = ReaderPalette.of(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.access_time,
-          size: 16,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        ),
+        Icon(Icons.access_time, size: 16, color: palette.muted),
         const SizedBox(width: 8),
-        Text(
-          l10n.loadingTimeEstimate,
-          style: AppFonts.inter(
-            fontSize: 13,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        Flexible(
+          child: Text(
+            l10n.loadingTimeEstimate,
+            textAlign: TextAlign.center,
+            style: AppFonts.inter(fontSize: 13, color: palette.muted),
           ),
         ),
       ],
