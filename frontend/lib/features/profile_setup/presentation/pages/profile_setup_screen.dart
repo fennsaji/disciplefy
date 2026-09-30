@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -471,10 +472,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       } else {
         // Mobile implementation would go here
         // For now, show an error that image picking is only supported on web
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image upload is currently only supported on web'),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.profileSetupImageWebOnly),
         );
       }
     } catch (e) {
@@ -485,11 +485,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to select image. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.profileSetupImageFailed),
+          tone: AppSnackTone.error,
         );
       }
     } finally {
@@ -588,11 +587,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     }
@@ -604,21 +602,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     if (_selectedAgeGroup == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select your age group'),
-          backgroundColor: Colors.red,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.profileSetupSelectAgeGroup),
+        tone: AppSnackTone.warning,
       );
       return;
     }
 
     if (_selectedInterests.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one interest'),
-          backgroundColor: Colors.red,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.profileSetupSelectInterest),
+        tone: AppSnackTone.warning,
       );
       return;
     }
@@ -676,11 +672,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: AppColors.error,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     } finally {

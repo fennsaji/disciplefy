@@ -9,6 +9,89 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _englishTranslations = {
+    // Study screens: screenshot share prompt, interrupted generation,
+    // offline Generate button, download picker.
+    'study_ui': {
+      'screenshot': {
+        'eyebrow': 'Screenshot',
+        'title': 'Share your study guide',
+        'body': 'You took a screenshot. Want to share it?',
+        'share_fellowship': 'Share to Fellowship',
+      },
+      'dismiss': 'Not now',
+      'generation_interrupted':
+          'Generation stopped part-way. What was ready is shown below.',
+      'generation_timeout':
+          'Study generation is taking longer than expected. Please try again.',
+      'offline_generate': 'Connect to the internet to generate a study guide',
+      'tokens_per_guide': '{count} tokens',
+    },
+    // App status: maintenance, error page, exit/join prompts, shell toasts.
+    'app_status': {
+      'navigation_restricted': 'Navigation restricted for security',
+      'maintenance_eyebrow': 'Scheduled maintenance',
+      'maintenance_title': 'Maintenance Mode',
+      'maintenance_check': 'Check Status',
+      'maintenance_checking': 'Checking...',
+      'maintenance_back_soon':
+          'We\'ll be back online shortly. Thank you for your patience!',
+      'maintenance_check_failed':
+          'Couldn\'t check the status. Please try again.',
+      'error_eyebrow': 'Error',
+      'error_try_later': 'Please try again later.',
+      'error_report': 'Report this issue',
+      'error_no_email_app': 'No email app found. Please write to {email}',
+      'subscription_activated': 'Subscription activated successfully!',
+      'purchase_validation_failed':
+          'Purchase validation failed: {error} Please contact support if you were charged.',
+      'settings_open_failed': 'Could not open settings.',
+      'locked_paths_body':
+          'Unlock structured learning journeys designed to deepen your faith and biblical understanding.',
+    },
+    // Payments feedback: checkout / invoice snackbars, report-issue sheet.
+    'payments_feedback': {
+      'subscription_created': 'Subscription created! Opening payment page...',
+      'purchase_received': 'Purchase received! Activating subscription...',
+      'payment_awaiting_approval':
+          "Payment is awaiting approval. You'll be notified when it's ready.",
+      'plan_activated': 'Subscription activated! You now have {plan} access.',
+      'open_payment_url_failed': 'Unable to open payment URL: {url}',
+      'open_payment_page_failed':
+          'Could not open payment page. Please try again.',
+      'store_open_failed_android':
+          'Could not open Google Play. Search "Disciplefy" in Google Play > Subscriptions.',
+      'store_open_failed_ios':
+          'Could not open App Store. Go to Settings > Apple ID > Subscriptions.',
+      'generating_pdf': 'Generating PDF...',
+      'invoice_downloaded': 'Invoice downloaded: {file}',
+      'invoice_saved_to': 'Invoice saved to:\n{file}',
+      'ok': 'OK',
+      'save_preference_failed': 'Failed to save preference. Please try again.',
+      'report_eyebrow': 'Purchase support',
+      'report_title': 'Report Issue',
+      'report_body':
+          'Describe the issue with your purchase. Our team will review and respond within 24-48 hours.',
+      'transaction_details': 'Transaction details',
+      'tokens': 'Tokens',
+      'amount': 'Amount',
+      'date': 'Date',
+      'payment_id': 'Payment ID',
+      'issue_type': 'Issue type',
+      'issue_wrong_amount': 'Wrong Amount Charged',
+      'issue_payment_failed': 'Payment Failed',
+      'issue_tokens_not_credited': 'Tokens Not Credited',
+      'issue_duplicate_charge': 'Duplicate Charge',
+      'issue_refund_request': 'Refund Request',
+      'issue_other': 'Other Issue',
+      'description': 'Description',
+      'description_hint':
+          'Please describe the issue in detail (minimum 10 characters)',
+      'description_too_short': 'Please enter at least 10 characters',
+      'screenshots': 'Screenshots (optional)',
+      'add_screenshot': 'Add',
+      'upload_web_only': 'Image upload is only supported on web',
+      'submit': 'Submit Report',
+    },
     // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
     'guide_feedback': {
       'completed_while_away': 'Your study guide finished while you were away!',
@@ -726,6 +809,16 @@ class AppTranslations {
       'email_exists': 'An account with this email already exists',
       'invalid_credentials': 'Invalid email or password',
       'weak_password': 'Password is too weak. Use at least 8 characters',
+    },
+    'auth_notices': {
+      'sign_in_cancelled': 'Sign-in was cancelled.',
+      'otp_code_sent': 'Verification code sent!',
+      'otp_incomplete': 'Please enter the complete 6-digit code',
+      'profile_image_web_only':
+          'Image upload is currently only supported on web',
+      'profile_image_failed': 'Failed to select image. Please try again.',
+      'profile_select_age_group': 'Please select your age group',
+      'profile_select_interest': 'Please select at least one interest',
     },
     'password_reset': {
       'title': 'Reset Password',
@@ -2947,6 +3040,90 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
+    // Study screens: screenshot share prompt, interrupted generation,
+    // offline Generate button, download picker.
+    'study_ui': {
+      'screenshot': {
+        'eyebrow': 'स्क्रीनशॉट',
+        'title': 'अपनी अध्ययन गाइड साझा करें',
+        'body': 'आपने स्क्रीनशॉट लिया है। क्या इसे साझा करना चाहेंगे?',
+        'share_fellowship': 'फ़ेलोशिप में साझा करें',
+      },
+      'dismiss': 'अभी नहीं',
+      'generation_interrupted':
+          'गाइड बनाना बीच में रुक गया। जो तैयार हुआ वह नीचे दिखाया गया है।',
+      'generation_timeout':
+          'अध्ययन गाइड बनने में उम्मीद से ज़्यादा समय लग रहा है। कृपया फिर से कोशिश करें।',
+      'offline_generate': 'अध्ययन गाइड बनाने के लिए इंटरनेट से जुड़ें',
+      'tokens_per_guide': '{count} टोकन',
+    },
+    // App status: maintenance, error page, exit/join prompts, shell toasts.
+    'app_status': {
+      'navigation_restricted': 'सुरक्षा के कारण नेविगेशन प्रतिबंधित है',
+      'maintenance_eyebrow': 'निर्धारित रखरखाव',
+      'maintenance_title': 'रखरखाव मोड',
+      'maintenance_check': 'स्थिति जाँचें',
+      'maintenance_checking': 'जाँच हो रही है...',
+      'maintenance_back_soon':
+          'हम जल्द ही वापस ऑनलाइन होंगे। आपके धैर्य के लिए धन्यवाद!',
+      'maintenance_check_failed':
+          'स्थिति जाँची नहीं जा सकी। कृपया फिर से कोशिश करें।',
+      'error_eyebrow': 'त्रुटि',
+      'error_try_later': 'कृपया बाद में फिर से कोशिश करें।',
+      'error_report': 'इस समस्या की रिपोर्ट करें',
+      'error_no_email_app': 'कोई ईमेल ऐप नहीं मिला। कृपया {email} पर लिखें',
+      'subscription_activated': 'सदस्यता सफलतापूर्वक सक्रिय हो गई!',
+      'purchase_validation_failed':
+          'खरीद की पुष्टि नहीं हो सकी: {error} यदि आपसे शुल्क लिया गया है तो कृपया सहायता से संपर्क करें।',
+      'settings_open_failed': 'सेटिंग्स नहीं खुल सकीं।',
+      'locked_paths_body':
+          'विश्वास और बाइबल की समझ को गहरा करने के लिए बनाई गई व्यवस्थित सीखने की यात्राएँ अनलॉक करें।',
+    },
+    // Payments feedback: checkout / invoice snackbars, report-issue sheet.
+    'payments_feedback': {
+      'subscription_created': 'सब्सक्रिप्शन बन गया! भुगतान पेज खुल रहा है...',
+      'purchase_received': 'खरीदारी मिल गई! सब्सक्रिप्शन सक्रिय हो रहा है...',
+      'payment_awaiting_approval':
+          'भुगतान स्वीकृति की प्रतीक्षा में है। तैयार होने पर आपको सूचित किया जाएगा।',
+      'plan_activated':
+          'सब्सक्रिप्शन सक्रिय हो गया! अब आपके पास {plan} एक्सेस है।',
+      'open_payment_url_failed': 'भुगतान URL नहीं खुल सका: {url}',
+      'open_payment_page_failed':
+          'भुगतान पेज नहीं खुल सका। कृपया फिर से कोशिश करें।',
+      'store_open_failed_android':
+          'Google Play नहीं खुल सका। Google Play > Subscriptions में "Disciplefy" खोजें।',
+      'store_open_failed_ios':
+          'App Store नहीं खुल सका। Settings > Apple ID > Subscriptions पर जाएँ।',
+      'generating_pdf': 'PDF बन रहा है...',
+      'invoice_downloaded': 'इनवॉइस डाउनलोड हो गया: {file}',
+      'invoice_saved_to': 'इनवॉइस यहाँ सेव हुआ:\n{file}',
+      'ok': 'ठीक है',
+      'save_preference_failed':
+          'पसंद सेव नहीं हो सकी। कृपया फिर से कोशिश करें।',
+      'report_eyebrow': 'खरीदारी सहायता',
+      'report_title': 'समस्या बताएँ',
+      'report_body':
+          'अपनी खरीदारी की समस्या बताएँ। हमारी टीम 24-48 घंटों में समीक्षा करके जवाब देगी।',
+      'transaction_details': 'लेन-देन का विवरण',
+      'tokens': 'टोकन',
+      'amount': 'राशि',
+      'date': 'तारीख',
+      'payment_id': 'भुगतान ID',
+      'issue_type': 'समस्या का प्रकार',
+      'issue_wrong_amount': 'गलत राशि काटी गई',
+      'issue_payment_failed': 'भुगतान विफल',
+      'issue_tokens_not_credited': 'टोकन जमा नहीं हुए',
+      'issue_duplicate_charge': 'दो बार शुल्क कटा',
+      'issue_refund_request': 'रिफ़ंड अनुरोध',
+      'issue_other': 'अन्य समस्या',
+      'description': 'विवरण',
+      'description_hint': 'कृपया समस्या का पूरा विवरण दें (कम से कम 10 अक्षर)',
+      'description_too_short': 'कृपया कम से कम 10 अक्षर लिखें',
+      'screenshots': 'स्क्रीनशॉट (वैकल्पिक)',
+      'add_screenshot': 'जोड़ें',
+      'upload_web_only': 'इमेज अपलोड केवल वेब पर उपलब्ध है',
+      'submit': 'रिपोर्ट भेजें',
+    },
     // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
     'guide_feedback': {
       'completed_while_away': 'आपके दूर रहते हुए आपकी अध्ययन गाइड तैयार हो गई!',
@@ -3655,6 +3832,16 @@ class AppTranslations {
       'email_exists': 'इस ईमेल से खाता पहले से मौजूद है',
       'invalid_credentials': 'गलत ईमेल या पासवर्ड',
       'weak_password': 'पासवर्ड बहुत कमजोर है। कम से कम 8 अक्षर डालें',
+    },
+    'auth_notices': {
+      'sign_in_cancelled': 'साइन-इन रद्द कर दिया गया।',
+      'otp_code_sent': 'सत्यापन कोड भेज दिया गया!',
+      'otp_incomplete': 'कृपया पूरा 6-अंकों का कोड दर्ज करें',
+      'profile_image_web_only': 'फ़ोटो अपलोड अभी केवल वेब पर उपलब्ध है',
+      'profile_image_failed':
+          'फ़ोटो चुनी नहीं जा सकी। कृपया फिर से प्रयास करें।',
+      'profile_select_age_group': 'कृपया अपना आयु वर्ग चुनें',
+      'profile_select_interest': 'कृपया कम से कम एक रुचि चुनें',
     },
     'password_reset': {
       'title': 'पासवर्ड रीसेट करें',
@@ -5893,6 +6080,93 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _malayalamTranslations = {
+    // Study screens: screenshot share prompt, interrupted generation,
+    // offline Generate button, download picker.
+    'study_ui': {
+      'screenshot': {
+        'eyebrow': 'സ്ക്രീൻഷോട്ട്',
+        'title': 'നിങ്ങളുടെ പഠന ഗൈഡ് പങ്കിടുക',
+        'body': 'നിങ്ങൾ ഒരു സ്ക്രീൻഷോട്ട് എടുത്തു. ഇത് പങ്കിടണോ?',
+        'share_fellowship': 'ഫെലോഷിപ്പിൽ പങ്കിടുക',
+      },
+      'dismiss': 'ഇപ്പോൾ വേണ്ട',
+      'generation_interrupted':
+          'ഗൈഡ് തയ്യാറാക്കൽ ഇടയ്ക്ക് നിന്നുപോയി. തയ്യാറായ ഭാഗം താഴെ കാണാം.',
+      'generation_timeout':
+          'പഠന ഗൈഡ് തയ്യാറാക്കാൻ പ്രതീക്ഷിച്ചതിലും കൂടുതൽ സമയമെടുക്കുന്നു. വീണ്ടും ശ്രമിക്കുക.',
+      'offline_generate':
+          'പഠന ഗൈഡ് തയ്യാറാക്കാൻ ഇന്റർനെറ്റുമായി ബന്ധിപ്പിക്കുക',
+      'tokens_per_guide': '{count} ടോക്കണുകൾ',
+    },
+    // App status: maintenance, error page, exit/join prompts, shell toasts.
+    'app_status': {
+      'navigation_restricted':
+          'സുരക്ഷയ്ക്കായി നാവിഗേഷൻ നിയന്ത്രിച്ചിരിക്കുന്നു',
+      'maintenance_eyebrow': 'നിശ്ചിത അറ്റകുറ്റപ്പണി',
+      'maintenance_title': 'അറ്റകുറ്റപ്പണി മോഡ്',
+      'maintenance_check': 'നില പരിശോധിക്കുക',
+      'maintenance_checking': 'പരിശോധിക്കുന്നു...',
+      'maintenance_back_soon':
+          'ഞങ്ങൾ ഉടൻ തിരികെ ഓൺലൈനിൽ എത്തും. നിങ്ങളുടെ ക്ഷമയ്ക്ക് നന്ദി!',
+      'maintenance_check_failed': 'നില പരിശോധിക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'error_eyebrow': 'പിശക്',
+      'error_try_later': 'പിന്നീട് വീണ്ടും ശ്രമിക്കുക.',
+      'error_report': 'ഈ പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക',
+      'error_no_email_app':
+          'ഇമെയിൽ ആപ്പ് കണ്ടെത്തിയില്ല. {email} എന്ന വിലാസത്തിൽ എഴുതുക',
+      'subscription_activated': 'സബ്സ്ക്രിപ്ഷൻ വിജയകരമായി സജീവമാക്കി!',
+      'purchase_validation_failed':
+          'വാങ്ങൽ സ്ഥിരീകരിക്കാനായില്ല: {error} നിങ്ങളിൽ നിന്ന് തുക ഈടാക്കിയിട്ടുണ്ടെങ്കിൽ സപ്പോർട്ടിനെ ബന്ധപ്പെടുക.',
+      'settings_open_failed': 'ക്രമീകരണങ്ങൾ തുറക്കാനായില്ല.',
+      'locked_paths_body':
+          'വിശ്വാസവും ബൈബിൾ ധാരണയും ആഴപ്പെടുത്താൻ രൂപകൽപ്പന ചെയ്ത ക്രമീകൃത പഠനയാത്രകൾ അൺലോക്ക് ചെയ്യുക.',
+    },
+    // Payments feedback: checkout / invoice snackbars, report-issue sheet.
+    'payments_feedback': {
+      'subscription_created':
+          'സബ്‌സ്‌ക്രിപ്‌ഷൻ സൃഷ്ടിച്ചു! പേയ്‌മെന്റ് പേജ് തുറക്കുന്നു...',
+      'purchase_received': 'വാങ്ങൽ ലഭിച്ചു! സബ്‌സ്‌ക്രിപ്‌ഷൻ സജീവമാക്കുന്നു...',
+      'payment_awaiting_approval':
+          'പേയ്‌മെന്റ് അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു. തയ്യാറാകുമ്പോൾ നിങ്ങളെ അറിയിക്കും.',
+      'plan_activated':
+          'സബ്‌സ്‌ക്രിപ്‌ഷൻ സജീവമായി! ഇപ്പോൾ നിങ്ങൾക്ക് {plan} ആക്‌സസ് ഉണ്ട്.',
+      'open_payment_url_failed': 'പേയ്‌മെന്റ് URL തുറക്കാനായില്ല: {url}',
+      'open_payment_page_failed':
+          'പേയ്‌മെന്റ് പേജ് തുറക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'store_open_failed_android':
+          'Google Play തുറക്കാനായില്ല. Google Play > Subscriptions-ൽ "Disciplefy" തിരയുക.',
+      'store_open_failed_ios':
+          'App Store തുറക്കാനായില്ല. Settings > Apple ID > Subscriptions-ലേക്ക് പോകുക.',
+      'generating_pdf': 'PDF തയ്യാറാക്കുന്നു...',
+      'invoice_downloaded': 'ഇൻവോയ്‌സ് ഡൗൺലോഡ് ചെയ്തു: {file}',
+      'invoice_saved_to': 'ഇൻവോയ്‌സ് ഇവിടെ സേവ് ചെയ്തു:\n{file}',
+      'ok': 'ശരി',
+      'save_preference_failed':
+          'മുൻഗണന സേവ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'report_eyebrow': 'വാങ്ങൽ സഹായം',
+      'report_title': 'പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക',
+      'report_body':
+          'നിങ്ങളുടെ വാങ്ങലിലെ പ്രശ്നം വിവരിക്കുക. ഞങ്ങളുടെ ടീം 24-48 മണിക്കൂറിനുള്ളിൽ പരിശോധിച്ച് മറുപടി നൽകും.',
+      'transaction_details': 'ഇടപാട് വിവരങ്ങൾ',
+      'tokens': 'ടോക്കണുകൾ',
+      'amount': 'തുക',
+      'date': 'തീയതി',
+      'payment_id': 'പേയ്‌മെന്റ് ID',
+      'issue_type': 'പ്രശ്നത്തിന്റെ തരം',
+      'issue_wrong_amount': 'തെറ്റായ തുക ഈടാക്കി',
+      'issue_payment_failed': 'പേയ്‌മെന്റ് പരാജയപ്പെട്ടു',
+      'issue_tokens_not_credited': 'ടോക്കണുകൾ ക്രെഡിറ്റ് ആയില്ല',
+      'issue_duplicate_charge': 'ഇരട്ടി ചാർജ് ഈടാക്കി',
+      'issue_refund_request': 'റീഫണ്ട് അഭ്യർത്ഥന',
+      'issue_other': 'മറ്റ് പ്രശ്നം',
+      'description': 'വിവരണം',
+      'description_hint': 'പ്രശ്നം വിശദമായി വിവരിക്കുക (കുറഞ്ഞത് 10 അക്ഷരങ്ങൾ)',
+      'description_too_short': 'കുറഞ്ഞത് 10 അക്ഷരങ്ങൾ നൽകുക',
+      'screenshots': 'സ്ക്രീൻഷോട്ടുകൾ (ഓപ്ഷണൽ)',
+      'add_screenshot': 'ചേർക്കുക',
+      'upload_web_only': 'ചിത്രം അപ്‌ലോഡ് വെബിൽ മാത്രമേ ലഭ്യമാകൂ',
+      'submit': 'റിപ്പോർട്ട് അയയ്ക്കുക',
+    },
     // Study guide feedback: snackbars, listen controls, verse sheet eyebrow.
     'guide_feedback': {
       'completed_while_away':
@@ -6617,6 +6891,18 @@ class AppTranslations {
       'invalid_credentials': 'തെറ്റായ ഇമെയിൽ അല്ലെങ്കിൽ പാസ്‌വേഡ്',
       'weak_password':
           'പാസ്‌വേഡ് വളരെ ദുർബലമാണ്. കുറഞ്ഞത് 8 അക്ഷരങ്ങൾ ഉപയോഗിക്കുക',
+    },
+    'auth_notices': {
+      'sign_in_cancelled': 'സൈൻ-ഇൻ റദ്ദാക്കി.',
+      'otp_code_sent': 'സ്ഥിരീകരണ കോഡ് അയച്ചു!',
+      'otp_incomplete': 'ദയവായി 6 അക്ക കോഡ് പൂർണ്ണമായി നൽകുക',
+      'profile_image_web_only':
+          'ചിത്രം അപ്‌ലോഡ് ചെയ്യുന്നത് ഇപ്പോൾ വെബിൽ മാത്രമേ ലഭ്യമാകൂ',
+      'profile_image_failed':
+          'ചിത്രം തിരഞ്ഞെടുക്കാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
+      'profile_select_age_group': 'ദയവായി നിങ്ങളുടെ പ്രായവിഭാഗം തിരഞ്ഞെടുക്കുക',
+      'profile_select_interest':
+          'ദയവായി കുറഞ്ഞത് ഒരു താൽപ്പര്യമെങ്കിലും തിരഞ്ഞെടുക്കുക',
     },
     'password_reset': {
       'title': 'പാസ്‌വേഡ് റീസെറ്റ് ചെയ്യുക',

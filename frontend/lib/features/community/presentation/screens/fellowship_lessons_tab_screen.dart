@@ -38,6 +38,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/shared/widgets/gold_marks.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Lessons tab for a fellowship.
 ///
@@ -124,33 +125,14 @@ class _FellowshipLessonsTabScreenState
         listener: (context, state) {
           final l10n = AppLocalizations.of(context)!;
           if (state.setStatus == FellowshipStudySetStatus.success) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(l10n.lessonsPathAssignedSuccess),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
+            showAppSnackBar(context, l10n.lessonsPathAssignedSuccess,
+                tone: AppSnackTone.success);
           } else if (state.setStatus == FellowshipStudySetStatus.failure) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(state.setError ??
-                      context
-                          .tr(TranslationKeys.communityFellowshipAssignFailed)),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
+            showAppSnackBar(
+                context,
+                state.setError ??
+                    context.tr(TranslationKeys.communityFellowshipAssignFailed),
+                tone: AppSnackTone.error);
           } else if (state.advanceStatus ==
               FellowshipStudyAdvanceStatus.success) {
             if (state.studyCompleted && state.isMentor) {
@@ -159,18 +141,7 @@ class _FellowshipLessonsTabScreenState
               final msg = state.studyCompleted
                   ? l10n.lessonsCompleted
                   : '${l10n.lessonsGuideProgress} ${(state.currentGuideIndex ?? 0) + 1} ${l10n.lessonsOf} ${state.totalGuides ?? '?'}';
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(msg),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                );
+              showAppSnackBar(context, msg, tone: AppSnackTone.success);
             }
             // Refresh member list so topicsCompleted counts stay current.
             context.read<FellowshipMembersBloc>().add(
@@ -179,52 +150,25 @@ class _FellowshipLessonsTabScreenState
                 );
           } else if (state.advanceStatus ==
               FellowshipStudyAdvanceStatus.failure) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(state.advanceError ??
-                      context.tr(
-                          TranslationKeys.communityFellowshipAdvanceFailed)),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
+            showAppSnackBar(
+                context,
+                state.advanceError ??
+                    context
+                        .tr(TranslationKeys.communityFellowshipAdvanceFailed),
+                tone: AppSnackTone.error);
           } else if (state.resetStatus == FellowshipStudyResetStatus.success) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(l10n.lessonsProgressResetSuccess),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
+            showAppSnackBar(context, l10n.lessonsProgressResetSuccess,
+                tone: AppSnackTone.success);
             context.read<FellowshipMembersBloc>().add(
                   FellowshipMembersLoadRequested(
                       fellowshipId: widget.fellowshipId),
                 );
           } else if (state.resetStatus == FellowshipStudyResetStatus.failure) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(state.resetError ??
-                      context
-                          .tr(TranslationKeys.communityFellowshipResetFailed)),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
+            showAppSnackBar(
+                context,
+                state.resetError ??
+                    context.tr(TranslationKeys.communityFellowshipResetFailed),
+                tone: AppSnackTone.error);
           }
         },
         builder: (context, state) {

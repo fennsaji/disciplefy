@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import '../bloc/phone_auth_bloc.dart';
 import '../bloc/phone_auth_event.dart';
 import '../bloc/phone_auth_state.dart';
@@ -182,23 +183,15 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 },
               );
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  behavior: SnackBarBehavior.floating,
-                  // persist:false — since Flutter 3.44 a SnackBar with an action
-                  // defaults to persist:true, so it never times out AND blocks every
-                  // later snackbar behind it in the app-wide queue.
-                  persist: false,
-                  action: state.errorType == PhoneAuthErrorType.networkError
-                      ? SnackBarAction(
-                          label: 'Retry',
-                          onPressed: () => _verifyOTP(),
-                        )
-                      : null,
-                ),
+              final canRetry =
+                  state.errorType == PhoneAuthErrorType.networkError;
+              showAppSnackBar(
+                context,
+                context.tr(TranslationKeys.commonErrorTryAgain),
+                tone: AppSnackTone.error,
+                actionLabel:
+                    canRetry ? context.tr(TranslationKeys.commonRetry) : null,
+                onAction: canRetry ? _verifyOTP : null,
               );
 
               // Clear OTP fields on error
@@ -213,12 +206,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 },
               );
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Verification code sent!'),
-                  backgroundColor: context.appInteractive,
-                  behavior: SnackBarBehavior.floating,
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(TranslationKeys.authOtpCodeSent),
+                tone: AppSnackTone.success,
               );
 
               // Restart timer with new expiry
@@ -574,12 +565,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     final otpCode = _getOTPCode();
 
     if (otpCode.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter the complete 6-digit code'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.authOtpIncomplete),
+        tone: AppSnackTone.warning,
       );
       return;
     }

@@ -12,6 +12,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// "Add a verse" sheet: source tiles (daily verse / suggested / custom) over
 /// the curated suggested verses, filtered by category.
@@ -166,22 +167,16 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                       current is VerseAdded || current is MemoryVerseError,
                   listener: (context, state) {
                     if (state is VerseAdded) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.message),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
+                      showAppSnackBar(context, state.message,
+                          tone: AppSnackTone.success);
                       // Reload verses to update "Already Added" status
                       _loadSuggestedVerses();
                       widget.onVerseAdded?.call();
                     } else if (state is MemoryVerseError) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              context.tr(TranslationKeys.commonErrorTryAgain)),
-                          backgroundColor: AppColors.error,
-                        ),
+                      showAppSnackBar(
+                        context,
+                        context.tr(TranslationKeys.commonErrorTryAgain),
+                        tone: AppSnackTone.error,
                       );
                     }
                   },

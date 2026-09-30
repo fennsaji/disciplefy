@@ -6,6 +6,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
 import '../../../study_topics/domain/entities/learning_path.dart';
 
 /// Colours for the cards under the home hero, per theme: white cards with a
@@ -541,6 +542,75 @@ class _HomePressableState extends State<HomePressable> {
       duration: const Duration(milliseconds: 110),
       curve: Curves.easeOut,
       child: widget.builder(_onHighlight),
+    );
+  }
+}
+
+/// Placeholder learning-path card shown under the lock overlay on Home: the
+/// same card as the path rows around it, with a line on what paths offer.
+class HomeLockedPathsCard extends StatelessWidget {
+  const HomeLockedPathsCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final accent = palette.accentIcon;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.route_outlined, color: accent, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(TranslationKeys.learningPathsTitle),
+                      style: AppFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.tr(TranslationKeys.learningPathsSubtitle),
+                      style: AppFonts.inter(fontSize: 11, color: palette.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            context.tr(TranslationKeys.appStatusLockedPathsBody),
+            style: AppFonts.inter(
+              fontSize: 13,
+              color: palette.muted,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

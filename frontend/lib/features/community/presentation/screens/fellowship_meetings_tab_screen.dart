@@ -23,6 +23,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_stub.dart'
     if (dart.library.js_interop) 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_web.dart'
     if (dart.library.io) 'package:disciplefy_bible_study/features/community/presentation/screens/google_calendar_auth_mobile.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Body of the fellowship Meetings page: the calendar-sync banner (mentors),
 /// then upcoming meetings grouped into This week / Next week / Later.
@@ -50,18 +51,6 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
     );
   }
 
-  void _showSnack(BuildContext context, String message, Color color) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<FellowshipMeetingsBloc, FellowshipMeetingsState>(
@@ -71,14 +60,16 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
           prev.syncRequiresReconnect != curr.syncRequiresReconnect,
       listener: (context, state) {
         if (state.successMessage != null) {
-          _showSnack(context, state.successMessage!, AppColors.success);
+          showAppSnackBar(context, state.successMessage!,
+              tone: AppSnackTone.success);
         } else if (state.errorMessage != null) {
-          _showSnack(context, state.errorMessage!, AppColors.error);
+          showAppSnackBar(context, state.errorMessage!,
+              tone: AppSnackTone.error);
         } else if (state.syncRequiresReconnect) {
-          _showSnack(
+          showAppSnackBar(
             context,
             AppLocalizations.of(context)!.meetingsSyncReconnect,
-            AppColors.brandPrimary,
+            tone: AppSnackTone.warning,
           );
         }
       },

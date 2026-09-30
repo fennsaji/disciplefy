@@ -1,5 +1,27 @@
 /// Translation key constants for type-safe translation access
 class TranslationKeys {
+  // App status: maintenance, error page, exit/join prompts, shell toasts.
+  static const appStatusNavigationRestricted =
+      'app_status.navigation_restricted';
+  static const appStatusMaintenanceEyebrow = 'app_status.maintenance_eyebrow';
+  static const appStatusMaintenanceTitle = 'app_status.maintenance_title';
+  static const appStatusMaintenanceCheck = 'app_status.maintenance_check';
+  static const appStatusMaintenanceChecking = 'app_status.maintenance_checking';
+  static const appStatusMaintenanceBackSoon =
+      'app_status.maintenance_back_soon';
+  static const appStatusMaintenanceCheckFailed =
+      'app_status.maintenance_check_failed';
+  static const appStatusErrorEyebrow = 'app_status.error_eyebrow';
+  static const appStatusErrorTryLater = 'app_status.error_try_later';
+  static const appStatusErrorReport = 'app_status.error_report';
+  static const appStatusErrorNoEmailApp = 'app_status.error_no_email_app';
+  static const appStatusSubscriptionActivated =
+      'app_status.subscription_activated';
+  static const appStatusPurchaseValidationFailed =
+      'app_status.purchase_validation_failed';
+  static const appStatusSettingsOpenFailed = 'app_status.settings_open_failed';
+  static const appStatusLockedPathsBody = 'app_status.locked_paths_body';
+
   // App chrome: lock overlay, update dialogs, offline banner,
   // notification prompt eyebrow.
   static const appChromeLockTapToUpgrade = 'app_chrome.lock.tap_to_upgrade';
@@ -441,6 +463,17 @@ class TranslationKeys {
   static const emailAuthSignInTitle = 'email_auth.sign_in_title';
   static const emailAuthSignUpTitle = 'email_auth.sign_up_title';
   static const emailAuthNewPasswordHint = 'email_auth.new_password_hint';
+
+  // Auth / profile-setup notices
+  static const authSignInCancelled = 'auth_notices.sign_in_cancelled';
+  static const authOtpCodeSent = 'auth_notices.otp_code_sent';
+  static const authOtpIncomplete = 'auth_notices.otp_incomplete';
+  static const profileSetupImageWebOnly = 'auth_notices.profile_image_web_only';
+  static const profileSetupImageFailed = 'auth_notices.profile_image_failed';
+  static const profileSetupSelectAgeGroup =
+      'auth_notices.profile_select_age_group';
+  static const profileSetupSelectInterest =
+      'auth_notices.profile_select_interest';
 
   // Password Reset Screen
   static const passwordResetTitle = 'password_reset.title';
@@ -1063,6 +1096,54 @@ class TranslationKeys {
   static const premiumSubscriptionActivated = 'premium.subscription_activated';
   static const premiumPaymentCompletedHint = 'premium.payment_completed_hint';
   static const premiumCheckStatus = 'premium.check_status';
+
+  // Payments feedback: checkout / invoice snackbars and the report-issue sheet
+  static const payFeedbackSubscriptionCreated =
+      'payments_feedback.subscription_created';
+  static const payFeedbackPurchaseReceived =
+      'payments_feedback.purchase_received';
+  static const payFeedbackAwaitingApproval =
+      'payments_feedback.payment_awaiting_approval';
+  static const payFeedbackPlanActivated = 'payments_feedback.plan_activated';
+  static const payFeedbackOpenPaymentUrlFailed =
+      'payments_feedback.open_payment_url_failed';
+  static const payFeedbackOpenPaymentPageFailed =
+      'payments_feedback.open_payment_page_failed';
+  static const payFeedbackStoreOpenFailedAndroid =
+      'payments_feedback.store_open_failed_android';
+  static const payFeedbackStoreOpenFailedIos =
+      'payments_feedback.store_open_failed_ios';
+  static const payFeedbackGeneratingPdf = 'payments_feedback.generating_pdf';
+  static const payFeedbackInvoiceDownloaded =
+      'payments_feedback.invoice_downloaded';
+  static const payFeedbackInvoiceSavedTo = 'payments_feedback.invoice_saved_to';
+  static const payFeedbackOk = 'payments_feedback.ok';
+  static const payFeedbackSavePreferenceFailed =
+      'payments_feedback.save_preference_failed';
+  static const reportIssueEyebrow = 'payments_feedback.report_eyebrow';
+  static const reportIssueTitle = 'payments_feedback.report_title';
+  static const reportIssueBody = 'payments_feedback.report_body';
+  static const reportIssueTransactionDetails =
+      'payments_feedback.transaction_details';
+  static const reportIssueTokens = 'payments_feedback.tokens';
+  static const reportIssueAmount = 'payments_feedback.amount';
+  static const reportIssueDate = 'payments_feedback.date';
+  static const reportIssuePaymentId = 'payments_feedback.payment_id';
+  static const reportIssueType = 'payments_feedback.issue_type';
+
+  /// Label for a purchase issue type, keyed by its API value
+  /// (e.g. `wrong_amount`).
+  static String reportIssueTypeLabel(String value) =>
+      'payments_feedback.issue_$value';
+  static const reportIssueDescription = 'payments_feedback.description';
+  static const reportIssueDescriptionHint =
+      'payments_feedback.description_hint';
+  static const reportIssueDescriptionTooShort =
+      'payments_feedback.description_too_short';
+  static const reportIssueScreenshots = 'payments_feedback.screenshots';
+  static const reportIssueAddScreenshot = 'payments_feedback.add_screenshot';
+  static const reportIssueUploadWebOnly = 'payments_feedback.upload_web_only';
+  static const reportIssueSubmit = 'payments_feedback.submit';
 
   // Token Purchase Dialog
   static const tokenPurchaseDialogTitle = 'tokens.purchase_dialog.title';
@@ -3389,4 +3470,17 @@ class TranslationKeys {
   static const guideFeedbackTtsReplay = 'guide_feedback.tts_replay';
   static const guideFeedbackTtsProgress = 'guide_feedback.tts_progress';
   static const guideFeedbackVerseEyebrow = 'guide_feedback.verse_eyebrow';
+
+  // Study screens: screenshot share prompt, interrupted generation, offline
+  // Generate button, download picker.
+  static const studyUiScreenshotEyebrow = 'study_ui.screenshot.eyebrow';
+  static const studyUiScreenshotTitle = 'study_ui.screenshot.title';
+  static const studyUiScreenshotBody = 'study_ui.screenshot.body';
+  static const studyUiScreenshotShareFellowship =
+      'study_ui.screenshot.share_fellowship';
+  static const studyUiDismiss = 'study_ui.dismiss';
+  static const studyUiGenerationInterrupted = 'study_ui.generation_interrupted';
+  static const studyUiGenerationTimeout = 'study_ui.generation_timeout';
+  static const studyUiOfflineGenerate = 'study_ui.offline_generate';
+  static const studyUiTokensPerGuide = 'study_ui.tokens_per_guide';
 }

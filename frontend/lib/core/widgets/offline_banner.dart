@@ -9,8 +9,15 @@ import '../theme/reader_palette.dart';
 
 /// Slim connectivity strip at the top of the app shell: amber "offline"
 /// while disconnected, then a brief green "back online" once reconnected.
+///
+/// The strip pads itself by the status-bar inset. Pass the page as [child]
+/// to lay it out below the strip: while the strip shows, the page's top
+/// inset is removed so its own SafeArea doesn't add a second status-bar gap.
 class OfflineBanner extends StatefulWidget {
-  const OfflineBanner({super.key});
+  /// Page shown below the strip, filling the remaining height.
+  final Widget? child;
+
+  const OfflineBanner({super.key, this.child});
 
   @override
   State<OfflineBanner> createState() => _OfflineBannerState();
@@ -35,11 +42,25 @@ class _OfflineBannerState extends State<OfflineBanner> {
           final isOffline = state is ConnectivityOffline;
           final showBanner = isOffline || _showReconnected;
 
-          return AnimatedSize(
+          final strip = AnimatedSize(
             duration: const Duration(milliseconds: 250),
             child: showBanner
                 ? _BannerStrip(isOffline: isOffline)
                 : const SizedBox.shrink(),
+          );
+          final child = widget.child;
+          if (child == null) return strip;
+          return Column(
+            children: [
+              strip,
+              Expanded(
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: showBanner,
+                  child: child,
+                ),
+              ),
+            ],
           );
         },
       ),

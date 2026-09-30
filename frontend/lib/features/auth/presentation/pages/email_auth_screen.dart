@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_stat
     as auth_states;
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
 import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Email authentication: one screen toggling between sign in and create
 /// account, with a photo header per mode ("V1 Photo Story" design).
@@ -56,13 +57,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
           } else if (state is auth_states.AuthErrorState) {
             // Show error message
             final theme = Theme.of(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colorScheme.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            showAppSnackBar(context, state.message, tone: AppSnackTone.error);
           }
         },
         child: Scaffold(

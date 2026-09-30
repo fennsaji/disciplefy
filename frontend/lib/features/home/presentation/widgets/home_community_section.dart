@@ -19,6 +19,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/d
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_sections.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 // ---------------------------------------------------------------------------
 // Pure helpers (unit-tested in test/features/home/)
@@ -395,7 +396,6 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     if (_joiningId != null) return;
     setState(() => _joiningId = fellowship.id);
     final l10n = AppLocalizations.of(context)!;
-    final messenger = ScaffoldMessenger.of(context);
 
     bool ok = false;
     try {
@@ -410,12 +410,14 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     setState(() => _joiningId = null);
 
     if (ok) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.homeJoinedFellowship(fellowship.name))),
+      showAppSnackBar(
+        context,
+        l10n.homeJoinedFellowship(fellowship.name),
+        tone: AppSnackTone.success,
       );
       context.push('/community/${fellowship.id}');
     } else {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.homeJoinFailed)));
+      showAppSnackBar(context, l10n.homeJoinFailed, tone: AppSnackTone.error);
     }
   }
 
@@ -956,7 +958,7 @@ class _SuggestionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            _JoinButton(
+            HomeJoinPill(
               label: l10n.homeJoinFellowshipCta,
               isJoining: isJoining,
               onPressed: isBusy ? null : onJoin,
@@ -996,54 +998,59 @@ class _OfficialPill extends StatelessWidget {
   }
 }
 
-class _JoinButton extends StatelessWidget {
+/// "Join" pill on a public-fellowship suggestion: primary CTA colours,
+/// with a spinner while the join is in flight.
+class HomeJoinPill extends StatelessWidget {
   final String label;
   final bool isJoining;
   final VoidCallback? onPressed;
 
-  const _JoinButton({
+  const HomeJoinPill({
+    super.key,
     required this.label,
     required this.isJoining,
     required this.onPressed,
   });
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 32,
-        child: ElevatedButton(
-          onPressed: isJoining ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor:
-                context.appInteractive.withValues(alpha: 0.5),
-            disabledForegroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: isJoining
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 32),
+      child: FilledButton(
+        onPressed: isJoining ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.ctaFill,
+          foregroundColor: palette.ctaInk,
+          disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.5),
+          disabledForegroundColor: palette.ctaInk,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          minimumSize: const Size(0, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: const StadiumBorder(),
         ),
-      );
+        child: isJoining
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(palette.ctaInk),
+                ),
+              )
+            : Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: palette.ctaInk,
+                ),
+              ),
+      ),
+    );
+  }
 }
 
 /// Single call-to-action row for the empty activity panel.

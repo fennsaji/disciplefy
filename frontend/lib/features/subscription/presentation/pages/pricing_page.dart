@@ -29,6 +29,7 @@ import 'package:disciplefy_bible_study/features/subscription/presentation/utils/
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/pricing_card.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/promo_code_input.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Public Pricing Page
 ///
@@ -565,11 +566,10 @@ class _PricingPageState extends State<PricingPage> {
         error: e,
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save preference. Please try again.'),
-            duration: Duration(seconds: 2),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.payFeedbackSavePreferenceFailed),
+          tone: AppSnackTone.error,
         );
         context.go(AppRoutes.login);
       }
@@ -580,11 +580,10 @@ class _PricingPageState extends State<PricingPage> {
         error: e,
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save preference. Please try again.'),
-            duration: Duration(seconds: 2),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.payFeedbackSavePreferenceFailed),
+          tone: AppSnackTone.error,
         );
         context.go(AppRoutes.login);
       }
@@ -633,11 +632,10 @@ class _PricingPageState extends State<PricingPage> {
     } catch (e) {
       Logger.error('Failed to save plan selection', tag: 'PRICING', error: e);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save preference. Please try again.'),
-            duration: Duration(seconds: 2),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.payFeedbackSavePreferenceFailed),
+          tone: AppSnackTone.error,
         );
         context.go(AppRoutes.login);
       }
@@ -683,141 +681,6 @@ class _PricingPageState extends State<PricingPage> {
     } catch (e) {
       Logger.error('Failed to clear plan selection', tag: 'PRICING', error: e);
     }
-  }
-
-  Widget _buildFreePlanCard(BuildContext context, {bool isMobile = false}) {
-    return PricingCard(
-      planName: context.tr(TranslationKeys.pricingFreePlan),
-      price: '0',
-      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
-      tokenInfo: '20 ${context.tr(TranslationKeys.pricingTokensDaily)}',
-      features: [
-        context.tr(TranslationKeys.pricingFreeFeature1),
-        context.tr(TranslationKeys.pricingFreeFeature2),
-        context.tr(TranslationKeys.pricingFreeFeature3),
-        context.tr(TranslationKeys.pricingFreeFeature4),
-      ],
-      buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: () => context.go(AppRoutes.login),
-      isMobile: isMobile,
-    );
-  }
-
-  Widget _buildStandardPlanCard(BuildContext context, {bool isMobile = false}) {
-    return PricingCard(
-      planName: context.tr(TranslationKeys.pricingStandardPlan),
-      price: '0',
-      originalPrice: '50',
-      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
-      tokenInfo: '100 ${context.tr(TranslationKeys.pricingTokensDaily)}',
-      promotionalText: context.tr(TranslationKeys.pricingLimitedTimeOffer),
-      badge: context.tr(TranslationKeys.pricingMostPopular),
-      features: [
-        context.tr(TranslationKeys.pricingStandardFeature1),
-        context.tr(TranslationKeys.pricingStandardFeature2),
-        context.tr(TranslationKeys.pricingStandardFeature3),
-        context.tr(TranslationKeys.pricingStandardFeature4),
-        context.tr(TranslationKeys.pricingStandardFeature5),
-      ],
-      buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: () => context.go(AppRoutes.login),
-      isHighlighted: true,
-      isMobile: isMobile,
-    );
-  }
-
-  Widget _buildPlusPlanCard(BuildContext context, {bool isMobile = false}) {
-    return PricingCard(
-      planName: 'Plus',
-      price: '149',
-      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
-      tokenInfo: '50 ${context.tr(TranslationKeys.pricingTokensDaily)}',
-      badge: 'Recommended',
-      badgeColor: const Color(0xFFFF9800), // Orange
-      features: [
-        '50 daily tokens (all study modes)',
-        '10 follow-ups per study guide',
-        '10 Discipler conversations/month',
-        '10 active memory verses',
-        'All 8 practice modes',
-        '3 practice sessions per verse per day',
-      ],
-      buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: () => context.go(AppRoutes.login),
-      isMobile: isMobile,
-    );
-  }
-
-  Widget _buildPremiumPlanCard(BuildContext context, {bool isMobile = false}) {
-    return PricingCard(
-      planName: context.tr(TranslationKeys.pricingPremiumPlan),
-      price: '100',
-      originalPrice: '200',
-      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
-      tokenInfo: context.tr(TranslationKeys.pricingUnlimitedTokens),
-      promotionalText: context.tr(TranslationKeys.pricingLimitedTimeOffer),
-      badge: context.tr(TranslationKeys.pricingBestValue),
-      badgeColor: AppTheme.successColor,
-      features: [
-        context.tr(TranslationKeys.pricingPremiumFeature1),
-        context.tr(TranslationKeys.pricingPremiumFeature2),
-        context.tr(TranslationKeys.pricingPremiumFeature3),
-        context.tr(TranslationKeys.pricingPremiumFeature4),
-        context.tr(TranslationKeys.pricingPremiumFeature5),
-        context.tr(TranslationKeys.pricingPremiumFeature6),
-      ],
-      buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: () async {
-        // Save pending premium upgrade flag for post-login redirect
-        try {
-          Box box;
-          if (Hive.isBoxOpen('app_settings')) {
-            box = Hive.box('app_settings');
-          } else {
-            box = await Hive.openBox('app_settings');
-          }
-          await box.put('pending_premium_upgrade', true);
-
-          if (context.mounted) {
-            context.go(AppRoutes.login);
-          }
-        } on HiveError catch (e) {
-          Logger.error(
-            'Hive error saving premium upgrade flag',
-            tag: 'PRICING',
-            error: e,
-          );
-          // Show error and navigate to login
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to save preference. Please try again.'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-            context.go(AppRoutes.login);
-          }
-        } catch (e) {
-          Logger.error(
-            'Unexpected error saving premium upgrade flag',
-            tag: 'PRICING',
-            error: e,
-          );
-          // Show error and navigate to login
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to save preference. Please try again.'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-            context.go(AppRoutes.login);
-          }
-        }
-      },
-      isPremium: true,
-      isMobile: isMobile,
-    );
   }
 
   Widget _buildFooterInfo(BuildContext context) {

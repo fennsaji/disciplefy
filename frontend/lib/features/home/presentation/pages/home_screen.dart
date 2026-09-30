@@ -14,6 +14,8 @@ import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
@@ -464,11 +466,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       }
     } else {
       // Show error if verse is not loaded
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.homeVerseNotLoaded)),
-          backgroundColor: AppColors.error,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.homeVerseNotLoaded),
+        tone: AppSnackTone.error,
       );
     }
   }
@@ -1202,7 +1203,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             else if (_isLearningPathsLocked())
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
-                child: _buildPlaceholderLearningPathCard(),
+                child: const HomeLockedPathsCard(),
               )
             else
               HomePathRow(
@@ -1217,26 +1218,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           ],
         );
       },
-    );
-  }
-
-  /// Show Standard subscription bottom sheet
-  void _showStandardSubscriptionSheet(BuildContext context) {
-    final state = sl<SubscriptionBloc>().state;
-
-    if (state is! UserSubscriptionStatusLoaded) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading subscription status...'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-
-    StandardSubscriptionSheet.show(
-      context,
-      status: state.subscriptionStatus,
     );
   }
 
@@ -1288,81 +1269,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final systemConfigService = sl<SystemConfigService>();
     return systemConfigService.isFeatureLocked('learning_paths', userPlan);
-  }
-
-  /// Build a placeholder learning path card to show with lock overlay
-  Widget _buildPlaceholderLearningPathCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color:
-              isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.appBrandAccent.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.route_outlined,
-                  color: context.appBrandAccent,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.learningPathsTitle),
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      context.tr(TranslationKeys.learningPathsSubtitle),
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.6)
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Unlock structured learning journeys designed to deepen your faith and biblical understanding.',
-            style: AppFonts.inter(
-              fontSize: 13,
-              color: isDark
-                  ? Colors.white.withOpacity(0.7)
-                  : const Color(0xFF6B7280),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

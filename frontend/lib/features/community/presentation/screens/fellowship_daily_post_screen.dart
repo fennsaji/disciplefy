@@ -20,6 +20,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/c
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Mentor controls for the Discipler daily post: when the next post goes out,
 /// the schedule (time, skip, pause), the lesson queue, and — when an admin has
@@ -74,13 +75,11 @@ class FellowshipDailyPostScreen extends StatelessWidget {
     } else {
       message = notice.error ?? l10n.dailyPostError;
     }
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(message),
-        backgroundColor: notice.success ? AppColors.success : context.appError,
-        behavior: SnackBarBehavior.floating,
-      ));
+    showAppSnackBar(
+      context,
+      message,
+      tone: notice.success ? AppSnackTone.success : AppSnackTone.error,
+    );
   }
 }
 

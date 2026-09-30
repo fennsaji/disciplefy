@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Strips `+ - ( ) space` from a raw WhatsApp number, leaving digits only.
 ///
@@ -87,8 +88,7 @@ Future<void> launchMentorContact(
   }
 
   if (!launched && context.mounted) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l10n.messageMentorFailed)));
+    showAppSnackBar(context, l10n.messageMentorFailed,
+        tone: AppSnackTone.error);
   }
 }

@@ -17,6 +17,7 @@ import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/
 import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_state.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/utils/time_of_day_extensions.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
@@ -42,24 +43,16 @@ Future<void> _showPermissionDeniedSnackbar(BuildContext context) async {
       await sl<NotificationService>().isPermissionPermanentlyDenied();
   if (!context.mounted) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-          context.tr(TranslationKeys.notificationsSettingsPermissionsDenied)),
-      backgroundColor: AppColors.warning,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // persist:false — since Flutter 3.44 a SnackBar with an action
-      // defaults to persist:true, so it never times out AND blocks every
-      // later snackbar behind it in the app-wide queue.
-      persist: false,
-      action: permanentlyDenied
-          ? SnackBarAction(
-              label: context.tr(TranslationKeys.commonOpenSettings),
-              onPressed: sl<NotificationService>().openPermissionSettings,
-            )
-          : null,
-    ),
+  showAppSnackBar(
+    context,
+    context.tr(TranslationKeys.notificationsSettingsPermissionsDenied),
+    tone: AppSnackTone.warning,
+    actionLabel: permanentlyDenied
+        ? context.tr(TranslationKeys.commonOpenSettings)
+        : null,
+    onAction: permanentlyDenied
+        ? sl<NotificationService>().openPermissionSettings
+        : null,
   );
 }
 
@@ -86,42 +79,28 @@ class _NotificationSettingsView extends StatelessWidget {
         body: BlocConsumer<NotificationBloc, NotificationState>(
           listener: (context, state) {
             if (state is NotificationError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(TranslationKeys.commonErrorTryAgain),
+                tone: AppSnackTone.error,
               );
             } else if (state is NotificationPreferencesUpdated) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.tr(
-                      TranslationKeys.notificationsSettingsPreferencesUpdated)),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  duration: const Duration(seconds: 2),
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(
+                    TranslationKeys.notificationsSettingsPreferencesUpdated),
+                tone: AppSnackTone.success,
               );
               context
                   .read<NotificationBloc>()
                   .add(const LoadNotificationPreferences());
             } else if (state is NotificationPermissionResult) {
               if (state.granted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr(TranslationKeys
-                        .notificationsSettingsPermissionsGranted)),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
+                showAppSnackBar(
+                  context,
+                  context.tr(
+                      TranslationKeys.notificationsSettingsPermissionsGranted),
+                  tone: AppSnackTone.success,
                 );
               } else {
                 _showPermissionDeniedSnackbar(context);

@@ -18,6 +18,7 @@ import 'package:disciplefy_bible_study/features/study_generation/data/repositori
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/reflection_response.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/repositories/reflections_repository.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 
 /// Screen displaying the user's reflection journal.
 ///
@@ -200,10 +201,10 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
 
       // Show user-friendly error message without raw exception
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(context
-                  .tr(TranslationKeys.reflectionJournalLoadStudyFailed))),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.reflectionJournalLoadStudyFailed),
+          tone: AppSnackTone.error,
         );
       }
     }
@@ -240,19 +241,19 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           _reflections.removeWhere((r) => r.id == reflectionId);
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text(context.tr(TranslationKeys.reflectionJournalDeleted))),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.reflectionJournalDeleted),
+            tone: AppSnackTone.success,
           );
         }
       } catch (e) {
         Logger.error('Failed to delete reflection', error: e);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    context.tr(TranslationKeys.reflectionJournalDeleteFailed))),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.reflectionJournalDeleteFailed),
+            tone: AppSnackTone.error,
           );
         }
       }

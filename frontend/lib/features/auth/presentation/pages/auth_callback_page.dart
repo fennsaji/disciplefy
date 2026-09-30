@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/utils/logger.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 
@@ -151,13 +152,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
   }
 
   void _showErrorAndRedirect(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showAppSnackBar(context, message, tone: AppSnackTone.error);
 
     // Redirect to login after showing error
     Future.delayed(const Duration(seconds: 2), () {

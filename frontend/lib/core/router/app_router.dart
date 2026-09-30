@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
 import '../navigation/route_observer.dart';
+import '../../shared/widgets/app_snackbar.dart';
 import '../animations/page_transitions.dart';
 import '../presentation/widgets/max_width_wrapper.dart';
 import '../screens/maintenance_screen.dart';
@@ -388,11 +391,12 @@ class AppRouter {
                             // back rather than crash on a null fellowship.
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context)
-                                  ..hideCurrentSnackBar()
-                                  ..showSnackBar(const SnackBar(
-                                      content:
-                                          Text('Could not open settings.')));
+                                showAppSnackBar(
+                                  context,
+                                  context.tr(TranslationKeys
+                                      .appStatusSettingsOpenFailed),
+                                  tone: AppSnackTone.error,
+                                );
                                 context.pop();
                               }
                             });

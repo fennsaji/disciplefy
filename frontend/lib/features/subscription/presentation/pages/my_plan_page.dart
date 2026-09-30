@@ -29,6 +29,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_b
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Unified "My Plan" Page
 ///
@@ -231,35 +232,30 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                   _loadPlanFeatures(planCode: subPlanCode);
                 }
               } else if (state is SubscriptionCancelled) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.warningColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  state.message,
+                  tone: AppSnackTone.warning,
                 );
               } else if (state is SubscriptionResumed) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.successColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  state.message,
+                  tone: AppSnackTone.success,
                 );
               } else if (state is PremiumTrialStarted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.successColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  state.message,
+                  tone: AppSnackTone.success,
                 );
                 // Refresh token status to reflect new Premium access
                 context.read<TokenBloc>().add(const RefreshTokenStatus());
               } else if (state is SubscriptionError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content:
-                        Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                    backgroundColor: AppTheme.errorColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  context.tr(TranslationKeys.commonErrorTryAgain),
+                  tone: AppSnackTone.error,
                 );
               } else if (state is UserSubscriptionStatusLoaded &&
                   state.authorizationUrl != null &&
@@ -861,20 +857,18 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open payment page. Please try again.'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.payFeedbackOpenPaymentPageFailed),
+          tone: AppSnackTone.error,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     }

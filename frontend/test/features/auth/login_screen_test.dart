@@ -15,6 +15,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_stat
     as auth_states;
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -196,7 +197,7 @@ void main() {
       await tester.pump(); // Trigger the stream emission
 
       // Assert — login screen shows generic cancelled message, not raw state.message
-      expect(find.text('Sign-in was cancelled.'), findsOneWidget);
+      expect(find.text(TranslationKeys.authSignInCancelled), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
     });
 

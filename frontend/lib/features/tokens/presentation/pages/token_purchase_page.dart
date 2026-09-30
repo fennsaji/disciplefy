@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_e
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/payment_success_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// "Get credits" in the quiet-ledger design.
 ///
@@ -120,22 +121,18 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     service.onError = (message) {
       if (!mounted || !_isLoading) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 5),
-        ),
+      showAppSnackBar(
+        context,
+        message,
+        tone: AppSnackTone.error,
       );
     };
     service.onCancelled = () {
       if (!mounted || !_isLoading) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.commonPurchaseCancelled)),
-          duration: const Duration(seconds: 2),
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.commonPurchaseCancelled),
       );
     };
     _consumableService = service;
@@ -305,12 +302,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
       Logger.debug('[TokenPurchasePage] ❌ Failed to confirm payment: $e');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.ledgerPaymentPending)),
-            backgroundColor: AppColors.warning,
-            duration: const Duration(seconds: 8),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.ledgerPaymentPending),
+          tone: AppSnackTone.warning,
         );
 
         // Refresh token balance - tokens may have been credited by webhook
@@ -333,11 +328,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     if (response.code == 2) return;
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.ledgerPaymentFailed)),
-          backgroundColor: AppColors.error,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.ledgerPaymentFailed),
+        tone: AppSnackTone.error,
       );
     }
   }
@@ -388,10 +382,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     final tokenAmount = _purchaseTokens;
 
     if (tokenAmount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(context.tr(TranslationKeys.ledgerChoosePackOrAmount))),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.ledgerChoosePackOrAmount),
+        tone: AppSnackTone.warning,
       );
       return;
     }
@@ -400,8 +394,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     if (_useAppleIAP) {
       final product = _iosProducts[_selectedPackageTokens];
       if (product == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr(TranslationKeys.ledgerChoosePack))),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.ledgerChoosePack),
+          tone: AppSnackTone.warning,
         );
         return;
       }
@@ -484,12 +480,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
             _isLoading = false;
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(ErrorMessageSanitizer.sanitize(state.failure)),
-              backgroundColor: AppColors.error,
-              duration: const Duration(seconds: 5),
-            ),
+          showAppSnackBar(
+            context,
+            ErrorMessageSanitizer.sanitize(state.failure),
+            tone: AppSnackTone.error,
           );
         }
       },

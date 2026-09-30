@@ -22,6 +22,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/c
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Fellowship settings screen: name/description/posting permission, plus
 /// (when [FellowshipEntity.disciplerAllowed]) the mentor-only Discipler
@@ -107,16 +108,13 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
     final rawEmail = _mentorEmailController.text.trim();
 
     if (rawWhatsapp.isNotEmpty && !isValidWhatsAppValue(rawWhatsapp)) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-            SnackBar(content: Text(l10n.mentorContactInvalidWhatsapp)));
+      showAppSnackBar(context, l10n.mentorContactInvalidWhatsapp,
+          tone: AppSnackTone.warning);
       return false;
     }
     if (rawEmail.isNotEmpty && !isValidEmailValue(rawEmail)) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.mentorContactInvalidEmail)));
+      showAppSnackBar(context, l10n.mentorContactInvalidEmail,
+          tone: AppSnackTone.warning);
       return false;
     }
 
@@ -136,10 +134,8 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
     result.fold(
       (failure) {
         ok = false;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-              SnackBar(content: Text(ErrorMessageSanitizer.sanitize(failure))));
+        showAppSnackBar(context, ErrorMessageSanitizer.sanitize(failure),
+            tone: AppSnackTone.error);
       },
       (confirmed) {
         setState(() {
@@ -149,9 +145,8 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
           _mentorEmailController.text = _savedEmail;
         });
         if (!silent) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(l10n.editFellowshipSuccess)));
+          showAppSnackBar(context, l10n.editFellowshipSuccess,
+              tone: AppSnackTone.success);
         }
       },
     );
@@ -230,15 +225,13 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
       listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == FellowshipSettingsStatus.saved) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(l10n.editFellowshipSuccess)));
+          showAppSnackBar(context, l10n.editFellowshipSuccess,
+              tone: AppSnackTone.success);
           Navigator.of(context).pop(state.original);
         } else if (state.status == FellowshipSettingsStatus.failure &&
             state.errorMessage != null) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          showAppSnackBar(context, state.errorMessage!,
+              tone: AppSnackTone.error);
         }
       },
       builder: (context, state) {

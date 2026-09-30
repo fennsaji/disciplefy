@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_e
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/extensions/duration_extensions.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Credits ("token management") in the quiet-ledger design.
 ///
@@ -204,11 +205,10 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
   void _showError() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-        backgroundColor: AppColors.error,
-      ),
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.commonErrorTryAgain),
+      tone: AppSnackTone.error,
     );
   }
 
@@ -244,11 +244,10 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         BlocListener<SubscriptionBloc, SubscriptionState>(
           listener: (context, state) {
             if (state is SubscriptionResumed) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.result.message),
-                  backgroundColor: AppColors.success,
-                ),
+              showAppSnackBar(
+                context,
+                state.result.message,
+                tone: AppSnackTone.success,
               );
               // Refresh token status to update UI
               context.read<TokenBloc>().add(const RefreshTokenStatus());

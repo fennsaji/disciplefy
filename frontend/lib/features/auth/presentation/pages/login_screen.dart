@@ -18,6 +18,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Login screen: photo header, feature chips and Google / Apple / email
 /// sign-in pills ("V1 Photo Story" design, dark and light).
@@ -195,23 +196,16 @@ class _LoginScreenState extends State<LoginScreen> {
             if (state.message.contains('canceled') ||
                 state.message.contains('cancelled')) {
               // Show neutral snackbar for cancelled operations
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Sign-in was cancelled.'),
-                  backgroundColor: theme.colorScheme.onSurface.withOpacity(0.8),
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(TranslationKeys.authSignInCancelled),
               );
             } else {
               // Show error message for actual errors
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                  backgroundColor: theme.colorScheme.error,
-                  behavior: SnackBarBehavior.floating,
-                ),
+              showAppSnackBar(
+                context,
+                context.tr(TranslationKeys.commonErrorTryAgain),
+                tone: AppSnackTone.error,
               );
             }
           }

@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/f
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_report_sheet.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/mention_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Real implementation of the Fellowship Feed tab.
 ///
@@ -129,19 +130,11 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
       listenWhen: (prev, curr) => prev.blockStatus != curr.blockStatus,
       listener: (context, state) {
         if (state.blockStatus == FellowshipBlockStatus.success) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(content: Text(l10n.blockUserSuccess)),
-            );
+          showAppSnackBar(context, l10n.blockUserSuccess,
+              tone: AppSnackTone.success);
         } else if (state.blockStatus == FellowshipBlockStatus.failure) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage ?? l10n.feedLoadError),
-              ),
-            );
+          showAppSnackBar(context, state.errorMessage ?? l10n.feedLoadError,
+              tone: AppSnackTone.error);
         }
       },
       child: Scaffold(

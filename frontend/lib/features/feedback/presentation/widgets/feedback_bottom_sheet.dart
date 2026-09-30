@@ -13,6 +13,7 @@ import 'package:disciplefy_bible_study/features/feedback/presentation/bloc/feedb
 import 'package:disciplefy_bible_study/features/feedback/presentation/utils/user_context_helper.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Bottom sheet widget for collecting general feedback
 class FeedbackBottomSheet extends StatefulWidget {
@@ -48,14 +49,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
       listener: (context, state) {
         if (state is FeedbackSubmitSuccess) {
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          showAppSnackBar(context, state.message, tone: AppSnackTone.success);
           // Close the bottom sheet after a brief delay
           Future.delayed(const Duration(milliseconds: 500), () {
             if (context.mounted) {
@@ -65,12 +59,10 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
           // Reset the state for future use
           context.read<FeedbackBloc>().add(const ResetFeedbackState());
         } else if (state is FeedbackSubmitFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.commonErrorTryAgain),
+            tone: AppSnackTone.error,
           );
         }
       },
@@ -190,12 +182,10 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
 
   Future<void> _submitFeedback() async {
     if (_messageController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.feedbackEmptyMessage)),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.feedbackEmptyMessage),
+        tone: AppSnackTone.warning,
       );
       return;
     }
@@ -212,12 +202,10 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
             ),
           );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.feedbackSubmitError)),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.feedbackSubmitError),
+        tone: AppSnackTone.error,
       );
     }
   }

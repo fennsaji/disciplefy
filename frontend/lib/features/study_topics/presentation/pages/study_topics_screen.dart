@@ -52,6 +52,9 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
 /// Screen for browsing study topics and learning paths.
@@ -910,16 +913,14 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 value: 'reset_progress',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.restart_alt,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    Icon(Icons.restart_alt, color: context.appError),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
                         context.tr(TranslationKeys.studyTopicsResetProgress),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                        style: AppFonts.inter(
+                          fontSize: 14,
+                          color: context.appError,
                         ),
                       ),
                     ),
@@ -950,7 +951,6 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
     } catch (_) {
       continueBloc = null;
     }
-    final messenger = ScaffoldMessenger.of(context);
     final successMessage = context.tr(TranslationKeys.studyTopicsResetSuccess);
 
     final confirmed = await DestructiveConfirmDialog.show(
@@ -998,7 +998,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (!context.mounted) return;
 
     if (outcome is LearningPathsResetSuccess) {
-      messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+      showAppSnackBar(context, successMessage, tone: AppSnackTone.success);
 
       // Everything derived from the deleted rows must be refetched: the
       // path list (in the user's actual study-content language — passing
@@ -1019,7 +1019,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         isNetworkError: outcome.isNetworkError,
         fallbackMessage: outcome.message,
       );
-      messenger.showSnackBar(SnackBar(content: Text(errorMessage)));
+      showAppSnackBar(context, errorMessage, tone: AppSnackTone.error);
     }
   }
 
@@ -1047,102 +1047,114 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (builderContext) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(builderContext).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: SheetScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+      builder: (sheetContext) {
+        void choose(String value) =>
+            _chooseLearningPathMode(sheetContext, parentContext, value);
+        final recommended =
+            sheetContext.tr(TranslationKeys.settingsUseRecommended);
+        final ask = sheetContext.tr(TranslationKeys.settingsAskEveryTime);
+        return SettingsSheetFrame(
+          title: sheetContext
+              .tr(TranslationKeys.settingsLearningPathStudyModePreference),
+          description: sheetContext
+              .tr(TranslationKeys.settingsLearningPathStudyModeDescription),
+          children: [
+            SettingsSheetGroup(
+              children: [
+                SettingsRadioRow(
+                  icon: Icons.stars_outlined,
+                  tone: SettingsTone.gold,
+                  title: recommended,
+                  subtitle: sheetContext
+                      .tr(TranslationKeys.settingsUseRecommendedSubtitle),
+                  selected: currentMode == StudyModePreferences.recommended,
+                  onTap: () => choose(StudyModePreferences.recommended),
+                ),
+                SettingsRadioRow(
+                  icon: Icons.help_outline,
+                  title: ask,
+                  subtitle: sheetContext
+                      .tr(TranslationKeys.settingsAskEveryTimeSubtitle),
+                  selected:
+                      currentMode == StudyModePreferences.learningPathDefault,
+                  onTap: () => choose(StudyModePreferences.learningPathDefault),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SettingsSheetGroup(
+              children: [
+                for (final mode in StudyMode.values)
+                  SettingsRadioRow(
+                    icon: mode.iconData,
+                    title: _getStudyModeTranslatedName(mode, sheetContext),
+                    subtitle: '${mode.durationText} • '
+                        '${_getStudyModeTranslatedDescription(mode, sheetContext)}',
+                    selected: currentMode == mode.value,
+                    onTap: () => choose(mode.value),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                context.tr(
-                    TranslationKeys.settingsLearningPathStudyModePreference),
-                style: AppFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(builderContext).colorScheme.onBackground,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr(
-                    TranslationKeys.settingsLearningPathStudyModeDescription),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: Theme.of(builderContext)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Option: Use Recommended
-              _buildLearningPathModeOption(
-                builderContext,
-                parentContext,
-                'recommended',
-                context.tr(TranslationKeys.settingsUseRecommended),
-                Icons.stars,
-                context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
-                currentMode,
-              ),
-              const SizedBox(height: 12),
-
-              // Option: Always Ask
-              _buildLearningPathModeOption(
-                builderContext,
-                parentContext,
-                'ask',
-                context.tr(TranslationKeys.settingsAskEveryTime),
-                Icons.help_outline,
-                context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
-                currentMode,
-              ),
-              const SizedBox(height: 12),
-
-              // Divider
-              Divider(
-                  color: context.appBrandAccent.withOpacity(0.2), height: 24),
-
-              // Specific modes (Quick, Standard, Deep, Lectio, Sermon)
-              ...StudyMode.values.map((mode) => Column(
-                    children: [
-                      _buildLearningPathModeOption(
-                        builderContext,
-                        parentContext,
-                        mode.value,
-                        _getStudyModeTranslatedName(mode, context),
-                        mode.iconData,
-                        '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
-                        currentMode,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  )),
-            ],
-          ),
-        ),
-      ),
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
+        );
+      },
     );
+  }
+
+  /// Saves the learning-path study mode, refreshes the cached profile and
+  /// closes the sheet, reporting the outcome on the page.
+  Future<void> _chooseLearningPathMode(
+    BuildContext sheetContext,
+    BuildContext parentContext,
+    String value,
+  ) async {
+    try {
+      final userProfileService = sl<UserProfileService>();
+      final authProvider = sl<AuthStateProvider>();
+
+      final result =
+          await userProfileService.updateLearningPathStudyModePreference(value);
+
+      if (!parentContext.mounted) return;
+      result.fold(
+        (failure) {
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+          showAppSnackBar(
+            parentContext,
+            parentContext.tr(TranslationKeys.errorUpdatingPreference),
+            tone: AppSnackTone.error,
+          );
+        },
+        (profile) {
+          // Update AuthStateProvider cache with new profile
+          final userId = authProvider.userId;
+          if (userId != null) {
+            final profileMap = UserProfileModel.fromEntity(profile).toJson();
+            authProvider.cacheProfile(userId, profileMap);
+          }
+
+          // Close sheet AFTER cache is updated
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+
+          showAppSnackBar(
+            parentContext,
+            parentContext.tr(TranslationKeys.preferenceUpdatedSuccessfully),
+            tone: AppSnackTone.success,
+          );
+        },
+      );
+    } catch (e) {
+      // Close sheet even on error
+      if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+      if (parentContext.mounted) {
+        showAppSnackBar(
+          parentContext,
+          parentContext.tr(TranslationKeys.errorUpdatingPreference),
+          tone: AppSnackTone.error,
+        );
+      }
+    }
   }
 
   /// Get translated display name for study mode enum
@@ -1176,188 +1188,6 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
       case StudyMode.sermon:
         return context.tr(TranslationKeys.studyModeSermonDescription);
     }
-  }
-
-  /// Build learning path mode option tile
-  Widget _buildLearningPathModeOption(
-    BuildContext sheetContext,
-    BuildContext parentContext,
-    String value,
-    String label,
-    IconData icon,
-    String subtitle,
-    String? currentMode,
-  ) {
-    final isSelected = value == currentMode;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          // Update user profile with learning path study mode preference
-          try {
-            final userProfileService = sl<UserProfileService>();
-            final authProvider = sl<AuthStateProvider>();
-
-            final result = await userProfileService
-                .updateLearningPathStudyModePreference(value);
-
-            if (parentContext.mounted) {
-              result.fold(
-                (failure) {
-                  // Close sheet on failure
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        parentContext
-                            .tr(TranslationKeys.errorUpdatingPreference),
-                      ),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.error,
-                    ),
-                  );
-                },
-                (profile) {
-                  // Update AuthStateProvider cache with new profile
-                  final userId = authProvider.userId;
-                  if (userId != null) {
-                    final profileMap =
-                        UserProfileModel.fromEntity(profile).toJson();
-                    authProvider.cacheProfile(userId, profileMap);
-                  }
-
-                  // Close sheet AFTER cache is updated
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        parentContext
-                            .tr(TranslationKeys.preferenceUpdatedSuccessfully),
-                      ),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.primary,
-                    ),
-                  );
-                },
-              );
-            }
-          } catch (e) {
-            // Close sheet even on error
-            if (sheetContext.mounted) {
-              Navigator.of(sheetContext).pop();
-            }
-
-            if (parentContext.mounted) {
-              ScaffoldMessenger.of(parentContext).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    parentContext.tr(TranslationKeys.errorUpdatingPreference),
-                  ),
-                  backgroundColor: Theme.of(parentContext).colorScheme.error,
-                ),
-              );
-            }
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor.withOpacity(0.1),
-                      AppTheme.secondaryPurple.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? parentContext.appBrandAccent
-                  : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? parentContext.appBrandAccent.withOpacity(0.15)
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected
-                      ? parentContext.appBrandAccent
-                      : Theme.of(sheetContext)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? parentContext.appBrandAccent
-                            : Theme.of(sheetContext).colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: sheetContext.appBrandAccent,
-                  size: 22,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override

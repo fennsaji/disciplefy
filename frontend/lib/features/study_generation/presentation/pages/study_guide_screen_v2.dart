@@ -44,6 +44,7 @@ import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
+import '../widgets/guide_share_prompts.dart';
 import '../widgets/streaming_study_content.dart';
 import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
@@ -2603,34 +2604,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildPartialContentWithError(StudyGenerationStreamingFailed state) {
     return Column(
       children: [
-        // Error banner
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.error.withOpacity(0.1),
-          child: Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Generation interrupted. Partial content shown below.',
-                  style: AppFonts.inter(
-                    color: Theme.of(context).colorScheme.error,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (state.canRetry)
-                TextButton(
-                  onPressed: _retryGeneration,
-                  child: const Text('Retry'),
-                ),
-            ],
-          ),
+        GenerationInterruptedBanner(
+          onRetry: state.canRetry ? _retryGeneration : null,
         ),
         // Partial content
         Expanded(
@@ -3502,8 +3477,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _showShareOnScreenshotPrompt() {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ScreenshotShareSheet(
+      builder: (ctx) => ScreenshotShareSheet(
         onShareText: () {
           Navigator.of(ctx).pop();
           _shareStudyGuide();
@@ -3513,6 +3490,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 Navigator.of(ctx).pop();
                 showModalBottomSheet<void>(
                   context: context,
+                  useRootNavigator: true,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
                   builder: (_) => ShareGuideSheet(
@@ -4027,128 +4005,6 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
           ],
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Screenshot share prompt sheet
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ScreenshotShareSheet extends StatelessWidget {
-  final VoidCallback onShareText;
-  final VoidCallback? onShareFellowship;
-
-  const _ScreenshotShareSheet({
-    required this.onShareText,
-    this.onShareFellowship,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Icon + headline
-          Icon(
-            Icons.screenshot_monitor_rounded,
-            size: 36,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Share your study guide',
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'You took a screenshot — want to share it?',
-            style: AppFonts.inter(
-              fontSize: 13,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Share buttons
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: onShareText,
-                    icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text('Share'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                if (onShareFellowship != null) ...[
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onShareFellowship,
-                      icon: const Icon(Icons.group_rounded, size: 18),
-                      label: const Text('Share to Fellowship'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'Dismiss',
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
     );
   }
 }

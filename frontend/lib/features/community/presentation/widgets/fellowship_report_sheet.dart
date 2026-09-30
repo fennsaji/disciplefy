@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Reports a post or comment to the fellowship's mentors.
 ///
@@ -63,15 +64,8 @@ class FellowshipReportSheetState extends State<FellowshipReportSheet> {
       listener: (context, state) {
         if (state.reportStatus == FellowshipReportStatus.success) {
           Navigator.of(context).maybePop();
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(l10n.reportSuccess),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              ),
-            );
+          showAppSnackBar(context, l10n.reportSuccess,
+              tone: AppSnackTone.success);
         }
       },
       // The sheet is shown on a transparent background, so it paints its

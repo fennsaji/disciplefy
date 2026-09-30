@@ -18,6 +18,7 @@ import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/path_icon_utils.dart';
 import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../shared/widgets/photo_wash.dart';
 import '../../../../shared/widgets/popup.dart'
     show PopupEyebrow, PopupPrimaryButton, kPopupRadius;
@@ -426,12 +427,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
               listener: (context, state) {
                 if (state is LearningPathEnrolled) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(context
-                          .tr(TranslationKeys.learningPathsEnrolledSuccess)),
-                      backgroundColor: AppColors.success,
-                    ),
+                  showAppSnackBar(
+                    context,
+                    context.tr(TranslationKeys.learningPathsEnrolledSuccess),
+                    tone: AppSnackTone.success,
                   );
                   // Reload details to show updated enrollment status
                   _loadPathDetails();
@@ -675,9 +674,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       await Share.share(message, subject: path.title);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(context.tr(TranslationKeys.downloadsShareFailed))),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.downloadsShareFailed),
+        tone: AppSnackTone.error,
       );
     }
   }
@@ -752,11 +752,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     final costPerGuide = costResult.fold<int?>((_) => null, (c) => c);
     if (costPerGuide == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(context.tr(TranslationKeys.studyTopicsSomethingWentWrong)),
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.studyTopicsSomethingWentWrong),
+        tone: AppSnackTone.error,
       );
       return;
     }
@@ -782,10 +781,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       useRootNavigator: true,
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => _TopicSelectionSheet(
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => TopicSelectionSheet(
         topics: selectable,
         initialSelected: selected,
         costPerGuide: costPerGuide,
@@ -1482,13 +1479,18 @@ class _DownloadTopicCard extends StatelessWidget {
 // Topic selection bottom sheet
 // ---------------------------------------------------------------------------
 
-class _TopicSelectionSheet extends StatefulWidget {
+/// Picks which not-yet-downloaded topics of a path to download.
+///
+/// Show it with a transparent sheet background.
+@visibleForTesting
+class TopicSelectionSheet extends StatefulWidget {
   final List<LearningPathTopic> topics;
   final Set<String> initialSelected;
   final int costPerGuide;
   final Future<void> Function(List<LearningPathTopic>) onConfirm;
 
-  const _TopicSelectionSheet({
+  const TopicSelectionSheet({
+    super.key,
     required this.topics,
     required this.initialSelected,
     required this.costPerGuide,
@@ -1496,10 +1498,10 @@ class _TopicSelectionSheet extends StatefulWidget {
   });
 
   @override
-  State<_TopicSelectionSheet> createState() => _TopicSelectionSheetState();
+  State<TopicSelectionSheet> createState() => _TopicSelectionSheetState();
 }
 
-class _TopicSelectionSheetState extends State<_TopicSelectionSheet> {
+class _TopicSelectionSheetState extends State<TopicSelectionSheet> {
   late final Set<String> _selected;
 
   @override
@@ -1510,173 +1512,180 @@ class _TopicSelectionSheetState extends State<_TopicSelectionSheet> {
 
   int get _selectedCount => _selected.length;
   int get _totalCost => _selectedCount * widget.costPerGuide;
+  bool get _allSelected => _selected.length == widget.topics.length;
+
+  void _toggle(String topicId) => setState(() {
+        if (!_selected.remove(topicId)) _selected.add(topicId);
+      });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       minChildSize: 0.4,
       maxChildSize: 0.92,
       expand: false,
-      builder: (_, controller) => Column(
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr(TranslationKeys.downloadsSelectGuides),
-                        style: AppFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.costPerGuide > 0
-                            ? context.tr(
-                                TranslationKeys.downloadsGuidesWithCost,
-                                {'count': _selectedCount, 'cost': _totalCost})
-                            : context.tr(
-                                TranslationKeys.downloadsGuidesSelected,
-                                {'count': _selectedCount}),
-                        style: AppFonts.inter(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => setState(() {
-                    if (_selected.length == widget.topics.length) {
-                      _selected.clear();
-                    } else {
-                      _selected.addAll(widget.topics.map((t) => t.topicId));
-                    }
-                  }),
-                  child: Text(
-                    _selected.length == widget.topics.length
-                        ? context.tr(TranslationKeys.downloadsDeselectAll)
-                        : context.tr(TranslationKeys.downloadsSelectAll),
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Topic list
-          Expanded(
-            child: ListView.builder(
-              controller: controller,
-              itemCount: widget.topics.length,
-              itemBuilder: (_, index) {
-                final topic = widget.topics[index];
-                final isSelected = _selected.contains(topic.topicId);
-                return CheckboxListTile(
-                  value: isSelected,
-                  onChanged: (_) => setState(() {
-                    if (isSelected) {
-                      _selected.remove(topic.topicId);
-                    } else {
-                      _selected.add(topic.topicId);
-                    }
-                  }),
-                  title: Text(
-                    topic.title,
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  subtitle: widget.costPerGuide > 0
-                      ? Text(
-                          '${widget.costPerGuide} tokens',
-                          style: AppFonts.inter(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5),
-                          ),
-                        )
-                      : null,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  fillColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppColors.brandPrimaryDeep;
-                    }
-                    return null;
-                  }),
-                  checkColor: Colors.white,
-                );
-              },
-            ),
-          ),
-          // Download button
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _selectedCount == 0
-                      ? null
-                      : () {
-                          final chosen = widget.topics
-                              .where((t) => _selected.contains(t.topicId))
-                              .toList();
-                          Navigator.pop(context);
-                          widget.onConfirm(chosen);
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.brandPrimaryDeep,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        AppColors.brandPrimaryDeep.withValues(alpha: 0.4),
-                  ),
-                  child: Text(
-                    _selectedCount == 0
-                        ? context.tr(TranslationKeys.downloadsSelectAtLeastOne)
-                        : widget.costPerGuide > 0
-                            ? context.tr(
-                                TranslationKeys.downloadsDownloadCountWithCost,
-                                {'count': _selectedCount, 'cost': _totalCost})
-                            : context.tr(TranslationKeys.downloadsDownloadCount,
-                                {'count': _selectedCount}),
-                    style: AppFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+      // A Material (not a decorated box) so the checkbox rows' ink shows.
+      builder: (_, controller) => Material(
+        color: palette.card,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(kPopupRadius)),
+          side: BorderSide(color: palette.hairline),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: palette.outline,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-        ],
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 12, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.downloadsSelectGuides),
+                          style: AppFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.costPerGuide > 0
+                              ? context.tr(
+                                  TranslationKeys.downloadsGuidesWithCost,
+                                  {'count': _selectedCount, 'cost': _totalCost})
+                              : context.tr(
+                                  TranslationKeys.downloadsGuidesSelected,
+                                  {'count': _selectedCount}),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: palette.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () => setState(() {
+                      if (_allSelected) {
+                        _selected.clear();
+                      } else {
+                        _selected.addAll(widget.topics.map((t) => t.topicId));
+                      }
+                    }),
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.accentIcon,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    child: Text(
+                      _allSelected
+                          ? context.tr(TranslationKeys.downloadsDeselectAll)
+                          : context.tr(TranslationKeys.downloadsSelectAll),
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: palette.accentIcon,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, thickness: 1, color: palette.hairline),
+            // Topic list
+            Expanded(
+              child: ListView.builder(
+                controller: controller,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                itemCount: widget.topics.length,
+                itemBuilder: (_, index) {
+                  final topic = widget.topics[index];
+                  final isSelected = _selected.contains(topic.topicId);
+                  return CheckboxListTile(
+                    value: isSelected,
+                    onChanged: (_) => _toggle(topic.topicId),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    title: Text(
+                      topic.title,
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: palette.text,
+                      ),
+                    ),
+                    subtitle: widget.costPerGuide > 0
+                        ? Text(
+                            context.tr(TranslationKeys.studyUiTokensPerGuide,
+                                {'count': widget.costPerGuide}),
+                            style: AppFonts.inter(
+                              fontSize: 12,
+                              color: palette.muted,
+                            ),
+                          )
+                        : null,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    side: BorderSide(color: palette.dim, width: 1.5),
+                    shape: const RoundedRectangleBorder(),
+                    checkboxShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    fillColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return ReaderPalette.selectedFill;
+                      }
+                      return Colors.transparent;
+                    }),
+                    checkColor: Colors.white,
+                  );
+                },
+              ),
+            ),
+            // Download button
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  20, 12, 20, 16 + MediaQuery.paddingOf(context).bottom),
+              child: PopupPrimaryButton(
+                onPressed: _selectedCount == 0
+                    ? null
+                    : () {
+                        final chosen = widget.topics
+                            .where((t) => _selected.contains(t.topicId))
+                            .toList();
+                        Navigator.pop(context);
+                        widget.onConfirm(chosen);
+                      },
+                label: _selectedCount == 0
+                    ? context.tr(TranslationKeys.downloadsSelectAtLeastOne)
+                    : widget.costPerGuide > 0
+                        ? context.tr(
+                            TranslationKeys.downloadsDownloadCountWithCost,
+                            {'count': _selectedCount, 'cost': _totalCost})
+                        : context.tr(TranslationKeys.downloadsDownloadCount,
+                            {'count': _selectedCount}),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

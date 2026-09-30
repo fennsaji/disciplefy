@@ -53,6 +53,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/user_profile/data/models/user_profile_model.dart';
 import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_service.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 // ============================================================================
 // Root widget — provides BLoCs, delegates to _FellowshipHomeContent
@@ -452,57 +453,29 @@ class _FellowshipHomeContent extends StatelessWidget {
             // Fellowship deleted — navigate back and show confirmation.
             if (state.deleteStatus == FellowshipDeleteStatus.success) {
               context.go('/community');
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(l10n.deleteFellowshipSuccess),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                ));
+              showAppSnackBar(context, l10n.deleteFellowshipSuccess,
+                  tone: AppSnackTone.success);
             }
             if (state.deleteStatus == FellowshipDeleteStatus.failure &&
                 state.errorMessage != null) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(state.errorMessage!),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                ));
+              showAppSnackBar(context, state.errorMessage!,
+                  tone: AppSnackTone.error);
             }
             // Edit success snackbar.
             if (state.editStatus == FellowshipEditStatus.success) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(l10n.editFellowshipSuccess),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                ));
+              showAppSnackBar(context, l10n.editFellowshipSuccess,
+                  tone: AppSnackTone.success);
             }
             // Edit failure snackbar.
             if (state.editStatus == FellowshipEditStatus.failure &&
                 state.editError != null) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(state.editError!),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                ));
+              showAppSnackBar(context, state.editError!,
+                  tone: AppSnackTone.error);
             }
             // Generic error snackbar.
             if (state.errorMessage != null) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(state.errorMessage!),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                ));
+              showAppSnackBar(context, state.errorMessage!,
+                  tone: AppSnackTone.error);
             }
           },
         ),
@@ -1409,13 +1382,10 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
               result.fold(
                 (failure) {
                   if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(parentContext
-                          .tr(TranslationKeys.errorUpdatingPreference)),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.error,
-                    ),
+                  showAppSnackBar(
+                    parentContext,
+                    parentContext.tr(TranslationKeys.errorUpdatingPreference),
+                    tone: AppSnackTone.error,
                   );
                 },
                 (profile) {
@@ -1426,13 +1396,11 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                     authProvider.cacheProfile(userId, profileMap);
                   }
                   if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(parentContext
-                          .tr(TranslationKeys.preferenceUpdatedSuccessfully)),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.primary,
-                    ),
+                  showAppSnackBar(
+                    parentContext,
+                    parentContext
+                        .tr(TranslationKeys.preferenceUpdatedSuccessfully),
+                    tone: AppSnackTone.success,
                   );
                 },
               );
@@ -1440,12 +1408,10 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
           } catch (e) {
             if (sheetContext.mounted) Navigator.of(sheetContext).pop();
             if (parentContext.mounted) {
-              ScaffoldMessenger.of(parentContext).showSnackBar(
-                SnackBar(
-                  content: Text(parentContext
-                      .tr(TranslationKeys.errorUpdatingPreference)),
-                  backgroundColor: Theme.of(parentContext).colorScheme.error,
-                ),
+              showAppSnackBar(
+                parentContext,
+                parentContext.tr(TranslationKeys.errorUpdatingPreference),
+                tone: AppSnackTone.error,
               );
             }
           }
@@ -1907,22 +1873,16 @@ Future<void> _toggleMuteNotifications(
   );
   if (!context.mounted) return;
   result.fold(
-    (failure) => ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(ErrorMessageSanitizer.sanitize(failure)),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      )),
-    (_) => ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(muted
-            ? l10n.fellowshipNotificationsMuted
-            : l10n.fellowshipNotificationsUnmuted),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      )),
+    (failure) => showAppSnackBar(
+      context,
+      ErrorMessageSanitizer.sanitize(failure),
+      tone: AppSnackTone.error,
+    ),
+    (_) => showAppSnackBar(
+      context,
+      muted
+          ? l10n.fellowshipNotificationsMuted
+          : l10n.fellowshipNotificationsUnmuted,
+    ),
   );
 }

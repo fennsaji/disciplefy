@@ -231,3 +231,42 @@ void showSettingsSnackBar(
               : AppSnackTone.neutral;
   showAppSnackBar(context, message, tone: tone);
 }
+
+/// Opens a non-dismissible, palette-styled busy indicator over the current
+/// screen. Close it with `Navigator.of(context, rootNavigator: true).pop()`.
+Future<void> showSettingsLoader(BuildContext context) => showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const SettingsLoaderCard(),
+    );
+
+/// Small card with a gold spinner, shown while a settings action runs.
+class SettingsLoaderCard extends StatelessWidget {
+  const SettingsLoaderCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Center(
+      child: Container(
+        width: 84,
+        height: 84,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: palette.hairline),
+        ),
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            color: palette.gold,
+            backgroundColor: palette.raised,
+          ),
+        ),
+      ),
+    );
+  }
+}

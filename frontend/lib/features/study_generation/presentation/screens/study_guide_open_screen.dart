@@ -5,6 +5,8 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../saved_guides/data/models/saved_guide_model.dart';
 import '../../../saved_guides/data/services/study_guides_api_service.dart';
 import '../../domain/entities/study_mode.dart';
@@ -65,17 +67,15 @@ class _StudyGuideOpenScreenState extends State<StudyGuideOpenScreen> {
     if (!mounted) return;
 
     if (guide == null) {
+      // The app-level ScaffoldMessenger outlives this route, so the message
+      // carries over to Home; showing it after navigating would find this
+      // screen already disposed.
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.studyGuideLinkUnavailable),
+        tone: AppSnackTone.error,
+      );
       context.go(AppRoutes.home);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content:
-                Text(context.tr(TranslationKeys.studyGuideLinkUnavailable)),
-            behavior: SnackBarBehavior.floating,
-          ));
-      });
       return;
     }
 
@@ -88,8 +88,19 @@ class _StudyGuideOpenScreenState extends State<StudyGuideOpenScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading || _guide == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      final palette = ReaderPalette.of(context);
+      return Scaffold(
+        backgroundColor: palette.page,
+        body: Center(
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: palette.accentIcon,
+            ),
+          ),
+        ),
       );
     }
 

@@ -37,6 +37,7 @@ import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_r
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 class CommunityTabScreen extends StatefulWidget {
   const CommunityTabScreen({super.key});
@@ -306,20 +307,6 @@ Widget _spinner(BuildContext context) => Center(
       ),
     );
 
-void _showSnack(BuildContext context, String text, Color color,
-    {Duration? duration}) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      content: Text(text),
-      backgroundColor: color,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: duration ?? const Duration(milliseconds: 4000),
-    ));
-}
-
 /// Signed-in user's id, for "(you)" on fellowships they mentor.
 String? _currentUserId(BuildContext context) {
   try {
@@ -354,10 +341,12 @@ class _MyFellowshipsTab extends StatelessWidget {
             previous.joinStatus != current.joinStatus,
         listener: (context, state) {
           if (state.joinStatus == FellowshipJoinStatus.success) {
-            _showSnack(context, l10n.communityJoinedSuccess, AppColors.success);
+            showAppSnackBar(context, l10n.communityJoinedSuccess,
+                tone: AppSnackTone.success);
           } else if (state.joinStatus == FellowshipJoinStatus.failure) {
-            _showSnack(context, state.joinError ?? l10n.communityJoinFailed,
-                AppColors.error);
+            showAppSnackBar(
+                context, state.joinError ?? l10n.communityJoinFailed,
+                tone: AppSnackTone.error);
           }
         },
         builder: (context, state) {
@@ -532,19 +521,18 @@ class _DiscoverTabState extends State<_DiscoverTab> {
       listener: (context, state) {
         final l10n = AppLocalizations.of(context)!;
         if (state.justJoinedName != null) {
-          _showSnack(
+          showAppSnackBar(
             context,
             l10n.discoverJoinedSnackbar(state.justJoinedName!),
-            AppColors.success,
-            duration: const Duration(seconds: 3),
+            tone: AppSnackTone.success,
           );
           context.read<DiscoverBloc>().add(const DiscoverJoinAcknowledged());
           context
               .read<FellowshipListBloc>()
               .add(const FellowshipListLoadRequested());
         } else if (state.errorMessage != null) {
-          _showSnack(context, state.errorMessage!, AppColors.error,
-              duration: const Duration(seconds: 3));
+          showAppSnackBar(context, state.errorMessage!,
+              tone: AppSnackTone.error);
         }
       },
       builder: (context, state) {

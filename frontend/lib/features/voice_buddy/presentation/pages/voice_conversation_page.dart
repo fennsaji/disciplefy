@@ -30,6 +30,7 @@ import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/voice_button.dart';
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/voice_session_view.dart';
 import 'package:disciplefy_bible_study/shared/widgets/scripture_verse_sheet.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 
 /// Main page for conversations with Discipler, by voice or by text.
 class VoiceConversationPage extends StatelessWidget {
@@ -291,11 +292,10 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     // Show error snackbar
     if (state.status == VoiceConversationStatus.error &&
         state.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.commonError)),
-          backgroundColor: AppColors.error,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.commonError),
+        tone: AppSnackTone.error,
       );
     }
 

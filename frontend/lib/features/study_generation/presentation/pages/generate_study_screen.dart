@@ -52,6 +52,7 @@ import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
 import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
@@ -399,13 +400,10 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         Logger.debug(
             '⏱️ [GENERATE_STUDY] Study generation timeout - resetting loading state');
         _resetLoadingState();
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Study generation is taking longer than expected. Please try again.'),
-            backgroundColor: AppColors.warning,
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.studyUiGenerationTimeout),
+          tone: AppSnackTone.warning,
         );
       }
     });
@@ -1815,75 +1813,43 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 
   Widget _buildOfflineGenerateOverlay(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final radius = BorderRadius.circular(GenerateStudyButton.height / 2);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(GenerateStudyButton.height / 2),
+      borderRadius: radius,
       child: Material(
-        color: Colors.transparent,
+        color: palette.raised,
         child: InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Connect to internet to generate a study guide'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(GenerateStudyButton.height / 2),
+          onTap: () => showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.studyUiOfflineGenerate),
+            tone: AppSnackTone.warning,
+          ),
+          borderRadius: radius,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius:
-                  BorderRadius.circular(GenerateStudyButton.height / 2),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.shadowMedium,
-                  AppColors.shadowLight,
-                ],
-              ),
+              borderRadius: radius,
+              border: Border.all(color: palette.outline),
             ),
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: context.appInteractive,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.appInteractive.withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.wifi_off_rounded,
-                      color: AppColors.onGradient,
-                      size: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.wifi_off_rounded, color: palette.muted, size: 18),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    context
+                        .tr(TranslationKeys.appChromeLockNotAvailableOffline),
+                    textAlign: TextAlign.center,
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: context.appInteractive,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Not available offline',
-                      style: TextStyle(
-                        color: AppColors.onGradient,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

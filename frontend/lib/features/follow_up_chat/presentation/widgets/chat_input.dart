@@ -5,6 +5,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/reader_palette.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
@@ -243,47 +244,31 @@ class _ChatInputState extends State<ChatInput>
   }
 
   void _showSpeechNotAvailableSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text(context.tr(TranslationKeys.followUpChatSpeechNotAvailable)),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
+    showAppSnackBar(
+      context,
+      context.tr(TranslationKeys.followUpChatSpeechNotAvailable),
+      tone: AppSnackTone.error,
     );
   }
 
   /// Tells the user what the declined microphone blocks, and how to undo it.
   /// Not styled as an error — typing still works.
   void _showMicPermissionSnackbar({required bool permanentlyDenied}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.tr(permanentlyDenied
-            ? TranslationKeys.micPermissionBlockedMessage
-            : TranslationKeys.micPermissionMessage)),
-        behavior: SnackBarBehavior.floating,
-        // persist:false — since Flutter 3.44 a SnackBar with an action
-        // defaults to persist:true, so it never times out AND blocks every
-        // later snackbar behind it in the app-wide queue.
-        persist: false,
-        action: permanentlyDenied
-            ? SnackBarAction(
-                label: context.tr(TranslationKeys.micPermissionOpenSettings),
-                onPressed: _speechService.openPermissionSettings,
-              )
-            : null,
-      ),
+    showAppSnackBar(
+      context,
+      context.tr(permanentlyDenied
+          ? TranslationKeys.micPermissionBlockedMessage
+          : TranslationKeys.micPermissionMessage),
+      actionLabel: permanentlyDenied
+          ? context.tr(TranslationKeys.micPermissionOpenSettings)
+          : null,
+      onAction:
+          permanentlyDenied ? _speechService.openPermissionSettings : null,
     );
   }
 
   void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
+    showAppSnackBar(context, message, tone: AppSnackTone.error);
   }
 
   @override
@@ -306,154 +291,137 @@ class _ChatInputState extends State<ChatInput>
     );
   }
 
-  /// Builds the processing indicator when request is in progress
-  Widget _buildProcessingIndicator(ThemeData theme) {
+  /// Card shell shared by the processing and listening indicators.
+  Widget _indicatorCard({required List<Widget> children}) {
+    final palette = ReaderPalette.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.SMALL_PADDING),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.DEFAULT_PADDING,
-        vertical: AppConstants.SMALL_PADDING,
-      ),
+      padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppConstants.BORDER_RADIUS),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
+        color: palette.isDark ? palette.card : palette.raised,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(children: children),
+    );
+  }
+
+  /// Small stadium text action inside an indicator (Cancel / Stop).
+  Widget _indicatorAction(String label, VoidCallback onPressed) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.error,
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(44, 40),
+      ),
+      child: Text(
+        label,
+        style: AppFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.error,
         ),
       ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+    );
+  }
+
+  /// Builds the processing indicator when request is in progress
+  Widget _buildProcessingIndicator(ThemeData theme) {
+    final palette = ReaderPalette.of(context);
+    return _indicatorCard(
+      children: [
+        SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: palette.accentIcon,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            context.tr(TranslationKeys.followUpChatGettingResponse),
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: palette.text,
             ),
           ),
-          const SizedBox(width: AppConstants.SMALL_PADDING),
-          Expanded(
-            child: Text(
-              context.tr(TranslationKeys.followUpChatGettingResponse),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: _cancelRequest,
-            child: Text(
-              context.tr(TranslationKeys.followUpChatCancel),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+        _indicatorAction(
+          context.tr(TranslationKeys.followUpChatCancel),
+          _cancelRequest,
+        ),
+      ],
     );
   }
 
   /// Builds the listening indicator with waveform visualization
   Widget _buildListeningIndicator(ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppConstants.SMALL_PADDING),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.DEFAULT_PADDING,
-        vertical: AppConstants.SMALL_PADDING,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          // Indigo ramp: blending into colorScheme.secondary (the brand's
-          // pale gold) produced an off-palette purple-to-peach wash.
-          colors: [
-            AppColors.brandPrimary.withOpacity(0.1),
-            AppColors.brandPrimaryDeep.withOpacity(0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppConstants.BORDER_RADIUS),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Animated mic icon
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppColors.brandPrimary,
-                        AppColors.brandPrimaryDeep,
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.mic,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-              );
-            },
+    final palette = ReaderPalette.of(context);
+    return _indicatorCard(
+      children: [
+        // Pulsing mic disc
+        AnimatedBuilder(
+          animation: _pulseAnimation,
+          builder: (context, child) => Transform.scale(
+            scale: _pulseAnimation.value,
+            child: child,
           ),
-          const SizedBox(width: AppConstants.SMALL_PADDING),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr(TranslationKeys.followUpChatListening),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (_partialText.isNotEmpty)
-                  Text(
-                    _partialText,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: palette.ctaFill,
+              shape: BoxShape.circle,
             ),
+            child: Icon(Icons.mic, color: palette.ctaInk, size: 18),
           ),
-          // Sound level indicator
-          _buildSoundLevelIndicator(theme),
-          const SizedBox(width: AppConstants.SMALL_PADDING),
-          // Stop button
-          TextButton(
-            onPressed: _stopListening,
-            child: Text(
-              context.tr(TranslationKeys.followUpChatStop),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
-                fontWeight: FontWeight.w600,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr(TranslationKeys.followUpChatListening),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
               ),
-            ),
+              if (_partialText.isNotEmpty)
+                Text(
+                  _partialText,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    color: palette.muted,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
           ),
-        ],
-      ),
+        ),
+        // Sound level indicator
+        _buildSoundLevelIndicator(theme),
+        const SizedBox(width: 4),
+        _indicatorAction(
+          context.tr(TranslationKeys.followUpChatStop),
+          _stopListening,
+        ),
+      ],
     );
   }
 
   /// Simple sound level visualization
   Widget _buildSoundLevelIndicator(ThemeData theme) {
+    final palette = ReaderPalette.of(context);
     final normalizedLevel = (_soundLevel / 10).clamp(0.0, 1.0);
 
     return Row(
@@ -466,9 +434,7 @@ class _ChatInputState extends State<ChatInput>
           height: 8 + (index * 3),
           margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
-            color: isActive
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface.withOpacity(0.2),
+            color: isActive ? palette.accentIcon : palette.outline,
             borderRadius: BorderRadius.circular(2),
           ),
         );

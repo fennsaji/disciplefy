@@ -20,6 +20,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/c
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Screen that allows a mentor/admin/paid user to create a new fellowship.
 ///
@@ -179,19 +180,7 @@ class _CreateFellowshipConsumer extends StatelessWidget {
           context.pop(true);
         } else if (state.createStatus == FellowshipCreateStatus.failure) {
           final message = state.createError ?? l10n.createFellowshipFailed;
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(message),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
+          showAppSnackBar(context, message, tone: AppSnackTone.error);
         }
       },
       buildWhen: (prev, curr) => prev.createStatus != curr.createStatus,

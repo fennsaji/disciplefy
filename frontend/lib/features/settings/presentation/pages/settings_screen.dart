@@ -38,6 +38,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_profile_card.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
@@ -573,33 +574,26 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
   /// Replay app walkthrough by resetting all walkthrough seen states.
   Future<void> _replayWalkthrough(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    unawaited(showSettingsLoader(context));
 
     try {
       await sl<WalkthroughRepository>().resetAll();
 
       if (context.mounted) {
-        Navigator.of(context).pop(); // dismiss loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                context.tr(TranslationKeys.settingsReplayWalkthroughSuccess)),
-          ),
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.settingsReplayWalkthroughSuccess),
+          tone: AppSnackTone.success,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // dismiss loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                context.tr(TranslationKeys.settingsReplayWalkthroughError)),
-            backgroundColor: Colors.red,
-          ),
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.settingsReplayWalkthroughError),
+          tone: AppSnackTone.error,
         );
       }
     }
@@ -715,16 +709,19 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
       context.read<AuthBloc>().add(const RefreshUserProfileRequested());
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsEditNameSuccess)),
-      ));
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.settingsEditNameSuccess),
+        tone: AppSnackTone.success,
+      );
     } catch (e) {
       Logger.error('Failed to update display name', error: e);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(TranslationKeys.settingsEditNameFailed)),
-        backgroundColor: AppColors.error,
-      ));
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.settingsEditNameFailed),
+        tone: AppSnackTone.error,
+      );
     }
   }
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../features/settings/presentation/widgets/settings_group.dart';
+import '../../shared/widgets/app_snackbar.dart';
+import '../../shared/widgets/popup.dart';
 import '../extensions/translation_extension.dart';
 import '../i18n/translation_keys.dart';
 import '../utils/logger.dart';
@@ -160,20 +163,30 @@ class _AuthProtectedScreenState extends State<AuthProtectedScreen> {
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(dialogContext.tr(TranslationKeys.commonExitTitle)),
-          content: Text(
-            message ?? dialogContext.tr(TranslationKeys.commonExitMessage),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(dialogContext.tr(TranslationKeys.commonCancel)),
+        return PopupDialog(
+          children: [
+            PopupHeader(
+              icon: const PopupIconCircle(icon: Icons.logout_rounded),
+              title: dialogContext.tr(TranslationKeys.commonExitTitle),
+              body: message ??
+                  dialogContext.tr(TranslationKeys.commonExitMessage),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(dialogContext.tr(TranslationKeys.commonExitConfirm)),
+            const SizedBox(height: 22),
+            SettingsButtonRow(
+              buttons: [
+                SettingsButton(
+                  label: dialogContext.tr(TranslationKeys.commonCancel),
+                  kind: SettingsButtonKind.neutral,
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                ),
+                SettingsButton(
+                  label: dialogContext.tr(TranslationKeys.commonExitConfirm),
+                  kind: SettingsButtonKind.destructive,
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                ),
+              ],
             ),
+            const SizedBox(height: 8),
           ],
         );
       },
@@ -270,11 +283,10 @@ class CriticalAuthScreen extends StatelessWidget {
           onUnauthorizedAccess!();
         } else {
           // Default: show warning and stay on screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Navigation restricted for security'),
-              duration: Duration(seconds: 2),
-            ),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.appStatusNavigationRestricted),
+            tone: AppSnackTone.warning,
           );
         }
       },

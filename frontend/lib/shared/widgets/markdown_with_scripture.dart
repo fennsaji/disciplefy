@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'scripture_verse_sheet.dart';
+import '../../core/constants/app_fonts.dart';
 import '../../core/constants/bible_books.dart';
+import '../../core/theme/reader_palette.dart';
 import '../../core/utils/logger.dart';
 
 /// A widget that renders markdown content with clickable scripture references
@@ -81,8 +83,8 @@ class MarkdownWithScripture extends StatelessWidget {
         _convertScriptureReferencesToLinks(withMarkdownBullets);
 
     // Create a unique key based on content and theme to force rebuilds when colors change
-    final linkColor = Theme.of(context).colorScheme.primary;
-    final uniqueKey = ValueKey('${data.hashCode}-${linkColor.value}');
+    final linkColor = ReaderPalette.of(context).accentIcon;
+    final uniqueKey = ValueKey('${data.hashCode}-${linkColor.toARGB32()}');
 
     return MarkdownBody(
       key: uniqueKey,
@@ -96,14 +98,7 @@ class MarkdownWithScripture extends StatelessWidget {
         if (href != null && href.startsWith('#scripture:')) {
           final encodedRef = href.replaceFirst('#scripture:', '');
           final reference = Uri.decodeComponent(encodedRef);
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => ScriptureVerseSheet(
-              reference: reference,
-            ),
-          );
+          ScriptureVerseSheet.show(context, reference: reference);
         } else if (href != null) {
           // Handle regular links if any
           Logger.debug('Regular link tapped: $href');
@@ -114,67 +109,57 @@ class MarkdownWithScripture extends StatelessWidget {
 
   MarkdownStyleSheet _buildStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final baseStyle = textStyle ?? theme.textTheme.bodyLarge;
-    // Full-opacity primary so links match the AppBar title brightness exactly.
-    final isDark = theme.brightness == Brightness.dark;
-    final linkColor = theme.colorScheme.primary;
+    final linkColor = palette.accentIcon;
+
+    TextStyle heading(double size, FontWeight weight) => AppFonts.poppins(
+          fontSize: size,
+          fontWeight: weight,
+          color: palette.text,
+          height: 1.3,
+        );
 
     return MarkdownStyleSheet(
       p: baseStyle?.copyWith(
-        color: theme.colorScheme.onBackground,
+        color: palette.text,
         height: 1.6,
       ),
-      h1: theme.textTheme.headlineLarge?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: theme.colorScheme.onBackground,
-      ),
-      h2: theme.textTheme.headlineMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: theme.colorScheme.onBackground,
-      ),
-      h3: theme.textTheme.headlineSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onBackground,
-      ),
-      h4: theme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onBackground,
-      ),
-      h5: theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w500,
-        color: theme.colorScheme.onBackground,
-      ),
-      h6: theme.textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w500,
-        color: theme.colorScheme.onBackground,
-      ),
+      h1: heading(24, FontWeight.w700),
+      h2: heading(20, FontWeight.w700),
+      h3: heading(18, FontWeight.w600),
+      h4: heading(18, FontWeight.w600),
+      h5: heading(16, FontWeight.w500),
+      h6: heading(14, FontWeight.w500),
       listBullet: baseStyle?.copyWith(
-        color: theme.colorScheme.primary,
+        color: palette.accentIcon,
       ),
       listIndent: 24,
       blockquote: baseStyle?.copyWith(
-        color: theme.colorScheme.onBackground.withOpacity(0.7),
+        color: palette.muted,
         fontStyle: FontStyle.italic,
       ),
       blockquoteDecoration: BoxDecoration(
         border: Border(
           left: BorderSide(
-            color: theme.colorScheme.primary,
+            color: palette.accentIcon,
             width: 4,
           ),
         ),
       ),
       code: baseStyle?.copyWith(
         fontFamily: 'monospace',
-        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+        color: palette.text,
+        backgroundColor: palette.raised,
       ),
       // Style for scripture reference links
       a: baseStyle?.copyWith(
         color: linkColor,
         fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
-        decorationColor:
-            isDark ? linkColor.withOpacity(0.6) : linkColor.withOpacity(0.5),
+        decorationColor: linkColor.withValues(
+          alpha: palette.isDark ? 0.6 : 0.5,
+        ),
       ),
     );
   }

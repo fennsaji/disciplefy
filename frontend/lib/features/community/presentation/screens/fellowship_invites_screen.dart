@@ -13,6 +13,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Full-screen invite-link management for fellowship mentors.
 ///
@@ -400,13 +401,7 @@ class _CopyIconButtonState extends State<_CopyIconButton> {
     await Clipboard.setData(ClipboardData(text: widget.text));
     if (!mounted) return;
     setState(() => _copied = true);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(widget.copiedMessage),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ));
+    showAppSnackBar(context, widget.copiedMessage, tone: AppSnackTone.success);
     await Future<void>.delayed(const Duration(seconds: 2));
     if (!mounted) return;
     setState(() => _copied = false);

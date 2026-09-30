@@ -22,6 +22,10 @@ import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import 'bottom_nav.dart' as bottom_nav;
 import 'max_width_wrapper.dart';
 import '../../widgets/offline_banner.dart';
+import '../../extensions/translation_extension.dart';
+import '../../i18n/translation_keys.dart';
+import '../../theme/reader_palette.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../router/app_routes.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
@@ -266,26 +270,23 @@ class _AppShellState extends State<AppShell>
           (current is SubscriptionError && current.isBackgroundDelivery),
       listener: (context, state) {
         if (state is SubscriptionCreated && state.isBackgroundDelivery) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Subscription activated successfully!'),
-              duration: Duration(seconds: 5),
-              behavior: SnackBarBehavior.floating,
-            ),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.appStatusSubscriptionActivated),
+            tone: AppSnackTone.success,
           );
           // Refresh status so home screen reflects the new plan immediately.
           sl<SubscriptionBloc>().add(const RefreshSubscription());
         } else if (state is SubscriptionError && state.isBackgroundDelivery) {
           // F27: Background delivery failure — user was charged but no upgrade page
           // is open. Show a global snackbar so they know something went wrong.
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Purchase validation failed: ${state.errorMessage} Please contact support if you were charged.',
-              ),
-              duration: const Duration(seconds: 8),
-              behavior: SnackBarBehavior.floating,
+          showAppSnackBar(
+            context,
+            context.tr(
+              TranslationKeys.appStatusPurchaseValidationFailed,
+              {'error': state.errorMessage},
             ),
+            tone: AppSnackTone.error,
           );
         }
       },
@@ -311,42 +312,37 @@ class _AppShellState extends State<AppShell>
               // dock's height to the bottom inset, so SafeArea, lists and
               // floating buttons inside each tab still clear it.
               extendBody: true,
-              body: Column(
-                children: [
-                  const OfflineBanner(),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        // Main content with animation
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: ScaleTransition(
-                            scale: _scaleAnimation,
-                            child: ClearOfFloatingDock(
-                                child: widget.navigationShell),
-                          ),
-                        ),
-                        // Loading indicator overlay
-                        if (_showLoadingIndicator)
-                          Semantics(
-                            label: 'Loading content',
-                            liveRegion: true,
-                            container: true,
-                            child: Container(
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  strokeWidth: 3,
-                                  semanticsLabel: 'Loading',
-                                ),
-                              ),
+              body: OfflineBanner(
+                child: Stack(
+                  children: [
+                    // Main content with animation
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child:
+                            ClearOfFloatingDock(child: widget.navigationShell),
+                      ),
+                    ),
+                    // Loading indicator overlay
+                    if (_showLoadingIndicator)
+                      Semantics(
+                        label: 'Loading content',
+                        liveRegion: true,
+                        container: true,
+                        child: Container(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: ReaderPalette.of(context).gold,
+                              strokeWidth: 3,
+                              semanticsLabel: 'Loading',
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
               bottomNavigationBar: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

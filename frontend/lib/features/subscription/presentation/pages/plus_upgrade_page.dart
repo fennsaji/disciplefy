@@ -31,6 +31,7 @@ import 'package:disciplefy_bible_study/features/subscription/presentation/widget
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/promo_code_input.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/subscription_legal_links.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 class PlusUpgradePage extends StatefulWidget {
   const PlusUpgradePage({super.key});
@@ -195,13 +196,10 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
             // Guarded: the UserSubscriptionStatusLoaded branch below can also
             // carry an authorizationUrl, and without this check both fire and
             // the user gets two identical Razorpay tabs.
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    const Text('Subscription created! Opening payment page...'),
-                backgroundColor: AppTheme.successColor,
-                duration: const Duration(seconds: 2),
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(TranslationKeys.payFeedbackSubscriptionCreated),
+              tone: AppSnackTone.success,
             );
             _hasOpenedPayment = true;
             _openAuthorizationUrl(state.authorizationUrl);
@@ -209,24 +207,18 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
             // Google Play IAP flow — purchase already processed, mark as complete
             // so the SubscriptionLoaded listener below can navigate away.
             _hasOpenedPayment = true;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    const Text('Purchase received! Activating subscription...'),
-                backgroundColor: AppTheme.successColor,
-                duration: const Duration(seconds: 3),
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(TranslationKeys.payFeedbackPurchaseReceived),
+              tone: AppSnackTone.success,
             );
           }
         } else if (state is SubscriptionInitial) {
           setState(() => _isSubmitting = false);
           if (state.isPendingPayment) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                    'Payment is awaiting approval. You\'ll be notified when it\'s ready.'),
-                duration: Duration(seconds: 5),
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(TranslationKeys.payFeedbackAwaitingApproval),
             );
           }
         } else if (state is SubscriptionLoaded) {
@@ -245,13 +237,11 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
               !_hasShownSuccess &&
               state.activeSubscription?.isActivatedPlan('plus') == true) {
             _hasShownSuccess = true;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                    'Subscription activated! You now have Plus access.'),
-                backgroundColor: AppTheme.successColor,
-                duration: const Duration(seconds: 3),
-              ),
+            showAppSnackBar(
+              context,
+              context.tr(
+                  TranslationKeys.payFeedbackPlanActivated, {'plan': 'Plus'}),
+              tone: AppSnackTone.success,
             );
             Future.delayed(const Duration(seconds: 1), () {
               if (mounted) context.go(AppRoutes.myPlan);
@@ -282,21 +272,17 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
           // F28: Web Razorpay failure emitted as UserSubscriptionStatusLoaded
           // with errorMessage — reset button and surface the error.
           setState(() => _isSubmitting = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppTheme.errorColor,
-              duration: const Duration(seconds: 5),
-            ),
+          showAppSnackBar(
+            context,
+            state.errorMessage!,
+            tone: AppSnackTone.error,
           );
         } else if (state is SubscriptionError) {
           setState(() => _isSubmitting = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(ErrorMessageSanitizer.sanitize(state.failure)),
-              backgroundColor: AppTheme.errorColor,
-              duration: const Duration(seconds: 5),
-            ),
+          showAppSnackBar(
+            context,
+            ErrorMessageSanitizer.sanitize(state.failure),
+            tone: AppSnackTone.error,
           );
         }
       },
@@ -467,11 +453,11 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
         _startCheckoutPolling();
       }
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to open payment URL: $url'),
-          backgroundColor: AppTheme.errorColor,
-        ),
+      showAppSnackBar(
+        context,
+        context
+            .tr(TranslationKeys.payFeedbackOpenPaymentUrlFailed, {'url': url}),
+        tone: AppSnackTone.error,
       );
     }
   }

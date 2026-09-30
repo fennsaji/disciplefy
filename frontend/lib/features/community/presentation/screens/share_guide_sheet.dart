@@ -22,6 +22,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// A modal bottom sheet that lets users share a study guide to one or more of
 /// their fellowships with an optional personal message.
@@ -184,11 +185,10 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
     setState(() => _submitting = false);
 
     if (hasError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-          backgroundColor: AppColors.error,
-        ),
+      showAppSnackBar(
+        context,
+        context.tr(TranslationKeys.commonErrorTryAgain),
+        tone: AppSnackTone.error,
       );
       return;
     }

@@ -21,6 +21,7 @@ import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/s
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Page displaying subscription payment history (invoices)
 class SubscriptionPaymentHistoryPage extends StatefulWidget {
@@ -162,24 +163,9 @@ class _InvoiceCardState extends State<_InvoiceCard> {
     try {
       // Show loading snackbar
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Text('Generating PDF...'),
-              ],
-            ),
-            duration: Duration(seconds: 30),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.payFeedbackGeneratingPdf),
         );
       }
 
@@ -213,12 +199,11 @@ class _InvoiceCardState extends State<_InvoiceCard> {
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Invoice downloaded: $fileName'),
-              backgroundColor: AppColors.successDark,
-              duration: const Duration(seconds: 3),
-            ),
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.payFeedbackInvoiceDownloaded,
+                {'file': fileName}),
+            tone: AppSnackTone.success,
           );
         }
       } else {
@@ -228,27 +213,16 @@ class _InvoiceCardState extends State<_InvoiceCard> {
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                kIsWeb
-                    ? 'Invoice downloaded: $filePath'
-                    : 'Invoice saved to:\n$filePath',
-              ),
-              backgroundColor: AppColors.successDark,
-              duration: const Duration(seconds: 5),
-              // persist:false — since Flutter 3.44 a SnackBar with an action
-              // defaults to persist:true, so it never times out AND blocks every
-              // later snackbar behind it in the app-wide queue.
-              persist: false,
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-              ),
-            ),
+          showAppSnackBar(
+            context,
+            kIsWeb
+                ? context.tr(TranslationKeys.payFeedbackInvoiceDownloaded,
+                    {'file': filePath})
+                : context.tr(TranslationKeys.payFeedbackInvoiceSavedTo,
+                    {'file': filePath}),
+            tone: AppSnackTone.success,
+            actionLabel: context.tr(TranslationKeys.payFeedbackOk),
+            onAction: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
           );
         }
       }
@@ -256,12 +230,10 @@ class _InvoiceCardState extends State<_InvoiceCard> {
       // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-            backgroundColor: AppColors.errorDark,
-            duration: const Duration(seconds: 5),
-          ),
+        showAppSnackBar(
+          context,
+          context.tr(TranslationKeys.commonErrorTryAgain),
+          tone: AppSnackTone.error,
         );
       }
     } finally {

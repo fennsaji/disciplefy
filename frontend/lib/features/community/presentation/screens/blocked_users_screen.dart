@@ -10,6 +10,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/bloc
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/blocked_users/blocked_users_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Settings → Blocked Users: lists blocked members and lets the user
 /// unblock them.
@@ -98,10 +99,8 @@ class BlockedUsersView extends StatelessWidget {
                                 onPressed: () {
                                   context.read<BlockedUsersBloc>().add(
                                       BlockedUserUnblockRequested(user.userId));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(l10n.unblockSuccess)),
-                                  );
+                                  showAppSnackBar(context, l10n.unblockSuccess,
+                                      tone: AppSnackTone.success);
                                 },
                               ),
                             ],

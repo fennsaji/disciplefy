@@ -22,6 +22,7 @@ import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_sta
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Subscription Management Page (quiet ledger)
 ///
@@ -90,28 +91,24 @@ class _SubscriptionManagementPageState
             listener: (context, state) {
               if (state is SubscriptionCancelled) {
                 // Show cancellation success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.warningColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  state.message,
+                  tone: AppSnackTone.warning,
                 );
               } else if (state is SubscriptionResumed) {
                 // Show resumption success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.successColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  state.message,
+                  tone: AppSnackTone.success,
                 );
               } else if (state is SubscriptionError) {
                 // Show error message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content:
-                        Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-                    backgroundColor: AppTheme.errorColor,
-                  ),
+                showAppSnackBar(
+                  context,
+                  context.tr(TranslationKeys.commonErrorTryAgain),
+                  tone: AppSnackTone.error,
                 );
               }
             },
@@ -529,15 +526,14 @@ class _SubscriptionManagementPageState
 
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isAndroid
-                  ? 'Could not open Google Play. Search "Disciplefy" in Google Play > Subscriptions.'
-                  : 'Could not open App Store. Go to Settings > Apple ID > Subscriptions.',
-            ),
-            backgroundColor: AppTheme.warningColor,
+        showAppSnackBar(
+          context,
+          context.tr(
+            isAndroid
+                ? TranslationKeys.payFeedbackStoreOpenFailedAndroid
+                : TranslationKeys.payFeedbackStoreOpenFailedIos,
           ),
+          tone: AppSnackTone.warning,
         );
       }
     }

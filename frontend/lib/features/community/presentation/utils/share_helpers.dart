@@ -6,6 +6,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../../domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Generates (or reuses) an invite link for [fellowshipId] and opens the
 /// native share sheet with it.
@@ -27,10 +28,8 @@ Future<void> shareFellowshipInvite(
   result.fold(
     (failure) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context)!.feedLoadError)));
+      showAppSnackBar(context, AppLocalizations.of(context)!.feedLoadError,
+          tone: AppSnackTone.error);
     },
     (invite) {
       final token = invite['token'] as String? ?? '';

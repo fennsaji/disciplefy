@@ -524,16 +524,19 @@ class CommunityWideCta extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final enabled = onPressed != null && !loading;
-    final ink = palette.ctaInk;
+    // While loading the pill keeps its colour (with a spinner); otherwise a
+    // disabled pill is the raised fill with muted ink, never a faded CTA.
+    final ink = loading || enabled ? palette.ctaInk : palette.muted;
+    final fill = loading || enabled ? palette.ctaFill : palette.raised;
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
         onPressed: enabled ? onPressed : null,
         style: FilledButton.styleFrom(
-          backgroundColor: palette.ctaFill,
+          backgroundColor: fill,
           foregroundColor: ink,
-          disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.45),
-          disabledForegroundColor: ink.withValues(alpha: 0.75),
+          disabledBackgroundColor: fill,
+          disabledForegroundColor: ink,
           minimumSize: const Size.fromHeight(54),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           shape: const StadiumBorder(),

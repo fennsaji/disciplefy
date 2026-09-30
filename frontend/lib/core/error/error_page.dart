@@ -8,7 +8,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../extensions/translation_extension.dart';
 import '../i18n/translation_keys.dart';
 import '../localization/app_localizations.dart';
-import '../theme/app_colors.dart';
+import '../../features/settings/presentation/widgets/settings_group.dart';
+import '../../shared/widgets/app_snackbar.dart';
+import '../../shared/widgets/popup.dart';
+import '../constants/app_fonts.dart';
+import '../theme/reader_palette.dart';
+import '../widgets/status_message_view.dart';
 import '../utils/logger.dart';
 
 /// Address issue reports from this screen are sent to.
@@ -128,12 +133,14 @@ class _ErrorPageState extends State<ErrorPage> {
       if (!mounted) return;
       // Show the address so the report is not a dead end on devices with no
       // mail app configured.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n?.errorPageReportUnavailable ??
-              'No email app found. Please write to $kSupportEmail'),
-          backgroundColor: AppColors.error,
-        ),
+      showAppSnackBar(
+        context,
+        l10n?.errorPageReportUnavailable ??
+            context.tr(
+              TranslationKeys.appStatusErrorNoEmailApp,
+              {'email': kSupportEmail},
+            ),
+        tone: AppSnackTone.error,
       );
     }
   }
@@ -191,114 +198,72 @@ class _ErrorPageState extends State<ErrorPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = ReaderPalette.of(context);
+    void goHome() => context.go('/');
 
-    // If localization is not ready, show basic error page
-    if (l10n == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Error'),
-          leading: IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () => context.go('/'),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 80,
-                  color: context.appError,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  context.tr(TranslationKeys.commonErrorTryAgain),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: context.appError,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Please try again later.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                TextButton.icon(
-                  onPressed: _reportIssue,
-                  icon: const Icon(Icons.mail_outline),
-                  label: const Text('Report this issue'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    // Without localization (not ready yet) fall back to the shared
+    // translation service copy.
+    final title =
+        l10n?.errorTitle ?? context.tr(TranslationKeys.commonErrorTryAgain);
+    final message = l10n != null
+        ? _getErrorMessage(context)
+        : context.tr(TranslationKeys.appStatusErrorTryLater);
+    final reportLabel = l10n?.errorPageReportButton ??
+        context.tr(TranslationKeys.appStatusErrorReport);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.errorPageTitle),
-        leading: IconButton(
-          icon: const Icon(Icons.home),
-          onPressed: () => context.go('/'),
+      backgroundColor: palette.page,
+      body: StatusMessageView(
+        icon: Icons.error_outline_rounded,
+        eyebrow: l10n?.errorPageTitle ??
+            context.tr(TranslationKeys.appStatusErrorEyebrow),
+        title: title,
+        message: message,
+        topAction: IconButton(
+          key: const Key('error_page_home_icon'),
+          tooltip: l10n?.continueButton,
+          icon: Icon(Icons.home_outlined, color: palette.text),
+          onPressed: goHome,
         ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 80,
-                color: Theme.of(context).colorScheme.error,
+        actions: [
+          if (l10n != null) ...[
+            PopupPrimaryButton(
+              key: const Key('error_page_continue'),
+              label: l10n.continueButton,
+              icon: Icons.home_outlined,
+              onPressed: goHome,
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: SettingsButton(
+                key: const Key('error_page_retry'),
+                label: l10n.retryButton,
+                kind: SettingsButtonKind.neutral,
+                icon: Icons.refresh_rounded,
+                onPressed: goHome,
               ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.errorTitle,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                textAlign: TextAlign.center,
+            ),
+          ],
+          TextButton.icon(
+            key: const Key('error_page_report'),
+            onPressed: _reportIssue,
+            style: TextButton.styleFrom(
+              foregroundColor: palette.muted,
+              shape: const StadiumBorder(),
+              minimumSize: const Size.fromHeight(44),
+            ),
+            icon: Icon(Icons.mail_outline, size: 18, color: palette.muted),
+            label: Text(
+              reportLabel,
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: palette.muted,
               ),
-              const SizedBox(height: 16),
-              Text(
-                _getErrorMessage(context),
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () => context.go('/'),
-                icon: const Icon(Icons.home),
-                label: Text(l10n.continueButton),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  // Go back to home and retry
-                  context.go('/');
-                },
-                child: Text(l10n.retryButton),
-              ),
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: _reportIssue,
-                icon: const Icon(Icons.mail_outline, size: 18),
-                label: Text(l10n.errorPageReportButton),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

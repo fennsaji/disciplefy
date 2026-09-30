@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../bloc/phone_auth_bloc.dart';
 import '../bloc/phone_auth_event.dart';
@@ -77,22 +78,14 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
             },
           );
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              // persist:false — since Flutter 3.44 a SnackBar with an action
-              // defaults to persist:true, so it never times out AND blocks every
-              // later snackbar behind it in the app-wide queue.
-              persist: false,
-              action: state.errorType == PhoneAuthErrorType.networkError
-                  ? SnackBarAction(
-                      label: 'Retry',
-                      onPressed: () => _sendOTP(),
-                    )
-                  : null,
-            ),
+          final canRetry = state.errorType == PhoneAuthErrorType.networkError;
+          showAppSnackBar(
+            context,
+            context.tr(TranslationKeys.commonErrorTryAgain),
+            tone: AppSnackTone.error,
+            actionLabel:
+                canRetry ? context.tr(TranslationKeys.commonRetry) : null,
+            onAction: canRetry ? _sendOTP : null,
           );
         }
       },

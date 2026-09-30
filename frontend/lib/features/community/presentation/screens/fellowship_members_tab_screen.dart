@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/m
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
 /// Displays the member list for a fellowship and provides an invite action.
 ///
@@ -431,7 +432,6 @@ class _MemberCard extends StatelessWidget {
     // LearningPathsBloc — see fellowship_home_screen.dart `_openMembers`),
     // so block directly through the repository and refresh the member list.
     final membersBloc = context.read<FellowshipMembersBloc>();
-    final messenger = ScaffoldMessenger.of(context);
     final successText = AppLocalizations.of(context)!.blockUserSuccess;
     final blockedUserId = member.userId;
     if (await showBlockUserConfirmation(context)) {
@@ -440,11 +440,14 @@ class _MemberCard extends StatelessWidget {
       );
       result.fold(
         (failure) {
-          messenger.showSnackBar(
-              SnackBar(content: Text(ErrorMessageSanitizer.sanitize(failure))));
+          if (!context.mounted) return;
+          showAppSnackBar(context, ErrorMessageSanitizer.sanitize(failure),
+              tone: AppSnackTone.error);
         },
         (_) {
-          messenger.showSnackBar(SnackBar(content: Text(successText)));
+          if (context.mounted) {
+            showAppSnackBar(context, successText, tone: AppSnackTone.success);
+          }
           membersBloc.add(
             FellowshipMembersLoadRequested(fellowshipId: fellowshipId),
           );

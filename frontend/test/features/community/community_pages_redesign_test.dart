@@ -50,6 +50,10 @@ import 'package:disciplefy_bible_study/features/community/presentation/screens/j
 import 'package:disciplefy_bible_study/features/community/presentation/screens/schedule_meeting_sheet.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/share_guide_sheet.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_form_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_edit_dialog.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 import '../../helpers/welcome_test_harness.dart';
 import '../settings/text_fit.dart';
@@ -727,17 +731,78 @@ void main() {
       sl.registerFactory<FellowshipListBloc>(() => bloc);
     });
 
-    for (final language in _languages) {
-      testWidgets('320pt ${language.code}: tiles and button fit',
-          (tester) async {
-        useSurface(tester, const Size(320, 640));
-        await tester.pumpWidget(
-            app(const JoinFellowshipScreen(), dark: true, language: language));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-      });
+    for (final dark in [true, false]) {
+      for (final language in _languages) {
+        testWidgets(
+            '${dark ? 'dark' : 'light'} 320pt ${language.code}: '
+            'tiles and button fit', (tester) async {
+          useSurface(tester, const Size(320, 640));
+          await tester.pumpWidget(app(const JoinFellowshipScreen(),
+              dark: dark, language: language));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+          expect(find.byType(PhotoWash), findsOneWidget);
+        });
+      }
     }
+
+    testWidgets('disabled pill is raised fill with muted ink', (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const JoinFellowshipScreen(), dark: true));
+      await tester.pumpAndSettle();
+      final context = tester.element(find.byType(CommunityWideCta));
+      final palette = ReaderPalette.of(context);
+      final button = tester.widget<FilledButton>(find.descendant(
+          of: find.byType(CommunityWideCta),
+          matching: find.byType(FilledButton)));
+      expect(button.onPressed, isNull);
+      expect(button.style!.backgroundColor!.resolve({WidgetState.disabled}),
+          palette.raised);
+      expect(button.style!.foregroundColor!.resolve({WidgetState.disabled}),
+          palette.muted);
+      // No stray placeholder dot in the empty first cell.
+      expect(find.text('·'), findsNothing);
+    });
+
+    testWidgets('deep-link token is pre-filled and auto-submitted',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(
+          app(const JoinFellowshipScreen(initialToken: 'qwerty'), dark: false));
+      await tester.pumpAndSettle();
+      verify(() =>
+              bloc.add(const FellowshipJoinRequested(inviteToken: 'QWERTY')))
+          .called(1);
+      for (final c in 'QWERTY'.split('')) {
+        expect(find.text(c), findsOneWidget);
+      }
+    });
+
+    testWidgets('failure shows inline error and snackbar; edit clears it',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      whenListen(
+        bloc,
+        Stream<FellowshipListState>.fromIterable(const [
+          FellowshipListState(joinStatus: FellowshipJoinStatus.loading),
+          FellowshipListState(
+            joinStatus: FellowshipJoinStatus.failure,
+            joinError: 'Invite code not found',
+          ),
+        ]),
+        initialState: const FellowshipListState(),
+      );
+      await tester.pumpWidget(
+          app(const JoinFellowshipScreen(initialToken: 'abcdef'), dark: true));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('join_fellowship_error')), findsOneWidget);
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'abcde');
+      await tester.pump();
+      expect(find.byKey(const Key('join_fellowship_error')), findsNothing);
+    });
 
     testWidgets('typed code joins with the upper-cased token', (tester) async {
       useSurface(tester, const Size(390, 844));
@@ -905,6 +970,68 @@ void main() {
     });
   });
 
+  group('Discipler edit dialog', () {
+    Future<String?> Function() open(WidgetTester tester) {
+      String? result;
+      var done = false;
+      final context = tester.element(find.text('open'));
+      showDisciplerEditDialog(context, initialText: 'Old text', maxLength: 200)
+          .then((value) {
+        result = value;
+        done = true;
+      });
+      return () async {
+        await tester.pumpAndSettle();
+        expect(done, isTrue);
+        return result;
+      };
+    }
+
+    for (final dark in [true, false]) {
+      for (final language in _languages) {
+        testWidgets(
+            '${dark ? 'dark' : 'light'} 320pt ${language.code}: popup fits',
+            (tester) async {
+          useSurface(tester, const Size(320, 640));
+          await tester.pumpWidget(
+              app(const Text('open'), dark: dark, language: language));
+          await tester.pumpAndSettle();
+          open(tester);
+          await tester.pumpAndSettle();
+          expect(find.byType(PopupDialog), findsOneWidget);
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
+      }
+    }
+
+    testWidgets('save is disabled until changed, then returns trimmed text',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const Text('open'), dark: false));
+      await tester.pumpAndSettle();
+      final result = open(tester);
+      await tester.pumpAndSettle();
+      final save = find.byType(PopupPrimaryButton);
+      expect(tester.widget<PopupPrimaryButton>(save).onPressed, isNull);
+      await tester.enterText(find.byType(TextField), '  New text  ');
+      await tester.pump();
+      await tester.tap(save);
+      expect(await result(), 'New text');
+    });
+
+    testWidgets('cancel returns null', (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const Text('open'), dark: true));
+      await tester.pumpAndSettle();
+      final result = open(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupTextButton));
+      expect(await result(), isNull);
+    });
+  });
+
   group('Blocked users', () {
     late _MockBlockedBloc bloc;
 
@@ -937,6 +1064,11 @@ void main() {
         await tester.tap(find.text('Unblock'));
         verify(() => bloc.add(const BlockedUserUnblockRequested('u9')))
             .called(1);
+        await tester.pump();
+        // Confirmation uses the shared floating snackbar.
+        final bar = tester.widget<SnackBar>(find.byType(SnackBar));
+        expect(bar.behavior, SnackBarBehavior.floating);
+        expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
       });
     }
   });
