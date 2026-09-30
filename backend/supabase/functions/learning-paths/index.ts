@@ -15,6 +15,7 @@ import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
 import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
+import { TtlCache } from '../_shared/utils/ttl-cache.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
   calculatePathScores,
@@ -151,20 +152,25 @@ const DEFAULT_FEATURED_PATH_SLUG = 'new-believer-essentials';
  * Gets the count of topics in a learning path
  */
 /**
- * Topic counts already fetched, for the lifetime of one request.
+ * Active-topic counts per learning path, shared across requests in this worker.
  *
  * Every section of a response — active paths, featured, recommended — asks for
- * the same handful of paths, and each ask was its own round trip. A single
- * response could spend twenty of them counting the same rows over and over.
- * The map is cleared per request, so a path whose topics change is never served
- * a stale count.
+ * the same handful of paths, and each ask was its own round trip. Counts are
+ * catalogue data (the same for every user), so they live for ten minutes; an
+ * admin edit to a path's topics shows up within that window. User progress is
+ * never cached here.
  */
-const topicCountCache = new Map<string, number>();
+const CATALOG_CACHE_TTL_MS = 10 * 60 * 1000;
+const topicCountCache = new TtlCache<number>(CATALOG_CACHE_TTL_MS, 2000);
 
-/** Forgets cached counts. Called once at the start of each request. */
-function resetRequestCaches(): void {
-  topicCountCache.clear();
-}
+/**
+ * Path translations keyed by `${pathId}:${lang}`; null records "no row", so a
+ * missing translation is not re-queried on every request.
+ */
+const translationCache = new TtlCache<{ title: string | null; description: string | null } | null>(
+  CATALOG_CACHE_TTL_MS,
+  2000,
+);
 
 /**
  * Counts every path in [learningPathIds] in one query, filling the cache.
@@ -180,16 +186,22 @@ async function preloadTopicCounts(
   const missing = learningPathIds.filter((id) => id && !topicCountCache.has(id));
   if (missing.length === 0) return;
 
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('learning_path_topics')
     .select('learning_path_id')
     .in('learning_path_id', missing)
     .eq('is_active', true);
 
-  for (const id of missing) topicCountCache.set(id, 0);
+  // A failed read is not remembered as "zero topics" for ten minutes;
+  // getTopicsCount falls back to its own query for these paths.
+  if (error) return;
+
+  const counts = new Map<string, number>();
+  for (const id of missing) counts.set(id, 0);
   for (const row of (data ?? []) as Array<{ learning_path_id: string }>) {
-    topicCountCache.set(row.learning_path_id, (topicCountCache.get(row.learning_path_id) ?? 0) + 1);
+    counts.set(row.learning_path_id, (counts.get(row.learning_path_id) ?? 0) + 1);
   }
+  for (const [id, count] of counts) topicCountCache.set(id, count);
 }
 
 async function getTopicsCount(
@@ -199,14 +211,14 @@ async function getTopicsCount(
   const cached = topicCountCache.get(learningPathId);
   if (cached !== undefined) return cached;
 
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('learning_path_topics')
     .select('id', { count: 'exact' })
     .eq('learning_path_id', learningPathId)
     .eq('is_active', true);
 
   const count = data?.length || 0;
-  topicCountCache.set(learningPathId, count);
+  if (!error) topicCountCache.set(learningPathId, count);
   return count;
 }
 
@@ -264,12 +276,24 @@ async function getLocalizedTitleDescription(
     return { title: fallbackTitle, description: fallbackDescription };
   }
 
-  const { data: translation } = await supabaseClient
-    .from('learning_path_translations')
-    .select('title, description')
-    .eq('learning_path_id', learningPathId)
-    .eq('lang_code', language)
-    .single();
+  const cacheKey = `${learningPathId}:${language}`;
+  let translation = translationCache.get(cacheKey);
+  if (translation === undefined) {
+    const { data, error } = await supabaseClient
+      .from('learning_path_translations')
+      .select('title, description')
+      .eq('learning_path_id', learningPathId)
+      .eq('lang_code', language)
+      .single();
+
+    const row = (data ?? null) as { title: string | null; description: string | null } | null;
+    translation = row;
+    // Remember a found row, or a confirmed absence (PGRST116: no rows). Any
+    // other error is transient and must not pin the English fallback.
+    if (row || error?.code === 'PGRST116') {
+      translationCache.set(cacheKey, row);
+    }
+  }
 
   if (translation) {
     return {
@@ -337,9 +361,6 @@ async function handleLearningPaths(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
-  // Caches live for one request only, so nothing is ever served a stale count.
-  resetRequestCaches();
-
   // Check maintenance mode FIRST
   await checkMaintenanceMode(req, services)
 
@@ -350,11 +371,7 @@ async function handleLearningPaths(
   // This allows users to see learning paths with lock overlays in the frontend
   // Feature access is only checked for write operations (enrollment) below
 
-  const userPlan = userContext?.userId
-    ? await services.authService.getUserPlan(req)
-    : 'free';
-
-  console.log(`👤 [LearningPaths] User plan: ${userPlan}`);
+  // The user's plan only matters for enrollment; handleEnroll resolves it there.
 
   // Determine the action based on URL pattern and method
   // /learning-paths -> list paths

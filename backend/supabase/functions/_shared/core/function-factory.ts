@@ -22,6 +22,7 @@ import { getServiceContainer, createUserSupabaseClient, ServiceContainer } from 
 import { config } from './config.ts'
 import { UserContext } from '../types/index.ts'
 import { defaultServiceRoleLimiter, getRequestIdentifier } from '../utils/rate-limiter.ts'
+import { runInBackground } from '../utils/background-task.ts'
 
 /**
  * Handler function signature that Edge Functions must implement
@@ -188,9 +189,11 @@ export function createFunction(
         metrics.authTime = performance.now()
       }
 
-      // Set up timeout
+      // Set up timeout. The timer is cleared once the race settles, so a fast
+      // request does not leave a pending timer holding the worker open.
+      let timeoutId: number | undefined
       const timeoutPromise = new Promise<Response>((_, reject) => {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           reject(new Error(`Request timeout after ${finalConfig.timeout}ms`))
         }, finalConfig.timeout)
       })
@@ -198,19 +201,27 @@ export function createFunction(
       // Execute handler with timeout
       // Always pass userContext (can be undefined if requireAuth is false)
       const handlerPromise = handler(req, services, userContext)
-      const response = await Promise.race([handlerPromise, timeoutPromise])
+      let response: Response
+      try {
+        response = await Promise.race([handlerPromise, timeoutPromise])
+      } finally {
+        clearTimeout(timeoutId)
+      }
       
       metrics.handlerTime = performance.now()
       metrics.totalTime = performance.now() - metrics.startTime!
 
-      // Log analytics if enabled
+      // Log analytics if enabled — after the response, never ahead of it.
       if (finalConfig.enableAnalytics) {
-        await logRequestAnalytics(
-          services,
-          req,
-          userContext,
-          metrics as PerformanceMetrics,
-          requestId
+        runInBackground(
+          logRequestAnalytics(
+            services,
+            req,
+            userContext,
+            metrics as PerformanceMetrics,
+            requestId
+          ),
+          'request analytics'
         )
       }
 
@@ -231,13 +242,13 @@ export function createFunction(
       metrics.totalTime = performance.now() - metrics.startTime!
       
       if (finalConfig.enableAnalytics) {
-        try {
-          const services = await getServiceContainer()
-          await logErrorAnalytics(services, req, error, metrics as PerformanceMetrics, requestId)
-        } catch (analyticsError) {
-          // Don't fail the request if analytics fails
-          console.error('[Analytics] Failed to log error:', analyticsError)
-        }
+        // Runs after the error response; a failure here never affects it.
+        runInBackground(
+          getServiceContainer().then((services) =>
+            logErrorAnalytics(services, req, error, metrics as PerformanceMetrics, requestId)
+          ),
+          'error analytics'
+        )
       }
 
       return ErrorHandler.handleError(error, mergedCorsHeaders, requestId)

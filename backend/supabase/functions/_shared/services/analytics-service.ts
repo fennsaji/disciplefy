@@ -1,4 +1,5 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { runInBackground } from '../utils/background-task.ts'
 
 /**
  * Analytics event data structure.
@@ -24,16 +25,38 @@ export class AnalyticsLogger {
 
   /**
    * Logs an analytics event to the database.
-   * 
+   *
    * This method ensures that sensitive data is filtered out and only
    * relevant metadata is stored for analytics purposes.
-   * 
+   *
+   * The insert runs in the background (EdgeRuntime.waitUntil), so callers that
+   * await this do not hold their response for the write. analytics_events is
+   * write-only from the functions — nothing reads it back within a request —
+   * so completing after the response changes nothing but latency.
+   *
    * @param eventType - Type of event (e.g., 'study_generated', 'topics_accessed')
    * @param eventData - Structured event data (no sensitive information)
    * @param ipAddress - Client IP address (optional)
-   * @returns Promise that resolves when event is logged
+   * @returns Promise that resolves once the insert has been scheduled
    */
-  async logEvent(
+  logEvent(
+    eventType: string,
+    eventData: AnalyticsEventData,
+    ipAddress?: string | null
+  ): Promise<void> {
+    try {
+      runInBackground(this.insertEvent(eventType, eventData, ipAddress), 'analytics event')
+    } catch (error) {
+      console.error('Analytics logging error:', error)
+      // Don't throw - analytics failures shouldn't break the main flow
+    }
+    return Promise.resolve()
+  }
+
+  /**
+   * Writes one analytics row. Never throws.
+   */
+  private async insertEvent(
     eventType: string,
     eventData: AnalyticsEventData,
     ipAddress?: string | null

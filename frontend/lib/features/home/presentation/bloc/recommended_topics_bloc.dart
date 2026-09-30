@@ -30,9 +30,6 @@ class RecommendedTopicsBloc
   // Key for storing prompt dismissal in local storage
   static const String _promptDismissedKey = 'personalization_prompt_dismissed';
 
-  // Language change subscription
-  StreamSubscription<dynamic>? _languageChangeSubscription;
-
   // Track if personalization prompt was dismissed (loaded from storage)
   bool _promptDismissed = false;
 
@@ -55,9 +52,10 @@ class RecommendedTopicsBloc
     on<LoadForYouTopics>(_onLoadForYouTopics);
     on<DismissPersonalizationPrompt>(_onDismissPersonalizationPrompt);
     on<InvalidateForYouCache>(_onInvalidateForYouCache);
-
-    // Listen for language preference changes
-    _setupLanguageChangeListener();
+    // Language changes are not subscribed to here: HomeBloc, which owns this
+    // bloc, reloads "For You" in the study content language on both the app
+    // and content language streams. Subscribing here as well fetched the
+    // topics a second time, in the app language, racing HomeBloc's request.
   }
 
   /// Handle loading recommended topics with intelligent caching
@@ -121,17 +119,6 @@ class RecommendedTopicsBloc
     if (state is RecommendedTopicsError) {
       emit(const RecommendedTopicsInitial());
     }
-  }
-
-  /// Setup listener for language preference changes from settings
-  void _setupLanguageChangeListener() {
-    _languageChangeSubscription =
-        _languagePreferenceService.languageChanges.listen(
-      (AppLanguage newLanguage) {
-        // Trigger refresh when language changes with new language code
-        add(LanguagePreferenceChanged(languageCode: newLanguage.code));
-      },
-    );
   }
 
   /// Handle language preference change from settings
@@ -288,9 +275,6 @@ class RecommendedTopicsBloc
 
   @override
   Future<void> close() {
-    // Cancel language change subscription
-    _languageChangeSubscription?.cancel();
-
     // RecommendedGuidesService is a singleton managed by dependency injection
     // No need to dispose it here as it may be used by other parts of the app
     return super.close();

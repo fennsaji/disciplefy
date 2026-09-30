@@ -17,6 +17,7 @@ import { UserContext } from "../_shared/types/index.ts";
 import { AppError } from "../_shared/utils/error-handler.ts";
 import type { SupportedLanguage } from "../_shared/services/llm-config/language-configs.ts";
 import { generateCorrelationId } from "../_shared/utils/correlation-id.ts";
+import { runInBackground } from "../_shared/utils/background-task.ts";
 
 // ============================================================================
 // Types
@@ -298,30 +299,32 @@ async function handleContinueLearning(
     req.headers.get("x-forwarded-for"),
   );
 
-  // Log usage for profitability tracking (non-LLM, read-only feature)
-  try {
-    const userTier = await services.authService.getUserPlan(req);
-
-    await services.usageLoggingService.logUsage({
-      userId,
-      tier: userTier,
-      featureName: 'continue_learning',
-      operationType: 'read',
-      tokensConsumed: 0,
-      requestMetadata: {
-        language: validatedLanguage,
-        topics_count: localizedTopics.length,
-        limit: validatedLimit,
-      },
-      responseMetadata: {
-        success: true,
-        latency_ms: 0,
-      },
-    });
-  } catch (usageLogError) {
-    console.error('Usage logging failed:', usageLogError)
-    // Don't fail the request if usage logging fails
-  }
+  // Log usage for profitability tracking (non-LLM, read-only feature).
+  // Runs after the response: continue_learning carries no tokens, no cost and
+  // no rate limit, so nothing depends on the row existing before we reply.
+  const topicsCount = localizedTopics.length;
+  runInBackground(
+    (async () => {
+      const userTier = await services.authService.getUserPlan(req);
+      await services.usageLoggingService.logUsage({
+        userId,
+        tier: userTier,
+        featureName: 'continue_learning',
+        operationType: 'read',
+        tokensConsumed: 0,
+        requestMetadata: {
+          language: validatedLanguage,
+          topics_count: topicsCount,
+          limit: validatedLimit,
+        },
+        responseMetadata: {
+          success: true,
+          latency_ms: 0,
+        },
+      });
+    })(),
+    'continue-learning usage logging',
+  );
 
   return new Response(
     JSON.stringify({

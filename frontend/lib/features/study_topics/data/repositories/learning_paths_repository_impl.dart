@@ -13,21 +13,26 @@ import '../../domain/repositories/learning_paths_repository.dart';
 import '../datasources/learning_paths_remote_datasource.dart';
 import '../models/learning_path_download_model.dart';
 import '../models/learning_path_model.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_cache_scope.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Implementation of [LearningPathsRepository].
+///
+/// Every cache here holds user-specific progress, so each one is keyed by
+/// [LearningCacheScope] (user id + language): a language switch or another
+/// account signing in is a cache miss, never the previous content.
 class LearningPathsRepositoryImpl implements LearningPathsRepository {
   final LearningPathsRemoteDataSource _remoteDataSource;
 
   // Cache for category-grouped paths
   LearningPathCategoriesResult? _cachedCategories;
   DateTime? _categoriesCacheTimestamp;
-  String? _categoriesCachedLanguage;
+  String? _categoriesCacheScope;
 
   // Cache for learning paths (flat, used for enrolled paths / recommended)
   LearningPathsResult? _cachedPaths;
   DateTime? _cacheTimestamp;
-  String? _pathsCachedLanguage;
+  String? _pathsCacheScope;
   static const _cacheDuration = Duration(hours: 24);
 
   // Cache for path details
@@ -38,6 +43,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   // Cache for recommended path
   RecommendedPathResult? _cachedRecommendedPath;
   DateTime? _recommendedPathCacheTimestamp;
+  String? _recommendedPathCacheScope;
 
   LearningPathsRepositoryImpl({
     required LearningPathsRemoteDataSource remoteDataSource,
@@ -78,7 +84,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       if (offset == 0 && search == null) {
         _cachedPaths = result;
         _cacheTimestamp = DateTime.now();
-        _pathsCachedLanguage = language;
+        _pathsCacheScope = LearningCacheScope.scopeFor(language);
       }
 
       return Right(result);
@@ -86,7 +92,9 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
       // Return cached data if available (first page only)
-      if (_cachedPaths != null && offset == 0) {
+      if (_cachedPaths != null &&
+          offset == 0 &&
+          _pathsCacheScope == LearningCacheScope.scopeFor(language)) {
         return Right(_cachedPaths!);
       }
       return Left(NetworkFailure(message: e.message));
@@ -128,14 +136,16 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       if (categoryOffset == 0) {
         _cachedCategories = result;
         _categoriesCacheTimestamp = DateTime.now();
-        _categoriesCachedLanguage = language;
+        _categoriesCacheScope = LearningCacheScope.scopeFor(language);
       }
 
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      if (_cachedCategories != null && categoryOffset == 0) {
+      if (_cachedCategories != null &&
+          categoryOffset == 0 &&
+          _categoriesCacheScope == LearningCacheScope.scopeFor(language)) {
         return Right(_cachedCategories!);
       }
       return Left(NetworkFailure(message: e.message));
@@ -191,8 +201,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     Logger.debug(
         '[LearningPathsRepo] getLearningPathDetails called for $pathId with forceRefresh: $forceRefresh');
 
-    // Cache key includes language so a language change always fetches fresh data
-    final cacheKey = '${pathId}_$language';
+    // Cache key includes user and language so a language change or another
+    // account always fetches fresh data
+    final cacheKey =
+        '${LearningCacheScope.currentUserKey()}|${pathId}_$language';
 
     // Check cache
     if (!forceRefresh && _isDetailsCacheValid(cacheKey)) {
@@ -409,18 +421,18 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   void clearCache() {
     _cachedCategories = null;
     _categoriesCacheTimestamp = null;
-    _categoriesCachedLanguage = null;
+    _categoriesCacheScope = null;
     _cachedPaths = null;
     _cacheTimestamp = null;
-    _pathsCachedLanguage = null;
+    _pathsCacheScope = null;
     _detailsCache.clear();
     _detailsCacheTimestamps.clear();
     _cachedRecommendedPath = null;
     _recommendedPathCacheTimestamp = null;
-    _recommendedPathCachedLanguage = null;
+    _recommendedPathCacheScope = null;
     _cachedPersonalizedPaths = null;
     _personalizedPathsCacheTimestamp = null;
-    _personalizedPathsCachedLanguage = null;
+    _personalizedPathsCacheScope = null;
     // Also clear the persistent Hive cache so stale data is not served after
     // events like enrollment, language change, or DB migrations.
     _remoteDataSource.clearCache();
@@ -429,7 +441,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   bool _isCategoriesCacheValid(String language) {
     if (_cachedCategories == null ||
         _categoriesCacheTimestamp == null ||
-        _categoriesCachedLanguage != language) {
+        _categoriesCacheScope != LearningCacheScope.scopeFor(language)) {
       return false;
     }
     return DateTime.now().difference(_categoriesCacheTimestamp!) <
@@ -439,7 +451,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   bool _isCacheValid(String language) {
     if (_cachedPaths == null ||
         _cacheTimestamp == null ||
-        _pathsCachedLanguage != language) {
+        _pathsCacheScope != LearningCacheScope.scopeFor(language)) {
       return false;
     }
     return DateTime.now().difference(_cacheTimestamp!) < _cacheDuration;
@@ -454,18 +466,15 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         _cacheDuration;
   }
 
-  // Cache for personalized paths (keyed by language)
-  String? _personalizedPathsCachedLanguage;
+  // Cache for personalized paths (keyed by user + language)
+  String? _personalizedPathsCacheScope;
   List<LearningPath>? _cachedPersonalizedPaths;
   DateTime? _personalizedPathsCacheTimestamp;
-
-  // Track cached language for recommended path
-  String? _recommendedPathCachedLanguage;
 
   bool _isRecommendedPathCacheValid(String language) {
     if (_cachedRecommendedPath == null ||
         _recommendedPathCacheTimestamp == null ||
-        _recommendedPathCachedLanguage != language) {
+        _recommendedPathCacheScope != LearningCacheScope.scopeFor(language)) {
       return false;
     }
     return DateTime.now().difference(_recommendedPathCacheTimestamp!) <
@@ -475,7 +484,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   bool _isPersonalizedPathsCacheValid(String language) {
     if (_cachedPersonalizedPaths == null ||
         _personalizedPathsCacheTimestamp == null ||
-        _personalizedPathsCachedLanguage != language) {
+        _personalizedPathsCacheScope != LearningCacheScope.scopeFor(language)) {
       return false;
     }
     return DateTime.now().difference(_personalizedPathsCacheTimestamp!) <
@@ -499,12 +508,14 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       final paths = response.toEntity();
       _cachedPersonalizedPaths = paths;
       _personalizedPathsCacheTimestamp = DateTime.now();
-      _personalizedPathsCachedLanguage = language;
+      _personalizedPathsCacheScope = LearningCacheScope.scopeFor(language);
       return Right(paths);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      if (_cachedPersonalizedPaths != null) {
+      if (_cachedPersonalizedPaths != null &&
+          _personalizedPathsCacheScope ==
+              LearningCacheScope.scopeFor(language)) {
         return Right(_cachedPersonalizedPaths!);
       }
       return Left(NetworkFailure(message: e.message));
@@ -551,22 +562,57 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       // Update cache
       _cachedRecommendedPath = result;
       _recommendedPathCacheTimestamp = DateTime.now();
-      _recommendedPathCachedLanguage = language;
+      _recommendedPathCacheScope = LearningCacheScope.scopeFor(language);
 
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      // Return cached data if available
-      if (_cachedRecommendedPath != null) {
-        return Right(_cachedRecommendedPath!);
-      }
+      // Offline: fall back to this user's last copy in this language.
+      final cached = await getCachedRecommendedPath(language: language);
+      if (cached != null) return Right(cached);
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
       Logger.error('[LearningPathsRepo] Failed to load recommended path',
           error: e);
       return const Left(
           ClientFailure(message: 'Failed to load recommended path.'));
+    }
+  }
+
+  @override
+  Future<LearningPathCategoriesResult?> getCachedLearningPathCategories({
+    String language = 'en',
+  }) async {
+    if (_cachedCategories != null &&
+        _categoriesCacheScope == LearningCacheScope.scopeFor(language)) {
+      return _cachedCategories;
+    }
+    try {
+      final persisted = await _remoteDataSource.getCachedLearningPathCategories(
+          language: language);
+      return persisted?.toEntity();
+    } catch (e) {
+      Logger.debug('[LearningPathsRepo] No cached categories: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<RecommendedPathResult?> getCachedRecommendedPath({
+    String language = 'en',
+  }) async {
+    if (_cachedRecommendedPath != null &&
+        _recommendedPathCacheScope == LearningCacheScope.scopeFor(language)) {
+      return _cachedRecommendedPath;
+    }
+    try {
+      final persisted =
+          await _remoteDataSource.getCachedRecommendedPath(language: language);
+      return persisted?.toEntity();
+    } catch (e) {
+      Logger.debug('[LearningPathsRepo] No cached recommended path: $e');
+      return null;
     }
   }
 }

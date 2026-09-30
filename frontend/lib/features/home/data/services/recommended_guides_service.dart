@@ -10,6 +10,7 @@ import '../../domain/entities/recommended_guide_topic.dart';
 import '../models/recommended_guide_topic_model.dart';
 import '../datasources/recommended_topics_local_datasource.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_cache_scope.dart';
 
 /// Result container for "For You" topics API response.
 ///
@@ -366,7 +367,10 @@ class RecommendedGuidesService {
 
       // Create language-specific cache key for "For You" topics
       // Include cache version to invalidate old cache when new fields are added
-      final cacheKey = 'for_you_${_cacheVersion}_${language ?? 'en'}_$limit';
+      // The user id is part of the key: these are personal recommendations,
+      // and the persistent copy survives a sign-out.
+      final cacheKey =
+          'for_you_${_cacheVersion}_${LearningCacheScope.currentUserKey()}_${language ?? 'en'}_$limit';
 
       // Check in-memory cache first (unless force refresh is requested)
       if (!forceRefresh && _filteredTopicsCache.containsKey(cacheKey)) {

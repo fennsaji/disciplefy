@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,27 +11,49 @@ import '../utils/logger.dart';
 ///
 /// On startup:
 ///   1. Loads from SharedPreferences immediately (no latency).
-///   2. If cache is stale/missing, fetches fresh data from the API in the background.
+///   2. If there is no cache, fetches from the API in the background — never
+///      before the first frame.
 ///
 /// The [BibleBooks] class falls back to its static constants if no remote data
-/// is loaded yet, so the app works even on first launch without network.
+/// is loaded yet, so the app works even on first launch without network, and
+/// picks up the remote names as soon as the background fetch lands.
 class BibleBooksService {
   static const String _cacheKey = 'bible_books_config_v1';
   static const String _cacheTimestampKey = 'bible_books_config_v1_timestamp';
 
-  DateTime? _lastFetch;
+  final SupabaseClient? _clientOverride;
 
-  /// Initialize the service: serve cached data immediately, then refresh if stale.
+  /// [client] defaults to the app-wide Supabase client; tests inject one with
+  /// a mock HTTP layer so the startup path can be exercised without a backend.
+  BibleBooksService({SupabaseClient? client}) : _clientOverride = client;
+
+  SupabaseClient get _supabase => _clientOverride ?? Supabase.instance.client;
+
+  DateTime? _lastFetch;
+  Future<void>? _fetchInFlight;
+
+  /// Initialize the service: serve cached data immediately; when there is
+  /// none, fetch in the background while the static names cover the gap.
+  ///
+  /// Returns without waiting for the network, so it never delays the first
+  /// frame.
   Future<void> initialize() async {
     try {
       await _loadFromCache();
       if (!_isCacheValid()) {
-        await _fetchFromApi();
+        unawaited(refreshInBackground());
       }
     } catch (e) {
       Logger.debug('⚠️ [BibleBooksService] Error initializing: $e');
       // Falls back to BibleBooks static constants — no crash.
     }
+  }
+
+  /// Fetches the remote config, sharing one request among concurrent callers.
+  /// Failures are logged and swallowed; the cached/static names stay in use.
+  Future<void> refreshInBackground() {
+    return _fetchInFlight ??=
+        _fetchFromApi().whenComplete(() => _fetchInFlight = null);
   }
 
   /// Fetch fresh config from the Edge Function and update [BibleBooks] + cache.
@@ -39,7 +62,7 @@ class BibleBooksService {
       Logger.debug(
           '🔄 [BibleBooksService] Fetching Bible book config from API...');
 
-      final response = await Supabase.instance.client.functions.invoke(
+      final response = await _supabase.functions.invoke(
         'get-bible-books',
         method: HttpMethod.get,
       );

@@ -226,15 +226,8 @@ jobs:
           # Create Vercel configuration for development (static deployment only)
           cat > vercel-deploy/frontend/vercel.json << EOF
           {
-            "version": 2,
             "buildCommand": null,
             "outputDirectory": ".",
-            "builds": [
-              {
-                "src": "**/*",
-                "use": "@vercel/static"
-              }
-            ],
             "rewrites": [
               {
                 "source": "/.well-known/(.*)",
@@ -247,11 +240,91 @@ jobs:
             ],
             "headers": [
               {
+                "source": "/(.*)",
+                "headers": [
+                  {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                  },
+                  {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                  },
+                  {
+                    "key": "Referrer-Policy",
+                    "value": "strict-origin-when-cross-origin"
+                  }
+                ]
+              },
+              {
+                "source": "/main.dart.js",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=0, must-revalidate, stale-while-revalidate=86400"
+                  }
+                ]
+              },
+              {
+                "source": "/flutter_bootstrap.js",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=0, must-revalidate, stale-while-revalidate=86400"
+                  }
+                ]
+              },
+              {
+                "source": "/flutter.js",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=0, must-revalidate, stale-while-revalidate=86400"
+                  }
+                ]
+              },
+              {
+                "source": "/canvaskit/(.*)",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=604800, stale-while-revalidate=86400"
+                  }
+                ]
+              },
+              {
+                "source": "/icons/(.*)",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=604800, stale-while-revalidate=86400"
+                  }
+                ]
+              },
+              {
                 "source": "/assets/(.*)",
                 "headers": [
                   {
                     "key": "Cache-Control",
-                    "value": "public, max-age=31536000, immutable"
+                    "value": "public, max-age=3600, stale-while-revalidate=604800"
+                  }
+                ]
+              },
+              {
+                "source": "/index.html",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                  }
+                ]
+              },
+              {
+                "source": "/",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
                   }
                 ]
               }

@@ -339,7 +339,7 @@ async function handleGetMemoryChampionsLeaderboard(
     status: 200,
     headers: { 
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
+      'Cache-Control': 'private, max-age=300' // Per-user payload (user_stats): browser-only cache, 5 minutes
     }
   })
 }

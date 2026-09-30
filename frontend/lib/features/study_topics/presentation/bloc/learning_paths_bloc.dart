@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
 import '../../domain/usecases/reset_learning_progress.dart';
@@ -57,15 +58,86 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
   List<LearningPath> _personalizedFor(String? language) =>
       _personalizedLanguage == language ? _personalizedPaths : const [];
 
+  /// Content language of the category listing currently in the state, or
+  /// null when the state holds no category listing.
+  String? _listingLanguage;
+
+  /// Whether the state already shows the category listing in [language].
+  bool _isShowingListingIn(String language) =>
+      state is LearningPathsLoaded && _listingLanguage == language;
+
+  /// Number of listings fetched from the server so far; see
+  /// [LearningPathsLoaded.listingRevision].
+  int _listingRevision = 0;
+
+  /// Emits [categoriesResult] as the listing in [language]. [fresh] marks a
+  /// listing from the server (as opposed to one painted from the cache).
+  void _emitListing(
+    LearningPathCategoriesResult categoriesResult,
+    String language,
+    Emitter<LearningPathsState> emit, {
+    bool fresh = true,
+  }) {
+    if (fresh) _listingRevision++;
+    if (!categoriesResult.categories.any((c) => c.paths.isNotEmpty)) {
+      _listingLanguage = null;
+      emit(const LearningPathsEmpty());
+      return;
+    }
+    final enrolledPaths = categoriesResult.categories
+        .expand((c) => c.paths)
+        .where((p) => p.isEnrolled)
+        .toList();
+    _listingLanguage = language;
+    // Personalized paths are held on the bloc, so they survive this
+    // re-emission whether they arrived before or after the listing.
+    emit(LearningPathsLoaded(
+      categories: categoriesResult.categories,
+      enrolledPaths: enrolledPaths,
+      hasMoreCategories: categoriesResult.hasMoreCategories,
+      nextCategoryOffset: categoriesResult.nextCategoryOffset,
+      personalizedPaths: _personalizedFor(language),
+      listingRevision: _listingRevision,
+    ));
+  }
+
+  /// Paints the cached listing in [language] (no network) when the state
+  /// does not already show it. Returns whether a listing is now on screen.
+  ///
+  /// Never shows a listing in another language: without a cache for
+  /// [language] the caller shows its loading state instead.
+  Future<bool> _showCachedListing(
+    String language,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    if (_isShowingListingIn(language)) return true;
+    LearningPathCategoriesResult? cached;
+    try {
+      cached =
+          await _repository.getCachedLearningPathCategories(language: language);
+    } catch (e) {
+      Logger.debug('[LearningPathsBloc] Cached listing unavailable: $e');
+    }
+    if (cached == null || !cached.categories.any((c) => c.paths.isNotEmpty)) {
+      return false;
+    }
+    _emitListing(cached, language, emit, fresh: false);
+    return true;
+  }
+
+  /// Stale-while-revalidate: the cached listing is shown at once and the
+  /// fresh one replaces it when it lands. A failed refresh keeps the listing
+  /// on screen; the error state is only shown when there is nothing to show.
   Future<void> _onLoadLearningPaths(
     LoadLearningPaths event,
     Emitter<LearningPathsState> emit,
   ) async {
-    if (state is LearningPathsLoaded && !event.forceRefresh) {
+    if (_isShowingListingIn(event.language) && !event.forceRefresh) {
       return;
     }
 
-    emit(const LearningPathsLoading());
+    final showingListing = await _showCachedListing(event.language, emit);
+    if (!showingListing) emit(const LearningPathsLoading());
 
     final result = await _repository.getLearningPathCategories(
       language: event.language,
@@ -73,30 +145,22 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       forceRefresh: event.forceRefresh,
     );
 
-    // Personalized paths are held on the bloc, so they survive this
-    // re-emission whether they arrived before or after the listing.
-    final priorPersonalizedPaths = _personalizedFor(event.language);
-
     result.fold(
-      (failure) => emit(
-          LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
-      (categoriesResult) {
-        if (!categoriesResult.categories.any((c) => c.paths.isNotEmpty)) {
-          emit(const LearningPathsEmpty());
-        } else {
-          final enrolledPaths = categoriesResult.categories
-              .expand((c) => c.paths)
-              .where((p) => p.isEnrolled)
-              .toList();
-          emit(LearningPathsLoaded(
-            categories: categoriesResult.categories,
-            enrolledPaths: enrolledPaths,
-            hasMoreCategories: categoriesResult.hasMoreCategories,
-            nextCategoryOffset: categoriesResult.nextCategoryOffset,
-            personalizedPaths: priorPersonalizedPaths,
-          ));
+      (failure) {
+        if (showingListing && _isShowingListingIn(event.language)) {
+          Logger.warning(
+            'Background refresh of learning paths failed: '
+            '${ErrorMessageSanitizer.sanitize(failure)}',
+            tag: 'LEARNING_PATHS',
+          );
+          return;
         }
+        _listingLanguage = null;
+        emit(LearningPathsError(
+            message: ErrorMessageSanitizer.sanitize(failure)));
       },
+      (categoriesResult) =>
+          _emitListing(categoriesResult, event.language, emit),
     );
   }
 
@@ -140,7 +204,10 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     RefreshLearningPaths event,
     Emitter<LearningPathsState> emit,
   ) async {
-    final hadData = state is LearningPathsLoaded;
+    // A listing in another language (a content-language switch) is never
+    // kept on screen: the cached one in the new language replaces it at
+    // once, or the loading state does.
+    final hadData = await _showCachedListing(event.language, emit);
     if (!hadData) {
       emit(const LearningPathsLoading());
     }
@@ -152,31 +219,17 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
 
     result.fold(
       (failure) {
+        _listingLanguage = null;
         emit(LearningPathsError(
           message: ErrorMessageSanitizer.sanitize(failure),
           isInitialLoadError: !hadData,
         ));
       },
-      (categoriesResult) {
-        if (!categoriesResult.categories.any((c) => c.paths.isNotEmpty)) {
-          emit(const LearningPathsEmpty());
-        } else {
-          final enrolledPaths = categoriesResult.categories
-              .expand((c) => c.paths)
-              .where((p) => p.isEnrolled)
-              .toList();
-          // Only personalized paths fetched for this same language are
-          // carried over; a language switch drops them until the matching
-          // LoadPersonalizedPaths (dispatched alongside this refresh) lands.
-          emit(LearningPathsLoaded(
-            categories: categoriesResult.categories,
-            enrolledPaths: enrolledPaths,
-            hasMoreCategories: categoriesResult.hasMoreCategories,
-            nextCategoryOffset: categoriesResult.nextCategoryOffset,
-            personalizedPaths: _personalizedFor(event.language),
-          ));
-        }
-      },
+      // Only personalized paths fetched for this same language are carried
+      // over; a language switch drops them until the matching
+      // LoadPersonalizedPaths (dispatched alongside this refresh) lands.
+      (categoriesResult) =>
+          _emitListing(categoriesResult, event.language, emit),
     );
   }
 
@@ -185,6 +238,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     Emitter<LearningPathsState> emit,
   ) {
     _repository.clearCache();
+    _listingLanguage = null;
     emit(const LearningPathsInitial());
   }
 
@@ -222,6 +276,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
           hasMoreCategories: categoriesResult.hasMoreCategories,
           nextCategoryOffset: categoriesResult.nextCategoryOffset,
           personalizedPaths: current.personalizedPaths,
+          listingRevision: current.listingRevision,
         ));
       },
     );
@@ -293,6 +348,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
               .where((c) => c != event.category)
               .toList(),
           personalizedPaths: updated.personalizedPaths,
+          listingRevision: updated.listingRevision,
         ));
       },
     );
@@ -320,6 +376,8 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       fellowshipId: event.fellowshipId,
     );
 
+    // The flat list replaces the category listing in the state.
+    _listingLanguage = null;
     result.fold(
       (failure) => emit(
           LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
@@ -410,6 +468,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       ));
     } else {
       // Bloc was reset while we were searching — emit a fresh loaded state
+      _listingLanguage = null;
       emit(LearningPathsLoaded(
         categories: const [],
         searchQuery: event.query,

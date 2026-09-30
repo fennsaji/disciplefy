@@ -166,8 +166,14 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
     // IndexedStack — so without this the card kept the progress it was built
     // with, even after the path was finished.
     return BlocListener<LearningPathsBloc, LearningPathsState>(
+      // Fires when a listing fresh from the server arrives — after a loading
+      // state, and also on a background refresh (Loaded → Loaded). A listing
+      // painted from the cache (revision 0, or unchanged) does not re-fetch.
       listenWhen: (previous, current) =>
-          current is LearningPathsLoaded && previous is! LearningPathsLoaded,
+          current is LearningPathsLoaded &&
+          current.listingRevision > 0 &&
+          current.listingRevision !=
+              (previous is LearningPathsLoaded ? previous.listingRevision : -1),
       listener: (_, __) => _loadFellowshipActivePath(),
       child: BlocBuilder<LearningPathsBloc, LearningPathsState>(
         // A progress reset emits LearningPathsResetting / LearningPathsResetSuccess

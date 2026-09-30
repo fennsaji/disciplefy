@@ -124,8 +124,9 @@ void main() async {
     // Note: Using bundled fonts (Inter, Poppins) via AppFonts helper
     // No GoogleFonts configuration needed - fonts loaded from pubspec.yaml
 
-    // Initialize Hive for local storage
-    await Hive.initFlutter();
+    // Validate and log configuration
+    AppConfig.validateConfiguration();
+    AppConfig.logConfiguration();
 
     // AndroidDownloadNotificationService is NOT configured here on purpose: it
     // set up a notification channel and a background service that only
@@ -138,106 +139,13 @@ void main() async {
     // the IAP init below measured ~300ms (~12%) off cold start in an emulator
     // A/B, not the ~825ms the raw step timings suggested.
 
-    // Register Hive adapters
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(SavedGuideModelAdapter());
-    }
-
-    await Hive.openBox('app_settings');
-
-    // Validate and log configuration
-    AppConfig.validateConfiguration();
-    AppConfig.logConfiguration();
-
-    // Initialize Firebase for push notifications
-    try {
-      if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing Firebase...');
-
-      if (kIsWeb) {
-        // Initialize Firebase for web with environment-based configuration
-        await Firebase.initializeApp(
-          options: const FirebaseOptions(
-            apiKey: firebaseApiKey,
-            authDomain: firebaseAuthDomain,
-            projectId: firebaseProjectId,
-            storageBucket: firebaseStorageBucket,
-            messagingSenderId: firebaseMessagingSenderId,
-            appId: firebaseAppId,
-            measurementId: firebaseMeasurementId,
-          ),
-        );
-      } else {
-        // Initialize Firebase for mobile platforms
-        // Note: Requires firebase_options.dart generated via FlutterFire CLI
-        await Firebase.initializeApp();
-
-        // Set up background message handler (mobile only)
-        FirebaseMessaging.onBackgroundMessage(
-          firebaseMessagingBackgroundHandler,
-        );
-
-        // Route uncaught errors to Crashlytics in release/profile builds
-        // (TestFlight / internal testing have no console attached). Debug keeps
-        // the local console; collection is disabled there to avoid dev noise.
-        await FirebaseCrashlytics.instance
-            .setCrashlyticsCollectionEnabled(!kDebugMode);
-        if (!kDebugMode) {
-          FlutterError.onError =
-              FirebaseCrashlytics.instance.recordFlutterFatalError;
-          PlatformDispatcher.instance.onError = (error, stack) {
-            // Transient network errors from Supabase's internal token-refresh
-            // fetch layer are recovered from automatically and never actually
-            // crash the app — recording them as fatal inflates crash counts.
-            final isRetryableAuthError = error is AuthRetryableFetchException;
-            FirebaseCrashlytics.instance.recordError(
-              error,
-              stack,
-              fatal: !isRetryableAuthError,
-            );
-            return true;
-          };
-
-          // Errors thrown on other isolates (background work, compute()) reach
-          // neither FlutterError.onError nor PlatformDispatcher.onError, so
-          // they would otherwise go unreported entirely.
-          listenForIsolateErrors();
-        }
-      }
-
-      if (kDebugMode) {
-        Logger.debug('✅ [MAIN] Firebase initialized successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        Logger.error('⚠️  [MAIN] Firebase initialization error: $e');
-        Logger.debug(
-            '   For mobile: Run "flutterfire configure" to set up Firebase');
-      }
-    }
-
-    // Initialize Supabase with platform-aware storage
-    // Web: Uses default localStorage (reliable)
-    // Android/iOS: Uses hybrid storage (SecureStorage + SharedPreferences fallback)
-    if (kIsWeb) {
-      // Web: Use default storage - browser localStorage is already reliable
-      await Supabase.initialize(
-        url: AppConfig.supabaseUrl,
-        anonKey: AppConfig.supabaseAnonKey,
-        debug: kDebugMode,
-      );
-      Logger.info('✅ [MAIN] Supabase initialized with default web storage');
-    } else {
-      // Android/iOS: Use hybrid storage to protect against Keystore clearing
-      await Supabase.initialize(
-        url: AppConfig.supabaseUrl,
-        anonKey: AppConfig.supabaseAnonKey,
-        debug: kDebugMode,
-        authOptions: FlutterAuthClientOptions(
-          localStorage: await AndroidHybridStorage.create(),
-        ),
-      );
-      Logger.info('✅ [MAIN] Supabase initialized with Android hybrid storage');
-    }
+    // Local storage, Firebase and Supabase do not depend on each other, so
+    // they start together. Dependency injection needs all three.
+    await Future.wait([
+      _initializeLocalStorage(),
+      _initializeFirebase(),
+      _initializeSupabase(),
+    ]);
 
     // Initialize dependency injection
     if (kDebugMode) {
@@ -249,71 +157,32 @@ void main() async {
     // Initialize connectivity sync service (flushes queues on reconnect)
     sl<ConnectivitySyncService>().initialize();
 
-    // Restore persisted learning path download state
-    await sl<LearningPathDownloadService>().initialize();
+    // Everything the first frame reads. Each step touches its own Hive box or
+    // SharedPreferences key (and the remote configs serve their cache without
+    // waiting for the network), so they run in parallel.
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing app services...');
+    await Future.wait([
+      // Restore persisted learning path download state
+      sl<LearningPathDownloadService>().initialize(),
+      sl<DailyVerseCacheInterface>().initialize(),
+      sl<MemoryVerseLocalDataSource>().initialize(),
+      sl<ThemeService>().initialize(),
+      // Local only: the server's language is reconciled after the first frame.
+      sl<LocaleService>().initialize(),
+      sl<FontScaleService>().initialize(),
+      // Maintenance mode, feature flags, version control. Blocks only on a
+      // first launch (no cache); otherwise refreshes in the background.
+      sl<SystemConfigService>().initialize(),
+      // Dynamic subscription pricing; same cache-first rule.
+      sl<PricingService>().initialize(),
+      // Remote Bible book names; never blocks (static names cover the gap).
+      sl<BibleBooksService>().initialize(),
+      // Phase 2 & 3 keyboard shadow fixes (mobile only; no-op elsewhere)
+      if (!kIsWeb) DeviceKeyboardHandler.initialize(),
+    ]);
+    if (kDebugMode) Logger.debug('✅ [MAIN] App services initialized');
 
-    // Initialize daily verse cache service
-    Logger.debug('🔧 [MAIN] Initializing daily verse cache service...');
-    await sl<DailyVerseCacheInterface>().initialize();
-    if (kDebugMode) {
-      Logger.debug('✅ [MAIN] Daily verse cache service completed');
-    }
-
-    // Initialize memory verse local datasource
-    Logger.debug('🔧 [MAIN] Initializing memory verse local datasource...');
-    await sl<MemoryVerseLocalDataSource>().initialize();
-    if (kDebugMode) {
-      Logger.debug('✅ [MAIN] Memory verse local datasource completed');
-    }
-
-    // Initialize theme service
-    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing theme service...');
-    await sl<ThemeService>().initialize();
-    if (kDebugMode) Logger.debug('✅ [MAIN] Theme service completed');
-
-    // Initialize locale service
-    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing locale service...');
-    await sl<LocaleService>().initialize();
-    if (kDebugMode) Logger.debug('✅ [MAIN] Locale service completed');
-
-    // Initialize font scale service
-    if (kDebugMode) {
-      Logger.debug('🔧 [MAIN] Initializing font scale service...');
-    }
-    await sl<FontScaleService>().initialize();
-    if (kDebugMode) Logger.debug('✅ [MAIN] Font scale service completed');
-
-    // Initialize system config service (maintenance mode, feature flags, version control)
-    if (kDebugMode) {
-      Logger.debug('🔧 [MAIN] Initializing system config service...');
-    }
-    await sl<SystemConfigService>().initialize();
-    if (kDebugMode) Logger.debug('✅ [MAIN] System config service completed');
-
-    // Initialize pricing service (dynamic subscription pricing from database)
-    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing pricing service...');
-    await sl<PricingService>().initialize();
-    if (kDebugMode) Logger.debug('✅ [MAIN] Pricing service completed');
-
-    // Initialize Bible books service (remote book name config with 30-day cache)
-    if (kDebugMode) {
-      Logger.debug('🔧 [MAIN] Initializing Bible books service...');
-    }
-    await sl<BibleBooksService>().initialize();
-    if (kDebugMode) Logger.debug('✅ [MAIN] Bible books service completed');
-
-    // IAP is initialized after runApp() (see _initializeStoreInBackground): the
-    // store connection is not needed to draw the first frame, and awaiting it
-    // here delayed startup for every user on every launch.
-
-    // Check app version requirements
-    if (kDebugMode) Logger.debug('🔧 [MAIN] Checking app version...');
-    await VersionChecker.checkVersion(sl<SystemConfigService>());
-    if (kDebugMode) Logger.debug('✅ [MAIN] Version check completed');
-
-    // Initialize Phase 2 & 3 keyboard shadow fixes (mobile only)
     if (!kIsWeb) {
-      await DeviceKeyboardHandler.initialize();
       KeyboardAnimationSync.instance.initialize();
       CustomViewportHandler.instance.initialize();
 
@@ -323,27 +192,17 @@ void main() async {
       }
     }
 
-    // Initialize deep link handler (Android App Links — no-op on web)
-    if (!kIsWeb) {
-      if (kDebugMode) {
-        Logger.debug('🔗 [MAIN] Initializing deep link service...');
-      }
-      final deepLinkService = DeepLinkService(router: AppRouter.router);
-      await deepLinkService.init();
-      if (kDebugMode) Logger.debug('✅ [MAIN] Deep link service completed');
-    }
+    // IAP is initialized after runApp() (see _initializeStoreInBackground): the
+    // store connection is not needed to draw the first frame, and awaiting it
+    // here delayed startup for every user on every launch.
 
     Logger.debug('🎉 [MAIN] All initialization completed, starting app...');
     runApp(const DisciplefyBibleStudyApp());
 
-    // Store setup still happens at startup — just after the first frame, so it
-    // no longer delays it. Keeping it here (rather than on a purchase screen)
-    // preserves the original intent: restored/unfinished token & tip
-    // transactions get confirmed and finished even if the user never opens the
-    // purchase screens, which otherwise makes them redeliver forever.
-    if (!kIsWeb) {
-      unawaited(_initializeStoreInBackground());
-    }
+    // Work the first frame does not need runs once it has been drawn.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_runAfterFirstFrame());
+    });
   } catch (e, stackTrace) {
     if (kDebugMode) {
       Logger.error('🚨 [MAIN] Initialization error: $e');
@@ -368,6 +227,153 @@ void main() async {
     }
 
     runApp(const ErrorApp());
+  }
+}
+
+/// Opens Hive and the box every feature reads settings from.
+Future<void> _initializeLocalStorage() async {
+  await Hive.initFlutter();
+
+  // Register Hive adapters
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(SavedGuideModelAdapter());
+  }
+
+  await Hive.openBox('app_settings');
+}
+
+/// Initializes Firebase for push notifications and crash reporting.
+///
+/// Failures are logged and swallowed: the app runs without push/crash
+/// reporting rather than failing to start.
+Future<void> _initializeFirebase() async {
+  try {
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing Firebase...');
+
+    if (kIsWeb) {
+      // Initialize Firebase for web with environment-based configuration
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: firebaseApiKey,
+          authDomain: firebaseAuthDomain,
+          projectId: firebaseProjectId,
+          storageBucket: firebaseStorageBucket,
+          messagingSenderId: firebaseMessagingSenderId,
+          appId: firebaseAppId,
+          measurementId: firebaseMeasurementId,
+        ),
+      );
+    } else {
+      // Initialize Firebase for mobile platforms
+      // Note: Requires firebase_options.dart generated via FlutterFire CLI
+      await Firebase.initializeApp();
+
+      // Set up background message handler (mobile only)
+      FirebaseMessaging.onBackgroundMessage(
+        firebaseMessagingBackgroundHandler,
+      );
+
+      // Route uncaught errors to Crashlytics in release/profile builds
+      // (TestFlight / internal testing have no console attached). Debug keeps
+      // the local console; collection is disabled there to avoid dev noise.
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(!kDebugMode);
+      if (!kDebugMode) {
+        FlutterError.onError =
+            FirebaseCrashlytics.instance.recordFlutterFatalError;
+        PlatformDispatcher.instance.onError = (error, stack) {
+          // Transient network errors from Supabase's internal token-refresh
+          // fetch layer are recovered from automatically and never actually
+          // crash the app — recording them as fatal inflates crash counts.
+          final isRetryableAuthError = error is AuthRetryableFetchException;
+          FirebaseCrashlytics.instance.recordError(
+            error,
+            stack,
+            fatal: !isRetryableAuthError,
+          );
+          return true;
+        };
+
+        // Errors thrown on other isolates (background work, compute()) reach
+        // neither FlutterError.onError nor PlatformDispatcher.onError, so
+        // they would otherwise go unreported entirely.
+        listenForIsolateErrors();
+      }
+    }
+
+    if (kDebugMode) {
+      Logger.debug('✅ [MAIN] Firebase initialized successfully');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      Logger.error('⚠️  [MAIN] Firebase initialization error: $e');
+      Logger.debug(
+          '   For mobile: Run "flutterfire configure" to set up Firebase');
+    }
+  }
+}
+
+/// Initializes Supabase with platform-aware storage.
+///
+/// Web: default localStorage (reliable). Android/iOS: hybrid storage
+/// (SecureStorage + SharedPreferences fallback) to survive Keystore clearing.
+Future<void> _initializeSupabase() async {
+  if (kIsWeb) {
+    await Supabase.initialize(
+      url: AppConfig.supabaseUrl,
+      anonKey: AppConfig.supabaseAnonKey,
+      debug: kDebugMode,
+    );
+    Logger.info('✅ [MAIN] Supabase initialized with default web storage');
+  } else {
+    await Supabase.initialize(
+      url: AppConfig.supabaseUrl,
+      anonKey: AppConfig.supabaseAnonKey,
+      debug: kDebugMode,
+      authOptions: FlutterAuthClientOptions(
+        localStorage: await AndroidHybridStorage.create(),
+      ),
+    );
+    Logger.info('✅ [MAIN] Supabase initialized with Android hybrid storage');
+  }
+}
+
+/// Startup work that must happen but that the first frame does not need.
+///
+/// Each step is isolated so one failure cannot skip the others.
+Future<void> _runAfterFirstFrame() async {
+  // Deep links (Android App Links — no-op on web). The cold-start link is not
+  // lost by starting later: AppLinks.getInitialLink() keeps returning the
+  // launch link, and navigating now reaches a router that is already mounted.
+  if (!kIsWeb) {
+    try {
+      if (kDebugMode) {
+        Logger.debug('🔗 [MAIN] Initializing deep link service...');
+      }
+      await DeepLinkService(router: AppRouter.router).init();
+      if (kDebugMode) Logger.debug('✅ [MAIN] Deep link service completed');
+    } catch (e) {
+      Logger.error('⚠️  [MAIN] Deep link initialization failed', error: e);
+    }
+  }
+
+  // App version requirements. Run with a navigator mounted so the update
+  // dialog has a context to show in.
+  try {
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Checking app version...');
+    await VersionChecker.checkVersion(sl<SystemConfigService>());
+    if (kDebugMode) Logger.debug('✅ [MAIN] Version check completed');
+  } catch (e) {
+    Logger.error('⚠️  [MAIN] Version check failed', error: e);
+  }
+
+  // Store setup still happens at startup — just after the first frame, so it
+  // no longer delays it. Keeping it here (rather than on a purchase screen)
+  // preserves the original intent: restored/unfinished token & tip
+  // transactions get confirmed and finished even if the user never opens the
+  // purchase screens, which otherwise makes them redeliver forever.
+  if (!kIsWeb) {
+    unawaited(_initializeStoreInBackground());
   }
 }
 

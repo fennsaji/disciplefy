@@ -1,6 +1,25 @@
 // Supabase client is now injected via DI container - no need to import createClient
 import { LLMService } from '../_shared/services/llm-service.ts'
 import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
+import { TtlCache, msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
+
+/**
+ * Verses read from daily_verses_cache, per worker, keyed by date_key.
+ *
+ * The row for a date is the same for every user and every language (it holds
+ * all translations), so one read serves the rest of the day. An entry lives at
+ * most until the next UTC midnight (date_key is a UTC date) and never past the
+ * row's own expires_at, and at most an hour for dates other than today.
+ * Only rows read back from the table are cached — never a freshly generated or
+ * fallback verse — so every worker serves exactly what the table holds.
+ */
+const verseMemoryCache = new TtlCache<DailyVerseData>(60 * 60 * 1000, 64)
+const MAX_OTHER_DATE_TTL_MS = 60 * 60 * 1000
+
+/** Test hook: forget every verse held in memory. */
+export function clearDailyVerseMemoryCache(): void {
+  verseMemoryCache.clear()
+}
 
 /**
  * Daily Verse Service
@@ -130,6 +149,12 @@ export class DailyVerseService {
     try {
       console.log(`Getting daily verse for date key: ${dateKey}`)
       
+      // In-memory copy of the table row first, then the table itself.
+      const memoryVerse = verseMemoryCache.get(dateKey)
+      if (memoryVerse) {
+        return { ...memoryVerse, fromCache: true }
+      }
+
       // Try to get cached verse first
       const cachedVerse = await this.getCachedVerse(dateKey)
       if (cachedVerse) {
@@ -368,7 +393,7 @@ export class DailyVerseService {
 
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
-        .select('uuid, verse_data')
+        .select('uuid, verse_data, expires_at')
         .eq('date_key', dateKey)
         .eq('is_active', true)
         // API.Bible content-recency: skip entries older than their 30-day TTL
@@ -413,12 +438,29 @@ export class DailyVerseService {
         }
       }
 
+      this.rememberVerse(dateKey, cachedData as DailyVerseData, data.expires_at)
       return cachedData as DailyVerseData
 
     } catch (error) {
       console.error('Error fetching cached verse:', error)
       return null
     }
+  }
+
+  /**
+   * Holds a verse read from the table in memory until the date rolls over
+   * (UTC), the row expires, or an hour passes for a date other than today.
+   */
+  private rememberVerse(dateKey: string, verse: DailyVerseData, rowExpiresAt?: string | null): void {
+    const now = new Date()
+    let ttlMs = dateKey === this.formatDateKey(now)
+      ? msUntilNextUtcMidnight(now)
+      : MAX_OTHER_DATE_TTL_MS
+    if (rowExpiresAt) {
+      const rowTtl = new Date(rowExpiresAt).getTime() - now.getTime()
+      if (!Number.isNaN(rowTtl)) ttlMs = Math.min(ttlMs, rowTtl)
+    }
+    verseMemoryCache.set(dateKey, verse, ttlMs)
   }
 
   /**
