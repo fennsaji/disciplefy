@@ -148,7 +148,7 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
         const u = userData.user
         const display_name: string =
           u.user_metadata?.full_name ?? u.user_metadata?.name ??
-          u.user_metadata?.display_name ?? u.email ?? 'Unknown Member'
+          u.user_metadata?.display_name ?? 'Unknown Member'
         const avatar_url: string | null = u.user_metadata?.avatar_url ?? null
         return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name, avatar_url, topics_completed, mentor_whatsapp, mentor_email }
       } catch (err) {
