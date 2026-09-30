@@ -238,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       right: 0,
                       height: photoHeight,
                       child: const WelcomePhotoBackdrop(
-                        asset: WelcomePhotos.wheatDawn,
+                        asset: WelcomePhotos.winterSunset,
                         alignment: Alignment.bottomCenter,
                       ),
                     ),

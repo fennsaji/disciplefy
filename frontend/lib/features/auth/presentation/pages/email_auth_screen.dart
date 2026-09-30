@@ -90,7 +90,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               key: ValueKey(_isSignUp),
               asset: _isSignUp
                   ? WelcomePhotos.greenHills
-                  : WelcomePhotos.wheatDawn,
+                  : WelcomePhotos.winterSunset,
               alignment: Alignment.bottomCenter,
             ),
           ),

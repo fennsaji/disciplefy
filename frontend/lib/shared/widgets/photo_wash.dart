@@ -13,7 +13,12 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 ///
 /// Lays out as a [Stack]: page colour, the wash across the top [height]
 /// logical pixels, then [child] on top filling the whole area.
-class CommunityPhotoWash extends StatelessWidget {
+/// Width, in pixels, a scenery photo is decoded at when it should read as a
+/// soft blurred wash rather than a picture. Upscaling a photo this small
+/// blurs it for free, with no blur filter.
+const int photoWashDecodeWidth = 8;
+
+class PhotoWash extends StatelessWidget {
   /// The photo used by the Community tab (My fellowships and Discover).
   static const String communityTabImage = 'assets/images/hero/valley_mist.jpg';
 
@@ -29,23 +34,23 @@ class CommunityPhotoWash extends StatelessWidget {
   /// Width, in pixels, the photo is decoded at. Tiny on purpose.
   final int decodeWidth;
 
-  const CommunityPhotoWash({
+  const PhotoWash({
     super.key,
     required this.image,
     required this.child,
     this.height = 440,
-    this.decodeWidth = 8,
+    this.decodeWidth = photoWashDecodeWidth,
   });
 
   /// A wash whose photo is picked from [key] (e.g. a fellowship id), so the
   /// same fellowship always keeps the same tint.
-  factory CommunityPhotoWash.forKey({
+  factory PhotoWash.forKey({
     Key? key,
     required String photoKey,
     required Widget child,
     double height = 440,
   }) =>
-      CommunityPhotoWash(
+      PhotoWash(
         key: key,
         image: heroImageForKey(photoKey),
         height: height,
@@ -60,8 +65,8 @@ class CommunityPhotoWash extends StatelessWidget {
     // colour by ~75%. Light: a page-colour veil so dark ink stays readable.
     final shade = palette.isDark
         ? [
-            Colors.black.withValues(alpha: 0.45),
-            page.withValues(alpha: 0.55),
+            Colors.black.withValues(alpha: 0.5),
+            page.withValues(alpha: 0.68),
             page.withValues(alpha: 0.88),
             page,
           ]

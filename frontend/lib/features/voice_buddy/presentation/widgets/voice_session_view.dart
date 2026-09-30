@@ -122,7 +122,8 @@ class VoiceSessionView extends StatelessWidget {
           left: 0,
           right: 0,
           height: media.size.height * 0.62,
-          child: const WelcomePhotoBackdrop(asset: disciplerHeaderPhoto),
+          child: const WelcomePhotoBackdrop(
+              asset: disciplerHeaderPhoto, blurred: true),
         ),
         SafeArea(
           bottom: false,

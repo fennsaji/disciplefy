@@ -7,11 +7,10 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 
-/// Scenery behind the top of the Generate tab.
-/// Today's Generate backdrop: rotates daily, offset from the home hero so
-/// the two tabs don't show the same photo on the same day.
-String generateHeroImageFor(DateTime date) => heroImageForDay(date, offset: 4);
+/// Photo behind the Generate screen's hero.
+const String generateHeroImage = 'assets/images/hero/snow_peaks.jpg';
 
 /// Photo behind the Generate tab's header, washed so the header text reads
 /// (dark shade in dark mode, light wash in light mode) and faded into the
@@ -51,10 +50,11 @@ class GenerateHeroBackdrop extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Image.asset(
-                generateHeroImageFor(DateTime.now()),
+                generateHeroImage,
                 fit: BoxFit.cover,
                 alignment: Alignment.bottomCenter,
-                cacheWidth: math.min(2000, (coverWidth * dpr).round()),
+                // Tiny decode: the upscale blurs the photo into a wash.
+                cacheWidth: photoWashDecodeWidth,
                 errorBuilder: (_, __, ___) => ColoredBox(color: page),
               ),
               DecoratedBox(

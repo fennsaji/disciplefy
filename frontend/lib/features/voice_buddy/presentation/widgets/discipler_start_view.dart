@@ -59,7 +59,8 @@ class DisciplerStartView extends StatelessWidget {
             left: 0,
             right: 0,
             height: _photoHeight + topInset,
-            child: const WelcomePhotoBackdrop(asset: disciplerHeaderPhoto),
+            child: const WelcomePhotoBackdrop(
+                asset: disciplerHeaderPhoto, blurred: true),
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, 24),
