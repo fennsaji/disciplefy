@@ -68,6 +68,9 @@ class CommunityCtaPill extends StatelessWidget {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                // Keeps the label centred when the pill is stretched full
+                // width (e.g. the mentor's advance button).
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (loading)
                     SizedBox(

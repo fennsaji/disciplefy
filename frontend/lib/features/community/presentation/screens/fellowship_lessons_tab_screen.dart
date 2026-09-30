@@ -607,6 +607,8 @@ class _StudyContent extends StatelessWidget {
                   detail.allowNonSequentialAccess,
                 );
 
+          // Clear the floating tab dock (its height is in the bottom padding).
+          final bottomInset = MediaQuery.paddingOf(context).bottom;
           return CustomScrollView(
             slivers: [
               // ── Summary: current lesson + group progress ──────────────
@@ -627,11 +629,25 @@ class _StudyContent extends StatelessWidget {
                 ),
               ),
 
+              // ── Change path button (mentor only) ──────────────────────
+              if (isMentor)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _AssignPathButton(
+                      isLoading:
+                          state.setStatus == FellowshipStudySetStatus.loading,
+                      hasStudy: true,
+                      onTap: onPathPickerTap,
+                    ),
+                  ),
+                ),
+
               // ── Member progress overview (mentor only) ────────────────
               if (isMentor)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
                     child: _MemberProgressSection(
                       l10n: l10n,
                       fellowshipGuideIndex: state.studyCompleted
@@ -657,21 +673,7 @@ class _StudyContent extends StatelessWidget {
                 ),
               ),
 
-              // ── Assign / change path button (mentor only) ─────────────
-              if (isMentor)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                    child: _AssignPathButton(
-                      isLoading:
-                          state.setStatus == FellowshipStudySetStatus.loading,
-                      hasStudy: true,
-                      onTap: onPathPickerTap,
-                    ),
-                  ),
-                )
-              else
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              SliverToBoxAdapter(child: SizedBox(height: 32 + bottomInset)),
             ],
           );
         },
@@ -699,7 +701,8 @@ class _NoStudyContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+          16, 20, 16, 24 + MediaQuery.paddingOf(context).bottom),
       child: Column(
         children: [
           Expanded(
@@ -879,6 +882,9 @@ class _LessonsSummaryCard extends StatelessWidget {
 
     final groupProgress =
         context.tr(TranslationKeys.communityFellowshipGroupProgress);
+    final isLastGuide = state.currentGuideIndex != null &&
+        state.totalGuides != null &&
+        state.currentGuideIndex! >= state.totalGuides! - 1;
 
     final body = Padding(
       padding: const EdgeInsets.all(16),
@@ -983,13 +989,25 @@ class _LessonsSummaryCard extends StatelessWidget {
             const SizedBox(height: 14),
             _AdvanceGuideButton(
               isLoading: isAdvancing,
-              label: (state.currentGuideIndex != null &&
-                      state.totalGuides != null &&
-                      state.currentGuideIndex! >= state.totalGuides! - 1)
+              label: isLastGuide
                   ? l10n.lessonsFinishPath
                   : l10n.lessonsAdvanceGuide,
               onTap: onAdvanceTap,
             ),
+            // Where advancing takes the group (not shown when it finishes).
+            if (!isLastGuide && state.currentGuideIndex != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                context.tr(TranslationKeys.communityLessonsAdvanceHint,
+                    {'number': state.currentGuideIndex! + 2}),
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 12,
+                  color: palette.muted,
+                  height: 1.35,
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -1658,40 +1676,21 @@ class _AdvanceGuideButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = ReaderPalette.of(context);
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: isLoading ? null : onTap,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: palette.accentIcon,
-          side: BorderSide(color: palette.accentIcon, width: 1.5),
-          minimumSize: const Size.fromHeight(48),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          shape: const StadiumBorder(),
-        ),
-        icon: isLoading
-            ? SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  color: palette.accentIcon,
-                  strokeWidth: 2,
-                ),
-              )
-            : const Icon(Icons.arrow_forward_rounded, size: 20),
-        label: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
-        ),
+      child: CommunityCtaPill(
+        icon: Icons.skip_next_rounded,
+        label: label,
+        loading: isLoading,
+        onPressed: onTap,
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// _AssignPathButton
+// _AssignPathButton — primary pill to assign the first path; once a path is
+// set, a quiet outlined "Change learning path" pill.
 // ---------------------------------------------------------------------------
 
 class _AssignPathButton extends StatelessWidget {
@@ -1708,13 +1707,75 @@ class _AssignPathButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final label = hasStudy ? l10n.lessonsChangePath : l10n.lessonsAssignPath;
-    return Center(
-      child: CommunityCtaPill(
-        icon: Icons.add_circle_outline_rounded,
-        label: label,
-        loading: isLoading,
-        onPressed: onTap,
+    if (!hasStudy) {
+      return Center(
+        child: CommunityCtaPill(
+          icon: Icons.add_circle_outline_rounded,
+          label: l10n.lessonsAssignPath,
+          loading: isLoading,
+          onPressed: onTap,
+        ),
+      );
+    }
+
+    final palette = ReaderPalette.of(context);
+    final label = l10n.lessonsChangePath;
+    final border = palette.isDark
+        ? Colors.white.withValues(alpha: 0.24)
+        : palette.hairline;
+    final radius = BorderRadius.circular(24);
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: !isLoading,
+      label: label,
+      onTap: isLoading ? null : onTap,
+      excludeSemantics: true,
+      child: Material(
+        type: MaterialType.transparency,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isLoading)
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(palette.text),
+                      ),
+                    )
+                  else
+                    Icon(Icons.route_rounded, size: 18, color: palette.text),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2267,11 +2328,14 @@ class _PathPickerItem extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _MemberProgressSection — mentor-only overview of all member progress
+// _MemberProgressSection — mentor-only overview of every member's progress:
+// a gold section label with the caught-up count, then one card of member rows.
 // ---------------------------------------------------------------------------
 
 class _MemberProgressSection extends StatelessWidget {
   final AppLocalizations l10n;
+
+  /// The fellowship's current lesson index (lessons the group has passed).
   final int? fellowshipGuideIndex;
   final int? fellowshipTotalGuides;
 
@@ -2289,258 +2353,109 @@ class _MemberProgressSection extends StatelessWidget {
             ? pathsState.pathDetail.topics.length
             : fellowshipTotalGuides;
 
-        // The topic at the fellowship's own position — not _findNowTopic,
-        // which factors in the *viewing* member's personal completion and can
-        // return a different (or no) lesson than the "X/Y" count just above
-        // it. Looking up by position keeps this chip always in agreement with
-        // that count.
-        LearningPathTopic? currentTopic;
-        if (pathsState is LearningPathDetailLoaded &&
-            fellowshipGuideIndex != null) {
-          for (final t in pathsState.pathDetail.topics) {
-            if (t.position == fellowshipGuideIndex) {
-              currentTopic = t;
-              break;
-            }
-          }
-        }
-
         return BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
           buildWhen: (prev, curr) =>
-              prev.members != curr.members || prev.status != curr.status,
+              prev.members != curr.members ||
+              prev.status != curr.status ||
+              prev.currentUserId != curr.currentUserId,
           builder: (context, membersState) {
             final members = membersState.members;
-            if (members.isEmpty) return const SizedBox.shrink();
-
-            final completedCount = totalTopics != null
-                ? members
-                    .where((m) =>
-                        m.topicsCompleted != null &&
-                        m.topicsCompleted! >= totalTopics)
-                    .length
-                : 0;
-            final totalCount = members.length;
-
-            final fellowshipProgress = (fellowshipGuideIndex != null &&
-                    totalTopics != null &&
-                    totalTopics > 0)
-                ? (fellowshipGuideIndex! / totalTopics).clamp(0.0, 1.0)
-                : null;
+            final isLoading = members.isEmpty &&
+                membersState.status == FellowshipMembersStatus.loading;
+            // Nothing to show once loading ends without members (empty or
+            // failed) — the lesson path below stays usable.
+            if (members.isEmpty && !isLoading) return const SizedBox.shrink();
 
             final palette = ReaderPalette.of(context);
-            return Container(
-              decoration: BoxDecoration(
-                color: palette.card,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: palette.hairline),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Header ───────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.brandPrimary.withValues(
-                                alpha: palette.isDark ? 0.24 : 0.10),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.people_alt_outlined,
-                            size: 18,
-                            color: palette.accentIcon,
-                          ),
+            final guideIndex = fellowshipGuideIndex;
+            bool isCaughtUp(FellowshipMemberEntity m) =>
+                guideIndex != null && (m.topicsCompleted ?? 0) >= guideIndex;
+            final caughtUp = members.where(isCaughtUp).length;
+
+            final Widget card;
+            if (isLoading) {
+              card = Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: palette.gold,
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              final rows = <Widget>[];
+              for (var i = 0; i < members.length; i++) {
+                if (i > 0) {
+                  rows.add(Divider(height: 1, color: palette.hairline));
+                }
+                final m = members[i];
+                rows.add(_MemberProgressRow(
+                  member: m,
+                  totalTopics: totalTopics,
+                  isCaughtUp: isCaughtUp(m),
+                  isSelf: membersState.currentUserId != null &&
+                      m.userId == membersState.currentUserId,
+                ));
+              }
+              card = Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(children: rows),
+              );
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Label row ────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: CommunitySectionLabel(
+                          l10n.lessonsMemberProgress,
+                          fontSize: 11,
                         ),
+                      ),
+                      if (!isLoading && guideIndex != null) ...[
                         const SizedBox(width: 12),
-                        // Title and badge stack: side by side they overflow
-                        // in Hindi and Malayalam at 320pt.
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.lessonsMemberProgress,
-                                style: AppFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: palette.text,
-                                  height: 1.3,
-                                ),
-                              ),
-                              if (totalTopics != null) ...[
-                                const SizedBox(height: 6),
-                                _CompletionBadge(
-                                  completed: completedCount,
-                                  total: totalCount,
-                                  l10n: l10n,
-                                ),
-                              ],
-                            ],
+                        Flexible(
+                          child: Text(
+                            context.tr(TranslationKeys.communityLessonsCaughtUp,
+                                {'count': caughtUp, 'total': members.length}),
+                            textAlign: TextAlign.end,
+                            style: AppFonts.inter(
+                              fontSize: 12.5,
+                              color: palette.muted,
+                              height: 1.35,
+                            ),
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-
-                  // ── Fellowship progress bar ───────────────────────────
-                  if (fellowshipProgress != null) ...[
-                    Divider(height: 1, color: palette.hairline),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.groups_outlined,
-                                size: 16,
-                                color: palette.muted,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  l10n.fellowshipProgress,
-                                  style: AppFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: palette.muted,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${fellowshipGuideIndex!}/${totalTopics!}',
-                                style: AppFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: palette.gold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          CommunityProgressBar(
-                            value: fellowshipProgress.toDouble(),
-                          ),
-                          if (currentTopic != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: palette.raised,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Icon(
-                                      Icons.menu_book_rounded,
-                                      size: 15,
-                                      color: palette.gold,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text.rich(
-                                      TextSpan(
-                                        style: AppFonts.inter(
-                                          fontSize: 13,
-                                          color: palette.muted,
-                                          height: 1.4,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                              text:
-                                                  '${l10n.lessonsCurrentLesson}: '),
-                                          TextSpan(
-                                            text: currentTopic.title,
-                                            style: AppFonts.inter(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w700,
-                                              color: palette.text,
-                                              height: 1.4,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  Divider(height: 1, color: palette.hairline),
-
-                  // ── Member rows ──────────────────────────────────────
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Column(
-                      children: members
-                          .map((m) => _MemberProgressRow(
-                                member: m,
-                                totalTopics: totalTopics,
-                              ))
-                          .toList(),
-                    ),
+                ),
+                const SizedBox(height: 10),
+                // ── Member rows ──────────────────────────────────────
+                Container(
+                  decoration: BoxDecoration(
+                    color: palette.card,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: palette.hairline),
                   ),
-                ],
-              ),
+                  child: card,
+                ),
+              ],
             );
           },
         );
       },
-    );
-  }
-}
-
-// ── Completion badge chip ────────────────────────────────────────────────────
-
-class _CompletionBadge extends StatelessWidget {
-  final int completed;
-  final int total;
-  final AppLocalizations l10n;
-
-  const _CompletionBadge(
-      {required this.completed, required this.total, required this.l10n});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = ReaderPalette.of(context);
-    final allDone = completed == total && total > 0;
-    final bg =
-        allDone ? AppColors.success.withValues(alpha: 0.14) : palette.raised;
-    final fg = allDone
-        ? (palette.isDark ? AppColors.successLighter : AppColors.successDark)
-        : palette.muted;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        '$completed/$total ${l10n.lessonsMembersCompleted}',
-        style: AppFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: fg,
-        ),
-      ),
     );
   }
 }
@@ -2551,7 +2466,18 @@ class _MemberProgressRow extends StatelessWidget {
   final FellowshipMemberEntity member;
   final int? totalTopics;
 
-  const _MemberProgressRow({required this.member, required this.totalTopics});
+  /// Has finished at least as many lessons as the group's current one.
+  final bool isCaughtUp;
+
+  /// The row is the signed-in user.
+  final bool isSelf;
+
+  const _MemberProgressRow({
+    required this.member,
+    required this.totalTopics,
+    required this.isCaughtUp,
+    required this.isSelf,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2561,104 +2487,84 @@ class _MemberProgressRow extends StatelessWidget {
     final total = totalTopics ?? 0;
     final progress =
         total > 0 ? (completed / total).clamp(0.0, 1.0).toDouble() : 0.0;
-    final isDone = total > 0 && completed >= total;
     final isMentorMember = member.role == 'mentor';
-    final successInk =
-        palette.isDark ? AppColors.successLighter : AppColors.successDark;
-
-    Widget avatar = MemberAvatar(
-      displayName: member.displayName,
-      avatarUrl: member.avatarUrl,
-      radius: 18,
-    );
-    if (isDone) {
-      // Green ring when completed
-      avatar = Container(
-        padding: const EdgeInsets.all(1.5),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.success, width: 2),
-        ),
-        child: avatar,
-      );
-    }
+    final name = isSelf
+        ? context.tr(TranslationKeys.communitySharedMentorYou,
+            {'name': member.displayName})
+        : member.displayName;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
         children: [
-          avatar,
+          MemberAvatar(
+            displayName: member.displayName,
+            avatarUrl: member.avatarUrl,
+            radius: 18,
+          ),
           const SizedBox(width: 12),
-
-          // Name + progress bar
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      member.displayName,
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: palette.text,
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            name,
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: palette.text,
+                              height: 1.3,
+                            ),
+                          ),
+                          if (isMentorMember)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: palette.gold.withValues(
+                                    alpha: palette.isDark ? 0.18 : 0.14),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                l10n.mentorLabel,
+                                style: AppFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: palette.gold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    if (isMentorMember)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: palette.gold
-                              .withValues(alpha: palette.isDark ? 0.18 : 0.14),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          l10n.mentorLabel,
-                          style: AppFonts.inter(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: palette.gold,
-                          ),
+                    if (totalTopics != null) ...[
+                      const SizedBox(width: 10),
+                      Text(
+                        '$completed / $total',
+                        style: AppFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: isCaughtUp ? palette.gold : palette.muted,
+                          height: 1.3,
                         ),
                       ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 6),
-                isDone
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: 1,
-                          minHeight: 4,
-                          backgroundColor: palette.raised,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.success),
-                        ),
-                      )
-                    : CommunityProgressBar(value: progress),
+                const SizedBox(height: 8),
+                CommunityProgressBar(value: progress),
               ],
             ),
           ),
-
-          const SizedBox(width: 10),
-
-          // Fraction or checkmark
-          if (isDone)
-            Icon(Icons.check_circle_rounded, color: successInk, size: 20)
-          else if (totalTopics != null)
-            Text(
-              '$completed/$total',
-              style: AppFonts.inter(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: palette.muted,
-              ),
-            ),
         ],
       ),
     );

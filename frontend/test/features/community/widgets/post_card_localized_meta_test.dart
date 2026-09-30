@@ -229,7 +229,7 @@ void main() {
       AppLanguage.english: [
         'I prayed 4',
         'Praise 9',
-        'Helpful 2',
+        'Love 2',
         'Amen 5',
         'Amen 3',
         'Amen 6',
@@ -238,7 +238,7 @@ void main() {
       AppLanguage.hindi: [
         'मैंने प्रार्थना की 4',
         'स्तुति 9',
-        'उपयोगी 2',
+        'प्रेम 2',
         'आमीन 5',
         'आमीन 3',
         'आमीन 6',
@@ -247,7 +247,7 @@ void main() {
       AppLanguage.malayalam: [
         'ഞാൻ പ്രാർത്ഥിച്ചു 4',
         'സ്തുതി 9',
-        'സഹായകരം 2',
+        'സ്നേഹം 2',
         'ആമേൻ 5',
         'ആമേൻ 3',
         'ആമേൻ 6',
@@ -275,26 +275,26 @@ void main() {
       });
     }
 
-    testWidgets('line icons per post type', (tester) async {
+    testWidgets('pill emoji matches the picker per post type',
+        (tester) async {
       useSurface(tester, const Size(390, 2600));
       await tester.pumpWidget(app(feed(posts())));
       await tester.pumpAndSettle();
 
-      Finder icon(IconData data) => find.descendant(
-          of: find.byType(FellowshipReactionButton),
-          matching: find.byIcon(data));
-      expect(icon(Icons.volunteer_activism_outlined), findsOneWidget);
-      expect(icon(Icons.celebration_outlined), findsOneWidget);
-      expect(icon(Icons.lightbulb_outline_rounded), findsOneWidget);
-      expect(icon(Icons.favorite_border_rounded), findsNWidgets(4));
+      Finder emoji(String e) => find.descendant(
+          of: find.byType(FellowshipReactionButton), matching: find.text(e));
+      expect(emoji('🙏'), findsOneWidget);
+      expect(emoji('🎉'), findsOneWidget);
+      expect(emoji('❤️'), findsOneWidget);
+      expect(emoji('🙌'), findsNWidgets(4));
     });
 
-    test('stored reaction keys per post type are unchanged', () {
+    test('default reaction key per post type', () {
       expect(defaultReactionFor('prayer'), 'i_prayed');
-      expect(defaultReactionFor('praise'), 'amen');
+      expect(defaultReactionFor('praise'), 'hands');
       expect(defaultReactionFor('question'), 'heart');
-      expect(defaultReactionFor('study_note'), 'fire');
-      expect(defaultReactionFor('shared_guide'), 'fire');
+      expect(defaultReactionFor('study_note'), 'amen');
+      expect(defaultReactionFor('shared_guide'), 'amen');
       expect(defaultReactionFor('daily'), 'fire');
       expect(defaultReactionFor('general'), 'amen');
     });
@@ -303,7 +303,8 @@ void main() {
       expect(reactionDisplayFor('prayer', 'fire').labelKey,
           'community_post.reaction_fire');
       expect(reactionDisplayFor('question', 'heart').labelKey,
-          'community_post.reaction_helpful');
+          'community_post.reaction_love');
+      expect(reactionDisplayFor('prayer', 'i_prayed').emoji, '🙏');
       expect(reactionDisplayFor('general', 'heart').labelKey,
           'community_post.reaction_love');
       expect(reactionDisplayFor('daily', null).labelKey,

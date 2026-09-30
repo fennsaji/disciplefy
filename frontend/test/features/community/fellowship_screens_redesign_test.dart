@@ -605,7 +605,7 @@ void main() {
         ),
         size: const Size(390, 1600),
       );
-      await tester.tap(find.byIcon(Icons.arrow_forward_rounded));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
       expect(find.byType(Dialog), findsOneWidget);
       await tester.tap(find.byType(FilledButton).last);

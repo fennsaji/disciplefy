@@ -158,6 +158,9 @@ class AppTranslations {
       'status_locked': 'Locked',
       'group_done': '{done} of {total} done',
       'xp_earned': '+{xp} XP earned',
+      // Mentor view: advance hint and member caught-up count.
+      'advance_hint': 'Moves everyone to lesson {number}',
+      'caught_up': '{count} of {total} caught up',
     },
     'community_post': {
       'open_guide': 'Open study guide',
@@ -3004,6 +3007,9 @@ class AppTranslations {
       'status_locked': 'लॉक है',
       'group_done': '{total} में से {done} पूरे',
       'xp_earned': '+{xp} XP अर्जित',
+      // Mentor view: advance hint and member caught-up count.
+      'advance_hint': 'सभी को पाठ {number} पर ले जाता है',
+      'caught_up': '{total} में से {count} साथ चल रहे हैं',
     },
     'community_post': {
       'open_guide': 'अध्ययन गाइड खोलें',
@@ -5859,6 +5865,9 @@ class AppTranslations {
       'status_locked': 'ലോക്ക് ചെയ്തു',
       'group_done': '{total}-ൽ {done} പൂർത്തിയായി',
       'xp_earned': '+{xp} XP നേടി',
+      // Mentor view: advance hint and member caught-up count.
+      'advance_hint': 'എല്ലാവരെയും പാഠം {number}-ലേക്ക് നീക്കുന്നു',
+      'caught_up': '{total}-ൽ {count} പേർ ഒപ്പമുണ്ട്',
     },
     'community_post': {
       'open_guide': 'പഠന ഗൈഡ് തുറക്കുക',

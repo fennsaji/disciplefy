@@ -215,7 +215,7 @@ void main() {
 
         expect(find.text('I prayed 4'), findsOneWidget);
         expect(find.text('Praise 9'), findsOneWidget);
-        expect(find.text('Helpful 2'), findsOneWidget);
+        expect(find.text('Love 2'), findsOneWidget);
         expect(find.text('1 reply'), findsOneWidget);
         expect(find.text('3 replies'), findsOneWidget);
         expect(find.text('Reply'), findsOneWidget);

@@ -3135,6 +3135,12 @@ class TranslationKeys {
   /// "+{xp} XP earned".
   static const communityLessonsXpEarned = 'community_lessons.xp_earned';
 
+  /// "Moves everyone to lesson {number}" (mentor advance hint).
+  static const communityLessonsAdvanceHint = 'community_lessons.advance_hint';
+
+  /// "{count} of {total} caught up" (mentor member progress).
+  static const communityLessonsCaughtUp = 'community_lessons.caught_up';
+
   // Community post cards (shared-guide card, study-note chip).
   /// "Open study guide".
   static const communityPostOpenGuide = 'community_post.open_guide';

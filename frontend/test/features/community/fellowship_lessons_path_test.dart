@@ -15,6 +15,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
@@ -217,7 +218,7 @@ void main() {
       when(() => _study.state).thenReturn(_studyState.copyWith(isMentor: true));
       await _pump(tester, language: AppLanguage.malayalam);
       _expectClean(tester);
-      expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
     });
   });
 
@@ -344,5 +345,122 @@ void main() {
           pathId: 'path1',
           forceRefresh: true,
         ))).called(1);
+  });
+
+  group('mentor view', () {
+    FellowshipMemberEntity member(String id, String name, int done,
+            {String role = 'member'}) =>
+        FellowshipMemberEntity(
+          userId: id,
+          displayName: name,
+          role: role,
+          joinedAt: '2026-01-01T00:00:00Z',
+          isMuted: false,
+          topicsCompleted: done,
+        );
+
+    setUp(() {
+      when(() => _study.state).thenReturn(_studyState.copyWith(isMentor: true));
+      when(() => _members.state).thenReturn(FellowshipMembersState(
+        status: FellowshipMembersStatus.success,
+        isMentor: true,
+        fellowshipId: 'f1',
+        currentUserId: 'u1',
+        members: [
+          member('u1', 'Fenn Ignatius Saji', 2, role: 'mentor'),
+          member('u2', 'Priya Thomas', 2),
+          member('u3', 'Joel Mathew', 1),
+          member('u4', 'Fenn', 0),
+        ],
+      ));
+    });
+
+    for (final size in const [Size(320, 640), Size(320, 2400)]) {
+      for (final v in _variants) {
+        testWidgets(
+            '${size.height.toInt()} ${v.$1.code} '
+            '${v.$2 ? 'dark' : 'light'} fits', (tester) async {
+          await _pump(tester, language: v.$1, dark: v.$2, size: size);
+          _expectClean(tester);
+        });
+      }
+    }
+
+    testWidgets('advance pill with hint, change path, member progress',
+        (tester) async {
+      await _pump(tester, size: const Size(320, 2400));
+      expect(find.text('Advance to next lesson'), findsOneWidget);
+      expect(find.text('Moves everyone to lesson 4'), findsOneWidget);
+      expect(find.text('Change learning path'), findsOneWidget);
+      expect(find.byIcon(Icons.route_rounded), findsOneWidget);
+      expect(find.text('MEMBER PROGRESS'), findsOneWidget);
+      // Caught up = completed at least the group's current lesson index (2).
+      expect(find.text('2 of 4 caught up'), findsOneWidget);
+      expect(find.text('Fenn Ignatius Saji (you)'), findsOneWidget);
+      expect(find.text('Mentor'), findsOneWidget);
+      expect(find.text('2 / 8'), findsNWidgets(2));
+      expect(find.text('1 / 8'), findsOneWidget);
+      expect(find.text('0 / 8'), findsOneWidget);
+      // Duplicated pieces are gone.
+      expect(find.text('Fellowship Progress'), findsNothing);
+      expect(find.textContaining('Current lesson'), findsNothing);
+      // Mentors still see and can open the whole lesson path.
+      expect(find.text('Who is Jesus Christ?'), findsOneWidget);
+      expect(find.text('Baptism and Communion'), findsOneWidget);
+    });
+
+    testWidgets('change path sits above member progress', (tester) async {
+      await _pump(tester, size: const Size(320, 2400));
+      final changeY = tester.getTopLeft(find.text('Change learning path')).dy;
+      final progressY = tester.getTopLeft(find.text('MEMBER PROGRESS')).dy;
+      final lessonY = tester.getTopLeft(find.text('Who is Jesus Christ?')).dy;
+      expect(changeY, lessThan(progressY));
+      expect(progressY, lessThan(lessonY));
+    });
+
+    testWidgets('advance asks to confirm, then dispatches the same event',
+        (tester) async {
+      await _pump(tester, size: const Size(320, 2400));
+      await tester.tap(find.text('Advance to next lesson'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Advance to next lesson').last);
+      await tester.pumpAndSettle();
+      verify(() => _study.add(const FellowshipStudyAdvanceRequested()))
+          .called(1);
+    });
+
+    testWidgets('while advancing the pill shows a spinner', (tester) async {
+      when(() => _study.state).thenReturn(_studyState.copyWith(
+        isMentor: true,
+        advanceStatus: FellowshipStudyAdvanceStatus.loading,
+      ));
+      await _pump(tester, size: const Size(320, 2400));
+      expect(find.byIcon(Icons.skip_next_rounded), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('last lesson shows Finish Path without the hint',
+        (tester) async {
+      when(() => _study.state).thenReturn(
+          _studyState.copyWith(isMentor: true, currentGuideIndex: 7));
+      await _pump(tester, size: const Size(320, 2400));
+      expect(find.text('Finish Path'), findsOneWidget);
+      expect(find.textContaining('Moves everyone'), findsNothing);
+    });
+  });
+
+  testWidgets('member view has no mentor controls', (tester) async {
+    when(() => _members.state).thenReturn(const FellowshipMembersState(
+      status: FellowshipMembersStatus.success,
+      fellowshipId: 'f1',
+      currentUserId: 'u2',
+    ));
+    await _pump(tester);
+    _expectClean(tester);
+    expect(find.text('Advance to next lesson'), findsNothing);
+    expect(find.textContaining('Moves everyone'), findsNothing);
+    expect(find.text('MEMBER PROGRESS'), findsNothing);
+    expect(find.text('Change learning path'), findsNothing);
+    expect(find.text('Baptism and Communion'), findsOneWidget);
   });
 }

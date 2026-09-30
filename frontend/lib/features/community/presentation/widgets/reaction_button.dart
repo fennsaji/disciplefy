@@ -15,92 +15,68 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 // ---------------------------------------------------------------------------
 
 /// Reaction key a tap on the pill toggles for each post type. These are the
-/// stored keys; how each reads on the pill comes from [reactionDisplayFor].
+/// stored keys; how each reads comes from [reactionDisplayFor].
 String defaultReactionFor(String postType) {
   switch (postType) {
     case 'prayer':
       return 'i_prayed';
+    case 'praise':
+      return 'hands';
     case 'question':
       return 'heart';
-    case 'study_note':
-    case 'shared_guide':
     case 'daily':
       return 'fire';
-    case 'praise':
+    case 'study_note':
+    case 'shared_guide':
     default: // general
       return 'amen';
   }
 }
 
-/// Line icon and label key for the reaction pill.
-typedef ReactionDisplay = ({IconData icon, String labelKey});
+/// Emoji and label key for one reaction.
+typedef ReactionDisplay = ({String emoji, String labelKey});
+
+/// Every reaction, in picker order. The pill and the long-press picker both
+/// read from this list, so a reaction looks the same everywhere.
+const List<({String type, String emoji, String labelKey})> reactionOptions = [
+  (
+    type: 'i_prayed',
+    emoji: '🙏',
+    labelKey: TranslationKeys.communityPostReactionPrayed,
+  ),
+  (
+    type: 'amen',
+    emoji: '🙌',
+    labelKey: TranslationKeys.communityPostReactionAmen,
+  ),
+  (
+    type: 'heart',
+    emoji: '❤️',
+    labelKey: TranslationKeys.communityPostReactionLove,
+  ),
+  (
+    type: 'fire',
+    emoji: '🔥',
+    labelKey: TranslationKeys.communityPostReactionFire,
+  ),
+  (
+    type: 'hands',
+    emoji: '🎉',
+    labelKey: TranslationKeys.communityPostReactionPraise,
+  ),
+];
 
 /// How the pill reads on a [postType] post given the viewer's
-/// [userReaction] (null when they have not reacted).
-///
-/// The post type's own reaction wears the type's face: "I prayed" on a
-/// prayer, "Praise" on a praise report, "Helpful" on a question, "Amen" on a
-/// shared guide, study note or general post, "Fire" on the daily study. A
-/// different reaction picked from the long-press picker shows as itself.
+/// [userReaction] (null when they have not reacted): the viewer's reaction,
+/// or the post type's default one, shown with the same emoji and name the
+/// picker uses.
 ReactionDisplay reactionDisplayFor(String postType, String? userReaction) {
-  final typeDefault = defaultReactionFor(postType);
-  if (userReaction == null || userReaction == typeDefault) {
-    switch (postType) {
-      case 'prayer':
-        return (
-          icon: Icons.volunteer_activism_outlined,
-          labelKey: TranslationKeys.communityPostReactionPrayed,
-        );
-      case 'praise':
-        return (
-          icon: Icons.celebration_outlined,
-          labelKey: TranslationKeys.communityPostReactionPraise,
-        );
-      case 'question':
-        return (
-          icon: Icons.lightbulb_outline_rounded,
-          labelKey: TranslationKeys.communityPostReactionHelpful,
-        );
-      case 'daily':
-        return (
-          icon: Icons.local_fire_department_outlined,
-          labelKey: TranslationKeys.communityPostReactionFire,
-        );
-      default: // shared guide, study note, general
-        return (
-          icon: Icons.favorite_border_rounded,
-          labelKey: TranslationKeys.communityPostReactionAmen,
-        );
-    }
-  }
-  switch (userReaction) {
-    case 'i_prayed':
-      return (
-        icon: Icons.volunteer_activism_outlined,
-        labelKey: TranslationKeys.communityPostReactionPrayed,
-      );
-    case 'heart':
-      return (
-        icon: Icons.favorite_border_rounded,
-        labelKey: TranslationKeys.communityPostReactionLove,
-      );
-    case 'fire':
-      return (
-        icon: Icons.local_fire_department_outlined,
-        labelKey: TranslationKeys.communityPostReactionFire,
-      );
-    case 'hands':
-      return (
-        icon: Icons.celebration_outlined,
-        labelKey: TranslationKeys.communityPostReactionPraise,
-      );
-    case 'amen':
-    default:
-      return (
-        icon: Icons.favorite_border_rounded,
-        labelKey: TranslationKeys.communityPostReactionAmen,
-      );
-  }
+  final key = userReaction ?? defaultReactionFor(postType);
+  final option = reactionOptions.firstWhere(
+    (o) => o.type == key,
+    orElse: () => reactionOptions[1],
+  );
+  return (emoji: option.emoji, labelKey: option.labelKey);
 }
 
 /// Reaction button shared by [FellowshipPostCard] and [DailyPostCard].
@@ -128,12 +104,8 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
   OverlayEntry? _pickerOverlay;
 
   /// Reactions offered by the long-press picker, by stored key.
-  static const _kReactions = [
-    (type: 'amen', emoji: '🙏'),
-    (type: 'i_prayed', emoji: '🕊️'),
-    (type: 'heart', emoji: '❤️'),
-    (type: 'fire', emoji: '🔥'),
-    (type: 'hands', emoji: '👐'),
+  static final _kReactions = [
+    for (final o in reactionOptions) (type: o.type, emoji: o.emoji),
   ];
 
   int get _totalCount =>
@@ -221,7 +193,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(display.icon, size: 18, color: ink),
+              Text(display.emoji, style: const TextStyle(fontSize: 16)),
               const SizedBox(width: 6),
               // Wraps rather than truncating when the footer caps the pill's
               // width (long Hindi/Malayalam labels on narrow screens).
