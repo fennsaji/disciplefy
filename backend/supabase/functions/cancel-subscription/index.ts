@@ -200,6 +200,8 @@ async function parseRequestBody(req: Request): Promise<CancelSubscriptionRequest
  * Export Edge Function using function factory
  */
 createSimpleFunction(handleCancelSubscription, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   enableAnalytics: true,
   allowedMethods: ['POST']
 })

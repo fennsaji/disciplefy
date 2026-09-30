@@ -395,5 +395,7 @@ async function handleAdminStudyGenerator(
 
 // Use simple function factory (bypasses Kong for EventSource compatibility)
 createSimpleFunction(handleAdminStudyGenerator, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   allowedMethods: ['GET', 'OPTIONS']
 })

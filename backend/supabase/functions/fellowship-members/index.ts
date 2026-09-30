@@ -45,7 +45,7 @@ interface FellowshipMemberRow {
 async function handleListMembers(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -171,7 +171,7 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
 async function handleMuteMember(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -216,7 +216,7 @@ async function handleMuteMember(req: Request, services: ServiceContainer): Promi
 async function handleUnmuteMember(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -247,7 +247,7 @@ async function handleUnmuteMember(req: Request, services: ServiceContainer): Pro
 async function handleRemoveMember(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -288,7 +288,7 @@ async function handleRemoveMember(req: Request, services: ServiceContainer): Pro
 async function handleTransferMentor(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -346,7 +346,7 @@ async function handleTransferMentor(req: Request, services: ServiceContainer): P
 async function handleChangeMentorRole(req: Request, services: ServiceContainer, to: 'mentor' | 'member'): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, authHeader.replace('Bearer ', ''))
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
   let body: { fellowship_id: string; user_id: string }
   try { body = await req.json() } catch { throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400) }
@@ -419,7 +419,7 @@ function normalizeWhatsapp(raw: string): string {
 async function handleSetMentorContact(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)

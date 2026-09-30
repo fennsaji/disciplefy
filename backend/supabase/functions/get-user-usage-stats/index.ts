@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/utils/cors.ts';
+import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts';
 import { DEFAULT_PLAN_CONFIGS, type UserPlan } from '../_shared/types/token-types.ts';
 
 /**
@@ -45,9 +46,14 @@ serve(async (req) => {
     );
 
     const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    const user = await verifyUserToken(jwt, Deno.env.get('SUPABASE_URL')!, async () => {
+      const { data, error } = await supabase.auth.getUser(jwt);
+      return error || !data.user
+        ? null
+        : { id: data.user.id, email: data.user.email ?? undefined, is_anonymous: data.user.is_anonymous === true };
+    });
 
-    if (authError || !user) {
+    if (!user) {
       return new Response(
         JSON.stringify({ error: 'Invalid authentication' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

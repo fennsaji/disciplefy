@@ -23,7 +23,7 @@ import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
 async function handleListMeetings(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -177,7 +177,7 @@ function buildMeetingInviteEmail(opts: {
 async function handleCreateMeeting(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -366,7 +366,7 @@ interface CancelMeetingRequest {
 async function handleCancelMeeting(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -740,7 +740,7 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
 
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)

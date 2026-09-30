@@ -109,6 +109,8 @@ async function handleDeleteAccount(
 }
 
 createAuthenticatedFunction(handleDeleteAccount, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   allowedMethods: ['DELETE'],
   enableAnalytics: false,
   timeout: 30000,

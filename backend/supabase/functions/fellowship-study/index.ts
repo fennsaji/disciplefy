@@ -61,7 +61,7 @@ async function recordMemberProgress(
 async function handleSetStudy(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -163,7 +163,7 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
 async function handleAdvanceStudy(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -260,7 +260,7 @@ async function handleAdvanceStudy(req: Request, services: ServiceContainer): Pro
 async function handleResetStudy(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)

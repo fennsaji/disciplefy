@@ -406,6 +406,8 @@ async function processRazorpayPayment(params: {
 
 // Create the Edge Function using the factory pattern
 createSimpleFunction(handleTokenPurchase, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   enableAnalytics: true,
   allowedMethods: ['POST']
 })

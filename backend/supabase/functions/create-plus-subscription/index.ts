@@ -136,6 +136,8 @@ async function handleCreatePlusSubscription(
  * Export Edge Function using function factory
  */
 createSimpleFunction(handleCreatePlusSubscription, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   enableAnalytics: true,
   allowedMethods: ['POST']
 })

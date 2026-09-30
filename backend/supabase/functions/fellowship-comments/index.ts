@@ -22,7 +22,7 @@ import { pushMentions } from '../_shared/services/mention-service.ts'
 async function handleListComments(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -139,7 +139,7 @@ async function handleListComments(req: Request, services: ServiceContainer): Pro
 async function handleCreateComment(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -299,7 +299,7 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
 async function handleReviewComment(req: Request, services: ServiceContainer, decision: 'approve' | 'discard'): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, authHeader.replace('Bearer ', ''))
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
   let body: { comment_id: string }
   try { body = await req.json() } catch { throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400) }
@@ -335,7 +335,7 @@ async function handleReviewComment(req: Request, services: ServiceContainer, dec
 async function handleDeleteComment(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -407,7 +407,7 @@ async function handleDeleteComment(req: Request, services: ServiceContainer): Pr
 async function handleEditComment(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)

@@ -79,7 +79,7 @@ function utcToday(): string {
 async function authenticate(req: Request, services: ServiceContainer): Promise<string> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', ''),
   )
   if (error || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)

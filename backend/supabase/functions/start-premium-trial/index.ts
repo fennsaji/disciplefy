@@ -170,6 +170,8 @@ async function handleStartPremiumTrial(
  * Export Edge Function using function factory
  */
 createSimpleFunction(handleStartPremiumTrial, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   enableAnalytics: true,
   allowedMethods: ['POST']
 })

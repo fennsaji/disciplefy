@@ -30,7 +30,7 @@ type Language = typeof VALID_LANGUAGES[number]
 async function handleListFellowships(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -379,7 +379,7 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
   let callerRole: string | null = null
   const authHeader = req.headers.get('Authorization')
   if (authHeader) {
-    const { data: { user } } = await services.supabaseServiceClient.auth.getUser(
+    const { data: { user } } = await services.authService.getUserFromToken(req, 
       authHeader.replace('Bearer ', '')
     )
     if (user) {
@@ -445,7 +445,7 @@ const MAX_LIMIT = 50
 async function handleDiscoverFellowships(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -605,7 +605,7 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
 async function handleCreateFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -791,7 +791,7 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
 async function handleJoinPublicFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -917,7 +917,7 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
 async function handleLeaveFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -985,7 +985,7 @@ async function handleLeaveFellowship(req: Request, services: ServiceContainer): 
 async function handleDeleteFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -1029,7 +1029,7 @@ async function handleDeleteFellowship(req: Request, services: ServiceContainer):
 async function handleUpdateFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -1236,7 +1236,7 @@ function fellowshipSettingsPayload(fellowship: any) {
 async function handleDisciplerActivity(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, authHeader.replace('Bearer ', ''))
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
   const url = new URL(req.url)
   const fellowshipId = url.searchParams.get('fellowship_id')
