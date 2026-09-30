@@ -703,6 +703,8 @@ async function handleGenerateInvoicePDF(
 // ============================================================================
 
 createAuthenticatedFunction(handleGenerateInvoicePDF, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   allowedMethods: ['POST'],
   enableAnalytics: true,
   timeout: 15000, // 15 seconds

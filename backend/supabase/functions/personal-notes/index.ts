@@ -94,7 +94,7 @@ async function handleGetPersonalNotes(
   }
 
   // Get personal notes using service
-  const notes = await services.personalNotesService.getPersonalNotes(
+  const notes = await (await services.getPersonalNotesService()).getPersonalNotes(
     studyGuideId,
     userContext
   )
@@ -153,8 +153,8 @@ async function handleUpdatePersonalNotes(
 
   // Update personal notes using service
   const updatedNotes = isAutoSave
-    ? await services.personalNotesService.autoSavePersonalNotes(requestData, userContext)
-    : await services.personalNotesService.updatePersonalNotes(requestData, userContext)
+    ? await (await services.getPersonalNotesService()).autoSavePersonalNotes(requestData, userContext)
+    : await (await services.getPersonalNotesService()).updatePersonalNotes(requestData, userContext)
 
   // Log analytics
   await services.analyticsLogger.logEvent('personal_notes_updated', {
@@ -205,7 +205,7 @@ async function handleDeletePersonalNotes(
   }
 
   // Delete personal notes using service
-  await services.personalNotesService.deletePersonalNotes(
+  await (await services.getPersonalNotesService()).deletePersonalNotes(
     studyGuideId,
     userContext
   )

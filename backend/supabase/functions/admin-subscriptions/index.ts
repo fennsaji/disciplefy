@@ -10,7 +10,7 @@
  * (adapted from admin-update-subscription-price's auth pattern).
  */
 
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Razorpay from 'npm:razorpay@2.9.2'
 import { corsHeaders } from '../_shared/cors.ts'
 

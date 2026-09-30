@@ -20,7 +20,7 @@ const int photoWashDecodeWidth = 8;
 
 class PhotoWash extends StatelessWidget {
   /// The photo used by the Community tab (My fellowships and Discover).
-  static const String communityTabImage = 'assets/images/hero/valley_mist.jpg';
+  static const String communityTabImage = 'assets/images/hero/valley_mist.webp';
 
   /// Asset path of the photo, from [heroImages].
   final String image;

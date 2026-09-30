@@ -39,6 +39,18 @@ class FellowshipListBloc
 
     final lang =
         await sl<LanguagePreferenceService>().getStudyContentLanguage();
+
+    // Stale-while-revalidate: show this user's last list for this language
+    // at once; the request below always runs and replaces it.
+    final cached = await _repository.getCachedFellowships(lang.code);
+    if (cached != null && state.status == FellowshipListStatus.loading) {
+      emit(state.copyWith(
+        status: FellowshipListStatus.success,
+        fellowships: cached,
+        clearErrorMessage: true,
+      ));
+    }
+
     final result = await _repository.getFellowships(lang.code);
 
     result.fold(

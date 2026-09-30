@@ -39,6 +39,24 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
       nextCursor: () => null,
     ));
 
+    // Stale-while-revalidate for the default (unsearched) first page only.
+    if (event.search == null || event.search!.isEmpty) {
+      final cached = await _repository.getCachedDiscoverFellowships(
+          language: event.language);
+      if (cached != null &&
+          state.status == DiscoverStatus.loading &&
+          state.language == event.language &&
+          (state.search == null || state.search!.isEmpty)) {
+        emit(state.copyWith(
+          status: DiscoverStatus.success,
+          fellowships: cached.fellowships,
+          // Paging waits for the fresh cursor.
+          hasMore: false,
+          nextCursor: () => null,
+        ));
+      }
+    }
+
     final result = await _repository.discoverFellowships(
       language: event.language,
       search: event.search,

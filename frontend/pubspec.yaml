@@ -137,8 +137,22 @@ flutter:
   generate: true
 
   assets:
-    - assets/images/
-    - assets/images/hero/
+    # Listed per file so unused/source images are not shipped to web.
+    - assets/images/app_logo.png
+    - assets/images/app_logo_dark.png
+    - assets/images/google_logo_96.png
+    - assets/images/logo_transparent.png
+    - assets/images/splash_screen.png
+    - assets/images/splash_screen_dark.png
+    - assets/images/hero/desert_dunes.webp
+    - assets/images/hero/green_hills.webp
+    - assets/images/hero/mountains_dawn.webp
+    - assets/images/hero/mountains_fog.webp
+    - assets/images/hero/night_stars.webp
+    - assets/images/hero/snow_peaks.webp
+    - assets/images/hero/valley_mist.webp
+    - assets/images/hero/wheat_dawn.webp
+    - assets/images/hero/winter_sunset.webp
     - assets/brand/
 
   # Bundled fonts for faster loading (no network fetch)

@@ -18,6 +18,9 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:dartz/dartz.dart' show Right;
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/current_study_entity.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_comment_entity.dart';
@@ -54,6 +57,10 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import '../../helpers/text_fit.dart' show loadAppFonts;
 import '../../helpers/welcome_test_harness.dart';
 import '../settings/text_fit.dart';
+
+class _MockCommunityRepository extends Mock implements CommunityRepository {}
+
+class _MockLanguagePrefs extends Mock implements LanguagePreferenceService {}
 
 class _MockFeedBloc extends MockBloc<FellowshipFeedEvent, FellowshipFeedState>
     implements FellowshipFeedBloc {}
@@ -708,6 +715,101 @@ void main() {
       await tester.pumpAndSettle();
       verify(() => _membersBloc.add(const FellowshipDeleteRequested()))
           .called(1);
+    });
+  });
+
+  // ── Opened by id only (Home banner, activity row, deep link) ─────────────
+
+  group('fellowship home opened by id without the entity', () {
+    const byId = FellowshipHomeScreen(fellowshipId: 'f1');
+
+    void stubRole({required bool mentor}) {
+      sl.registerFactory<FellowshipFeedBloc>(() => _feed);
+      sl.registerFactory<FellowshipMembersBloc>(() => _membersBloc);
+      sl.registerFactory<FellowshipStudyBloc>(() => _study);
+      sl.registerFactory<LearningPathsBloc>(() => _paths);
+      sl.registerFactory<FellowshipMeetingsBloc>(() => _meetings);
+      when(() => _feed.state).thenReturn(FellowshipFeedState(
+        status: FellowshipFeedStatus.success,
+        hasMore: false,
+        postingContextResolved: true,
+        isMentor: mentor,
+      ));
+      when(() => _membersBloc.state).thenReturn(FellowshipMembersState(
+        status: FellowshipMembersStatus.success,
+        members: _members,
+        isMentor: mentor,
+      ));
+      when(() => _study.state)
+          .thenReturn(const FellowshipStudyState(fellowshipId: 'f1'));
+    }
+
+    testWidgets('a mentor still gets the mentor controls', (tester) async {
+      stubRole(mentor: true);
+      await _pump(tester, byId,
+          size: const Size(390, 1200), provideBlocs: false);
+      await tester.tap(find.byTooltip('More options').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Fellowship Settings'), findsOneWidget);
+      expect(find.text('Delete Fellowship'), findsOneWidget);
+      verify(() =>
+              _study.add(const FellowshipStudyRoleResolved(isMentor: true)))
+          .called(1);
+    });
+
+    testWidgets('loads the entity by id: daily post and discipler items',
+        (tester) async {
+      // Blocs have not resolved the role yet; only the loaded entity knows.
+      stubRole(mentor: false);
+      final repo = _MockCommunityRepository();
+      final prefs = _MockLanguagePrefs();
+      when(prefs.getStudyContentLanguage)
+          .thenAnswer((_) async => AppLanguage.english);
+      when(() => repo.getFellowships(any())).thenAnswer((_) async => Right([
+            FellowshipEntity(
+              id: 'other',
+              name: 'Other',
+              memberCount: 1,
+              userRole: 'member',
+              joinedAt: _fellowship.joinedAt,
+              createdAt: _fellowship.createdAt,
+            ),
+            const FellowshipEntity(
+              id: 'f1',
+              name: 'Loaded Group',
+              memberCount: 3,
+              userRole: 'mentor',
+              joinedAt: '2025-03-01T00:00:00Z',
+              createdAt: '2025-03-01T00:00:00Z',
+              dailyPostAllowed: true,
+              disciplerAllowed: true,
+            ),
+          ]));
+      sl.registerSingleton<CommunityRepository>(repo);
+      sl.registerSingleton<LanguagePreferenceService>(prefs);
+      await _pump(tester, byId,
+          size: const Size(390, 1200), provideBlocs: false);
+      await tester.pumpAndSettle();
+      expect(find.text('Loaded Group'), findsWidgets);
+      await tester.tap(find.byTooltip('More options').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Fellowship Settings'), findsOneWidget);
+      expect(find.text('Daily post'), findsOneWidget);
+      expect(find.text('Discipler activity'), findsOneWidget);
+      verify(() => repo.getFellowships(any())).called(1);
+    });
+
+    testWidgets('a member does not get the mentor controls', (tester) async {
+      stubRole(mentor: false);
+      await _pump(tester, byId,
+          size: const Size(390, 1200), provideBlocs: false);
+      await tester.tap(find.byTooltip('More options').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Fellowship Settings'), findsNothing);
+      expect(find.text('Delete Fellowship'), findsNothing);
+      expect(find.text('Leave Fellowship'), findsOneWidget);
+      verifyNever(
+          () => _study.add(any(that: isA<FellowshipStudyRoleResolved>())));
     });
   });
 

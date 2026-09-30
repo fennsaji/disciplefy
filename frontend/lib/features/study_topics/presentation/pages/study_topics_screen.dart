@@ -354,7 +354,7 @@ class _StudyTopicsScreenContent extends StatefulWidget {
 
 class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// Scenery behind the top of the tab.
-  static const String _washImage = 'assets/images/hero/green_hills.jpg';
+  static const String _washImage = 'assets/images/hero/green_hills.webp';
 
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;

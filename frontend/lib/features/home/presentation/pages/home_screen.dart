@@ -64,6 +64,8 @@ import '../../../community/domain/entities/fellowship_entity.dart';
 import '../../../community/domain/entities/fellowship_meeting_entity.dart';
 import '../../../community/domain/fellowship_changes.dart';
 import '../../../community/domain/repositories/community_repository.dart';
+import '../../../../core/error/failures.dart';
+import 'package:dartz/dartz.dart' show Either;
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
@@ -514,7 +516,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       bloc: _usageStatsBloc,
       listener: (context, state) {
         // Check and show soft paywall when usage stats load or update
-        if (state is UsageStatsLoaded) {
+        // Cached stats are only a placeholder: wait for the fresh response.
+        if (state is UsageStatsLoaded && !state.isCached) {
           _checkUsageThreshold(context, state.usageStats);
         }
       },
@@ -525,7 +528,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           // TokenLoaded — the first check is skipped, this retries it.
           if (state is TokenLoaded) {
             final usageState = _usageStatsBloc.state;
-            if (usageState is UsageStatsLoaded) {
+            if (usageState is UsageStatsLoaded && !usageState.isCached) {
               _checkUsageThreshold(context, usageState.usageStats);
             }
           }
@@ -891,7 +894,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       int purchasedTokens = 0;
       try {
         final tokenState = context.read<TokenBloc>().state;
-        if (tokenState is! TokenLoaded) {
+        // A refreshing state may still be the persisted balance: the
+        // listener re-runs this once the fresh status arrives.
+        if (tokenState is! TokenLoaded || tokenState.isRefreshing) {
           // TokenBloc not loaded yet — skip now; the BlocListener on TokenBloc
           // will re-trigger this check once the state is available.
           return;
@@ -1126,6 +1131,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 /// single nearest meeting as a compact banner card.
 ///
 /// Renders [SizedBox.shrink] when there are no meetings today.
+/// Meetings for each of [fellowships], requested concurrently; results are in
+/// the same order as [fellowships].
+@visibleForTesting
+Future<List<Either<Failure, List<FellowshipMeetingEntity>>>>
+    fetchMeetingsInParallel(
+  CommunityRepository repo,
+  List<FellowshipEntity> fellowships,
+) =>
+        Future.wait(fellowships.map((f) => repo.getMeetings(f.id)));
+
 class _UpcomingMeetingBanner extends StatefulWidget {
   const _UpcomingMeetingBanner();
 
@@ -1200,9 +1215,12 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
         String fellowshipId,
       })? closest;
 
-      // Fetch meetings for each fellowship; keep the nearest one ending after now.
-      for (final fellowship in fellowships) {
-        final result = await repo.getMeetings(fellowship.id);
+      // Fetch meetings for every fellowship in parallel; keep the nearest one
+      // ending after now (results are walked in list order, as before).
+      final results = await fetchMeetingsInParallel(repo, fellowships);
+      for (var i = 0; i < fellowships.length; i++) {
+        final fellowship = fellowships[i];
+        final result = results[i];
         result.fold(
           (_) {},
           (meetings) {

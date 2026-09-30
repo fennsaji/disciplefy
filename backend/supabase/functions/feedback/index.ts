@@ -321,7 +321,7 @@ async function handleFeedback(
   let sentimentScore: number | null = null
   if (requestBody.message && requestBody.message.trim().length > 0) {
     try {
-      sentimentScore = await services.llmService.analyzeSentiment(requestBody.message)
+      sentimentScore = await (await services.getLlmService()).analyzeSentiment(requestBody.message)
       console.log(`[FEEDBACK] Sentiment score: ${sentimentScore}`)
     } catch (error) {
       console.warn('[FEEDBACK] Sentiment analysis failed, continuing without score:', error)

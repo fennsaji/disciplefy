@@ -11,6 +11,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { TtlCache } from '../_shared/utils/ttl-cache.ts'
 import { extractOAuthProfileData, createProfileUpdateData, logProfileExtraction } from '../_shared/utils/profile-extractor.ts'
 
 interface UserProfile {
@@ -164,38 +165,72 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
  *
  * This fulfils the seed.sql promise of "auto-granted on login".
  */
+/**
+ * admin_emails from system_config, lower-cased. Global config, the same for
+ * every caller, so it is cached per worker for five minutes; an edit to the
+ * list takes effect within that window.
+ */
+const ADMIN_EMAILS_TTL_MS = 5 * 60 * 1000
+const adminEmailsCache = new TtlCache<string[]>(ADMIN_EMAILS_TTL_MS, 1)
+
+async function getAdminEmails(services: ServiceContainer): Promise<string[]> {
+  const cached = adminEmailsCache.get('admin_emails')
+  if (cached) return cached
+  try {
+    const { data, error } = await services.supabaseServiceClient
+      .from('system_config')
+      .select('value')
+      .eq('key', 'admin_emails')
+      .single()
+    // Only a successful read (or a confirmed missing row) is remembered.
+    if (error && error.code !== 'PGRST116') return []
+    const emails = data?.value
+      ? (data.value as string).split(',').map((e: string) => e.trim().toLowerCase())
+      : []
+    adminEmailsCache.set('admin_emails', emails)
+    return emails
+  } catch (error) {
+    console.warn('⚠️ [USER_PROFILE] Failed to read admin emails:', error)
+    return []
+  }
+}
+
+/**
+ * Grants is_admin = true when the user's email is in [adminEmails].
+ * Returns true when the grant was written.
+ */
+async function grantAdminIfListed(
+  services: ServiceContainer,
+  userId: string,
+  userEmail: string | undefined | null,
+  adminEmails: string[]
+): Promise<boolean> {
+  if (!userEmail || !adminEmails.includes(userEmail.toLowerCase())) return false
+  try {
+    const { error } = await services.supabaseServiceClient
+      .from('user_profiles')
+      .update({ is_admin: true, updated_at: new Date().toISOString() })
+      .eq('id', userId)
+    if (error) {
+      console.warn('⚠️ [USER_PROFILE] Failed to grant admin:', error.code)
+      return false
+    }
+    console.log(`✅ [USER_PROFILE] Admin access auto-granted to: ${userEmail}`)
+    return true
+  } catch (error) {
+    // Non-fatal — don't break sync if admin check fails
+    console.warn('⚠️ [USER_PROFILE] Failed to check admin emails:', error)
+    return false
+  }
+}
+
 async function autoGrantAdminIfEligible(
   services: ServiceContainer,
   userId: string,
   userEmail: string | undefined | null
 ): Promise<void> {
   if (!userEmail) return
-
-  try {
-    const { data } = await services.supabaseServiceClient
-      .from('system_config')
-      .select('value')
-      .eq('key', 'admin_emails')
-      .single()
-
-    if (!data?.value) return
-
-    const adminEmails = (data.value as string)
-      .split(',')
-      .map((e: string) => e.trim().toLowerCase())
-
-    if (adminEmails.includes(userEmail.toLowerCase())) {
-      await services.supabaseServiceClient
-        .from('user_profiles')
-        .update({ is_admin: true, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-
-      console.log(`✅ [USER_PROFILE] Admin access auto-granted to: ${userEmail}`)
-    }
-  } catch (error) {
-    // Non-fatal — don't break sync if admin check fails
-    console.warn('⚠️ [USER_PROFILE] Failed to check admin emails:', error)
-  }
+  await grantAdminIfListed(services, userId, userEmail, await getAdminEmails(services))
 }
 
 // ============================================================================
@@ -329,11 +364,28 @@ async function handleGetProfile(
   services: ServiceContainer,
   userId: string
 ): Promise<Response> {
-  const { data: profile, error } = await services.supabaseServiceClient
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
+  // Profile, preferences, auth user and the admin list are independent reads:
+  // one round trip instead of five in sequence.
+  const [
+    { data: profile, error },
+    { data: preferences },
+    { data: { user }, error: userError },
+    adminEmails,
+  ] = await Promise.all([
+    services.supabaseServiceClient
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single(),
+    // user preferences (learning_path_study_mode)
+    services.supabaseServiceClient
+      .from('user_preferences')
+      .select('learning_path_study_mode')
+      .eq('user_id', userId)
+      .single(),
+    services.supabaseServiceClient.auth.admin.getUserById(userId),
+    getAdminEmails(services),
+  ])
 
   let userProfile: UserProfile
 
@@ -376,30 +428,16 @@ async function handleGetProfile(
     userProfile = profile
   }
 
-  // Fetch user preferences (learning_path_study_mode)
-  const { data: preferences } = await services.supabaseServiceClient
-    .from('user_preferences')
-    .select('learning_path_study_mode')
-    .eq('user_id', userId)
-    .single()
-
-  // Fetch auth user data
-  const { data: { user }, error: userError } = await services.supabaseServiceClient.auth.admin.getUserById(userId)
-
   if (!userError && user) {
     userProfile.email = user.email || null
     userProfile.phone = user.phone || null
 
-    // Auto-grant admin if email is in system_config admin_emails list
-    await autoGrantAdminIfEligible(services, userId, user.email)
-
-    // Re-fetch profile to pick up any is_admin change
-    const { data: refreshed } = await services.supabaseServiceClient
-      .from('user_profiles')
-      .select('is_admin')
-      .eq('id', userId)
-      .single()
-    if (refreshed) userProfile.is_admin = refreshed.is_admin
+    // Auto-grant admin if email is in system_config admin_emails list. Only
+    // writes (and costs a round trip) for a listed user not yet admin; the
+    // grant is reflected in this response without a re-fetch.
+    if (!userProfile.is_admin && await grantAdminIfListed(services, userId, user.email, adminEmails)) {
+      userProfile.is_admin = true
+    }
   }
 
   // Merge preferences into profile response

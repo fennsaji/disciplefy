@@ -196,6 +196,8 @@ function successResponse(kind: string, tokensCredited: number, alreadyFulfilled:
 }
 
 createSimpleFunction(handleConfirmApplePurchase, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   allowedMethods: ['POST'],
   timeout: 30000,
 })

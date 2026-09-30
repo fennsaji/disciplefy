@@ -9,7 +9,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
-import { selectTopicsForYouWithLearningPath, getLocalizedTopicContent } from '../_shared/topic-selector.ts';
+import { selectTopicsForYouWithLearningPath, getLocalizedTopicsContent } from '../_shared/topic-selector.ts';
 
 // ============================================================================
 // Types
@@ -94,46 +94,50 @@ async function handleTopicsForYou(
     throw new AppError('CONFIG_ERROR', 'Missing SUPABASE_SERVICE_ROLE_KEY environment variable', 500);
   }
 
-  const result = await selectTopicsForYouWithLearningPath(supabaseUrl, supabaseServiceKey, userId, limit);
+  const result = await selectTopicsForYouWithLearningPath(
+    supabaseUrl,
+    supabaseServiceKey,
+    userId,
+    limit,
+    services.supabaseServiceClient as any,
+  );
 
   if (!result.success) {
     throw new AppError('INTERNAL_ERROR', result.error || 'Failed to fetch topics', 500);
   }
 
-  // Fetch progress data for all topics if requested
-  let progressMap: Record<string, TopicProgressData> = {};
+  const topics = result.topics || [];
 
-  if (includeProgress && result.topics && result.topics.length > 0) {
-    const topicIds = result.topics.map((t: any) => t.id);
-
+  // Progress and translations are independent: one query each, in parallel.
+  const fetchProgress = async (): Promise<Record<string, TopicProgressData>> => {
+    const progressMap: Record<string, TopicProgressData> = {};
+    if (!includeProgress || topics.length === 0) return progressMap;
+    const topicIds = topics.map((t: any) => t.id);
     const { data: progressData } = await services.supabaseServiceClient
       .from('user_topic_progress')
       .select('topic_id, started_at, completed_at, time_spent_seconds, xp_earned')
       .eq('user_id', userId)
       .in('topic_id', topicIds);
-
-    if (progressData) {
-      for (const p of progressData) {
-        progressMap[p.topic_id] = {
-          started_at: p.started_at,
-          completed_at: p.completed_at,
-          time_spent_seconds: p.time_spent_seconds || 0,
-          xp_earned: p.xp_earned || 0,
-        };
-      }
+    for (const p of progressData ?? []) {
+      progressMap[p.topic_id] = {
+        started_at: p.started_at,
+        completed_at: p.completed_at,
+        time_spent_seconds: p.time_spent_seconds || 0,
+        xp_earned: p.xp_earned || 0,
+      };
     }
-  }
+    return progressMap;
+  };
 
-  // Localize topics if needed
+  const [progressMap, localizedContent] = await Promise.all([
+    fetchProgress(),
+    getLocalizedTopicsContent(services.supabaseServiceClient as any, topics as any, language),
+  ]);
+
   const localizedTopics: LocalizedTopic[] = [];
 
-  for (const topic of result.topics || []) {
-    const localized = await getLocalizedTopicContent(
-      supabaseUrl,
-      supabaseServiceKey,
-      topic,
-      language
-    );
+  for (const [index, topic] of topics.entries()) {
+    const localized = localizedContent[index];
 
     const topicData: LocalizedTopic = {
       id: topic.id,

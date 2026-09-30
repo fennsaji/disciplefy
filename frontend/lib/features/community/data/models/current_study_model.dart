@@ -43,6 +43,16 @@ class CurrentStudyModel {
     );
   }
 
+  /// Inverse of [CurrentStudyModel.fromJson].
+  Map<String, dynamic> toJson() => {
+        'learning_path_id': learningPathId,
+        'learning_path_title': learningPathTitle,
+        'current_guide_index': currentGuideIndex,
+        'started_at': startedAt,
+        'completed_at': completedAt,
+        'total_guides': totalGuides,
+      };
+
   /// Converts this model to a [CurrentStudyEntity] for use in the domain layer.
   CurrentStudyEntity toEntity() => CurrentStudyEntity(
         learningPathId: learningPathId,

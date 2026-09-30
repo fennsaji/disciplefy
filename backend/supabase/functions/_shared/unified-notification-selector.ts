@@ -9,7 +9,7 @@
 //
 // This aligns push notifications with the "For You" section in the app
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { selectTopicsForYouWithLearningPath, getLocalizedTopicContent } from './topic-selector.ts';
 import { formatError } from './utils/error-formatter.ts';
 

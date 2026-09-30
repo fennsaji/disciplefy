@@ -161,6 +161,8 @@ class StudyGuidePdfService {
     BuildContext? context,
     void Function(int step, int total)? onProgress,
   }) async {
+    // Section titles come from AppTranslations; Hindi/Malayalam are deferred.
+    await AppTranslations.ensureAllLoaded();
     if (_requiresImageBasedRendering(guide) && context != null) {
       return _generateImageBasedPdf(guide, context, onProgress: onProgress);
     }
@@ -992,6 +994,8 @@ class StudyGuidePdfService {
       Map<String, dynamic> data) async {
     final guide = _mapToStudyGuide(data);
     final service = StudyGuidePdfService();
+    // Statics are per isolate: load the translation maps here too.
+    await AppTranslations.ensureAllLoaded();
 
     final theme = pw.ThemeData.withFont(
       base: await PdfGoogleFonts.interRegular(),

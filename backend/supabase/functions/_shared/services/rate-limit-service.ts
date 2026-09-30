@@ -3,7 +3,8 @@
  * Enforces tier-based rate limits, detects abuse, and manages request throttling
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceRoleClient } from '../core/service-client.ts';
 import type {
   RateLimitRule,
   RateLimitCheck,
@@ -21,7 +22,7 @@ export class RateLimitService {
   private usageCache: Map<string, { count: number; resetAt: Date }> = new Map();
 
   constructor(supabaseUrl: string, supabaseKey: string) {
-    this.supabaseClient = createClient(supabaseUrl, supabaseKey);
+    this.supabaseClient = getServiceRoleClient(supabaseUrl, supabaseKey);
   }
 
   /**

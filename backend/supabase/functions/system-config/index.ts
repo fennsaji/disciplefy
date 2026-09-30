@@ -12,7 +12,8 @@
 import { getSystemConfig, getSystemConfigRows } from '../_shared/services/system-config-service.ts'
 import { getFeatureFlags, isTesterEmail, applyTesterBypass } from '../_shared/services/feature-flag-service.ts'
 import { MemoryVerseConfigService } from '../_shared/services/memory-verse-config-service.ts'
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts'
 
 /**
  * One memory verse config service per worker, so its 5-minute cache actually
@@ -85,12 +86,15 @@ Deno.serve(async (req) => {
     const anyFlagAllowsBypass = featureFlags.some(f => f.allowTesterBypass)
     if (anyFlagAllowsBypass && authHeader?.startsWith('Bearer ')) {
       try {
-        const anonClient = createClient(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_ANON_KEY')!,
-          { global: { headers: { Authorization: authHeader } }, auth: { autoRefreshToken: false, persistSession: false } }
-        )
-        const { data: { user } } = await anonClient.auth.getUser()
+        const user = await verifyUserToken(authHeader.replace('Bearer ', ''), Deno.env.get('SUPABASE_URL')!, async () => {
+          const anonClient = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_ANON_KEY')!,
+            { global: { headers: { Authorization: authHeader } }, auth: { autoRefreshToken: false, persistSession: false } }
+          )
+          const { data: { user } } = await anonClient.auth.getUser()
+          return user ? { id: user.id, email: user.email ?? undefined, is_anonymous: user.is_anonymous === true } : null
+        })
         if (user && !user.is_anonymous && user.email) {
           testerBypassActive = await isTesterEmail(user.email)
         }

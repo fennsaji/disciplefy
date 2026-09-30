@@ -2,15 +2,15 @@
 /// and the library's Continue card). All are 2000px wide; decode them at the
 /// box's pixel width, never the full source.
 const List<String> heroImages = [
-  'assets/images/hero/mountains_fog.jpg',
-  'assets/images/hero/mountains_dawn.jpg',
-  'assets/images/hero/valley_mist.jpg',
-  'assets/images/hero/winter_sunset.jpg',
-  'assets/images/hero/wheat_dawn.jpg',
-  'assets/images/hero/night_stars.jpg',
-  'assets/images/hero/desert_dunes.jpg',
-  'assets/images/hero/green_hills.jpg',
-  'assets/images/hero/snow_peaks.jpg',
+  'assets/images/hero/mountains_fog.webp',
+  'assets/images/hero/mountains_dawn.webp',
+  'assets/images/hero/valley_mist.webp',
+  'assets/images/hero/winter_sunset.webp',
+  'assets/images/hero/wheat_dawn.webp',
+  'assets/images/hero/night_stars.webp',
+  'assets/images/hero/desert_dunes.webp',
+  'assets/images/hero/green_hills.webp',
+  'assets/images/hero/snow_peaks.webp',
 ];
 
 /// A photo for [date]: stable within a calendar day, rotates across days.

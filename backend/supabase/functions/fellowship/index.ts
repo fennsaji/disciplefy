@@ -30,7 +30,7 @@ type Language = typeof VALID_LANGUAGES[number]
 async function handleListFellowships(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -98,22 +98,84 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
   }
 
   const mentorUserIds = [...new Set((mentorRows ?? []).map((r: any) => r.user_id as string))]
-  const mentorEntries = await Promise.all(
-    mentorUserIds.map(async (userId: string): Promise<MentorEntry> => {
-      try {
-        const { data: userData } = await db.auth.admin.getUserById(userId)
-        if (!userData?.user) return { userId, name: null, avatar: null }
-        const u = userData.user
-        const name: string | null =
-          u.user_metadata?.full_name ?? u.user_metadata?.name ??
-          u.user_metadata?.display_name ?? null
-        const avatar: string | null = u.user_metadata?.avatar_url ?? null
-        return { userId, name, avatar }
-      } catch {
-        return { userId, name: null, avatar: null }
+
+  // Per-user admin lookup, kept as the fallback when the batch RPC is not
+  // available (e.g. functions deployed ahead of the migration).
+  const fetchMentorOne = async (userId: string): Promise<MentorEntry> => {
+    try {
+      const { data: userData } = await db.auth.admin.getUserById(userId)
+      if (!userData?.user) return { userId, name: null, avatar: null }
+      const u = userData.user
+      const name: string | null =
+        u.user_metadata?.full_name ?? u.user_metadata?.name ??
+        u.user_metadata?.display_name ?? null
+      const avatar: string | null = u.user_metadata?.avatar_url ?? null
+      return { userId, name, avatar }
+    } catch {
+      return { userId, name: null, avatar: null }
+    }
+  }
+
+  const fetchMentorEntries = async (): Promise<MentorEntry[]> => {
+    if (mentorUserIds.length === 0) return []
+    const { data, error } = await db.rpc('get_user_display_meta', { p_user_ids: mentorUserIds })
+    if (error) {
+      console.error('[fellowship/list] Mentor meta RPC error, falling back:', error.code)
+      return Promise.all(mentorUserIds.map(fetchMentorOne))
+    }
+    const byId = new Map<string, MentorEntry>()
+    for (const row of (data ?? []) as { user_id: string; display_name: string | null; avatar_url: string | null }[]) {
+      byId.set(row.user_id, { userId: row.user_id, name: row.display_name, avatar: row.avatar_url })
+    }
+    return mentorUserIds.map((userId) => byId.get(userId) ?? { userId, name: null, avatar: null })
+  }
+
+  // Active member counts for every fellowship in one round trip.
+  const fetchMemberCounts = async (): Promise<Map<string, number>> => {
+    const counts = new Map<string, number>()
+    if (fellowshipIds.length === 0) return counts
+    const { data, error } = await db.rpc('get_fellowship_member_counts', { p_fellowship_ids: fellowshipIds })
+    if (!error) {
+      for (const id of fellowshipIds) counts.set(id, 0)
+      for (const row of (data ?? []) as { fellowship_id: string; member_count: number | string }[]) {
+        counts.set(row.fellowship_id, Number(row.member_count))
       }
-    })
-  )
+      return counts
+    }
+    console.error('[fellowship/list] Member count RPC error, falling back:', error.code)
+    await Promise.all(fellowshipIds.map(async (fellowshipId: string) => {
+      const { count, error: countError } = await db.from('fellowship_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('fellowship_id', fellowshipId)
+        .eq('is_active', true)
+      if (countError) {
+        console.error('[fellowship/list] Member count error for', fellowshipId, ':', countError)
+        throw new AppError('DATABASE_ERROR', 'Failed to fetch member count', 500)
+      }
+      counts.set(fellowshipId, count || 0)
+    }))
+    return counts
+  }
+
+  // One fellowship_study row per fellowship (UNIQUE(fellowship_id)): it holds
+  // both the completed-path history and the current study.
+  const fetchStudies = async () => {
+    if (fellowshipIds.length === 0) return [] as any[]
+    const { data, error } = await db.from('fellowship_study')
+      .select('fellowship_id, learning_path_id, current_guide_index, started_at, completed_at, completed_path_ids, learning_paths(id, title)')
+      .in('fellowship_id', fellowshipIds)
+    if (error) {
+      console.error('[fellowship/list] Study query error:', error)
+      throw new AppError('DATABASE_ERROR', 'Failed to fetch study info', 500)
+    }
+    return (data ?? []) as any[]
+  }
+
+  const [mentorEntries, memberCounts, studyRows] = await Promise.all([
+    fetchMentorEntries(),
+    fetchMemberCounts(),
+    fetchStudies(),
+  ])
 
   const mentorInfoMap = new Map<string, { name: string | null; avatar: string | null }>()
   for (const entry of mentorEntries) mentorInfoMap.set(entry.userId, { name: entry.name, avatar: entry.avatar })
@@ -131,30 +193,21 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
   // recommended it again, even though group study records no personal
   // per-topic progress and so leaves progress_percentage at 0.
   const completedPathsByFellowship = new Map<string, string[]>()
-  {
-    const fellowshipIds = activeMemberships
-      .map((m: any) => m.fellowships?.id)
-      .filter((id: string | undefined): id is string => !!id)
-    if (fellowshipIds.length > 0) {
-      // There is one fellowship_study row per fellowship, reused as the group
-      // moves from path to path: the history lives in completed_path_ids, and
-      // completed_at only ever describes the path currently assigned. Reading
-      // completed_at alone therefore missed every path the group finished
-      // before its current one.
-      const { data: completedRows } = await db.from('fellowship_study')
-        .select('fellowship_id, learning_path_id, completed_at, completed_path_ids')
-        .in('fellowship_id', fellowshipIds)
-      for (const row of (completedRows ?? []) as {
-        fellowship_id: string
-        learning_path_id: string | null
-        completed_at: string | null
-        completed_path_ids: string[] | null
-      }[]) {
-        const done = new Set<string>(row.completed_path_ids ?? [])
-        if (row.completed_at && row.learning_path_id) done.add(row.learning_path_id)
-        if (done.size > 0) completedPathsByFellowship.set(row.fellowship_id, [...done])
-      }
-    }
+  // The study in progress (completed_at null), per fellowship.
+  const currentStudyByFellowship = new Map<string, any>()
+  // The row is reused as the group moves from path to path: the history lives
+  // in completed_path_ids, and completed_at only ever describes the path
+  // currently assigned, so both are read.
+  for (const row of studyRows as {
+    fellowship_id: string
+    learning_path_id: string | null
+    completed_at: string | null
+    completed_path_ids: string[] | null
+  }[]) {
+    const done = new Set<string>(row.completed_path_ids ?? [])
+    if (row.completed_at && row.learning_path_id) done.add(row.learning_path_id)
+    if (done.size > 0) completedPathsByFellowship.set(row.fellowship_id, [...done])
+    if (row.completed_at === null) currentStudyByFellowship.set(row.fellowship_id, row)
   }
 
   const fellowships = await Promise.all(
@@ -162,30 +215,8 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
       const fellowship = membership.fellowships as any
       const fellowshipId: string = fellowship.id
 
-      const [countResult, studyResult] = await Promise.all([
-        db.from('fellowship_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('fellowship_id', fellowshipId)
-          .eq('is_active', true),
-        db.from('fellowship_study')
-          .select('learning_path_id, current_guide_index, started_at, completed_at, learning_paths(id, title)')
-          .eq('fellowship_id', fellowshipId)
-          .is('completed_at', null)
-          .order('started_at', { ascending: false })
-          .maybeSingle()
-      ])
-
-      const { count: memberCount, error: countError } = countResult
-      if (countError) {
-        console.error('[fellowship/list] Member count error for', fellowshipId, ':', countError)
-        throw new AppError('DATABASE_ERROR', 'Failed to fetch member count', 500)
-      }
-
-      const { data: study, error: studyError } = studyResult
-      if (studyError) {
-        console.error('[fellowship/list] Study query error for', fellowshipId, ':', studyError)
-        throw new AppError('DATABASE_ERROR', 'Failed to fetch study info', 500)
-      }
+      const memberCount = memberCounts.get(fellowshipId) ?? 0
+      const study = currentStudyByFellowship.get(fellowshipId) ?? null
 
       return {
         id: fellowship.id,
@@ -348,7 +379,7 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
   let callerRole: string | null = null
   const authHeader = req.headers.get('Authorization')
   if (authHeader) {
-    const { data: { user } } = await services.supabaseServiceClient.auth.getUser(
+    const { data: { user } } = await services.authService.getUserFromToken(req, 
       authHeader.replace('Bearer ', '')
     )
     if (user) {
@@ -414,7 +445,7 @@ const MAX_LIMIT = 50
 async function handleDiscoverFellowships(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -574,7 +605,7 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
 async function handleCreateFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -760,7 +791,7 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
 async function handleJoinPublicFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -886,7 +917,7 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
 async function handleLeaveFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -954,7 +985,7 @@ async function handleLeaveFellowship(req: Request, services: ServiceContainer): 
 async function handleDeleteFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -998,7 +1029,7 @@ async function handleDeleteFellowship(req: Request, services: ServiceContainer):
 async function handleUpdateFellowship(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, 
     authHeader.replace('Bearer ', '')
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
@@ -1205,7 +1236,7 @@ function fellowshipSettingsPayload(fellowship: any) {
 async function handleDisciplerActivity(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
-  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  const { data: { user }, error: authError } = await services.authService.getUserFromToken(req, authHeader.replace('Bearer ', ''))
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
   const url = new URL(req.url)
   const fellowshipId = url.searchParams.get('fellowship_id')

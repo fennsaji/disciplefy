@@ -1,32 +1,50 @@
 import 'package:dartz/dartz.dart';
 
+import '../../../../core/cache/user_scoped_cache.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
 import '../../domain/repositories/subscription_repository.dart';
+import '../../../tokens/domain/token_balance_changes.dart';
 import '../datasources/subscription_remote_data_source.dart';
+import '../models/subscription_model.dart';
 
 /// Implementation of SubscriptionRepository that handles data operations.
 class SubscriptionRepositoryImpl implements SubscriptionRepository {
   final SubscriptionRemoteDataSource _remoteDataSource;
   final NetworkInfo _networkInfo;
+  final UserScopedCache? _cacheOverride;
 
   const SubscriptionRepositoryImpl({
     required SubscriptionRemoteDataSource remoteDataSource,
     required NetworkInfo networkInfo,
+    UserScopedCache? cache,
   })  : _remoteDataSource = remoteDataSource,
-        _networkInfo = networkInfo;
+        _networkInfo = networkInfo,
+        _cacheOverride = cache;
 
-  /// Generic error handler that converts exceptions to failures
+  UserScopedCache get _cache => _cacheOverride ?? UserScopedCache.instance;
+
+  /// Generic error handler that converts exceptions to failures.
+  ///
+  /// [changesPlan] marks operations that may change the user's plan: cached
+  /// plan data is dropped before (so in-flight reads are discarded) and after.
   Future<Either<Failure, T>> _execute<T>(
     Future<T> Function() operation,
-    String operationName,
-  ) async {
+    String operationName, {
+    bool changesPlan = false,
+  }) async {
     if (await _networkInfo.isConnected) {
       try {
-        final result = await operation();
+        if (changesPlan) await _dropPlanCaches();
+        final T result;
+        try {
+          result = await operation();
+        } finally {
+          if (changesPlan) await invalidateCachedPlanData();
+        }
         return Right(result);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message, code: e.code));
@@ -60,6 +78,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         return response;
       },
       'subscription creation',
+      changesPlan: true,
     );
   }
 
@@ -78,6 +97,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         return response;
       },
       'subscription cancellation',
+      changesPlan: true,
     );
   }
 
@@ -99,6 +119,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         );
       },
       'subscription resumption',
+      changesPlan: true,
     );
   }
 
@@ -106,7 +127,10 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   Future<Either<Failure, Subscription?>> getActiveSubscription() async {
     return _execute<Subscription?>(
       () async {
+        final ticket = _cache.ticket(UserScopedCache.activeSubscription);
         final subscription = await _remoteDataSource.getActiveSubscription();
+        await _cache.write(ticket, UserScopedCache.activeSubscription,
+            {'subscription': subscription?.toJson()});
         // Model already extends entity, so we can return it directly
         return subscription;
       },
@@ -149,10 +173,54 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       getSubscriptionStatus() async {
     return _execute<UserSubscriptionStatus>(
       () async {
-        return await _remoteDataSource.getSubscriptionStatus();
+        final ticket = _cache.ticket(UserScopedCache.subscriptionStatus);
+        final status = await _remoteDataSource.getSubscriptionStatus();
+        await _cache.write(
+            ticket, UserScopedCache.subscriptionStatus, status.toJson());
+        return status;
       },
       'subscription status fetch',
     );
+  }
+
+  @override
+  Future<({Subscription? subscription})?> getCachedActiveSubscription() async {
+    final cached = await _cache.read(UserScopedCache.activeSubscription);
+    if (cached is! Map<String, dynamic>) return null;
+    final json = cached['subscription'];
+    if (json == null) return (subscription: null);
+    if (json is! Map<String, dynamic>) return null;
+    try {
+      return (subscription: SubscriptionModel.fromJson(json));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<UserSubscriptionStatus?> getCachedSubscriptionStatus() async {
+    final cached = await _cache.read(UserScopedCache.subscriptionStatus);
+    if (cached is! Map<String, dynamic>) return null;
+    try {
+      return UserSubscriptionStatus.fromJson(cached);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> invalidateCachedPlanData() async {
+    await _dropPlanCaches();
+    TokenBalanceChanges.instance.notifyChanged();
+  }
+
+  Future<void> _dropPlanCaches() async {
+    await Future.wait([
+      _cache.invalidate(UserScopedCache.activeSubscription),
+      _cache.invalidate(UserScopedCache.subscriptionStatus),
+      _cache.invalidate(UserScopedCache.tokenStatus),
+      _cache.invalidate(UserScopedCache.usageStats),
+    ]);
   }
 
   @override
@@ -165,6 +233,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         return response;
       },
       'standard subscription creation',
+      changesPlan: true,
     );
   }
 
@@ -178,6 +247,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         return response;
       },
       'plus subscription creation',
+      changesPlan: true,
     );
   }
 
@@ -194,6 +264,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         );
       },
       'premium trial start',
+      changesPlan: true,
     );
   }
 
@@ -224,6 +295,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         );
       },
       'subscription creation v2',
+      changesPlan: true,
     );
   }
 
@@ -248,6 +320,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         );
       },
       'play store sync',
+      changesPlan: true,
     );
   }
 }

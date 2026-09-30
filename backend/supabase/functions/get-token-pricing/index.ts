@@ -17,6 +17,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
+import { TtlCache, PUBLIC_CACHE_CONTROL } from '../_shared/utils/ttl-cache.ts'
+
+/**
+ * Successful pricing bodies per region, cached per worker for 5 minutes.
+ * The fallback body is never cached, so a transient DB error is not pinned.
+ */
+const pricingBodyCache = new TtlCache<string>(5 * 60 * 1000, 20)
 
 interface TokenPackage {
   id: number
@@ -45,6 +52,14 @@ serve(async (req) => {
 
     console.log('[get-token-pricing] Request:', { region })
 
+    const cachedBody = pricingBodyCache.get(region)
+    if (cachedBody) {
+      return new Response(cachedBody, {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': PUBLIC_CACHE_CONTROL }
+      })
+    }
+
     // L6: Use anon key — this endpoint is public and reads non-sensitive pricing data.
     // Service role key grants unrestricted DB access; unneeded here.
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -52,9 +67,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Fetch current pricing configuration
-    const { data: pricingData, error: pricingError } = await supabase
-      .rpc('get_current_token_pricing', { p_region: region })
-      .single()
+    // Pricing and packages are independent reads: fetch them together.
+    const [
+      { data: pricingData, error: pricingError },
+      { data: packagesData, error: packagesError },
+    ] = await Promise.all([
+      supabase.rpc('get_current_token_pricing', { p_region: region }).single(),
+      supabase.rpc('get_token_packages', { p_region: region }),
+    ])
 
     if (pricingError) {
       console.error('[get-token-pricing] Pricing fetch error:', pricingError)
@@ -85,10 +105,6 @@ serve(async (req) => {
 
     const pricing = pricingData as TokenPricingConfig
 
-    // Fetch available token packages
-    const { data: packagesData, error: packagesError } = await supabase
-      .rpc('get_token_packages', { p_region: region })
-
     if (packagesError) {
       console.error('[get-token-pricing] Packages fetch error:', packagesError)
       throw new Error('Failed to fetch token packages')
@@ -115,11 +131,14 @@ serve(async (req) => {
       packageCount: packages.length
     })
 
+    const body = JSON.stringify(response)
+    pricingBodyCache.set(region, body)
+
     return new Response(
-      JSON.stringify(response),
+      body,
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': PUBLIC_CACHE_CONTROL }
       }
     )
   } catch (error) {

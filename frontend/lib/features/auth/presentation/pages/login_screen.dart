@@ -504,7 +504,7 @@ class _LoginScreenState extends State<LoginScreen> {
             )
           : _pillLabel(
               Image.asset(
-                'assets/images/google_logo.png',
+                'assets/images/google_logo_96.png',
                 width: 20,
                 height: 20,
               ),

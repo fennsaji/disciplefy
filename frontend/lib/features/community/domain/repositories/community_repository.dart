@@ -56,6 +56,14 @@ abstract class CommunityRepository {
   Future<Either<Failure, List<FellowshipEntity>>> getFellowships(
       String language);
 
+  /// Last fellowship list persisted for the signed-in user and [language],
+  /// or null. Only a placeholder: callers must still call [getFellowships].
+  Future<List<FellowshipEntity>?> getCachedFellowships(String language);
+
+  /// Last default first page of [discoverFellowships] persisted for the
+  /// signed-in user and [language], or null. Callers must still refresh.
+  Future<DiscoverPage?> getCachedDiscoverFellowships({String? language});
+
   /// Returns the member list for the fellowship identified by [fellowshipId].
   Future<Either<Failure, List<FellowshipMemberEntity>>> getFellowshipMembers(
       String fellowshipId);

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 import '../error/exceptions.dart';
@@ -57,6 +58,11 @@ class ApiAuthHelper {
           break;
         }
 
+        // Only wait when a session is actually on its way (OAuth callback
+        // being handled, or a stored session not yet restored). A genuinely
+        // anonymous user proceeds immediately with the anon key.
+        if (attempt == 1 && !await _isSessionPending()) break;
+
         if (attempt < maxRetries) {
           // Wait before retrying (only if we have more attempts)
           Logger.debug(
@@ -91,6 +97,41 @@ class ApiAuthHelper {
       Logger.error('🚨 [API] Error creating auth headers: $e');
       rethrow;
     }
+  }
+
+  /// Test seam: replaces the "session is on its way" check.
+  @visibleForTesting
+  static Future<bool> Function()? sessionPendingOverride;
+
+  /// True while a session is expected but not yet in memory: an OAuth
+  /// callback URL is being handled (web), or Supabase's persisted session is
+  /// still being restored (same signal the router guard uses).
+  static Future<bool> _isSessionPending() async {
+    final override = sessionPendingOverride;
+    if (override != null) return override();
+    try {
+      if (kIsWeb) {
+        final uri = Uri.base;
+        if (uri.path.startsWith('/auth/callback') ||
+            uri.queryParameters.containsKey('code') ||
+            uri.fragment.contains('access_token')) {
+          return true;
+        }
+      }
+      final prefs = await SharedPreferences.getInstance();
+      for (final key in prefs.getKeys()) {
+        if ((key.startsWith('sb-') && key.endsWith('-auth-token')) ||
+            key == 'supabase.auth.token' ||
+            key == 'supabase.session') {
+          final value = prefs.getString(key);
+          if (value != null && value.isNotEmpty) return true;
+        }
+      }
+    } catch (_) {
+      // Unknown: keep the previous behaviour and wait for the session.
+      return true;
+    }
+    return false;
   }
 
   /// Get or create session ID for unauthenticated users

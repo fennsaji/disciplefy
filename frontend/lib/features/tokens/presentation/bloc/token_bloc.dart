@@ -3,7 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/cache/user_scoped_cache.dart';
 import '../../../../core/constants/plan_constants.dart';
+import '../../domain/repositories/token_repository.dart';
+import '../../domain/token_balance_changes.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
@@ -48,9 +51,17 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
   final get_usage_history.GetUsageHistory _getUsageHistory;
   final get_usage_statistics.GetUsageStatistics _getUsageStatistics;
 
+  /// Source of the persisted (last known) token status; optional so tests
+  /// and callers without persistence keep the network-only behaviour.
+  final TokenRepository? _tokenRepository;
+  final String? Function() _currentUserId;
+
   // Token status cache with timestamp
   TokenStatus? _cachedTokenStatus;
   DateTime? _lastCacheUpdate;
+
+  /// User the in-memory cache belongs to; a different signed-in user drops it.
+  String? _cachedForUserId;
   Timer? _refreshTimer;
 
   static const Duration _cacheValidityDuration = Duration(minutes: 5);
@@ -65,7 +76,12 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         getPurchaseStatistics,
     required get_usage_history.GetUsageHistory getUsageHistory,
     required get_usage_statistics.GetUsageStatistics getUsageStatistics,
-  })  : _getTokenStatus = getTokenStatus,
+    TokenRepository? tokenRepository,
+    String? Function()? currentUserId,
+  })  : _tokenRepository = tokenRepository,
+        _currentUserId =
+            currentUserId ?? (() => UserScopedCache.instance.currentUserId),
+        _getTokenStatus = getTokenStatus,
         _createPaymentOrder = createPaymentOrder,
         _confirmPayment = confirmPayment,
         _getPurchaseHistory = getPurchaseHistory,
@@ -96,12 +112,64 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     // Start auto-refresh timer
     _startAutoRefreshTimer();
+
+    TokenBalanceChanges.instance.addListener(_onBalanceChanged);
   }
 
   @override
   Future<void> close() {
     _refreshTimer?.cancel();
+    TokenBalanceChanges.instance.removeListener(_onBalanceChanged);
     return super.close();
+  }
+
+  /// Tokens were spent or granted elsewhere: forget the balance and reload it.
+  void _onBalanceChanged() {
+    if (isClosed) return;
+    _lastCacheUpdate = null;
+    final repository = _tokenRepository;
+    final invalidated = repository == null
+        ? Future<void>.value()
+        : repository.invalidateCachedTokenStatus();
+    invalidated.whenComplete(() {
+      if (isClosed) return;
+      if (_shouldPreservePurchaseHistoryState()) {
+        add(const PrefetchTokenStatus());
+      } else {
+        add(const RefreshTokenStatus());
+      }
+    });
+  }
+
+  /// Drops the in-memory status when it belongs to another (or no) user.
+  void _ensureCacheOwner() {
+    final userId = _currentUserId();
+    if (_cachedForUserId != userId) {
+      _cachedTokenStatus = null;
+      _lastCacheUpdate = null;
+      _cachedForUserId = userId;
+    }
+  }
+
+  /// Emits the persisted status for the current user, if any, marked as
+  /// refreshing. Returns whether something was shown.
+  Future<bool> _emitPersistedStatus(Emitter<TokenState> emit) async {
+    final repository = _tokenRepository;
+    if (repository == null) return false;
+    final userId = _currentUserId();
+    final persisted = await repository.getCachedTokenStatus();
+    if (persisted == null || _currentUserId() != userId) return false;
+    // A fresher in-memory value may have arrived while reading from disk.
+    if (_cachedTokenStatus == null) {
+      _cachedTokenStatus = persisted;
+      _cachedForUserId = userId;
+    }
+    emit(TokenLoaded(
+      tokenStatus: _cachedTokenStatus!,
+      lastUpdated: DateTime.now(),
+      isRefreshing: true,
+    ));
+    return true;
   }
 
   /// Handles fetching token status from API or cache
@@ -115,6 +183,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
           '🪙 [TOKEN_BLOC] Cache valid: ${_isCacheValid()}, cached status: $_cachedTokenStatus');
     }
 
+    _ensureCacheOwner();
+
     // Check if cached data is valid
     if (_isCacheValid() && _cachedTokenStatus != null) {
       Logger.debug(
@@ -127,7 +197,10 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     }
 
     Logger.debug('🪙 [TOKEN_BLOC] Fetching token status from API...');
-    emit(const TokenLoading(operation: 'fetching'));
+    // Stale-while-revalidate: show the last known balance while fetching.
+    if (!await _emitPersistedStatus(emit)) {
+      emit(const TokenLoading(operation: 'fetching'));
+    }
 
     final result = await _getTokenStatus(NoParams());
 
@@ -158,11 +231,13 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     RefreshTokenStatus event,
     Emitter<TokenState> emit,
   ) async {
+    _ensureCacheOwner();
+
     // If already loaded, show refresh indicator
-    if (state is TokenLoaded) {
+    if (state is TokenLoaded && _cachedTokenStatus != null) {
       final currentState = state as TokenLoaded;
       emit(currentState.copyWith(isRefreshing: true));
-    } else {
+    } else if (!await _emitPersistedStatus(emit)) {
       emit(const TokenLoading(operation: 'refreshing'));
     }
 
@@ -797,6 +872,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
   /// Updates the token status cache
   void _updateCache(TokenStatus tokenStatus) {
+    _cachedForUserId = _currentUserId();
     _cachedTokenStatus = tokenStatus;
     _lastCacheUpdate = DateTime.now();
   }

@@ -112,62 +112,59 @@ function validateLimit(limitInput: string | null): number {
 // Helper Functions
 // ============================================================================
 
-async function getLocalizedContent(
+/**
+ * Loads topic and learning-path translations for every in-progress topic in
+ * two queries (run in parallel) instead of two queries per topic.
+ */
+async function loadTranslations(
   services: ServiceContainer,
-  topicId: string,
+  topics: InProgressTopic[],
   language: string,
-  fallbackTitle: string,
-  fallbackDescription: string,
-): Promise<{ title: string; description: string }> {
-  if (language === "en") {
-    return { title: fallbackTitle, description: fallbackDescription };
+): Promise<{
+  topicTranslations: Map<string, { title: string | null; description: string | null }>;
+  pathTranslations: Map<string, string | null>;
+}> {
+  const topicTranslations = new Map<string, { title: string | null; description: string | null }>();
+  const pathTranslations = new Map<string, string | null>();
+  if (language === "en") return { topicTranslations, pathTranslations };
+
+  const topicIds = [...new Set(topics.map((t) => t.topic_id))];
+  const pathIds = [
+    ...new Set(
+      topics
+        .filter((t) => t.learning_path_id && t.learning_path_name)
+        .map((t) => t.learning_path_id as string),
+    ),
+  ];
+
+  const [topicResult, pathResult] = await Promise.all([
+    topicIds.length > 0
+      ? services.supabaseServiceClient
+        .from("recommended_topics_translations")
+        .select("topic_id, title, description")
+        .in("topic_id", topicIds)
+        .eq("language_code", language)
+      : Promise.resolve({ data: [] as { topic_id: string; title: string | null; description: string | null }[] }),
+    pathIds.length > 0
+      ? services.supabaseServiceClient
+        .from("learning_path_translations")
+        .select("learning_path_id, title")
+        .in("learning_path_id", pathIds)
+        .eq("lang_code", language)
+      : Promise.resolve({ data: [] as { learning_path_id: string; title: string | null }[] }),
+  ]);
+
+  for (const row of topicResult.data ?? []) {
+    if (!topicTranslations.has(row.topic_id)) {
+      topicTranslations.set(row.topic_id, { title: row.title, description: row.description });
+    }
   }
-
-  // Try to get localized content from recommended_topics_translations table
-  const { data: translation } = await services.supabaseServiceClient
-    .from("recommended_topics_translations")
-    .select("title, description")
-    .eq("topic_id", topicId)
-    .eq("language_code", language)
-    .single();
-
-  if (translation) {
-    return {
-      title: translation.title || fallbackTitle,
-      description: translation.description || fallbackDescription,
-    };
+  for (const row of pathResult.data ?? []) {
+    if (!pathTranslations.has(row.learning_path_id)) {
+      pathTranslations.set(row.learning_path_id, row.title);
+    }
   }
-
-  return { title: fallbackTitle, description: fallbackDescription };
-}
-
-async function getLocalizedLearningPathName(
-  services: ServiceContainer,
-  learningPathId: string | null,
-  language: string,
-  fallbackName: string | null,
-): Promise<string | null> {
-  if (!learningPathId || !fallbackName) {
-    return fallbackName;
-  }
-
-  if (language === "en") {
-    return fallbackName;
-  }
-
-  // Try to get localized learning path name from learning_path_translations table
-  const { data: translation } = await services.supabaseServiceClient
-    .from("learning_path_translations")
-    .select("title")
-    .eq("learning_path_id", learningPathId)
-    .eq("lang_code", language)
-    .single();
-
-  if (translation?.title) {
-    return translation.title;
-  }
-
-  return fallbackName;
+  return { topicTranslations, pathTranslations };
 }
 
 // ============================================================================
@@ -254,22 +251,21 @@ async function handleContinueLearning(
   // Localize content if needed
   const localizedTopics: LocalizedInProgressTopic[] = [];
 
-  for (const topic of inProgressTopics) {
-    const localized = await getLocalizedContent(
-      services,
-      topic.topic_id,
-      validatedLanguage,
-      topic.topic_title,
-      topic.topic_description,
-    );
+  const { topicTranslations, pathTranslations } = await loadTranslations(
+    services,
+    inProgressTopics as InProgressTopic[],
+    validatedLanguage,
+  );
 
-    // Localize learning path name if present
-    const localizedPathName = await getLocalizedLearningPathName(
-      services,
-      topic.learning_path_id,
-      validatedLanguage,
-      topic.learning_path_name,
-    );
+  for (const topic of inProgressTopics as InProgressTopic[]) {
+    const translation = topicTranslations.get(topic.topic_id);
+    const localized = {
+      title: translation?.title || topic.topic_title,
+      description: translation?.description || topic.topic_description,
+    };
+    const localizedPathName = topic.learning_path_id && topic.learning_path_name
+      ? pathTranslations.get(topic.learning_path_id) || topic.learning_path_name
+      : topic.learning_path_name;
 
     localizedTopics.push({
       topic_id: topic.topic_id,

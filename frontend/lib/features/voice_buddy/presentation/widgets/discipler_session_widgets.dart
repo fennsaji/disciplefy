@@ -11,7 +11,7 @@ import 'package:disciplefy_bible_study/features/voice_buddy/domain/entities/voic
 /// voice session.
 
 /// Photo behind the Discipler headers.
-const String disciplerHeaderPhoto = 'assets/images/hero/night_stars.jpg';
+const String disciplerHeaderPhoto = 'assets/images/hero/night_stars.webp';
 
 /// Red used for "End" controls: a tint fill with red ink.
 Color endTint(ReaderPalette palette) =>

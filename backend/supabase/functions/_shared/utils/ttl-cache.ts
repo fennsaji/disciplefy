@@ -66,3 +66,10 @@ export function msUntilNextUtcMidnight(now: Date = new Date()): number {
   const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
   return next - now.getTime()
 }
+
+/**
+ * Cache-Control for responses that carry only global, non-user data
+ * (catalogues, pricing, config): browsers and CDNs may reuse them for five
+ * minutes and serve a stale copy for up to an hour while revalidating.
+ */
+export const PUBLIC_CACHE_CONTROL = 'public, max-age=300, stale-while-revalidate=3600'

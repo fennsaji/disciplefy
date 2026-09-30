@@ -8,4 +8,9 @@ abstract class UsageStatsRepository {
   ///
   /// Returns [UsageStats] on success, [Failure] on error
   Future<Either<Failure, UsageStats>> getUserUsageStats();
+
+  /// Last usage stats persisted for the signed-in user, or null.
+  ///
+  /// Only for showing something immediately; callers must still refresh.
+  Future<UsageStats?> getCachedUserUsageStats();
 }

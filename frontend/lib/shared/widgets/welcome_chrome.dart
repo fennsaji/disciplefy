@@ -14,10 +14,10 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 class WelcomePhotos {
   WelcomePhotos._();
 
-  static const String wheatDawn = 'assets/images/hero/wheat_dawn.jpg';
-  static const String greenHills = 'assets/images/hero/green_hills.jpg';
-  static const String valleyMist = 'assets/images/hero/valley_mist.jpg';
-  static const String winterSunset = 'assets/images/hero/winter_sunset.jpg';
+  static const String wheatDawn = 'assets/images/hero/wheat_dawn.webp';
+  static const String greenHills = 'assets/images/hero/green_hills.webp';
+  static const String valleyMist = 'assets/images/hero/valley_mist.webp';
+  static const String winterSunset = 'assets/images/hero/winter_sunset.webp';
 }
 
 /// Decode width for a 2000px-wide 3:2 photo covering a [width] x [height]

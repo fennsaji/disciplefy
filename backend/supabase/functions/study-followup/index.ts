@@ -249,7 +249,11 @@ async function handleStudyFollowUp(
   await checkMaintenanceMode(req, services)
 
   // Destructure services
-  const { llmService, tokenService, analyticsLogger, securityValidator, authService, supabaseServiceClient, usageLoggingService, costTrackingService } = services
+  const { tokenService, analyticsLogger, authService, supabaseServiceClient, usageLoggingService, costTrackingService } = services
+  const [llmService, securityValidator] = await Promise.all([
+    services.getLlmService(),
+    services.getSecurityValidator()
+  ])
 
   console.log('🚀 [FOLLOW-UP] Starting follow-up question handler')
 

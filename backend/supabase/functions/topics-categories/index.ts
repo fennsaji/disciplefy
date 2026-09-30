@@ -8,6 +8,10 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse } from '../_shared/types/index.ts'
+import { TtlCache, PUBLIC_CACHE_CONTROL } from '../_shared/utils/ttl-cache.ts'
+
+/** Categories per language: global catalogue data, cached per worker for 10 min. */
+const categoriesCache = new TtlCache<readonly string[]>(10 * 60 * 1000, 20)
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
@@ -49,7 +53,7 @@ function buildSuccessResponse(categories: readonly string[]): Response {
 
   return new Response(JSON.stringify(response), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': PUBLIC_CACHE_CONTROL }
   })
 }
 
@@ -78,7 +82,11 @@ async function handleTopicsCategories(req: Request, services: ServiceContainer):
   try {
     // Parse query parameters and fetch categories
     const queryParams = parseQueryParameters(req.url)
-    const categories = await services.topicsRepository.getCategories(queryParams.language)
+    let categories = categoriesCache.get(queryParams.language)
+    if (!categories) {
+      categories = await (await services.getTopicsRepository()).getCategories(queryParams.language)
+      categoriesCache.set(queryParams.language, categories)
+    }
 
     // Log analytics event
     await logAccessEvent(services, req, queryParams.language, categories.length)

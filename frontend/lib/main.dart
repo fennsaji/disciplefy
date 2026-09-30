@@ -12,6 +12,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/config/app_config.dart';
 import 'core/constants/payment_constants.dart';
 import 'core/di/injection_container.dart';
+import 'core/i18n/translation_service.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import 'features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import 'core/router/app_router.dart';
@@ -169,6 +170,9 @@ void main() async {
       sl<ThemeService>().initialize(),
       // Local only: the server's language is reconciled after the first frame.
       sl<LocaleService>().initialize(),
+      // Hindi/Malayalam strings are a deferred chunk on web: load the saved
+      // language before the first frame so it is never shown in English.
+      sl<TranslationService>().ensureCurrentLanguageLoaded(),
       sl<FontScaleService>().initialize(),
       // Maintenance mode, feature flags, version control. Blocks only on a
       // first launch (no cache); otherwise refreshes in the background.

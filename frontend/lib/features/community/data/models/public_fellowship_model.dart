@@ -62,6 +62,19 @@ class PublicFellowshipModel {
     );
   }
 
+  /// Inverse of [PublicFellowshipModel.fromJson].
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'language': language,
+        'member_count': memberCount,
+        'max_members': maxMembers,
+        'current_study_title': currentStudyTitle,
+        'mentor_name': mentorName,
+        'is_official': isOfficial,
+      };
+
   /// Converts this model to a [PublicFellowshipEntity] for use in the domain layer.
   PublicFellowshipEntity toEntity() => PublicFellowshipEntity(
         id: id,

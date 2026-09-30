@@ -213,11 +213,11 @@ async function handleVoiceConversation(
 
   // Return SSE streaming response
   return createSSEResponse(async (sendEvent) => {
-    const {
-      voiceConversationRepository,
-      voiceStreamingService,
-      voiceQuotaService
-    } = services
+    const { voiceQuotaService } = services
+    const [voiceConversationRepository, voiceStreamingService] = await Promise.all([
+      services.getVoiceConversationRepository(),
+      services.getVoiceStreamingService()
+    ])
 
     // Check message limit (non-premium users have 50 messages per conversation)
     const limitResult = await voiceQuotaService.checkMessageLimit(conversation_id, tier)

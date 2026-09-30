@@ -82,7 +82,7 @@ async function handleGetStudyGuides(req: Request, services: ServiceContainer, us
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0)
 
   // Get user's study guides with total count using the service
-  const result = await services.studyGuideService.getUserStudyGuidesWithCount(
+  const result = await (await services.getStudyGuideService()).getUserStudyGuidesWithCount(
     userContext,
     { savedOnly, limit, offset }
   )
@@ -126,7 +126,7 @@ async function handleGetStudyGuideById(
   userContext: UserContext,
   req: Request
 ): Promise<Response> {
-  const guide = await services.studyGuideService.getUserStudyGuideById(guideId, userContext)
+  const guide = await (await services.getStudyGuideService()).getUserStudyGuideById(guideId, userContext)
 
   if (!guide) {
     throw new AppError('NOT_FOUND', 'Study guide not found', 404)
@@ -169,7 +169,7 @@ async function handleSaveUnsaveGuide(req: Request, services: ServiceContainer, u
 
   // Perform save/unsave operation using the service
   const isSaved = requestData.action === 'save'
-  const updatedGuide = await services.studyGuideService.updateSaveStatus(
+  const updatedGuide = await (await services.getStudyGuideService()).updateSaveStatus(
     requestData.guide_id,
     isSaved,
     userContext
@@ -215,7 +215,7 @@ async function handleDeleteGuide(req: Request, services: ServiceContainer, userC
   }
 
   // Delete the user's relationship to the guide (not the cached content)
-  await services.studyGuideService.deleteUserStudyGuideRelationship(guideId, userContext)
+  await (await services.getStudyGuideService()).deleteUserStudyGuideRelationship(guideId, userContext)
 
   // Log analytics
   await services.analyticsLogger.logEvent('study_guide_deleted', {

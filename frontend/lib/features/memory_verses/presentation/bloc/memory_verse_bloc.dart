@@ -394,6 +394,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
         (verse) {
           Logger.info('✅ [BLOC] Manual verse added: ${verse.verseReference}');
+          // Suggested-verse "already added" flags are cached; invalidate.
+          suggestedVersesCacheService.clearCache().ignore();
 
           emit(VerseAdded(
             verse: verse,
@@ -675,6 +677,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
         (_) {
           Logger.info('✅ [BLOC] Verse deleted successfully');
+          // Suggested-verse "already added" flags are cached; invalidate.
+          suggestedVersesCacheService.clearCache().ignore();
 
           emit(const VerseDeleted('Verse removed from memory deck'));
         },
@@ -1336,6 +1340,11 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
               operationType: 'add_suggested',
             ));
           } else {
+            // A conflict means the cached "already added" flags were stale;
+            // drop them so the sheet's reload reflects the real deck.
+            if (failure.code == 'VERSE_ALREADY_EXISTS') {
+              await suggestedVersesCacheService.clearCache();
+            }
             emit(MemoryVerseError(
               message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,

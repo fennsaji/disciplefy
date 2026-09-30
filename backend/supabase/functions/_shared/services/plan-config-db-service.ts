@@ -10,8 +10,7 @@
 
 /// <reference path="../types/deno-env.d.ts" />
 
-// @deno-types="https://esm.sh/@supabase/supabase-js@2.39.0"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { getServiceRoleClient } from '../core/service-client.ts'
 
 /**
  * Plan type identifier
@@ -78,15 +77,7 @@ const planCache = new Map<string, CacheEntry>()
  * Get Supabase client
  */
 function getSupabaseClient() {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
+  return getServiceRoleClient()
 }
 
 /**

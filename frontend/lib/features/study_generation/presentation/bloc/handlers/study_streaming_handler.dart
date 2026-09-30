@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import '../../../../tokens/domain/token_balance_changes.dart';
 import '../../../data/services/study_stream_service.dart';
 import '../../../domain/entities/study_mode.dart';
 import '../../../domain/entities/study_stream_event.dart';
@@ -154,6 +155,11 @@ class StudyStreamingHandler {
     Logger.debug(
         '🌊 [STREAMING_HANDLER] Tokens consumed: ${event.tokensConsumed}');
     Logger.debug('🌊 [STREAMING_HANDLER] From cache: ${event.fromCache}');
+
+    // Generating (unless served from cache) spends tokens server-side.
+    if (event.tokensConsumed > 0 || !event.fromCache) {
+      TokenBalanceChanges.instance.notifyChanged();
+    }
 
     final content = currentState.content;
 

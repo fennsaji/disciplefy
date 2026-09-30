@@ -769,6 +769,9 @@ class TranslationKeys {
   static const memoryAddFeedbackReviewNow = 'memory_add_feedback.review_now';
   static const memoryAddFeedbackAlreadyExists =
       'memory_add_feedback.already_exists';
+  static const memoryAddFeedbackLimitReached =
+      'memory_add_feedback.limit_reached';
+  static const memoryAddFeedbackQueued = 'memory_add_feedback.queued';
   static const memoryAddFeedbackReview = 'memory_add_feedback.review';
 
   // Streak protection (freeze day) dialog

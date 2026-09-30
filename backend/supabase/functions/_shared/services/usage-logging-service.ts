@@ -3,7 +3,8 @@
  * Centralized service for logging all operations with cost attribution and profitability tracking
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceRoleClient } from '../core/service-client.ts';
 import { FALLBACK_USD_TO_INR, usdToInrRate } from './exchange-rate.ts';
 import type {
   LogUsageRequest,
@@ -39,7 +40,7 @@ export class UsageLoggingService {
   private supabaseClient: SupabaseClient;
 
   constructor(supabaseUrl: string, supabaseKey: string) {
-    this.supabaseClient = createClient(supabaseUrl, supabaseKey);
+    this.supabaseClient = getServiceRoleClient(supabaseUrl, supabaseKey);
   }
 
   /**

@@ -165,6 +165,42 @@ class FellowshipModel {
     );
   }
 
+  /// Inverse of [FellowshipModel.fromJson] (used to persist the list).
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'member_count': memberCount,
+        'user_role': userRole,
+        'joined_at': joinedAt,
+        'created_at': createdAt,
+        'current_study': currentStudy?.toJson(),
+        'completed_path_ids': completedPathIds,
+        'mentor_name': mentorName,
+        'is_public': isPublic,
+        'posting_permission': postingPermission,
+        'mentors': mentors
+            .map((m) => {
+                  'user_id': m.userId,
+                  'display_name': m.displayName,
+                  'avatar_url': m.avatarUrl,
+                })
+            .toList(),
+        'is_official': isOfficial,
+        'discipler_allowed': disciplerAllowed,
+        'daily_post_allowed': dailyPostAllowed,
+        'discipler_reply_mode': disciplerReplyMode,
+        'discipler_reply_scope': disciplerReplyScope,
+        'discipler_reply_delay_min': disciplerReplyDelayMin,
+        'discipler_react_enabled': disciplerReactEnabled,
+        'daily_post_on': dailyPostOn,
+        'daily_post_frequency_days': dailyPostFrequencyDays,
+        'daily_post_auto_advance': dailyPostAutoAdvance,
+        'daily_post_auto_advance_path': dailyPostAutoAdvancePath,
+        'my_discipler_activity_push': myDisciplerActivityPush,
+        'my_notifications_muted': myNotificationsMuted,
+      };
+
   /// Converts this model to a [FellowshipEntity] for use in the domain layer.
   FellowshipEntity toEntity() => FellowshipEntity(
         id: id,

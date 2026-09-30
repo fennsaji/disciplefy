@@ -9,6 +9,7 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/cache/user_scoped_cache.dart';
 import '../../domain/repositories/subscription_repository.dart';
 import '../../domain/usecases/get_active_subscription.dart'
     as get_active_subscription;
@@ -56,6 +57,10 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   UserSubscriptionStatus? _cachedSubscriptionStatus;
   DateTime? _lastStatusCacheUpdate;
 
+  /// User the in-memory caches belong to; another signed-in user drops them.
+  String? _cachedForUserId;
+  final String? Function() _currentUserId;
+
   // IAP purchase tracking
   String? _pendingPurchasePlanCode;
   String? _pendingPurchasePromoCode;
@@ -85,7 +90,10 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     required SubscriptionRepository subscriptionRepository,
     required PricingService pricingService,
     IAPService? iapService, // Optional - only for mobile platforms
-  })  : _getActiveSubscription = getActiveSubscription,
+    String? Function()? currentUserId,
+  })  : _currentUserId =
+            currentUserId ?? (() => UserScopedCache.instance.currentUserId),
+        _getActiveSubscription = getActiveSubscription,
         _createSubscription = createSubscription,
         _cancelSubscription = cancelSubscription,
         _resumeSubscription = resumeSubscription,
@@ -140,6 +148,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     GetActiveSubscription event,
     Emitter<SubscriptionState> emit,
   ) async {
+    _ensureCacheOwner();
+
     // Check if cached data is valid
     if (_isCacheValid() && _cachedSubscription != null) {
       emit(SubscriptionLoaded(
@@ -149,7 +159,19 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       return;
     }
 
-    emit(const SubscriptionLoading(operation: 'fetching'));
+    // Stale-while-revalidate: show the last known subscription while fetching.
+    final userId = _currentUserId();
+    final persisted =
+        await _subscriptionRepository.getCachedActiveSubscription();
+    if (persisted != null && _currentUserId() == userId) {
+      emit(SubscriptionLoaded(
+        activeSubscription: persisted.subscription,
+        lastUpdated: DateTime.now(),
+        isRefreshing: true,
+      ));
+    } else {
+      emit(const SubscriptionLoading(operation: 'fetching'));
+    }
 
     final result = await _getActiveSubscription(NoParams());
 
@@ -438,6 +460,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     // Clear cache and refresh to get latest data
     _clearCache();
+    _clearStatusCache();
+    await _subscriptionRepository.invalidateCachedPlanData();
     add(const RefreshSubscription());
   }
 
@@ -448,6 +472,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     // Clear cache and refresh to get latest data
     _clearCache();
+    _clearStatusCache();
+    await _subscriptionRepository.invalidateCachedPlanData();
     add(const RefreshSubscription());
   }
 
@@ -456,6 +482,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     LoadSubscriptionStatus event,
     Emitter<SubscriptionState> emit,
   ) async {
+    _ensureCacheOwner();
+
     // Check if cached status is valid
     if (_isStatusCacheValid() && _cachedSubscriptionStatus != null) {
       emit(UserSubscriptionStatusLoaded(
@@ -465,7 +493,18 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       return;
     }
 
-    emit(const SubscriptionLoading(operation: 'loading status'));
+    // Stale-while-revalidate: show the last known status while fetching.
+    final userId = _currentUserId();
+    final persisted =
+        await _subscriptionRepository.getCachedSubscriptionStatus();
+    if (persisted != null && _currentUserId() == userId) {
+      emit(UserSubscriptionStatusLoaded(
+        subscriptionStatus: persisted,
+        lastUpdated: DateTime.now(),
+      ));
+    } else {
+      emit(const SubscriptionLoading(operation: 'loading status'));
+    }
 
     final result = await _subscriptionRepository.getSubscriptionStatus();
 
@@ -617,6 +656,16 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
   // ========== Cache Management ==========
 
+  /// Drops the in-memory caches when they belong to another (or no) user.
+  void _ensureCacheOwner() {
+    final userId = _currentUserId();
+    if (_cachedForUserId != userId) {
+      _clearCache();
+      _clearStatusCache();
+      _cachedForUserId = userId;
+    }
+  }
+
   /// Check if cached data is still valid
   bool _isCacheValid() {
     if (_lastCacheUpdate == null) return false;
@@ -626,6 +675,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
   /// Update cache with new subscription data
   void _updateCache(Subscription? subscription) {
+    _cachedForUserId = _currentUserId();
     _cachedSubscription = subscription;
     _lastCacheUpdate = DateTime.now();
   }
@@ -645,6 +695,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
   /// Update subscription status cache
   void _updateStatusCache(UserSubscriptionStatus status) {
+    _cachedForUserId = _currentUserId();
     _cachedSubscriptionStatus = status;
     _lastStatusCacheUpdate = DateTime.now();
   }

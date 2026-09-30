@@ -75,7 +75,7 @@ export async function handleDailyTeaser(req: Request, services: ServiceContainer
     const globalEnabled = await isDisciplerGloballyEnabled(db)
     if (!globalEnabled) return unavailable()
 
-    const teaser = await getOrCreateTeaser(db, services.llmService, {
+    const teaser = await getOrCreateTeaser(db, (await services.getLlmService()), {
       topicId: input.topic_id,
       topicTitle: input.topic_title,
       pathTitle: input.path_title,

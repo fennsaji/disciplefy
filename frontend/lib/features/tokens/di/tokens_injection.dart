@@ -85,5 +85,6 @@ void registerTokenDependencies(GetIt sl) {
         getPurchaseStatistics: sl<GetPurchaseStatistics>(),
         getUsageHistory: sl<GetUsageHistory>(),
         getUsageStatistics: sl<GetUsageStatistics>(),
+        tokenRepository: sl<TokenRepository>(),
       ));
 }

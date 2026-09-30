@@ -586,6 +586,8 @@ async function verifyPaymentSignature({
 }
 
 createSimpleFunction(handleConfirmPurchase, {
+  // Payments / subscription / account / admin: session revocation must be honoured.
+  verifyWithAuthServer: true,
   enableAnalytics: true,
   allowedMethods: ['POST']
 })

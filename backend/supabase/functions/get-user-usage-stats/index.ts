@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/utils/cors.ts';
+import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts';
 import { DEFAULT_PLAN_CONFIGS, type UserPlan } from '../_shared/types/token-types.ts';
 
 /**
@@ -45,9 +46,14 @@ serve(async (req) => {
     );
 
     const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    const user = await verifyUserToken(jwt, Deno.env.get('SUPABASE_URL')!, async () => {
+      const { data, error } = await supabase.auth.getUser(jwt);
+      return error || !data.user
+        ? null
+        : { id: data.user.id, email: data.user.email ?? undefined, is_anonymous: data.user.is_anonymous === true };
+    });
 
-    if (authError || !user) {
+    if (!user) {
       return new Response(
         JSON.stringify({ error: 'Invalid authentication' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -60,11 +66,35 @@ serve(async (req) => {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfDayISO = startOfDay.toISOString();
 
-    const { data: usageRecords, error: usageError } = await supabase
-      .from('token_usage_history')
-      .select('daily_tokens_used')
-      .eq('user_id', user.id)
-      .gte('created_at', startOfDayISO);
+    // The four reads are independent: one round trip instead of four.
+    const [
+      { data: usageRecords, error: usageError },
+      { data: streakData, error: streakError },
+      { data: subscription, error: subError },
+      { data: userTokenRow, error: tokensError },
+    ] = await Promise.all([
+      supabase
+        .from('token_usage_history')
+        .select('daily_tokens_used')
+        .eq('user_id', user.id)
+        .gte('created_at', startOfDayISO),
+      supabase.rpc('calculate_study_streak', { p_user_id: user.id }),
+      // Subscription plan (plan_type column) and user_tokens plan; merged below.
+      supabase
+        .from('subscriptions')
+        .select('plan_type, status')
+        .eq('user_id', user.id)
+        .in('status', ['active', 'trial', 'pending_cancellation'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('user_tokens')
+        .select('user_plan')
+        .eq('identifier', user.id)
+        .maybeSingle(),
+    ]);
+
 
     if (usageError) {
       console.error('[get-user-usage-stats] Error fetching token usage:', usageError);
@@ -77,10 +107,6 @@ serve(async (req) => {
     ) || 0;
 
     // Get study streak using the calculate_study_streak function
-    const { data: streakData, error: streakError } = await supabase.rpc(
-      'calculate_study_streak',
-      { p_user_id: user.id }
-    );
 
     if (streakError) {
       console.error('[get-user-usage-stats] Error calculating streak:', streakError);
@@ -127,14 +153,6 @@ serve(async (req) => {
     // Use the highest plan found between them (premium > plus > standard > free)
 
     // 1. Get subscription plan from subscriptions table (uses plan_type column)
-    const { data: subscription, error: subError } = await supabase
-      .from('subscriptions')
-      .select('plan_type, status')
-      .eq('user_id', user.id)
-      .in('status', ['active', 'trial', 'pending_cancellation'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
 
     if (subError) {
       console.error('[get-user-usage-stats] Error fetching subscription:', subError);
@@ -143,11 +161,6 @@ serve(async (req) => {
     const subscriptionPlan = planTypeToBasePlan(subscription?.plan_type);
 
     // 2. Get user plan from user_tokens table (one row per user)
-    const { data: userTokenRow, error: tokensError } = await supabase
-      .from('user_tokens')
-      .select('user_plan')
-      .eq('identifier', user.id)
-      .maybeSingle();
 
     if (tokensError) {
       console.error('[get-user-usage-stats] Error fetching user_tokens:', tokensError);

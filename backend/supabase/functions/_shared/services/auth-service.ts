@@ -14,6 +14,7 @@ import { SupabaseClient, createClient } from 'https://esm.sh/@supabase/supabase-
 import { AppError } from '../utils/error-handler.ts'
 import { UserPlan } from '../types/token-types.ts'
 import { UserContext } from '../types/index.ts'
+import type { VerifiedIdentity } from '../auth/jwt-verifier.ts'
 
 /**
  * Authentication result with additional metadata
@@ -59,6 +60,74 @@ export class AuthService {
     private readonly supabaseAnonKey: string,
     private readonly supabaseServiceClient?: SupabaseClient
   ) {}
+
+  /** Identity verified by the function factory, keyed by the request it came from. */
+  private readonly verifiedIdentities = new WeakMap<Request, VerifiedIdentity>()
+  /** Per-request memo of getUserContext (one profile read per request). */
+  private readonly contextMemo = new WeakMap<Request, Promise<UserContext>>()
+  /** Per-request memo of getUserPlan (one plan RPC per request). */
+  private readonly planMemo = new WeakMap<Request, Promise<UserPlan>>()
+
+  /**
+   * Records the identity the function factory already verified for this request,
+   * so later calls with the same request skip the Auth server round trip.
+   * Only the factory calls this, after verifying the token.
+   */
+  primeVerifiedIdentity(req: Request, identity: VerifiedIdentity): void {
+    this.verifiedIdentities.set(req, identity)
+  }
+
+  /**
+   * Returns the factory-verified identity for this request when it was derived
+   * from the same token the request carries now.
+   */
+  private getPrimedIdentity(req: Request, token?: string): VerifiedIdentity | undefined {
+    const identity = this.verifiedIdentities.get(req)
+    if (!identity) return undefined
+    const current = token ?? this.extractToken(req)
+    return current === identity.token ? identity : undefined
+  }
+
+  /** Access token from the Authorization header, or the EventSource query fallback. */
+  private extractToken(req: Request): string {
+    let authToken = req.headers.get('Authorization') || ''
+    if (!authToken) {
+      const queryAuthToken = new URL(req.url).searchParams.get('authorization')
+      if (queryAuthToken) authToken = `Bearer ${queryAuthToken}`
+    }
+    return authToken.replace('Bearer ', '')
+  }
+
+  /**
+   * Drop-in replacement for `serviceClient.auth.getUser(token)` in handlers that
+   * only need the user's id / email / anonymity. Reuses the factory verification
+   * for this request; otherwise asks the Auth server as before.
+   */
+  async getUserFromToken(
+    req: Request,
+    token: string
+  ): Promise<{ data: { user: { id: string; email?: string; is_anonymous: boolean } | null }; error: Error | null }> {
+    const identity = this.getPrimedIdentity(req, token)
+    if (identity) {
+      return {
+        data: { user: { id: identity.id, email: identity.email, is_anonymous: identity.isAnonymous } },
+        error: null
+      }
+    }
+    if (!this.supabaseServiceClient) {
+      return { data: { user: null }, error: new Error('No service client available') }
+    }
+    const { data, error } = await this.supabaseServiceClient.auth.getUser(token)
+    const user = data?.user
+    return {
+      data: {
+        user: user
+          ? { id: user.id, email: user.email ?? undefined, is_anonymous: user.is_anonymous === true }
+          : null
+      },
+      error: error ?? null
+    }
+  }
   
   /**
    * Securely gets user context from the request's Authorization header
@@ -73,7 +142,17 @@ export class AuthService {
    * @returns Promise resolving to verified user context
    * @throws AppError when authentication fails
    */
-  async getUserContext(req: Request): Promise<UserContext> {
+  getUserContext(req: Request): Promise<UserContext> {
+    const cached = this.contextMemo.get(req)
+    if (cached) return cached
+    const pending = this.resolveUserContext(req)
+    this.contextMemo.set(req, pending)
+    // A failed lookup is not memoised, so a retry behaves as before.
+    pending.catch(() => this.contextMemo.delete(req))
+    return pending
+  }
+
+  private async resolveUserContext(req: Request): Promise<UserContext> {
     // Server-to-server: bypass auth.getUser() for trusted internal callers
     const internalKey = req.headers.get('X-Internal-Api-Key')
     const expectedKey = Deno.env.get('INTERNAL_API_KEY')
@@ -85,10 +164,11 @@ export class AuthService {
       }
     }
 
-    const authClient = this.createAuthClient(req)
-
     try {
-      const { data: { user }, error } = await authClient.auth.getUser()
+      const primed = this.getPrimedIdentity(req)
+      const { data: { user }, error } = primed
+        ? { data: { user: { id: primed.id, email: primed.email, is_anonymous: primed.isAnonymous } }, error: null }
+        : await this.createAuthClient(req).auth.getUser()
       
       if (error) {
         // Handle specific error types for better error messages
@@ -405,9 +485,40 @@ export class AuthService {
    * @param req - HTTP request to get user context from
    * @returns Promise resolving to user's subscription plan
    */
-  async getUserPlan(req: Request): Promise<UserPlan> {
+  getUserPlan(req: Request, userContext?: UserContext): Promise<UserPlan> {
+    const cached = this.planMemo.get(req)
+    if (cached) return cached
+    const pending = this.resolveUserPlan(req, userContext)
+    this.planMemo.set(req, pending)
+    return pending
+  }
+
+  /**
+   * Identity needed for the plan lookup. Keeps the internal-caller check first;
+   * then uses a caller-supplied or factory-verified context (no profile read),
+   * falling back to the full getUserContext.
+   */
+  private async planIdentity(req: Request, provided?: UserContext): Promise<UserContext> {
+    const internalKey = req.headers.get('X-Internal-Api-Key')
+    const expectedKey = Deno.env.get('INTERNAL_API_KEY')
+    if (internalKey && expectedKey && this.constantTimeCompare(internalKey, expectedKey)) {
+      return this.getUserContext(req)
+    }
+    if (provided) return provided
+    const primed = this.getPrimedIdentity(req)
+    if (primed) {
+      return {
+        type: primed.isAnonymous ? 'anonymous' : 'authenticated',
+        userId: primed.isAnonymous ? undefined : primed.id,
+        sessionId: primed.isAnonymous ? primed.id : undefined
+      }
+    }
+    return this.getUserContext(req)
+  }
+
+  private async resolveUserPlan(req: Request, provided?: UserContext): Promise<UserPlan> {
     try {
-      const userContext = await this.getUserContext(req)
+      const userContext = await this.planIdentity(req, provided)
 
       if (userContext.type === 'anonymous') {
         return 'free'

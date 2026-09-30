@@ -8,8 +8,10 @@
  * 
  * Features:
  * - Top 100 users displayed
- * - User's rank always visible (even if not in top 100)
- * - Period filtering: weekly/monthly/all_time
+ * - User's rank always visible (exact rank, even if not in top 100)
+ * - Aggregation/ranking done in SQL (get_memory_champions_leaderboard,
+ *   get_memory_champion_rank); top list cached 5 min per worker
+ * - period param (weekly/monthly/all_time) is validated; rankings are all-time
  * - User profile data (display name, avatar)
  */
 
@@ -57,210 +59,69 @@ interface LeaderboardData {
  */
 interface LeaderboardResponse extends ApiSuccessResponse<LeaderboardData> {}
 
-/**
- * Calculate date range for period filtering
- */
-function getDateRange(period: string): string | null {
-  const now = new Date()
-  
-  switch (period) {
-    case 'weekly': {
-      const weekAgo = new Date(now)
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      return weekAgo.toISOString()
-    }
-    case 'monthly': {
-      const monthAgo = new Date(now)
-      monthAgo.setMonth(monthAgo.getMonth() - 1)
-      return monthAgo.toISOString()
-    }
-    case 'all_time':
-      return null // No date filter
-    default:
-      throw new AppError('VALIDATION_ERROR', 'Invalid period. Use: weekly, monthly, all_time', 400)
-  }
-}
+/** Global top list is identical for every caller: cache it per worker. */
+const LEADERBOARD_CACHE_TTL_MS = 5 * 60 * 1000
+const leaderboardCache = new Map<number, { expiresAt: number; entries: LeaderboardEntry[] }>()
 
 /**
- * Fetch leaderboard rankings
+ * Fetch the ranked top list (aggregated and ranked in SQL, see
+ * get_memory_champions_leaderboard). Cached for 5 minutes per limit.
  */
 async function getLeaderboard(
   supabaseClient: SupabaseClient,
-  limit: number,
-  period: string
+  limit: number
 ): Promise<LeaderboardEntry[]> {
-  
-  // Get all users with memory verse statistics
-  // Note: This is a simplified version. In production, you'd want a materialized view
-  // or a separate leaderboard table updated via triggers for better performance.
-  
-  const { data: users, error } = await supabaseClient
-    .from('user_profiles')
-    .select(`
-      id,
-      first_name,
-      last_name,
-      profile_image_url
-    `)
-    .limit(1000) // Prevent excessive data fetch
+  const cached = leaderboardCache.get(limit)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.entries
+  }
+
+  const { data, error } = await supabaseClient.rpc('get_memory_champions_leaderboard', {
+    p_limit: limit
+  })
 
   if (error) {
-    console.error('[Leaderboard] User profiles fetch error:', error)
-    throw new AppError('DATABASE_ERROR', 'Failed to fetch user profiles', 500)
+    console.error('[Leaderboard] Leaderboard RPC error:', error.message)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch leaderboard', 500)
   }
 
-  if (!users || users.length === 0) {
-    return []
-  }
-
-  // OPTIMIZATION: Fetch all master verse counts in one aggregated query
-  // This replaces N individual count queries with a single bulk query
-  // Note: For production at scale, consider a materialized view or scheduled aggregation
-  const { data: masterVerseCounts, error: masterError } = await supabaseClient
-    .from('memory_verses')
-    .select('user_id')
-    .gte('repetitions', 5) // Define "master" as 5+ repetitions (matches get-due-memory-verses)
-
-  if (masterError) {
-    console.error('[Leaderboard] Master verse count fetch error:', masterError)
-  }
-
-  // Build map of user_id -> master verse count
-  const masterVerseMap = new Map<string, number>()
-  if (masterVerseCounts) {
-    for (const row of masterVerseCounts) {
-      const userId = row.user_id as string
-      masterVerseMap.set(userId, (masterVerseMap.get(userId) || 0) + 1)
-    }
-  }
-
-  // OPTIMIZATION: Fetch all streak data in one bulk query
-  // This replaces N individual streak queries with a single query
-  const { data: allStreakData, error: streakError } = await supabaseClient
-    .from('memory_verse_streaks')
-    .select('user_id, current_streak, longest_streak, total_practice_days')
-
-  if (streakError) {
-    console.error('[Leaderboard] Streak data fetch error:', streakError)
-  }
-
-  // Build map of user_id -> streak data
-  const streakMap = new Map<string, { current_streak: number; longest_streak: number; total_practice_days: number }>()
-  if (allStreakData) {
-    for (const streak of allStreakData) {
-      streakMap.set(streak.user_id, {
-        current_streak: streak.current_streak || 0,
-        longest_streak: streak.longest_streak || 0,
-        total_practice_days: streak.total_practice_days || 0
-      })
-    }
-  }
-
-  // Iterate users once and construct entries from the pre-fetched maps
-  const leaderboardEntries: Array<LeaderboardEntry & { sort_key: string }> = []
-
-  for (const user of users) {
-    // Look up pre-fetched data from maps (O(1) lookup instead of DB query)
-    const masterVerses = masterVerseMap.get(user.id) || 0
-    const streakData = streakMap.get(user.id)
-    const longestStreak = streakData?.longest_streak || 0
-    const totalPracticeDays = streakData?.total_practice_days || 0
-
-    // Create display name from first_name and last_name
-    const displayName = [user.first_name, user.last_name]
-      .filter(Boolean)
-      .join(' ')
-      .trim() || 'Anonymous User'
-
-    // Only include users with at least some activity
-    if (masterVerses > 0 || longestStreak > 0 || totalPracticeDays > 0) {
-      leaderboardEntries.push({
-        user_id: user.id,
-        display_name: displayName,
-        rank: 0, // Will be set after sorting
-        master_verses: masterVerses,
-        longest_streak: longestStreak,
-        total_practice_days: totalPracticeDays,
-        avatar_url: user.profile_image_url,
-        // Create composite sort key: master_verses (desc), longest_streak (desc), total_practice_days (desc)
-        sort_key: `${String(1000000 - masterVerses).padStart(7, '0')}_${String(100000 - longestStreak).padStart(6, '0')}_${String(100000 - totalPracticeDays).padStart(6, '0')}`
-      })
-    }
-  }
-
-  // Sort by the composite key (ascending, since we inverted the numbers)
-  leaderboardEntries.sort((a, b) => a.sort_key.localeCompare(b.sort_key))
-
-  // Assign ranks and limit to top N
-  const rankedEntries = leaderboardEntries.slice(0, limit).map((entry, index) => ({
-    user_id: entry.user_id,
-    display_name: entry.display_name,
-    rank: index + 1,
-    master_verses: entry.master_verses,
-    longest_streak: entry.longest_streak,
-    total_practice_days: entry.total_practice_days,
-    avatar_url: entry.avatar_url
+  const entries: LeaderboardEntry[] = (data ?? []).map((row: LeaderboardEntry) => ({
+    user_id: row.user_id,
+    display_name: row.display_name,
+    rank: Number(row.rank),
+    master_verses: row.master_verses,
+    longest_streak: row.longest_streak,
+    total_practice_days: row.total_practice_days,
+    avatar_url: row.avatar_url
   }))
 
-  return rankedEntries
+  leaderboardCache.set(limit, { expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS, entries })
+  return entries
 }
 
 /**
- * Get current user's statistics
+ * Get the caller's own rank and statistics (always fresh, never cached).
  */
 async function getUserStats(
   supabaseClient: SupabaseClient,
-  userId: string,
-  leaderboard: readonly LeaderboardEntry[]
+  userId: string
 ): Promise<UserMemoryStats> {
-  
-  // Get actual streak data from memory_verse_streaks table
-  const { data: userStreakData } = await supabaseClient
-    .from('memory_verse_streaks')
-    .select('current_streak, longest_streak, total_practice_days')
-    .eq('user_id', userId)
+  const { data, error } = await supabaseClient
+    .rpc('get_memory_champion_rank', { p_user_id: userId })
     .maybeSingle()
 
-  const currentStreak = userStreakData?.current_streak || 0
-  const longestStreak = userStreakData?.longest_streak || 0
-  const totalPracticeDays = userStreakData?.total_practice_days || 0
+  if (error) {
+    console.error('[Leaderboard] User rank RPC error:', error.message)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch user statistics', 500)
+  }
 
-  // Check if user is in the leaderboard
-  const userInLeaderboard = leaderboard.find(entry => entry.user_id === userId)
-
-  if (userInLeaderboard) {
-    // User is in top 100
-    return {
-      rank: userInLeaderboard.rank,
-      master_verses: userInLeaderboard.master_verses,
-      current_streak: currentStreak,
-      longest_streak: longestStreak,
-      total_practice_days: totalPracticeDays
-    }
-  } else {
-    // User is not in top 100, calculate their rank
-
-    // Count master verses for user (repetitions >= 5, consistent threshold)
-    const { count: userMasterCount } = await supabaseClient
-      .from('memory_verses')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('repetitions', 5)
-
-    const userMasterVerses = userMasterCount || 0
-
-    // Calculate rank by counting how many users are ahead
-    // Simplified approach: assume rank is > 100 if not in leaderboard
-    // In production, you'd implement a more accurate ranking system
-    const estimatedRank = 101
-
-    return {
-      rank: estimatedRank,
-      master_verses: userMasterVerses,
-      current_streak: currentStreak,
-      longest_streak: longestStreak,
-      total_practice_days: totalPracticeDays
-    }
+  const row = data as UserMemoryStats | null
+  return {
+    rank: Number(row?.rank ?? 1),
+    master_verses: row?.master_verses ?? 0,
+    current_streak: row?.current_streak ?? 0,
+    longest_streak: row?.longest_streak ?? 0,
+    total_practice_days: row?.total_practice_days ?? 0
   }
 }
 
@@ -299,22 +160,11 @@ async function handleGetMemoryChampionsLeaderboard(
     throw new AppError('VALIDATION_ERROR', 'limit must be between 1 and 100', 400)
   }
 
-  // Get date range for period filtering (currently not used, but available for future)
-  const dateFrom = getDateRange(periodParam)
-
-  // Fetch leaderboard
-  const leaderboard = await getLeaderboard(
-    services.supabaseServiceClient,
-    limit,
-    periodParam
-  )
-
-  // Get user's statistics
-  const userStats = await getUserStats(
-    services.supabaseServiceClient,
-    userContext.userId,
-    leaderboard
-  )
+  // Period is validated for API compatibility; rankings are all-time.
+  const [leaderboard, userStats] = await Promise.all([
+    getLeaderboard(services.supabaseServiceClient, limit),
+    getUserStats(services.supabaseServiceClient, userContext.userId)
+  ])
 
   // Log analytics event
   await services.analyticsLogger.logEvent('memory_leaderboard_viewed', {
@@ -348,5 +198,5 @@ async function handleGetMemoryChampionsLeaderboard(
 createAuthenticatedFunction(handleGetMemoryChampionsLeaderboard, {
   allowedMethods: ['GET'],
   enableAnalytics: true,
-  timeout: 30000 // 30 seconds (may need more time for large leaderboards)
+  timeout: 30000
 })

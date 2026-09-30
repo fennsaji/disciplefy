@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
@@ -91,6 +92,41 @@ class FellowshipHomeScreen extends StatefulWidget {
 class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
   bool _handledInitialPost = false;
 
+  /// The fellowship loaded by id when no entity came with the navigation
+  /// (Home banner, activity row, deep link, notification, post back-nav).
+  FellowshipEntity? _loadedFellowship;
+
+  FellowshipEntity? get _fellowship => widget.fellowship ?? _loadedFellowship;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.fellowship == null) _loadFellowship();
+  }
+
+  /// Fetches the caller's fellowships (deduped in-flight by the repository,
+  /// shared with Home/Community) and picks this one, so entity-only fields
+  /// (role, daily post / discipler flags, name, mentors) match the
+  /// Community-list entry.
+  Future<void> _loadFellowship() async {
+    if (!sl.isRegistered<CommunityRepository>() ||
+        !sl.isRegistered<LanguagePreferenceService>()) {
+      return;
+    }
+    final lang =
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+    final result = await sl<CommunityRepository>().getFellowships(lang.code);
+    if (!mounted) return;
+    result.fold((_) {}, (list) {
+      for (final f in list) {
+        if (f.id == widget.fellowshipId) {
+          setState(() => _loadedFellowship = f);
+          return;
+        }
+      }
+    });
+  }
+
   void _handleFeedStateChange(BuildContext context, FellowshipFeedState state) {
     if (widget.initialPostId == null || _handledInitialPost) return;
     if (state.status != FellowshipFeedStatus.success) return;
@@ -102,7 +138,7 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
           value: feedBloc,
           child: FellowshipPostDetailScreen(
             fellowshipId: widget.fellowshipId,
-            fellowshipName: widget.fellowshipName,
+            fellowshipName: widget.fellowshipName ?? _fellowship?.name,
             postId: widget.initialPostId!,
           ),
         ),
@@ -112,7 +148,7 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fellowship = widget.fellowship;
+    final fellowship = _fellowship;
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     final isMentor = fellowship?.userRole == 'mentor';
     return MultiBlocProvider(
@@ -172,14 +208,46 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
       child: BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
         listenWhen: (prev, curr) => prev.status != curr.status,
         listener: _handleFeedStateChange,
-        child: _FellowshipHomeContent(
-          fellowshipId: widget.fellowshipId,
-          fellowshipName: widget.fellowshipName,
-          fellowship: widget.fellowship,
-          isMentor: isMentor,
+        child: _ResolvedRole(
+          seedIsMentor: isMentor,
+          builder: (resolvedIsMentor) => _FellowshipHomeContent(
+            fellowshipId: widget.fellowshipId,
+            fellowshipName: widget.fellowshipName ?? fellowship?.name,
+            fellowship: fellowship,
+            isMentor: resolvedIsMentor,
+          ),
         ),
       ),
     );
+  }
+}
+
+/// Resolves the caller's mentor role for the fellowship screen.
+///
+/// The navigation extra (FellowshipEntity) only exists when the group is
+/// opened from the Community list. From Home, a deep link, a notification or
+/// post-detail back navigation the screen gets only an id, so the seed is
+/// false. The feed bloc (server `caller_role`) and the members bloc (loaded
+/// member list) resolve the real role; either one marking the caller as a
+/// mentor wins. The study bloc is kept in sync for the lessons page.
+class _ResolvedRole extends StatelessWidget {
+  final bool seedIsMentor;
+  final Widget Function(bool isMentor) builder;
+
+  const _ResolvedRole({required this.seedIsMentor, required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    final feedIsMentor =
+        context.select((FellowshipFeedBloc b) => b.state.isMentor);
+    final membersIsMentor =
+        context.select((FellowshipMembersBloc b) => b.state.isMentor);
+    final isMentor = seedIsMentor || feedIsMentor || membersIsMentor;
+    final studyBloc = context.read<FellowshipStudyBloc>();
+    if (studyBloc.state.isMentor != isMentor) {
+      studyBloc.add(FellowshipStudyRoleResolved(isMentor: isMentor));
+    }
+    return builder(isMentor);
   }
 }
 

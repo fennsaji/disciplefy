@@ -68,6 +68,21 @@ abstract class SubscriptionRepository {
   /// Returns [Failure] on error (network, server, authentication, etc.).
   Future<Either<Failure, UserSubscriptionStatus>> getSubscriptionStatus();
 
+  /// Last active-subscription result persisted for the signed-in user.
+  ///
+  /// Returns null when nothing is cached; otherwise a record whose
+  /// `subscription` may itself be null (the user had no active subscription).
+  /// Only for showing something immediately — callers must still refresh.
+  Future<({Subscription? subscription})?> getCachedActiveSubscription();
+
+  /// Last [UserSubscriptionStatus] persisted for the signed-in user, or null.
+  Future<UserSubscriptionStatus?> getCachedSubscriptionStatus();
+
+  /// Drops every persisted value that depends on the user's plan (active
+  /// subscription, subscription status, token status, usage stats) and asks
+  /// the token balance to refresh. Call after any plan change or purchase.
+  Future<void> invalidateCachedPlanData();
+
   /// Creates a new Standard subscription for the authenticated user.
   ///
   /// Creates a Razorpay subscription for Standard plan (₹79/month)

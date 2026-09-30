@@ -46,6 +46,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/memory_add_error_message.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
@@ -294,7 +295,15 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 } else if (state is MemoryVerseError) {
                   final isOffline = context.read<ConnectivityBloc>().state
                       is ConnectivityOffline;
-                  if (!isOffline) {
+                  final addErrorKey = memoryAddErrorKey(state.code);
+                  if (addErrorKey != null) {
+                    // Add-verse outcomes (already added, limit reached) get
+                    // their own message; the sheet shows the same one.
+                    showAppSnackBar(context, context.tr(addErrorKey),
+                        tone: state.code == 'VERSE_ALREADY_EXISTS'
+                            ? AppSnackTone.neutral
+                            : AppSnackTone.error);
+                  } else if (!isOffline) {
                     showAppSnackBar(
                       context,
                       context.tr(TranslationKeys.commonErrorTryAgain),
@@ -316,7 +325,11 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   // Show notification prompt for memory verse reminder after adding first verse
                   _showMemoryVerseReminderPrompt();
                 } else if (state is OperationQueued) {
-                  showAppSnackBar(context, state.message,
+                  showAppSnackBar(
+                      context,
+                      state.operationType.startsWith('add_')
+                          ? context.tr(TranslationKeys.memoryAddFeedbackQueued)
+                          : state.message,
                       tone: AppSnackTone.warning);
                 } else if (state is VerseDeleted) {
                   showAppSnackBar(

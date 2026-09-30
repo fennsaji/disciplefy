@@ -23,6 +23,7 @@ import { config } from './config.ts'
 import { UserContext } from '../types/index.ts'
 import { defaultServiceRoleLimiter, getRequestIdentifier } from '../utils/rate-limiter.ts'
 import { runInBackground } from '../utils/background-task.ts'
+import { getProjectJwtVerifier, JwtVerificationError, VerifiedIdentity } from '../auth/jwt-verifier.ts'
 
 /**
  * Handler function signature that Edge Functions must implement
@@ -79,6 +80,12 @@ interface FunctionConfig {
    * Only set to true for endpoints that explicitly support guest access.
    */
   readonly allowGuestOnJwtFailure?: boolean
+  /**
+   * Verify user JWTs with the Auth server (network) instead of locally.
+   * Local verification cannot see sessions revoked before the token expires,
+   * so endpoints that move money, change subscriptions or delete data set this.
+   */
+  readonly verifyWithAuthServer?: boolean
 }
 
 /**
@@ -91,7 +98,8 @@ const DEFAULT_CONFIG: Required<FunctionConfig> = {
   maxBodySize: 10 * 1024 * 1024, // 10MB
   timeout: 60000, // 60 seconds
   corsHeaders: {},
-  allowGuestOnJwtFailure: false // Default: do not silently fall back to guest on JWT errors
+  allowGuestOnJwtFailure: false, // Default: do not silently fall back to guest on JWT errors
+  verifyWithAuthServer: false
 }
 
 /**
@@ -178,7 +186,12 @@ export function createFunction(
       // This allows handlers to access authenticated user info for optional features
       let userContext: UserContext | undefined
       try {
-        userContext = await parseUserContext(req, services, finalConfig.allowGuestOnJwtFailure)
+        userContext = await parseUserContext(
+          req,
+          services,
+          finalConfig.allowGuestOnJwtFailure,
+          finalConfig.verifyWithAuthServer
+        )
         metrics.authTime = performance.now()
       } catch (authError) {
         // If auth is required, rethrow the error
@@ -477,10 +490,11 @@ export function createServiceRoleFunction(
  * @param services - Service container
  * @returns User context extracted from JWT
  */
-async function parseUserContext(
+export async function parseUserContext(
   req: Request,
   services: ServiceContainer,
-  allowGuestOnJwtFailure: boolean = false
+  allowGuestOnJwtFailure: boolean = false,
+  verifyWithAuthServer: boolean = false
 ): Promise<UserContext> {
   let authToken = req.headers.get('Authorization') || ''
   const hasHeaderAuth = !!authToken
@@ -528,21 +542,47 @@ async function parseUserContext(
     throw new Error('Guest user without session - please sign in or use anonymous session')
   }
 
-  // Token is NOT the anon key, so it should be a valid user JWT
-  // Verify it with Supabase Auth
-  console.log('[AUTH] Verifying user JWT with Supabase Auth')
-  const userSupabaseClient = createUserSupabaseClient(authToken, config.supabaseUrl, config.supabaseAnonKey)
-  const { data: { user }, error } = await userSupabaseClient.auth.getUser()
+  // Token is NOT the anon key, so it should be a valid user JWT.
+  // Verify it once per request: locally against the project's signing keys when
+  // possible, otherwise (legacy HS256, unknown key, opt-out) with the Auth server.
+  let identity: VerifiedIdentity | null = null
+  let failure: string | null = null
+  try {
+    identity = verifyWithAuthServer
+      ? null
+      : await getProjectJwtVerifier(config.supabaseUrl).verify(token)
+  } catch (error) {
+    if (!(error instanceof JwtVerificationError)) throw error
+    failure = error.message
+  }
 
-  if (error) {
+  if (!identity && failure === null) {
+    console.log('[AUTH] Verifying user JWT with Supabase Auth')
+    const userSupabaseClient = createUserSupabaseClient(authToken, config.supabaseUrl, config.supabaseAnonKey)
+    const { data: { user }, error } = await userSupabaseClient.auth.getUser()
+    if (error) {
+      failure = error.message
+    } else if (!user) {
+      throw new Error('No user found in token')
+    } else {
+      identity = {
+        id: user.id,
+        email: user.is_anonymous ? undefined : (user.email ?? undefined),
+        isAnonymous: user.is_anonymous === true,
+        token,
+        source: 'auth-server'
+      }
+    }
+  }
+
+  if (!identity) {
     // Always log the original error details first for debugging
     const endpoint = new URL(req.url).pathname
     const sessionId = req.headers.get('x-session-id')
     console.error('[AUTH] JWT validation error:', {
       endpoint,
       sessionId: sessionId || 'none',
-      errorMessage: error.message,
-      errorStack: error.stack || 'no stack trace',
+      errorMessage: failure,
       allowGuestOnJwtFailure
     })
 
@@ -560,18 +600,17 @@ async function parseUserContext(
     }
 
     // Rethrow authentication error - do not silently fall back to guest
-    throw new Error(`Authentication failed: ${error.message}`)
+    throw new Error(`Authentication failed: ${failure}`)
   }
 
-  if (!user) {
-    throw new Error('No user found in token')
-  }
+  // Let AuthService reuse this verification for the rest of the request.
+  services.authService.primeVerifiedIdentity(req, identity)
 
   return {
-    type: user.is_anonymous ? 'anonymous' : 'authenticated',
-    userId: user.is_anonymous ? undefined : user.id,
-    sessionId: user.is_anonymous ? user.id : undefined,
-    email: user.is_anonymous ? undefined : (user.email ?? undefined)
+    type: identity.isAnonymous ? 'anonymous' : 'authenticated',
+    userId: identity.isAnonymous ? undefined : identity.id,
+    sessionId: identity.isAnonymous ? identity.id : undefined,
+    email: identity.email
   }
 }
 

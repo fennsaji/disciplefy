@@ -18,7 +18,7 @@
  * - Action taken
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { SecurityValidationResult, SecurityViolation } from './security-validator.ts'
 
 export interface SecurityEventData {

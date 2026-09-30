@@ -512,12 +512,14 @@ async function handleStudyGenerateV2(
 
   const {
     authService,
-    llmService,
-    studyGuideRepository,
     tokenService,
-    analyticsLogger,
-    securityValidator
+    analyticsLogger
   } = services
+  const [llmService, studyGuideRepository, securityValidator] = await Promise.all([
+    services.getLlmService(),
+    services.getStudyGuideRepository(),
+    services.getSecurityValidator()
+  ])
 
   console.log('🚀 [STUDY-V2] Starting streaming study guide generation')
 
