@@ -10,6 +10,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/su
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/utils/memory_add_error_message.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/widgets/ledger_widgets.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
@@ -164,7 +165,9 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                 child: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
                   // Only listen for events relevant to this sheet
                   listenWhen: (previous, current) =>
-                      current is VerseAdded || current is MemoryVerseError,
+                      current is VerseAdded ||
+                      current is MemoryVerseError ||
+                      current is OperationQueued,
                   listener: (context, state) {
                     if (state is VerseAdded) {
                       showAppSnackBar(context, state.message,
@@ -172,12 +175,26 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                       // Reload verses to update "Already Added" status
                       _loadSuggestedVerses();
                       widget.onVerseAdded?.call();
-                    } else if (state is MemoryVerseError) {
+                    } else if (state is OperationQueued) {
                       showAppSnackBar(
                         context,
-                        context.tr(TranslationKeys.commonErrorTryAgain),
-                        tone: AppSnackTone.error,
+                        context.tr(TranslationKeys.memoryAddFeedbackQueued),
+                        tone: AppSnackTone.warning,
                       );
+                    } else if (state is MemoryVerseError) {
+                      final key = memoryAddErrorKey(state.code);
+                      showAppSnackBar(
+                        context,
+                        context.tr(key ?? TranslationKeys.commonErrorTryAgain),
+                        tone: state.code == 'VERSE_ALREADY_EXISTS'
+                            ? AppSnackTone.neutral
+                            : AppSnackTone.error,
+                      );
+                      // The verse was already in the deck: refresh the
+                      // "Already added" flags that were stale.
+                      if (state.code == 'VERSE_ALREADY_EXISTS') {
+                        _loadSuggestedVerses();
+                      }
                     }
                   },
                   // Only rebuild when suggested-verses-specific state changes

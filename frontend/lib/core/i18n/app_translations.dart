@@ -1097,6 +1097,10 @@ class AppTranslations {
           'Added to Memory Verses! Start reviewing to memorize this verse.',
       'review_now': 'Review Now',
       'already_exists': 'Verse already in your memory deck',
+      'limit_reached':
+          'You have reached your memory verse limit. Upgrade your plan to add more.',
+      'queued':
+          'You are offline. The verse will be added when you are back online.',
       'review': 'Review',
     },
     'streak_protection': {
@@ -4178,6 +4182,9 @@ class AppTranslations {
           'स्मृति वचनों में जोड़ा गया! इसे याद करने के लिए दोहराना शुरू करें।',
       'review_now': 'अभी दोहराएं',
       'already_exists': 'यह वचन पहले से आपके स्मृति संग्रह में है',
+      'limit_reached':
+          'आप अपनी स्मृति वचन सीमा तक पहुँच गए हैं। और जोड़ने के लिए अपना प्लान अपग्रेड करें।',
+      'queued': 'आप ऑफ़लाइन हैं। ऑनलाइन होते ही वचन जोड़ दिया जाएगा।',
       'review': 'दोहराएं',
     },
     'streak_protection': {
@@ -7296,6 +7303,9 @@ class AppTranslations {
           'മെമ്മറി വചനങ്ങളിൽ ചേർത്തു! ഈ വചനം മനഃപാഠമാക്കാൻ ആവർത്തിക്കാൻ തുടങ്ങുക.',
       'review_now': 'ഇപ്പോൾ ആവർത്തിക്കുക',
       'already_exists': 'ഈ വചനം ഇതിനകം നിങ്ങളുടെ മെമ്മറി ശേഖരത്തിലുണ്ട്',
+      'limit_reached':
+          'നിങ്ങളുടെ മെമ്മറി വചന പരിധി എത്തി. കൂടുതൽ ചേർക്കാൻ പ്ലാൻ അപ്ഗ്രേഡ് ചെയ്യുക.',
+      'queued': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്. ഓൺലൈനിൽ വരുമ്പോൾ വചനം ചേർക്കും.',
       'review': 'ആവർത്തിക്കുക',
     },
     'streak_protection': {

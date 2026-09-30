@@ -60,10 +60,15 @@ class MemoryVerseRepositoryHelper {
     } on NetworkException catch (e) {
       logError('Network error in $operationName: ${e.message}');
 
-      // Queue for sync if specified
+      // Queue for sync if specified. A queued operation is reported as
+      // OFFLINE_QUEUED so callers can tell the user it will sync later.
       if (queueOnFailure != null) {
         try {
           await _syncService.queueOperation(queueOnFailure);
+          return Left(NetworkFailure(
+            message: 'Operation queued for sync when online',
+            code: 'OFFLINE_QUEUED',
+          ));
         } catch (queueError, stackTrace) {
           logError(
             'Failed to queue operation after network error in $operationName: $queueError',
