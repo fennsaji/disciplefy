@@ -27,12 +27,12 @@ void main() {
     // expected here; the assertion is about which provider was handed over.
     tester.takeException();
 
-    // Decoded at the avatar's pixel size (ResizeImage), never full size.
-    final avatar = tester.widget<CircleAvatar>(find.byType(CircleAvatar));
-    expect(avatar.backgroundImage, isA<ResizeImage>());
-    expect((avatar.backgroundImage! as ResizeImage).imageProvider,
-        isA<NetworkImage>());
-    expect(find.text('FS'), findsNothing);
+    // Decoded at the avatar's pixel size (ResizeImage), never full size,
+    // over the initials so a failed load still shows who it is.
+    final image = tester.widget<Image>(find.byType(Image));
+    expect(image.image, isA<ResizeImage>());
+    expect((image.image as ResizeImage).imageProvider, isA<NetworkImage>());
+    expect(find.text('FS'), findsOneWidget);
   });
 
   testWidgets('a member without one falls back to their initials',

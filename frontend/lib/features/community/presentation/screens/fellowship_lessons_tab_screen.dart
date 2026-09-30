@@ -28,6 +28,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/c
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_path_picker_sheet.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_paths_cache_service.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/disciple_level.dart';
@@ -309,10 +310,18 @@ class _FellowshipLessonsTabScreenState
             language: _contentLanguage,
             fellowshipId: widget.fellowshipId,
           )),
-        child: _PathPickerSheet(
+        child: FellowshipPathPickerSheet(
           fellowshipId: widget.fellowshipId,
-          studyBloc: studyBloc,
+          fellowshipName: studyBloc.state.fellowshipName,
+          currentPathId: studyBloc.state.currentLearningPathId,
           language: _contentLanguage,
+          onPathSelected: (path) => studyBloc.add(
+            FellowshipStudySetRequested(
+              fellowshipId: widget.fellowshipId,
+              learningPathId: path.id,
+              learningPathTitle: path.title,
+            ),
+          ),
         ),
       ),
     );
@@ -895,6 +904,7 @@ class _LessonsSummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
+                flex: 3,
                 child: CommunitySectionLabel(
                   context
                       .tr(TranslationKeys.communityFellowshipStudyingTogether),
@@ -903,7 +913,8 @@ class _LessonsSummaryCard extends StatelessWidget {
               ),
               if (!allDone) ...[
                 const SizedBox(width: 12),
-                Flexible(
+                Expanded(
+                  flex: 2,
                   child: Text(
                     lessonOf,
                     textAlign: TextAlign.end,
@@ -955,6 +966,7 @@ class _LessonsSummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
+                flex: 3,
                 child: Text(
                   hasTotal
                       ? '$groupProgress · ${context.tr(TranslationKeys.communityLessonsGroupDone, {
@@ -967,7 +979,8 @@ class _LessonsSummaryCard extends StatelessWidget {
               ),
               if (xpEarned > 0) ...[
                 const SizedBox(width: 12),
-                Flexible(
+                Expanded(
+                  flex: 2,
                   child: Text(
                     context.tr(TranslationKeys.communityLessonsXpEarned,
                         {'xp': xpEarned}),
@@ -1782,552 +1795,6 @@ class _AssignPathButton extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _PathPickerSheet — bottom sheet for selecting a learning path
-// Supports search filtering + scroll-triggered pagination.
-// ---------------------------------------------------------------------------
-
-class _PathPickerSheet extends StatefulWidget {
-  final String fellowshipId;
-  final FellowshipStudyBloc studyBloc;
-  final String language;
-
-  const _PathPickerSheet({
-    required this.fellowshipId,
-    required this.studyBloc,
-    this.language = 'en',
-  });
-
-  @override
-  State<_PathPickerSheet> createState() => _PathPickerSheetState();
-}
-
-class _PathPickerSheetState extends State<_PathPickerSheet> {
-  final TextEditingController _searchController = TextEditingController();
-  Timer? _debounce;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  /// Dispatches [SearchLearningPaths] after a 400 ms debounce.
-  void _onSearchChanged(String value, BuildContext context) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      if (!mounted) return;
-      final trimmed = value.trim();
-      if (trimmed.isEmpty) {
-        context.read<LearningPathsBloc>().add(
-              LoadFlatLearningPaths(language: widget.language),
-            );
-      } else {
-        context.read<LearningPathsBloc>().add(
-              SearchLearningPaths(query: trimmed, language: widget.language),
-            );
-      }
-    });
-  }
-
-  /// The paths in discipleship order: seeker, follower, disciple, leader, and
-  /// within a level the curated display order (New Believer Essentials first).
-  ///
-  /// The listing arrives ordered for the mentor personally — their own
-  /// in-progress and enrolled paths, then featured ones — which put a path the
-  /// mentor had started ahead of where a group should begin. A group picks from
-  /// the curriculum as designed, so the personal order is only the tiebreak.
-  List<LearningPath> _byDiscipleLevel(List<LearningPath> paths) {
-    final sorted = [...paths];
-    sorted.sort((a, b) {
-      final byLevel = discipleLevelRank(a.discipleLevel)
-          .compareTo(discipleLevelRank(b.discipleLevel));
-      if (byLevel != 0) return byLevel;
-      // Paths without an order (older cached data) go after ordered ones.
-      final byOrder =
-          (a.displayOrder ?? 1 << 30).compareTo(b.displayOrder ?? 1 << 30);
-      if (byOrder != 0) return byOrder;
-      return paths.indexOf(a).compareTo(paths.indexOf(b));
-    });
-    return sorted;
-  }
-
-  void _maybeLoadMore(BuildContext context, ScrollNotification notification) {
-    if (notification is! ScrollUpdateNotification &&
-        notification is! ScrollEndNotification) {
-      return;
-    }
-    final metrics = notification.metrics;
-    if (metrics.pixels < metrics.maxScrollExtent - 160) {
-      return;
-    }
-
-    final bloc = context.read<LearningPathsBloc>();
-    final state = bloc.state;
-    // Only load more categories when not in search mode
-    if (state is LearningPathsLoaded &&
-        state.searchQuery == null &&
-        state.hasMoreCategories &&
-        !state.isFetchingMoreCategories) {
-      bloc.add(LoadMoreCategories(language: widget.language));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final palette = ReaderPalette.of(context);
-    return DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      maxChildSize: 0.92,
-      minChildSize: 0.4,
-      builder: (_, sheetController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: palette.card,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: palette.hairline)),
-          ),
-          child: Column(
-            children: [
-              // ── Handle ─────────────────────────────────────────────────
-              const SizedBox(height: 12),
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: palette.outline,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── Title ──────────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  l10n.lessonsPickPathTitle,
-                  style: AppFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: palette.text,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // ── Search field ───────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Builder(builder: (ctx) {
-                  final hasText = _searchController.text.isNotEmpty;
-                  return TextField(
-                    controller: _searchController,
-                    onChanged: (v) {
-                      _onSearchChanged(v, ctx);
-                      setState(() {}); // refresh suffix icon
-                    },
-                    style: AppFonts.inter(fontSize: 15, color: palette.text),
-                    decoration: communityInputDecoration(
-                      context,
-                      pill: true,
-                      hintText: l10n.searchPathsHint,
-                      prefixIcon: Icon(Icons.search, color: palette.muted),
-                      suffixIcon: hasText
-                          ? IconButton(
-                              tooltip: MaterialLocalizations.of(context)
-                                  .deleteButtonTooltip,
-                              icon: Icon(Icons.close,
-                                  size: 18, color: palette.muted),
-                              onPressed: () {
-                                _searchController.clear();
-                                _onSearchChanged('', ctx);
-                                setState(() {});
-                              },
-                            )
-                          : null,
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 12),
-
-              Divider(height: 1, color: palette.hairline),
-
-              // ── Path list ──────────────────────────────────────────────
-              Expanded(
-                child: BlocBuilder<LearningPathsBloc, LearningPathsState>(
-                  builder: (context, state) {
-                    if (state is LearningPathsLoading ||
-                        state is LearningPathsInitial) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: palette.accentIcon,
-                        ),
-                      );
-                    }
-
-                    if (state is LearningPathsError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            state.message,
-                            style: AppFonts.inter(
-                              fontSize: 14,
-                              color: palette.muted,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
-
-                    if (state is LearningPathsEmpty) {
-                      return _PathPickerEmpty(message: l10n.searchNoResults);
-                    }
-
-                    if (state is LearningPathsLoaded) {
-                      // ── Search mode ──────────────────────────────────────
-                      if (state.searchQuery != null) {
-                        if (state.isSearching) {
-                          return Center(
-                            child: CircularProgressIndicator(
-                              color: palette.accentIcon,
-                            ),
-                          );
-                        }
-                        // This is the sheet's normal listing too, not only an
-                        // actual search: LoadFlatLearningPaths emits every path
-                        // as `searchResults` with an empty query, so `categories`
-                        // — and therefore `allPaths` — is always empty here.
-                        final results =
-                            _byDiscipleLevel(state.searchResults ?? []);
-                        if (results.isEmpty) {
-                          return _PathPickerEmpty(
-                              message: l10n.searchNoResults);
-                        }
-                        return ListView.builder(
-                          controller: sheetController,
-                          padding: EdgeInsets.fromLTRB(16, 8, 16,
-                              24 + MediaQuery.paddingOf(context).bottom),
-                          itemCount: results.length,
-                          itemBuilder: (context, index) {
-                            final path = results[index];
-                            final previous = index == 0
-                                ? null
-                                : results[index - 1].discipleLevel;
-                            final startsLevel = index == 0 ||
-                                discipleLevelRank(previous) !=
-                                    discipleLevelRank(path.discipleLevel);
-
-                            return _PathPickerItem(
-                              levelHeading:
-                                  startsLevel ? path.discipleLevel : null,
-                              path: path,
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                widget.studyBloc.add(
-                                  FellowshipStudySetRequested(
-                                    fellowshipId: widget.fellowshipId,
-                                    learningPathId: path.id,
-                                    learningPathTitle: path.title,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        );
-                      }
-
-                      // ── Normal mode (category listing + pagination) ──────
-                      // Ordered by the discipleship progression rather than the
-                      // personalised category order the listing arrives in.
-                      // Flattening the categories dropped their headings, so the
-                      // picker showed seeker, follower, disciple, seeker... with
-                      // nothing on screen explaining the grouping — it read as
-                      // random. The whole list arrives in one request here
-                      // (LoadFlatLearningPaths, limit 100), so sorting it is
-                      // stable; nothing reshuffles as the sheet scrolls.
-                      final allPaths = _byDiscipleLevel(state.allPaths);
-
-                      if (allPaths.isEmpty && !state.hasMoreCategories) {
-                        return _PathPickerEmpty(
-                          message: context
-                              .tr(TranslationKeys.communityFellowshipNoPaths),
-                        );
-                      }
-
-                      // +1 slot for the load-more footer
-                      final hasFooter = state.hasMoreCategories ||
-                          state.isFetchingMoreCategories;
-                      final itemCount = allPaths.length + (hasFooter ? 1 : 0);
-
-                      return NotificationListener<ScrollNotification>(
-                        onNotification: (n) {
-                          _maybeLoadMore(context, n);
-                          return false;
-                        },
-                        child: ListView.builder(
-                          controller: sheetController,
-                          padding: EdgeInsets.fromLTRB(16, 8, 16,
-                              24 + MediaQuery.paddingOf(context).bottom),
-                          itemCount: itemCount,
-                          itemBuilder: (context, index) {
-                            // Footer spinner
-                            if (index == allPaths.length) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                child: Center(
-                                  child: state.isFetchingMoreCategories
-                                      ? SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: palette.accentIcon,
-                                          ),
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
-                              );
-                            }
-
-                            final path = allPaths[index];
-                            // Heading at each level change, so the progression
-                            // the list is sorted by is visible rather than implied.
-                            final previous = index == 0
-                                ? null
-                                : allPaths[index - 1].discipleLevel;
-                            final startsLevel = index == 0 ||
-                                discipleLevelRank(previous) !=
-                                    discipleLevelRank(path.discipleLevel);
-
-                            return _PathPickerItem(
-                              levelHeading:
-                                  startsLevel ? path.discipleLevel : null,
-                              path: path,
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                widget.studyBloc.add(
-                                  FellowshipStudySetRequested(
-                                    fellowshipId: widget.fellowshipId,
-                                    learningPathId: path.id,
-                                    learningPathTitle: path.title,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      );
-                    }
-
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _PathPickerEmpty — shared empty / no-results state
-// ---------------------------------------------------------------------------
-
-class _PathPickerEmpty extends StatelessWidget {
-  final String message;
-  const _PathPickerEmpty({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_off_rounded,
-                size: 48, color: ReaderPalette.of(context).dim),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: AppFonts.inter(
-                fontSize: 14,
-                color: ReaderPalette.of(context).muted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _PathPickerItem
-// ---------------------------------------------------------------------------
-
-class _PathPickerItem extends StatelessWidget {
-  final LearningPath path;
-  final VoidCallback onTap;
-
-  /// Level name to head this row with, set on the first path of each level.
-  final String? levelHeading;
-
-  const _PathPickerItem({
-    required this.path,
-    required this.onTap,
-    this.levelHeading,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final heading = levelHeading;
-    if (heading != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 10, left: 4),
-            child: CommunitySectionLabel(_levelLabel(context, heading)),
-          ),
-          _buildCard(context),
-        ],
-      );
-    }
-    return _buildCard(context);
-  }
-
-  /// The level's name in the reader's language, falling back to whatever the
-  /// row holds when it is a level this build does not know.
-  String _levelLabel(BuildContext context, String level) {
-    final key = discipleLevelLabelKey(level);
-    return key == null ? level : context.tr(key);
-  }
-
-  Widget _buildCard(BuildContext context) {
-    final palette = ReaderPalette.of(context);
-    final successInk =
-        palette.isDark ? AppColors.successLighter : AppColors.successDark;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: palette.isDark ? palette.raised : palette.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: palette.hairline),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandPrimary
-                        .withValues(alpha: palette.isDark ? 0.24 : 0.10),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.menu_book_rounded,
-                    color: palette.accentIcon,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        path.title,
-                        style: AppFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: palette.text,
-                          height: 1.3,
-                        ),
-                      ),
-                      if (path.description.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          path.description,
-                          style: AppFonts.inter(
-                            fontSize: 13,
-                            color: palette.muted,
-                            height: 1.35,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            '${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}'
-                            ' · ${_levelLabel(context, path.discipleLevel)}',
-                            style: AppFonts.inter(
-                              fontSize: 12.5,
-                              color: palette.dim,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          if (path.fellowshipCompleted)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color:
-                                    AppColors.success.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                context
-                                    .tr(TranslationKeys.learningPathsCompleted),
-                                style: AppFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: successInk,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 22,
-                  color: palette.dim,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
 // _MemberProgressSection — mentor-only overview of every member's progress:
 // a gold section label with the caught-up count, then one card of member rows.
 // ---------------------------------------------------------------------------
@@ -2418,6 +1885,7 @@ class _MemberProgressSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
+                        flex: 3,
                         child: CommunitySectionLabel(
                           l10n.lessonsMemberProgress,
                           fontSize: 11,
@@ -2425,7 +1893,8 @@ class _MemberProgressSection extends StatelessWidget {
                       ),
                       if (!isLoading && guideIndex != null) ...[
                         const SizedBox(width: 12),
-                        Flexible(
+                        Expanded(
+                          flex: 2,
                           child: Text(
                             context.tr(TranslationKeys.communityLessonsCaughtUp,
                                 {'count': caughtUp, 'total': members.length}),

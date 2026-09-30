@@ -275,8 +275,7 @@ void main() {
       });
     }
 
-    testWidgets('pill emoji matches the picker per post type',
-        (tester) async {
+    testWidgets('pill emoji matches the picker per post type', (tester) async {
       useSurface(tester, const Size(390, 2600));
       await tester.pumpWidget(app(feed(posts())));
       await tester.pumpAndSettle();

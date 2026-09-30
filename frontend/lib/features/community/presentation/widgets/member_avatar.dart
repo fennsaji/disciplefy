@@ -71,26 +71,39 @@ class MemberAvatar extends StatelessWidget {
     final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2;
     final decodeSize = (radius * 2 * dpr).round();
 
-    return CircleAvatar(
+    // Initials always sit underneath, so a picture that fails to load (or
+    // is still loading) shows the initials instead of a blank circle.
+    final fallback = CircleAvatar(
       radius: radius,
       backgroundColor: colorFor(displayName),
-      backgroundImage: hasPicture
-          ? ResizeImage(NetworkImage(avatarUrl!),
-              width: decodeSize, policy: ResizeImagePolicy.fit)
-          : null,
-      onBackgroundImageError: hasPicture ? (_, __) {} : null,
-      child: hasPicture
-          ? null
-          : Text(
-              initials,
-              maxLines: 1,
-              style: AppFonts.inter(
-                // Keeps the letters proportional at any radius callers use.
-                fontSize: radius * (initials.length > 1 ? 0.62 : 0.75),
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+      child: Text(
+        initials,
+        maxLines: 1,
+        style: AppFonts.inter(
+          // Keeps the letters proportional at any radius callers use.
+          fontSize: radius * (initials.length > 1 ? 0.62 : 0.75),
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
+    );
+    if (!hasPicture) return fallback;
+    return SizedBox.square(
+      dimension: radius * 2,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          fallback,
+          ClipOval(
+            child: Image.network(
+              avatarUrl!,
+              fit: BoxFit.cover,
+              cacheWidth: decodeSize,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
+          ),
+        ],
+      ),
     );
   }
 }
