@@ -1149,21 +1149,23 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Language pill inside the search field (EN / हिं / മ, or "Default").
-  Widget _buildCompactLanguageSelector() {
-    String getLanguageLabel() {
-      if (_isLanguageDefault) {
-        return context.tr(TranslationKeys.generateStudyDefaultLanguage);
-      }
-      switch (_selectedLanguage) {
-        case StudyLanguage.english:
-          return 'EN';
-        case StudyLanguage.hindi:
-          return 'हिं';
-        case StudyLanguage.malayalam:
-          return 'മ';
-      }
+  /// Short code for a study language, as shown on the language pill.
+  static String _languageCode(StudyLanguage language) {
+    switch (language) {
+      case StudyLanguage.english:
+        return 'EN';
+      case StudyLanguage.hindi:
+        return 'हिं';
+      case StudyLanguage.malayalam:
+        return 'മ';
     }
+  }
+
+  /// Language pill inside the search field (EN / हिं / മ). When the study
+  /// language follows the default, the pill shows the default's code so the
+  /// user can see which language the guide will be in.
+  Widget _buildCompactLanguageSelector() {
+    String getLanguageLabel() => _languageCode(_selectedLanguage);
 
     return PopupMenuButton<StudyLanguage?>(
       key: const Key('generate_language_pill'),
@@ -1180,7 +1182,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       ),
       itemBuilder: (context) => [
         _buildLanguageMenuItem(null,
-            context.tr(TranslationKeys.generateStudyDefaultLanguageOption)),
+            '${context.tr(TranslationKeys.generateStudyDefaultLanguage)} (${_languageCode(_selectedLanguage)})'),
         PopupMenuDivider(color: ReaderPalette.of(context).hairline),
         _buildLanguageMenuItem(StudyLanguage.english, 'English'),
         _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
