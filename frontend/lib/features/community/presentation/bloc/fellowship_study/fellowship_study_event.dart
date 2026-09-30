@@ -94,3 +94,15 @@ class FellowshipStudySetRequested extends FellowshipStudyEvent {
   @override
   List<Object?> get props => [fellowshipId, learningPathId, learningPathTitle];
 }
+
+/// Fired when the caller's role is resolved from the server after the screen
+/// was opened without the fellowship entity (Home banner, deep link,
+/// notification), so mentor-only lesson controls appear.
+class FellowshipStudyRoleResolved extends FellowshipStudyEvent {
+  final bool isMentor;
+
+  const FellowshipStudyRoleResolved({required this.isMentor});
+
+  @override
+  List<Object?> get props => [isMentor];
+}

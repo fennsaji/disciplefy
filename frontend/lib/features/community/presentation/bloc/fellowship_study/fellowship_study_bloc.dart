@@ -24,6 +24,9 @@ class FellowshipStudyBloc
     on<FellowshipStudySetRequested>(_onSetRequested);
     on<FellowshipStudyAdvanceRequested>(_onAdvanceRequested);
     on<FellowshipStudyResetRequested>(_onResetRequested);
+    on<FellowshipStudyRoleResolved>(
+      (event, emit) => emit(state.copyWith(isMentor: event.isMentor)),
+    );
   }
 
   // ---------------------------------------------------------------------------
