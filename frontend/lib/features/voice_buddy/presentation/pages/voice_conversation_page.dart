@@ -2,28 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/services/auth_state_provider.dart';
-import '../../data/services/speech_service.dart';
-import '../../domain/entities/voice_conversation_entity.dart';
-import '../bloc/voice_conversation_bloc.dart';
-import '../bloc/voice_conversation_event.dart';
-import '../bloc/voice_conversation_state.dart';
-import '../widgets/conversation_bubble.dart';
-import '../../../../shared/widgets/scripture_verse_sheet.dart';
-import '../widgets/language_selector.dart' show VoiceLanguage;
-import '../widgets/voice_button.dart';
-import '../widgets/monthly_limit_exceeded_dialog.dart';
-import '../../../gamification/presentation/bloc/gamification_bloc.dart';
-import '../../../gamification/presentation/bloc/gamification_event.dart';
-import '../../../community/presentation/widgets/discipler_badges.dart';
-import '../../../../core/widgets/upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/data/services/speech_service.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/domain/entities/voice_conversation_entity.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/bloc/voice_conversation_bloc.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/bloc/voice_conversation_event.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/bloc/voice_conversation_state.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/conversation_bubble.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/discipler_session_widgets.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/discipler_start_view.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/end_conversation_sheet.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/language_selector.dart'
+    show VoiceLanguage, VoiceLanguageSheet;
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/mic_permission_dialog.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/voice_button.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/voice_session_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/scripture_verse_sheet.dart';
 
-/// Main page for voice conversations with the Talk to Discipler.
+/// Main page for conversations with Discipler, by voice or by text.
 class VoiceConversationPage extends StatelessWidget {
   /// Optional study guide ID for contextual conversations.
   final String? studyGuideId;
@@ -82,11 +90,29 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _textFocusNode = FocusNode();
 
+  /// Chat (typing) view instead of the hands-free voice view.
   bool _isTextInputMode = false;
+
+  /// Continuous mode is paused while typing and restored on return to voice.
+  bool _continuousBeforeTyping = false;
 
   /// Guards against a second mic-permission dialog stacking on the first when
   /// the bloc re-emits the denied state.
   bool _micPermissionSheetOpen = false;
+
+  /// A suggested question to send as soon as the conversation it started is
+  /// ready.
+  String? _pendingFirstMessage;
+
+  /// Focus the text field once the conversation started by "Type" is ready.
+  bool _focusTextWhenReady = false;
+
+  /// Start listening once the conversation started by "Start talking" is
+  /// ready, so the user can speak straight away instead of tapping again.
+  bool _listenWhenReady = false;
+
+  /// Whether the previous state had a conversation, to notice it ending.
+  bool _hadConversation = false;
 
   @override
   void initState() {
@@ -115,11 +141,6 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     _visible = visible;
   }
 
-  VoiceLanguage get _selectedLanguage {
-    final state = context.read<VoiceConversationBloc>().state;
-    return VoiceLanguage.fromCode(state.languageCode);
-  }
-
   @override
   void dispose() {
     _textController.dispose();
@@ -131,6 +152,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 100), () {
+        if (!_scrollController.hasClients) return;
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -140,34 +162,22 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     }
   }
 
-  void _startConversation() {
-    context.read<VoiceConversationBloc>().add(StartConversation(
-          languageCode: _selectedLanguage.code,
-          conversationType: widget.conversationType,
-          relatedStudyGuideId: widget.studyGuideId,
-          relatedScripture: widget.relatedScripture,
-        ));
-  }
-
   void _endConversation() {
-    // Capture the bloc from the widget context before showing the dialog
-    // The dialog's context doesn't have access to the BlocProvider
+    // Capture the bloc from the widget context before showing the sheet:
+    // the sheet's context doesn't have access to the BlocProvider.
     final bloc = context.read<VoiceConversationBloc>();
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => _EndConversationDialog(
-        onEnd: (rating, feedback, helpful) {
-          bloc.add(EndConversation(
-            rating: rating,
-            feedbackText: feedback,
-            wasHelpful: helpful,
-          ));
-          // Check voice achievements when session ends
-          sl<GamificationBloc>().add(const CheckVoiceAchievements());
-          Navigator.of(dialogContext).pop();
-        },
-      ),
+    EndConversationSheet.show(
+      context,
+      onEnd: (rating, feedback, helpful) {
+        bloc.add(EndConversation(
+          rating: rating,
+          feedbackText: feedback,
+          wasHelpful: helpful,
+        ));
+        // Check voice achievements when session ends
+        sl<GamificationBloc>().add(const CheckVoiceAchievements());
+      },
     );
   }
 
@@ -180,12 +190,165 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     }
   }
 
-  void _onLanguageChanged(VoiceLanguage language) {
-    context.read<VoiceConversationBloc>().add(ChangeLanguage(language.code));
+  void _switchToTyping() {
+    final bloc = context.read<VoiceConversationBloc>();
+    // Typing means the mic should be off: drop any half-spoken sentence and
+    // stop continuous mode from reopening the mic after the next reply.
+    if (bloc.state.isListening) bloc.add(const CancelListening());
+    if (bloc.state.isContinuousMode) {
+      _continuousBeforeTyping = true;
+      bloc.add(const ToggleContinuousMode(false));
+    }
+    setState(() => _isTextInputMode = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _textFocusNode.requestFocus();
+    });
+  }
+
+  void _switchToVoice() {
+    if (_continuousBeforeTyping) {
+      _continuousBeforeTyping = false;
+      context
+          .read<VoiceConversationBloc>()
+          .add(const ToggleContinuousMode(true));
+    }
+    _textFocusNode.unfocus();
+    setState(() => _isTextInputMode = false);
+  }
+
+  Future<void> _openSettings() async {
+    await context.push(AppRoutes.voicePreferences);
+    // Reload preferences when returning from settings
+    if (mounted) {
+      context.read<VoiceConversationBloc>().add(const LoadPreferences());
+    }
+  }
+
+  /// Opens the language sheet. "Default" resolves to the study content
+  /// language here, as preferences do, because a conversation needs a
+  /// concrete language code.
+  Future<void> _openLanguageSheet(VoiceConversationState state) async {
+    final bloc = context.read<VoiceConversationBloc>();
+    final chosen = await VoiceLanguageSheet.show(
+      context,
+      selectedLanguage: VoiceLanguage.fromCode(state.languageCode),
+    );
+    if (chosen == null) return;
+    final code = chosen.isDefault ? await _defaultVoiceCode() : chosen.code;
+    if (!mounted) return;
+    bloc.add(ChangeLanguage(code));
+  }
+
+  Future<String> _defaultVoiceCode() async {
+    try {
+      final language =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+      final voice = VoiceLanguage.fromCode(language.code);
+      return voice.isDefault ? VoiceLanguage.english.code : voice.code;
+    } catch (e) {
+      Logger.warning('Voice language: could not resolve default: $e');
+      return VoiceLanguage.english.code;
+    }
+  }
+
+  String _languageName(VoiceConversationState state) {
+    final language = VoiceLanguage.fromCode(state.languageCode);
+    return language.isDefault
+        ? context.tr('voice_buddy.settings.default_language')
+        : language.displayName;
+  }
+
+  QuotaDisplay? _quotaDisplay(VoiceConversationState state) =>
+      state.quota == null
+          ? null
+          : QuotaDisplay(
+              state.quota!,
+              notifyQuota: state.notifyDailyQuotaReached,
+            );
+
+  void _onStateChanged(BuildContext context, VoiceConversationState state) {
+    final bloc = context.read<VoiceConversationBloc>();
+
+    // Show monthly limit exceeded dialog (mid-conversation server rejection)
+    if (state is VoiceConversationMonthlyLimitExceeded) {
+      _showVoiceUpsell(state.tier);
+    }
+
+    // Show limit dialog when server rejects start (quota was unknown or stale)
+    if (state.status == VoiceConversationStatus.quotaExceeded) {
+      _showVoiceUpsell(state.quota?.tier ?? 'free');
+    }
+
+    // A declined microphone is a choice, not a failure — explain what
+    // it blocks and offer the way back instead of a red error.
+    if (state.status == VoiceConversationStatus.micPermissionDenied) {
+      _showMicPermissionSheet(
+        context,
+        permanentlyDenied: state.micPermissionPermanentlyDenied,
+      );
+    }
+
+    // Show error snackbar
+    if (state.status == VoiceConversationStatus.error &&
+        state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.commonError)),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+
+    if (state.hasActiveConversation &&
+        state.status == VoiceConversationStatus.ready) {
+      // A suggested question or "Type" started this conversation.
+      final pending = _pendingFirstMessage;
+      if (pending != null) {
+        _pendingFirstMessage = null;
+        bloc.add(SendTextMessage(pending));
+      }
+      if (_focusTextWhenReady) {
+        _focusTextWhenReady = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _textFocusNode.requestFocus();
+        });
+      }
+      // Same event as the mic button; a declined microphone still comes
+      // back as the permission dialog.
+      if (_listenWhenReady) {
+        _listenWhenReady = false;
+        bloc.add(const StartListening());
+      }
+    } else if (state.conversation == null &&
+        state.status != VoiceConversationStatus.loading) {
+      // The start failed or was refused: nothing to send into.
+      _pendingFirstMessage = null;
+      _focusTextWhenReady = false;
+      _listenWhenReady = false;
+    }
+
+    // Ending a conversation resets the bloc to a blank state, which also
+    // drops the loaded preferences and allowance; reload them for the
+    // start screen and go back to the voice view for the next one.
+    if (_hadConversation &&
+        state.conversation == null &&
+        state.status == VoiceConversationStatus.initial) {
+      bloc.add(const LoadPreferences());
+      bloc.add(const CheckQuota());
+      _textController.clear();
+      if (_isTextInputMode) setState(() => _isTextInputMode = false);
+    }
+    _hadConversation = state.conversation != null;
+
+    // Scroll to bottom when new messages arrive
+    if (state.messages.isNotEmpty) {
+      _scrollToBottom();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return PopScope(
       // As a tab, back belongs to the tab bar (AppShell returns to Home).
       canPop: widget.asTab,
@@ -194,252 +357,47 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
         _handleBackNavigation();
       },
       child: Scaffold(
-        appBar: _buildAppBar(),
+        backgroundColor: palette.page,
         body: BlocConsumer<VoiceConversationBloc, VoiceConversationState>(
-          listener: (context, state) {
-            // Show monthly limit exceeded dialog (mid-conversation server rejection)
-            if (state is VoiceConversationMonthlyLimitExceeded) {
-              _showVoiceUpsell(state.tier);
-            }
-
-            // Show limit dialog when server rejects start (quota was unknown or stale)
-            if (state.status == VoiceConversationStatus.quotaExceeded) {
-              _showVoiceUpsell(state.quota?.tier ?? 'free');
-            }
-
-            // A declined microphone is a choice, not a failure — explain what
-            // it blocks and offer the way back instead of a red error.
-            if (state.status == VoiceConversationStatus.micPermissionDenied) {
-              _showMicPermissionSheet(
-                context,
-                permanentlyDenied: state.micPermissionPermanentlyDenied,
-              );
-            }
-
-            // Show error snackbar
-            if (state.status == VoiceConversationStatus.error &&
-                state.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.tr(TranslationKeys.commonError)),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-            }
-
-            // Scroll to bottom when new messages arrive
-            if (state.messages.isNotEmpty) {
-              _scrollToBottom();
-            }
-          },
-          builder: (context, state) {
-            return Column(
-              children: [
-                // Quota indicator
-                if (state.quota != null) _buildQuotaIndicator(state),
-
-                // Main content
-                Expanded(
-                  child: _buildContent(state),
-                ),
-
-                // Input area
-                if (state.hasActiveConversation) _buildInputArea(state),
-              ],
-            );
-          },
+          listener: _onStateChanged,
+          builder: (context, state) => _buildContent(state),
         ),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    final theme = Theme.of(context);
-
-    return AppBar(
-      automaticallyImplyLeading: false,
-      leading: widget.asTab
-          ? null
-          : IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _handleBackNavigation,
-            ),
-      title: Text(
-        context.tr('voice_buddy.title'),
-        style: theme.appBarTheme.titleTextStyle?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-      actions: [
-        // Settings/preferences
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () async {
-            await context.push(AppRoutes.voicePreferences);
-            // Reload preferences when returning from settings
-            if (mounted) {
-              context
-                  .read<VoiceConversationBloc>()
-                  .add(const LoadPreferences());
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuotaIndicator(VoiceConversationState state) {
-    final theme = Theme.of(context);
-    final quota = state.quota!;
-
-    // Check if premium user (unlimited quota)
-    final isPremium = quota.tier == 'premium' || quota.quotaRemaining < 0;
-    final isLow = !isPremium && quota.quotaRemaining <= 1;
-
-    // If notifications are disabled and quota is not critically low, don't show
-    if (!state.notifyDailyQuotaReached && !isLow) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isLow
-          ? theme.colorScheme.error.withAlpha((0.1 * 255).round())
-          : theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isLow ? Icons.warning_amber : Icons.info_outline,
-            size: 16,
-            color: isLow ? theme.colorScheme.error : theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${context.tr('voice_buddy.conversations_remaining')}: ',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color:
-                  isLow ? theme.colorScheme.error : theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          if (isPremium)
-            Icon(
-              Icons.all_inclusive,
-              size: 16,
-              color: theme.colorScheme.primary,
-            )
-          else
-            Text(
-              '${quota.quotaRemaining}/${quota.quotaLimit}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color:
-                    isLow ? theme.colorScheme.error : theme.colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-        ],
       ),
     );
   }
 
   Widget _buildContent(VoiceConversationState state) {
-    switch (state.status) {
-      case VoiceConversationStatus.initial:
-        return _buildStartScreen(state);
-
-      case VoiceConversationStatus.loading:
-        return const Center(child: CircularProgressIndicator());
-
-      case VoiceConversationStatus.quotaExceeded:
-        return _buildStartScreen(state);
-
-      default:
-        return _buildConversationView(state);
+    if (state.status == VoiceConversationStatus.loading) {
+      return const SafeArea(
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
+
+    // No conversation to show (not started, refused, failed to start, or
+    // ended): the start screen, so a new one can always be started.
+    if (state.conversation == null && state.messages.isEmpty) {
+      return DisciplerStartView(
+        quota: _quotaDisplay(state),
+        languageName: _languageName(state),
+        onBack: widget.asTab ? null : _handleBackNavigation,
+        onSettings: _openSettings,
+        onLanguageTap: () => _openLanguageSheet(state),
+        onStartTalking: () => _startConversationWithState(state),
+        onType: () => _startConversationWithState(state, typing: true),
+        onSuggestion: (text) => _startConversationWithState(
+          state,
+          typing: true,
+          firstMessage: text,
+        ),
+      );
+    }
+
+    if (_isTextInputMode || !state.hasActiveConversation) {
+      return _buildConversationView(state);
+    }
+    return _buildVoiceView(state);
   }
 
-  Widget _buildStartScreen(VoiceConversationState state) {
-    final theme = Theme.of(context);
-
-    // Get current language from state (supports both 'hi' and 'hi-IN' formats)
-    final currentLanguage = VoiceLanguage.fromCode(state.languageCode);
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Hero treatment: the white Discipler glyph on the brand indigo, so
-          // the screen resolves around one accent (title, CTA) instead of the
-          // avatar's ink navy, which appears nowhere else here. The gold-on-ink
-          // [DisciplerAvatar] stays the author mark beside individual replies.
-          Container(
-            width: 112,
-            height: 112,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
-              ),
-            ),
-            alignment: Alignment.center,
-            child: const DisciplerGlyph(size: 84),
-          ),
-          const SizedBox(height: 32),
-
-          // Title
-          Text(
-            context.tr('voice_buddy.title'),
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Description
-          Text(
-            context.tr('voice_buddy.description'),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withAlpha((0.7 * 255).round()),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Current language indicator
-          Text(
-            '${context.tr('voice_buddy.language_label')}: ${currentLanguage.displayName}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withAlpha((0.6 * 255).round()),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Start button
-          FilledButton.icon(
-            onPressed: () => _startConversationWithState(state),
-            icon: const Icon(Icons.play_arrow),
-            label: Text(context.tr('voice_buddy.start_conversation')),
-            style: FilledButton.styleFrom(
-              backgroundColor: context.appInteractive,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The single upgrade sheet for every case where Talk to Discipler is
-  /// unavailable — no allowance on this plan, allowance spent, or the server
-  /// rejecting a start. The user's next step is the same in all of them.
   /// Explains what a declined microphone blocks, and offers the way back.
   ///
   /// Deliberately not an error dialog: typing still works, so this only asks
@@ -450,42 +408,34 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }) {
     if (_micPermissionSheetOpen) return;
     _micPermissionSheetOpen = true;
+    final bloc = context.read<VoiceConversationBloc>();
 
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr(TranslationKeys.micPermissionTitle)),
-        content: Text(context.tr(permanentlyDenied
-            ? TranslationKeys.micPermissionBlockedMessage
-            : TranslationKeys.micPermissionMessage)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(context.tr(TranslationKeys.micPermissionTypeInstead)),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              if (permanentlyDenied) {
-                sl<SpeechService>().openPermissionSettings();
-              } else {
-                // The OS will prompt again; re-running the flow is the retry.
-                context
-                    .read<VoiceConversationBloc>()
-                    .add(const StartListening());
-              }
-            },
-            child: Text(context.tr(permanentlyDenied
-                ? TranslationKeys.micPermissionOpenSettings
-                : TranslationKeys.micPermissionAllow)),
-          ),
-        ],
+      builder: (_) => MicPermissionDialog(
+        permanentlyDenied: permanentlyDenied,
+        onPrimary: () {
+          if (permanentlyDenied) {
+            sl<SpeechService>().openPermissionSettings();
+          } else {
+            // The OS will prompt again; re-running the flow is the retry.
+            bloc.add(const StartListening());
+          }
+        },
+        onTypeInstead: () {
+          if (mounted && bloc.state.hasActiveConversation) _switchToTyping();
+        },
       ),
     ).whenComplete(() => _micPermissionSheetOpen = false);
   }
 
+  /// The single upgrade sheet for every case where Talk to Discipler is
+  /// unavailable — no allowance on this plan, allowance spent, or the server
+  /// rejecting a start. The user's next step is the same in all of them.
   void _showVoiceUpsell(String tier) {
     showModalBottomSheet(
+      // Above the floating dock, not under it.
+      useRootNavigator: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -497,7 +447,13 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     );
   }
 
-  void _startConversationWithState(VoiceConversationState state) {
+  /// Starts a conversation, in the voice view or — with [typing] — the chat
+  /// view, optionally sending [firstMessage] once it is ready.
+  void _startConversationWithState(
+    VoiceConversationState state, {
+    bool typing = false,
+    String? firstMessage,
+  }) {
     final quota = state.quota;
     // Anyone who cannot start gets the same upgrade sheet, whether their plan
     // never included Talk to Discipler (free is 0/month) or they used up this
@@ -507,6 +463,10 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
       _showVoiceUpsell(quota.tier);
       return;
     }
+    setState(() => _isTextInputMode = typing);
+    _pendingFirstMessage = firstMessage;
+    _focusTextWhenReady = typing && firstMessage == null;
+    _listenWhenReady = !typing && firstMessage == null;
     context.read<VoiceConversationBloc>().add(StartConversation(
           languageCode: state.languageCode,
           conversationType: widget.conversationType,
@@ -515,55 +475,27 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
         ));
   }
 
-  Widget _buildConversationView(VoiceConversationState state) {
-    // Fetch user profile picture URL once to avoid repeated getter calls
-    final userProfilePictureUrl = sl<AuthStateProvider>().profilePictureUrl;
+  // ---------------------------------------------------------------------------
+  // Chat view
+  // ---------------------------------------------------------------------------
 
+  Widget _buildConversationView(VoiceConversationState state) {
+    final quota = _quotaDisplay(state);
     return Column(
       children: [
-        // Messages list
+        _buildChatHeader(state),
+        if (quota != null && quota.isVisible)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: DisciplerQuotaChip(display: quota),
+            ),
+          ),
         Expanded(
           child: state.messages.isEmpty
               ? _buildEmptyConversation()
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.messages.length +
-                      // Show extra item for streaming/processing
-                      // Allow streaming text to be visible even while TTS plays
-                      ((state.status == VoiceConversationStatus.streaming ||
-                              state.status ==
-                                  VoiceConversationStatus.processing)
-                          ? 1
-                          : 0),
-                  itemBuilder: (context, index) {
-                    if (index >= state.messages.length) {
-                      // Show streaming response or thinking indicator
-                      if (state.streamingResponse.isNotEmpty) {
-                        return ConversationBubble(
-                          content: state.streamingResponse,
-                          isUser: false,
-                        );
-                      }
-                      return const ThinkingBubble();
-                    }
-
-                    final message = state.messages[index];
-                    final isUserMessage = message.role == MessageRole.user;
-
-                    return ConversationBubble(
-                      content: message.contentText,
-                      isUser: isUserMessage,
-                      scriptureReferences: message.scriptureReferences,
-                      timestamp: message.createdAt,
-                      onScriptureReferenceTap: (ref) {
-                        ScriptureVerseSheet.show(context, reference: ref);
-                      },
-                      userProfilePictureUrl:
-                          isUserMessage ? userProfilePictureUrl : null,
-                    );
-                  },
-                ),
+              : _buildMessageList(state),
         ),
 
         // Current transcription display (only if showTranscription is enabled)
@@ -571,30 +503,153 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             state.isListening &&
             state.currentTranscription != null)
           _buildTranscriptionDisplay(state.currentTranscription!),
+
+        if (state.hasActiveConversation) _buildInputArea(state),
       ],
     );
   }
 
+  Widget _buildChatHeader(VoiceConversationState state) {
+    final palette = ReaderPalette.of(context);
+    final buttonState = chatStatusFor(state);
+    final dotColor = switch (buttonState) {
+      VoiceButtonState.idle => AppColors.success,
+      VoiceButtonState.listening => palette.accentIcon,
+      VoiceButtonState.processing || VoiceButtonState.speaking => palette.gold,
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.page,
+        border: Border(bottom: BorderSide(color: palette.hairline)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(widget.asTab ? 16 : 4, 8, 12, 10),
+          child: Row(
+            children: [
+              if (!widget.asTab)
+                IconButton(
+                  onPressed: _handleBackNavigation,
+                  icon: const Icon(Icons.arrow_back),
+                  color: palette.text,
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                ),
+              const DisciplerAvatar(radius: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.tr('voice_buddy.title'),
+                      style: AppFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: dotColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            '${sessionStatusLabel(context, buttonState)} · '
+                            '${_languageName(state)}',
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              color: palette.muted,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (state.hasActiveConversation) ...[
+                IconButton(
+                  onPressed: _switchToVoice,
+                  icon: const Icon(Icons.graphic_eq_rounded),
+                  color: palette.accentIcon,
+                  tooltip: context.tr(TranslationKeys.voiceSessionVoiceMode),
+                ),
+                const SizedBox(width: 2),
+                SessionEndPill(onPressed: _endConversation),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageList(VoiceConversationState state) {
+    final showPending = state.status == VoiceConversationStatus.streaming ||
+        state.status == VoiceConversationStatus.processing;
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      // Extra item for the reply being streamed (visible even while TTS
+      // plays) or the typing indicator.
+      itemCount: state.messages.length + (showPending ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= state.messages.length) {
+          if (state.streamingResponse.isNotEmpty) {
+            return ConversationBubble(
+              content: state.streamingResponse,
+              isUser: false,
+            );
+          }
+          return const ThinkingBubble();
+        }
+
+        final message = state.messages[index];
+        return ConversationBubble(
+          content: message.contentText,
+          isUser: message.role == MessageRole.user,
+          scriptureReferences: message.scriptureReferences,
+          timestamp: message.createdAt,
+          onScriptureReferenceTap: (ref) {
+            ScriptureVerseSheet.show(context, reference: ref);
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildEmptyConversation() {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: theme.colorScheme.primary.withAlpha((0.3 * 255).round()),
-            ),
+            const DisciplerAvatar(radius: 28),
             const SizedBox(height: 16),
             Text(
               context.tr('voice_buddy.conversation.empty_hint'),
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color:
-                    theme.colorScheme.onSurface.withAlpha((0.5 * 255).round()),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 15,
+                color: palette.muted,
+                height: 1.4,
               ),
             ),
           ],
@@ -604,23 +659,30 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   Widget _buildTranscriptionDisplay(String transcription) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: userBubbleFill(palette),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.mic, size: 16),
+          Icon(Icons.mic, size: 16, color: palette.accentIcon),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               transcription,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: AppFonts.inter(
+                fontSize: 14,
                 fontStyle: FontStyle.italic,
+                color: palette.text,
+                height: 1.4,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -629,151 +691,123 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   Widget _buildInputArea(VoiceConversationState state) {
-    final theme = Theme.of(context);
+    final palette = ReaderPalette.of(context);
     final isProcessing = state.status == VoiceConversationStatus.processing ||
         state.status == VoiceConversationStatus.streaming;
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha((0.1 * 255).round()),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: palette.page,
+        border: Border(top: BorderSide(color: palette.hairline)),
       ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Toggle between voice and text input
-            Row(
-              children: [
-                // Text input toggle
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isTextInputMode = !_isTextInputMode;
-                    });
-                    if (_isTextInputMode) {
-                      _textFocusNode.requestFocus();
-                    }
-                  },
-                  icon: Icon(
-                    _isTextInputMode ? Icons.mic : Icons.keyboard,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-
-                // Text input field
-                if (_isTextInputMode)
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _textFocusNode,
-                      enabled: !isProcessing,
-                      decoration: InputDecoration(
-                        hintText:
-                            context.tr('voice_buddy.conversation.type_hint'),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: isProcessing ? null : _sendTextMessage,
-                          icon: const Icon(Icons.send),
-                        ),
-                      ),
-                      onSubmitted: (_) => _sendTextMessage(),
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _textFocusNode,
+                  enabled: !isProcessing,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  style: AppFonts.inter(fontSize: 15, color: palette.text),
+                  decoration: InputDecoration(
+                    hintText: context.tr('voice_buddy.conversation.type_hint'),
+                    hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+                    filled: true,
+                    fillColor: palette.raised,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 14,
                     ),
-                  )
-                else
-                  Expanded(
-                    child: Center(
-                      child: _buildVoiceControls(state),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(26),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(26),
+                      borderSide: BorderSide.none,
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(26),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(26),
+                      borderSide: BorderSide(color: palette.outline),
                     ),
                   ),
-
-                // End conversation button
-                IconButton(
-                  onPressed: _endConversation,
-                  icon: const Icon(Icons.stop_circle_outlined),
-                  color: theme.colorScheme.error,
-                  tooltip: context.tr('voice_buddy.voice_controls.end_tooltip'),
+                  onSubmitted: (_) => _sendTextMessage(),
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(width: 8),
+              SessionRoundButton(
+                icon: Icons.mic_none_rounded,
+                tooltip: context.tr(TranslationKeys.voiceSessionVoiceMode),
+                onPressed: _switchToVoice,
+                fill: palette.raised,
+                ink: palette.accentIcon,
+              ),
+              const SizedBox(width: 8),
+              SessionRoundButton(
+                icon: Icons.arrow_upward_rounded,
+                tooltip: context.tr(TranslationKeys.voiceSessionSend),
+                onPressed: isProcessing ? null : _sendTextMessage,
+                fill: AppColors.brandPrimary,
+                ink: Colors.white,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildVoiceControls(VoiceConversationState state) {
-    VoiceButtonState buttonState;
+  // ---------------------------------------------------------------------------
+  // Voice view
+  // ---------------------------------------------------------------------------
 
-    // Priority: isPlaying > isListening > processing > idle
-    // isPlaying takes priority because we want to show speaking animation
-    // during TTS playback even if continuous mode has listening enabled
-    if (state.isPlaying) {
-      // TTS is playing - show speaking state (highest priority)
-      buttonState = VoiceButtonState.speaking;
-    } else if (state.isListening) {
-      buttonState = VoiceButtonState.listening;
-    } else if (state.status == VoiceConversationStatus.processing ||
-        state.status == VoiceConversationStatus.streaming) {
-      buttonState = VoiceButtonState.processing;
-    } else {
-      buttonState = VoiceButtonState.idle;
-    }
+  Widget _buildVoiceView(VoiceConversationState state) {
+    final bloc = context.read<VoiceConversationBloc>();
+    final buttonState = voiceButtonStateFor(state);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        VoiceButton(
-          state: buttonState,
-          isContinuousMode: state.isContinuousMode,
-          // Continuous mode: tap to toggle
-          // Speaking state: tap to interrupt and start listening
-          onTap: () {
-            if (state.isPlaying) {
-              // Interrupt TTS and start listening
-              context.read<VoiceConversationBloc>().add(const StopPlayback());
-              context.read<VoiceConversationBloc>().add(const StartListening());
-            } else if (state.isListening) {
-              context.read<VoiceConversationBloc>().add(const StopListening());
-            } else {
-              context.read<VoiceConversationBloc>().add(const StartListening());
-            }
-          },
-          // Normal mode: hold to speak
-          onTapDown: () {
-            context.read<VoiceConversationBloc>().add(const StartListening());
-          },
-          onTapUp: () {
-            context.read<VoiceConversationBloc>().add(const StopListening());
-          },
-          onTapCancel: () {
-            context.read<VoiceConversationBloc>().add(const StopListening());
-          },
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _getVoiceHint(buttonState, state.isContinuousMode),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withAlpha((0.5 * 255).round()),
-              ),
-        ),
-      ],
+    return VoiceSessionView(
+      state: state,
+      languageName: _languageName(state),
+      hint: _getVoiceHint(buttonState, state.isContinuousMode),
+      quota: _quotaDisplay(state),
+      onBack: widget.asTab ? null : _handleBackNavigation,
+      onSettings: _openSettings,
+      onKeyboard: _switchToTyping,
+      onEnd: _endConversation,
+      // Interrupt the spoken reply and start listening.
+      onInterrupt: () {
+        bloc.add(const StopPlayback());
+        bloc.add(const StartListening());
+      },
+      // Continuous mode: tap to toggle. Speaking: tap to interrupt.
+      onVoiceTap: () {
+        final current = bloc.state;
+        if (current.isPlaying) {
+          bloc.add(const StopPlayback());
+          bloc.add(const StartListening());
+        } else if (current.isListening) {
+          bloc.add(const StopListening());
+        } else {
+          bloc.add(const StartListening());
+        }
+      },
+      // Hold mode: press to speak, release to send.
+      onVoiceTapDown: () => bloc.add(const StartListening()),
+      onVoiceTapUp: () => bloc.add(const StopListening()),
+      onVoiceTapCancel: () => bloc.add(const StopListening()),
+      onScriptureReferenceTap: (ref) =>
+          ScriptureVerseSheet.show(context, reference: ref),
     );
   }
 
@@ -801,125 +835,5 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     } else {
       context.go(AppRoutes.generateStudy);
     }
-  }
-}
-
-/// Dialog for ending conversation with optional feedback.
-class _EndConversationDialog extends StatefulWidget {
-  final void Function(int? rating, String? feedback, bool? helpful) onEnd;
-
-  const _EndConversationDialog({required this.onEnd});
-
-  @override
-  State<_EndConversationDialog> createState() => _EndConversationDialogState();
-}
-
-class _EndConversationDialogState extends State<_EndConversationDialog> {
-  int? _rating;
-  bool? _wasHelpful;
-  final TextEditingController _feedbackController = TextEditingController();
-
-  @override
-  void dispose() {
-    _feedbackController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AlertDialog(
-      title: Text(context.tr('voice_buddy.conversation.end_title')),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(context.tr('voice_buddy.conversation.end_experience')),
-            const SizedBox(height: 12),
-
-            // Star rating
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) {
-                return IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _rating = index + 1;
-                    });
-                  },
-                  icon: Icon(
-                    index < (_rating ?? 0) ? Icons.star : Icons.star_border,
-                    color: theme.colorScheme.secondary,
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 16),
-
-            // Was it helpful?
-            Text(context.tr('voice_buddy.conversation.end_helpful')),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                ChoiceChip(
-                  label: Text(context.tr('voice_buddy.conversation.yes')),
-                  selected: _wasHelpful == true,
-                  onSelected: (selected) {
-                    setState(() {
-                      _wasHelpful = selected ? true : null;
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  label: Text(context.tr('voice_buddy.conversation.no')),
-                  selected: _wasHelpful == false,
-                  onSelected: (selected) {
-                    setState(() {
-                      _wasHelpful = selected ? false : null;
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Feedback text
-            TextField(
-              controller: _feedbackController,
-              decoration: InputDecoration(
-                labelText: context.tr('voice_buddy.conversation.end_feedback'),
-                border: const OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.tr('voice_buddy.conversation.cancel')),
-        ),
-        FilledButton(
-          onPressed: () {
-            widget.onEnd(
-              _rating,
-              _feedbackController.text.trim().isEmpty
-                  ? null
-                  : _feedbackController.text.trim(),
-              _wasHelpful,
-            );
-          },
-          style: FilledButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: Colors.white,
-          ),
-          child: Text(context.tr('voice_buddy.conversation.end_button')),
-        ),
-      ],
-    );
   }
 }

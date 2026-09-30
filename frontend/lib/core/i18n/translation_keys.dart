@@ -2897,6 +2897,43 @@ class TranslationKeys {
       'voice_buddy.mic_permission.type_instead';
   static const micPermissionAllow = 'voice_buddy.mic_permission.allow';
 
+  // ==========================================================================
+  // Discipler tab: start screen, chat and voice session
+  // ==========================================================================
+
+  static const voiceSessionHeadline = 'voice_buddy.session.headline';
+
+  /// Takes `{language}`.
+  static const voiceSessionSpeakingLanguage =
+      'voice_buddy.session.speaking_language';
+  static const voiceSessionChangeLanguage =
+      'voice_buddy.session.change_language';
+  static const voiceSessionStartTalking = 'voice_buddy.session.start_talking';
+  static const voiceSessionType = 'voice_buddy.session.type';
+  static const voiceSessionTryAsking = 'voice_buddy.session.try_asking';
+  static const voiceSessionSuggestion1 = 'voice_buddy.session.suggestion_1';
+  static const voiceSessionSuggestion2 = 'voice_buddy.session.suggestion_2';
+  static const voiceSessionSuggestion3 = 'voice_buddy.session.suggestion_3';
+
+  /// Takes `{remaining}` and `{limit}`.
+  static const voiceSessionQuotaLeft = 'voice_buddy.session.quota_left';
+  static const voiceSessionStatusReady = 'voice_buddy.session.status_ready';
+  static const voiceSessionStatusListening =
+      'voice_buddy.session.status_listening';
+  static const voiceSessionStatusThinking =
+      'voice_buddy.session.status_thinking';
+  static const voiceSessionStatusSpeaking =
+      'voice_buddy.session.status_speaking';
+  static const voiceSessionYou = 'voice_buddy.session.you';
+  static const voiceSessionYouAsked = 'voice_buddy.session.you_asked';
+  static const voiceSessionVoiceMode = 'voice_buddy.session.voice_mode';
+  static const voiceSessionTypingMode = 'voice_buddy.session.typing_mode';
+  static const voiceSessionSend = 'voice_buddy.session.send';
+  static const voiceSessionKeepTalking = 'voice_buddy.session.keep_talking';
+
+  /// Takes `{count}`.
+  static const voiceSessionRateStars = 'voice_buddy.session.rate_stars';
+
   // Credits / plans (quiet ledger)
   static const ledgerCreditsTitle = 'ledger.credits_title';
   static const ledgerPlanName = 'ledger.plan_name';
@@ -3013,4 +3050,22 @@ class TranslationKeys {
   static const ledgerPaisePerCredit = 'ledger.paise_per_credit';
   static const ledgerStandardTagline = 'ledger.standard_tagline';
   static const ledgerPlusTagline = 'ledger.plus_tagline';
+
+  // Discipler voice settings: language sheet and monthly limit dialog
+  static const voiceLanguageSheetTitle = 'voice_buddy.language_sheet.title';
+
+  /// "Uses your app language ({language})".
+  static const voiceLanguageSheetDefaultSubtitle =
+      'voice_buddy.language_sheet.default_subtitle';
+  static const voiceLimitMessageOne = 'voice_buddy.limit_dialog.message_one';
+  static const voiceLimitMessageOther =
+      'voice_buddy.limit_dialog.message_other';
+  static const voiceLimitThisMonth = 'voice_buddy.limit_dialog.this_month';
+
+  /// "{used} of {limit} used".
+  static const voiceLimitUsed = 'voice_buddy.limit_dialog.used';
+  static const voiceLimitUpgradeHeading =
+      'voice_buddy.limit_dialog.upgrade_heading';
+  static const voiceLimitViewPlans = 'voice_buddy.limit_dialog.view_plans';
+  static const voiceLimitMaybeLater = 'voice_buddy.limit_dialog.maybe_later';
 }

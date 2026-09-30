@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
-/// A circular voice button widget for initiating voice conversations.
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+
+/// The round microphone control of a voice session.
 ///
-/// Supports four states:
-/// - Idle: Ready to start recording
-/// - Listening: Currently recording user speech
-/// - Processing: Processing the recorded audio
-/// - Speaking: TTS is playing the AI response
+/// A solid pill-coloured disc (white with indigo ink on dark, indigo with
+/// white ink on light). The big orb above it already says "listening", so the
+/// button itself stays still: only the existing speaking bars move, and only
+/// while a reply is being spoken.
+///
+/// Gestures:
+/// - continuous mode: tap toggles listening;
+/// - hold mode: press to start, release (or cancel) to send;
+/// - while speaking: tap interrupts the reply.
 class VoiceButton extends StatefulWidget {
   final VoiceButtonState state;
   final VoidCallback? onTapDown;
@@ -16,6 +21,9 @@ class VoiceButton extends StatefulWidget {
   final VoidCallback? onTap;
   final bool isContinuousMode;
   final double size;
+
+  /// Spoken by screen readers; the button has no visible label.
+  final String? semanticLabel;
 
   const VoiceButton({
     super.key,
@@ -26,6 +34,7 @@ class VoiceButton extends StatefulWidget {
     this.onTap,
     this.isContinuousMode = false,
     this.size = 80.0,
+    this.semanticLabel,
   });
 
   @override
@@ -33,10 +42,8 @@ class VoiceButton extends StatefulWidget {
 }
 
 class _VoiceButtonState extends State<VoiceButton>
-    with TickerProviderStateMixin {
-  late AnimationController _speakingController;
-  late AnimationController _listeningController;
-  late Animation<double> _pulseAnimation;
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _speakingController;
 
   @override
   void initState() {
@@ -45,232 +52,99 @@ class _VoiceButtonState extends State<VoiceButton>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    _listeningController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _listeningController, curve: Curves.easeInOut),
-    );
-
-    _updateAnimations();
+    _updateAnimation();
   }
 
   @override
   void didUpdateWidget(VoiceButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _updateAnimations();
+    _updateAnimation();
   }
 
-  void _updateAnimations() {
-    // Speaking animation
+  void _updateAnimation() {
     if (widget.state == VoiceButtonState.speaking) {
       if (!_speakingController.isAnimating) {
         _speakingController.repeat(reverse: true);
       }
-    } else {
-      _speakingController.stop();
-      _speakingController.reset();
-    }
-
-    // Listening pulse animation
-    if (widget.state == VoiceButtonState.listening) {
-      if (!_listeningController.isAnimating) {
-        _listeningController.repeat(reverse: true);
-      }
-    } else {
-      _listeningController.stop();
-      _listeningController.reset();
+    } else if (_speakingController.isAnimating ||
+        _speakingController.value != 0) {
+      _speakingController
+        ..stop()
+        ..reset();
     }
   }
 
   @override
   void dispose() {
     _speakingController.dispose();
-    _listeningController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
+    final palette = ReaderPalette.of(context);
     final isListening = widget.state == VoiceButtonState.listening;
+    final isProcessing = widget.state == VoiceButtonState.processing;
+    final fill = isProcessing
+        ? palette.ctaFill.withValues(alpha: 0.55)
+        : palette.ctaFill;
 
-    // Listening color - bright blue/cyan for clear distinction
-    const listeningColor = AppColors.brandPrimaryDeep;
-
-    return GestureDetector(
-      // In continuous mode: tap to toggle listening
-      // In normal mode: hold to speak (tap down to start, tap up to stop)
-      // When speaking: tap to interrupt and start listening
-      onTap:
-          widget.isContinuousMode || widget.state == VoiceButtonState.speaking
-              ? widget.onTap
+    return VoiceMicGestures(
+      state: widget.state,
+      isContinuousMode: widget.isContinuousMode,
+      semanticLabel: widget.semanticLabel,
+      onTap: widget.onTap,
+      onTapDown: widget.onTapDown,
+      onTapUp: widget.onTapUp,
+      onTapCancel: widget.onTapCancel,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: fill,
+          // A still ring marks "recording" without a pulse.
+          border: isListening
+              ? Border.all(
+                  color: palette.accentIcon.withValues(alpha: 0.7),
+                  width: 3,
+                )
               : null,
-      onTapDown:
-          !widget.isContinuousMode && widget.state == VoiceButtonState.idle
-              ? (_) => widget.onTapDown?.call()
-              : null,
-      onTapUp:
-          !widget.isContinuousMode && widget.state == VoiceButtonState.listening
-              ? (_) => widget.onTapUp?.call()
-              : null,
-      onTapCancel: !widget.isContinuousMode ? widget.onTapCancel : null,
-      child: SizedBox(
-        // Fixed size to prevent layout shifts during animation
-        width: widget.size * 1.5,
-        height: widget.size * 1.5,
-        child: AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                // Pulsing ring when listening
-                if (isListening)
-                  AnimatedBuilder(
-                    animation: _listeningController,
-                    builder: (context, _) {
-                      return Container(
-                        width: widget.size *
-                            (1.3 + 0.2 * _listeningController.value),
-                        height: widget.size *
-                            (1.3 + 0.2 * _listeningController.value),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: listeningColor.withAlpha(
-                              ((0.6 - 0.4 * _listeningController.value) * 255)
-                                  .round(),
-                            ),
-                            width: 3,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                // Second pulsing ring (delayed) when listening
-                if (isListening)
-                  AnimatedBuilder(
-                    animation: _listeningController,
-                    builder: (context, _) {
-                      final delayedValue =
-                          (_listeningController.value + 0.5) % 1.0;
-                      return Container(
-                        width: widget.size * (1.15 + 0.25 * delayedValue),
-                        height: widget.size * (1.15 + 0.25 * delayedValue),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: listeningColor.withAlpha(
-                              ((0.4 - 0.3 * delayedValue) * 255).round(),
-                            ),
-                            width: 2,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                // Main button
-                Transform.scale(
-                  scale: isListening ? _pulseAnimation.value : 1.0,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: widget.size,
-                    height: widget.size,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: _getGradientColors(),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isListening
-                              ? listeningColor.withAlpha((0.5 * 255).round())
-                              : primaryColor.withAlpha((0.3 * 255).round()),
-                          blurRadius: isListening ? 25 : 20,
-                          spreadRadius: isListening ||
-                                  widget.state == VoiceButtonState.speaking
-                              ? 8
-                              : 0,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: _buildIcon(),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
         ),
+        alignment: Alignment.center,
+        child: _buildIcon(palette.ctaInk),
       ),
     );
   }
 
-  /// Single-hue brand indigo ramp.
-  ///
-  /// This used to blend `colorScheme.primary` into `colorScheme.secondary` —
-  /// indigo into the brand's pale gold — which read as an off-palette purple
-  /// -to-peach wash. Staying inside the indigo family keeps the control on
-  /// brand; state is conveyed by depth and the pulse, not by a second hue.
-  List<Color> _getGradientColors() {
+  Widget _buildIcon(Color ink) {
+    final iconSize = widget.size * 0.4;
     switch (widget.state) {
       case VoiceButtonState.listening:
-        // Deepest ramp while recording — reads as "hot" without a new hue.
-        return [AppColors.brandPrimaryDeep, AppColors.brandPrimary];
+        return Icon(Icons.mic, color: ink, size: iconSize);
       case VoiceButtonState.processing:
-        return [
-          AppColors.brandPrimary.withAlpha((0.5 * 255).round()),
-          AppColors.brandPrimaryDeep.withAlpha((0.5 * 255).round())
-        ];
-      case VoiceButtonState.speaking:
-      case VoiceButtonState.idle:
-        return [AppColors.brandPrimary, AppColors.brandPrimaryDeep];
-    }
-  }
-
-  Widget _buildIcon() {
-    switch (widget.state) {
-      case VoiceButtonState.listening:
-        return const Icon(
-          Icons.mic,
-          color: Colors.white,
-          size: 36,
-        );
-      case VoiceButtonState.processing:
-        return const SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 3,
-          ),
+        return SizedBox(
+          width: widget.size * 0.34,
+          height: widget.size * 0.34,
+          child: CircularProgressIndicator(color: ink, strokeWidth: 3),
         );
       case VoiceButtonState.speaking:
-        // Animated speaker icon when AI is speaking
         return AnimatedBuilder(
           animation: _speakingController,
           builder: (context, child) {
             return Row(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(3, (index) {
-                // Create staggered wave bars
-                final delay = index * 0.3;
-                final value = (_speakingController.value + delay) % 1.0;
+                // Staggered wave bars
+                final value = (_speakingController.value + index * 0.3) % 1.0;
                 final height = 8.0 + 20.0 * (0.3 + 0.7 * value);
-
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   width: 4,
                   height: height,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: ink,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 );
@@ -279,12 +153,71 @@ class _VoiceButtonState extends State<VoiceButton>
           },
         );
       case VoiceButtonState.idle:
-        return const Icon(
-          Icons.mic_none,
-          color: Colors.white,
-          size: 36,
-        );
+        return Icon(Icons.mic_none_rounded, color: ink, size: iconSize);
     }
+  }
+}
+
+/// The mic's gestures around any [child], so every surface that starts or
+/// stops listening (the round mic button, the big orb above it) responds
+/// the same way:
+/// - continuous mode: tap toggles listening;
+/// - hold mode: press to start, release (or cancel) to send;
+/// - while speaking: tap interrupts the reply.
+class VoiceMicGestures extends StatelessWidget {
+  final VoiceButtonState state;
+  final bool isContinuousMode;
+  final VoidCallback? onTap;
+  final VoidCallback? onTapDown;
+  final VoidCallback? onTapUp;
+  final VoidCallback? onTapCancel;
+
+  /// Spoken by screen readers in place of [child]'s own semantics.
+  final String? semanticLabel;
+  final Widget child;
+
+  const VoiceMicGestures({
+    super.key,
+    required this.state,
+    required this.isContinuousMode,
+    required this.child,
+    this.onTap,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isListening = state == VoiceButtonState.listening;
+    final tapToggles = isContinuousMode || state == VoiceButtonState.speaking;
+    final pressStarts = !isContinuousMode && state == VoiceButtonState.idle;
+    final releaseSends = !isContinuousMode && isListening;
+    // Excluding the child's semantics also drops the detector's own tap
+    // action, so a screen reader's double-tap is given the same meaning
+    // here: toggle, start, or send, as the pointer would.
+    final VoidCallback? semanticTap = tapToggles
+        ? onTap
+        : pressStarts
+            ? onTapDown
+            : releaseSends
+                ? onTapUp
+                : null;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      onTap: semanticTap,
+      excludeSemantics: semanticLabel != null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: tapToggles ? onTap : null,
+        onTapDown: pressStarts ? (_) => onTapDown?.call() : null,
+        onTapUp: releaseSends ? (_) => onTapUp?.call() : null,
+        onTapCancel: !isContinuousMode ? onTapCancel : null,
+        child: child,
+      ),
+    );
   }
 }
 

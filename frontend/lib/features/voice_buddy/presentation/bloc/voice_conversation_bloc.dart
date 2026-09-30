@@ -55,6 +55,9 @@ class VoiceConversationBloc
   /// final result cancels it.
   Timer? _pendingSendTimer;
 
+  /// Set by [CancelListening] so late recognizer results are dropped.
+  bool _discardSpeech = false;
+
   /// How long to wait after `notListening` for the engine's final result.
   static const Duration _finalResultGrace = Duration(milliseconds: 700);
 
@@ -96,6 +99,7 @@ class VoiceConversationBloc
     on<EndConversation>(_onEndConversation);
     on<StartListening>(_onStartListening);
     on<StopListening>(_onStopListening);
+    on<CancelListening>(_onCancelListening);
     on<ProcessSpeechText>(_onProcessSpeechText);
     on<SendTextMessage>(_onSendTextMessage);
     on<ReceiveStreamChunk>(_onReceiveStreamChunk);
@@ -366,6 +370,8 @@ class VoiceConversationBloc
       return;
     }
 
+    _discardSpeech = false;
+
     // Reset transcription tracking
     _currentTranscription = '';
     _bestTranscription = '';
@@ -395,6 +401,8 @@ class VoiceConversationBloc
         // ever stopped it was a manual stop(), which truncates the tail.
         pauseFor: const Duration(seconds: 3),
         onResult: (result) {
+          // Cancelled: late results from the recognizer must not be sent.
+          if (_discardSpeech) return;
           final text = result.recognizedWords;
           final confidence = result.confidence;
 
@@ -514,6 +522,33 @@ class VoiceConversationBloc
 
     emit(state.copyWith(
       isListening: false,
+      status: state.hasActiveConversation
+          ? VoiceConversationStatus.ready
+          : state.status,
+    ));
+  }
+
+  Future<void> _onCancelListening(
+    CancelListening event,
+    Emitter<VoiceConversationState> emit,
+  ) async {
+    _discardSpeech = true;
+    _vadService.stop();
+    _silenceAfterSpeechTimer?.cancel();
+    _silenceAfterSpeechTimer = null;
+    _pendingSendTimer?.cancel();
+    _pendingSendTimer = null;
+    _hasStartedSpeaking = false;
+    _currentTranscription = '';
+    _bestTranscription = '';
+    _currentConfidence = 0.0;
+
+    await _speechService.cancelListening();
+    _speechSubscription?.cancel();
+
+    emit(state.copyWith(
+      isListening: false,
+      clearCurrentTranscription: true,
       status: state.hasActiveConversation
           ? VoiceConversationStatus.ready
           : state.status,

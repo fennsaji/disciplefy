@@ -1804,6 +1804,30 @@ class AppTranslations {
       'start_conversation': 'Start Conversation',
       'conversations_remaining': 'Conversations remaining',
       'unlimited': 'Unlimited',
+      // Discipler tab: start screen, chat and voice session.
+      'session': {
+        'headline': 'Ask Discipler anything',
+        'speaking_language': 'Speaking {language}',
+        'change_language': 'Change language',
+        'start_talking': 'Start talking',
+        'type': 'Type',
+        'try_asking': 'Try asking',
+        'suggestion_1': 'Why did Jesus speak in parables?',
+        'suggestion_2': 'How do I forgive someone who hurt me?',
+        'suggestion_3': 'What does Romans 8:28 really mean?',
+        'quota_left': '{remaining} of {limit} left this month',
+        'status_ready': 'Ready',
+        'status_listening': 'Listening',
+        'status_thinking': 'Thinking',
+        'status_speaking': 'Speaking',
+        'you': 'You',
+        'you_asked': 'You asked',
+        'voice_mode': 'Switch to voice',
+        'typing_mode': 'Switch to typing',
+        'send': 'Send',
+        'keep_talking': 'Keep talking',
+        'rate_stars': 'Rate {count} of 5',
+      },
       'mic_permission': {
         'title': 'Microphone access needed',
         'message':
@@ -1894,6 +1918,22 @@ class AppTranslations {
         'select_language': 'Select Language',
         'default_language': 'Default',
         'default_language_subtitle': 'Uses your app language preference',
+      },
+      // Voice settings language sheet and monthly limit dialog.
+      'language_sheet': {
+        'title': 'Speak with Discipler in',
+        'default_subtitle': 'Uses your app language ({language})',
+      },
+      'limit_dialog': {
+        'message_one':
+            'You\'ve used your {limit} voice conversation for this month.',
+        'message_other':
+            'You\'ve used all {limit} voice conversations for this month.',
+        'this_month': 'This month',
+        'used': '{used} of {limit} used',
+        'upgrade_heading': 'Upgrade to get more conversations:',
+        'view_plans': 'View plans',
+        'maybe_later': 'Maybe later',
       },
     },
     'pricing': {
@@ -4443,6 +4483,30 @@ class AppTranslations {
       'start_conversation': 'बातचीत शुरू करें',
       'conversations_remaining': 'शेष बातचीत',
       'unlimited': 'असीमित',
+      // Discipler tab: start screen, chat and voice session.
+      'session': {
+        'headline': 'शिक्षागुरु से कुछ भी पूछें',
+        'speaking_language': '{language} में बातचीत',
+        'change_language': 'भाषा बदलें',
+        'start_talking': 'बोलना शुरू करें',
+        'type': 'टाइप करें',
+        'try_asking': 'यह पूछकर देखें',
+        'suggestion_1': 'यीशु दृष्टांतों में क्यों बोलते थे?',
+        'suggestion_2': 'जिसने मुझे चोट पहुँचाई, उसे मैं कैसे क्षमा करूँ?',
+        'suggestion_3': 'रोमियों 8:28 का असली अर्थ क्या है?',
+        'quota_left': 'इस महीने {limit} में से {remaining} शेष',
+        'status_ready': 'तैयार',
+        'status_listening': 'सुन रहा है',
+        'status_thinking': 'सोच रहा है',
+        'status_speaking': 'बोल रहा है',
+        'you': 'आप',
+        'you_asked': 'आपने पूछा',
+        'voice_mode': 'आवाज़ पर जाएँ',
+        'typing_mode': 'टाइपिंग पर जाएँ',
+        'send': 'भेजें',
+        'keep_talking': 'बात जारी रखें',
+        'rate_stars': '5 में से {count} रेटिंग दें',
+      },
       'mic_permission': {
         'title': 'माइक्रोफ़ोन की अनुमति चाहिए',
         'message':
@@ -4533,6 +4597,22 @@ class AppTranslations {
         'select_language': 'भाषा चुनें',
         'default_language': 'डिफ़ॉल्ट',
         'default_language_subtitle': 'आपकी ऐप भाषा पसंद का उपयोग करता है',
+      },
+      // Voice settings language sheet and monthly limit dialog.
+      'language_sheet': {
+        'title': 'Discipler से इस भाषा में बात करें',
+        'default_subtitle': 'आपकी ऐप भाषा ({language}) का उपयोग करता है',
+      },
+      'limit_dialog': {
+        'message_one':
+            'आपने इस महीने की अपनी {limit} वॉइस बातचीत का उपयोग कर लिया है।',
+        'message_other':
+            'आपने इस महीने की सभी {limit} वॉइस बातचीत का उपयोग कर लिया है।',
+        'this_month': 'इस महीने',
+        'used': '{limit} में से {used} उपयोग की गईं',
+        'upgrade_heading': 'और बातचीत पाने के लिए अपग्रेड करें:',
+        'view_plans': 'प्लान देखें',
+        'maybe_later': 'शायद बाद में',
       },
     },
     'pricing': {
@@ -7173,6 +7253,30 @@ class AppTranslations {
       'start_conversation': 'സംഭാഷണം ആരംഭിക്കുക',
       'conversations_remaining': 'ശേഷിക്കുന്ന സംഭാഷണങ്ങൾ',
       'unlimited': 'പരിധിയില്ലാത്ത',
+      // Discipler tab: start screen, chat and voice session.
+      'session': {
+        'headline': 'Discipler-നോട് എന്തും ചോദിക്കൂ',
+        'speaking_language': '{language}-ൽ സംസാരിക്കുന്നു',
+        'change_language': 'ഭാഷ മാറ്റുക',
+        'start_talking': 'സംസാരിച്ചു തുടങ്ങുക',
+        'type': 'ടൈപ്പ് ചെയ്യുക',
+        'try_asking': 'ഇങ്ങനെ ചോദിച്ചു നോക്കൂ',
+        'suggestion_1': 'യേശു ഉപമകളിലൂടെ സംസാരിച്ചത് എന്തുകൊണ്ട്?',
+        'suggestion_2': 'എന്നെ വേദനിപ്പിച്ച ഒരാളോട് ഞാൻ എങ്ങനെ ക്ഷമിക്കും?',
+        'suggestion_3': 'റോമർ 8:28 യഥാർത്ഥത്തിൽ എന്താണ് അർത്ഥമാക്കുന്നത്?',
+        'quota_left': 'ഈ മാസം {limit}-ൽ {remaining} ശേഷിക്കുന്നു',
+        'status_ready': 'തയ്യാർ',
+        'status_listening': 'കേൾക്കുന്നു',
+        'status_thinking': 'ചിന്തിക്കുന്നു',
+        'status_speaking': 'സംസാരിക്കുന്നു',
+        'you': 'നിങ്ങൾ',
+        'you_asked': 'നിങ്ങൾ ചോദിച്ചത്',
+        'voice_mode': 'ശബ്ദത്തിലേക്ക് മാറുക',
+        'typing_mode': 'ടൈപ്പിങ്ങിലേക്ക് മാറുക',
+        'send': 'അയയ്ക്കുക',
+        'keep_talking': 'സംസാരം തുടരുക',
+        'rate_stars': '5-ൽ {count} റേറ്റിംഗ് നൽകുക',
+      },
       'mic_permission': {
         'title': 'മൈക്രോഫോൺ അനുമതി വേണം',
         'message':
@@ -7265,6 +7369,22 @@ class AppTranslations {
         'default_language': 'ഡിഫോൾട്ട്',
         'default_language_subtitle':
             'നിങ്ങളുടെ ആപ്പ് ഭാഷ മുൻഗണന ഉപയോഗിക്കുന്നു',
+      },
+      // Voice settings language sheet and monthly limit dialog.
+      'language_sheet': {
+        'title': 'Discipler-നോട് സംസാരിക്കേണ്ട ഭാഷ',
+        'default_subtitle': 'നിങ്ങളുടെ ആപ്പ് ഭാഷ ({language}) ഉപയോഗിക്കുന്നു',
+      },
+      'limit_dialog': {
+        'message_one':
+            'ഈ മാസത്തെ നിങ്ങളുടെ {limit} വോയ്സ് സംഭാഷണം ഉപയോഗിച്ചുകഴിഞ്ഞു.',
+        'message_other':
+            'ഈ മാസത്തെ എല്ലാ {limit} വോയ്സ് സംഭാഷണങ്ങളും ഉപയോഗിച്ചുകഴിഞ്ഞു.',
+        'this_month': 'ഈ മാസം',
+        'used': '{limit}-ൽ {used} ഉപയോഗിച്ചു',
+        'upgrade_heading': 'കൂടുതൽ സംഭാഷണങ്ങൾക്ക് അപ്ഗ്രേഡ് ചെയ്യുക:',
+        'view_plans': 'പ്ലാനുകൾ കാണുക',
+        'maybe_later': 'പിന്നീടാകാം',
       },
     },
     'pricing': {

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/pricing_service.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/pricing_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
+import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Dialog shown when user exceeds their monthly voice conversation limit.
 /// Displays current usage, upgrade options, and navigation to pricing page.
@@ -44,104 +49,112 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final palette = ReaderPalette.of(context);
     final pricingService = sl<PricingService>();
+    final progress =
+        limit <= 0 ? 1.0 : (conversationsUsed / limit).clamp(0.0, 1.0);
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: colorScheme.error.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.block, color: colorScheme.error, size: 24),
+    return PopupDialog(
+      children: [
+        PopupHeader(
+          icon: const PopupIconCircle(
+            icon: Icons.forum_outlined,
+            tone: PopupTone.gold,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Monthly Limit Reached',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          title: context.tr('voice_buddy.quota_exceeded.title'),
+          body: context.tr(
+            limit == 1
+                ? TranslationKeys.voiceLimitMessageOne
+                : TranslationKeys.voiceLimitMessageOther,
+            {'limit': limit},
           ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'You\'ve used all $limit voice conversation${limit > 1 ? 's' : ''} for this month.',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.onSurface.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        const SizedBox(height: 18),
+
+        // Usage this month
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 12,
+                runSpacing: 4,
                 children: [
                   Text(
-                    'Conversations Used:',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                    context.tr(TranslationKeys.voiceLimitThisMonth),
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
                     ),
                   ),
                   Text(
-                    '$conversationsUsed / $limit',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                    context.tr(TranslationKeys.voiceLimitUsed, {
+                      'used': conversationsUsed,
+                      'limit': limit,
+                    }),
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: palette.gold,
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Upgrade to get more conversations:',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  color: palette.gold,
+                  backgroundColor: palette.hairline,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _buildPlanOption(
-              context,
-              'Standard',
-              pricingService.getVoiceQuotaLabel('standard'),
-              pricingService.getFormattedPricePerMonth('standard'),
-            ),
-            _buildPlanOption(
-              context,
-              'Plus',
-              pricingService.getVoiceQuotaLabel('plus'),
-              pricingService.getFormattedPricePerMonth('plus'),
-            ),
-            _buildPlanOption(
-              context,
-              'Premium',
-              pricingService.getVoiceQuotaLabel('premium'),
-              pricingService.getFormattedPricePerMonth('premium'),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Maybe Later'),
+        const SizedBox(height: 12),
+
+        // Plans that include more conversations
+        PopupPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr(TranslationKeys.voiceLimitUpgradeHeading),
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _PlanOption(
+                name: 'Standard',
+                conversations: pricingService.getVoiceQuotaLabel('standard'),
+                price: pricingService.getFormattedPricePerMonth('standard'),
+              ),
+              _PlanOption(
+                name: 'Plus',
+                conversations: pricingService.getVoiceQuotaLabel('plus'),
+                price: pricingService.getFormattedPricePerMonth('plus'),
+              ),
+              _PlanOption(
+                name: 'Premium',
+                conversations: pricingService.getVoiceQuotaLabel('premium'),
+                price: pricingService.getFormattedPricePerMonth('premium'),
+              ),
+            ],
+          ),
         ),
-        ElevatedButton(
+        const SizedBox(height: 20),
+
+        PopupPrimaryButton(
+          label: context.tr(TranslationKeys.voiceLimitViewPlans),
+          icon: Icons.workspace_premium_outlined,
           onPressed: () {
             Navigator.of(context).pop();
             // go_router owns navigation here; Navigator.pushNamed has no
@@ -152,49 +165,61 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
               extra: {'preselectedPlan': tier == 'plus' ? 'premium' : 'plus'},
             );
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appInteractive,
-            foregroundColor: colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: const Text('View Plans'),
+        ),
+        const SizedBox(height: 4),
+        PopupTextButton(
+          label: context.tr(TranslationKeys.voiceLimitMaybeLater),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
   }
+}
 
-  Widget _buildPlanOption(
-    BuildContext context,
-    String name,
-    String conversations,
-    String price,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
+/// One plan line: check, bold plan name, its voice allowance and price.
+class _PlanOption extends StatelessWidget {
+  final String name;
+  final String conversations;
+  final String price;
+
+  const _PlanOption({
+    required this.name,
+    required this.conversations,
+    required this.price,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final green = SettingsToneColors.of(context, SettingsTone.green);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.check_circle, color: context.appSuccess, size: 16),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(Icons.check_circle, color: green.foreground, size: 16),
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
+            child: Text.rich(
+              TextSpan(
+                style: AppFonts.inter(
                   fontSize: 13,
-                  color: colorScheme.onSurface,
+                  color: palette.text,
+                  height: 1.35,
                 ),
                 children: [
                   TextSpan(
                     text: '$name: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   TextSpan(text: '$conversations '),
                   TextSpan(
                     text: '($price)',
-                    style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
+                    style: TextStyle(color: palette.muted),
                   ),
                 ],
               ),

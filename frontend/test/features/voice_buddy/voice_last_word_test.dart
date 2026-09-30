@@ -81,6 +81,7 @@ void main() {
         .thenAnswer((_) async => MicPermission.granted);
     when(speechService.initialize()).thenAnswer((_) async => true);
     when(speechService.stopListening()).thenAnswer((_) async {});
+    when(speechService.cancelListening()).thenAnswer((_) async {});
     when(ttsService.stop()).thenAnswer((_) async {});
 
     when(speechService.startListening(
@@ -156,5 +157,25 @@ void main() {
     expect(
         () => onResult(result('late words', isFinal: true)), returnsNormally);
     expect(() => onStatusChange('done'), returnsNormally);
+  });
+
+  test('CancelListening turns the mic off and never sends what was heard',
+      () async {
+    final bloc = buildBloc();
+    bloc.add(const StartListening());
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    onResult(result('half a sentence', isFinal: false));
+    bloc.add(const CancelListening());
+    await Future.delayed(const Duration(milliseconds: 50));
+    // Late results and status changes from the engine are ignored.
+    onResult(result('half a sentence finished', isFinal: true));
+    onStatusChange('notListening');
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    expect(bloc.state.isListening, isFalse);
+    expect(bloc.state.messages, isEmpty);
+    verify(speechService.cancelListening()).called(1);
+    await bloc.close();
   });
 }
