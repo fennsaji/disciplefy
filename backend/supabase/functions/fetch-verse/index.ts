@@ -18,6 +18,13 @@ import { fetchWithTimeout } from '../_shared/services/bible-api-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { isBibleContentEnabled, isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 import { HINDI_BOOK_NAMES, MALAYALAM_BOOK_NAMES, LOCALIZED_VARIANTS_TO_ENGLISH } from '../_shared/utils/bible-book-normalizer.ts'
+import {
+  buildPassageId,
+  buildPassageUrl,
+  formatCrossChapterReference,
+  parseCrossChapterRange,
+  splitNumberedVerses,
+} from './passage.ts'
 
 /**
  * Request payload structure
@@ -26,7 +33,8 @@ interface FetchVerseRequest {
   readonly book: string      // Book name (e.g., "John", "1 Corinthians")
   readonly chapter: number   // Chapter number
   readonly verse_start: number // Starting verse number
-  readonly verse_end?: number  // Optional ending verse for ranges
+  readonly verse_end?: number  // Optional ending verse for ranges (in end_chapter when given)
+  readonly end_chapter?: number // Optional, for cross-chapter passages (e.g. 10:23-11:1)
   readonly language: 'en' | 'hi' | 'ml'
 }
 
@@ -228,6 +236,12 @@ async function handleFetchVerse(
     throw new AppError('VALIDATION_ERROR', 'Invalid language. Must be en, hi, or ml', 400)
   }
 
+  // Optional cross-chapter end (older clients never send it)
+  const crossChapter = parseCrossChapterRange(body)
+  if (crossChapter && 'error' in crossChapter) {
+    throw new AppError('VALIDATION_ERROR', crossChapter.error, 400)
+  }
+
   // Normalize book name to English (handles Hindi/Malayalam book names)
   const englishBookName = normalizeBookName(body.book)
 
@@ -255,7 +269,41 @@ async function handleFetchVerse(
   // Check if this is a chapter-only request (verse_start: 1, verse_end: 999)
   const isChapterOnly = body.verse_start === 1 && body.verse_end === 999
 
-  if (isChapterOnly) {
+  if (crossChapter) {
+    // Cross-chapter passage: one API.Bible passages call
+    reference = formatCrossChapterReference(englishBookName, crossChapter)
+    localizedReference = formatCrossChapterReference(
+      getLocalizedBookName(englishBookName, body.language),
+      crossChapter,
+    )
+
+    const passageId = buildPassageId(bookCode, crossChapter)
+    const response = await fetchWithTimeout(
+      buildPassageUrl(bibleId, passageId),
+      { headers: { 'api-key': apiKey } },
+      15000
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null)
+      console.error('[FetchVerse] Passage API error:', errorData)
+      throw new AppError('NOT_FOUND', `Passage not found: ${reference}`, 404)
+    }
+
+    const data = await response.json()
+    const content: string = data.data?.content ?? ''
+    const verseItems = splitNumberedVerses(content, cleanVerseText)
+    if (verseItems.length > 0) {
+      verses = verseItems
+      verseText = verseItems.map(item => item.text).join(' ')
+    } else {
+      verseText = cleanVerseText(content.replace(/\[\d+\]/g, ''))
+    }
+    if (!verseText) {
+      throw new AppError('NOT_FOUND', `No verses found for ${reference}`, 404)
+    }
+    if (data.meta?.fumsToken) fumsTokens.push(data.meta.fumsToken)
+  } else if (isChapterOnly) {
     // Fetch entire chapter using chapters endpoint
     reference = `${englishBookName} ${body.chapter}`
     const localizedBook = getLocalizedBookName(englishBookName, body.language)

@@ -569,6 +569,7 @@ class MockMemoryVerseRepository extends _i1.Mock
     required int? chapter,
     required int? verseStart,
     int? verseEnd,
+    int? endChapter,
     required String? language,
   }) =>
       (super.noSuchMethod(
@@ -580,6 +581,7 @@ class MockMemoryVerseRepository extends _i1.Mock
             #chapter: chapter,
             #verseStart: verseStart,
             #verseEnd: verseEnd,
+            #endChapter: endChapter,
             #language: language,
           },
         ),
@@ -595,6 +597,7 @@ class MockMemoryVerseRepository extends _i1.Mock
               #chapter: chapter,
               #verseStart: verseStart,
               #verseEnd: verseEnd,
+              #endChapter: endChapter,
               #language: language,
             },
           ),
@@ -611,6 +614,7 @@ class MockMemoryVerseRepository extends _i1.Mock
               #chapter: chapter,
               #verseStart: verseStart,
               #verseEnd: verseEnd,
+              #endChapter: endChapter,
               #language: language,
             },
           ),
@@ -1326,6 +1330,7 @@ class MockFetchVerseText extends _i1.Mock implements _i24.FetchVerseText {
     required int? chapter,
     required int? verseStart,
     int? verseEnd,
+    int? endChapter,
     required String? language,
   }) =>
       (super.noSuchMethod(
@@ -1337,6 +1342,7 @@ class MockFetchVerseText extends _i1.Mock implements _i24.FetchVerseText {
             #chapter: chapter,
             #verseStart: verseStart,
             #verseEnd: verseEnd,
+            #endChapter: endChapter,
             #language: language,
           },
         ),
@@ -1352,6 +1358,7 @@ class MockFetchVerseText extends _i1.Mock implements _i24.FetchVerseText {
               #chapter: chapter,
               #verseStart: verseStart,
               #verseEnd: verseEnd,
+              #endChapter: endChapter,
               #language: language,
             },
           ),
@@ -1368,6 +1375,7 @@ class MockFetchVerseText extends _i1.Mock implements _i24.FetchVerseText {
               #chapter: chapter,
               #verseStart: verseStart,
               #verseEnd: verseEnd,
+              #endChapter: endChapter,
               #language: language,
             },
           ),

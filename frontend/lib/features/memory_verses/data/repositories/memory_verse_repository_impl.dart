@@ -402,6 +402,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     required int chapter,
     required int verseStart,
     int? verseEnd,
+    int? endChapter,
     required String language,
   }) async {
     try {
@@ -413,6 +414,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
         chapter: chapter,
         verseStart: verseStart,
         verseEnd: verseEnd,
+        endChapter: endChapter,
         language: language,
       );
 

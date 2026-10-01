@@ -50,6 +50,79 @@ class ScriptureVerseSheet extends StatefulWidget {
     );
   }
 
+  /// Parses a scripture reference string into components.
+  ///
+  /// Supports formats in English, Hindi (Devanagari), and Malayalam:
+  /// - "John 3:16" -> book: John, chapter: 3, verseStart: 16, verseEnd: null (single verse)
+  /// - "John 3" -> book: John, chapter: 3, verseStart: 1, verseEnd: 999 (entire chapter)
+  /// - "1 John 3:16" -> book: 1 John, chapter: 3, verseStart: 16, verseEnd: null
+  /// - "Matthew 5:1-12" -> book: Matthew, chapter: 5, verseStart: 1, verseEnd: 12 (verse range)
+  /// - "1 Corinthians 10:23-11:1" -> chapter: 10, verseStart: 23, endChapter: 11, verseEnd: 1
+  /// - "यूहन्ना 3:16" -> book: यूहन्ना, chapter: 3, verseStart: 16, verseEnd: null
+  /// - "भजन संहिता 23" -> book: भजन संहिता, chapter: 23, verseStart: 1, verseEnd: 999 (entire chapter)
+  /// - "भजन संहिता 119:105" -> book: भजन संहिता, chapter: 119, verseStart: 105, verseEnd: null
+  /// - "രോമർ 8:28" -> book: രോമർ, chapter: 8, verseStart: 28, verseEnd: null
+  @visibleForTesting
+  static ParsedScriptureReference? parseReference(String reference) {
+    // Pattern: captures book name in English, Hindi, or Malayalam
+    // - May start with number (1 John, 2 Timothy, etc.)
+    // - Supports multi-word book names (भजन संहिता, Song of Solomon, etc.)
+    // - Supports chapter-only, chapter:verse, same-chapter ranges and
+    //   cross-chapter ranges ("10:23-11:1": group 5 = end chapter,
+    //   group 6 = end verse; group 4 is the same-chapter end verse)
+    // Unicode ranges: Devanagari (Hindi) ऀ-ॿ, Malayalam ഀ-ൿ
+    final regex = RegExp(
+      r'^(\d?\s?[A-Za-zऀ-ॿഀ-ൿ]+(?:\s+[A-Za-zऀ-ॿഀ-ൿ]+)*)\s+(\d+)(?::(\d+)(?:-(\d+)(?!\d|:\d)|-(\d+):(\d+))?)?$',
+    );
+    final match = regex.firstMatch(reference.trim());
+
+    if (match == null) {
+      return null;
+    }
+
+    final chapter = int.parse(match.group(2)!);
+    final endChapterGroup = match.group(5);
+    if (endChapterGroup != null) {
+      final endChapter = int.parse(endChapterGroup);
+      final endVerse = int.parse(match.group(6)!);
+      final verseStart = int.parse(match.group(3)!);
+      if (endChapter > chapter) {
+        return ParsedScriptureReference(
+          book: match.group(1)!.trim(),
+          chapter: chapter,
+          verseStart: verseStart,
+          verseEnd: endVerse,
+          endChapter: endChapter,
+        );
+      }
+      if (endChapter == chapter) {
+        // "John 3:16-3:18" is a same-chapter range.
+        return ParsedScriptureReference(
+          book: match.group(1)!.trim(),
+          chapter: chapter,
+          verseStart: verseStart,
+          verseEnd: endVerse,
+        );
+      }
+      return null; // End before start
+    }
+
+    // If verse is not specified (chapter-only), fetch entire chapter (verses 1-999)
+    final verseStart = match.group(3) != null ? int.parse(match.group(3)!) : 1;
+    final verseEnd = match.group(4) != null
+        ? int.parse(match.group(4)!)
+        : (match.group(3) == null
+            ? 999
+            : null); // If chapter-only, fetch whole chapter; if single verse, fetch only that verse
+
+    return ParsedScriptureReference(
+      book: match.group(1)!.trim(),
+      chapter: chapter,
+      verseStart: verseStart,
+      verseEnd: verseEnd,
+    );
+  }
+
   @override
   State<ScriptureVerseSheet> createState() => _ScriptureVerseSheetState();
 }
@@ -93,7 +166,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     final verseCache = GetIt.instance<VerseCacheService>();
 
     // Parse the reference
-    final parsed = _parseReference(widget.reference);
+    final parsed = ScriptureVerseSheet.parseReference(widget.reference);
     if (parsed == null) {
       setState(() {
         _isLoading = false;
@@ -136,6 +209,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       chapter: parsed.chapter,
       verseStart: parsed.verseStart,
       verseEnd: parsed.verseEnd,
+      endChapter: parsed.endChapter,
       language: langCode,
     );
 
@@ -164,48 +238,6 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
           _verses = fetchedVerse.verses;
         });
       },
-    );
-  }
-
-  /// Parses a scripture reference string into components.
-  ///
-  /// Supports formats in English, Hindi (Devanagari), and Malayalam:
-  /// - "John 3:16" -> book: John, chapter: 3, verseStart: 16, verseEnd: null (single verse)
-  /// - "John 3" -> book: John, chapter: 3, verseStart: 1, verseEnd: 999 (entire chapter)
-  /// - "1 John 3:16" -> book: 1 John, chapter: 3, verseStart: 16, verseEnd: null
-  /// - "Matthew 5:1-12" -> book: Matthew, chapter: 5, verseStart: 1, verseEnd: 12 (verse range)
-  /// - "यूहन्ना 3:16" -> book: यूहन्ना, chapter: 3, verseStart: 16, verseEnd: null
-  /// - "भजन संहिता 23" -> book: भजन संहिता, chapter: 23, verseStart: 1, verseEnd: 999 (entire chapter)
-  /// - "भजन संहिता 119:105" -> book: भजन संहिता, chapter: 119, verseStart: 105, verseEnd: null
-  /// - "രോമർ 8:28" -> book: രോമർ, chapter: 8, verseStart: 28, verseEnd: null
-  _ParsedReference? _parseReference(String reference) {
-    // Pattern: captures book name in English, Hindi, or Malayalam
-    // - May start with number (1 John, 2 Timothy, etc.)
-    // - Supports multi-word book names (भजन संहिता, Song of Solomon, etc.)
-    // - Supports both chapter:verse and chapter-only formats
-    // Unicode ranges: Devanagari (Hindi) \u0900-\u097F, Malayalam \u0D00-\u0D7F
-    final regex = RegExp(
-      r'^(\d?\s?[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+)*)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$',
-    );
-    final match = regex.firstMatch(reference.trim());
-
-    if (match == null) {
-      return null;
-    }
-
-    // If verse is not specified (chapter-only), fetch entire chapter (verses 1-999)
-    final verseStart = match.group(3) != null ? int.parse(match.group(3)!) : 1;
-    final verseEnd = match.group(4) != null
-        ? int.parse(match.group(4)!)
-        : (match.group(3) == null
-            ? 999
-            : null); // If chapter-only, fetch whole chapter; if single verse, fetch only that verse
-
-    return _ParsedReference(
-      book: match.group(1)!.trim(),
-      chapter: int.parse(match.group(2)!),
-      verseStart: verseStart,
-      verseEnd: verseEnd,
     );
   }
 
@@ -531,16 +563,25 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 }
 
 /// Internal class to hold parsed reference components.
-class _ParsedReference {
+/// Components of a scripture reference parsed by
+/// [ScriptureVerseSheet.parseReference].
+@visibleForTesting
+class ParsedScriptureReference {
   final String book;
   final int chapter;
   final int verseStart;
+
+  /// End verse; lies in [endChapter] when that is set.
   final int? verseEnd;
 
-  _ParsedReference({
+  /// End chapter of a cross-chapter range (e.g. 11 in "10:23-11:1").
+  final int? endChapter;
+
+  const ParsedScriptureReference({
     required this.book,
     required this.chapter,
     required this.verseStart,
     this.verseEnd,
+    this.endChapter,
   });
 }

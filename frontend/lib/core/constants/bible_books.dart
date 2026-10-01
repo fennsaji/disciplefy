@@ -353,9 +353,17 @@ class BibleBooks {
 
     final booksPattern = escapedBooks.join('|');
 
-    // Pattern: (BookName) Chapter:Verse or (BookName) Chapter
-    // Requires chapter number to prevent false matches like "Point 1"
-    return r'(' + booksPattern + r')' + r'\s+(\d+)(?::(\d+)(?:-(\d+))?)?';
+    // Pattern: (BookName) Chapter, Chapter:Verse, Chapter:Verse-Verse or
+    // Chapter:Verse-Chapter:Verse (cross-chapter, e.g. "10:23-11:1").
+    // Requires chapter number to prevent false matches like "Point 1".
+    // Groups (stable for existing consumers):
+    //   1 book, 2 chapter, 3 start verse, 4 same-chapter end verse,
+    //   5 cross-chapter end chapter, 6 cross-chapter end verse.
+    // The lookahead stops group 4 from swallowing "11" of "11:1".
+    return r'(' +
+        booksPattern +
+        r')' +
+        r'\s+(\d+)(?::(\d+)(?:-(\d+)(?!\d|:\d)|-(\d+):(\d+))?)?';
   }
 
   /// Escape special regex characters

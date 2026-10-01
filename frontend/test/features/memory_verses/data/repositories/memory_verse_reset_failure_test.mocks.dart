@@ -249,6 +249,7 @@ class MockMemoryVerseRemoteDataSource extends _i1.Mock
     required int? chapter,
     required int? verseStart,
     int? verseEnd,
+    int? endChapter,
     required String? language,
   }) =>
       (super.noSuchMethod(
@@ -260,6 +261,7 @@ class MockMemoryVerseRemoteDataSource extends _i1.Mock
             #chapter: chapter,
             #verseStart: verseStart,
             #verseEnd: verseEnd,
+            #endChapter: endChapter,
             #language: language,
           },
         ),
