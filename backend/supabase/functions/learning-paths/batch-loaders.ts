@@ -128,3 +128,18 @@ export function groupPathTranslations(
   }
   return result;
 }
+
+/**
+ * A path's progress for the user: completed visible topics over visible
+ * topics, or 100 once the path itself is marked completed.
+ */
+export function pathProgressPercentage(
+  topicsCompleted: number,
+  topicsCount: number,
+  pathId: string,
+  completedPathIds: Set<string>,
+): number {
+  if (completedPathIds.has(pathId)) return 100;
+  if (topicsCount <= 0) return 0;
+  return Math.min(100, Math.round((topicsCompleted * 100) / topicsCount));
+}

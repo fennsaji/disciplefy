@@ -71,9 +71,9 @@ class DailyPostBody extends StatelessWidget {
 ///
 /// Gold hairline with a faint gold tint at the top; header with the Discipler
 /// mark and a "Daily study" chip; the lesson eyebrow (when the post carries
-/// its path/lesson), the body laid out by [DailyPostBody], then a
-/// "Start study" pill that opens the guide exactly as the old guide chip did,
-/// followed by the reaction/replies/share row.
+/// its path/lesson), the body laid out by [DailyPostBody], then
+/// one action row led by a "Start study" pill (opens the guide exactly as the
+/// old guide chip did), then reaction, replies and share.
 class DailyPostCard extends StatelessWidget {
   final FellowshipPostEntity post;
   final String fellowshipId;
@@ -212,23 +212,15 @@ class DailyPostCard extends StatelessWidget {
 
             // ── Footer ─────────────────────────────────────────────────
             if (interactive)
-              LayoutBuilder(builder: (context, box) {
-                final start = _StartStudyButton(post: post);
-                final footer = FellowshipPostFooter(
-                  post: post,
-                  accentColor: accent,
-                  onCommentTap: onCommentTap,
-                  onShareTap: onShareTap,
-                  leading: box.maxWidth >= 380 ? start : null,
-                );
-                if (box.maxWidth >= 380) return footer;
-                // Too narrow for the pill beside the reaction and replies
-                // buttons: it takes its own line rather than cutting labels.
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [start, const SizedBox(height: 8), footer],
-                );
-              })
+              // One action row: "Start study" leads as the primary action,
+              // then reaction, replies and share.
+              FellowshipPostFooter(
+                post: post,
+                accentColor: accent,
+                onCommentTap: onCommentTap,
+                onShareTap: onShareTap,
+                leading: _StartStudyButton(post: post),
+              )
             else ...[
               _StartStudyButton(post: post),
               const SizedBox(height: 10),
@@ -351,6 +343,7 @@ class _StartStudyButtonState extends State<_StartStudyButton> {
     return CommunityCtaPill(
       label: context.tr(TranslationKeys.communitySharedStartStudy),
       icon: Icons.play_arrow_outlined,
+      compact: true,
       loading: _loading,
       onPressed: () => openFellowshipStudyGuide(
         context,

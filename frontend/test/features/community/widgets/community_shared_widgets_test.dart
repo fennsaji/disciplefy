@@ -180,7 +180,8 @@ void main() {
     expect(find.text('Daily study'), findsOneWidget);
     expect(find.text('Start study'), findsOneWidget);
     expect(find.text('Matthew 16:15-16'), findsOneWidget);
-    expect(find.text('2 replies'), findsOneWidget);
+    // Narrow card: replies collapse to icon + count, full label in tooltip.
+    expect(find.byTooltip('2 replies'), findsOneWidget);
     // Only mentors/admins get the manage menu.
     expect(find.byIcon(Icons.more_vert), findsNothing);
   });

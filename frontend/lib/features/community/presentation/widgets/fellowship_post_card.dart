@@ -1091,14 +1091,19 @@ String postRepliesLabel(BuildContext context, int count) {
 /// own copy, so raising the reaction button to a 44px touch target left its
 /// reply button at the old size and the two no longer lined up.
 ///
-/// [leading] is placed before the reaction pill (the daily post's
-/// "Start study").
+/// [leading] is placed first, as the row's primary action (the daily post's
+/// "Start study"). With a leading action on a narrow card the replies button
+/// and reaction buttons collapse to icon (plus count) so no label is ever truncated; its full
+/// label stays in the tooltip and semantics.
 class FellowshipPostFooter extends StatelessWidget {
   final FellowshipPostEntity post;
   final Color accentColor;
   final VoidCallback? onCommentTap;
   final VoidCallback? onShareTap;
   final Widget? leading;
+
+  /// Below this row width a footer with [leading] shows replies icon-only.
+  static const double compactRepliesBelow = 420;
 
   const FellowshipPostFooter({
     required this.post,
@@ -1112,70 +1117,121 @@ class FellowshipPostFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final maxReactionWidth = MediaQuery.sizeOf(context).width * 0.45;
-    return Row(
-      children: [
-        if (leading != null) ...[leading!, const SizedBox(width: 8)],
-        // Capped so a long translated label wraps inside the pill instead
-        // of pushing the replies and share buttons off the card.
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxReactionWidth),
-          child: FellowshipReactionButton(post: post, accentColor: accentColor),
-        ),
-        const SizedBox(width: 4),
-        if (onCommentTap != null)
-          // Expanded + Align: the button still shrinks (and its text wraps)
-          // when "replies" runs long in Malayalam/Hindi, but all leftover
-          // width goes after it, so the share button sits at the right edge.
-          Expanded(
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: InkWell(
-                onTap: onCommentTap,
-                borderRadius: BorderRadius.circular(22),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline_rounded,
-                          size: 20,
-                          color: palette.muted,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            postRepliesLabel(context, post.commentCount),
-                            style: AppFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: palette.muted,
-                            ),
-                          ),
-                        ),
-                      ],
+    return LayoutBuilder(builder: (context, box) {
+      final rowWidth =
+          box.hasBoundedWidth ? box.maxWidth : MediaQuery.sizeOf(context).width;
+      final compactReplies = leading != null && rowWidth < compactRepliesBelow;
+      final repliesLabel = postRepliesLabel(context, post.commentCount);
+      final replyTextStyle = AppFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: palette.muted,
+      );
+      final replies = Tooltip(
+        message: repliesLabel,
+        child: Semantics(
+          button: true,
+          label: repliesLabel,
+          excludeSemantics: true,
+          child: InkWell(
+            key: const ValueKey('post-footer-replies'),
+            onTap: onCommentTap,
+            borderRadius: BorderRadius.circular(22),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: compactReplies ? 8 : 10,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 20,
+                      color: palette.muted,
                     ),
-                  ),
+                    if (!compactReplies) ...[
+                      const SizedBox(width: 6),
+                      Flexible(
+                          child: Text(repliesLabel, style: replyTextStyle)),
+                    ] else if (post.commentCount > 0) ...[
+                      const SizedBox(width: 4),
+                      Text('${post.commentCount}', style: replyTextStyle),
+                    ],
+                  ],
                 ),
               ),
             ),
-          )
-        else
-          const Spacer(),
-        if (onShareTap != null)
-          IconButton(
-            onPressed: onShareTap,
-            tooltip: AppLocalizations.of(context)!.sharePost,
-            icon: Icon(Icons.share_outlined, size: 20, color: palette.muted),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
-      ],
-    );
+        ),
+      );
+
+      final share = IconButton(
+        onPressed: onShareTap,
+        tooltip: AppLocalizations.of(context)!.sharePost,
+        icon: Icon(Icons.share_outlined, size: 20, color: palette.muted),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      );
+      final reaction = ConstrainedBox(
+        // Capped so a long translated label wraps inside the pill instead
+        // of pushing the replies and share buttons off the card.
+        constraints: BoxConstraints(maxWidth: rowWidth * 0.45),
+        child: FellowshipReactionButton(
+          post: post,
+          accentColor: accentColor,
+        ),
+      );
+      if (compactReplies) {
+        return Row(
+          children: [
+            // Takes almost all spare width (flex 100 vs the spacer's 1), so
+            // the label stays on one line whenever it fits and only wraps,
+            // never cuts, on the narrowest cards.
+            Flexible(flex: 100, child: leading!),
+            const SizedBox(width: 6),
+            FellowshipReactionButton(
+              post: post,
+              accentColor: accentColor,
+              compact: true,
+            ),
+            if (onCommentTap != null) replies,
+            const Spacer(),
+            if (onShareTap != null) share,
+          ],
+        );
+      }
+      return Row(
+        children: [
+          if (leading != null) ...[
+            // Hugs its label; wraps it (never cuts it) past half the row.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: rowWidth * 0.5),
+              child: leading,
+            ),
+            const SizedBox(width: 8),
+          ],
+          reaction,
+          const SizedBox(width: 4),
+          if (onCommentTap != null)
+            // Expanded + Align: the button still shrinks (and its text
+            // wraps) when "replies" runs long in Malayalam/Hindi, but all
+            // leftover width goes after it, so share sits at the right edge.
+            Expanded(
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: replies,
+              ),
+            )
+          else
+            const Spacer(),
+          if (onShareTap != null) share,
+        ],
+      );
+    });
   }
 }
 
@@ -1204,7 +1260,7 @@ class FellowshipPostPreviewFooter extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🙏', style: TextStyle(fontSize: 14)),
+              Icon(reactionOptions.first.icon, size: 15, color: palette.muted),
               const SizedBox(width: 4),
               Text('$totalReactions', style: style),
             ],

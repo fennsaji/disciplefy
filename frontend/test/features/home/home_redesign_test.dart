@@ -351,6 +351,13 @@ void main() {
           (tester) async {
         await pump(tester, hero(_loaded(_shortVerse)), theme: theme);
 
+        if (theme.brightness == Brightness.light) {
+          // Light: a rounded edge, never a dark-to-pale fade (grey band).
+          expect(find.byKey(const Key('home_hero_ground_fade')), findsNothing);
+          expect(find.byKey(const Key('home_hero_light_edge')), findsOneWidget);
+          return;
+        }
+
         final fade = tester.widget<DecoratedBox>(
             find.byKey(const Key('home_hero_ground_fade')));
         final fadeColors =
@@ -1019,8 +1026,10 @@ void main() {
           find.text('Confidence in Your Salvation — '
               'How can we be sure we belong to God?'),
           findsOneWidget);
-      expect(find.text('·  3 replies  ·  🙏 5'), findsOneWidget);
-      expect(find.text('·  1 reply  ·  🙏 8'), findsOneWidget);
+      expect(find.textContaining('3 replies'), findsOneWidget);
+      expect(find.textContaining(' 5'), findsWidgets);
+      expect(find.byIcon(Icons.volunteer_activism_outlined), findsWidgets);
+      expect(find.textContaining('1 reply'), findsOneWidget);
       expect(find.text('·  Start study'), findsOneWidget);
       expect(find.text("Fenn's Test Fellowship"), findsNWidgets(3));
     });

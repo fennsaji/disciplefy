@@ -214,10 +214,7 @@ class _ActivityCard extends StatelessWidget {
       case 'reply':
         return (label: l10n.activityKindReplied, tone: SettingsTone.green);
       case 'react':
-        return (
-          label: '${l10n.activityKindReacted} 🙏',
-          tone: SettingsTone.indigo,
-        );
+        return (label: l10n.activityKindReacted, tone: SettingsTone.indigo);
       case 'daily_post':
       case 'daily':
         return (label: l10n.activityKindDaily, tone: SettingsTone.gold);

@@ -16,7 +16,7 @@ import { AppError } from '../_shared/utils/error-handler.ts';
 import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
-import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations } from './batch-loaders.ts';
+import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations, pathProgressPercentage } from './batch-loaders.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
   calculatePathScores,
@@ -1199,45 +1199,40 @@ async function handleGetRecommendedPaths(
     .order('display_order', { ascending: true })
     .limit(limit + 10);
 
-  const progressByPath = new Map<string, { enrolled: boolean; topicsCompleted: number; completed: boolean }>();
-  if (userId) {
-    const { data: rows } = await supabaseServiceClient
-      .from('user_learning_path_progress')
-      .select('learning_path_id, topics_completed, completed_at')
-      .eq('user_id', userId);
-    for (const row of (rows ?? [])) {
-      progressByPath.set(row.learning_path_id as string, {
-        enrolled: true,
-        topicsCompleted: (row.topics_completed as number) ?? 0,
-        completed: row.completed_at != null,
-      });
-    }
-  }
+  // Progress comes from user_topic_progress, as on the detail screen and in
+  // every other branch. The enrollment row's topics_completed counter goes
+  // stale (and there is no row for topics finished without enrolling), so a
+  // path whose every topic was done read "0/16 Topics" here and stayed listed.
+  const featuredIds = (featuredPaths || []).map((p: { id: string }) => p.id);
+  const [, completedCounts, enrolledIds, completedPathIds] = await Promise.all([
+    preloadTopicCounts(supabaseServiceClient, featuredIds),
+    userId ? loadCompletedTopicCounts(supabaseServiceClient, featuredIds, userId) : Promise.resolve(null),
+    userId ? loadEnrolledPathIds(supabaseServiceClient, featuredIds, userId) : Promise.resolve(null),
+    userId ? getCompletedPathIds(supabaseServiceClient, userId) : Promise.resolve(new Set<string>()),
+  ]);
 
   const fallbackObjects: LearningPath[] = [];
-  await preloadTopicCounts(supabaseServiceClient, (featuredPaths || []).map((p: { id: string }) => p.id));
-
   for (const pathData of (featuredPaths || [])) {
     if (fallbackObjects.length >= limit) break;
-    const progress = progressByPath.get(pathData.id as string);
-    if (progress?.completed) continue;
 
     const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-    // Real progress, not a flag: reporting 0 for a path already under way made
-    // the card read "0/8 Topics" on a path with a topic finished.
-    const percentage = progress && topicsCountNum > 0
-      ? Math.round((progress.topicsCompleted * 100) / topicsCountNum)
+    const topicsCompleted = userId
+      ? await completedFor(supabaseServiceClient, completedCounts, pathData.id, userId)
       : 0;
+    const percentage = pathProgressPercentage(topicsCompleted, topicsCountNum, pathData.id, completedPathIds);
+    if (percentage >= 100) continue;
+
     const localized = await getLocalizedTitleDescription(
       supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
     );
     fallbackObjects.push(buildLearningPathResponse(
       pathData,
       topicsCountNum,
-      progress?.enrolled ?? false,
+      enrolledIds?.has(pathData.id) ?? false,
       percentage,
       localized.title,
       localized.description,
+      topicsCompleted,
     ));
   }
 

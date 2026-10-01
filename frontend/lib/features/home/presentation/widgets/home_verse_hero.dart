@@ -47,9 +47,14 @@ const int homeVerseMaxLines = 8;
 const Color _onScene = Color(0xFFF2F2F4);
 const Color _onSceneMuted = Color(0xFFD6D6DC);
 
-/// Height of the strip at the hero's bottom edge that fades into the page.
+/// Height of the strip at the hero's bottom edge that fades into the page
+/// (dark theme only).
 const double _groundFadeHeight = 28;
-const double _groundFadeHeightLight = 64;
+
+/// Light theme: the dark scene ends in a rounded edge instead of fading
+/// into the pale page, which would leave a muddy grey band.
+const double _lightSceneRadius = 28;
+const double _lightSceneBottomPadding = 22;
 
 /// Full-bleed top of the home screen: scenery photo, a greeting and the
 /// verse of the day, with room at the top for the pinned header.
@@ -76,13 +81,11 @@ class HomeVerseHero extends StatelessWidget {
     final theme = Theme.of(context);
     final ground = theme.scaffoldBackgroundColor;
     final topInset = MediaQuery.paddingOf(context).top;
-    // A dark photo meeting a pale page needs a longer, eased fade or the
-    // seam reads as a hard edge; on the dark page a short one is enough.
-    final fadeHeight = theme.brightness == Brightness.light
-        ? _groundFadeHeightLight
-        : _groundFadeHeight;
+    final isLight = theme.brightness == Brightness.light;
+    final bottomPadding =
+        isLight ? _lightSceneBottomPadding : _groundFadeHeight + 6;
 
-    return Stack(
+    final scene = Stack(
       children: [
         Positioned.fill(
           child: ClipRect(
@@ -129,32 +132,33 @@ class HomeVerseHero extends StatelessWidget {
             ),
           ),
         ),
-        // The fade into the page ground happens only in the empty strip
-        // under the content, never behind the verse actions.
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: fadeHeight,
-          child: DecoratedBox(
-            key: const Key('home_hero_ground_fade'),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  ground.withValues(alpha: 0),
-                  ground.withValues(alpha: 0.35),
-                  ground.withValues(alpha: 0.8),
-                  ground,
-                ],
-                stops: const [0, 0.35, 0.72, 1],
+        // Dark theme: the fade into the page ground happens only in the
+        // empty strip under the content, never behind the verse actions.
+        if (!isLight)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: _groundFadeHeight,
+            child: DecoratedBox(
+              key: const Key('home_hero_ground_fade'),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    ground.withValues(alpha: 0),
+                    ground.withValues(alpha: 0.35),
+                    ground.withValues(alpha: 0.8),
+                    ground,
+                  ],
+                  stops: const [0, 0.35, 0.72, 1],
+                ),
               ),
             ),
           ),
-        ),
         Padding(
-          padding: EdgeInsets.fromLTRB(0, topInset + 12, 0, fadeHeight + 6),
+          padding: EdgeInsets.fromLTRB(0, topInset + 12, 0, bottomPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -200,6 +204,20 @@ class HomeVerseHero extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (!isLight) return scene;
+    // The cards below sit on the page ground; leave a gap so the rounded
+    // edge reads as the end of the photo, not a border touching them.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        key: const Key('home_hero_light_edge'),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(_lightSceneRadius),
+        ),
+        child: scene,
+      ),
     );
   }
 }

@@ -18,6 +18,7 @@ import 'package:disciplefy_bible_study/features/community/domain/repositories/co
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/reaction_button.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_sections.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
@@ -822,13 +823,31 @@ class _ActivityMeta extends StatelessWidget {
     } else {
       final replies = post.commentCount;
       final reactions = recentActivityReactionTotal(post);
-      final parts = [
-        if (replies > 0) postRepliesLabel(context, replies),
-        if (reactions > 0) '🙏 $reactions',
-      ];
-      trailing = parts.isEmpty
+      trailing = replies <= 0 && reactions <= 0
           ? null
-          : Text('·  ${parts.join('  ·  ')}', style: metaStyle);
+          : Text.rich(
+              TextSpan(
+                style: metaStyle,
+                children: [
+                  const TextSpan(text: '·  '),
+                  if (replies > 0)
+                    TextSpan(text: postRepliesLabel(context, replies)),
+                  if (replies > 0 && reactions > 0)
+                    const TextSpan(text: '  ·  '),
+                  if (reactions > 0) ...[
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Icon(
+                        reactionOptions.first.icon,
+                        size: 13,
+                        color: metaStyle.color,
+                      ),
+                    ),
+                    TextSpan(text: ' $reactions'),
+                  ],
+                ],
+              ),
+            );
     }
 
     return LayoutBuilder(
