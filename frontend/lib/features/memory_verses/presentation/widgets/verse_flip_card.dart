@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
-import 'package:disciplefy_bible_study/core/constants/bible_translation_citation.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
@@ -94,7 +93,6 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                       child: _CardFace(
                         child: _BackContent(
                           verse: widget.verse,
-                          citedReference: _citedReference(),
                         ),
                       ),
                     ),
@@ -103,18 +101,6 @@ class _VerseFlipCardState extends State<VerseFlipCard>
         ),
       ),
     );
-  }
-
-  /// Daily-verse-sourced verses show the translation citation, e.g.
-  /// "John 3:16 (BSB)". The user's own (manual / ai_generated) verses do not.
-  String _citedReference() {
-    if (widget.verse.sourceType != 'daily_verse') {
-      return widget.verse.verseReference;
-    }
-    final abbr = bibleTranslationAbbr(widget.verse.language);
-    return abbr.isEmpty
-        ? widget.verse.verseReference
-        : '${widget.verse.verseReference} ($abbr)';
   }
 }
 
@@ -205,9 +191,7 @@ class _FrontContent extends StatelessWidget {
 
 class _BackContent extends StatelessWidget {
   final MemoryVerseEntity verse;
-  final String citedReference;
-
-  const _BackContent({required this.verse, required this.citedReference});
+  const _BackContent({required this.verse});
 
   @override
   Widget build(BuildContext context) {
@@ -221,8 +205,9 @@ class _BackContent extends StatelessWidget {
       children: [
         _FaceLabel(context.tr(TranslationKeys.memoryRecallFlipBack)),
         const SizedBox(height: 10),
+        // Reference only — no translation label beside a verse being recalled.
         Text(
-          citedReference,
+          verse.verseReference,
           textAlign: TextAlign.center,
           style: AppFonts.poppins(
             fontSize: 16,
