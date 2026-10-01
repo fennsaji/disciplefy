@@ -12,6 +12,8 @@ import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/dail
 import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_streak.dart';
 import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_sections.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_model.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_verse_hero.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
@@ -671,6 +673,83 @@ void main() {
       await tester.tap(find.text('The Attributes of God'));
       expect(taps, 1);
     });
+
+    LearningPath path({
+      int progress = 50,
+      bool enrolled = true,
+      String? next = 'Faith and Science',
+    }) =>
+        LearningPathModel.fromJson({
+          'id': 'p1',
+          'title': 'Foundations',
+          'topics_count': 14,
+          'progress_percentage': progress,
+          'is_enrolled': enrolled,
+          if (next != null) 'next_topic_title': next,
+        });
+
+    Future<String> subtitleFor(WidgetTester tester, LearningPath p) async {
+      late String result;
+      await pump(tester, Builder(builder: (context) {
+        result = homePathSubtitle(context, p);
+        return const SizedBox();
+      }));
+      return result;
+    }
+
+    testWidgets('subtitle names the next topic when the server sends one',
+        (tester) async {
+      expect(await subtitleFor(tester, path()),
+          '7 of 14 · Next: Faith and Science');
+    });
+
+    testWidgets('subtitle falls back without a next topic or when done',
+        (tester) async {
+      expect(await subtitleFor(tester, path(next: null)), '7 of 14 topics');
+      expect(await subtitleFor(tester, path(next: '  ')), '7 of 14 topics');
+      expect(await subtitleFor(tester, path(progress: 100)), '14 of 14 topics');
+      expect(await subtitleFor(tester, path(progress: 0, enrolled: false)),
+          'Start here · 14 topics');
+    });
+
+    test('next topic survives the cache round trip, not a progress change', () {
+      final p = path();
+      expect(
+          LearningPathModel.fromJson((p as LearningPathModel).toJson())
+              .nextTopicTitle,
+          'Faith and Science');
+      expect(p.copyWith(isEnrolled: true).nextTopicTitle, 'Faith and Science');
+      expect(p.copyWith(progressPercentage: 60).nextTopicTitle, isNull);
+    });
+
+    for (final lang in AppLanguage.values) {
+      testWidgets('${lang.code}: long next title fits 320px on one line',
+          (tester) async {
+        final subtitle =
+            _translate(lang, TranslationKeys.homeTopicsProgressNext, {
+          'done': 13,
+          'total': 14,
+          'title': 'Faith and Science in a World of Questions and Doubts ' * 2,
+        });
+        await pump(
+          tester,
+          HomePathRow(
+            title: 'Foundations of the Faith for New Believers',
+            subtitle: subtitle,
+            progress: 13 / 14,
+            accent: Colors.amber,
+            onTap: () {},
+          ),
+          width: 320,
+          height: 640,
+        );
+        expect(tester.takeException(), isNull);
+        final text = tester.widget<Text>(find.text(subtitle));
+        expect(text.maxLines, 1);
+        expect(text.overflow, TextOverflow.ellipsis);
+        expect(subtitle.contains('13'), isTrue);
+      });
+    }
   });
 
   group('recent activity empty states', () {

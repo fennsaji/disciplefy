@@ -586,6 +586,7 @@ const Map<String, dynamic> hindiTranslations = {
     'browse_paths': 'सीखने के पथ देखें',
     'browse_paths_hint': 'अपनी यात्रा शुरू करने के लिए एक पथ चुनें',
     'topics_progress': '{total} में से {done} विषय',
+    'topics_progress_next': '{total} में से {done} · अगला: {title}',
     'start_here': 'यहाँ से शुरू करें · {count} विषय',
     'day_streak': '{count} दिन की स्ट्रीक',
     'keep_it_alive': 'इसे बनाए रखें',

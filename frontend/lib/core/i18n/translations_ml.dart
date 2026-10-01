@@ -596,6 +596,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'browse_paths': 'പഠന പാതകൾ കാണൂ',
     'browse_paths_hint': 'യാത്ര തുടങ്ങാൻ ഒരു പാത തിരഞ്ഞെടുക്കൂ',
     'topics_progress': '{total}-ൽ {done} വിഷയങ്ങൾ',
+    'topics_progress_next': '{total}-ൽ {done} · അടുത്തത്: {title}',
     'start_here': 'ഇവിടെ തുടങ്ങൂ · {count} വിഷയങ്ങൾ',
     'day_streak': '{count} ദിവസ സ്ട്രീക്ക്',
     'keep_it_alive': 'തുടർന്നും നിലനിർത്തൂ',

@@ -25,6 +25,10 @@ class LearningPath extends Equatable {
   /// send one.
   final int? displayOrder;
 
+  /// Title of the first unfinished topic, in the content language. Sent only
+  /// with the recommended path; `null` elsewhere or when nothing is left.
+  final String? nextTopicTitle;
+
   const LearningPath({
     required this.id,
     required this.slug,
@@ -44,6 +48,7 @@ class LearningPath extends Equatable {
     this.category = '',
     this.fellowshipCompleted = false,
     this.displayOrder,
+    this.nextTopicTitle,
   });
 
   @override
@@ -66,6 +71,7 @@ class LearningPath extends Equatable {
         category,
         fellowshipCompleted,
         displayOrder,
+        nextTopicTitle,
       ];
 
   /// Number of topics completed, derived from progress percentage.
@@ -96,6 +102,8 @@ class LearningPath extends Equatable {
       category: category,
       fellowshipCompleted: fellowshipCompleted,
       displayOrder: displayOrder,
+      // A progress change may finish that topic; drop rather than show stale.
+      nextTopicTitle: progressPercentage == null ? nextTopicTitle : null,
     );
   }
 

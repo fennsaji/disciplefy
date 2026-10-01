@@ -21,6 +21,7 @@ class LearningPathModel extends LearningPath {
     super.category,
     super.fellowshipCompleted,
     super.displayOrder,
+    super.nextTopicTitle,
   });
 
   factory LearningPathModel.fromJson(Map<String, dynamic> json) {
@@ -44,7 +45,14 @@ class LearningPathModel extends LearningPath {
       category: json['category'] as String? ?? '',
       fellowshipCompleted: json['fellowship_completed'] as bool? ?? false,
       displayOrder: (json['display_order'] as num?)?.toInt(),
+      nextTopicTitle: _nonBlank(json['next_topic_title']),
     );
+  }
+
+  static String? _nonBlank(Object? value) {
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Map<String, dynamic> toJson() {
@@ -64,6 +72,7 @@ class LearningPathModel extends LearningPath {
       'is_enrolled': isEnrolled,
       'progress_percentage': progressPercentage,
       if (displayOrder != null) 'display_order': displayOrder,
+      if (nextTopicTitle != null) 'next_topic_title': nextTopicTitle,
     };
   }
 }

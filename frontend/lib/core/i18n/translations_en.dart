@@ -588,6 +588,7 @@ const Map<String, dynamic> englishTranslations = {
     'browse_paths': 'Browse learning paths',
     'browse_paths_hint': 'Pick a path to start your journey',
     'topics_progress': '{done} of {total} topics',
+    'topics_progress_next': '{done} of {total} · Next: {title}',
     'start_here': 'Start here · {count} topics',
     'day_streak': '{count}-day streak',
     'keep_it_alive': 'Keep it alive',
