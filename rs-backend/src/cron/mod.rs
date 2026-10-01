@@ -32,6 +32,7 @@ pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static FELLOWSHIP_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static DISCIPLER_REPLY_WORKER_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static TELEGRAM_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static TELEGRAM_DAILY_VERSE_RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// How long each job may hold its cross-instance lease.
 ///
@@ -133,9 +134,16 @@ pub async fn start_scheduler(
             },
             CronConfig {
                 name: "telegram_daily_post".into(),
-                enabled: false,
+                enabled: true,
                 schedule: schedules::TELEGRAM_DAILY_POST.into(),
-                label: "Daily 14:30 IST — Telegram channel post (en, hi, ml)".into(),
+                label: "Daily 08:00 IST — Telegram study post (en, hi, ml)".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "telegram_daily_verse".into(),
+                enabled: true,
+                schedule: schedules::TELEGRAM_DAILY_VERSE.into(),
+                label: "Daily 06:00 IST — Telegram daily verse (en, hi, ml)".into(),
                 updated_at: chrono::Utc::now(),
             },
         ]
@@ -485,6 +493,55 @@ pub async fn start_scheduler(
         .expect("Failed to add Telegram daily post CRON job");
     job_ids.insert("telegram_daily_post".into(), telegram_uuid);
 
+    // Telegram daily verse CRON
+    let verse_cfg = configs.iter().find(|c| c.name == "telegram_daily_verse");
+    let verse_schedule = verse_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::TELEGRAM_DAILY_VERSE.into());
+    let verse_pool = pool.clone();
+    let verse_config = Arc::new(config.clone());
+    let verse_http = http.clone();
+
+    let verse_job = Job::new_async(verse_schedule.as_str(), move |_uuid, _lock| {
+        let p = verse_pool.clone();
+        let c = verse_config.clone();
+        let h = verse_http.clone();
+        Box::pin(async move {
+            if !cron_config::should_run(&p, "telegram_daily_verse").await {
+                return;
+            }
+            let _guard = match CronGuard::try_acquire(&TELEGRAM_DAILY_VERSE_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Telegram daily verse CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) =
+                locks::CronLease::try_acquire(&p, "telegram_daily_verse", LEASE_TTL).await
+            else {
+                return;
+            };
+            if let Err(e) = telegram_daily_post::run_telegram_daily_verse(&c, &h).await {
+                tracing::error!("Telegram daily verse CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
+            }
+        })
+    })
+    .expect("Failed to create Telegram daily verse CRON job");
+
+    let verse_uuid = sched
+        .add(verse_job)
+        .await
+        .expect("Failed to add Telegram daily verse CRON job");
+    job_ids.insert("telegram_daily_verse".into(), verse_uuid);
+
     // Pre-warm CRON
     let prewarm_cfg = configs.iter().find(|c| c.name == "prewarm");
     let prewarm_schedule = prewarm_cfg
@@ -588,6 +645,7 @@ pub async fn start_scheduler(
         ("fellowship_daily_post", daily_schedule.as_str()),
         ("discipler_reply_worker", worker_schedule.as_str()),
         ("telegram_daily_post", telegram_schedule.as_str()),
+        ("telegram_daily_verse", verse_schedule.as_str()),
         ("prewarm", prewarm_schedule.as_str()),
         ("cost_reconcile", reconcile_schedule.as_str()),
     ]);

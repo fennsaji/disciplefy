@@ -21,9 +21,12 @@ pub const FELLOWSHIP_DAILY_POST: &str = "0 0 1 * * *";
 /// Discipler reply worker — every minute; drains the reply queue and, on minute 0, flushes activity digests.
 pub const DISCIPLER_REPLY_WORKER: &str = "0 * * * * *";
 
-/// Telegram daily post — 09:00 UTC (14:30 IST). One run posts every language;
-/// the Edge Function is idempotent per language per day.
-pub const TELEGRAM_DAILY_POST: &str = "0 0 9 * * *";
+/// Telegram study/blog post — 02:30 UTC (08:00 IST). One run posts every
+/// language; the Edge Function is idempotent per language per day.
+pub const TELEGRAM_DAILY_POST: &str = "0 30 2 * * *";
+
+/// Telegram daily verse — 00:30 UTC (06:00 IST), every language.
+pub const TELEGRAM_DAILY_VERSE: &str = "0 30 0 * * *";
 
 /// Pre-warm tick — hourly. Starts a batch of learning-path guides when the
 /// monthly budget allows one, then moves it through its two passes and writes

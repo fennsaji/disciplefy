@@ -39,6 +39,7 @@ async fn main() {
         .init();
 
     let config = Config::from_env();
+    models::bible::init();
     let pool = db::create_pool(&config.database_url, config.db_pool_size).await;
     let http = Client::builder()
         .timeout(Duration::from_secs(300)) // 5 min — Malayalam generation can take 2-3 min
