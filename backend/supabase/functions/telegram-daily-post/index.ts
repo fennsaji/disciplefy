@@ -12,7 +12,8 @@
  * Teasers come from the shared teaser service, so a lesson already teased for a
  * fellowship costs nothing here; only a lesson no one has seen yet is generated.
  *
- * Schedule: daily via pg_cron (see 20260908000004_schedule_telegram_daily_post.sql).
+ * Schedule: cron_config `telegram_daily_post` (rs-backend), 08:00 IST.
+ * Topic: telegram_topics kind 'study_post' per language (none = no topic).
  * Env: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
  */
 
@@ -20,44 +21,13 @@ import { createServiceRoleFunction } from '../_shared/core/function-factory.ts'
 import { getServiceContainer } from '../_shared/core/services.ts'
 import { getOrCreateTeaser } from '../_shared/services/teaser-service.ts'
 import { buildTelegramMessage } from './message.ts'
+import { resolveTelegramThreadId, sendTelegramMessage } from '../_shared/services/telegram-service.ts'
 
 /**
  * Audience id for the variant picker. A constant, so the channel keeps one
  * voice across lessons instead of hopping between stored wordings.
  */
 const TELEGRAM_AUDIENCE = 'telegram-official-channel'
-
-const TELEGRAM_API = 'https://api.telegram.org'
-
-interface TelegramSendResult {
-  ok: boolean
-  messageId: number | null
-  error: string | null
-}
-
-async function sendToTelegram(token: string, chatId: string, text: string): Promise<TelegramSendResult> {
-  try {
-    const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        // The message is plain text on purpose: topic titles carry apostrophes
-        // and em dashes that would have to be escaped for Markdown or HTML,
-        // and a single missed escape drops the whole post.
-        disable_web_page_preview: false,
-      }),
-    })
-    const payload = await res.json().catch(() => null)
-    if (!res.ok || !payload?.ok) {
-      return { ok: false, messageId: null, error: payload?.description ?? `HTTP ${res.status}` }
-    }
-    return { ok: true, messageId: payload.result?.message_id ?? null, error: null }
-  } catch (err) {
-    return { ok: false, messageId: null, error: err instanceof Error ? err.message : String(err) }
-  }
-}
 
 createServiceRoleFunction(async (req, supabase) => {
   const token = Deno.env.get('TELEGRAM_BOT_TOKEN')
@@ -125,9 +95,11 @@ createServiceRoleFunction(async (req, supabase) => {
     blogSlug: next.blog_slug,
   })
 
+  const threadId = await resolveTelegramThreadId(supabase, 'study_post', language)
+
   if (dryRun) {
     return {
-      success: true, dry_run: true, topic_id: next.topic_id, topic_title: next.topic_title,
+      success: true, dry_run: true, thread_id: threadId, topic_id: next.topic_id, topic_title: next.topic_title,
       blog_slug: next.blog_slug, teaser_cached: teaser.cached, message,
     }
   }
@@ -139,7 +111,7 @@ createServiceRoleFunction(async (req, supabase) => {
     return { success: false, skipped: true, reason: 'telegram_not_configured', topic_id: next.topic_id }
   }
 
-  const sent = await sendToTelegram(token, chatId, message)
+  const sent = await sendTelegramMessage(token, chatId, message, threadId)
 
   // Recorded either way: a failed row keeps the day visible without consuming
   // the lesson, so the next run retries the same one.

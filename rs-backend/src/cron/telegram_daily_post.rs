@@ -22,8 +22,19 @@ const LANGUAGES: [&str; 3] = ["en", "hi", "ml"];
 const TIMEOUT: Duration = Duration::from_secs(60);
 
 pub async fn run_telegram_daily_post(config: &Config, http: &Client) -> Result<(), AppError> {
-    tracing::info!("Starting Telegram daily post CRON job");
-    let url = format!("{}/functions/v1/telegram-daily-post", config.supabase_url);
+    run_per_language(config, http, "telegram-daily-post").await
+}
+
+/// Today's daily verse to the daily-verse topic, per language (06:00 IST).
+pub async fn run_telegram_daily_verse(config: &Config, http: &Client) -> Result<(), AppError> {
+    run_per_language(config, http, "telegram-daily-verse").await
+}
+
+/// Calls a Telegram Edge Function once per language. Both functions are
+/// idempotent per language per day, so a retry cannot double-post.
+async fn run_per_language(config: &Config, http: &Client, function: &str) -> Result<(), AppError> {
+    tracing::info!(function, "Starting Telegram CRON job");
+    let url = format!("{}/functions/v1/{}", config.supabase_url, function);
     let (mut posted, mut skipped, mut failed) = (0usize, 0usize, 0usize);
 
     for language in LANGUAGES {
@@ -55,14 +66,14 @@ pub async fn run_telegram_daily_post(config: &Config, http: &Client) -> Result<(
                     tracing::info!(
                         language,
                         reason = %body.get("reason").and_then(|v| v.as_str()).unwrap_or("unknown"),
-                        "Telegram daily post skipped"
+                        "Telegram post skipped"
                     );
                 } else {
                     posted += 1;
                     tracing::info!(
                         language,
                         topic = %body.get("topic_title").and_then(|v| v.as_str()).unwrap_or(""),
-                        "Telegram daily post sent"
+                        "Telegram post sent"
                     );
                 }
             }
@@ -70,11 +81,11 @@ pub async fn run_telegram_daily_post(config: &Config, http: &Client) -> Result<(
                 failed += 1;
                 let status = r.status();
                 let body = r.text().await.unwrap_or_default();
-                tracing::error!(language, %status, "Telegram daily post failed: {}", body);
+                tracing::error!(language, function, %status, "Telegram post failed: {}", body);
             }
             Err(e) => {
                 failed += 1;
-                tracing::error!(language, "Telegram daily post request failed: {}", e);
+                tracing::error!(language, function, "Telegram post request failed: {}", e);
             }
         }
     }
@@ -83,7 +94,8 @@ pub async fn run_telegram_daily_post(config: &Config, http: &Client) -> Result<(
         posted,
         skipped,
         failed,
-        "Telegram daily post CRON job finished"
+        function,
+        "Telegram CRON job finished"
     );
     Ok(())
 }
