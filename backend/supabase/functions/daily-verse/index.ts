@@ -15,6 +15,7 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 import { DailyVerseService } from './daily-verse-service.ts'
 import { isBibleContentEnabled } from '../_shared/services/bible-availability.ts'
 import { msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
+import { toDailyVerseResponseBody, type DailyVerseResponseBody } from './response.ts'
 
 // Lazy singleton — created once per worker lifetime, not at module load
 let _dailyVerseService: DailyVerseService | null = null
@@ -26,28 +27,9 @@ function getDailyVerseService(services: ServiceContainer): DailyVerseService {
 }
 
 /**
- * Daily verse data structure
- */
-interface DailyVerseData {
-  readonly id?: string // UUID from daily_verses_cache table
-  readonly reference: string
-  readonly referenceTranslations: {
-    readonly en: string
-    readonly hi: string
-    readonly ml: string
-  }
-  readonly date: string
-  readonly translations: {
-    readonly esv?: string
-    readonly hindi?: string
-    readonly malayalam?: string
-  }
-}
-
-/**
  * Complete API response structure
  */
-interface DailyVerseApiResponse extends ApiSuccessResponse<DailyVerseData> {}
+interface DailyVerseApiResponse extends ApiSuccessResponse<DailyVerseResponseBody> {}
 
 /**
  * Main handler for daily verse
@@ -117,21 +99,7 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
 
   // Create response data with additional fields
   // Only include translations that have content (non-empty strings)
-  const responseData: DailyVerseData = {
-    id: verseData.id, // UUID from daily_verses_cache table
-    reference: verseData.reference,
-    referenceTranslations: {
-      en: verseData.referenceTranslations.en,
-      hi: verseData.referenceTranslations.hi,
-      ml: verseData.referenceTranslations.ml
-    },
-    date: verseData.date,
-    translations: {
-      ...(verseData.translations.esv ? { esv: verseData.translations.esv } : {}),
-      ...(verseData.translations.hi ? { hindi: verseData.translations.hi } : {}),
-      ...(verseData.translations.ml ? { malayalam: verseData.translations.ml } : {})
-    },
-  }
+  const responseData = toDailyVerseResponseBody(verseData)
   // Not in the body: a per-request timestamp or cache flag would make every
   // response for the same verse differ, defeating ETag / HTTP revalidation.
   // No client reads either field; fromCache is still reported to analytics.
@@ -168,7 +136,7 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
  * be reused until the next UTC midnight. Other dates, and a verse that could
  * not be stored (no id), keep the previous one-hour limit.
  */
-function dailyVerseMaxAgeSeconds(verse: DailyVerseData): number {
+function dailyVerseMaxAgeSeconds(verse: DailyVerseResponseBody): number {
   const oneHour = 3600
   const untilMidnight = Math.max(0, Math.floor(msUntilNextUtcMidnight() / 1000))
   const todayKey = new Date().toISOString().split('T')[0]

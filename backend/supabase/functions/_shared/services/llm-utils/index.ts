@@ -12,7 +12,6 @@ export {
   sanitizeMarkdownText,
   sanitizeStudyGuideResponse,
   parseVerseReferenceResponse,
-  parseFullVerseResponse,
   parseJSONSafely
 } from './response-parser.ts'
 export type { VerseReferenceResponse } from './response-parser.ts'
@@ -20,7 +19,6 @@ export type { VerseReferenceResponse } from './response-parser.ts'
 export {
   createStudyGuidePrompt,
   createVerseReferencePrompt,
-  createFullVersePrompt,
   estimateContentComplexity,
   calculateOptimalTokens
 } from './prompt-builder.ts'

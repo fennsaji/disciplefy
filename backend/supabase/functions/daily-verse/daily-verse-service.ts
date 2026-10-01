@@ -2,6 +2,22 @@
 import type { LLMService } from '../_shared/services/llm-service.ts'
 import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 import { TtlCache, msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
+import { fetchVerseAllLanguages } from '../_shared/services/bible-api-service.ts'
+
+/** Fetches verse text per language for a reference (default: API.Bible, KJV/IRV). */
+export type VerseTextFetcher = (reference: string) => Promise<Record<'en' | 'hi' | 'ml', { text: string }>>
+
+const defaultVerseTextFetcher: VerseTextFetcher = (reference) => fetchVerseAllLanguages(reference)
+
+/** Strips API.Bible paragraph marks and stray unbalanced quote marks around a single verse. */
+export function tidyVerseText(text: string): string {
+  let t = (text ?? '').replace(/¶/g, '').replace(/\s+/g, ' ').trim()
+  const opens = (t.match(/“/g) ?? []).length
+  const closes = (t.match(/”/g) ?? []).length
+  if (opens > closes && t.startsWith('“')) t = t.slice(1).trim()
+  if (closes > opens && t.endsWith('”')) t = t.slice(0, -1).trim()
+  return t
+}
 
 /**
  * Verses read from daily_verses_cache, per worker, keyed by date_key.
@@ -26,7 +42,10 @@ export function clearDailyVerseMemoryCache(): void {
  * 
  * Handles fetching, caching, and serving daily Bible verses
  * in multiple translations with fallback mechanisms.
- * Uses LLM generation for dynamic verse selection.
+ *
+ * The LLM only chooses the reference. Verse wording always comes from the
+ * Bible API: KJV (public domain) for English, IRV for Hindi/Malayalam — the
+ * same versions fetch-verse serves. The LLM never writes Scripture text.
  */
 
 interface DailyVerseData {
@@ -38,9 +57,11 @@ interface DailyVerseData {
     ml: string
   }
   translations: {
+    // Key kept as `esv` for backward compatibility (installed apps and cached
+    // rows read it). It holds King James Version (KJV) text, not ESV.
     esv: string
-    hi: string
-    ml: string
+    hi: string // IRV Hindi
+    ml: string // IRV Malayalam
   }
   date: string
   fromCache?: boolean // signals whether this came from cache (true) or was LLM-generated (false)
@@ -56,7 +77,9 @@ interface BibleApiResponse {
 export class DailyVerseService {
   private readonly CACHE_TABLE = 'daily_verses_cache'
   
-  // Emergency fallback verses for when LLM generation fails
+  // Emergency fallback verses (LLM or Bible API unavailable). Text is exact
+  // KJV (public domain) for English and IRV for Hindi/Malayalam, matching the
+  // versions the app cites. Never put ESV or LLM wording here.
   private readonly EMERGENCY_FALLBACK_VERSES = [
     {
       reference: "John 3:16",
@@ -66,9 +89,9 @@ export class DailyVerseService {
         ml: "യോഹന്നാൻ 3:16"
       },
       translations: {
-        esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
-        hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
-        ml: "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി, അവനിൽ വിശ്വസിക്കുന്നവൻ നശിക്കാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന്."
+        esv: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+        hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे, वह नाश न हो, परन्तु अनन्त जीवन पाए।",
+        ml: "തന്‍റെ ഏകജാതനായ പുത്രനിൽ വിശ്വസിക്കുന്ന ഏവനും നശിച്ചുപോകാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന് ദൈവം അവനെ നല്കുവാൻ തക്കവണ്ണം ലോകത്തെ സ്നേഹിച്ചു."
       }
     },
     {
@@ -79,9 +102,9 @@ export class DailyVerseService {
         ml: "സങ്കീർത്തനം 23:1"
       },
       translations: {
-        esv: "The Lord is my shepherd; I shall not want.",
-        hi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
-        ml: "യഹോവ എന്റെ ഇടയൻ ആകുന്നു; എനിക്കു മുട്ടു വരികയില്ല."
+        esv: "The LORD is my shepherd; I shall not want.",
+        hi: "यहोवा मेरा चरवाहा है, मुझे कुछ घटी न होगी।",
+        ml: "യഹോവ എന്‍റെ ഇടയനാകുന്നു; എനിക്ക് ഒരു കുറവും ഉണ്ടാകുകയില്ല."
       }
     },
     {
@@ -92,9 +115,9 @@ export class DailyVerseService {
         ml: "ഫിലിപ്പിയർ 4:13"
       },
       translations: {
-        esv: "I can do all things through him who strengthens me.",
-        hi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
-        ml: "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ എനിക്കു സകലവും ചെയ്വാൻ കഴിയും."
+        esv: "I can do all things through Christ which strengtheneth me.",
+        hi: "जो मुझे सामर्थ्य देता है उसमें मैं सब कुछ कर सकता हूँ।",
+        ml: "എന്നെ ശക്തനാക്കുന്നവൻ മുഖാന്തരം എനിക്ക് എല്ലാം ചെയ്യുവാൻ കഴിയും."
       }
     },
     {
@@ -105,9 +128,9 @@ export class DailyVerseService {
         ml: "യോശുവ 1:9"
       },
       translations: {
-        esv: "Have I not commanded you? Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go.",
-        hi: "क्या मैं ने तुझे आज्ञा नहीं दी? हियाव बाँधकर दृढ़ हो जा; भयभीत न हो, और तेरा मन कच्चा न हो क्योंकि जहाँ कहीं तू जाएगा वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।",
-        ml: "ഞാൻ നിന്നോടു കല്പിച്ചിട്ടില്ലയോ? ബലപ്പെടുകയും ധൈര്യപ്പെടുകയും ചെയ്ക; ഭയപ്പെടുകയോ ഭ്രമിക്കുകയോ ചെയ്യേണ്ടാ; നീ എവിടെ പോയാലും നിന്റെ ദൈവമായ യഹോവ നിന്നോടുകൂടെ ഉണ്ടു."
+        esv: "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.",
+        hi: "क्या मैंने तुझे आज्ञा नहीं दी? हियाव बाँधकर दृढ़ हो जा; भय न खा, और तेरा मन कच्चा न हो; क्योंकि जहाँ-जहाँ तू जाएगा वहाँ-वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।",
+        ml: "നിന്‍റെ ദൈവമായ യഹോവ നീ പോകുന്ന ഇടത്തൊക്കെയും നിന്നോടുകൂടെ ഉള്ളതുകൊണ്ട് ഉറപ്പും ധൈര്യവുമുള്ളവനായിരിക്ക; ഭയപ്പെടരുത്, ഭ്രമിക്കയും അരുത് ഞാൻ തന്നെ നിന്നോട് കല്പിച്ചുവല്ലോ."
       }
     },
     {
@@ -118,16 +141,17 @@ export class DailyVerseService {
         ml: "റോമർ 8:28"
       },
       translations: {
-        esv: "And we know that for those who love God all things work together for good, for those who are called according to his purpose.",
-        hi: "और हम जानते हैं कि जो लोग परमेश्वर से प्रेम करते हैं, उनके लिये सब बातें मिलकर भलाई ही को उत्पन्न करती हैं; अर्थात् उन्हीं के लिये जो उसकी इच्छा के अनुसार बुलाए गए हैं।",
-        ml: "ദൈവത്തെ സ്നേഹിക്കുന്നവർക്കു, അവന്റെ ഉദ്ദേശ്യത്തിന് അനുസാരമായി വിളിക്കപ്പെട്ടവർക്കു സർവ്വവും ഗുണത്തിന്നായി കൂടിവരുന്നു എന്നു നാം അറിയുന്നു."
+        esv: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
+        hi: "और हम जानते हैं, कि जो लोग परमेश्वर से प्रेम रखते हैं, उनके लिये सब बातें मिलकर भलाई ही को उत्पन्न करती हैं; अर्थात् उन्हीं के लिये जो उसकी इच्छा के अनुसार बुलाए हुए हैं।",
+        ml: "എന്നാൽ ദൈവത്തെ സ്നേഹിക്കുന്നവർക്ക്, നിർണ്ണയപ്രകാരം വിളിക്കപ്പെട്ടവർക്കു തന്നെ, സകലവും നന്മയ്ക്കായി കൂടി വ്യാപരിക്കുന്നു എന്നു നാം അറിയുന്നു."
       }
     }
   ]
 
   constructor(
     private readonly supabase: any,
-    private readonly getLlmService: () => Promise<LLMService>
+    private readonly getLlmService: () => Promise<LLMService>,
+    private readonly fetchVerseText: VerseTextFetcher = defaultVerseTextFetcher
   ) {
     // Supabase client and LLM service injected via DI container
   }
@@ -232,12 +256,7 @@ export class DailyVerseService {
       
       console.log('LLM generation successful:', llmResponse.reference)
       
-      return {
-        reference: llmResponse.reference,
-        referenceTranslations: llmResponse.referenceTranslations,
-        translations: llmResponse.translations,
-        date: this.formatDateKey(date)
-      }
+      return { ...llmResponse, date: this.formatDateKey(date) }
       
     } catch (error) {
       console.error('Error generating daily verse with LLM:', error)
@@ -277,36 +296,33 @@ export class DailyVerseService {
   }
 
   /**
-   * Generate verse using LLM with proper verse content generation
+   * LLM picks the reference only; the wording is fetched from the Bible API
+   * (KJV / IRV). Throws when any language's text is missing so the caller uses
+   * the deterministic fallback instead of serving a partial verse.
    */
   private async generateVerseWithLLM(excludeReferences: string[], language: string = 'en'): Promise<DailyVerseData> {
-    console.log(`Generating daily verse using dedicated LLM method for language: ${language}...`)
-    
-    try {
-      // Use the dedicated daily verse generation method from LLM service
-      const llmResponse = await (await this.getLlmService()).generateDailyVerse(excludeReferences, language)
-      
-      console.log(`LLM generated verse: ${llmResponse.reference}`)
-      console.log('LLM referenceTranslations:', JSON.stringify(llmResponse.referenceTranslations))
-      
-      return {
-        reference: llmResponse.reference,
-        referenceTranslations: {
-          en: llmResponse.referenceTranslations.en,
-          hi: llmResponse.referenceTranslations.hi,
-          ml: llmResponse.referenceTranslations.ml
-        },
-        translations: {
-          esv: llmResponse.translations.esv,
-          hi: llmResponse.translations.hi,
-          ml: llmResponse.translations.ml
-        },
-        date: '' // Will be set by caller
-      }
-      
-    } catch (llmError) {
-      console.error('LLM generation failed:', llmError)
-      throw new Error('Failed to generate verse with LLM')
+    const choice = await (await this.getLlmService()).generateDailyVerse(excludeReferences, language)
+    console.log(`LLM selected reference: ${choice.reference}`)
+
+    const texts = await this.fetchVerseText(choice.reference)
+    const translations = {
+      esv: tidyVerseText(texts.en?.text ?? ''),
+      hi: tidyVerseText(texts.hi?.text ?? ''),
+      ml: tidyVerseText(texts.ml?.text ?? ''),
+    }
+    if (!translations.esv || !translations.hi || !translations.ml) {
+      throw new Error(`Bible API returned incomplete text for ${choice.reference}`)
+    }
+
+    return {
+      reference: choice.reference,
+      referenceTranslations: {
+        en: choice.referenceTranslations.en,
+        hi: choice.referenceTranslations.hi,
+        ml: choice.referenceTranslations.ml
+      },
+      translations,
+      date: '' // Will be set by caller
     }
   }
 
@@ -378,8 +394,8 @@ export class DailyVerseService {
 
     return {
       reference: fallbackVerse.reference,
-      referenceTranslations: fallbackVerse.referenceTranslations,
-      translations: fallbackVerse.translations,
+      referenceTranslations: { ...fallbackVerse.referenceTranslations },
+      translations: { ...fallbackVerse.translations },
       date: this.formatDateKey(date)
     }
   }

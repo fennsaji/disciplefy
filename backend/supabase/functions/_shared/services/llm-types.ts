@@ -64,18 +64,14 @@ export interface LLMResponse {
 }
 
 /**
- * Daily verse generation response structure.
- * Uses consistent 'hi'/'ml' keys for Hindi/Malayalam translations.
+ * Daily verse selection from the LLM: the reference only. The LLM never
+ * supplies verse wording — DailyVerseService fills the text from the Bible API
+ * (KJV for English, IRV for Hindi/Malayalam).
  */
 export interface DailyVerseResponse {
   readonly reference: string
   readonly referenceTranslations: {
     readonly en: string
-    readonly hi: string
-    readonly ml: string
-  }
-  readonly translations: {
-    readonly esv: string
     readonly hi: string
     readonly ml: string
   }

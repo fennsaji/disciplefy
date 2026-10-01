@@ -24,6 +24,7 @@ const HEADER: Record<VerseLanguage, string> = {
 export interface DailyVerseRecord {
   reference: string
   referenceTranslations?: Partial<Record<VerseLanguage, string>>
+  // `esv` is a legacy key name: it holds KJV text.
   translations?: { esv?: string; hi?: string; ml?: string; hindi?: string; malayalam?: string }
 }
 
