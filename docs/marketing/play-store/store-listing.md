@@ -1,92 +1,98 @@
 # Disciplefy - Play Store Listing Content
 
 ## App Name
-**Disciplefy - Bible Study**
+**Disciplefy: Bible Study Guide**
 
 ---
+
 
 ## Short Description (80 characters max)
 ```
-AI-powered Bible study guide with personalized insights & daily verses
+Bible study guides, Bible chat, daily verse & Scripture memory in 3 languages
 ```
-Character count: 70 ✓
+Character count: 77 ✓
 
 ---
+
 
 ## Full Description (4000 characters max)
 
 ```
-📖 Deepen Your Faith with AI-Powered Bible Study
+📖 Understand the Bible, not just read it
 
-Disciplefy is your personal Bible study companion that helps you understand Scripture like never before. Using advanced AI technology, get instant, meaningful study guides for any Bible verse or spiritual topic.
+Disciplefy is a Bible study guide app that turns any Bible verse or question into a clear, personal Bible study — in seconds, in your language. Type a reference like "John 3:16" or ask something real like "What does the Bible say about anxiety?" and get an easy-to-follow study guide grounded in sound, historic Christian theology.
 
 🌟 KEY FEATURES
 
-✨ AI-Powered Study Guides
-Enter any Bible verse and receive a comprehensive study guide with:
-• Summary - Clear explanation of the passage
-• Historical Context - Background and setting
-• Related Verses - Cross-references for deeper study
-• Discussion Questions - For personal reflection or group study
-• Prayer Points - Apply what you've learned
+✨ Bible Study Guides
+Five study modes for every kind of moment — Quick Read, Standard, Deep Dive, Lectio Divina and Sermon Outline. Each Bible study guide brings you:
+• Summary — the passage in plain language
+• Historical Context — background, culture and setting
+• Interpretation — verse-by-verse meaning
+• Related Verses — cross-references for deeper Bible study
+• Reflection Questions — for personal devotions or your small group
+• Prayer Points — turn what you've learned into prayer
 
-🗣️ Text-to-Speech
-Listen to your study guides with natural voice narration. Perfect for commuting, exercising, or when you prefer audio learning.
+🗣️ Listen
+Hear any study guide read aloud in English, Hindi or Malayalam — perfect for commuting, walking or when you'd rather listen than read.
 
-🌐 Multi-Language Support
-Study the Bible in:
-• English
-• हिन्दी (Hindi)
-• മലയാളം (Malayalam)
+🎙️ Voice Discipler
+Have a natural spoken conversation about a Bible passage or question and hear the answers in your language.
 
-📅 Daily Verse
-Start each day with an inspiring verse and devotional thought delivered to your home screen.
+💬 Bible Chat
+Ask deeper follow-up questions about any study guide while keeping the full context of what you're studying.
 
-💬 Follow-Up Chat
-Ask questions about your study and get instant AI-powered answers to deepen your understanding.
+🧭 Learning Paths & Bible Reading Plans
+Structured discipleship journeys on prayer, faith, character and more — like a guided Bible reading plan you follow one lesson at a time. Download a path and keep studying offline.
 
-📱 YOUR SPIRITUAL JOURNEY
+📅 Daily Verse & Daily Devotional
+A fresh daily Bible verse and short daily devotional every morning, with a reminder so you never miss it.
 
-• Explore curated topics like Grace, Faith, Discipleship
-• Save your favorite studies for later
-• Share insights with friends and study groups
-• Track your study progress
+🧠 Scripture Memory
+Memorize Bible verses with spaced-repetition flashcards and eight practice modes — including audio, fill-in-the-blank, word scramble and type-it-out — to truly hide God's Word in your heart.
+
+🤝 Fellowship & Church Groups
+Study the Bible together with your church or small group, schedule Google Meet sessions, and share prayer requests and praise reports.
+
+🏆 Progress
+Earn XP, unlock achievements, keep your Bible study streak and climb the leaderboard.
+
+🌐 THREE LANGUAGES
+• English (KJV)
+• हिन्दी — Hindi Bible study
+• മലയാളം — Malayalam Bible study
+Study, listen and pray in the language you think in.
 
 🔒 PRIVACY & SECURITY
-• No account required to start studying
-• Sign in with Google or Apple for premium features
-• Your data stays private and secure
+• Sign in with Google, Apple, email or phone
+• Your notes, saved guides and progress stay private to you
+• Read our Privacy Policy: https://www.disciplefy.in/privacy
 
-💎 SUBSCRIPTION OPTIONS
+💎 FREE AND PAID
 
-Free Plan:
-• 3 AI tokens daily
-• Basic study guides
-• Daily verse access
+Start free — no card required. The Free plan includes:
+• 15 study credits a day
+• Daily Verse
+• Learning Paths
+• Up to 3 memory verses with 2 practice modes
+• Join Fellowship Groups
 
-Standard Plan (₹50/month):
-• 100 AI tokens daily
-• All study guide features
-• Text-to-Speech
-• Save unlimited studies
-
-Premium Plan (₹100/month):
-• Unlimited AI tokens
-• Follow-up chat
-• Priority support
-• All premium features
+Optional subscriptions (Standard, Plus, Premium) add more daily credits, Voice Discipler sessions, unlimited follow-ups, unlimited memory verses with all eight practice modes, unlimited fellowship groups and more. See current plans and prices inside the app.
 
 📧 SUPPORT
-Questions or feedback? Contact us at support@disciplefy.in
+Questions or feedback? Write to hello@disciplefy.in
 
-Begin your journey of faith today with Disciplefy - where technology meets spirituality to help you grow closer to God.
+Whether you're a new believer taking first steps, a busy disciple who wants depth without spending hours, or someone exploring faith for the first time, Disciplefy helps you meet God in His Word through daily Bible study, prayer and Scripture memory — anytime, anywhere.
 
-Download now and transform your Bible study experience!
+"Your word is a lamp to my feet and a light to my path." — Psalm 119:105
+
+Terms of Use: https://www.disciplefy.in/terms
 ```
 
-Character count: ~2200 ✓
+Play has no keyword field: name, short description and full description are indexed. Keep the key phrases (Bible study guide, daily devotional, daily verse, Scripture memory, Bible reading plan, prayer, Bible chat, Hindi/Malayalam Bible) 2–4 times each; never paste keyword lists. No AI wording.
 
 ---
+
 
 ## What's New (Release Notes v1.0.0)
 
