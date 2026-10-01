@@ -1,10 +1,17 @@
 name: Send Push Notifications (Production)
 
 on:
-  # No schedule: every push here is triggered by pg_cron inside the database
-  # (migrations 20260915080000, 20260915090000, 20260915100000). GitHub's
-  # hourly schedule dropped most runs, so pushes arrived hours late, and
-  # running both could race and double-send. Manual dispatch stays for testing.
+  # Backup trigger. pg_cron (migrations 20260915080000, 20260915090000,
+  # 20260915100000) is meant to call these every 15 minutes, but it depends on
+  # the Vault secrets project_url / service_role_key; when they are missing or
+  # wrong nothing is sent at all (no scheduled push went out from 2026-09-15 to
+  # 2026-10-01). Every function picks users by their local time with a catch-up
+  # window and records what it sent per user per day, so this schedule is safe
+  # alongside pg_cron. Minutes are offset from pg_cron's :00/:15/:30/:45 runs to
+  # avoid overlapping calls.
+  schedule:
+    - cron: '7,37 * * * *'
+
 
   workflow_dispatch:
     inputs:
@@ -29,13 +36,13 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Daily Verse Notifications (Prod)
 
-    # Manual dispatch only. pg_cron triggers this every 15 minutes (migration
-    # 20260915080000): GitHub's hourly schedule dropped most runs, so the 8 AM
-    # verse arrived hours late, and running both could race and double-send.
+    # Runs on the backup schedule above and on manual dispatch; pg_cron also
+    # triggers it every 15 minutes. The function dedups per user per day.
     if: |
-      github.event_name == 'workflow_dispatch' &&
-      (github.event.inputs.notification_type == 'daily_verse' ||
-       github.event.inputs.notification_type == 'all')
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.notification_type == 'daily_verse' ||
+        github.event.inputs.notification_type == 'all'))
 
     steps:
       # The Edge Function selects users whose local time has reached 08:00 and
@@ -95,15 +102,14 @@ jobs:
     needs: [send-daily-verse]
     name: Send Recommended Topic Notifications (Prod)
 
-    # Manual dispatch only: pg_cron triggers this every 15 minutes (migration
-    # 20260915090000), for the same reason as the Daily Verse job above.
-    # always() so one category failing or having nothing to send does not
-    # break the chain for the categories after it.
+    # Runs on the backup schedule above and on manual dispatch; pg_cron also
+    # triggers it every 15 minutes. The function dedups per user per day.
     if: |
-      always() &&
-      github.event_name == 'workflow_dispatch' &&
-      (github.event.inputs.notification_type == 'recommended_topic' ||
-       github.event.inputs.notification_type == 'all')
+      always() && (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' &&
+         (github.event.inputs.notification_type == 'recommended_topic' ||
+          github.event.inputs.notification_type == 'all')))
 
     steps:
       # The Edge Function owns the 9 AM local-time window and catch-up.
