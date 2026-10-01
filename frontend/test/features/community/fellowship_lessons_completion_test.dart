@@ -35,6 +35,7 @@ import 'package:disciplefy_bible_study/core/services/language_preference_service
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_paths_cache_service.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/welcome_test_harness.dart';
 
@@ -83,7 +84,7 @@ void main() {
     await Hive.openBox('app_settings');
   });
 
-  setUp(() {
+  setUp(() async {
     // Reset DI container so each test gets fresh mock instances.
     sl.reset();
 
@@ -120,6 +121,9 @@ void main() {
         .thenAnswer((_) => Stream.value(const LearningPathsInitial()));
 
     // Register required singletons.
+    SharedPreferences.setMockInitialValues({});
+    sl.registerSingleton<SharedPreferences>(
+        await SharedPreferences.getInstance());
     sl.registerSingleton<TranslationService>(FakeTranslationService());
     sl.registerLazySingleton<LanguagePreferenceService>(() => mockLangService);
     sl.registerLazySingleton<LearningPathsRepository>(() => mockPathsRepo);
