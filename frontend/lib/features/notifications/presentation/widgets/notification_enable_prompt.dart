@@ -14,10 +14,10 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/app_snackbar.dart';
 import '../../../../shared/widgets/popup.dart';
-import '../../domain/entities/notification_preferences.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
+import '../utils/notification_prompt_policy.dart';
 
 /// Types of notification prompts that can be shown
 enum NotificationPromptType {
@@ -35,13 +35,11 @@ class NotificationPromptConfig {
   final String title;
   final String description;
   final IconData icon;
-  final String sharedPrefsKey;
 
   const NotificationPromptConfig({
     required this.title,
     required this.description,
     required this.icon,
-    required this.sharedPrefsKey,
   });
 
   static NotificationPromptConfig getConfig(
@@ -52,49 +50,42 @@ class NotificationPromptConfig {
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.menu_book_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_daily_verse',
         );
       case NotificationPromptType.recommendedTopic:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.lightbulb_outline_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_recommended_topic',
         );
       case NotificationPromptType.streakReminder:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.local_fire_department_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_streak_reminder',
         );
       case NotificationPromptType.streakMilestone:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.emoji_events_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_streak_milestone',
         );
       case NotificationPromptType.streakLost:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.favorite_border_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_streak_lost',
         );
       case NotificationPromptType.memoryVerseOverdue:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.warning_amber_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_memory_verse_overdue',
         );
       case NotificationPromptType.memoryVerseReminder:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
           description: _getLocalizedDescription(type, languageCode),
           icon: Icons.psychology_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_memory_verse_reminder',
         );
     }
   }
@@ -205,100 +196,48 @@ class NotificationPromptConfig {
   }
 }
 
-/// Shows a notification enable prompt bottom sheet
-/// Returns true if user enabled, false if declined, null if already shown or already enabled
+/// Shows the notification enable sheet.
+///
+/// Every notification category is on by default, so this never asks about a
+/// category preference — that is what Settings is for. It appears only when
+/// the OS/browser permission was explicitly refused, and at most once per
+/// install across all notification types (see [NotificationPromptPolicy]).
+///
+/// Returns true if the user enabled, false if declined, null if not shown.
 Future<bool?> showNotificationEnablePrompt({
   required BuildContext context,
   required NotificationPromptType type,
   String languageCode = 'en',
   bool forceShow = false,
 }) async {
-  // Two independent things can stop a push from arriving: the OS-level
-  // permission, and this category's own preference. Prompt only when the
-  // user has turned one of them off (refused the permission, or disabled
-  // the category) — both are on by default.
-  //
-  // The OS check matters most: category preferences default to true, so a user
-  // who denied the system permission had every preference reading as "enabled"
-  // and was never prompted — despite receiving nothing at all.
-  if (!forceShow) {
-    final osPermissionGranted = await sl<NotificationService>()
-        .areNotificationsEnabled()
-        .catchError((_) => true); // fail closed on the prompt, not the feature
-
-    if (!context.mounted) return null;
-
-    if (!osPermissionGranted) {
-      // Notifications are on by default. Only a user who actually refused
-      // the system permission is asked again; if it was never answered, the
-      // system's own permission request handles it, not this sheet.
-      final denied = await sl<NotificationService>()
-          .isNotificationPermissionDenied()
-          .catchError((_) => false);
-      if (!denied || !context.mounted) return null;
-    }
-
-    if (osPermissionGranted) {
-      // System permission is fine, so only the per-category preference can be
-      // the reason this notification would not arrive.
-      final bloc = context.read<NotificationBloc>();
-      var currentState = bloc.state;
-
-      if (currentState is! NotificationPreferencesLoaded &&
-          currentState is! NotificationPreferencesUpdated) {
-        // Load them here rather than giving up.
-        //
-        // Nothing else in the app dispatches LoadNotificationPreferences except
-        // the notification settings screen, so for any session where the user
-        // never opened that screen the bloc sat in its initial state and this
-        // function returned null every time — the prompt could not fire at all,
-        // which is exactly the case it exists for.
-        bloc.add(const LoadNotificationPreferences());
-        try {
-          currentState = await bloc.stream
-              .firstWhere((state) =>
-                  state is NotificationPreferencesLoaded ||
-                  state is NotificationPreferencesUpdated ||
-                  state is NotificationError)
-              .timeout(const Duration(seconds: 5));
-        } catch (_) {
-          return null; // Could not determine the setting — better than nagging
-        }
-
-        if (!context.mounted) return null;
-      }
-
-      if (currentState is NotificationPreferencesLoaded ||
-          currentState is NotificationPreferencesUpdated) {
-        final preferences = currentState is NotificationPreferencesLoaded
-            ? currentState.preferences
-            : (currentState as NotificationPreferencesUpdated).preferences;
-
-        if (_isNotificationEnabled(type, preferences)) {
-          return null; // Already enabled — no need to prompt
-        }
-      } else {
-        // Load failed — skip to avoid false positives
-        return null;
-      }
-    }
-  }
-
-  // Check if we've already shown this prompt
   final prefs = await SharedPreferences.getInstance();
-  final config = NotificationPromptConfig.getConfig(type, languageCode);
+  final policy = NotificationPromptPolicy(prefs);
 
-  if (!forceShow && prefs.getBool(config.sharedPrefsKey) == true) {
-    return null; // Already shown before
+  if (!forceShow) {
+    if (policy.hasAsked) return null;
+
+    final service = sl<NotificationService>();
+    final granted =
+        await service.areNotificationsEnabled().catchError((_) => true);
+    final denied = granted
+        ? false
+        : await service
+            .isNotificationPermissionDenied()
+            .catchError((_) => false);
+
+    if (!policy.shouldShow(
+        permissionGranted: granted, permissionDenied: denied)) {
+      return null;
+    }
   }
 
   if (!context.mounted) return null;
 
-  // Mark as shown only after user interacts with the prompt
-  void markAsShown() {
-    prefs.setBool(config.sharedPrefsKey, true);
-  }
+  // Recorded as soon as it is shown, so a swipe-away or barrier tap counts.
+  await policy.markAsked();
+  if (!context.mounted) return null;
 
+  final config = NotificationPromptConfig.getConfig(type, languageCode);
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -308,30 +247,9 @@ Future<bool?> showNotificationEnablePrompt({
       type: type,
       config: config,
       languageCode: languageCode,
-      onInteraction: markAsShown,
+      onInteraction: () {},
     ),
   );
-}
-
-/// Helper function to check if a specific notification type is already enabled
-bool _isNotificationEnabled(
-    NotificationPromptType type, NotificationPreferences preferences) {
-  switch (type) {
-    case NotificationPromptType.dailyVerse:
-      return preferences.dailyVerseEnabled;
-    case NotificationPromptType.recommendedTopic:
-      return preferences.recommendedTopicEnabled;
-    case NotificationPromptType.streakReminder:
-      return preferences.streakReminderEnabled;
-    case NotificationPromptType.streakMilestone:
-      return preferences.streakMilestoneEnabled;
-    case NotificationPromptType.streakLost:
-      return preferences.streakLostEnabled;
-    case NotificationPromptType.memoryVerseReminder:
-      return preferences.memoryVerseReminderEnabled;
-    case NotificationPromptType.memoryVerseOverdue:
-      return preferences.memoryVerseOverdueEnabled;
-  }
 }
 
 class _NotificationEnableSheet extends StatelessWidget {

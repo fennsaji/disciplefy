@@ -6,6 +6,7 @@ import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/core/services/notification_service.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/widgets/notification_enable_prompt.dart';
+import 'package:disciplefy_bible_study/features/notifications/presentation/utils/notification_prompt_policy.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_event.dart';
 import 'package:disciplefy_bible_study/features/notifications/presentation/bloc/notification_state.dart';
@@ -48,7 +49,8 @@ void main() {
 
   tearDown(() => sl.reset());
 
-  Future<void> prompt(WidgetTester tester) async {
+  Future<void> prompt(WidgetTester tester,
+      {NotificationPromptType type = NotificationPromptType.dailyVerse}) async {
     final bloc = _MockNotificationBloc();
     whenListen<NotificationState>(bloc, const Stream<NotificationState>.empty(),
         initialState: const NotificationInitial());
@@ -59,7 +61,7 @@ void main() {
           builder: (context) => TextButton(
             onPressed: () => showNotificationEnablePrompt(
               context: context,
-              type: NotificationPromptType.dailyVerse,
+              type: type,
             ),
             child: const Text('open'),
           ),
@@ -89,6 +91,67 @@ void main() {
     await prompt(tester);
 
     expect(find.byType(BottomSheet), findsOneWidget);
+  });
+
+  testWidgets('permission granted: never shows, for any type', (tester) async {
+    when(service.areNotificationsEnabled()).thenAnswer((_) async => true);
+
+    for (final type in NotificationPromptType.values) {
+      await prompt(tester, type: type);
+      expect(find.byType(BottomSheet), findsNothing, reason: '$type');
+    }
+    verifyNever(service.isNotificationPermissionDenied());
+  });
+
+  testWidgets('refused permission: asked once, never again for any type',
+      (tester) async {
+    when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
+    when(service.isNotificationPermissionDenied())
+        .thenAnswer((_) async => true);
+
+    await prompt(tester);
+    expect(find.byType(BottomSheet), findsOneWidget);
+    // Dismissed by tapping outside, not via a button — still counts.
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsNothing);
+
+    await prompt(tester);
+    expect(find.byType(BottomSheet), findsNothing);
+    await prompt(tester, type: NotificationPromptType.recommendedTopic);
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets('already asked on a previous run: no sheet', (tester) async {
+    SharedPreferences.setMockInitialValues(
+        {NotificationPromptPolicy.askedKey: true});
+    when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
+    when(service.isNotificationPermissionDenied())
+        .thenAnswer((_) async => true);
+
+    await prompt(tester, type: NotificationPromptType.recommendedTopic);
+
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  group('NotificationPromptPolicy', () {
+    Future<NotificationPromptPolicy> policy([Map<String, Object>? v]) async {
+      SharedPreferences.setMockInitialValues(v ?? {});
+      return NotificationPromptPolicy(await SharedPreferences.getInstance());
+    }
+
+    test('only a refused, never-asked permission shows', () async {
+      final p = await policy();
+      expect(p.shouldShow(permissionGranted: true, permissionDenied: false),
+          isFalse);
+      expect(p.shouldShow(permissionGranted: false, permissionDenied: false),
+          isFalse);
+      expect(p.shouldShow(permissionGranted: false, permissionDenied: true),
+          isTrue);
+      await p.markAsked();
+      expect(p.shouldShow(permissionGranted: false, permissionDenied: true),
+          isFalse);
+    });
   });
 
   group('restyled sheet at 320x640', () {
