@@ -21,6 +21,9 @@ class CommunityCtaPill extends StatelessWidget {
   /// Larger padding/text for a floating action ("Join a fellowship").
   final bool large;
 
+  /// Tighter padding/text for a pill sharing a row with other actions.
+  final bool compact;
+
   const CommunityCtaPill({
     super.key,
     required this.label,
@@ -28,6 +31,7 @@ class CommunityCtaPill extends StatelessWidget {
     this.onPressed,
     this.loading = false,
     this.large = false,
+    this.compact = false,
   });
 
   @override
@@ -63,7 +67,7 @@ class CommunityCtaPill extends StatelessWidget {
             constraints: BoxConstraints(minHeight: large ? 56 : 44),
             child: Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: large ? 24 : 18,
+                horizontal: large ? 24 : (compact ? 12 : 18),
                 vertical: 8,
               ),
               child: Row(
@@ -83,13 +87,13 @@ class CommunityCtaPill extends StatelessWidget {
                     )
                   else if (icon != null)
                     Icon(icon, size: large ? 22 : 18, color: ink),
-                  if (loading || icon != null) const SizedBox(width: 8),
+                  if (loading || icon != null) SizedBox(width: compact ? 4 : 8),
                   Flexible(
                     child: Text(
                       label,
                       textAlign: TextAlign.center,
                       style: AppFonts.inter(
-                        fontSize: large ? 16 : 15,
+                        fontSize: large ? 16 : (compact ? 14 : 15),
                         fontWeight: FontWeight.w600,
                         color: ink,
                         height: 1.25,

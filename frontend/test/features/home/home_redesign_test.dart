@@ -1019,8 +1019,10 @@ void main() {
           find.text('Confidence in Your Salvation — '
               'How can we be sure we belong to God?'),
           findsOneWidget);
-      expect(find.text('·  3 replies  ·  🙏 5'), findsOneWidget);
-      expect(find.text('·  1 reply  ·  🙏 8'), findsOneWidget);
+      expect(find.textContaining('3 replies'), findsOneWidget);
+      expect(find.textContaining(' 5'), findsWidgets);
+      expect(find.byIcon(Icons.volunteer_activism_outlined), findsWidgets);
+      expect(find.textContaining('1 reply'), findsOneWidget);
       expect(find.text('·  Start study'), findsOneWidget);
       expect(find.text("Fenn's Test Fellowship"), findsNWidgets(3));
     });

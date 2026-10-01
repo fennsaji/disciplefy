@@ -18,6 +18,7 @@ import 'package:disciplefy_bible_study/features/community/domain/entities/fellow
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
 import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/share_guide_sheet.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/reaction_button.dart';
 
@@ -275,17 +276,24 @@ void main() {
       });
     }
 
-    testWidgets('pill emoji matches the picker per post type', (tester) async {
+    testWidgets('pill outline icon matches the picker per post type',
+        (tester) async {
       useSurface(tester, const Size(390, 2600));
       await tester.pumpWidget(app(feed(posts())));
       await tester.pumpAndSettle();
 
-      Finder emoji(String e) => find.descendant(
-          of: find.byType(FellowshipReactionButton), matching: find.text(e));
-      expect(emoji('🙏'), findsOneWidget);
-      expect(emoji('🎉'), findsOneWidget);
-      expect(emoji('❤️'), findsOneWidget);
-      expect(emoji('🙌'), findsNWidgets(4));
+      Finder icon(IconData i) => find.descendant(
+          of: find.byType(FellowshipReactionButton), matching: find.byIcon(i));
+      expect(icon(Icons.volunteer_activism_outlined), findsOneWidget);
+      expect(icon(Icons.celebration_outlined), findsOneWidget);
+      expect(icon(Icons.favorite_border_rounded), findsOneWidget);
+      expect(icon(Icons.front_hand_outlined), findsNWidgets(4));
+      // No colour emoji left in the pill.
+      expect(
+          find.descendant(
+              of: find.byType(FellowshipReactionButton),
+              matching: find.text('🙏')),
+          findsNothing);
     });
 
     test('default reaction key per post type', () {
@@ -303,7 +311,8 @@ void main() {
           'community_post.reaction_fire');
       expect(reactionDisplayFor('question', 'heart').labelKey,
           'community_post.reaction_love');
-      expect(reactionDisplayFor('prayer', 'i_prayed').emoji, '🙏');
+      expect(reactionDisplayFor('prayer', 'i_prayed').icon,
+          Icons.volunteer_activism_outlined);
       expect(reactionDisplayFor('general', 'heart').labelKey,
           'community_post.reaction_love');
       expect(reactionDisplayFor('daily', null).labelKey,
@@ -490,5 +499,49 @@ void main() {
       expect(repo.calls.single['guideSummary'],
           'Summary God works all things together for good. For those who love Him.');
     });
+  });
+
+  group('Daily post action row', () {
+    final daily = [
+      _post('daily', id: 'd', reactions: const {'fire': 3}),
+    ];
+
+    for (final language in AppLanguage.values) {
+      for (final dark in [true, false]) {
+        testWidgets(
+            '360pt ${language.code} ${dark ? 'dark' : 'light'}: Start study '
+            'shares the row with reaction, replies and share', (tester) async {
+          useSurface(tester, const Size(360, 1400));
+          await tester
+              .pumpWidget(app(feed(daily), language: language, dark: dark));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester, allowed: {'Anna George'});
+
+          final footer = find.byType(FellowshipPostFooter);
+          expect(footer, findsOneWidget);
+          final start = find.descendant(
+              of: footer, matching: find.byType(CommunityCtaPill));
+          final reaction = find.descendant(
+              of: footer, matching: find.byType(FellowshipReactionButton));
+          expect(start, findsOneWidget);
+          expect(reaction, findsOneWidget);
+          expect(
+              find.descendant(
+                  of: footer, matching: find.byIcon(Icons.share_outlined)),
+              findsOneWidget);
+          // One row: all actions share a vertical centre.
+          final y = tester.getCenter(start).dy;
+          expect(tester.getCenter(reaction).dy, closeTo(y, 1));
+          // Outline icon, not the colour emoji.
+          expect(
+              find.descendant(
+                  of: reaction,
+                  matching: find.byIcon(Icons.local_fire_department_outlined)),
+              findsOneWidget);
+          expect(find.text('🔥'), findsNothing);
+        });
+      }
+    }
   });
 }

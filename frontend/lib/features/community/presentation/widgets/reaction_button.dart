@@ -4,14 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
-import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 
 // ---------------------------------------------------------------------------
-// Reaction button (tap = toggle amen, long-press = emoji picker)
+// Reaction button (tap = toggle amen, long-press = reaction picker)
 // ---------------------------------------------------------------------------
 
 /// Reaction key a tap on the pill toggles for each post type. These are the
@@ -33,42 +32,45 @@ String defaultReactionFor(String postType) {
   }
 }
 
-/// Emoji and label key for one reaction.
-typedef ReactionDisplay = ({String emoji, String labelKey});
+/// Outline icon and label key for one reaction.
+typedef ReactionDisplay = ({IconData icon, String labelKey});
 
 /// Every reaction, in picker order. The pill and the long-press picker both
 /// read from this list, so a reaction looks the same everywhere.
-const List<({String type, String emoji, String labelKey})> reactionOptions = [
+///
+/// Reactions render as monochrome outline icons tinted by the theme (accent
+/// once the viewer has reacted); the stored keys are unchanged.
+const List<({String type, IconData icon, String labelKey})> reactionOptions = [
   (
     type: 'i_prayed',
-    emoji: '🙏',
+    icon: Icons.volunteer_activism_outlined,
     labelKey: TranslationKeys.communityPostReactionPrayed,
   ),
   (
     type: 'amen',
-    emoji: '🙌',
+    icon: Icons.front_hand_outlined,
     labelKey: TranslationKeys.communityPostReactionAmen,
   ),
   (
     type: 'heart',
-    emoji: '❤️',
+    icon: Icons.favorite_border_rounded,
     labelKey: TranslationKeys.communityPostReactionLove,
   ),
   (
     type: 'fire',
-    emoji: '🔥',
+    icon: Icons.local_fire_department_outlined,
     labelKey: TranslationKeys.communityPostReactionFire,
   ),
   (
     type: 'hands',
-    emoji: '🎉',
+    icon: Icons.celebration_outlined,
     labelKey: TranslationKeys.communityPostReactionPraise,
   ),
 ];
 
 /// How the pill reads on a [postType] post given the viewer's
 /// [userReaction] (null when they have not reacted): the viewer's reaction,
-/// or the post type's default one, shown with the same emoji and name the
+/// or the post type's default one, shown with the same icon and name the
 /// picker uses.
 ReactionDisplay reactionDisplayFor(String postType, String? userReaction) {
   final key = userReaction ?? defaultReactionFor(postType);
@@ -76,22 +78,27 @@ ReactionDisplay reactionDisplayFor(String postType, String? userReaction) {
     (o) => o.type == key,
     orElse: () => reactionOptions[1],
   );
-  return (emoji: option.emoji, labelKey: option.labelKey);
+  return (icon: option.icon, labelKey: option.labelKey);
 }
 
 /// Reaction button shared by [FellowshipPostCard] and [DailyPostCard].
 ///
 /// Tapping toggles the default reaction for the post's type; long-pressing
-/// opens a Facebook-style emoji picker. The pill shows a line icon and a
+/// opens a Facebook-style reaction picker. The pill shows a line icon and a
 /// translated label ([reactionDisplayFor]). Reads [FellowshipFeedBloc] from
 /// context.
 class FellowshipReactionButton extends StatefulWidget {
   final FellowshipPostEntity post;
   final Color accentColor;
 
+  /// Icon (and count) only, for a row shared with a primary action on a
+  /// narrow card. The reaction's name stays in the tooltip and semantics.
+  final bool compact;
+
   const FellowshipReactionButton({
     required this.post,
     required this.accentColor,
+    this.compact = false,
     super.key,
   });
 
@@ -105,7 +112,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
 
   /// Reactions offered by the long-press picker, by stored key.
   static final _kReactions = [
-    for (final o in reactionOptions) (type: o.type, emoji: o.emoji),
+    for (final o in reactionOptions) (type: o.type, icon: o.icon),
   ];
 
   int get _totalCount =>
@@ -162,52 +169,61 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
     // appended, so a bare number never stands in for the action.
     final label = total > 0 ? '$name $total' : name;
     final ink = isActive ? widget.accentColor : palette.text;
-    return Semantics(
-      button: true,
-      toggled: isActive,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: _onTap,
-        onLongPressStart: (d) => _showPicker(d.globalPosition),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          // Matches the replies button's 44px minimum touch target. No
-          // alignment: the pill hugs its content, and the row below centres
-          // it vertically within the 44px.
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: isActive
-                ? widget.accentColor.withAlpha(palette.isDark ? 36 : 26)
-                : (palette.isDark
-                    ? Colors.white.withValues(alpha: 0.07)
-                    : palette.raised),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
+    final compact = widget.compact;
+    final visible = compact ? (total > 0 ? '$total' : null) : label;
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        button: true,
+        toggled: isActive,
+        label: label,
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTap: _onTap,
+          onLongPressStart: (d) => _showPicker(d.globalPosition),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            // Matches the replies button's 44px minimum touch target. No
+            // alignment: the pill hugs its content, and the row below centres
+            // it vertically within the 44px.
+            constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+            padding:
+                EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: 8),
+            decoration: BoxDecoration(
               color: isActive
-                  ? widget.accentColor.withAlpha(110)
-                  : Colors.transparent,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(display.emoji, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 6),
-              // Wraps rather than truncating when the footer caps the pill's
-              // width (long Hindi/Malayalam labels on narrow screens).
-              Flexible(
-                child: Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: ink,
-                  ),
-                ),
+                  ? widget.accentColor.withAlpha(palette.isDark ? 36 : 26)
+                  : (palette.isDark
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : palette.raised),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: isActive
+                    ? widget.accentColor.withAlpha(110)
+                    : Colors.transparent,
               ),
-            ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(display.icon, size: 18, color: ink),
+                if (visible != null) ...[
+                  SizedBox(width: compact ? 4 : 6),
+                  // Wraps rather than truncating when the footer caps the pill's
+                  // width (long Hindi/Malayalam labels on narrow screens).
+                  Flexible(
+                    child: Text(
+                      visible,
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -222,7 +238,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
 class _ReactionPickerOverlay extends StatefulWidget {
   final String postId;
   final FellowshipFeedBloc bloc;
-  final List<({String type, String emoji})> reactions;
+  final List<({String type, IconData icon})> reactions;
   final Offset tapPosition;
   final String? userReaction;
   final VoidCallback onDismiss;
@@ -280,7 +296,8 @@ class _ReactionPickerOverlayState extends State<_ReactionPickerOverlay>
       MediaQuery.of(context).padding.top + 8,
       double.infinity,
     );
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.of(context);
+    final isDark = palette.isDark;
 
     return Stack(
       children: [
@@ -300,7 +317,7 @@ class _ReactionPickerOverlayState extends State<_ReactionPickerOverlay>
             child: Material(
               elevation: 10,
               borderRadius: BorderRadius.circular(32),
-              color: isDark ? ReaderPalette.of(context).raised : Colors.white,
+              color: isDark ? palette.raised : palette.card,
               shadowColor: Colors.black38,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -309,6 +326,7 @@ class _ReactionPickerOverlayState extends State<_ReactionPickerOverlay>
                   children: widget.reactions.map((r) {
                     final isActive = widget.userReaction == r.type;
                     return GestureDetector(
+                      key: ValueKey('reaction-option-${r.type}'),
                       onTap: () => _select(r.type),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 120),
@@ -316,15 +334,14 @@ class _ReactionPickerOverlayState extends State<_ReactionPickerOverlay>
                             horizontal: 7, vertical: 4),
                         decoration: isActive
                             ? BoxDecoration(
-                                color: AppColors.brandPrimary.withAlpha(30),
+                                color: palette.accentIcon.withAlpha(30),
                                 borderRadius: BorderRadius.circular(20),
                               )
                             : null,
-                        child: Text(
-                          r.emoji,
-                          style: TextStyle(
-                            fontSize: isActive ? 26 : 22,
-                          ),
+                        child: Icon(
+                          r.icon,
+                          size: isActive ? 28 : 24,
+                          color: isActive ? palette.accentIcon : palette.text,
                         ),
                       ),
                     );
