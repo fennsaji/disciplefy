@@ -12,6 +12,17 @@
 import {
   buildDailyTeaserSystemPrompt, buildDailyTeaserUserMessage, parseDailyTeaserOutput,
 } from '../prompts/discipler-prompt.ts'
+import { fetchPassageGrounding } from './passage-grounding.ts'
+
+/** Teasers are one sentence; a short excerpt is all the grounding they need. */
+const TEASER_GROUNDING_VERSES = 8
+
+/** Verse text for the teaser prompt; undefined when it cannot be fetched. */
+async function teaserVerseText(lesson: TeaserLesson): Promise<string | undefined> {
+  if (!lesson.verse) return undefined
+  const g = await fetchPassageGrounding(lesson.verse, lesson.language, { maxVerses: TEASER_GROUNDING_VERSES, maxChars: 1500 })
+  return g?.text
+}
 
 export type TeaserLanguage = 'en' | 'hi' | 'ml'
 
@@ -109,7 +120,7 @@ export async function getOrCreateTeaser(
       systemMessage: buildDailyTeaserSystemPrompt(),
       userMessage: buildDailyTeaserUserMessage({
         topicTitle: lesson.topicTitle, pathTitle: lesson.pathTitle, language: lesson.language,
-        summary: lesson.summary, verse: lesson.verse,
+        summary: lesson.summary, verse: lesson.verse, verseText: await teaserVerseText(lesson),
       }),
     }, lesson.language)
     const out = parseDailyTeaserOutput(fresh.content)
@@ -148,7 +159,7 @@ export async function getOrCreateTeaser(
     systemMessage: buildDailyTeaserSystemPrompt(),
     userMessage: buildDailyTeaserUserMessage({
       topicTitle: lesson.topicTitle, pathTitle: lesson.pathTitle, language: lesson.language,
-      summary: lesson.summary, verse: lesson.verse,
+      summary: lesson.summary, verse: lesson.verse, verseText: await teaserVerseText(lesson),
     }),
   }, lesson.language)
   const out = parseDailyTeaserOutput(result.content)

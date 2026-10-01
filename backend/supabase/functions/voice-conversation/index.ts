@@ -22,6 +22,10 @@ import { StreamMessage } from '../_shared/services/voice-streaming-service.ts'
 import { BibleBookNormalizer } from '../_shared/utils/bible-book-normalizer.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { getPassageGroundingBlock } from '../_shared/services/passage-grounding.ts'
+
+/** Verses of passage text given to voice answers as grounding. */
+const VOICE_GROUNDING_VERSES = 15
 
 /**
  * Request payload for voice conversation
@@ -247,12 +251,20 @@ async function handleVoiceConversation(
     }
 
     // Get contexts in parallel
-    const [userContextData, studyContext, conversationHistory] = await Promise.all([
+    const [userContextData, studyContext, conversationHistory, passageBlock] = await Promise.all([
       voiceConversationRepository.getUserContext(userId),
       related_study_guide_id
         ? voiceConversationRepository.getStudyContext(related_study_guide_id)
         : Promise.resolve(null),
-      voiceConversationRepository.getConversationHistory(conversation_id)
+      voiceConversationRepository.getConversationHistory(conversation_id),
+      // Passage text as grounding (best-effort; short cap since it is re-sent every turn)
+      (async () => {
+        const ref = related_scripture
+          || (related_study_guide_id ? await voiceConversationRepository.getStudyPassageReference(related_study_guide_id) : null)
+        return ref
+          ? getPassageGroundingBlock(ref, language_code, { maxVerses: VOICE_GROUNDING_VERSES, maxChars: 2000 })
+          : null
+      })(),
     ])
 
     // Enforce monthly conversation quota on the first message of each conversation.
@@ -303,7 +315,7 @@ async function handleVoiceConversation(
     // Build system prompt
     const systemPrompt = getVoiceSystemPrompt(language_code, {
       maturityLevel: userContextData.maturityLevel,
-      currentStudy: studyContext || related_scripture || 'General conversation',
+      currentStudy: [studyContext || related_scripture || 'General conversation', passageBlock].filter(Boolean).join('\n\n'),
       recentTopics: userContextData.recentTopics,
     })
 

@@ -901,6 +901,12 @@ OUTPUT: Valid JSON starting with { and ending with }`
  * Main prompt router - dispatches to appropriate mode
  */
 export function createStudyGuidePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const prompt = createModePrompt(params, languageConfig)
+  if (!params.passageGrounding) return prompt
+  return { ...prompt, userMessage: `${prompt.userMessage}\n\n${params.passageGrounding}` }
+}
+
+function createModePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
   const studyMode = params.studyMode || 'standard'
 
   switch (studyMode) {

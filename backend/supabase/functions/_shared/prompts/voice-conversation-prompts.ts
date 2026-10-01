@@ -65,7 +65,7 @@ OLD TESTAMENT: Genesis, Exodus, Leviticus, Numbers, Deuteronomy, Joshua, Judges,
 
 NEW TESTAMENT: Matthew, Mark, Luke, John, Acts, Romans, 1 Corinthians, 2 Corinthians, Galatians, Ephesians, Philippians, Colossians, 1 Thessalonians, 2 Thessalonians, 1 Timothy, 2 Timothy, Titus, Philemon, Hebrews, James, 1 Peter, 2 Peter, 1 John, 2 John, 3 John, Jude, Revelation
 
-DEFAULT TRANSLATION: ESV (English Standard Version)
+DEFAULT TRANSLATION: BSB (Berean Standard Bible)
 
 ---
 
@@ -427,9 +427,9 @@ export function getVoiceExamples(languageCode: string): Array<{ role: string; co
  * Scripture translation defaults for each language.
  */
 export const SCRIPTURE_TRANSLATIONS: Record<string, string[]> = {
-  'en-US': ['ESV', 'NIV', 'KJV'],
+  'en-US': ['BSB', 'KJV'],
   'hi-IN': ['IRV', 'Hindi Bible'],
-  'ml-IN': ['POC', 'Malayalam Bible']
+  'ml-IN': ['IRV', 'Malayalam Bible']
 };
 
 /**

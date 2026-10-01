@@ -47,6 +47,7 @@ export interface LLMGenerationParams {
   readonly tier?: string  // Optional: user subscription tier for model selection
   readonly studyMode?: StudyMode  // Optional: study mode for different experiences (default: 'standard')
   readonly forceProvider?: 'openai' | 'anthropic'  // Optional: force specific provider (used for retry/fallback)
+  readonly passageGrounding?: string | null  // Optional: delimited Bible text block (see passage-grounding.ts) appended to the user message
 }
 
 /**

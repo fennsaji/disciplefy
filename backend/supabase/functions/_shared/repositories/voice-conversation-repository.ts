@@ -265,6 +265,20 @@ export class VoiceConversationRepository {
   }
 
   /**
+   * Reference of the passage a study guide is about: the input for scripture
+   * guides, otherwise the passage the guide chose. Null when unavailable.
+   */
+  async getStudyPassageReference(studyGuideId: string): Promise<string | null> {
+    const { data: guide, error } = await this.supabase
+      .from('study_guides')
+      .select('input_type, input_value, passage')
+      .eq('id', studyGuideId)
+      .single()
+    if (error || !guide) return null
+    return (guide.input_type === 'scripture' ? guide.input_value : guide.passage) || null
+  }
+
+  /**
    * Get the maximum messages allowed per conversation
    */
   get maxMessagesPerConversation(): number {

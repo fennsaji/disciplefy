@@ -15,6 +15,7 @@
  * - apikey: Supabase anon key
  */
 
+import { getPassageGroundingBlock, withPassageGrounding } from '../_shared/services/passage-grounding.ts'
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { config } from '../_shared/core/config.ts'
@@ -1114,6 +1115,13 @@ async function handleStudyGenerateV2(
         // Declare streamingUsage variable for all paths
         let streamingUsage: LLMUsageMetadata | null = null
 
+        // Ground scripture guides in the actual passage text (content language's
+        // translation). Best-effort: null on any failure keeps the old behaviour.
+        const passageGrounding = input_type === 'scripture'
+          ? await getPassageGroundingBlock(input_value, targetLanguage)
+          : null
+        console.log(`📖 [STUDY-V2] Passage grounding: ${passageGrounding ? `included (${passageGrounding.length} chars)` : 'none'}`)
+
         if (useMultiPass) {
           console.log(`🔄 [STUDY-V2] Using multi-pass generation for ${study_mode} in`, targetLanguage)
 
@@ -1143,7 +1151,7 @@ async function handleStudyGenerateV2(
 
             // PASS 1: Summary + Context + Passage + Intro + Point 1 (STREAMING)
             console.log(`[LLM-MultiPass] 🔄 Starting Pass 1/4 (Summary + Context + Passage + Intro + Point 1) - STREAMING`)
-            const pass1Prompt = createSermonPass1Prompt({
+            const pass1Prompt = withPassageGrounding(createSermonPass1Prompt({
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
@@ -1153,7 +1161,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig)
+            }, languageConfig), passageGrounding)
 
             const pass1Stream = llmService.streamFromPrompt(pass1Prompt, {
               inputType: input_type,
@@ -1214,7 +1222,7 @@ async function handleStudyGenerateV2(
 
             // PASS 2: Interpretation Part 2 (Point 2 ONLY) (STREAMING)
             console.log(`[LLM-MultiPass] 🔄 Starting Pass 2/4 (Point 2 Only) - STREAMING`)
-            const pass2Prompt = createSermonPass2Prompt({
+            const pass2Prompt = withPassageGrounding(createSermonPass2Prompt({
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
@@ -1224,7 +1232,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig, pass1Data)
+            }, languageConfig, pass1Data), passageGrounding)
 
             const pass2Stream = llmService.streamFromPrompt(pass2Prompt, {
               inputType: input_type,
@@ -1269,7 +1277,7 @@ async function handleStudyGenerateV2(
 
             // PASS 3: Interpretation Part 3 (Point 3 ONLY) (STREAMING)
             console.log(`[LLM-MultiPass] 🔄 Starting Pass 3/4 (Point 3 Only) - STREAMING`)
-            const pass3Prompt = createSermonPass3Prompt({
+            const pass3Prompt = withPassageGrounding(createSermonPass3Prompt({
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
@@ -1279,7 +1287,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig, pass1Data, pass2Data)
+            }, languageConfig, pass1Data, pass2Data), passageGrounding)
 
             const pass3Stream = llmService.streamFromPrompt(pass3Prompt, {
               inputType: input_type,
@@ -1325,7 +1333,7 @@ async function handleStudyGenerateV2(
 
             // PASS 4: Conclusion + Altar Call + Supporting Fields (STREAMING)
             console.log(`[LLM-MultiPass] 🔄 Starting Pass 4/4 (Conclusion + Altar Call + Extras) - STREAMING`)
-            const pass4Prompt = createSermonPass4Prompt({
+            const pass4Prompt = withPassageGrounding(createSermonPass4Prompt({
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
@@ -1335,7 +1343,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig, pass1Data)
+            }, languageConfig, pass1Data), passageGrounding)
 
             const pass4Stream = llmService.streamFromPrompt(pass4Prompt, {
               inputType: input_type,
@@ -1434,7 +1442,7 @@ async function handleStudyGenerateV2(
 
               // PASS 1: Summary + Context + Interpretation Part 1 (STREAMING)
               console.log(`[LLM-MultiPass] 🔄 Starting ${modeName} Pass 1/2 - STREAMING`)
-              const pass1Prompt = createPass1Prompt({
+              const pass1Prompt = withPassageGrounding(createPass1Prompt({
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
@@ -1444,7 +1452,7 @@ async function handleStudyGenerateV2(
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
-              }, languageConfig)
+              }, languageConfig), passageGrounding)
 
               const pass1Stream = llmService.streamFromPrompt(pass1Prompt, {
                 inputType: input_type,
@@ -1507,7 +1515,7 @@ async function handleStudyGenerateV2(
 
               // PASS 2: Interpretation Part 2 + Supporting Fields (STREAMING)
               console.log(`[LLM-MultiPass] 🔄 Starting ${modeName} Pass 2/2 - STREAMING`)
-              const pass2Prompt = createPass2Prompt({
+              const pass2Prompt = withPassageGrounding(createPass2Prompt({
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
@@ -1517,7 +1525,7 @@ async function handleStudyGenerateV2(
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
-              }, languageConfig, pass1Data)
+              }, languageConfig, pass1Data), passageGrounding)
 
               const pass2Stream = llmService.streamFromPrompt(pass2Prompt, {
                 inputType: input_type,
@@ -1606,7 +1614,8 @@ async function handleStudyGenerateV2(
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode,
-                forceProvider
+                forceProvider,
+                passageGrounding
               })
 
             // Manually iterate to capture return value
