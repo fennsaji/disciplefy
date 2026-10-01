@@ -30,6 +30,7 @@ import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-servic
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
 import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
+import { resolveTopicLanguage } from '../_shared/utils/content-language.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -126,7 +127,7 @@ function parseRequestParams(req: Request): {
   const path_title = url.searchParams.get('path_title') || undefined
   const path_description = url.searchParams.get('path_description') || undefined
   const disciple_level = url.searchParams.get('disciple_level') || undefined
-  const language = url.searchParams.get('language') || 'en'
+  const requestedLanguage = url.searchParams.get('language') || 'en'
   const mode = url.searchParams.get('mode') as StudyMode | null
   // TODO: Remove or update this when learning path token pricing is finalized.
   const topic_id = url.searchParams.get('topic_id') || undefined
@@ -134,6 +135,11 @@ function parseRequestParams(req: Request): {
   if (!input_type || !input_value) {
     return null
   }
+
+  // Catalogue topics: the localized title's script decides the language, so
+  // older clients that send the user's language for a fellowship lesson still
+  // get (and cache) the guide in the lesson's language.
+  const language = resolveTopicLanguage(requestedLanguage, input_value, topic_id)
 
   if (!['scripture', 'topic', 'question'].includes(input_type)) {
     return null

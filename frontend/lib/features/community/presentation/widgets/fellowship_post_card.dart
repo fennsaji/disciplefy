@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_study/fellowship_study_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +15,7 @@ import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/community/domain/utils/fellowship_lesson_language.dart';
 import 'package:disciplefy_bible_study/features/community/data/services/saved_guide_fetcher.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
@@ -695,8 +698,33 @@ class _StudyNoteLink extends StatelessWidget {
 
     Future<void> onTap() async {
       if (!canNavigate) return;
-      final lang =
-          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+      // Open the lesson in the group's language (or this member's choice
+      // for the group), never the member's app-wide study language.
+      String? groupLanguage;
+      try {
+        final study = context.read<FellowshipStudyBloc>().state;
+        if (study.fellowshipId == fellowshipId) {
+          groupLanguage = study.fellowshipLanguage;
+        }
+      } catch (_) {
+        // Not inside a fellowship screen (e.g. Home activity).
+      }
+      final langCode = await resolveFellowshipLessonLanguage(
+        prefs: sl<SharedPreferences>(),
+        fellowshipId: fellowshipId,
+        fellowshipLanguage: groupLanguage,
+        fetchFellowshipLanguage: () async {
+          final row = await Supabase.instance.client
+              .from('fellowships')
+              .select('language')
+              .eq('id', fellowshipId)
+              .maybeSingle();
+          return row?['language'] as String?;
+        },
+        userStudyLanguage: () async =>
+            (await sl<LanguagePreferenceService>().getStudyContentLanguage())
+                .code,
+      );
 
       // Fetch the translated path title for the current content language.
       String translatedPathTitle = post.guideTitle ?? '';
@@ -713,7 +741,7 @@ class _StudyNoteLink extends StatelessWidget {
               .from('learning_path_translations')
               .select('title')
               .eq('learning_path_id', pathId)
-              .eq('lang_code', lang.code)
+              .eq('lang_code', langCode)
               .maybeSingle();
           final t = transRow?['title'] as String?;
           if (t != null && t.isNotEmpty) translatedPathTitle = t;
@@ -722,9 +750,30 @@ class _StudyNoteLink extends StatelessWidget {
         // Fall back to stored guideTitle
       }
 
+      // The lesson title in the same language the guide is generated in.
+      String topicTitle = post.topicTitle ?? '';
+      try {
+        final topicRow = langCode == 'en'
+            ? await Supabase.instance.client
+                .from('recommended_topics')
+                .select('title')
+                .eq('id', post.topicId!)
+                .maybeSingle()
+            : await Supabase.instance.client
+                .from('recommended_topics_translations')
+                .select('title')
+                .eq('topic_id', post.topicId!)
+                .eq('language_code', langCode)
+                .maybeSingle();
+        final t = topicRow?['title'] as String?;
+        if (t != null && t.isNotEmpty) topicTitle = t;
+      } catch (_) {
+        // Fall back to the post's stored lesson title.
+      }
+
       final topic = LearningPathTopic(
         topicId: post.topicId!,
-        title: post.topicTitle ?? '',
+        title: topicTitle,
         description: '',
         category: post.guideTitle ?? '',
         position: post.lessonIndex != null ? post.lessonIndex! - 1 : 0,
@@ -741,7 +790,7 @@ class _StudyNoteLink extends StatelessWidget {
             pathDescription: '',
             pathDiscipleLevel: '',
             isMentor: isMentor,
-            contentLanguage: lang.code,
+            contentLanguage: langCode,
           ),
         ),
       );

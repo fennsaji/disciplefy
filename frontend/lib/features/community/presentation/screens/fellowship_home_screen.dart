@@ -15,6 +15,7 @@ import 'package:disciplefy_bible_study/core/services/language_preference_service
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/features/community/domain/utils/fellowship_lesson_language.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
 import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
@@ -1200,7 +1201,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
   /// Kept per fellowship, and apart from the app-wide study language: reading
   /// a Hindi group's lessons in English should not change every other study.
   String get _languagePrefKey =>
-      'fellowship_lessons_language_${widget.fellowshipId}';
+      fellowshipLessonsLanguagePrefKey(widget.fellowshipId);
 
   @override
   void initState() {
