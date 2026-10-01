@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as flutter_services;
 import 'package:showcaseview/showcaseview.dart';
@@ -9,7 +7,6 @@ import '../../localization/app_localizations.dart';
 import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
-import 'max_width_wrapper.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Navigation tab data model for bottom navigation
@@ -106,32 +103,6 @@ class DisciplefyBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Compute arrow alignment for Community tab dynamically so the arrow
-    // accurately points at the tab icon regardless of screen width.
-    // Use the constrained width (not full viewport) because the bottom nav
-    // is wrapped in a ConstrainedBox(maxWidth: 900) on desktop.
-    final double screenWidth = math.min(
-      MediaQuery.of(context).size.width,
-      MaxWidthWrapper.maxWidth,
-    );
-    final double tooltipWidth = math.min(280.0, screenWidth - 48);
-    const double arrowWidth = 20.0;
-    // Community is the last of N equal slots (Discipler is one of them when
-    // shown), so this cannot assume 4.
-    final int slotCount = tabs.length;
-    final double communityCenterFraction =
-        slotCount == 0 ? 0.5 : (slotCount - 0.5) / slotCount;
-    final double tabCenterX = screenWidth * communityCenterFraction;
-    // showcaseview clamps the tooltip so its right edge ≤ screen width.
-    final double tooltipLeft =
-        (screenWidth - tooltipWidth).clamp(0.0, screenWidth);
-    final double fromLeft = (tabCenterX - tooltipLeft)
-        .clamp(arrowWidth / 2, tooltipWidth - arrowWidth / 2);
-    final double ax =
-        ((fromLeft - arrowWidth / 2) / (tooltipWidth - arrowWidth) * 2 - 1)
-            .clamp(-1.0, 1.0);
-    final Alignment communityArrowAlignment = Alignment(ax, 0.0);
-
     final palette = _DockPalette.of(context);
 
     // Sit just above the home indicator, or 14px from the edge on phones
@@ -157,14 +128,42 @@ class DisciplefyBottomNav extends StatelessWidget {
           ],
         ),
         child: Row(
-          children: _buildTabItems(context, communityArrowAlignment),
+          children: _buildTabItems(context),
         ),
       ),
     );
   }
 
-  List<Widget> _buildTabItems(
-      BuildContext context, Alignment communityArrowAlignment) {
+  List<Widget> _buildTabItems(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    // Dock tabs covered by the home tour, in dock order. Step numbers here
+    // are fallbacks; the running tour numbers them (hidden tabs excluded).
+    final tourSteps = <String, (GlobalKey, String, String)>{
+      'generate': (
+        ShowcaseKeys.homeGenerateTab,
+        l10n.walkthroughHomeGenerateTitle,
+        l10n.walkthroughHomeGenerateDesc,
+      ),
+      disciplerTab.id: (
+        ShowcaseKeys.homeDisciplerTab,
+        l10n.walkthroughHomeDisciplerTitle,
+        l10n.walkthroughHomeDisciplerDesc,
+      ),
+      'topics': (
+        ShowcaseKeys.homeTopicsTab,
+        l10n.walkthroughHomeTopicsTitle,
+        l10n.walkthroughHomeTopicsDesc,
+      ),
+      'community': (
+        ShowcaseKeys.homeCommunityTab,
+        l10n.walkthroughCommunityNavTitle,
+        l10n.walkthroughCommunityNavDesc,
+      ),
+    };
+    const bodySteps = 2;
+    final tourTabIds = tabs.map((t) => t.id).where(tourSteps.containsKey);
+    final totalSteps = bodySteps + tourTabIds.length;
+
     return tabs.asMap().entries.map((entry) {
       final index = entry.key;
       final tab = entry.value;
@@ -182,53 +181,19 @@ class DisciplefyBottomNav extends StatelessWidget {
               onTap: () => _handleTap(context, index),
             );
 
-      // Wrap Generate, Topics, and Community tabs with walkthrough
-      // tooltips so the home screen walkthrough highlights each nav item.
-      if (tab.id == 'generate') {
+      // Wrap the dock tabs with walkthrough tooltips so the home tour
+      // highlights each of them.
+      final step = tourSteps[tab.id];
+      if (step != null) {
+        final (key, title, description) = step;
         return Expanded(
           child: WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.homeGenerateTab,
-            title: AppLocalizations.of(context)!.walkthroughHomeGenerateTitle,
-            description:
-                AppLocalizations.of(context)!.walkthroughHomeGenerateDesc,
+            showcaseKey: key,
+            title: title,
+            description: description,
             screen: WalkthroughScreen.home,
-            stepNumber: 3,
-            totalSteps: 5,
-            onNext: () => ShowCaseWidget.of(context).next(),
-            child: navItem,
-          ),
-        );
-      }
-
-      if (tab.id == 'topics') {
-        return Expanded(
-          child: WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.homeTopicsTab,
-            title: AppLocalizations.of(context)!.walkthroughHomeTopicsTitle,
-            description:
-                AppLocalizations.of(context)!.walkthroughHomeTopicsDesc,
-            screen: WalkthroughScreen.home,
-            stepNumber: 4,
-            totalSteps: 5,
-            onNext: () => ShowCaseWidget.of(context).next(),
-            child: navItem,
-          ),
-        );
-      }
-
-      if (tab.id == 'community') {
-        return Expanded(
-          child: WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.homeCommunityTab,
-            title: AppLocalizations.of(context)!.walkthroughCommunityNavTitle,
-            description:
-                AppLocalizations.of(context)!.walkthroughCommunityNavDesc,
-            screen: WalkthroughScreen.home,
-            stepNumber: 5,
-            totalSteps: 5,
-            // Community tab is rightmost — shift arrow right so it
-            // points accurately at the tab icon.
-            arrowAlignment: communityArrowAlignment,
+            stepNumber: bodySteps + 1 + tourTabIds.toList().indexOf(tab.id),
+            totalSteps: totalSteps,
             onNext: () => ShowCaseWidget.of(context).next(),
             child: navItem,
           ),

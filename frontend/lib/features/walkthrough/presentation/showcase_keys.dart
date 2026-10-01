@@ -20,13 +20,44 @@ class ShowcaseKeys {
   static void triggerCommunityTab() =>
       _appShellState?.startShowCase([homeCommunityTab]);
 
-  /// Starts the Generate → Topics → Community nav-tab steps from AppShell's
-  /// ShowCaseWidget (called when home body walkthrough finishes).
-  static void triggerNavTabsAndCommunity() => _appShellState?.startShowCase([
+  /// Dock tabs in the order the home tour visits them.
+  static List<GlobalKey> get homeNavTabKeys => [
         homeGenerateTab,
+        homeDisciplerTab,
         homeTopicsTab,
         homeCommunityTab,
-      ]);
+      ];
+
+  /// Ordered keys of the running home tour (body steps then dock tabs), used
+  /// to number each step. Tabs hidden by feature flags are left out.
+  static List<GlobalKey> _homeTour = const [];
+
+  /// Records the home tour: [bodyKeys] plus every dock tab currently shown.
+  static void beginHomeTour(List<GlobalKey> bodyKeys) =>
+      _homeTour = [...bodyKeys, ..._mountedNavTabKeys()];
+
+  /// 1-based step number and total for [key] in the running home tour, or
+  /// null when [key] is not part of it.
+  static ({int step, int total})? homeTourStepOf(GlobalKey key) {
+    final index = _homeTour.indexOf(key);
+    if (index < 0) return null;
+    return (step: index + 1, total: _homeTour.length);
+  }
+
+  static List<GlobalKey> _mountedNavTabKeys() =>
+      homeNavTabKeys.where((k) => k.currentContext != null).toList();
+
+  /// Starts the dock-tab steps (Generate → Discipler → Topics → Community)
+  /// from AppShell's ShowCaseWidget (called when home body walkthrough
+  /// finishes). Returns false when there is nothing to show, so the caller
+  /// can finish the tour itself.
+  static bool triggerNavTabsAndCommunity() {
+    final state = _appShellState;
+    final keys = _mountedNavTabKeys();
+    if (state == null || !state.mounted || keys.isEmpty) return false;
+    state.startShowCase(keys);
+    return true;
+  }
 
   // Home screen
   static final GlobalKey homeDailyVerse =
@@ -35,6 +66,8 @@ class ShowcaseKeys {
       GlobalKey(debugLabel: 'homeMemoryVerses');
   static final GlobalKey homeGenerateTab =
       GlobalKey(debugLabel: 'homeGenerateTab');
+  static final GlobalKey homeDisciplerTab =
+      GlobalKey(debugLabel: 'homeDisciplerTab');
   static final GlobalKey homeTopicsTab = GlobalKey(debugLabel: 'homeTopicsTab');
   static final GlobalKey homeCommunityTab =
       GlobalKey(debugLabel: 'homeCommunityTab');

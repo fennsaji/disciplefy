@@ -92,7 +92,10 @@ class HomeScreen extends StatelessWidget {
             // nav tabs using the AppShell's ShowCaseWidget.
             // markSeen is called once the full AppShell sequence completes (see AppShell).
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              ShowcaseKeys.triggerNavTabsAndCommunity();
+              if (!ShowcaseKeys.triggerNavTabsAndCommunity()) {
+                // No dock steps to show: the tour ends here.
+                sl<WalkthroughRepository>().markSeen(WalkthroughScreen.home);
+              }
             });
           },
           builder: (context) => const _HomeScreenContent(),
@@ -181,8 +184,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       await Future<void>.delayed(Duration.zero);
       if (!mounted) return;
 
-      final keys = _buildWalkthroughKeys();
+      // Only steps whose target is on screen: a missing target would stall
+      // the tour with no tooltip to dismiss it.
+      final keys = _buildWalkthroughKeys()
+          .where((k) => k.currentContext != null)
+          .toList();
       if (keys.isNotEmpty) {
+        ShowcaseKeys.beginHomeTour(keys);
         ShowCaseWidget.of(context).startShowCase(keys);
       }
     });
@@ -200,9 +208,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final showMemoryVerses =
         !systemConfigService.shouldHideFeature('memory_verses', userPlan);
 
-    // Steps 1-2 run in the home screen's own ShowCaseWidget.
-    // Steps 3-5 (Generate / Topics / Community nav tabs) run in the AppShell's
-    // ShowCaseWidget, triggered via ShowcaseKeys.triggerNavTabsAndCommunity().
+    // Body steps run in the home screen's own ShowCaseWidget.
+    // The dock-tab steps (Generate / Discipler / Topics / Community) run in
+    // the AppShell's ShowCaseWidget, triggered via ShowcaseKeys.triggerNavTabsAndCommunity().
     return [
       ShowcaseKeys.homeDailyVerse,
       if (showMemoryVerses) ShowcaseKeys.homeMemoryVerses,
@@ -676,9 +684,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 AppLocalizations.of(context)!.walkthroughHomeMemoryDesc,
             screen: WalkthroughScreen.home,
             stepNumber: 2,
-            totalSteps: 5,
+            totalSteps: 6,
             onNext: _onNext,
-            // Header element — not enough space above; show below
+            // Header element — prefer below (flips automatically if needed)
             tooltipPosition: TooltipPosition.bottom,
             child: _buildMemoryVersesIconButton(onPhoto: onPhoto),
           ),
@@ -942,7 +950,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       description: AppLocalizations.of(context)!.walkthroughHomeDailyVerseDesc,
       screen: WalkthroughScreen.home,
       stepNumber: 1,
-      totalSteps: 5,
+      totalSteps: 6,
       onNext: _onNext,
       child: LockedFeatureWrapper(
         featureKey: 'daily_verse',

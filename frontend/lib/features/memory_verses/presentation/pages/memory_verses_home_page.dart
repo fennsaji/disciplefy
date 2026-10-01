@@ -224,7 +224,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   stepNumber: 1,
                   totalSteps: hasVerses ? 2 : 1,
                   tooltipPosition: TooltipPosition.bottom,
-                  arrowAlignment: Alignment.centerRight,
                   onNext: _onNext,
                   child: MemoryBarAction(
                     icon: Icons.add,

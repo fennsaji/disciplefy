@@ -2305,7 +2305,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             stepNumber: 1,
             totalSteps: 2,
             tooltipPosition: TooltipPosition.bottom,
-            arrowAlignment: Alignment.centerRight,
             onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
             child: PopupMenuButton<String>(
               icon: Icon(
@@ -3247,7 +3246,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     screen: WalkthroughScreen.disciplerHint,
                     stepNumber: 1,
                     totalSteps: 1,
-                    arrowAlignment: Alignment.centerRight,
                     highlightBorderRadius: pillHeight / 2,
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
                     child: SizedBox(
