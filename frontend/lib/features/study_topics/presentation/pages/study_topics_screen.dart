@@ -115,7 +115,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     if (!mounted || !_dataLoadingStarted) return;
     _learningPathsBloc
       ..add(LoadLearningPaths(language: _currentLanguage, forceRefresh: true))
-      ..add(LoadPersonalizedPaths(language: _currentLanguage));
+      ..add(LoadPersonalizedPaths(
+          language: _currentLanguage, forceRefresh: true));
     _continueLearningBloc
         .add(RefreshContinueLearning(language: _currentLanguage));
   }
@@ -231,7 +232,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     if (!mounted || code == _currentLanguage) return;
     setState(() => _currentLanguage = code);
     _learningPathsBloc.add(RefreshLearningPaths(language: code));
-    _learningPathsBloc.add(LoadPersonalizedPaths(language: code));
+    _learningPathsBloc
+        .add(LoadPersonalizedPaths(language: code, forceRefresh: true));
     _continueLearningBloc
         .add(LoadContinueLearning(language: code, forceRefresh: true));
   }
@@ -261,6 +263,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       // Load personalized paths for the For You section (questionnaire-based)
       _learningPathsBloc.add(LoadPersonalizedPaths(
         language: _currentLanguage,
+        forceRefresh: true,
       ));
 
       // The Continue card's current topic.
@@ -777,7 +780,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         forceRefresh: true,
         language: widget.currentLanguage,
       ))
-      ..add(LoadPersonalizedPaths(language: widget.currentLanguage));
+      ..add(LoadPersonalizedPaths(
+          language: widget.currentLanguage, forceRefresh: true));
     context
         .read<ContinueLearningBloc>()
         .add(RefreshContinueLearning(language: widget.currentLanguage));
@@ -1042,7 +1046,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
       // (via GamificationBloc, a singleton reached directly through the
       // service locator).
       bloc.add(LoadLearningPaths(forceRefresh: true, language: language));
-      bloc.add(LoadPersonalizedPaths(language: language));
+      bloc.add(LoadPersonalizedPaths(language: language, forceRefresh: true));
       sl<GamificationBloc>().add(const RefreshGamificationStats());
       continueBloc?.add(RefreshContinueLearning(language: language));
     } else if (outcome is LearningPathsResetError) {

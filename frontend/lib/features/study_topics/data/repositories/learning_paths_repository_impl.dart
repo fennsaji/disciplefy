@@ -495,8 +495,9 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
     String language = 'en',
     int limit = 5,
+    bool forceRefresh = false,
   }) async {
-    if (_isPersonalizedPathsCacheValid(language)) {
+    if (!forceRefresh && _isPersonalizedPathsCacheValid(language)) {
       return Right(_cachedPersonalizedPaths!);
     }
 

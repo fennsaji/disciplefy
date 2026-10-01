@@ -370,8 +370,16 @@ List<LearningPath> buildForYouPaths({
   //    the backend algorithm based on faith_stage, spiritual_goals, etc.).
   //    Falls back to featured paths when personalizedPaths is empty
   //    (e.g. not yet loaded, unauthenticated, or questionnaire not completed).
+  //    Personalized entries are fetched separately and can be older than the
+  //    listing, so each one takes the listing's copy when it has one — that
+  //    copy carries current progress. Without this a path finished since the
+  //    recommendations were fetched read "0/16 Topics" and stayed listed.
+  final latestById = {
+    for (final p in state.allPaths) p.id: p,
+    for (final p in state.enrolledPaths) p.id: p,
+  };
   final personalizedSource = state.personalizedPaths.isNotEmpty
-      ? state.personalizedPaths
+      ? state.personalizedPaths.map((p) => latestById[p.id] ?? p).toList()
       : state.allPaths.where((p) => p.isFeatured).toList();
 
   if (result.length < minCount) {
