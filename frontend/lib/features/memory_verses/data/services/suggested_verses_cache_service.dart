@@ -180,9 +180,15 @@ class SuggestedVersesCacheService {
     };
   }
 
+  // Versioned so suggestion texts cached before the switch to BSB / IRV wording
+  // are never served again.
+  static const String _keyVersion = 'v2';
+
   /// Generate cache key from language and category
   String _generateCacheKey(String language, String? category) {
-    return category != null ? '${language}_$category' : '${language}_all';
+    return category != null
+        ? '${_keyVersion}_${language}_$category'
+        : '${_keyVersion}_${language}_all';
   }
 
   /// Convert verse entity to map for storage
