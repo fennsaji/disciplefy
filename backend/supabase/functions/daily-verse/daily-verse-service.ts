@@ -151,7 +151,8 @@ export class DailyVerseService {
   constructor(
     private readonly supabase: any,
     private readonly getLlmService: () => Promise<LLMService>,
-    private readonly fetchVerseText: VerseTextFetcher = defaultVerseTextFetcher
+    private readonly fetchVerseText: VerseTextFetcher = defaultVerseTextFetcher,
+    private readonly bibleApiCallsEnabled: () => Promise<boolean> = isBibleApiCallsEnabled
   ) {
     // Supabase client and LLM service injected via DI container
   }
@@ -179,17 +180,30 @@ export class DailyVerseService {
         return { ...memoryVerse, fromCache: true }
       }
 
-      // Try to get cached verse first
-      const cachedVerse = await this.getCachedVerse(dateKey)
-      if (cachedVerse) {
-        console.log(`Daily verse cache hit for date: ${dateKey}`)
-        return { ...cachedVerse, fromCache: true }
+      // A row for this date fixes the reference for the whole day. If its
+      // wording is legacy (LLM-written) or past its TTL, refresh only the
+      // wording in place — never pick a new reference for an existing date.
+      const cachedRow = await this.getCachedRow(dateKey)
+      if (cachedRow) {
+        if (!cachedRow.needsRefresh) {
+          console.log(`Daily verse cache hit for date: ${dateKey}`)
+          this.rememberVerse(dateKey, cachedRow.verse, cachedRow.expiresAt)
+          return { ...cachedRow.verse, fromCache: true }
+        }
+        const refreshed = await this.refreshVerseText(dateKey, cachedRow.verse)
+        if (refreshed) {
+          this.rememberVerse(dateKey, refreshed)
+          return { ...refreshed, fromCache: true }
+        }
+        // Refresh failed: keep serving the existing row (not held in memory,
+        // so the next read retries the refresh).
+        return { ...cachedRow.verse, fromCache: true }
       }
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
 
       // Operational kill-switch: skip API.Bible calls, use deterministic fallback.
-      if (!(await isBibleApiCallsEnabled())) {
+      if (!(await this.bibleApiCallsEnabled())) {
         console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no API.Bible call')
         const fallback = this.getFallbackVerse(targetDate)
         // Keep the cached row's UUID on the verse: a verse handed to the client
@@ -209,7 +223,8 @@ export class DailyVerseService {
 
       // Try to cache the new verse and get the UUID
       try {
-        const uuid = await this.cacheVerse(dateKey, newVerse)
+        const fromBibleApi = !this.EMERGENCY_FALLBACK_VERSES.some(v => v.translations.esv === newVerse.translations.esv)
+        const uuid = await this.cacheVerse(dateKey, newVerse, fromBibleApi ? 'bible_api' : null)
         // Add the UUID to the verse data
         newVerse.id = uuid
         console.log(`Daily verse cached successfully for date: ${dateKey}, UUID: ${uuid}`)
@@ -401,41 +416,31 @@ export class DailyVerseService {
   }
 
   /**
-   * Get cached verse from database
+   * Reads the active row for a date, expired or not. needsRefresh is true when
+   * its wording did not come from the Bible API or its TTL has passed.
    */
-  private async getCachedVerse(dateKey: string): Promise<DailyVerseData | null> {
+  private async getCachedRow(
+    dateKey: string
+  ): Promise<{ verse: DailyVerseData; expiresAt: string | null; needsRefresh: boolean } | null> {
     try {
-      console.log(`Attempting to fetch cached verse for date: ${dateKey}`)
-
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
-        .select('uuid, verse_data, expires_at')
+        .select('uuid, verse_data, expires_at, text_source')
         .eq('date_key', dateKey)
         .eq('is_active', true)
-        // API.Bible content-recency: skip entries older than their 30-day TTL
-        // so they are regenerated (and re-fetched) instead of served stale.
-        .gt('expires_at', new Date().toISOString())
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.log('No cached verse found or database error:', error.message)
         return null
       }
+      if (!data?.verse_data) return null
 
-      if (!data) {
-        console.log('No cached verse data found')
-        return null
-      }
-
-      console.log(`Found cached verse for date: ${dateKey}`)
       const cachedData = data.verse_data
-
-      // Add UUID to the cached data
       cachedData.id = data.uuid
 
       // Backward compatibility: Add referenceTranslations if missing from old cache
       if (!cachedData.referenceTranslations) {
-        console.log('Adding missing referenceTranslations to cached verse')
         cachedData.referenceTranslations = {
           en: cachedData.reference,
           hi: cachedData.reference,
@@ -444,7 +449,6 @@ export class DailyVerseService {
       }
 
       // Backward compatibility: Map 'hindi'/'malayalam' keys to 'hi'/'ml' keys
-      // The bible-api-service.ts caches with 'hindi'/'malayalam' but DailyVerseData expects 'hi'/'ml'
       if (cachedData.translations) {
         const translations = cachedData.translations as Record<string, string>
         cachedData.translations = {
@@ -454,11 +458,52 @@ export class DailyVerseService {
         }
       }
 
-      this.rememberVerse(dateKey, cachedData as DailyVerseData, data.expires_at)
-      return cachedData as DailyVerseData
-
+      const expired = !data.expires_at || new Date(data.expires_at).getTime() <= Date.now()
+      return {
+        verse: cachedData as DailyVerseData,
+        expiresAt: data.expires_at ?? null,
+        needsRefresh: expired || data.text_source !== 'bible_api',
+      }
     } catch (error) {
       console.error('Error fetching cached verse:', error)
+      return null
+    }
+  }
+
+  /**
+   * Re-fetches the wording for an existing row's reference and updates the row
+   * in place (same uuid, new expires_at). Returns null on any failure so the
+   * caller keeps serving the existing row and retries on a later read.
+   */
+  private async refreshVerseText(dateKey: string, verse: DailyVerseData): Promise<DailyVerseData | null> {
+    try {
+      if (!(await this.bibleApiCallsEnabled())) return null
+      const texts = await this.fetchVerseText(verse.reference)
+      const translations = {
+        esv: tidyVerseText(texts.en?.text ?? ''),
+        hi: tidyVerseText(texts.hi?.text ?? ''),
+        ml: tidyVerseText(texts.ml?.text ?? ''),
+      }
+      if (!translations.esv || !translations.hi || !translations.ml) {
+        throw new Error(`Bible API returned incomplete text for ${verse.reference}`)
+      }
+      const { id, fromCache: _fromCache, ...stored } = verse
+      const updated: DailyVerseData = { ...stored, translations }
+      const { error } = await this.supabase
+        .from(this.CACHE_TABLE)
+        .update({
+          verse_data: updated,
+          text_source: 'bible_api',
+          expires_at: this.getExpirationDate(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('date_key', dateKey)
+        .eq('uuid', id)
+      if (error) throw error
+      console.log(`Daily verse text refreshed for date: ${dateKey}, reference kept: ${verse.reference}`)
+      return { ...updated, id }
+    } catch (error) {
+      console.warn(`Daily verse text refresh failed for ${dateKey} (serving existing row):`, error)
       return null
     }
   }
@@ -482,13 +527,14 @@ export class DailyVerseService {
   /**
    * Cache verse in database and return the UUID
    */
-  private async cacheVerse(dateKey: string, verseData: DailyVerseData): Promise<string> {
+  private async cacheVerse(dateKey: string, verseData: DailyVerseData, textSource: 'bible_api' | null = null): Promise<string> {
     try {
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
         .upsert({
           date_key: dateKey,
           verse_data: verseData,
+          text_source: textSource,
           is_active: true,
           created_at: new Date().toISOString(),
           expires_at: this.getExpirationDate()

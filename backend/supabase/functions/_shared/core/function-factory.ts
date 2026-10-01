@@ -17,7 +17,7 @@
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { corsHeaders, handleCors } from '../utils/cors.ts'
-import { ErrorHandler } from '../utils/error-handler.ts'
+import { AppError, ErrorHandler } from '../utils/error-handler.ts'
 import { getServiceContainer, createUserSupabaseClient, ServiceContainer } from './services.ts'
 import { config } from './config.ts'
 import { UserContext } from '../types/index.ts'
@@ -451,6 +451,12 @@ export function createServiceRoleFunction(
 
     } catch (error) {
       console.error('[ServiceRoleFunction] Error:', error)
+      if (error instanceof AppError) {
+        return new Response(
+          JSON.stringify({ success: false, error: { code: error.code, message: error.message } }),
+          { status: error.statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
       return new Response(
         JSON.stringify({
           success: false,

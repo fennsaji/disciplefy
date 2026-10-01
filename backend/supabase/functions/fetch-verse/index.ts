@@ -23,6 +23,7 @@ import {
   buildPassageUrl,
   formatCrossChapterReference,
   parseCrossChapterRange,
+  parseVerseNumbers,
   splitNumberedVerses,
   assignChapters,
 } from './passage.ts'
@@ -195,7 +196,7 @@ function cleanVerseText(content: string): string {
  * Build URL with query parameters to get clean verse text
  */
 function buildVerseUrl(bibleId: string, verseId: string): string {
-  const baseUrl = `https://api.scripture.api.bible/v1/bibles/${bibleId}/verses/${verseId}`
+  const baseUrl = `https://api.scripture.api.bible/v1/bibles/${encodeURIComponent(bibleId)}/verses/${encodeURIComponent(verseId)}`
   const params = new URLSearchParams({
     'content-type': 'text',           // Plain text format
     'include-notes': 'false',         // No footnotes
@@ -227,11 +228,19 @@ async function handleFetchVerse(
   }
 
   // Parse and validate request body
-  const body = await req.json() as FetchVerseRequest
+  const rawBody = await req.json() as FetchVerseRequest
 
-  if (!body.book || !body.chapter || !body.verse_start || !body.language) {
+  if (!rawBody.book || !rawBody.chapter || !rawBody.verse_start || !rawBody.language) {
     throw new AppError('VALIDATION_ERROR', 'book, chapter, verse_start, and language are required', 400)
   }
+
+  // Chapter/verse values go into the API.Bible URL path: accept only positive
+  // integers (numeric strings coerced) and use the coerced numbers from here on.
+  const numbers = parseVerseNumbers(rawBody)
+  if ('error' in numbers) {
+    throw new AppError('VALIDATION_ERROR', numbers.error, 400)
+  }
+  const body: FetchVerseRequest = { ...rawBody, ...numbers }
 
   // Validate language
   if (!['en', 'hi', 'ml'].includes(body.language)) {
@@ -315,7 +324,7 @@ async function handleFetchVerse(
     localizedReference = `${localizedBook} ${body.chapter}`
 
     const chapterId = `${bookCode}.${body.chapter}`
-    const chapterUrl = `https://api.scripture.api.bible/v1/bibles/${bibleId}/chapters/${chapterId}`
+    const chapterUrl = `https://api.scripture.api.bible/v1/bibles/${encodeURIComponent(bibleId)}/chapters/${encodeURIComponent(chapterId)}`
     const params = new URLSearchParams({
       'content-type': 'text',
       'include-notes': 'false',

@@ -19,18 +19,13 @@ import { getServiceContainer } from '../_shared/core/services.ts'
 import { isBibleContentEnabled } from '../_shared/services/bible-availability.ts'
 import { resolveTelegramThreadId, sendTelegramMessage } from '../_shared/services/telegram-service.ts'
 import { DailyVerseService } from '../daily-verse/daily-verse-service.ts'
+import { claimDailySlot, parseJobRequest, settleDailySlot } from '../_shared/services/telegram-ledger.ts'
 import { buildDailyVerseMessage, verseFor, type VerseLanguage } from './message.ts'
 
-const LANGUAGES: VerseLanguage[] = ['en', 'hi', 'ml']
+const LEDGER = 'telegram_daily_verse_posts'
 
 createServiceRoleFunction(async (req, supabase) => {
-  let dryRun = false
-  let language: VerseLanguage = 'en'
-  try {
-    const body = await req.json()
-    dryRun = body?.dry_run === true
-    if (LANGUAGES.includes(body?.language)) language = body.language
-  } catch { /* no body: a scheduled run */ }
+  const { language, dryRun } = await parseJobRequest(req)
 
   if (!(await isBibleContentEnabled())) {
     console.log('[TELEGRAM-VERSE] bible content disabled, skipping', { language })
@@ -76,18 +71,22 @@ createServiceRoleFunction(async (req, supabase) => {
     return { success: false, skipped: true, reason: 'telegram_not_configured' }
   }
 
-  const sent = await sendTelegramMessage(token, chatId, message, threadId)
-
-  const { error: ledgerError } = await supabase.from('telegram_daily_verse_posts').upsert({
-    post_date: today,
-    language,
+  // Claim the slot before sending: a retry skips a 'sent' or in-flight slot,
+  // so a ledger write failing after a successful send can never repost.
+  const claim = await claimDailySlot(supabase, LEDGER, today, language, {
     reference: picked.reference,
     thread_id: threadId,
-    message_id: sent.messageId,
-    status: sent.ok ? 'sent' : 'failed',
-    error: sent.error,
-  }, { onConflict: 'post_date,language' })
-  if (ledgerError) console.error('[TELEGRAM-VERSE] ledger write failed', ledgerError.message)
+  })
+  if (!claim.claimed) {
+    if (claim.error) {
+      console.error('[TELEGRAM-VERSE] ledger claim failed', claim.error)
+      return { success: false, error: 'ledger_claim_failed' }
+    }
+    return { success: true, skipped: true, reason: claim.status === 'sent' ? 'already_posted_today' : 'post_in_progress' }
+  }
+
+  const sent = await sendTelegramMessage(token, chatId, message, threadId)
+  await settleDailySlot(supabase, LEDGER, today, language, sent)
 
   if (!sent.ok) {
     console.error('[TELEGRAM-VERSE] send failed', { language, error: sent.error })
