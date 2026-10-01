@@ -635,3 +635,26 @@ class UsageHistoryError extends TokenState {
     }
   }
 }
+
+/// Resolves the user's last known plan from any state carrying a token
+/// status, including a failed refresh (e.g. offline) that kept the previous
+/// or persisted status. Returns null when no plan has ever been known.
+extension TokenStatePlan on TokenState {
+  String? get knownPlanName {
+    final self = this;
+    final TokenStatus? status = switch (self) {
+      TokenLoaded() => self.tokenStatus,
+      TokenError() => self.previousTokenStatus,
+      TokenConsuming() => self.currentTokenStatus,
+      TokenPurchasing() => self.currentTokenStatus,
+      TokenOrderCreating() => self.currentTokenStatus,
+      TokenOrderCreated() => self.currentTokenStatus,
+      TokenPaymentConfirming() => self.currentTokenStatus,
+      TokenPurchaseSuccess() => self.updatedTokenStatus,
+      TokenPlanUpgrading() => self.currentTokenStatus,
+      TokenPlanUpgradeSuccess() => self.updatedTokenStatus,
+      _ => null,
+    };
+    return status?.userPlan.name;
+  }
+}

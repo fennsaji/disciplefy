@@ -1,6 +1,7 @@
 // Run with: deno test passage.test.ts
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import {
+  assignChapters,
   buildPassageId,
   buildPassageUrl,
   formatCrossChapterReference,
@@ -53,4 +54,14 @@ Deno.test('splits bracketed verse numbers across a chapter boundary', () => {
     { number: 1, text: 'Be ye followers of me.' },
   ])
   assertEquals(splitNumberedVerses('no markers', clean), [])
+})
+
+Deno.test('assigns chapters across a chapter boundary', () => {
+  const items = [
+    { number: 32, text: 'a' },
+    { number: 33, text: 'b' },
+    { number: 1, text: 'c' },
+  ]
+  assertEquals(assignChapters(items, 10).map(v => v.chapter), [10, 10, 11])
+  assertEquals(assignChapters([], 10), [])
 })

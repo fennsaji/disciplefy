@@ -24,6 +24,7 @@ import {
   formatCrossChapterReference,
   parseCrossChapterRange,
   splitNumberedVerses,
+  assignChapters,
 } from './passage.ts'
 
 /**
@@ -44,6 +45,7 @@ interface FetchVerseRequest {
 interface VerseItem {
   number: number
   text: string
+  chapter?: number // Only set for cross-chapter passages
 }
 
 interface FetchVerseResponse extends ApiSuccessResponse<{
@@ -292,7 +294,10 @@ async function handleFetchVerse(
 
     const data = await response.json()
     const content: string = data.data?.content ?? ''
-    const verseItems = splitNumberedVerses(content, cleanVerseText)
+    const verseItems = assignChapters(
+      splitNumberedVerses(content, cleanVerseText),
+      crossChapter.chapter,
+    )
     if (verseItems.length > 0) {
       verses = verseItems
       verseText = verseItems.map(item => item.text).join(' ')

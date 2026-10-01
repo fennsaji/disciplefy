@@ -197,7 +197,9 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         _localizedReference = cached.localizedReference;
         _verses = cached.verses
             ?.map((v) => VerseItem(
-                number: v['number'] as int, text: v['text'] as String))
+                number: v['number'] as int,
+                text: v['text'] as String,
+                chapter: v['chapter'] as int?))
             .toList();
       });
       return;
@@ -232,7 +234,11 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
           text: fetchedVerse.text,
           localizedReference: fetchedVerse.localizedReference,
           verses: fetchedVerse.verses
-              ?.map((v) => {'number': v.number, 'text': v.text})
+              ?.map((v) => {
+                    'number': v.number,
+                    'text': v.text,
+                    if (v.chapter != null) 'chapter': v.chapter,
+                  })
               .toList(),
         );
         if (!mounted) return;
@@ -443,9 +449,49 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
           ),
           const SizedBox(height: 8),
           if (hasMultipleVerses)
-            ..._verses!.map((verse) => _buildVerseRow(verse, palette))
+            ..._buildVerseRows(palette)
           else
             Text(_verseText ?? '', style: _verseStyle(palette)),
+        ],
+      ),
+    );
+  }
+
+  /// Verse rows with a chapter marker before the first verse of each new
+  /// chapter (cross-chapter passages only; single-chapter rows are unchanged).
+  List<Widget> _buildVerseRows(ReaderPalette palette) {
+    final rows = <Widget>[];
+    int? previousChapter;
+    for (final verse in _verses!) {
+      final chapter = verse.chapter;
+      if (chapter != null &&
+          previousChapter != null &&
+          chapter != previousChapter) {
+        rows.add(_buildChapterMarker(chapter, palette));
+      }
+      previousChapter = chapter ?? previousChapter;
+      rows.add(_buildVerseRow(verse, palette));
+    }
+    return rows;
+  }
+
+  Widget _buildChapterMarker(int chapter, ReaderPalette palette) {
+    return Padding(
+      key: Key('verse_sheet_chapter_$chapter'),
+      padding: const EdgeInsets.only(top: 6, bottom: 12),
+      child: Row(
+        children: [
+          Text(
+            '$chapter',
+            style: AppFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: palette.gold,
+              height: 1,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Divider(color: palette.hairline, height: 1)),
         ],
       ),
     );

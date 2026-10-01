@@ -48,11 +48,9 @@ class LockedFeatureWrapper extends StatelessWidget {
       builder: (context, connectivityState) =>
           BlocBuilder<TokenBloc, TokenState>(
         builder: (context, tokenState) {
-          // Get user plan
-          String userPlan = 'free';
-          if (tokenState is TokenLoaded) {
-            userPlan = tokenState.tokenStatus.userPlan.name;
-          }
+          // Last known plan — survives offline refresh failures so a paid
+          // user is never shown "Tap to upgrade" just for being offline.
+          final userPlan = tokenState.knownPlanName ?? 'free';
 
           final systemConfig = sl<SystemConfigService>();
 

@@ -94,3 +94,20 @@ export function splitNumberedVerses(
   }
   return items
 }
+
+/**
+ * Tags split verses with their chapter, starting at [startChapter] and
+ * advancing whenever verse numbering resets (e.g. 33 → 1).
+ */
+export function assignChapters(
+  items: { number: number; text: string }[],
+  startChapter: number,
+): { number: number; text: string; chapter: number }[] {
+  let chapter = startChapter
+  let previous = 0
+  return items.map(item => {
+    if (item.number < previous) chapter++
+    previous = item.number
+    return { ...item, chapter }
+  })
+}

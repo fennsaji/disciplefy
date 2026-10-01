@@ -425,6 +425,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
           ?.map((v) => VerseItem(
                 number: v['number'] as int,
                 text: v['text'] as String,
+                chapter: v['chapter'] as int?,
               ))
           .toList();
 
