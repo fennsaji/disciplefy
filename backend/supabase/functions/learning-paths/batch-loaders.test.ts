@@ -5,6 +5,7 @@ import {
   groupPathTranslations,
   loadCompletedTopicCounts,
   loadEnrolledPathIds,
+  pathProgressPercentage,
 } from './batch-loaders.ts'
 
 /** Minimal chainable fake of a supabase-js query builder. */
@@ -75,4 +76,11 @@ Deno.test('loadEnrolledPathIds returns the enrolled set, empty without ids', asy
   const client = fakeClient({ user_learning_path_progress: { data: [{ learning_path_id: 'p2' }], error: null } })
   assertEquals(await loadEnrolledPathIds(client, ['p1', 'p2'], 'u'), new Set(['p2']))
   assertEquals(await loadEnrolledPathIds(client, [], 'u'), new Set())
+})
+
+Deno.test('pathProgressPercentage reads every topic done as 100 without an enrollment row', () => {
+  assertEquals(pathProgressPercentage(16, 16, 'romans', new Set()), 100)
+  assertEquals(pathProgressPercentage(4, 16, 'romans', new Set()), 25)
+  assertEquals(pathProgressPercentage(0, 16, 'romans', new Set(['romans'])), 100)
+  assertEquals(pathProgressPercentage(0, 0, 'empty', new Set()), 0)
 })
