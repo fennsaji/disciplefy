@@ -33,10 +33,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
       if (currentUser == null) {
         final prefs = await SharedPreferences.getInstance();
         final dailyVerseEnabled =
-            prefs.getBool('notification_pref_daily_verse_enabled') ?? false;
+            prefs.getBool('notification_pref_daily_verse_enabled') ?? true;
         final recommendedTopicEnabled =
             prefs.getBool('notification_pref_recommended_topic_enabled') ??
-                false;
+                true;
         final streakReminderEnabled =
             prefs.getBool('notification_pref_streak_reminder_enabled') ?? false;
         final streakMilestoneEnabled =
@@ -218,10 +218,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
         // Load current preferences
         final currentDailyVerse =
-            prefs.getBool('notification_pref_daily_verse_enabled') ?? false;
+            prefs.getBool('notification_pref_daily_verse_enabled') ?? true;
         final currentRecommendedTopic =
             prefs.getBool('notification_pref_recommended_topic_enabled') ??
-                false;
+                true;
         final currentStreakReminder =
             prefs.getBool('notification_pref_streak_reminder_enabled') ?? false;
         final currentStreakMilestone =

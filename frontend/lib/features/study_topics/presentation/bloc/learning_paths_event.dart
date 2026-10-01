@@ -141,13 +141,17 @@ class LoadPersonalizedPaths extends LearningPathsEvent {
   final String language;
   final int limit;
 
+  /// Bypass the repository's in-memory copy (it holds per-user progress).
+  final bool forceRefresh;
+
   const LoadPersonalizedPaths({
     this.language = 'en',
     this.limit = 5,
+    this.forceRefresh = false,
   });
 
   @override
-  List<Object?> get props => [language, limit];
+  List<Object?> get props => [language, limit, forceRefresh];
 }
 
 /// Reset all of the user's learning path progress.

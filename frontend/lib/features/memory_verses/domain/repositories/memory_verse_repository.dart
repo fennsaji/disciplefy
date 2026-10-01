@@ -132,7 +132,8 @@ abstract class MemoryVerseRepository {
   /// [book] - Book name (e.g., "John", "Genesis")
   /// [chapter] - Chapter number
   /// [verseStart] - Starting verse number
-  /// [verseEnd] - Optional ending verse for ranges
+  /// [verseEnd] - Optional ending verse for ranges (in [endChapter] if set)
+  /// [endChapter] - Optional end chapter for cross-chapter passages
   /// [language] - Language code ('en', 'hi', 'ml')
   ///
   /// Returns FetchedVerseEntity with text and localized reference on success.
@@ -141,6 +142,7 @@ abstract class MemoryVerseRepository {
     required int chapter,
     required int verseStart,
     int? verseEnd,
+    int? endChapter,
     required String language,
   });
 

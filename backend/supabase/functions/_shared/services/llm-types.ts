@@ -47,6 +47,7 @@ export interface LLMGenerationParams {
   readonly tier?: string  // Optional: user subscription tier for model selection
   readonly studyMode?: StudyMode  // Optional: study mode for different experiences (default: 'standard')
   readonly forceProvider?: 'openai' | 'anthropic'  // Optional: force specific provider (used for retry/fallback)
+  readonly passageGrounding?: string | null  // Optional: delimited Bible text block (see passage-grounding.ts) appended to the user message
 }
 
 /**
@@ -64,18 +65,14 @@ export interface LLMResponse {
 }
 
 /**
- * Daily verse generation response structure.
- * Uses consistent 'hi'/'ml' keys for Hindi/Malayalam translations.
+ * Daily verse selection from the LLM: the reference only. The LLM never
+ * supplies verse wording — DailyVerseService fills the text from the Bible text
+ * service (BSB for English, IRV for Hindi/Malayalam).
  */
 export interface DailyVerseResponse {
   readonly reference: string
   readonly referenceTranslations: {
     readonly en: string
-    readonly hi: string
-    readonly ml: string
-  }
-  readonly translations: {
-    readonly esv: string
     readonly hi: string
     readonly ml: string
   }

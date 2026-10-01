@@ -172,7 +172,7 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
     final language = await _resolveLanguage();
     bloc
       ..add(LoadLearningPaths(forceRefresh: true, language: language))
-      ..add(LoadPersonalizedPaths(language: language));
+      ..add(LoadPersonalizedPaths(language: language, forceRefresh: true));
   }
 
   void _goBack() {

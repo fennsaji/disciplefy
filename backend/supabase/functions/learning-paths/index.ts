@@ -87,6 +87,8 @@ interface LearningPath {
   category: string;
   /** Curated order within a disciple level (admin-set). */
   display_order?: number;
+  /** Localized title of the first unfinished topic; recommended path only. */
+  next_topic_title?: string;
 }
 
 interface LearningPathDetail extends LearningPath {
@@ -392,6 +394,40 @@ function buildLearningPathResponse(
     topics_completed: topicsCompleted ?? (topicsCount > 0 ? Math.round(progressPercentage * topicsCount / 100) : 0),
     category: (pathData as Record<string, unknown>).category as string || '',
   };
+}
+
+/**
+ * Adds the localized title of the path's first unfinished topic to a started
+ * recommended path, so Home can show "Next: …" without a second request.
+ * Best effort: any failure returns the path unchanged (older apps ignore it).
+ */
+async function withNextTopic(
+  // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
+  supabaseClient: any,
+  path: LearningPath | null,
+  userId: string | null | undefined,
+  language: string
+): Promise<LearningPath | null> {
+  if (!path || !userId) return path;
+  const started = path.is_enrolled || path.topics_completed > 0 || path.progress_percentage > 0;
+  if (!started || path.topics_completed >= path.topics_count) return path;
+  try {
+    const { data, error } = await supabaseClient.rpc('get_learning_path_details', {
+      p_path_id: path.id,
+      p_user_id: userId,
+      p_language: language,
+    });
+    if (error || !data || data.length === 0) return path;
+    const topics = ((data[0].topics || []) as Array<Record<string, unknown>>)
+      .slice()
+      .sort((a, b) => (a.position as number) - (b.position as number));
+    const next = topics.find((t) => !t.is_completed);
+    const title = typeof next?.title === 'string' ? next.title.trim() : '';
+    return title ? { ...path, next_topic_title: title } : path;
+  } catch (e) {
+    console.error('[RECOMMENDED_PATH] Next topic lookup failed:', e instanceof Error ? e.message : 'unknown');
+    return path;
+  }
 }
 
 /**
@@ -1349,7 +1385,10 @@ async function handleGetRecommendedPath(
           localized.description
         );
 
-        return createRecommendedPathResponse(path, 'active');
+        return createRecommendedPathResponse(
+          await withNextTopic(supabaseServiceClient, path, userId, language),
+          'active'
+        );
       }
     }
 
@@ -1481,7 +1520,10 @@ async function handleGetRecommendedPath(
               localized.description
             );
 
-            return createRecommendedPathResponse(path, 'personalized');
+            return createRecommendedPathResponse(
+          await withNextTopic(supabaseServiceClient, path, userId, language),
+          'personalized'
+        );
           }
         }
       }
@@ -1569,7 +1611,10 @@ async function handleGetRecommendedPath(
         localized.description
       );
 
-      return createRecommendedPathResponse(path, 'featured');
+      return createRecommendedPathResponse(
+          await withNextTopic(supabaseServiceClient, path, userId, language),
+          'featured'
+        );
     }
 
     // All featured paths completed — return the first one anyway (for anonymous users this won't happen)
@@ -1590,7 +1635,10 @@ async function handleGetRecommendedPath(
       fallbackPath, fallbackTopicsCount, false, fallbackProgress,
       fallbackLocalized.title, fallbackLocalized.description
     );
-    return createRecommendedPathResponse(path, 'featured');
+    return createRecommendedPathResponse(
+          await withNextTopic(supabaseServiceClient, path, userId, language),
+          'featured'
+        );
   } catch (error) {
     console.error('[RECOMMENDED_PATH] Error:', error);
     throw new AppError('SERVER_ERROR', 'Failed to get recommended learning path', 500);

@@ -78,6 +78,38 @@ class FellowshipGuideDetailScreen extends StatelessWidget {
   }
 }
 
+/// Study-guide route for a fellowship lesson. [language] must be the
+/// fellowship's content language (the one the lesson title is shown in), so
+/// the generated guide matches the lesson.
+@visibleForTesting
+String fellowshipStudyGuideLocation({
+  required LearningPathTopic topic,
+  required String language,
+  required StudyMode studyMode,
+  String pathTitle = '',
+  String pathDescription = '',
+  String pathDiscipleLevel = '',
+}) {
+  final encodedTitle = Uri.encodeComponent(topic.title);
+  final inputType = topic.inputType.isNotEmpty ? topic.inputType : 'topic';
+  final topicIdParam =
+      topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
+  final descParam = topic.description.isNotEmpty
+      ? '&description=${Uri.encodeComponent(topic.description)}'
+      : '';
+  final pathTitleParam = pathTitle.isNotEmpty
+      ? '&path_title=${Uri.encodeComponent(pathTitle)}'
+      : '';
+  final pathDescParam = pathDescription.isNotEmpty
+      ? '&path_description=${Uri.encodeComponent(pathDescription)}'
+      : '';
+  final discipleLevelParam = pathDiscipleLevel.isNotEmpty
+      ? '&disciple_level=${Uri.encodeComponent(pathDiscipleLevel)}'
+      : '';
+  return '/study-guide-v2?input=$encodedTitle&type=$inputType&language=$language&mode=${studyMode.name}&source=fellowship'
+      '$topicIdParam$descParam$pathTitleParam$pathDescParam$discipleLevelParam';
+}
+
 // ============================================================================
 // Main content
 // ============================================================================
@@ -183,35 +215,23 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
     try {
       final topic = _topic;
 
-      // Fetch content language and study mode preference — same as learning path
+      // The lesson is shown in the fellowship's language, so the guide must be
+      // generated in that same language — not the member's own study language.
       final languageService = sl<LanguagePreferenceService>();
-      final lang = await languageService.getStudyContentLanguage();
-      final language = lang.code;
+      final language = widget.contentLanguage;
       final studyMode =
           await languageService.getStudyModePreference() ?? StudyMode.standard;
 
       if (!mounted) return;
 
-      final encodedTitle = Uri.encodeComponent(topic.title);
-      final inputType = topic.inputType.isNotEmpty ? topic.inputType : 'topic';
-      final topicIdParam =
-          topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
-      final descParam = topic.description.isNotEmpty
-          ? '&description=${Uri.encodeComponent(topic.description)}'
-          : '';
-      final pathTitleParam = widget.pathTitle.isNotEmpty
-          ? '&path_title=${Uri.encodeComponent(widget.pathTitle)}'
-          : '';
-      final pathDescParam = widget.pathDescription.isNotEmpty
-          ? '&path_description=${Uri.encodeComponent(widget.pathDescription)}'
-          : '';
-      final discipleLevelParam = widget.pathDiscipleLevel.isNotEmpty
-          ? '&disciple_level=${Uri.encodeComponent(widget.pathDiscipleLevel)}'
-          : '';
-      await context.push(
-        '/study-guide-v2?input=$encodedTitle&type=$inputType&language=$language&mode=${studyMode.name}&source=fellowship'
-        '$topicIdParam$descParam$pathTitleParam$pathDescParam$discipleLevelParam',
-      );
+      await context.push(fellowshipStudyGuideLocation(
+        topic: topic,
+        language: language,
+        studyMode: studyMode,
+        pathTitle: widget.pathTitle,
+        pathDescription: widget.pathDescription,
+        pathDiscipleLevel: widget.pathDiscipleLevel,
+      ));
     } finally {
       if (mounted) setState(() => _isOpeningStudyGuide = false);
     }

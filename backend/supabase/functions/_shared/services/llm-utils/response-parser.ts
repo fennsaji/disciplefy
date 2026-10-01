@@ -5,7 +5,7 @@
  * Provides retry mechanisms for malformed JSON and text sanitization.
  */
 
-import type { LLMResponse, DailyVerseResponse } from '../llm-types.ts'
+import type { LLMResponse } from '../llm-types.ts'
 
 /**
  * Verse reference response structure (used when fetching from Bible API)
@@ -331,83 +331,6 @@ export function parseVerseReferenceResponse(rawResponse: string): VerseReference
       en: sanitizeText(en),
       hi: sanitizeText(hi),
       ml: sanitizeText(ml)
-    }
-  }
-}
-
-/**
- * Parses and validates full verse response from LLM.
- * 
- * @param rawResponse - Raw response from LLM
- * @returns Parsed and validated verse response
- */
-export function parseFullVerseResponse(rawResponse: string): DailyVerseResponse {
-  const cleaned = cleanJSONResponse(rawResponse)
-  console.log('[ResponseParser] Cleaned LLM response:', cleaned.substring(0, 500))
-  
-  const parsed = JSON.parse(cleaned)
-  console.log('[ResponseParser] Parsed LLM response structure:', {
-    hasReference: !!parsed.reference,
-    hasReferenceTranslations: !!parsed.referenceTranslations,
-    hasTranslations: !!parsed.translations,
-    translationKeys: parsed.translations ? Object.keys(parsed.translations) : []
-  })
-  
-  // Validate structure
-  if (!parsed.reference || typeof parsed.reference !== 'string') {
-    throw new Error('Missing or invalid reference field')
-  }
-  
-  if (!parsed.referenceTranslations || typeof parsed.referenceTranslations !== 'object') {
-    throw new Error('Missing or invalid referenceTranslations field')
-  }
-  
-  const { en, hi, ml } = parsed.referenceTranslations
-  
-  if (!en || typeof en !== 'string') {
-    throw new Error('Missing or invalid English reference translation')
-  }
-  
-  if (!hi || typeof hi !== 'string') {
-    console.warn('[ResponseParser] Missing Hindi reference translation, using fallback')
-  }
-  
-  if (!ml || typeof ml !== 'string') {
-    console.warn('[ResponseParser] Missing Malayalam reference translation, using fallback')
-  }
-  
-  if (!parsed.translations || typeof parsed.translations !== 'object') {
-    throw new Error('Missing or invalid translations field')
-  }
-  
-  // Support both 'hindi'/'malayalam' (LLM output) and 'hi'/'ml' (standard) keys
-  const esv = parsed.translations.esv
-  const hindiTranslation = parsed.translations.hi || parsed.translations.hindi
-  const malayalamTranslation = parsed.translations.ml || parsed.translations.malayalam
-
-  if (!esv || typeof esv !== 'string') {
-    throw new Error('Missing or invalid ESV translation')
-  }
-
-  if (!hindiTranslation || typeof hindiTranslation !== 'string') {
-    console.warn('[ResponseParser] LLM did not return Hindi translation')
-  }
-
-  if (!malayalamTranslation || typeof malayalamTranslation !== 'string') {
-    console.warn('[ResponseParser] LLM did not return Malayalam translation')
-  }
-
-  return {
-    reference: sanitizeText(parsed.reference),
-    referenceTranslations: {
-      en: sanitizeText(en),
-      hi: sanitizeText(hi),
-      ml: sanitizeText(ml)
-    },
-    translations: {
-      esv: sanitizeText(esv),
-      hi: sanitizeText(hindiTranslation),
-      ml: sanitizeText(malayalamTranslation)
     }
   }
 }

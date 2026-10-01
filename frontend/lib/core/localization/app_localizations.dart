@@ -478,6 +478,10 @@ class AppLocalizations {
       // Walkthrough tooltips
       'walkthroughGotIt': 'Got it →',
       'walkthroughWatchVideo': '▶ Watch video',
+      'walkthroughSkip': 'Skip',
+      'walkthroughHomeDisciplerTitle': 'Talk to Discipler',
+      'walkthroughHomeDisciplerDesc':
+          'Ask questions about the Bible by voice or text',
       'walkthroughHomeDailyVerseTitle': 'Your Daily Verse',
       'walkthroughHomeDailyVerseDesc':
           'A new Bible verse every day — read it, copy it, or share it',
@@ -1262,6 +1266,10 @@ class AppLocalizations {
       // Walkthrough tooltips
       'walkthroughGotIt': 'समझ गया →',
       'walkthroughWatchVideo': '▶ वीडियो देखें',
+      'walkthroughSkip': 'छोड़ें',
+      'walkthroughHomeDisciplerTitle': 'Discipler से बात करें',
+      'walkthroughHomeDisciplerDesc':
+          'आवाज़ या टेक्स्ट से बाइबल के बारे में प्रश्न पूछें',
       'walkthroughHomeDailyVerseTitle': 'आपका दैनिक वचन',
       'walkthroughHomeDailyVerseDesc':
           'हर दिन एक नया बाइबल वचन — इसे पढ़ें, कॉपी करें या साझा करें',
@@ -2055,6 +2063,10 @@ class AppLocalizations {
       // Walkthrough tooltips
       'walkthroughGotIt': 'മനസ്സിലായി →',
       'walkthroughWatchVideo': '▶ വീഡിയോ കാണുക',
+      'walkthroughSkip': 'ഒഴിവാക്കുക',
+      'walkthroughHomeDisciplerTitle': 'Discipler-നോട് സംസാരിക്കുക',
+      'walkthroughHomeDisciplerDesc':
+          'ശബ്ദത്തിലൂടെയോ ടെക്സ്റ്റിലൂടെയോ ബൈബിളിനെക്കുറിച്ച് ചോദ്യങ്ങൾ ചോദിക്കുക',
       'walkthroughHomeDailyVerseTitle': 'നിങ്ങളുടെ ദൈനിക വചനം',
       'walkthroughHomeDailyVerseDesc':
           'ഓരോ ദിവസവും ഒരു പുതിയ ബൈബിൾ വചനം — വായിക്കുക, പകർത്തുക, അല്ലെങ്കിൽ പങ്കിടുക',
@@ -3038,6 +3050,12 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['walkthroughGotIt']!;
   String get walkthroughWatchVideo =>
       _localizedValues[locale.languageCode]!['walkthroughWatchVideo']!;
+  String get walkthroughSkip =>
+      _localizedValues[locale.languageCode]!['walkthroughSkip']!;
+  String get walkthroughHomeDisciplerTitle =>
+      _localizedValues[locale.languageCode]!['walkthroughHomeDisciplerTitle']!;
+  String get walkthroughHomeDisciplerDesc =>
+      _localizedValues[locale.languageCode]!['walkthroughHomeDisciplerDesc']!;
   String get walkthroughHomeDailyVerseTitle =>
       _localizedValues[locale.languageCode]!['walkthroughHomeDailyVerseTitle']!;
   String get walkthroughHomeDailyVerseDesc =>

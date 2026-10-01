@@ -37,8 +37,7 @@ import {
 } from './llm-config/language-configs.ts'
 import {
   createStudyGuidePrompt,
-  createVerseReferencePrompt,
-  createFullVersePrompt
+  createVerseReferencePrompt
 } from './llm-utils/prompt-builder.ts'
 import {
   cleanJSONResponse,
@@ -46,8 +45,7 @@ import {
   validateStudyGuideResponse,
   sanitizeStudyGuideResponse,
   sanitizeMarkdownText,
-  parseVerseReferenceResponse,
-  parseFullVerseResponse
+  parseVerseReferenceResponse
 } from './llm-utils/response-parser.ts'
 import {
   validateInputSecurity,
@@ -748,65 +746,27 @@ Return ONLY the numeric score, nothing else.`
   }
 
   /**
-   * Generates a daily Bible verse with translations.
+   * Chooses the daily verse reference (book/chapter/verse) only. The LLM never
+   * returns verse wording; DailyVerseService fetches the text from the Bible API.
+   * Throws on failure so the caller can use its deterministic fallback.
    */
   async generateDailyVerse(
     excludeReferences: string[] = [],
     language: string = 'en'
   ): Promise<DailyVerseResponse> {
-    console.log(`[LLM] Generating daily verse, excluding: ${excludeReferences.join(', ')}`)
+    console.log(`[LLM] Selecting daily verse reference, excluding ${excludeReferences.length} recent`)
 
     if (this.useMockData) {
-      return this.getMockDailyVerse()
+      return this.getMockDailyVerse(excludeReferences)
     }
 
-    try {
-      // Import Bible API service dynamically
-      const { fetchVerseAllLanguages } = await import('./bible-api-service.ts')
+    const prompt = createVerseReferencePrompt(excludeReferences, language)
+    const selectedProvider = this.selectOptimalProvider(language)
+    const result: LLMResponseWithUsage<string> = selectedProvider === 'openai'
+      ? await this.getOpenAIClient().callForVerse(prompt.systemMessage, prompt.userMessage)
+      : await this.getAnthropicClient().callForVerse(prompt.systemMessage, prompt.userMessage)
 
-      // NOTE: No cache check here — caching is handled by DailyVerseService with the
-      // correct per-date key. A cache here used new Date() (always today), which caused
-      // all dates generated on the same day to return the same verse, bypassing exclusions.
-
-      // Generate reference using LLM
-      const prompt = createVerseReferencePrompt(excludeReferences, language)
-      const selectedProvider = this.selectOptimalProvider(language)
-      console.log(`[LLM] Selected ${selectedProvider} for verse reference generation`)
-
-      let result: LLMResponseWithUsage<string>
-
-      if (selectedProvider === 'openai') {
-        result = await this.getOpenAIClient().callForVerse(prompt.systemMessage, prompt.userMessage)
-      } else {
-        result = await this.getAnthropicClient().callForVerse(prompt.systemMessage, prompt.userMessage)
-      }
-
-      const parsedReference = parseVerseReferenceResponse(result.content)
-      console.log(`[LLM] LLM selected reference: ${parsedReference.reference}`)
-
-      // Fetch verse text from Bible API
-      const allVerses = await fetchVerseAllLanguages(parsedReference.reference)
-      const hasAllTranslations = allVerses.en.text && allVerses.hi.text && allVerses.ml.text
-
-      if (!hasAllTranslations) {
-        console.warn(`[LLM] Bible API returned incomplete translations, falling back to LLM`)
-        return this.generateDailyVerseLLMFallback(excludeReferences, language)
-      }
-
-      return {
-        reference: parsedReference.reference,
-        referenceTranslations: parsedReference.referenceTranslations,
-        translations: {
-          esv: allVerses.en.text,
-          hi: allVerses.hi.text,
-          ml: allVerses.ml.text,
-        }
-      }
-
-    } catch (error) {
-      console.error(`[LLM] Daily verse generation failed:`, error)
-      return this.generateDailyVerseLLMFallback(excludeReferences, language)
-    }
+    return parseVerseReferenceResponse(result.content)
   }
 
   // ==================== Private Methods ====================
@@ -1006,29 +966,6 @@ Return ONLY the numeric score, nothing else.`
     }
   }
 
-  private async generateDailyVerseLLMFallback(
-    excludeReferences: string[],
-    language: string
-  ): Promise<DailyVerseResponse> {
-    try {
-      const prompt = createFullVersePrompt(excludeReferences, language)
-      const selectedProvider = this.selectOptimalProvider(language)
-
-      let result: LLMResponseWithUsage<string>
-
-      if (selectedProvider === 'openai') {
-        result = await this.getOpenAIClient().callForVerse(prompt.systemMessage, prompt.userMessage)
-      } else {
-        result = await this.getAnthropicClient().callForVerse(prompt.systemMessage, prompt.userMessage)
-      }
-
-      return parseFullVerseResponse(result.content)
-    } catch (error) {
-      console.error(`[LLM] LLM fallback generation failed:`, error)
-      return this.getMockDailyVerse()
-    }
-  }
-
   // ==================== Mock Data ====================
 
   /**
@@ -1089,30 +1026,16 @@ Return ONLY the numeric score, nothing else.`
     }
   }
 
-  private getMockDailyVerse(): DailyVerseResponse {
-    const mockVerses = [
-      {
-        reference: "John 3:16",
-        referenceTranslations: { en: "John 3:16", hi: "यूहन्ना 3:16", ml: "യോഹന്നാൻ 3:16" },
-        translations: {
-          esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
-          hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया।",
-          ml: "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി."
-        }
-      },
-      {
-        reference: "Philippians 4:13",
-        referenceTranslations: { en: "Philippians 4:13", hi: "फिलिप्पियों 4:13", ml: "ഫിലിപ്പിയർ 4:13" },
-        translations: {
-          esv: "I can do all things through him who strengthens me.",
-          hi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
-          ml: "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ എനിക്കു സകലവും ചെയ്വാൻ കഴിയും."
-        }
-      }
+  /** Mock reference choice (no verse wording), skipping recently used references. */
+  private getMockDailyVerse(excludeReferences: string[] = []): DailyVerseResponse {
+    const mockVerses: DailyVerseResponse[] = [
+      { reference: 'John 3:16', referenceTranslations: { en: 'John 3:16', hi: 'यूहन्ना 3:16', ml: 'യോഹന്നാൻ 3:16' } },
+      { reference: 'Philippians 4:13', referenceTranslations: { en: 'Philippians 4:13', hi: 'फिलिप्पियों 4:13', ml: 'ഫിലിപ്പിയർ 4:13' } },
+      { reference: 'Psalm 23:1', referenceTranslations: { en: 'Psalm 23:1', hi: 'भजन संहिता 23:1', ml: 'സങ്കീർത്തനം 23:1' } },
     ]
-
-    const index = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % mockVerses.length
-    return mockVerses[index]
+    const fresh = mockVerses.filter(v => !excludeReferences.includes(v.reference))
+    const pool = fresh.length ? fresh : mockVerses
+    return pool[Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % pool.length]
   }
 
   private getMockFollowUpResponse(question: string, language: string): string {

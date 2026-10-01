@@ -32,7 +32,7 @@ class BibleBooks {
   // Static fallback data (used when remote config is not yet loaded)
   // ---------------------------------------------------------------------------
 
-  /// English Bible book names (API.Bible - KJV/ESV)
+  /// English Bible book names
   static const List<String> english = [
     // Old Testament
     'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
@@ -51,7 +51,7 @@ class BibleBooks {
     '1 John', '2 John', '3 John', 'Jude', 'Revelation',
   ];
 
-  /// Hindi Bible book names (API.Bible - Indian Revised Version Hindi 2019)
+  /// Hindi Bible book names (Indian Revised Version Hindi 2019)
   static const List<String> hindi = [
     // Old Testament (Hindi)
     'उत्पत्ति', 'निर्गमन', 'लैव्यव्यवस्था', 'गिनती', 'व्यवस्थाविवरण',
@@ -70,7 +70,7 @@ class BibleBooks {
     '1 यूहन्ना', '2 यूहन्ना', '3 यूहन्ना', 'यहूदा', 'प्रकाशितवाक्य',
   ];
 
-  /// Malayalam Bible book names (API.Bible - Indian Revised Version Malayalam 2025)
+  /// Malayalam Bible book names (Indian Revised Version Malayalam)
   /// These are abbreviated forms with periods as used in the official Malayalam Bible
   static const List<String> malayalam = [
     // Old Testament (Malayalam)
@@ -353,9 +353,17 @@ class BibleBooks {
 
     final booksPattern = escapedBooks.join('|');
 
-    // Pattern: (BookName) Chapter:Verse or (BookName) Chapter
-    // Requires chapter number to prevent false matches like "Point 1"
-    return r'(' + booksPattern + r')' + r'\s+(\d+)(?::(\d+)(?:-(\d+))?)?';
+    // Pattern: (BookName) Chapter, Chapter:Verse, Chapter:Verse-Verse or
+    // Chapter:Verse-Chapter:Verse (cross-chapter, e.g. "10:23-11:1").
+    // Requires chapter number to prevent false matches like "Point 1".
+    // Groups (stable for existing consumers):
+    //   1 book, 2 chapter, 3 start verse, 4 same-chapter end verse,
+    //   5 cross-chapter end chapter, 6 cross-chapter end verse.
+    // The lookahead stops group 4 from swallowing "11" of "11:1".
+    return r'(' +
+        booksPattern +
+        r')' +
+        r'\s+(\d+)(?::(\d+)(?:-(\d+)(?!\d|:\d)|-(\d+):(\d+))?)?';
   }
 
   /// Escape special regex characters

@@ -1700,10 +1700,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
+    final userPlan = tokenState.knownPlanName ?? 'free';
 
     final systemConfigService = sl<SystemConfigService>();
     return systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
@@ -1714,10 +1711,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
+    final userPlan = tokenState.knownPlanName ?? 'free';
 
     final systemConfigService = sl<SystemConfigService>();
     return systemConfigService.isFeatureEnabled('voice_buddy', userPlan);
@@ -1728,10 +1722,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
+    final userPlan = tokenState.knownPlanName ?? 'free';
 
     final systemConfigService = sl<SystemConfigService>();
     return systemConfigService.isFeatureEnabled('study_chat', userPlan);
@@ -1742,10 +1733,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
+    final userPlan = tokenState.knownPlanName ?? 'free';
 
     final systemConfigService = sl<SystemConfigService>();
     return !systemConfigService.shouldHideFeature('study_chat', userPlan);
@@ -2305,7 +2293,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             stepNumber: 1,
             totalSteps: 2,
             tooltipPosition: TooltipPosition.bottom,
-            arrowAlignment: Alignment.centerRight,
             onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
             child: PopupMenuButton<String>(
               icon: Icon(
@@ -3247,7 +3234,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     screen: WalkthroughScreen.disciplerHint,
                     stepNumber: 1,
                     totalSteps: 1,
-                    arrowAlignment: Alignment.centerRight,
                     highlightBorderRadius: pillHeight / 2,
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
                     child: SizedBox(

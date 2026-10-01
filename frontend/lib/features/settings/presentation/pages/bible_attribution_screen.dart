@@ -7,26 +7,32 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 
-/// Bible copyright & attribution page (API.Bible compliance).
+/// Bible copyright & attribution page.
 ///
-/// API.Bible's terms require a copyright page that names each translation, its
-/// copyright/licence and IP-holder link, and (on the Starter plan) a visible link
-/// to https://api.bible. In-context citations elsewhere in the app link here.
+/// Names each translation Disciplefy serves, with its copyright / licence
+/// notice. The CC BY-SA 4.0 texts (IRV Hindi, IRV Malayalam, Sathyavedapusthakam
+/// 1910) require this notice wherever they are shown; in-context citations
+/// elsewhere in the app link here.
 class BibleAttributionScreen extends StatelessWidget {
   const BibleAttributionScreen({super.key});
 
-  static const _apiBibleUrl = 'https://api.bible';
-  static const _vachanUrl = 'https://vachanonline.com';
+  static const _eBibleUrl = 'https://ebible.org';
   static const _ccBySaUrl = 'https://creativecommons.org/licenses/by-sa/4.0/';
 
-  // Notices are the verbatim `copyright` strings from API.Bible's /bibles metadata.
   static const List<_Attribution> _attributions = [
+    _Attribution(
+      language: 'English',
+      abbreviation: 'BSB',
+      name: 'Berean Standard Bible',
+      notice: 'The Holy Bible, Berean Standard Bible, BSB. Public domain.',
+      licenseUrl: null,
+    ),
     _Attribution(
       language: 'English',
       abbreviation: 'KJV',
       name: 'King James (Authorised) Version',
       notice:
-          'PUBLIC DOMAIN except in the United Kingdom, where a Crown Copyright '
+          'Public domain except in the United Kingdom, where a Crown Copyright '
           'applies to printing the KJV.',
       licenseUrl: null,
     ),
@@ -35,21 +41,31 @@ class BibleAttributionScreen extends StatelessWidget {
       abbreviation: 'IRV',
       name: 'Indian Revised Version (IRV) Hindi — 2019',
       notice:
-          'Indian Revised Version (IRV) - Hindi (इंडियन रिवाइज्ड वर्जन - हिंदी), '
-          '2019 by Bridge Connectivity Solutions Pvt. Ltd. is licensed under a '
-          'Creative Commons Attribution-ShareAlike 4.0 International License. '
-          'This resource is published originally on VachanOnline.',
+          'Indian Revised Version (IRV) Hindi - 2019 (इंडियन रिवाइज्ड वर्जन - '
+          'हिंदी), © 2017, 2018, 2019 Bridge Connectivity Solutions Pvt. Ltd., '
+          'licensed under a Creative Commons Attribution-ShareAlike 4.0 '
+          'International License. Notes and cross references removed.',
       licenseUrl: _ccBySaUrl,
     ),
     _Attribution(
       language: 'മലയാളം (Malayalam)',
       abbreviation: 'IRV',
-      name: 'Indian Revised Version (IRV) Malayalam — 2025',
+      name: 'Indian Revised Version (IRV) Malayalam',
       notice:
-          'Indian Revised Version (IRV) - Malayalam (ഇന്ത്യന്‍ റിവൈസ്ഡ് വേര്‍ഷന്‍ '
-          '- മലയാളം), 2019 by Bridge Connectivity Solutions Pvt. Ltd. is licensed '
-          'under a Creative Commons Attribution-ShareAlike 4.0 International '
-          'License. This resource is published originally on VachanOnline.',
+          'Indian Revised Version (IRV) Malayalam (ഇന്ത്യൻ റിവൈസ്ഡ് വേർഷൻ - '
+          'മലയാളം), © 2017, 2019 Bridge Connectivity Solutions Pvt. Ltd., '
+          'licensed under a Creative Commons Attribution-ShareAlike 4.0 '
+          'International License. Notes and cross references removed.',
+      licenseUrl: _ccBySaUrl,
+    ),
+    _Attribution(
+      language: 'മലയാളം (Malayalam)',
+      abbreviation: 'SV 1910',
+      name: 'Sathyavedapusthakam 1910 (contemporary orthography)',
+      notice: 'Malayalam Bible 1910 (സത്യവേദപുസ്തകം), contemporary orthography '
+          'edition © 2015 The Free Bible Foundation, licensed under a Creative '
+          'Commons Attribution-ShareAlike 4.0 International License. Notes '
+          'removed.',
       licenseUrl: _ccBySaUrl,
     ),
   ];
@@ -68,7 +84,7 @@ class BibleAttributionScreen extends StatelessWidget {
       backgroundColor: palette.page,
       appBar: SettingsTopBar(
         title: context.tr(TranslationKeys.settingsBibleAttribution),
-        subtitle: 'Scripture provided by API.Bible',
+        subtitle: 'Bible texts and licences',
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
@@ -76,9 +92,9 @@ class BibleAttributionScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
-              'Scripture text in Disciplefy is provided by API.Bible. Each '
-              'translation is used under its respective copyright or licence, '
-              'as shown below.',
+              'Each Bible translation in Disciplefy is used under its '
+              'copyright or licence, as shown below. Texts were obtained from '
+              'eBible.org.',
               style: AppFonts.inter(
                 fontSize: 13.5,
                 color: palette.muted,
@@ -96,22 +112,13 @@ class BibleAttributionScreen extends StatelessWidget {
           const SettingsSectionLabel('Sources'),
           SettingsGroup(
             children: [
-              // API.Bible attribution (required visible link on the Starter
-              // plan).
-              SettingsRow(
-                icon: Icons.menu_book_outlined,
-                title: 'Scripture provided by API.Bible',
-                subtitle: _apiBibleUrl,
-                trailing: Icon(Icons.open_in_new, size: 16, color: palette.dim),
-                onTap: () => _launch(_apiBibleUrl),
-              ),
               SettingsRow(
                 icon: Icons.public,
                 tone: SettingsTone.sky,
-                title: 'VachanOnline',
-                subtitle: _vachanUrl,
+                title: 'eBible.org',
+                subtitle: _eBibleUrl,
                 trailing: Icon(Icons.open_in_new, size: 16, color: palette.dim),
-                onTap: () => _launch(_vachanUrl),
+                onTap: () => _launch(_eBibleUrl),
               ),
             ],
           ),

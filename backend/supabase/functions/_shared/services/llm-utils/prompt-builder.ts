@@ -901,6 +901,12 @@ OUTPUT: Valid JSON starting with { and ending with }`
  * Main prompt router - dispatches to appropriate mode
  */
 export function createStudyGuidePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const prompt = createModePrompt(params, languageConfig)
+  if (!params.passageGrounding) return prompt
+  return { ...prompt, userMessage: `${prompt.userMessage}\n\n${params.passageGrounding}` }
+}
+
+function createModePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
   const studyMode = params.studyMode || 'standard'
 
   switch (studyMode) {
@@ -950,6 +956,7 @@ DAILY VERSE REFERENCE SELECTION - SPECIFIC REQUIREMENTS
 ---
 
 TASK: Select ONE meaningful, encouraging Bible verse reference for daily inspiration.
+Return ONLY the reference. Do NOT write, quote or paraphrase the verse wording in any language — the text is filled from a licensed Bible source.
 
 SELECTION CRITERIA:
 ✓ Choose verses that are encouraging, uplifting, or practically applicable to daily life
@@ -981,93 +988,6 @@ VALIDATION CHECKLIST:
 `.trim()
 
   const userMessage = 'Select an encouraging Bible verse reference for today\'s daily inspiration. Output only valid JSON.'
-
-  return { systemMessage, userMessage }
-}
-
-/**
- * Creates prompt for generating a complete daily verse with full text.
- * Used as fallback when Bible API fails.
- */
-export function createFullVersePrompt(
-  excludeReferences: string[],
-  language: string
-): PromptPair {
-  const excludeList = excludeReferences.length > 0
-    ? `\n\nEXCLUDE these recently used references:\n${excludeReferences.map(ref => `- ${ref}`).join('\n')}`
-    : ''
-
-  const languageInstructions = language === 'hi'
-    ? `
-Hindi Requirements:
-✓ Reference: "यूहन्ना 3:16" (Devanagari script)
-✓ Verse text: Must be in Devanagari script
-✗ NO romanized Hinglish (e.g., "Yeshu" → use "यीशु")
-`
-    : language === 'ml'
-    ? `
-Malayalam Requirements:
-✓ Reference: "യോഹന്നാൻ 3:16" (Malayalam script)
-✓ Verse text: Must be in Malayalam script
-✗ NO romanized Manglish (e.g., "Yeshu" → use "യേശു")
-`
-    : `
-English Requirements:
-✓ Use clear, accessible English
-✓ Standard Bible translations (NIV, ESV style)
-`
-
-  const systemMessage = `
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
----
-DAILY VERSE GENERATION - COMPLETE TEXT
----
-
-TASK: Generate ONE complete Bible verse with reference and full text in all three languages.
-
-SELECTION CRITERIA:
-✓ Choose verses that are encouraging, uplifting, or practically applicable
-✓ Prefer well-known verses (John 3:16, Philippians 4:13, Romans 8:28, Proverbs 3:5-6, etc.)
-✓ Ensure verse is meaningful when read alone without additional context
-✓ Do NOT repeat any of the excluded references provided${excludeList}
-
-TRANSLATION ACCURACY:
-✓ English: Use standard Bible translation style (NIV/ESV equivalent)
-✓ Hindi: Accurate Devanagari translation from standard Hindi Bibles
-✓ Malayalam: Accurate Malayalam script translation from standard Malayalam Bibles
-✓ Maintain theological accuracy across all languages
-
-LANGUAGE REQUIREMENTS:
-${languageInstructions}
-${getVerseReferenceExamples(language)}
-
-OUTPUT FORMAT (strict JSON):
-{
-  "reference": "English reference (e.g., John 3:16)",
-  "referenceTranslations": {
-    "en": "English format (John 3:16)",
-    "hi": "हिंदी प्रारूप (यूहन्ना 3:16)",
-    "ml": "മലയാളം ഫോർമാറ്റ് (യോഹന്നാൻ 3:16)"
-  },
-  "translations": {
-    "en": "For God so loved the world that he gave his one and only Son...",
-    "hi": "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया...",
-    "ml": "ദൈവം ലോകത്തെ ഇത്രമേൽ സ്നേഹിച്ചു, താൻ തന്റെ ഏകജാതനായ പുത്രനെ നൽകുവാൻ..."
-  }
-}
-
-VALIDATION CHECKLIST:
-✓ Is the JSON properly formatted (no markdown blocks)?
-✓ Are reference translations in native scripts?
-✓ Are verse translations in native scripts?
-✓ Is the verse text accurate and meaningful?
-✓ Does it avoid recently used references?
-`.trim()
-
-  const userMessage = 'Generate a complete daily Bible verse with full text in all three languages. Output only valid JSON.'
 
   return { systemMessage, userMessage }
 }

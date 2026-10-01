@@ -25,7 +25,8 @@ class FetchVerseText {
   /// - [book] - Book name (e.g., "John", "Genesis")
   /// - [chapter] - Chapter number
   /// - [verseStart] - Starting verse number
-  /// - [verseEnd] - Optional ending verse for ranges
+  /// - [verseEnd] - Optional ending verse for ranges (in [endChapter] if set)
+  /// - [endChapter] - Optional end chapter for cross-chapter passages
   /// - [language] - Language code ('en', 'hi', 'ml')
   ///
   /// **Returns:**
@@ -37,6 +38,7 @@ class FetchVerseText {
     required int chapter,
     required int verseStart,
     int? verseEnd,
+    int? endChapter,
     required String language,
   }) {
     return repository.fetchVerseText(
@@ -44,6 +46,7 @@ class FetchVerseText {
       chapter: chapter,
       verseStart: verseStart,
       verseEnd: verseEnd,
+      endChapter: endChapter,
       language: language,
     );
   }

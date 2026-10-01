@@ -174,7 +174,7 @@ async function handleAddMemoryVerseFromDaily(
       throw new AppError('NOT_FOUND', `Translation not available in ${requestedLanguage} for this verse`, 404)
     }
   } else {
-    // Auto-detect: Default to English (ESV) if available
+    // Auto-detect: Default to English (BSB) if available
     if (verseData.translations?.esv) {
       verseText = verseData.translations.esv
       verseReference = verseData.referenceTranslations?.en || verseData.reference

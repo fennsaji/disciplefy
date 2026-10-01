@@ -2,6 +2,29 @@
 import type { LLMService } from '../_shared/services/llm-service.ts'
 import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 import { TtlCache, msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
+import { fetchVerseAllLanguages } from '../_shared/services/bible-text-service.ts'
+
+/** Fetches verse text per language for a reference (default: self-hosted BSB / IRV). */
+export type VerseTextFetcher = (reference: string) => Promise<Record<'en' | 'hi' | 'ml', { text: string }>>
+
+/**
+ * daily_verses_cache.text_source of rows whose wording came from the current
+ * Bible text source. Rows with any other value (e.g. 'bible_api', KJV wording
+ * from API.Bible) are refreshed in place on read, keeping their reference.
+ */
+export const TEXT_SOURCE = 'bible_text_bsb_irv'
+
+const defaultVerseTextFetcher: VerseTextFetcher = (reference) => fetchVerseAllLanguages(reference)
+
+/** Strips paragraph marks and stray unbalanced quote marks around a single verse. */
+export function tidyVerseText(text: string): string {
+  let t = (text ?? '').replace(/¶/g, '').replace(/\s+/g, ' ').trim()
+  const opens = (t.match(/“/g) ?? []).length
+  const closes = (t.match(/”/g) ?? []).length
+  if (opens > closes && t.startsWith('“')) t = t.slice(1).trim()
+  if (closes > opens && t.endsWith('”')) t = t.slice(0, -1).trim()
+  return t
+}
 
 /**
  * Verses read from daily_verses_cache, per worker, keyed by date_key.
@@ -26,7 +49,11 @@ export function clearDailyVerseMemoryCache(): void {
  * 
  * Handles fetching, caching, and serving daily Bible verses
  * in multiple translations with fallback mechanisms.
- * Uses LLM generation for dynamic verse selection.
+ *
+ * The LLM only chooses the reference. Verse wording always comes from the
+ * self-hosted Bible text: BSB (public domain) for English, IRV for
+ * Hindi/Malayalam — the same versions fetch-verse serves by default. The LLM
+ * never writes Scripture text.
  */
 
 interface DailyVerseData {
@@ -38,9 +65,12 @@ interface DailyVerseData {
     ml: string
   }
   translations: {
+    // Key kept as `esv` for backward compatibility (installed apps and cached
+    // rows read it). It holds Berean Standard Bible (BSB) text, not ESV
+    // (KJV in rows written before TEXT_SOURCE, which are refreshed on read).
     esv: string
-    hi: string
-    ml: string
+    hi: string // IRV Hindi
+    ml: string // IRV Malayalam
   }
   date: string
   fromCache?: boolean // signals whether this came from cache (true) or was LLM-generated (false)
@@ -56,7 +86,9 @@ interface BibleApiResponse {
 export class DailyVerseService {
   private readonly CACHE_TABLE = 'daily_verses_cache'
   
-  // Emergency fallback verses for when LLM generation fails
+  // Emergency fallback verses (LLM or Bible text unavailable). Text is exact
+  // BSB (public domain) for English and IRV for Hindi/Malayalam, matching the
+  // versions the app cites. Never put ESV or LLM wording here.
   private readonly EMERGENCY_FALLBACK_VERSES = [
     {
       reference: "John 3:16",
@@ -66,9 +98,9 @@ export class DailyVerseService {
         ml: "യോഹന്നാൻ 3:16"
       },
       translations: {
-        esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
-        hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
-        ml: "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി, അവനിൽ വിശ്വസിക്കുന്നവൻ നശിക്കാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന്."
+        esv: "For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.",
+        hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे, वह नाश न हो, परन्तु अनन्त जीवन पाए।",
+        ml: "തന്‍റെ ഏകജാതനായ പുത്രനിൽ വിശ്വസിക്കുന്ന ഏവനും നശിച്ചുപോകാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന് ദൈവം അവനെ നല്കുവാൻ തക്കവണ്ണം ലോകത്തെ സ്നേഹിച്ചു."
       }
     },
     {
@@ -79,9 +111,9 @@ export class DailyVerseService {
         ml: "സങ്കീർത്തനം 23:1"
       },
       translations: {
-        esv: "The Lord is my shepherd; I shall not want.",
-        hi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
-        ml: "യഹോവ എന്റെ ഇടയൻ ആകുന്നു; എനിക്കു മുട്ടു വരികയില്ല."
+        esv: "The LORD is my shepherd; I shall not want.",
+        hi: "यहोवा मेरा चरवाहा है, मुझे कुछ घटी न होगी।",
+        ml: "യഹോവ എന്‍റെ ഇടയനാകുന്നു; എനിക്ക് ഒരു കുറവും ഉണ്ടാകുകയില്ല."
       }
     },
     {
@@ -92,9 +124,9 @@ export class DailyVerseService {
         ml: "ഫിലിപ്പിയർ 4:13"
       },
       translations: {
-        esv: "I can do all things through him who strengthens me.",
-        hi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
-        ml: "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ എനിക്കു സകലവും ചെയ്വാൻ കഴിയും."
+        esv: "I can do all things through Christ who gives me strength.",
+        hi: "जो मुझे सामर्थ्य देता है उसमें मैं सब कुछ कर सकता हूँ।",
+        ml: "എന്നെ ശക്തനാക്കുന്നവൻ മുഖാന്തരം എനിക്ക് എല്ലാം ചെയ്യുവാൻ കഴിയും."
       }
     },
     {
@@ -105,9 +137,9 @@ export class DailyVerseService {
         ml: "യോശുവ 1:9"
       },
       translations: {
-        esv: "Have I not commanded you? Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go.",
-        hi: "क्या मैं ने तुझे आज्ञा नहीं दी? हियाव बाँधकर दृढ़ हो जा; भयभीत न हो, और तेरा मन कच्चा न हो क्योंकि जहाँ कहीं तू जाएगा वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।",
-        ml: "ഞാൻ നിന്നോടു കല്പിച്ചിട്ടില്ലയോ? ബലപ്പെടുകയും ധൈര്യപ്പെടുകയും ചെയ്ക; ഭയപ്പെടുകയോ ഭ്രമിക്കുകയോ ചെയ്യേണ്ടാ; നീ എവിടെ പോയാലും നിന്റെ ദൈവമായ യഹോവ നിന്നോടുകൂടെ ഉണ്ടു."
+        esv: "Have I not commanded you to be strong and courageous? Do not be afraid; do not be discouraged, for the LORD your God is with you wherever you go.",
+        hi: "क्या मैंने तुझे आज्ञा नहीं दी? हियाव बाँधकर दृढ़ हो जा; भय न खा, और तेरा मन कच्चा न हो; क्योंकि जहाँ-जहाँ तू जाएगा वहाँ-वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।",
+        ml: "നിന്‍റെ ദൈവമായ യഹോവ നീ പോകുന്ന ഇടത്തൊക്കെയും നിന്നോടുകൂടെ ഉള്ളതുകൊണ്ട് ഉറപ്പും ധൈര്യവുമുള്ളവനായിരിക്ക; ഭയപ്പെടരുത്, ഭ്രമിക്കയും അരുത് ഞാൻ തന്നെ നിന്നോട് കല്പിച്ചുവല്ലോ."
       }
     },
     {
@@ -118,16 +150,18 @@ export class DailyVerseService {
         ml: "റോമർ 8:28"
       },
       translations: {
-        esv: "And we know that for those who love God all things work together for good, for those who are called according to his purpose.",
-        hi: "और हम जानते हैं कि जो लोग परमेश्वर से प्रेम करते हैं, उनके लिये सब बातें मिलकर भलाई ही को उत्पन्न करती हैं; अर्थात् उन्हीं के लिये जो उसकी इच्छा के अनुसार बुलाए गए हैं।",
-        ml: "ദൈവത്തെ സ്നേഹിക്കുന്നവർക്കു, അവന്റെ ഉദ്ദേശ്യത്തിന് അനുസാരമായി വിളിക്കപ്പെട്ടവർക്കു സർവ്വവും ഗുണത്തിന്നായി കൂടിവരുന്നു എന്നു നാം അറിയുന്നു."
+        esv: "And we know that God works all things together for the good of those who love Him, who are called according to His purpose.",
+        hi: "और हम जानते हैं, कि जो लोग परमेश्वर से प्रेम रखते हैं, उनके लिये सब बातें मिलकर भलाई ही को उत्पन्न करती हैं; अर्थात् उन्हीं के लिये जो उसकी इच्छा के अनुसार बुलाए हुए हैं।",
+        ml: "എന്നാൽ ദൈവത്തെ സ്നേഹിക്കുന്നവർക്ക്, നിർണ്ണയപ്രകാരം വിളിക്കപ്പെട്ടവർക്കു തന്നെ, സകലവും നന്മയ്ക്കായി കൂടി വ്യാപരിക്കുന്നു എന്നു നാം അറിയുന്നു."
       }
     }
   ]
 
   constructor(
     private readonly supabase: any,
-    private readonly getLlmService: () => Promise<LLMService>
+    private readonly getLlmService: () => Promise<LLMService>,
+    private readonly fetchVerseText: VerseTextFetcher = defaultVerseTextFetcher,
+    private readonly bibleApiCallsEnabled: () => Promise<boolean> = isBibleApiCallsEnabled
   ) {
     // Supabase client and LLM service injected via DI container
   }
@@ -155,18 +189,31 @@ export class DailyVerseService {
         return { ...memoryVerse, fromCache: true }
       }
 
-      // Try to get cached verse first
-      const cachedVerse = await this.getCachedVerse(dateKey)
-      if (cachedVerse) {
-        console.log(`Daily verse cache hit for date: ${dateKey}`)
-        return { ...cachedVerse, fromCache: true }
+      // A row for this date fixes the reference for the whole day. If its
+      // wording is legacy (LLM-written) or past its TTL, refresh only the
+      // wording in place — never pick a new reference for an existing date.
+      const cachedRow = await this.getCachedRow(dateKey)
+      if (cachedRow) {
+        if (!cachedRow.needsRefresh) {
+          console.log(`Daily verse cache hit for date: ${dateKey}`)
+          this.rememberVerse(dateKey, cachedRow.verse, cachedRow.expiresAt)
+          return { ...cachedRow.verse, fromCache: true }
+        }
+        const refreshed = await this.refreshVerseText(dateKey, cachedRow.verse)
+        if (refreshed) {
+          this.rememberVerse(dateKey, refreshed)
+          return { ...refreshed, fromCache: true }
+        }
+        // Refresh failed: keep serving the existing row (not held in memory,
+        // so the next read retries the refresh).
+        return { ...cachedRow.verse, fromCache: true }
       }
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
 
-      // Operational kill-switch: skip API.Bible calls, use deterministic fallback.
-      if (!(await isBibleApiCallsEnabled())) {
-        console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no API.Bible call')
+      // Operational kill-switch: skip Bible text lookups, use deterministic fallback.
+      if (!(await this.bibleApiCallsEnabled())) {
+        console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no Bible text lookup')
         const fallback = this.getFallbackVerse(targetDate)
         // Keep the cached row's UUID on the verse: a verse handed to the client
         // without an id gets a synthetic `temp-<date>` id there, and every
@@ -185,7 +232,8 @@ export class DailyVerseService {
 
       // Try to cache the new verse and get the UUID
       try {
-        const uuid = await this.cacheVerse(dateKey, newVerse)
+        const fromBibleApi = !this.EMERGENCY_FALLBACK_VERSES.some(v => v.translations.esv === newVerse.translations.esv)
+        const uuid = await this.cacheVerse(dateKey, newVerse, fromBibleApi ? TEXT_SOURCE : null)
         // Add the UUID to the verse data
         newVerse.id = uuid
         console.log(`Daily verse cached successfully for date: ${dateKey}, UUID: ${uuid}`)
@@ -232,12 +280,7 @@ export class DailyVerseService {
       
       console.log('LLM generation successful:', llmResponse.reference)
       
-      return {
-        reference: llmResponse.reference,
-        referenceTranslations: llmResponse.referenceTranslations,
-        translations: llmResponse.translations,
-        date: this.formatDateKey(date)
-      }
+      return { ...llmResponse, date: this.formatDateKey(date) }
       
     } catch (error) {
       console.error('Error generating daily verse with LLM:', error)
@@ -277,36 +320,33 @@ export class DailyVerseService {
   }
 
   /**
-   * Generate verse using LLM with proper verse content generation
+   * LLM picks the reference only; the wording is fetched from the Bible text
+   * service (BSB / IRV). Throws when any language's text is missing so the caller uses
+   * the deterministic fallback instead of serving a partial verse.
    */
   private async generateVerseWithLLM(excludeReferences: string[], language: string = 'en'): Promise<DailyVerseData> {
-    console.log(`Generating daily verse using dedicated LLM method for language: ${language}...`)
-    
-    try {
-      // Use the dedicated daily verse generation method from LLM service
-      const llmResponse = await (await this.getLlmService()).generateDailyVerse(excludeReferences, language)
-      
-      console.log(`LLM generated verse: ${llmResponse.reference}`)
-      console.log('LLM referenceTranslations:', JSON.stringify(llmResponse.referenceTranslations))
-      
-      return {
-        reference: llmResponse.reference,
-        referenceTranslations: {
-          en: llmResponse.referenceTranslations.en,
-          hi: llmResponse.referenceTranslations.hi,
-          ml: llmResponse.referenceTranslations.ml
-        },
-        translations: {
-          esv: llmResponse.translations.esv,
-          hi: llmResponse.translations.hi,
-          ml: llmResponse.translations.ml
-        },
-        date: '' // Will be set by caller
-      }
-      
-    } catch (llmError) {
-      console.error('LLM generation failed:', llmError)
-      throw new Error('Failed to generate verse with LLM')
+    const choice = await (await this.getLlmService()).generateDailyVerse(excludeReferences, language)
+    console.log(`LLM selected reference: ${choice.reference}`)
+
+    const texts = await this.fetchVerseText(choice.reference)
+    const translations = {
+      esv: tidyVerseText(texts.en?.text ?? ''),
+      hi: tidyVerseText(texts.hi?.text ?? ''),
+      ml: tidyVerseText(texts.ml?.text ?? ''),
+    }
+    if (!translations.esv || !translations.hi || !translations.ml) {
+      throw new Error(`Bible text service returned incomplete text for ${choice.reference}`)
+    }
+
+    return {
+      reference: choice.reference,
+      referenceTranslations: {
+        en: choice.referenceTranslations.en,
+        hi: choice.referenceTranslations.hi,
+        ml: choice.referenceTranslations.ml
+      },
+      translations,
+      date: '' // Will be set by caller
     }
   }
 
@@ -378,48 +418,38 @@ export class DailyVerseService {
 
     return {
       reference: fallbackVerse.reference,
-      referenceTranslations: fallbackVerse.referenceTranslations,
-      translations: fallbackVerse.translations,
+      referenceTranslations: { ...fallbackVerse.referenceTranslations },
+      translations: { ...fallbackVerse.translations },
       date: this.formatDateKey(date)
     }
   }
 
   /**
-   * Get cached verse from database
+   * Reads the active row for a date, expired or not. needsRefresh is true when
+   * its wording did not come from the current Bible text source (TEXT_SOURCE) or its TTL has passed.
    */
-  private async getCachedVerse(dateKey: string): Promise<DailyVerseData | null> {
+  private async getCachedRow(
+    dateKey: string
+  ): Promise<{ verse: DailyVerseData; expiresAt: string | null; needsRefresh: boolean } | null> {
     try {
-      console.log(`Attempting to fetch cached verse for date: ${dateKey}`)
-
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
-        .select('uuid, verse_data, expires_at')
+        .select('uuid, verse_data, expires_at, text_source')
         .eq('date_key', dateKey)
         .eq('is_active', true)
-        // API.Bible content-recency: skip entries older than their 30-day TTL
-        // so they are regenerated (and re-fetched) instead of served stale.
-        .gt('expires_at', new Date().toISOString())
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.log('No cached verse found or database error:', error.message)
         return null
       }
+      if (!data?.verse_data) return null
 
-      if (!data) {
-        console.log('No cached verse data found')
-        return null
-      }
-
-      console.log(`Found cached verse for date: ${dateKey}`)
       const cachedData = data.verse_data
-
-      // Add UUID to the cached data
       cachedData.id = data.uuid
 
       // Backward compatibility: Add referenceTranslations if missing from old cache
       if (!cachedData.referenceTranslations) {
-        console.log('Adding missing referenceTranslations to cached verse')
         cachedData.referenceTranslations = {
           en: cachedData.reference,
           hi: cachedData.reference,
@@ -428,7 +458,6 @@ export class DailyVerseService {
       }
 
       // Backward compatibility: Map 'hindi'/'malayalam' keys to 'hi'/'ml' keys
-      // The bible-api-service.ts caches with 'hindi'/'malayalam' but DailyVerseData expects 'hi'/'ml'
       if (cachedData.translations) {
         const translations = cachedData.translations as Record<string, string>
         cachedData.translations = {
@@ -438,11 +467,52 @@ export class DailyVerseService {
         }
       }
 
-      this.rememberVerse(dateKey, cachedData as DailyVerseData, data.expires_at)
-      return cachedData as DailyVerseData
-
+      const expired = !data.expires_at || new Date(data.expires_at).getTime() <= Date.now()
+      return {
+        verse: cachedData as DailyVerseData,
+        expiresAt: data.expires_at ?? null,
+        needsRefresh: expired || data.text_source !== TEXT_SOURCE,
+      }
     } catch (error) {
       console.error('Error fetching cached verse:', error)
+      return null
+    }
+  }
+
+  /**
+   * Re-fetches the wording for an existing row's reference and updates the row
+   * in place (same uuid, new expires_at). Returns null on any failure so the
+   * caller keeps serving the existing row and retries on a later read.
+   */
+  private async refreshVerseText(dateKey: string, verse: DailyVerseData): Promise<DailyVerseData | null> {
+    try {
+      if (!(await this.bibleApiCallsEnabled())) return null
+      const texts = await this.fetchVerseText(verse.reference)
+      const translations = {
+        esv: tidyVerseText(texts.en?.text ?? ''),
+        hi: tidyVerseText(texts.hi?.text ?? ''),
+        ml: tidyVerseText(texts.ml?.text ?? ''),
+      }
+      if (!translations.esv || !translations.hi || !translations.ml) {
+        throw new Error(`Bible text service returned incomplete text for ${verse.reference}`)
+      }
+      const { id, fromCache: _fromCache, ...stored } = verse
+      const updated: DailyVerseData = { ...stored, translations }
+      const { error } = await this.supabase
+        .from(this.CACHE_TABLE)
+        .update({
+          verse_data: updated,
+          text_source: TEXT_SOURCE,
+          expires_at: this.getExpirationDate(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('date_key', dateKey)
+        .eq('uuid', id)
+      if (error) throw error
+      console.log(`Daily verse text refreshed for date: ${dateKey}, reference kept: ${verse.reference}`)
+      return { ...updated, id }
+    } catch (error) {
+      console.warn(`Daily verse text refresh failed for ${dateKey} (serving existing row):`, error)
       return null
     }
   }
@@ -466,13 +536,14 @@ export class DailyVerseService {
   /**
    * Cache verse in database and return the UUID
    */
-  private async cacheVerse(dateKey: string, verseData: DailyVerseData): Promise<string> {
+  private async cacheVerse(dateKey: string, verseData: DailyVerseData, textSource: typeof TEXT_SOURCE | null = null): Promise<string> {
     try {
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
         .upsert({
           date_key: dateKey,
           verse_data: verseData,
+          text_source: textSource,
           is_active: true,
           created_at: new Date().toISOString(),
           expires_at: this.getExpirationDate()
@@ -518,7 +589,7 @@ export class DailyVerseService {
 
   /**
    * Get cache expiration date.
-   * API.Bible Terms require cached content be refreshed at least every 30 days.
+   * Rows are re-read from the Bible text source after 30 days.
    */
   private getExpirationDate(): string {
     const expirationDate = new Date()

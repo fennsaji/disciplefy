@@ -111,6 +111,8 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
     'user_language_preference',
     'has_completed_language_selection',
     'study_content_language',
+    // Asked-once flag for the notification permission sheet is per install.
+    'notification_permission_prompt_asked', // NotificationPromptPolicy.askedKey
   ];
 
   @override

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
@@ -13,6 +15,7 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/category_utils.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/utils/fellowship_lesson_language.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
@@ -49,9 +52,15 @@ class FellowshipLessonsTabScreen extends StatefulWidget {
   final String fellowshipId;
   final String? languageOverride;
 
+  /// Looks up the group's language when neither [languageOverride] nor the
+  /// study state has it. Defaults to a Supabase query; replaceable in tests.
+  @visibleForTesting
+  final Future<String?> Function(String fellowshipId)? fellowshipLanguageLoader;
+
   const FellowshipLessonsTabScreen({
     required this.fellowshipId,
     this.languageOverride,
+    this.fellowshipLanguageLoader,
     super.key,
   });
 
@@ -74,19 +83,43 @@ class _FellowshipLessonsTabScreenState
     }
   }
 
-  /// Fetches the user's content language (always fresh) and loads path details.
-  /// Using [pathId] override is for when a new path is assigned and we already
-  /// know the ID, e.g. from the [BlocListener] callback.
+  static Future<String?> _fetchFellowshipLanguage(String fellowshipId) async {
+    final row = await Supabase.instance.client
+        .from('fellowships')
+        .select('language')
+        .eq('id', fellowshipId)
+        .maybeSingle();
+    return row?['language'] as String?;
+  }
+
+  /// Bumped on every [_loadPathDetails] call so a slower, older call (e.g.
+  /// still awaiting the member's study language) can't overwrite the result
+  /// of a newer one that already used the group's language.
+  int _loadRequest = 0;
+
+  /// Resolves the lesson language and loads path details. [pathId] is used
+  /// when a new path was just assigned and its ID is already known, e.g. from
+  /// the [BlocListener] callback.
   Future<void> _loadPathDetails({String? pathId}) async {
+    final request = ++_loadRequest;
+    final override = widget.languageOverride;
     final String langCode;
-    if (widget.languageOverride != null) {
-      langCode = widget.languageOverride!;
+    if (override != null) {
+      langCode = override;
     } else {
-      final lang =
-          await sl<LanguagePreferenceService>().getStudyContentLanguage();
-      langCode = lang.code;
+      langCode = await resolveFellowshipLessonLanguage(
+        prefs: sl<SharedPreferences>(),
+        fellowshipId: widget.fellowshipId,
+        fellowshipLanguage:
+            context.read<FellowshipStudyBloc>().state.fellowshipLanguage,
+        fetchFellowshipLanguage: () => (widget.fellowshipLanguageLoader ??
+            _fetchFellowshipLanguage)(widget.fellowshipId),
+        userStudyLanguage: () async =>
+            (await sl<LanguagePreferenceService>().getStudyContentLanguage())
+                .code,
+      );
     }
-    if (!mounted) return;
+    if (!mounted || request != _loadRequest) return;
     setState(() => _contentLanguage = langCode);
     final id = pathId ??
         context.read<FellowshipStudyBloc>().state.currentLearningPathId;

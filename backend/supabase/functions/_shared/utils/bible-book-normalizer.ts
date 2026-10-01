@@ -32,7 +32,7 @@ export const CANONICAL_BIBLE_BOOKS = {
     '1 John', '2 John', '3 John', 'Jude', 'Revelation'
   ],
   'hi-IN': [
-    // Official book names from API.Bible - Indian Revised Version Hindi 2019
+    // Official book names of the Indian Revised Version Hindi 2019
     // Old Testament (Hindi)
     'उत्पत्ति', 'निर्गमन', 'लैव्यव्यवस्था', 'गिनती', 'व्यवस्थाविवरण',
     'यहोशू', 'न्यायियों', 'रूत', '1 शमूएल', '2 शमूएल', '1 राजाओं', '2 राजाओं',
@@ -49,7 +49,7 @@ export const CANONICAL_BIBLE_BOOKS = {
     '1 यूहन्ना', '2 यूहन्ना', '3 यूहन्ना', 'यहूदा', 'प्रकाशितवाक्य'
   ],
   'ml-IN': [
-    // Official book names from API.Bible - Indian Revised Version Malayalam 2025
+    // Official book names of the Indian Revised Version Malayalam
     // These are abbreviated forms with periods as used in the official Malayalam Bible
     // Old Testament (Malayalam)
     'ഉല്പ.', 'പുറ.', 'ലേവ്യ.', 'സംഖ്യ.', 'ആവർ.',

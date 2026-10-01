@@ -490,10 +490,19 @@ class HomePathRow extends StatelessWidget {
   }
 }
 
-/// Subtitle for a learning path row: "3 of 8 topics" once started, "Start
+/// Subtitle for a learning path row: "3 of 8 · Next: God is Love" once
+/// started and the next topic is known, "3 of 8 topics" otherwise, "Start
 /// here · 8 topics" before.
 String homePathSubtitle(BuildContext context, LearningPath path) {
   if (path.progressPercentage > 0 || path.isEnrolled) {
+    final next = path.nextTopicTitle;
+    if (next != null && !path.isCompleted) {
+      return context.tr(TranslationKeys.homeTopicsProgressNext, {
+        'done': path.topicsCompleted,
+        'total': path.topicsCount,
+        'title': next,
+      });
+    }
     return context.tr(TranslationKeys.homeTopicsProgress, {
       'done': path.topicsCompleted,
       'total': path.topicsCount,

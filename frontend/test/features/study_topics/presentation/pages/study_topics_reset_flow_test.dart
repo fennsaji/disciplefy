@@ -275,7 +275,7 @@ void main() {
       // this re-fetch is what makes it recover.
       mocktail
           .verify(() => learningPathsBloc.add(
-                const LoadPersonalizedPaths(language: 'hi'),
+                const LoadPersonalizedPaths(language: 'hi', forceRefresh: true),
               ))
           .called(1);
     });

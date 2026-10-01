@@ -124,8 +124,13 @@ abstract class LearningPathsRepository {
   ///
   /// [language] - The language for localized content (default: 'en')
   /// [limit] - Number of paths to return (default: 5)
+  ///
+  /// [forceRefresh] skips the in-memory copy. The list carries the user's
+  /// progress, so a screen showing it after topics were completed must pass
+  /// true or it reads the progress from when it was first fetched.
   Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
     String language = 'en',
     int limit = 5,
+    bool forceRefresh = false,
   });
 }

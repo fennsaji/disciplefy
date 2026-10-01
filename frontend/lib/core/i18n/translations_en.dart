@@ -588,6 +588,7 @@ const Map<String, dynamic> englishTranslations = {
     'browse_paths': 'Browse learning paths',
     'browse_paths_hint': 'Pick a path to start your journey',
     'topics_progress': '{done} of {total} topics',
+    'topics_progress_next': '{done} of {total} · Next: {title}',
     'start_here': 'Start here · {count} topics',
     'day_streak': '{count}-day streak',
     'keep_it_alive': 'Keep it alive',
@@ -1075,7 +1076,7 @@ const Map<String, dynamic> englishTranslations = {
     'delete_account_lose_plan':
         'Any active plan (cancel your subscription first)',
     'bible_attribution': 'Bible copyright & attribution',
-    'bible_attribution_subtitle': 'Scripture provided by API.Bible',
+    'bible_attribution_subtitle': 'Bible texts and licences',
   },
   'memory_add_feedback': {
     'added': 'Added to Memory Verses! Start reviewing to memorize this verse.',

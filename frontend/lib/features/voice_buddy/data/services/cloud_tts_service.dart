@@ -430,9 +430,11 @@ class CloudTTSService {
     // Group 2: Book name (1-3 words, supports English, Hindi, Malayalam)
     // Group 3: Chapter number
     // Group 4: Start verse
-    // Group 5: End verse (optional, for ranges)
+    // Group 5: End verse (optional, for ranges) — or end chapter when
+    //          group 6 is present (cross-chapter, e.g. 10:23-11:1)
+    // Group 6: End verse of a cross-chapter range (optional)
     final bibleRefPattern = RegExp(
-      r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+){0,2})\s+(\d+):(\d+)(?:-(\d+))?',
+      r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+){0,2})\s+(\d+):(\d+)(?:-(\d+)(?::(\d+))?)?',
       caseSensitive: false,
     );
 
@@ -442,6 +444,7 @@ class CloudTTSService {
       final chapter = match.group(3)!;
       final verseStart = match.group(4)!;
       final verseEnd = match.group(5); // null if single verse
+      final crossChapterEndVerse = match.group(6); // only for 10:23-11:1
 
       // Validate against known Bible book names to avoid false positives
       // (e.g., "Section 3:16" or "Room 1:30" should not be transformed)
@@ -464,7 +467,9 @@ class CloudTTSService {
         fullBookName = bookName;
       }
 
-      if (verseEnd != null) {
+      if (verseEnd != null && crossChapterEndVerse != null) {
+        return '$fullBookName $chapterWord $chapter $verseWord $verseStart $toWord $chapterWord $verseEnd $verseWord $crossChapterEndVerse';
+      } else if (verseEnd != null) {
         return '$fullBookName $chapterWord $chapter $versesWord $verseStart $toWord $verseEnd';
       } else {
         return '$fullBookName $chapterWord $chapter $verseWord $verseStart';

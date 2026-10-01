@@ -8,6 +8,7 @@
  * - Leverages function factory for boilerplate elimination
  */
 
+import { getPassageGroundingBlock } from '../_shared/services/passage-grounding.ts'
 import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { RequestValidator } from '../_shared/utils/request-validator.ts'
@@ -334,12 +335,17 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
 
   try {
     const startTime = Date.now()
+    // Best-effort grounding in the actual passage text; null keeps the old behaviour.
+    const passageGrounding = input_type === 'scripture'
+      ? await getPassageGroundingBlock(input_value, targetLanguage)
+      : null
     generatedContent = await llmService.generateStudyGuide({
       inputType: input_type,
       inputValue: input_value,
       topicDescription: topic_description,  // Provides additional context for topic-based guides
       language: targetLanguage,
-      tier: userPlan  // Premium English users get GPT-4.1-mini
+      tier: userPlan,  // Premium English users get GPT-4.1-mini
+      passageGrounding
     })
     latencyMs = Date.now() - startTime
 

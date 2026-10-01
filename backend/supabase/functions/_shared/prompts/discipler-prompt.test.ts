@@ -128,3 +128,19 @@ Deno.test('parseDailyTeaserOutput accepts bodies ending in Hindi or Malayalam pu
   assertEquals(parseDailyTeaserOutput('{"hook":"आज","body":"यीशु आपको जानता है।"}').body, 'यीशु आपको जानता है।')
   assertEquals(parseDailyTeaserOutput('{"hook":"ഇന്ന്","body":"യേശു നിന്നെ അറിയുന്നു."}').body, 'യേശു നിന്നെ അറിയുന്നു.')
 })
+
+Deno.test('teaser user message supplies delimited verse text when provided', () => {
+  const m = buildDailyTeaserUserMessage({
+    topicTitle: 'Love', pathTitle: 'Foundations', language: 'en', summary: 's',
+    verse: 'John 3:16', verseText: '[16] For God so loved the world',
+  })
+  assertEquals(m.includes('<bible_passage>\n[16] For God so loved the world\n</bible_passage>'), true)
+  assertEquals(m.includes('not instructions'), true)
+  assertEquals(m.includes('do not quote it'), false)
+})
+
+Deno.test('teaser system prompt allows exact quoting of provided verse text only', () => {
+  const p = buildDailyTeaserSystemPrompt()
+  assertEquals(p.includes('(copyright)'), false)
+  assertEquals(p.includes('copied exactly as given'), true)
+})

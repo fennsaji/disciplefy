@@ -12,14 +12,17 @@
  * Teasers come from the shared teaser service, so a lesson already teased for a
  * fellowship costs nothing here; only a lesson no one has seen yet is generated.
  *
- * Schedule: daily via pg_cron (see 20260908000004_schedule_telegram_daily_post.sql).
+ * Schedule: cron_config `telegram_daily_post` (rs-backend), 08:00 IST.
+ * Topic: telegram_topics kind 'study_post' per language (none = no topic).
  * Env: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
  */
 
 import { createServiceRoleFunction } from '../_shared/core/function-factory.ts'
 import { getServiceContainer } from '../_shared/core/services.ts'
 import { getOrCreateTeaser } from '../_shared/services/teaser-service.ts'
+import { claimDailySlot, parseJobRequest, settleDailySlot } from '../_shared/services/telegram-ledger.ts'
 import { buildTelegramMessage } from './message.ts'
+import { resolveTelegramThreadId, sendTelegramMessage } from '../_shared/services/telegram-service.ts'
 
 /**
  * Audience id for the variant picker. A constant, so the channel keeps one
@@ -27,37 +30,7 @@ import { buildTelegramMessage } from './message.ts'
  */
 const TELEGRAM_AUDIENCE = 'telegram-official-channel'
 
-const TELEGRAM_API = 'https://api.telegram.org'
-
-interface TelegramSendResult {
-  ok: boolean
-  messageId: number | null
-  error: string | null
-}
-
-async function sendToTelegram(token: string, chatId: string, text: string): Promise<TelegramSendResult> {
-  try {
-    const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        // The message is plain text on purpose: topic titles carry apostrophes
-        // and em dashes that would have to be escaped for Markdown or HTML,
-        // and a single missed escape drops the whole post.
-        disable_web_page_preview: false,
-      }),
-    })
-    const payload = await res.json().catch(() => null)
-    if (!res.ok || !payload?.ok) {
-      return { ok: false, messageId: null, error: payload?.description ?? `HTTP ${res.status}` }
-    }
-    return { ok: true, messageId: payload.result?.message_id ?? null, error: null }
-  } catch (err) {
-    return { ok: false, messageId: null, error: err instanceof Error ? err.message : String(err) }
-  }
-}
+const LEDGER = 'telegram_daily_posts'
 
 createServiceRoleFunction(async (req, supabase) => {
   const token = Deno.env.get('TELEGRAM_BOT_TOKEN')
@@ -65,13 +38,7 @@ createServiceRoleFunction(async (req, supabase) => {
 
   // A dry run composes the post and returns it without sending or recording,
   // so the wording can be checked against a real lesson before going live.
-  let dryRun = false
-  let language = 'en'
-  try {
-    const body = await req.json()
-    dryRun = body?.dry_run === true
-    if (typeof body?.language === 'string') language = body.language
-  } catch { /* no body: a scheduled run */ }
+  const { language, dryRun } = await parseJobRequest(req)
 
   const today = new Date().toISOString().slice(0, 10)
 
@@ -110,7 +77,7 @@ createServiceRoleFunction(async (req, supabase) => {
     topicId: next.topic_id,
     topicTitle: next.topic_title,
     pathTitle: next.path_title,
-    language: language as 'en' | 'hi' | 'ml',
+    language,
     summary: next.topic_description,
     // The article's study guide, when it has one. The fellowship cron passes
     // these too, so whichever surface generates a lesson's teaser first
@@ -125,9 +92,11 @@ createServiceRoleFunction(async (req, supabase) => {
     blogSlug: next.blog_slug,
   })
 
+  const threadId = await resolveTelegramThreadId(supabase, 'study_post', language)
+
   if (dryRun) {
     return {
-      success: true, dry_run: true, topic_id: next.topic_id, topic_title: next.topic_title,
+      success: true, dry_run: true, thread_id: threadId, topic_id: next.topic_id, topic_title: next.topic_title,
       blog_slug: next.blog_slug, teaser_cached: teaser.cached, message,
     }
   }
@@ -139,24 +108,27 @@ createServiceRoleFunction(async (req, supabase) => {
     return { success: false, skipped: true, reason: 'telegram_not_configured', topic_id: next.topic_id }
   }
 
-  const sent = await sendToTelegram(token, chatId, message)
-
-  // Recorded either way: a failed row keeps the day visible without consuming
-  // the lesson, so the next run retries the same one.
-  const { error: ledgerError } = await supabase.from('telegram_daily_posts').upsert({
-    post_date: today,
+  // Claim the slot before sending: a retry skips a 'sent' or in-flight slot,
+  // so a ledger write failing after a successful send can never repost. A
+  // 'failed' slot is reclaimed by the next run, which retries the lesson.
+  const claim = await claimDailySlot(supabase, LEDGER, today, language, {
     topic_id: next.topic_id,
     learning_path_id: next.learning_path_id,
     blog_slug: next.blog_slug,
-    language,
-    message_id: sent.messageId,
-    status: sent.ok ? 'sent' : 'failed',
-    error: sent.error,
-  }, { onConflict: 'post_date,language' })
-
-  if (ledgerError) {
-    console.error('[TELEGRAM-DAILY] ledger write failed', ledgerError.message)
+  })
+  if (!claim.claimed) {
+    if (claim.error) {
+      console.error('[TELEGRAM-DAILY] ledger claim failed', claim.error)
+      return { success: false, topic_id: next.topic_id, error: 'ledger_claim_failed' }
+    }
+    return {
+      success: true, skipped: true, topic_id: next.topic_id,
+      reason: claim.status === 'sent' ? 'already_posted_today' : 'post_in_progress',
+    }
   }
+
+  const sent = await sendTelegramMessage(token, chatId, message, threadId)
+  await settleDailySlot(supabase, LEDGER, today, language, sent)
 
   if (!sent.ok) {
     console.error('[TELEGRAM-DAILY] send failed', { topic_id: next.topic_id, error: sent.error })

@@ -10,6 +10,7 @@
  * - Context-aware responses based on study guide content
  */
 
+import { getPassageGroundingBlock } from '../_shared/services/passage-grounding.ts'
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
@@ -20,6 +21,9 @@ import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-servic
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { THEOLOGICAL_FOUNDATION } from '../_shared/services/llm-utils/prompt-builder.ts'
+
+/** Verses of passage text given to follow-up answers as grounding. */
+const FOLLOWUP_GROUNDING_VERSES = 8
 
 /**
  * Request payload for follow-up questions
@@ -62,6 +66,7 @@ interface StudyGuide {
   readonly interpretation: string | null
   readonly context: string | null
   readonly language: string | null
+  readonly passage?: string | null
   readonly created_at: string
 }
 
@@ -178,7 +183,8 @@ async function getOrCreateConversation(
 function buildLLMContext(
   studyGuide: StudyGuide,
   conversationHistory: ConversationHistoryMessage[],
-  targetLanguage: SupportedLanguage
+  targetLanguage: SupportedLanguage,
+  passageBlock: string | null = null
 ): { systemMessage: string; conversationContext: string } {
   let studyContext = `Study Guide for: ${studyGuide.input_value || 'No input'} (${studyGuide.input_type || 'unknown'})\n`
   studyContext += `Summary: ${studyGuide.summary || 'No summary available'}\n`
@@ -231,7 +237,7 @@ ${THEOLOGICAL_FOUNDATION}
 
   Study Guide Context:
   ${studyContext}
-
+${passageBlock ? `\n${passageBlock}\n` : ''}
   Previous Conversation:
   ${conversationContext}`
 
@@ -374,7 +380,7 @@ async function handleStudyFollowUp(
   try {
     const { data, error } = await supabaseServiceClient
       .from('study_guides')
-      .select('id, input_type, input_value, summary, interpretation, context, language, created_at')
+      .select('id, input_type, input_value, summary, interpretation, context, language, passage, created_at')
       .eq('id', study_guide_id)
       .single()
 
@@ -424,6 +430,12 @@ async function handleStudyFollowUp(
 
   // Determine target language from study guide (not request parameter)
   const targetLanguage = (studyGuide.language || 'en') as SupportedLanguage
+
+  // Ground answers in the guide's passage text (best-effort, capped for chat).
+  const groundingReference = studyGuide.input_type === 'scripture' ? studyGuide.input_value : studyGuide.passage
+  const passageBlock = groundingReference
+    ? await getPassageGroundingBlock(groundingReference, targetLanguage, { maxVerses: FOLLOWUP_GROUNDING_VERSES, maxChars: 800 })
+    : null
   console.log('🌐 [FOLLOW-UP] Target language determined:', {
     studyGuideLanguage: studyGuide.language,
     targetLanguage,
@@ -623,7 +635,7 @@ async function handleStudyFollowUp(
           try {
             // Use only last 10 messages for context to avoid token bloat
             const recentHistory = conversationHistory.slice(-10)
-            const { systemMessage } = buildLLMContext(studyGuide, recentHistory, targetLanguage)
+            const { systemMessage } = buildLLMContext(studyGuide, recentHistory, targetLanguage, passageBlock)
             const userMessage = `Follow-up question: ${question}`
 
             // Generate follow-up response using LLM service
@@ -758,7 +770,7 @@ async function handleStudyFollowUp(
     try {
       // Use only last 10 messages for context to avoid token bloat
       const recentHistory = conversationHistory.slice(-10)
-      const { systemMessage } = buildLLMContext(studyGuide, recentHistory, targetLanguage)
+      const { systemMessage } = buildLLMContext(studyGuide, recentHistory, targetLanguage, passageBlock)
       const userMessage = `Follow-up question: ${question}`
 
       // Generate follow-up response using LLM service

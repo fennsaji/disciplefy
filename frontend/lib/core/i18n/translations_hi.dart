@@ -586,6 +586,7 @@ const Map<String, dynamic> hindiTranslations = {
     'browse_paths': 'सीखने के पथ देखें',
     'browse_paths_hint': 'अपनी यात्रा शुरू करने के लिए एक पथ चुनें',
     'topics_progress': '{total} में से {done} विषय',
+    'topics_progress_next': '{total} में से {done} · अगला: {title}',
     'start_here': 'यहाँ से शुरू करें · {count} विषय',
     'day_streak': '{count} दिन की स्ट्रीक',
     'keep_it_alive': 'इसे बनाए रखें',
@@ -1070,8 +1071,7 @@ const Map<String, dynamic> hindiTranslations = {
     'delete_account_lose_plan':
         'कोई भी सक्रिय प्लान (पहले अपनी सदस्यता रद्द करें)',
     'bible_attribution': 'बाइबल कॉपीराइट और श्रेय',
-    'bible_attribution_subtitle':
-        'पवित्रशास्त्र API.Bible द्वारा प्रदान किया गया',
+    'bible_attribution_subtitle': 'बाइबल अनुवाद और लाइसेंस',
   },
   'memory_add_feedback': {
     'added':

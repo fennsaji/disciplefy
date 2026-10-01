@@ -115,4 +115,38 @@ void main() {
     expect(result.first.id, 'active');
     expect(result.map((p) => p.id), contains('in-progress'));
   });
+
+  test(
+      'a stale personalized entry takes the listing progress and is dropped '
+      'once the listing shows it finished', () {
+    // Recommendations fetched before the user started the path: 0%.
+    final staleRomans = _path('romans');
+    final other = _path('other');
+
+    final result = buildForYouPaths(
+      state: _state(
+        [_path('romans', progress: 100), other],
+        personalized: [staleRomans, other],
+      ),
+      fellowshipCompletedPathIds: const {},
+      fellowshipPath: null,
+      minCount: 3,
+    );
+
+    expect(result.map((p) => p.id), ['other']);
+  });
+
+  test('a stale personalized entry shows the listing progress', () {
+    final result = buildForYouPaths(
+      state: _state(
+        [_path('romans', progress: 50)],
+        personalized: [_path('romans')],
+      ),
+      fellowshipCompletedPathIds: const {},
+      fellowshipPath: null,
+      minCount: 1,
+    );
+
+    expect(result.single.progressPercentage, 50);
+  });
 }

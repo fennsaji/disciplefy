@@ -400,6 +400,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     final result = await _repository.getPersonalizedPaths(
       language: event.language,
       limit: event.limit,
+      forceRefresh: event.forceRefresh,
     );
 
     result.fold(

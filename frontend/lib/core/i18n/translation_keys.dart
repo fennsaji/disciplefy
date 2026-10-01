@@ -257,6 +257,7 @@ class TranslationKeys {
   static const homeBrowsePaths = 'home.browse_paths';
   static const homeBrowsePathsHint = 'home.browse_paths_hint';
   static const homeTopicsProgress = 'home.topics_progress';
+  static const homeTopicsProgressNext = 'home.topics_progress_next';
   static const homeStartHere = 'home.start_here';
   static const homeDayStreak = 'home.day_streak';
   static const homeKeepItAlive = 'home.keep_it_alive';

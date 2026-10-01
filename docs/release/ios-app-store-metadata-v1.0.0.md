@@ -7,73 +7,115 @@ Char limits noted per field.
 
 ## Localizable Information
 
-**Name** _(≤ 30)_ — already set:
+**Name** _(≤ 30)_:
 ```
-Disciplefy - Bible Study App
+Disciplefy: Bible Study Guide
 ```
 
-**Subtitle** _(≤ 30)_ — recommended:
+**Subtitle** _(≤ 30)_:
 ```
-AI study guides in 3 languages
+Devotional & Scripture Memory
 ```
-Alternates: `AI study guides & daily verse` (29) · `Study guides in your language` (29) · `AI guides in your language` (26).
+Title, subtitle and keywords are indexed together, so no word repeats across them. No AI wording.
 
 ---
 
 ## Promotional Text  _(≤ 170)_
 
 ```
-Type any verse or topic and get an instant study guide — context, interpretation & prayer points, plus a Talk to Discipler. In English, हिन्दी & മലയാളം.
+Study the Bible deeper every day: guided Bible study, daily verse, prayer, Scripture memory and reading plans with your church group. Free to start.
 ```
 
 ---
+
 
 ## Description  _(≤ 4,000)_
 
 ```
-Disciplefy turns any Bible verse or question into a clear, personal study guide — in seconds, in your language.
+Understand the Bible, not just read it
 
-Type a reference like "John 3:16" or ask something real like "What does the Bible say about anxiety?" and get an instant, easy-to-follow guide: a plain-language summary, historical and cultural context, verse-by-verse interpretation, practical life application, reflection questions, prayer points, and related scriptures — all grounded in sound, historic Christian theology.
+Disciplefy is a Bible study guide app that turns any Bible verse or question into a clear, personal Bible study — in seconds, in your language. Type a reference like "John 3:16" or ask something real like "What does the Bible say about anxiety?" and get an easy-to-follow study guide grounded in sound, historic Christian theology.
 
-WHY DISCIPLEFY
-• Understand the Bible, not just read it — context and meaning made clear
-• Built for English, हिन्दी and മലയാളം — study and pray in the language you think in
-• A companion that points you back to Scripture and prayer — never a replacement for your Bible or your church
+KEY FEATURES
 
-FEATURES
-• Study Guides — instant, structured guides for any verse or topic
-• Talk to Discipler — have a natural spoken conversation about a passage or question and hear answers in your language
-• Follow-Up Chat — ask deeper questions about any guide while keeping the full context
-• Learning Paths — structured discipleship journeys on Grace, Prayer, Faith, Discipleship and more
-• Daily Verse — a fresh verse and short devotional each day, with reminders
-• Memory Verses — spaced-repetition flashcards with audio and fill-in-the-blank modes to truly memorise God's Word
-• Fellowship Groups — study together, schedule Google Meet sessions, and share prayer requests and praise reports
+Bible Study Guides
+Five study modes for every kind of moment — Quick Read, Standard, Deep Dive, Lectio Divina and Sermon Outline. Each Bible study guide brings you:
+• Summary — the passage in plain language
+• Historical Context — background, culture and setting
+• Interpretation — verse-by-verse meaning
+• Related Verses — cross-references for deeper Bible study
+• Reflection Questions — for personal devotions or your small group
+• Prayer Points — turn what you've learned into prayer
 
-HOW IT WORKS
-1. Choose a verse or topic
-2. Get a complete study guide in seconds
-3. Talk it through with your Talk to Discipler
-4. Follow a learning path to grow with direction
-5. Memorise, build streaks, and keep growing
+Listen
+Hear any study guide read aloud in English, Hindi or Malayalam — perfect for commuting, walking or when you'd rather listen than read.
 
-Start free — no credit card required. Optional plans unlock more.
+Voice Discipler
+Have a natural spoken conversation about a Bible passage or question and hear the answers in your language.
 
-Whether you're a new believer taking first steps, a busy disciple who wants depth without spending hours, or someone exploring faith for the first time, Disciplefy helps you meet God in His Word — anytime, anywhere.
+Bible Chat
+Ask deeper follow-up questions about any study guide while keeping the full context of what you're studying.
+
+Learning Paths & Bible Reading Plans
+Structured discipleship journeys on prayer, faith, character and more — like a guided Bible reading plan you follow one lesson at a time. Download a path and keep studying offline.
+
+Daily Verse & Daily Devotional
+A fresh daily Bible verse and short daily devotional every morning, with a reminder so you never miss it.
+
+Scripture Memory
+Memorize Bible verses with spaced-repetition flashcards and eight practice modes — including audio, fill-in-the-blank, word scramble and type-it-out — to truly hide God's Word in your heart.
+
+Fellowship & Church Groups
+Study the Bible together with your church or small group, schedule Google Meet sessions, and share prayer requests and praise reports.
+
+Progress
+Earn XP, unlock achievements, keep your Bible study streak and climb the leaderboard.
+
+THREE LANGUAGES
+• English (KJV)
+• हिन्दी — Hindi Bible study
+• മലയാളം — Malayalam Bible study
+Study, listen and pray in the language you think in.
+
+PRIVACY & SECURITY
+• Sign in with Google, Apple, email or phone
+• Your notes, saved guides and progress stay private to you
+• Read our Privacy Policy: https://www.disciplefy.in/privacy
+
+FREE AND PAID
+
+Start free — no card required. The Free plan includes:
+• 15 study credits a day
+• Daily Verse
+• Learning Paths
+• Up to 3 memory verses with 2 practice modes
+• Join Fellowship Groups
+
+Optional subscriptions (Standard, Plus, Premium) add more daily credits, Voice Discipler sessions, unlimited follow-ups, unlimited memory verses with all eight practice modes, unlimited fellowship groups and more. See current plans and prices inside the app.
+
+SUPPORT
+Questions or feedback? Write to hello@disciplefy.in
+
+Whether you're a new believer taking first steps, a busy disciple who wants depth without spending hours, or someone exploring faith for the first time, Disciplefy helps you meet God in His Word through daily Bible study, prayer and Scripture memory — anytime, anywhere.
 
 "Your word is a lamp to my feet and a light to my path." — Psalm 119:105
+
+Terms of Use: https://www.disciplefy.in/terms
 ```
 
 ---
+
 
 ## Keywords  _(≤ 100 — comma-separated, no spaces after commas)_
 
 ```
-devotional,scripture,prayer,daily verse,christian,faith,gospel,discipleship,jesus,hindi,malayalam
+chat,verse,daily,prayer,journal,kjv,niv,reading,plan,christian,jesus,group,hindi,malayalam,church
 ```
 
-> Note: "Bible", "Study", "App" are intentionally omitted — they're already in the app title and indexed automatically, so they'd waste keyword space.
+> "bible", "study", "guide", "devotional", "scripture", "memory" are already in the name/subtitle, so they are left out of the keyword field. Check candidates in ASO Scout (popularity ≥ ~20, competitiveness ≤ ~60) and re-check ranks after 2–4 weeks.
 
 ---
+
 
 ## Support URL
 

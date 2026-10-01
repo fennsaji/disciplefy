@@ -5,10 +5,13 @@ class VerseItem extends Equatable {
   final int number;
   final String text;
 
-  const VerseItem({required this.number, required this.text});
+  /// Chapter of this verse; only set for passages spanning chapters.
+  final int? chapter;
+
+  const VerseItem({required this.number, required this.text, this.chapter});
 
   @override
-  List<Object?> get props => [number, text];
+  List<Object?> get props => [number, text, chapter];
 }
 
 /// Entity representing a fetched verse text from the API.

@@ -274,6 +274,30 @@ class MockLearningPathsRepository extends _i1.Mock
       );
 
   @override
+  _i4.Future<_i6.LearningPathCategoriesResult?> getCachedLearningPathCategories(
+          {String? language = 'en'}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getCachedLearningPathCategories,
+          [],
+          {#language: language},
+        ),
+        returnValue: _i4.Future<_i6.LearningPathCategoriesResult?>.value(),
+      ) as _i4.Future<_i6.LearningPathCategoriesResult?>);
+
+  @override
+  _i4.Future<_i6.RecommendedPathResult?> getCachedRecommendedPath(
+          {String? language = 'en'}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getCachedRecommendedPath,
+          [],
+          {#language: language},
+        ),
+        returnValue: _i4.Future<_i6.RecommendedPathResult?>.value(),
+      ) as _i4.Future<_i6.RecommendedPathResult?>);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, _i6.RecommendedPathResult>>
       getRecommendedPath({
     String? language = 'en',
@@ -308,6 +332,7 @@ class MockLearningPathsRepository extends _i1.Mock
       _i2.Either<_i5.Failure, List<_i6.LearningPath>>> getPersonalizedPaths({
     String? language = 'en',
     int? limit = 5,
+    bool? forceRefresh = false,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -316,6 +341,7 @@ class MockLearningPathsRepository extends _i1.Mock
           {
             #language: language,
             #limit: limit,
+            #forceRefresh: forceRefresh,
           },
         ),
         returnValue:
@@ -328,6 +354,7 @@ class MockLearningPathsRepository extends _i1.Mock
             {
               #language: language,
               #limit: limit,
+              #forceRefresh: forceRefresh,
             },
           ),
         )),

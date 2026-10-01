@@ -379,7 +379,8 @@ class MemoryVerseRemoteDataSource {
   /// [book] - Book name (e.g., "John", "Genesis")
   /// [chapter] - Chapter number
   /// [verseStart] - Starting verse number
-  /// [verseEnd] - Optional ending verse for ranges
+  /// [verseEnd] - Optional ending verse for ranges (in [endChapter] if set)
+  /// [endChapter] - Optional end chapter for cross-chapter passages
   /// [language] - Language code ('en', 'hi', 'ml')
   ///
   /// Returns map with 'text' and 'localizedReference' keys
@@ -388,6 +389,7 @@ class MemoryVerseRemoteDataSource {
     required int chapter,
     required int verseStart,
     int? verseEnd,
+    int? endChapter,
     required String language,
   }) async {
     try {
@@ -400,12 +402,16 @@ class MemoryVerseRemoteDataSource {
         'chapter': chapter,
         'verse_start': verseStart,
         if (verseEnd != null) 'verse_end': verseEnd,
+        // Only sent for cross-chapter passages; older backends ignore it.
+        if (endChapter != null && endChapter != chapter)
+          'end_chapter': endChapter,
         'language': language,
       });
 
       final headers = await _httpService.createHeaders();
       // Use longer timeout for verse ranges (parallel backend calls still need network time)
-      final isRange = verseEnd != null && verseEnd > verseStart;
+      final isRange = verseEnd != null &&
+          (verseEnd > verseStart || (endChapter ?? chapter) > chapter);
       final response = await _httpService.post(
         url,
         headers: headers,
@@ -420,7 +426,7 @@ class MemoryVerseRemoteDataSource {
 
         _errorHandler.logSuccess('Verse text fetched successfully');
 
-        // API.Bible FUMS: report usage tokens for this live verse fetch.
+        // Legacy API.Bible FUMS: the server no longer sends tokens, so this is a no-op.
         if (data['fumsTokens'] is List) {
           FumsService.instance.trackView(
             (data['fumsTokens'] as List).map((t) => t.toString()).toList(),

@@ -103,7 +103,8 @@ class ReferenceTranslations extends Equatable {
 
 /// Available verse translations
 class DailyVerseTranslations extends Equatable {
-  final String esv; // English Standard Version
+  final String
+      esv; // Berean Standard Bible (BSB) text; key name kept for compatibility
   final String hindi; // Hindi translation
   final String malayalam; // Malayalam translation
 

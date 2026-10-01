@@ -146,6 +146,15 @@
             android:foregroundServiceType="mediaPlayback"
             android:exported="false"
             tools:replace="android:exported" />
+        <!-- The plugin's BootReceiver starts the service on BOOT_COMPLETED /
+             MY_PACKAGE_REPLACED whenever its persisted auto_start_on_boot flag is
+             true. Builds before autoStartOnBoot:false persisted true, and the flag
+             is only rewritten when a download/TTS session configures the service,
+             so updated devices still crashed on boot (Android 14+ forbids
+             mediaPlayback FGS from BOOT_COMPLETED). Nothing here needs boot start. -->
+        <receiver
+            android:name="id.flutter.flutter_background_service.BootReceiver"
+            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -1,18 +1,19 @@
 /**
  * Refresh Stale Memory Verses - Scheduled Background Job
  *
- * API.Bible's terms require stored content to be refreshed at least every 30 days.
- * memory_verses with source_type = 'daily_verse' hold API.Bible verse text, so this
- * job re-fetches the text for any such row whose verse_text was last synced more
- * than 30 days ago, and stamps verse_text_synced_at. manual / ai_generated rows are
- * not API.Bible content and are left untouched.
+ * memory_verses with source_type = 'daily_verse' hold the daily verse wording.
+ * Rows saved before the switch to the self-hosted Bible text hold KJV (English)
+ * wording that the app now cites as BSB, so this job re-fetches the text (BSB /
+ * IRV) for any such row last synced more than 30 days ago and stamps
+ * verse_text_synced_at; every legacy row is converted within one 30-day cycle.
+ * manual / ai_generated rows are the user's own text and are left untouched.
  *
  * Processes a bounded batch per run; remaining rows are picked up on the next run.
  * Schedule: daily via external scheduler / pg_cron (e.g. `0 4 * * *`).
  */
 
 import { createServiceRoleFunction } from '../_shared/core/function-factory.ts'
-import { fetchBibleVerse } from '../_shared/services/bible-api-service.ts'
+import { fetchBibleVerse } from '../_shared/services/bible-text-service.ts'
 import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000

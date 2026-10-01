@@ -64,7 +64,7 @@ class ShareLinks {
   /// link, share was missing everything but the link.
   ///
   /// The translation is named inline via [citedReference] (e.g.
-  /// "Psalm 31:24 (KJV)"); the source citation itself lives on the in-app
+  /// "Psalm 31:24 (BSB)"); the source citation itself lives on the in-app
   /// attribution screen rather than riding along on every pasted verse.
   static String verseMessage({
     required String citedReference,

@@ -77,12 +77,12 @@ void main() {
       // Copy and share used to build their own strings and had drifted:
       // copy had no link, share had nothing but the link.
       final message = ShareLinks.verseMessage(
-        citedReference: 'Psalm 31:24 (KJV)',
+        citedReference: 'Psalm 31:24 (BSB)',
         verseText: 'Be of good courage, and he shall strengthen your heart.',
         link: ShareLinks.dailyVerse,
       );
 
-      expect(message, contains('Psalm 31:24 (KJV)'));
+      expect(message, contains('Psalm 31:24 (BSB)'));
       expect(message, contains('Be of good courage'));
       expect(message, contains('Shared from Disciplefy: Bible Study App'));
       // The source citation lives on the attribution screen, not in the
@@ -93,12 +93,12 @@ void main() {
 
     test('opens with the reference and ends with the link', () {
       final message = ShareLinks.verseMessage(
-        citedReference: 'John 3:16 (KJV)',
+        citedReference: 'John 3:16 (BSB)',
         verseText: 'For God so loved the world.',
         link: ShareLinks.download,
       );
 
-      expect(message, startsWith('John 3:16 (KJV)'));
+      expect(message, startsWith('John 3:16 (BSB)'));
       expect(message, endsWith(ShareLinks.download));
     });
   });
