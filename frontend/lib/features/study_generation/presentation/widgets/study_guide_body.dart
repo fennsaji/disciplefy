@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:disciplefy_bible_study/core/constants/hero_images.dart';
 import 'package:flutter/material.dart';
+
+import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -563,13 +565,9 @@ class StudyGuideHero extends StatelessWidget {
               photoAsset,
               fit: BoxFit.cover,
               alignment: const Alignment(0, -0.3),
-              // Decode at the screen's pixel width (sharp on 3x phones),
-              // never above the 2000px source.
-              cacheWidth: math.min(
-                  2000,
-                  (MediaQuery.sizeOf(context).width *
-                          MediaQuery.devicePixelRatioOf(context))
-                      .round()),
+              // Decoded tiny so the upscale blurs it into a soft wash,
+              // like the other photo headers (no blur filter).
+              cacheWidth: photoWashDecodeWidth,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
           ),
