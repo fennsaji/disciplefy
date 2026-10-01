@@ -105,8 +105,8 @@ class _VerseFlipCardState extends State<VerseFlipCard>
     );
   }
 
-  /// API.Bible-sourced verses (daily_verse) show the translation citation, e.g.
-  /// "John 3:16 (KJV)". The user's own (manual / ai_generated) verses do not.
+  /// Daily-verse-sourced verses show the translation citation, e.g.
+  /// "John 3:16 (BSB)". The user's own (manual / ai_generated) verses do not.
   String _citedReference() {
     if (widget.verse.sourceType != 'daily_verse') {
       return widget.verse.verseReference;
@@ -212,7 +212,7 @@ class _BackContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    // Hide API.Bible verse text for daily_verse-sourced verses when the
+    // Hide Bible verse text for daily_verse-sourced verses when the
     // bible_content_enabled kill-switch is off.
     final hideApiContent = verse.sourceType == 'daily_verse' &&
         !sl<SystemConfigService>().isBibleContentEnabled;

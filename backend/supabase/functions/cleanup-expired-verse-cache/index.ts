@@ -3,8 +3,7 @@
  *
  * Deletes daily_verses_cache rows whose 30-day TTL has elapsed. The read paths
  * already skip expired rows (so stale content is never served), but expired rows
- * otherwise linger in the table. API.Bible's content-recency terms require cached
- * content to be refreshed or removed at least every 30 days — this enforces removal.
+ * otherwise linger in the table, so this removes them.
  *
  * Schedule: daily via external scheduler / pg_cron (e.g. `0 3 * * *`).
  */

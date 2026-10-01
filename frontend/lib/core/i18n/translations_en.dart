@@ -1076,7 +1076,7 @@ const Map<String, dynamic> englishTranslations = {
     'delete_account_lose_plan':
         'Any active plan (cancel your subscription first)',
     'bible_attribution': 'Bible copyright & attribution',
-    'bible_attribution_subtitle': 'Scripture provided by API.Bible',
+    'bible_attribution_subtitle': 'Bible texts and licences',
   },
   'memory_add_feedback': {
     'added': 'Added to Memory Verses! Start reviewing to memorize this verse.',

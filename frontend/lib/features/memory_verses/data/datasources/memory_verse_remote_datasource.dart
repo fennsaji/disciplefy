@@ -426,7 +426,7 @@ class MemoryVerseRemoteDataSource {
 
         _errorHandler.logSuccess('Verse text fetched successfully');
 
-        // API.Bible FUMS: report usage tokens for this live verse fetch.
+        // Legacy API.Bible FUMS: the server no longer sends tokens, so this is a no-op.
         if (data['fumsTokens'] is List) {
           FumsService.instance.trackView(
             (data['fumsTokens'] as List).map((t) => t.toString()).toList(),

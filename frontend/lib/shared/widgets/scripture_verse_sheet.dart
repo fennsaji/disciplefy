@@ -252,8 +252,8 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     );
   }
 
-  /// Reference with the API.Bible translation abbreviation appended, e.g.
-  /// "John 3:16 (KJV)". Links to the full copyright page via the citation badge.
+  /// Reference with the translation abbreviation appended, e.g.
+  /// "John 3:16 (BSB)". Links to the full copyright page via the citation badge.
   String _citedReference() {
     final ref = _localizedReference ?? widget.reference;
     final abbr = _langCode == null ? '' : bibleTranslationAbbr(_langCode!);
@@ -344,8 +344,20 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
                       _buildLoadingState(palette)
                     else if (_errorMessage != null)
                       _buildErrorState(palette)
-                    else
+                    else ...[
                       _buildVerseContent(palette),
+                      if (_langCode != null &&
+                          bibleTranslationNotice(_langCode!) != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          bibleTranslationNotice(_langCode!)!,
+                          style: AppFonts.inter(
+                            fontSize: 11.5,
+                            color: palette.muted,
+                          ),
+                        ),
+                      ],
+                    ],
 
                     const SizedBox(height: 20),
 

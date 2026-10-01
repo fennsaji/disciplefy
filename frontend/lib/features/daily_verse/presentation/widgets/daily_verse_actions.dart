@@ -23,13 +23,13 @@ import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../bloc/daily_verse_state.dart';
 
-/// API.Bible translation abbreviation for in-context citation.
-/// English = King James Version (KJV); Hindi/Malayalam = Indian Revised
+/// Translation abbreviation for in-context citation.
+/// English = Berean Standard Bible (BSB); Hindi/Malayalam = Indian Revised
 /// Version (IRV).
 String dailyVerseTranslationAbbr(VerseLanguage language) {
   switch (language) {
     case VerseLanguage.english:
-      return 'KJV';
+      return 'BSB';
     case VerseLanguage.hindi:
     case VerseLanguage.malayalam:
       return 'IRV';

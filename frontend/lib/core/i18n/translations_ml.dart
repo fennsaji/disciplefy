@@ -1096,7 +1096,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'delete_account_lose_plan':
         'സജീവമായ ഏതു പ്ലാനും (ആദ്യം സബ്സ്ക്രിപ്ഷൻ റദ്ദാക്കുക)',
     'bible_attribution': 'ബൈബിൾ പകർപ്പവകാശവും കടപ്പാടും',
-    'bible_attribution_subtitle': 'തിരുവെഴുത്ത് API.Bible നൽകുന്നത്',
+    'bible_attribution_subtitle': 'ബൈബിൾ പരിഭാഷകളും ലൈസൻസുകളും',
   },
   'memory_add_feedback': {
     'added':

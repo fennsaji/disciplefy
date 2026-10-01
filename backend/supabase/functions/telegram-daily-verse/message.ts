@@ -13,7 +13,14 @@ export type VerseLanguage = 'en' | 'hi' | 'ml'
 export const DAILY_VERSE_URL = 'https://go.disciplefy.in/daily-verse'
 
 /** Translation cited per language, matching dailyVerseTranslationAbbr in the app. */
-export const TRANSLATION_ABBR: Record<VerseLanguage, string> = { en: 'KJV', hi: 'IRV', ml: 'IRV' }
+export const TRANSLATION_ABBR: Record<VerseLanguage, string> = { en: 'BSB', hi: 'IRV', ml: 'IRV' }
+
+/** Licence notice the CC BY-SA 4.0 IRV texts must carry wherever they are shown. */
+export const ATTRIBUTION: Record<VerseLanguage, string | null> = {
+  en: null, // BSB is public domain
+  hi: 'IRV Hindi © Bridge Connectivity Solutions, CC BY-SA 4.0',
+  ml: 'IRV Malayalam © Bridge Connectivity Solutions, CC BY-SA 4.0',
+}
 
 const HEADER: Record<VerseLanguage, string> = {
   en: "🌅 Today's Verse",
@@ -24,7 +31,7 @@ const HEADER: Record<VerseLanguage, string> = {
 export interface DailyVerseRecord {
   reference: string
   referenceTranslations?: Partial<Record<VerseLanguage, string>>
-  // `esv` is a legacy key name: it holds KJV text.
+  // `esv` is a legacy key name: it holds BSB text.
   translations?: { esv?: string; hi?: string; ml?: string; hindi?: string; malayalam?: string }
 }
 
@@ -49,6 +56,7 @@ export function buildDailyVerseMessage(language: VerseLanguage, reference: strin
     '',
     text,
     '',
+    ...(ATTRIBUTION[language] ? [ATTRIBUTION[language]!, ''] : []),
     `📱 ${DAILY_VERSE_URL}`,
   ].join('\n')
 }

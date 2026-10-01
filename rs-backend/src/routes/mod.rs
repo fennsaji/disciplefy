@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod bible;
 pub mod health;
 pub mod posts;
 
@@ -18,6 +19,9 @@ pub fn create_router() -> Router<AppState> {
             get(posts::get_adjacent_posts),
         )
         .route("/api/v1/learning-paths", get(posts::list_learning_paths))
+        .route("/api/v1/bible/versions", get(bible::list_versions))
+        .route("/api/v1/bible/:version/books", get(bible::list_books))
+        .route("/api/v1/bible/:version/verses", get(bible::get_verses))
         .route("/api/v1/admin/posts", post(admin::create_post))
         .route(
             "/api/v1/admin/posts/:id",

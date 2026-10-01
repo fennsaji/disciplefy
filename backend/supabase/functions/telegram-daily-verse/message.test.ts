@@ -8,10 +8,10 @@ const verse = {
   translations: { esv: 'I can do all things.', hi: 'मैं सब कुछ कर सकता हूँ।', ml: 'എനിക്കു സകലവും ചെയ്വാൻ കഴിയും.' },
 }
 
-Deno.test('english post cites KJV and links to the daily verse', () => {
+Deno.test('english post cites BSB and links to the daily verse', () => {
   const v = verseFor(verse, 'en')!
   assertEquals(buildDailyVerseMessage('en', v.reference, v.text), [
-    "🌅 Today's Verse", '', 'Philippians 4:13 (KJV)', '', 'I can do all things.', '', `📱 ${DAILY_VERSE_URL}`,
+    "🌅 Today's Verse", '', 'Philippians 4:13 (BSB)', '', 'I can do all things.', '', `📱 ${DAILY_VERSE_URL}`,
   ].join('\n'))
 })
 
@@ -21,6 +21,14 @@ Deno.test('hindi and malayalam use localized reference and IRV', () => {
   const ml = verseFor(verse, 'ml')!
   assertEquals(ml.text, 'എനിക്കു സകലവും ചെയ്വാൻ കഴിയും.')
   assertEquals(buildDailyVerseMessage('ml', ml.reference, ml.text).includes('ഫിലിപ്പിയർ 4:13 (IRV)'), true)
+})
+
+Deno.test('IRV posts carry the CC BY-SA attribution line', () => {
+  for (const lang of ['hi', 'ml'] as const) {
+    const msg = buildDailyVerseMessage(lang, 'x', 'y')
+    assertEquals(msg.includes('Bridge Connectivity Solutions, CC BY-SA 4.0'), true)
+  }
+  assertEquals(buildDailyVerseMessage('en', 'x', 'y').includes('CC BY-SA'), false)
 })
 
 Deno.test('legacy translation keys and missing reference translation fall back', () => {

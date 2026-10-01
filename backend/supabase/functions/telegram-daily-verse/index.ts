@@ -4,9 +4,9 @@
  * Posts today's daily verse (the same `daily_verses_cache` row the app shows)
  * to the Telegram group's daily-verse topic for one language.
  *
- * Compliance: the verse text is only read and posted with its translation
- * cited; it is never sent to an LLM here. The `bible_content_enabled`
- * kill-switch stops the post entirely.
+ * The verse is posted with its translation cited and, for the CC BY-SA IRV
+ * texts, the licence line. The `bible_content_enabled` kill-switch stops the
+ * post entirely.
  *
  * Schedule: cron_config `telegram_daily_verse` (rs-backend), 06:00 IST.
  * Topic: telegram_topics kind 'daily_verse' per language (none = no topic).

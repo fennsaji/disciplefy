@@ -4,7 +4,7 @@
  * be unit tested without the edge runtime.
  */
 
-/** Longest cross-chapter span accepted, to bound API.Bible usage. */
+/** Longest cross-chapter span accepted (rs-backend allows at most 4 chapters). */
 export const MAX_CROSS_CHAPTER_SPAN = 3
 
 export interface CrossChapterRange {
@@ -30,7 +30,7 @@ function toPositiveInt(value: unknown): number | null {
 }
 
 /**
- * Validates chapter / verse fields before they reach an API.Bible URL path.
+ * Validates chapter / verse fields before they reach the Bible text URL.
  * Accepts numbers or numeric strings, returns them as numbers, and rejects
  * anything else (e.g. "1/../../bibles") so no request field can alter the path.
  */
@@ -90,63 +90,7 @@ export function parseCrossChapterRange(body: {
   }
 }
 
-/** API.Bible passage id, e.g. `1CO.10.23-1CO.11.1`. */
-export function buildPassageId(bookCode: string, range: CrossChapterRange): string {
-  return `${bookCode}.${range.chapter}.${range.verseStart}-${bookCode}.${range.endChapter}.${range.verseEnd}`
-}
-
-/** API.Bible passages URL returning plain text with bracketed verse numbers. */
-export function buildPassageUrl(bibleId: string, passageId: string): string {
-  const params = new URLSearchParams({
-    'content-type': 'text',
-    'include-notes': 'false',
-    'include-titles': 'false',
-    'include-chapter-numbers': 'false',
-    'include-verse-numbers': 'true', // "[23] ..." markers, split into verses below
-    'fums-version': '3',
-  })
-  return `https://api.scripture.api.bible/v1/bibles/${encodeURIComponent(bibleId)}/passages/${encodeURIComponent(passageId)}?${params.toString()}`
-}
-
 /** "Book C1:V1-C2:V2" with an already-localized book name. */
 export function formatCrossChapterReference(book: string, range: CrossChapterRange): string {
   return `${book} ${range.chapter}:${range.verseStart}-${range.endChapter}:${range.verseEnd}`
-}
-
-/**
- * Splits passage text carrying "[n]" verse markers into verse items.
- * Text before the first marker is ignored. Returns an empty list when no
- * markers are present.
- */
-export function splitNumberedVerses(
-  text: string,
-  clean: (s: string) => string,
-): { number: number; text: string }[] {
-  const items: { number: number; text: string }[] = []
-  const marker = /\[(\d+)\]/g
-  const matches = [...text.matchAll(marker)]
-  for (let i = 0; i < matches.length; i++) {
-    const start = matches[i].index! + matches[i][0].length
-    const end = i + 1 < matches.length ? matches[i + 1].index! : text.length
-    const verseText = clean(text.slice(start, end))
-    if (verseText) items.push({ number: Number(matches[i][1]), text: verseText })
-  }
-  return items
-}
-
-/**
- * Tags split verses with their chapter, starting at [startChapter] and
- * advancing whenever verse numbering resets (e.g. 33 → 1).
- */
-export function assignChapters(
-  items: { number: number; text: string }[],
-  startChapter: number,
-): { number: number; text: string; chapter: number }[] {
-  let chapter = startChapter
-  let previous = 0
-  return items.map(item => {
-    if (item.number < previous) chapter++
-    previous = item.number
-    return { ...item, chapter }
-  })
 }

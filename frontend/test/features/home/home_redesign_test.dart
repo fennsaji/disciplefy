@@ -268,7 +268,7 @@ void main() {
 
       expect(find.text('Good evening, Fenn'), findsOneWidget);
       expect(find.text(_shortVerse), findsOneWidget);
-      expect(find.text('Philippians 4:13 · KJV'), findsOneWidget);
+      expect(find.text('Philippians 4:13 · BSB'), findsOneWidget);
       expect(find.text('VERSE OF THE DAY'), findsOneWidget);
       expect(find.text('· SEPTEMBER 29, 2026'), findsOneWidget);
       expect(find.text('Study now'), findsOneWidget);

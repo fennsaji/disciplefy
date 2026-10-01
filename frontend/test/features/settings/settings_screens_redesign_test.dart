@@ -173,17 +173,21 @@ void main() {
             .pumpWidget(app(const BibleAttributionScreen(), dark: dark));
         await tester.pumpAndSettle();
 
+        expect(find.text('English · BSB'), findsOneWidget);
         expect(find.text('English · KJV'), findsOneWidget);
         // Native-script language names are shown again.
         expect(find.text('हिन्दी (Hindi) · IRV'), findsOneWidget);
         expect(find.text('മലയാളം (Malayalam) · IRV'), findsOneWidget);
-        expect(find.textContaining('PUBLIC DOMAIN'), findsOneWidget);
-        expect(find.text('CC BY-SA 4.0'), findsNWidgets(2));
-        await tester.scrollUntilVisible(find.text('VachanOnline'), 300,
+        expect(find.textContaining('Public domain'), findsNWidgets(2));
+        await tester.scrollUntilVisible(find.text('eBible.org'), 300,
             scrollable: find.byType(Scrollable).first);
         await tester.pumpAndSettle();
-        expect(find.text('Scripture provided by API.Bible'), findsWidgets);
-        expect(find.text('VachanOnline'), findsOneWidget);
+        expect(find.text('മലയാളം (Malayalam) · SV 1910'), findsOneWidget);
+        expect(find.text('CC BY-SA 4.0'), findsNWidgets(3));
+        expect(find.textContaining('Bridge Connectivity Solutions'),
+            findsNWidgets(2));
+        expect(find.textContaining('API.Bible'), findsNothing);
+        expect(find.text('eBible.org'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }

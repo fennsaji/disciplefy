@@ -38,7 +38,7 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
   // Check maintenance mode FIRST
   await checkMaintenanceMode(req, services)
 
-  // Compliance kill-switch: do not serve API.Bible content at all.
+  // Compliance kill-switch: do not serve Bible content at all.
   if (!(await isBibleContentEnabled())) {
     throw new AppError('BIBLE_CONTENT_DISABLED', 'Bible content is currently unavailable.', 503)
   }

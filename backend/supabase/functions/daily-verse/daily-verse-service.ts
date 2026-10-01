@@ -2,14 +2,21 @@
 import type { LLMService } from '../_shared/services/llm-service.ts'
 import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 import { TtlCache, msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
-import { fetchVerseAllLanguages } from '../_shared/services/bible-api-service.ts'
+import { fetchVerseAllLanguages } from '../_shared/services/bible-text-service.ts'
 
-/** Fetches verse text per language for a reference (default: API.Bible, KJV/IRV). */
+/** Fetches verse text per language for a reference (default: self-hosted BSB / IRV). */
 export type VerseTextFetcher = (reference: string) => Promise<Record<'en' | 'hi' | 'ml', { text: string }>>
+
+/**
+ * daily_verses_cache.text_source of rows whose wording came from the current
+ * Bible text source. Rows with any other value (e.g. 'bible_api', KJV wording
+ * from API.Bible) are refreshed in place on read, keeping their reference.
+ */
+export const TEXT_SOURCE = 'bible_text_bsb_irv'
 
 const defaultVerseTextFetcher: VerseTextFetcher = (reference) => fetchVerseAllLanguages(reference)
 
-/** Strips API.Bible paragraph marks and stray unbalanced quote marks around a single verse. */
+/** Strips paragraph marks and stray unbalanced quote marks around a single verse. */
 export function tidyVerseText(text: string): string {
   let t = (text ?? '').replace(/¶/g, '').replace(/\s+/g, ' ').trim()
   const opens = (t.match(/“/g) ?? []).length
@@ -44,8 +51,9 @@ export function clearDailyVerseMemoryCache(): void {
  * in multiple translations with fallback mechanisms.
  *
  * The LLM only chooses the reference. Verse wording always comes from the
- * Bible API: KJV (public domain) for English, IRV for Hindi/Malayalam — the
- * same versions fetch-verse serves. The LLM never writes Scripture text.
+ * self-hosted Bible text: BSB (public domain) for English, IRV for
+ * Hindi/Malayalam — the same versions fetch-verse serves by default. The LLM
+ * never writes Scripture text.
  */
 
 interface DailyVerseData {
@@ -58,7 +66,8 @@ interface DailyVerseData {
   }
   translations: {
     // Key kept as `esv` for backward compatibility (installed apps and cached
-    // rows read it). It holds King James Version (KJV) text, not ESV.
+    // rows read it). It holds Berean Standard Bible (BSB) text, not ESV
+    // (KJV in rows written before TEXT_SOURCE, which are refreshed on read).
     esv: string
     hi: string // IRV Hindi
     ml: string // IRV Malayalam
@@ -77,8 +86,8 @@ interface BibleApiResponse {
 export class DailyVerseService {
   private readonly CACHE_TABLE = 'daily_verses_cache'
   
-  // Emergency fallback verses (LLM or Bible API unavailable). Text is exact
-  // KJV (public domain) for English and IRV for Hindi/Malayalam, matching the
+  // Emergency fallback verses (LLM or Bible text unavailable). Text is exact
+  // BSB (public domain) for English and IRV for Hindi/Malayalam, matching the
   // versions the app cites. Never put ESV or LLM wording here.
   private readonly EMERGENCY_FALLBACK_VERSES = [
     {
@@ -89,7 +98,7 @@ export class DailyVerseService {
         ml: "യോഹന്നാൻ 3:16"
       },
       translations: {
-        esv: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+        esv: "For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.",
         hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे, वह नाश न हो, परन्तु अनन्त जीवन पाए।",
         ml: "തന്‍റെ ഏകജാതനായ പുത്രനിൽ വിശ്വസിക്കുന്ന ഏവനും നശിച്ചുപോകാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന് ദൈവം അവനെ നല്കുവാൻ തക്കവണ്ണം ലോകത്തെ സ്നേഹിച്ചു."
       }
@@ -115,7 +124,7 @@ export class DailyVerseService {
         ml: "ഫിലിപ്പിയർ 4:13"
       },
       translations: {
-        esv: "I can do all things through Christ which strengtheneth me.",
+        esv: "I can do all things through Christ who gives me strength.",
         hi: "जो मुझे सामर्थ्य देता है उसमें मैं सब कुछ कर सकता हूँ।",
         ml: "എന്നെ ശക്തനാക്കുന്നവൻ മുഖാന്തരം എനിക്ക് എല്ലാം ചെയ്യുവാൻ കഴിയും."
       }
@@ -128,7 +137,7 @@ export class DailyVerseService {
         ml: "യോശുവ 1:9"
       },
       translations: {
-        esv: "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.",
+        esv: "Have I not commanded you to be strong and courageous? Do not be afraid; do not be discouraged, for the LORD your God is with you wherever you go.",
         hi: "क्या मैंने तुझे आज्ञा नहीं दी? हियाव बाँधकर दृढ़ हो जा; भय न खा, और तेरा मन कच्चा न हो; क्योंकि जहाँ-जहाँ तू जाएगा वहाँ-वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।",
         ml: "നിന്‍റെ ദൈവമായ യഹോവ നീ പോകുന്ന ഇടത്തൊക്കെയും നിന്നോടുകൂടെ ഉള്ളതുകൊണ്ട് ഉറപ്പും ധൈര്യവുമുള്ളവനായിരിക്ക; ഭയപ്പെടരുത്, ഭ്രമിക്കയും അരുത് ഞാൻ തന്നെ നിന്നോട് കല്പിച്ചുവല്ലോ."
       }
@@ -141,7 +150,7 @@ export class DailyVerseService {
         ml: "റോമർ 8:28"
       },
       translations: {
-        esv: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
+        esv: "And we know that God works all things together for the good of those who love Him, who are called according to His purpose.",
         hi: "और हम जानते हैं, कि जो लोग परमेश्वर से प्रेम रखते हैं, उनके लिये सब बातें मिलकर भलाई ही को उत्पन्न करती हैं; अर्थात् उन्हीं के लिये जो उसकी इच्छा के अनुसार बुलाए हुए हैं।",
         ml: "എന്നാൽ ദൈവത്തെ സ്നേഹിക്കുന്നവർക്ക്, നിർണ്ണയപ്രകാരം വിളിക്കപ്പെട്ടവർക്കു തന്നെ, സകലവും നന്മയ്ക്കായി കൂടി വ്യാപരിക്കുന്നു എന്നു നാം അറിയുന്നു."
       }
@@ -202,9 +211,9 @@ export class DailyVerseService {
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
 
-      // Operational kill-switch: skip API.Bible calls, use deterministic fallback.
+      // Operational kill-switch: skip Bible text lookups, use deterministic fallback.
       if (!(await this.bibleApiCallsEnabled())) {
-        console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no API.Bible call')
+        console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no Bible text lookup')
         const fallback = this.getFallbackVerse(targetDate)
         // Keep the cached row's UUID on the verse: a verse handed to the client
         // without an id gets a synthetic `temp-<date>` id there, and every
@@ -224,7 +233,7 @@ export class DailyVerseService {
       // Try to cache the new verse and get the UUID
       try {
         const fromBibleApi = !this.EMERGENCY_FALLBACK_VERSES.some(v => v.translations.esv === newVerse.translations.esv)
-        const uuid = await this.cacheVerse(dateKey, newVerse, fromBibleApi ? 'bible_api' : null)
+        const uuid = await this.cacheVerse(dateKey, newVerse, fromBibleApi ? TEXT_SOURCE : null)
         // Add the UUID to the verse data
         newVerse.id = uuid
         console.log(`Daily verse cached successfully for date: ${dateKey}, UUID: ${uuid}`)
@@ -311,8 +320,8 @@ export class DailyVerseService {
   }
 
   /**
-   * LLM picks the reference only; the wording is fetched from the Bible API
-   * (KJV / IRV). Throws when any language's text is missing so the caller uses
+   * LLM picks the reference only; the wording is fetched from the Bible text
+   * service (BSB / IRV). Throws when any language's text is missing so the caller uses
    * the deterministic fallback instead of serving a partial verse.
    */
   private async generateVerseWithLLM(excludeReferences: string[], language: string = 'en'): Promise<DailyVerseData> {
@@ -326,7 +335,7 @@ export class DailyVerseService {
       ml: tidyVerseText(texts.ml?.text ?? ''),
     }
     if (!translations.esv || !translations.hi || !translations.ml) {
-      throw new Error(`Bible API returned incomplete text for ${choice.reference}`)
+      throw new Error(`Bible text service returned incomplete text for ${choice.reference}`)
     }
 
     return {
@@ -417,7 +426,7 @@ export class DailyVerseService {
 
   /**
    * Reads the active row for a date, expired or not. needsRefresh is true when
-   * its wording did not come from the Bible API or its TTL has passed.
+   * its wording did not come from the current Bible text source (TEXT_SOURCE) or its TTL has passed.
    */
   private async getCachedRow(
     dateKey: string
@@ -462,7 +471,7 @@ export class DailyVerseService {
       return {
         verse: cachedData as DailyVerseData,
         expiresAt: data.expires_at ?? null,
-        needsRefresh: expired || data.text_source !== 'bible_api',
+        needsRefresh: expired || data.text_source !== TEXT_SOURCE,
       }
     } catch (error) {
       console.error('Error fetching cached verse:', error)
@@ -485,7 +494,7 @@ export class DailyVerseService {
         ml: tidyVerseText(texts.ml?.text ?? ''),
       }
       if (!translations.esv || !translations.hi || !translations.ml) {
-        throw new Error(`Bible API returned incomplete text for ${verse.reference}`)
+        throw new Error(`Bible text service returned incomplete text for ${verse.reference}`)
       }
       const { id, fromCache: _fromCache, ...stored } = verse
       const updated: DailyVerseData = { ...stored, translations }
@@ -493,7 +502,7 @@ export class DailyVerseService {
         .from(this.CACHE_TABLE)
         .update({
           verse_data: updated,
-          text_source: 'bible_api',
+          text_source: TEXT_SOURCE,
           expires_at: this.getExpirationDate(),
           updated_at: new Date().toISOString(),
         })
@@ -527,7 +536,7 @@ export class DailyVerseService {
   /**
    * Cache verse in database and return the UUID
    */
-  private async cacheVerse(dateKey: string, verseData: DailyVerseData, textSource: 'bible_api' | null = null): Promise<string> {
+  private async cacheVerse(dateKey: string, verseData: DailyVerseData, textSource: typeof TEXT_SOURCE | null = null): Promise<string> {
     try {
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
@@ -580,7 +589,7 @@ export class DailyVerseService {
 
   /**
    * Get cache expiration date.
-   * API.Bible Terms require cached content be refreshed at least every 30 days.
+   * Rows are re-read from the Bible text source after 30 days.
    */
   private getExpirationDate(): string {
     const expirationDate = new Date()

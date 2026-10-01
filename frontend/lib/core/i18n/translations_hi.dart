@@ -1071,8 +1071,7 @@ const Map<String, dynamic> hindiTranslations = {
     'delete_account_lose_plan':
         'कोई भी सक्रिय प्लान (पहले अपनी सदस्यता रद्द करें)',
     'bible_attribution': 'बाइबल कॉपीराइट और श्रेय',
-    'bible_attribution_subtitle':
-        'पवित्रशास्त्र API.Bible द्वारा प्रदान किया गया',
+    'bible_attribution_subtitle': 'बाइबल अनुवाद और लाइसेंस',
   },
   'memory_add_feedback': {
     'added':

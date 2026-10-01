@@ -4,6 +4,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 COPY Cargo.toml Cargo.lock* ./
 COPY src/ src/
+# Bible text is compiled into the binary (include_str!)
+COPY data/ data/
 RUN cargo build --release
 
 # Runtime stage

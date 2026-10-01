@@ -65,8 +65,8 @@ export interface LLMResponse {
 
 /**
  * Daily verse selection from the LLM: the reference only. The LLM never
- * supplies verse wording — DailyVerseService fills the text from the Bible API
- * (KJV for English, IRV for Hindi/Malayalam).
+ * supplies verse wording — DailyVerseService fills the text from the Bible text
+ * service (BSB for English, IRV for Hindi/Malayalam).
  */
 export interface DailyVerseResponse {
   readonly reference: string

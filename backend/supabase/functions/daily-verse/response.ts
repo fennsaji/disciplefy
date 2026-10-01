@@ -4,7 +4,7 @@
  * Telegram post carries exactly what the app shows.
  *
  * `translations.esv` is a legacy key name kept for installed apps: it holds
- * KJV text. `hindi` / `malayalam` hold IRV text.
+ * BSB text (KJV in older rows). `hindi` / `malayalam` hold IRV text.
  */
 export interface DailyVerseResponseBody {
   readonly id?: string
