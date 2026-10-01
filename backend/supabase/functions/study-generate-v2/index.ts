@@ -15,7 +15,7 @@
  * - apikey: Supabase anon key
  */
 
-import { getPassageGroundingBlock, withPassageGrounding } from '../_shared/services/passage-grounding.ts'
+import { getPassageGroundingBlock, groundingForPass, withPassageGrounding } from '../_shared/services/passage-grounding.ts'
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { config } from '../_shared/core/config.ts'
@@ -1232,7 +1232,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig, pass1Data), passageGrounding)
+            }, languageConfig, pass1Data), groundingForPass(passageGrounding, 2))
 
             const pass2Stream = llmService.streamFromPrompt(pass2Prompt, {
               inputType: input_type,
@@ -1287,7 +1287,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig, pass1Data, pass2Data), passageGrounding)
+            }, languageConfig, pass1Data, pass2Data), groundingForPass(passageGrounding, 3))
 
             const pass3Stream = llmService.streamFromPrompt(pass3Prompt, {
               inputType: input_type,
@@ -1343,7 +1343,7 @@ async function handleStudyGenerateV2(
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
-            }, languageConfig, pass1Data), passageGrounding)
+            }, languageConfig, pass1Data), groundingForPass(passageGrounding, 4))
 
             const pass4Stream = llmService.streamFromPrompt(pass4Prompt, {
               inputType: input_type,
@@ -1525,7 +1525,7 @@ async function handleStudyGenerateV2(
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
-              }, languageConfig, pass1Data), passageGrounding)
+              }, languageConfig, pass1Data), groundingForPass(passageGrounding, 2))
 
               const pass2Stream = llmService.streamFromPrompt(pass2Prompt, {
                 inputType: input_type,
@@ -1615,7 +1615,8 @@ async function handleStudyGenerateV2(
                 tier: userPlan,
                 studyMode: study_mode,
                 forceProvider,
-                passageGrounding
+                // Cost control: content-filter retry regenerates without the passage
+                passageGrounding: retryAttempted ? null : passageGrounding
               })
 
             // Manually iterate to capture return value

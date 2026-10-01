@@ -15,12 +15,12 @@ import {
 import { fetchPassageGrounding } from './passage-grounding.ts'
 
 /** Teasers are one sentence; a short excerpt is all the grounding they need. */
-const TEASER_GROUNDING_VERSES = 8
+const TEASER_GROUNDING_VERSES = 3
 
 /** Verse text for the teaser prompt; undefined when it cannot be fetched. */
 async function teaserVerseText(lesson: TeaserLesson): Promise<string | undefined> {
   if (!lesson.verse) return undefined
-  const g = await fetchPassageGrounding(lesson.verse, lesson.language, { maxVerses: TEASER_GROUNDING_VERSES, maxChars: 1500 })
+  const g = await fetchPassageGrounding(lesson.verse, lesson.language, { maxVerses: TEASER_GROUNDING_VERSES, maxChars: 400 })
   return g?.text
 }
 

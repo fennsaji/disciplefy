@@ -5,6 +5,8 @@ import {
   formatPassageGroundingBlock,
   getPassageGroundingBlock,
   parseGroundingReference,
+  groundingForPass,
+  MAX_GROUNDING_CHARS,
   withPassageGrounding,
 } from './passage-grounding.ts'
 import type { FetchLike } from './bible-text-service.ts'
@@ -71,15 +73,15 @@ Deno.test('long single-chapter ranges are narrowed before fetching, with a trunc
   const calls: Call[] = []
   const g = await fetchPassageGrounding('Psalm 119:1-176', 'en', { fetchImpl: mockFetch(calls) })
   assert(g)
-  assert(calls[0].url.includes('verse_end=60'))
-  assertEquals(g.verseCount, 60)
+  assert(calls[0].url.includes('verse_end=12'))
+  assertEquals(g.verseCount, 12)
   assertEquals(g.truncated, true)
-  assert(formatPassageGroundingBlock(g).includes('Only the first 60 verses are shown'))
+  assert(formatPassageGroundingBlock(g).includes('Only the first 12 verses are shown'))
 })
 
 Deno.test('whole chapters are capped after fetching; spans over 4 chapters are narrowed', async () => {
   const g = await fetchPassageGrounding('Psalm 119', 'en', { fetchImpl: mockFetch([], { chapterLength: 176 }) })
-  assertEquals(g?.verseCount, 60)
+  assertEquals(g?.verseCount, 12)
   assertEquals(g?.truncated, true)
   const calls: Call[] = []
   await fetchPassageGrounding('Genesis 1-11', 'en', { fetchImpl: mockFetch(calls) })
@@ -107,4 +109,26 @@ Deno.test('delimiter tags inside passage text are neutralized', async () => {
   })))
   const block = await getPassageGroundingBlock('John 3:16', 'en', { fetchImpl: evil })
   assertEquals(block?.match(/<\/bible_passage>/g)?.length, 1)
+})
+
+Deno.test('passage is sent only with the first pass of multi-pass generation', async () => {
+  const block = await getPassageGroundingBlock('John 3:16-17', 'en', { fetchImpl: mockFetch([]) })
+  assert(block)
+  const base = { userMessage: 'pass prompt' }
+  assert(withPassageGrounding(base, groundingForPass(block, 1)).userMessage.includes('<bible_passage'))
+  for (const pass of [2, 3, 4]) {
+    assertEquals(groundingForPass(block, pass), null)
+    assertEquals(withPassageGrounding(base, groundingForPass(block, pass)), base)
+  }
+})
+
+Deno.test('default character cap bounds the block for token-heavy scripts', async () => {
+  const long: FetchLike = (url: string) => {
+    const u = new URL(url)
+    const verses = Array.from({ length: 12 }, (_, i) => ({ chapter: 1, verse: i + 1, text: 'ക'.repeat(300) }))
+    return Promise.resolve(new Response(JSON.stringify({ data: { book: u.searchParams.get('book'), book_name: 'B', reference: 'B 1', verses, attribution: 'a' } })))
+  }
+  const g = await fetchPassageGrounding('John 1:1-12', 'ml', { fetchImpl: long })
+  assert(g && g.truncated && g.verseCount < 12)
+  assert(g.verseCount * 300 <= MAX_GROUNDING_CHARS)
 })

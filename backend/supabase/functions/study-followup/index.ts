@@ -23,7 +23,7 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 import { THEOLOGICAL_FOUNDATION } from '../_shared/services/llm-utils/prompt-builder.ts'
 
 /** Verses of passage text given to follow-up answers as grounding. */
-const FOLLOWUP_GROUNDING_VERSES = 30
+const FOLLOWUP_GROUNDING_VERSES = 8
 
 /**
  * Request payload for follow-up questions
@@ -434,7 +434,7 @@ async function handleStudyFollowUp(
   // Ground answers in the guide's passage text (best-effort, capped for chat).
   const groundingReference = studyGuide.input_type === 'scripture' ? studyGuide.input_value : studyGuide.passage
   const passageBlock = groundingReference
-    ? await getPassageGroundingBlock(groundingReference, targetLanguage, { maxVerses: FOLLOWUP_GROUNDING_VERSES, maxChars: 3000 })
+    ? await getPassageGroundingBlock(groundingReference, targetLanguage, { maxVerses: FOLLOWUP_GROUNDING_VERSES, maxChars: 800 })
     : null
   console.log('🌐 [FOLLOW-UP] Target language determined:', {
     studyGuideLanguage: studyGuide.language,

@@ -28,9 +28,9 @@ import {
 } from '../utils/bible-book-normalizer.ts'
 
 /** Verses kept in a grounding block; longer passages are truncated with a note. */
-export const MAX_GROUNDING_VERSES = 60
+export const MAX_GROUNDING_VERSES = 12
 /** Hard character ceiling (Indic scripts tokenize ~3-4x denser than English). */
-export const MAX_GROUNDING_CHARS = 6000
+export const MAX_GROUNDING_CHARS = 1200
 /** Overall budget for the fetch so grounding never noticeably delays generation. */
 export const GROUNDING_TIMEOUT_MS = 4000
 /** rs-backend serves at most 4 chapters per request. */
@@ -242,6 +242,14 @@ HOW TO USE IT:
 export function withPassageGrounding<T extends { userMessage: string }>(prompt: T, block: string | null | undefined): T {
   if (!block) return prompt
   return { ...prompt, userMessage: `${prompt.userMessage}\n\n${block}` }
+}
+
+/**
+ * Cost control: the passage is sent only with the first pass of a multi-pass
+ * generation; later passes build on pass-1 output and skip it.
+ */
+export function groundingForPass(block: string | null | undefined, pass: number): string | null {
+  return pass === 1 && block ? block : null
 }
 
 /** Fetch + format in one step; null when grounding is unavailable. */
