@@ -136,21 +136,31 @@ pub fn parse(info: &'static TranslationInfo) -> Translation {
         let mut parts = line.splitn(4, '\t');
         let (a, b, c) = (parts.next(), parts.next(), parts.next());
         if a == Some("#name") {
-            let (Some(code), Some(name)) = (b, c) else { fail("bad #name") };
+            let (Some(code), Some(name)) = (b, c) else {
+                fail("bad #name")
+            };
             index.insert(code, books.len());
-            books.push(Book { code, name, chapters: Vec::new() });
+            books.push(Book {
+                code,
+                name,
+                chapters: Vec::new(),
+            });
             continue;
         }
         let (Some(code), Some(ch), Some(label), Some(text)) = (a, b, c, parts.next()) else {
             fail("expected 4 columns")
         };
-        let Some(&bi) = index.get(code) else { fail("unknown book") };
+        let Some(&bi) = index.get(code) else {
+            fail("unknown book")
+        };
         let ch: usize = ch.parse().unwrap_or_else(|_| fail("bad chapter"));
         let (start, end) = match label.split_once('-') {
             Some((s, e)) => (s.parse(), e.parse()),
             None => (label.parse(), label.parse()),
         };
-        let (Ok(start), Ok(end)) = (start, end) else { fail("bad verse") };
+        let (Ok(start), Ok(end)) = (start, end) else {
+            fail("bad verse")
+        };
         let chapters = &mut books[bi].chapters;
         if ch == 0 {
             fail("chapter 0");
@@ -163,9 +173,8 @@ pub fn parse(info: &'static TranslationInfo) -> Translation {
     Translation { info, books, index }
 }
 
-static LIBRARY: LazyLock<HashMap<&'static str, Translation>> = LazyLock::new(|| {
-    TRANSLATIONS.iter().map(|t| (t.id, parse(t))).collect()
-});
+static LIBRARY: LazyLock<HashMap<&'static str, Translation>> =
+    LazyLock::new(|| TRANSLATIONS.iter().map(|t| (t.id, parse(t))).collect());
 
 /// Loads every translation; call once at startup so the first request is not
 /// the one that pays for parsing.
@@ -367,7 +376,11 @@ mod tests {
 
     #[test]
     fn hindi_inline_cross_references_are_removed() {
-        let p = passage(translation("irv-hi").unwrap(), &q("GEN", 1, Some(1), None, None)).unwrap();
+        let p = passage(
+            translation("irv-hi").unwrap(),
+            &q("GEN", 1, Some(1), None, None),
+        )
+        .unwrap();
         assert!(!p.verses[0].text.contains('('));
     }
 
@@ -375,7 +388,10 @@ mod tests {
     fn verse_range_and_whole_chapter() {
         let p = passage(bsb(), &q("JHN", 3, Some(16), Some(18), None)).unwrap();
         assert_eq!(p.reference, "John 3:16-18");
-        assert_eq!(p.verses.iter().map(|v| v.verse).collect::<Vec<_>>(), [16, 17, 18]);
+        assert_eq!(
+            p.verses.iter().map(|v| v.verse).collect::<Vec<_>>(),
+            [16, 17, 18]
+        );
 
         let p = passage(bsb(), &q("PSA", 23, None, None, None)).unwrap();
         assert_eq!(p.reference, "Psalms 23");
@@ -427,9 +443,18 @@ mod tests {
             passage(bsb(), &q("JHN", 3, Some(4), None, Some(2))),
             Err(AppError::BadRequest(_))
         ));
-        assert!(matches!(passage(bsb(), &q("XYZ", 1, None, None, None)), Err(AppError::NotFound(_))));
-        assert!(matches!(passage(bsb(), &q("JHN", 22, None, None, None)), Err(AppError::NotFound(_))));
-        assert!(matches!(passage(bsb(), &q("JHN", 3, Some(37), None, None)), Err(AppError::NotFound(_))));
+        assert!(matches!(
+            passage(bsb(), &q("XYZ", 1, None, None, None)),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            passage(bsb(), &q("JHN", 22, None, None, None)),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            passage(bsb(), &q("JHN", 3, Some(37), None, None)),
+            Err(AppError::NotFound(_))
+        ));
         assert!(translation("niv").is_err());
     }
 

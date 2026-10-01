@@ -70,7 +70,12 @@ pub async fn get_verses(
         end_chapter: get("end_chapter")?,
     };
     let p = bible::passage(tr, &query)?;
-    let text = p.verses.iter().map(|v| v.text).collect::<Vec<_>>().join(" ");
+    let text = p
+        .verses
+        .iter()
+        .map(|v| v.text)
+        .collect::<Vec<_>>()
+        .join(" ");
     Ok(cached(json!({
         "success": true,
         "data": {
