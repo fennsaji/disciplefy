@@ -110,6 +110,9 @@ void main() {
     ShowCaseWidget.of(showcaseContext).startShowCase([first, second]);
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
+    // The Showcase mounts once its target is measured laid out, a frame
+    // after the step starts; its overlay follows a frame later.
+    await tester.pump(const Duration(milliseconds: 500));
     return showcaseContext;
   }
 
@@ -170,6 +173,7 @@ void main() {
   testWidgets('Got it advances without marking seen', (tester) async {
     await pumpTour(tester, alignment: Alignment.center);
     await tester.tap(find.text('Got it →'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('2 / 2'), findsOneWidget);
@@ -241,8 +245,10 @@ void main() {
     ShowCaseWidget.of(showcaseContext).startShowCase(navKeys);
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('3 / 6'), findsOneWidget);
     await tester.tap(find.text('Got it →'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Talk to Discipler'), findsOneWidget);

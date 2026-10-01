@@ -53,6 +53,7 @@ void main() {
     ShowCaseWidget.of(showcaseContext).startShowCase([key]);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
 
     final gotIt = AppLocalizations.of(showcaseContext)!.walkthroughGotIt;
     await tester.tap(find.text(gotIt));

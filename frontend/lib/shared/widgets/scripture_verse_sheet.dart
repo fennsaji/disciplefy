@@ -179,6 +179,8 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     // Get current language — prefer study content language (set in Study Topics)
     // over app language, so verse displays in the same language as the study content
     final appLanguage = await languageService.getStudyContentLanguage();
+    // The sheet may be dismissed while any await below is pending.
+    if (!mounted) return;
     final langCode = appLanguage.code;
     _langCode = langCode;
 
@@ -187,6 +189,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       reference: widget.reference,
       language: langCode,
     );
+    if (!mounted) return;
     if (cached != null) {
       setState(() {
         _isLoading = false;
@@ -215,6 +218,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 
     result.fold(
       (failure) {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _errorMessage = context.tr(TranslationKeys.verseSheetCouldNotLoad);
@@ -231,6 +235,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
               ?.map((v) => {'number': v.number, 'text': v.text})
               .toList(),
         );
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _verseText = fetchedVerse.text;

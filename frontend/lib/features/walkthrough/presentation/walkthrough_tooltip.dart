@@ -100,6 +100,14 @@ class _WalkthroughTooltipState extends State<WalkthroughTooltip>
   late final Ticker _ticker;
   bool _active = false;
 
+  /// Whether the target and every render ancestor have been laid out, so
+  /// showcaseview may measure it. Only then is the [Showcase] mounted.
+  bool _ready = false;
+
+  /// Keeps [WalkthroughTooltip.child]'s state when the wrapper around it
+  /// switches between the plain and the [Showcase] form.
+  final GlobalKey _childKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -113,14 +121,33 @@ class _WalkthroughTooltipState extends State<WalkthroughTooltip>
     super.dispose();
   }
 
+  /// True when [box] and all its ancestors have a size. `localToGlobal`
+  /// asks every ancestor for its paint transform, and some of those (e.g.
+  /// the [RenderFractionalTranslation] of a tab [SlideTransition]) read
+  /// their own size, which throws while they have not been laid out yet.
+  static bool _isLaidOut(RenderObject? box) {
+    if (box is! RenderBox || !box.attached || !box.hasSize) return false;
+    for (RenderObject? node = box.parent; node != null; node = node.parent) {
+      if (node is RenderBox && !node.hasSize) return false;
+    }
+    return true;
+  }
+
   Rect? _measureTarget() {
     final box = widget.showcaseKey.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    if (!_isLaidOut(box)) return null;
+    box as RenderBox;
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
   void _syncTargetRect() {
     final rect = _measureTarget();
+    final ready = rect != null;
+    if (ready != _ready) {
+      // Mount the Showcase only once the target is measurable, and drop it
+      // again if the target is caught mid-relayout (e.g. a tab transition).
+      if (mounted) setState(() => _ready = ready);
+    }
     if (rect == null || rect == _targetRect.value) return;
     _targetRect.value = rect;
     // Rebuilding the Showcase makes showcaseview re-measure the target, so
@@ -134,9 +161,13 @@ class _WalkthroughTooltipState extends State<WalkthroughTooltip>
       if (!mounted) return;
       if (_active) {
         _scrollIntoViewIfNeeded();
+        // Measure now rather than on the first tick, so a laid-out target
+        // gets its Showcase in the very next frame.
+        _syncTargetRect();
         if (!_ticker.isActive) _ticker.start();
-      } else if (_ticker.isActive) {
-        _ticker.stop();
+      } else {
+        if (_ticker.isActive) _ticker.stop();
+        if (_ready) setState(() => _ready = false);
       }
     });
   }
@@ -180,6 +211,15 @@ class _WalkthroughTooltipState extends State<WalkthroughTooltip>
     final l10n = AppLocalizations.of(context)!;
     final radius = BorderRadius.circular(widget.highlightBorderRadius);
     final tourStep = ShowcaseKeys.homeTourStepOf(widget.showcaseKey);
+    final child = KeyedSubtree(key: _childKey, child: widget.child);
+
+    // showcaseview gives every mounted Showcase an overlay that measures its
+    // target on each overlay rebuild, whether or not it is the active step.
+    // Off-stage or mid-transition targets are not laid out, so measuring
+    // them throws; mount the Showcase only for the active, laid-out step.
+    if (!active || !_ready) {
+      return KeyedSubtree(key: widget.showcaseKey, child: child);
+    }
 
     return Showcase.withWidget(
       key: widget.showcaseKey,
@@ -213,7 +253,7 @@ class _WalkthroughTooltipState extends State<WalkthroughTooltip>
           skipLabel: l10n.walkthroughSkip,
         ),
       ),
-      child: widget.child,
+      child: child,
     );
   }
 }
