@@ -677,6 +677,7 @@ class _StudyContent extends StatelessWidget {
                     topicPostCounts: feedState.topicPostCounts,
                     currentGuideIndex: currentGuideIndex,
                     nowPosition: now?.position,
+                    groupPosition: groupTopic?.position,
                     lessonContext: lessonContext,
                     studyPathId: state.currentLearningPathId,
                   ),
@@ -1142,6 +1143,9 @@ class _LessonPath extends StatelessWidget {
   final Map<String, int> topicPostCounts;
   final int currentGuideIndex;
   final int? nowPosition;
+
+  /// Position of the lesson the group is on; null once it finished the path.
+  final int? groupPosition;
   final _LessonOpenContext lessonContext;
   final String? studyPathId;
 
@@ -1150,6 +1154,7 @@ class _LessonPath extends StatelessWidget {
     required this.topicPostCounts,
     required this.currentGuideIndex,
     required this.nowPosition,
+    required this.groupPosition,
     required this.lessonContext,
     required this.studyPathId,
   });
@@ -1230,6 +1235,7 @@ class _LessonPath extends StatelessWidget {
         topic: topic,
         status: status,
         discussionCount: topicPostCounts[topic.topicId] ?? 0,
+        isGroupLesson: topic.position == groupPosition,
       ));
     }
 
@@ -1304,10 +1310,15 @@ class _LessonRowData {
   final _LessonStatus status;
   final int discussionCount;
 
+  /// The lesson the whole group is currently on — marked whatever the
+  /// viewer's own status is, so a member who has finished it still sees it.
+  final bool isGroupLesson;
+
   const _LessonRowData({
     required this.topic,
     required this.status,
     required this.discussionCount,
+    this.isGroupLesson = false,
   });
 }
 
@@ -1316,7 +1327,7 @@ class _LessonRowData {
 // the title, chevron and meta. The current lesson's body sits in a card.
 // ---------------------------------------------------------------------------
 
-class _LessonRow extends StatelessWidget {
+class _LessonRow extends StatefulWidget {
   final _LessonRowData data;
   final bool isLast;
   final VoidCallback? onTap;
@@ -1331,7 +1342,45 @@ class _LessonRow extends StatelessWidget {
   });
 
   @override
+  State<_LessonRow> createState() => _LessonRowState();
+}
+
+class _LessonRowState extends State<_LessonRow> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.data.isGroupLesson) _revealOnce();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LessonRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.data.isGroupLesson && !oldWidget.data.isGroupLesson) {
+      _revealOnce();
+    }
+  }
+
+  /// Scrolls just enough to bring the group's lesson on screen (no-op when
+  /// it is already visible).
+  void _revealOnce() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
+    final isLast = widget.isLast;
+    final onTap = widget.onTap;
+    const rail = _LessonRow._rail;
+    const gap = _LessonRow._gap;
     final palette = ReaderPalette.of(context);
     final l10n = AppLocalizations.of(context)!;
     final topic = data.topic;
@@ -1339,6 +1388,7 @@ class _LessonRow extends StatelessWidget {
     final isLocked = status == _LessonStatus.locked;
     final isDone = status == _LessonStatus.done;
     final isNow = status == _LessonStatus.now;
+    final isGroupLesson = data.isGroupLesson;
     final successInk =
         palette.isDark ? AppColors.successLighter : AppColors.successDark;
 
@@ -1370,6 +1420,8 @@ class _LessonRow extends StatelessWidget {
       runSpacing: 6,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        if (isGroupLesson)
+          _LessonTag.groupHere(context, l10n.lessonsGroupIsHere),
         if (isNow)
           _LessonTag.now(
               context, context.tr(TranslationKeys.communityFellowshipNow)),
@@ -1420,14 +1472,22 @@ class _LessonRow extends StatelessWidget {
       children: [titleRow, const SizedBox(height: 6), meta],
     );
 
-    final Widget body = isNow
+    final Widget body = (isNow || isGroupLesson)
         ? Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
             decoration: BoxDecoration(
-              color: palette.card,
+              color: isGroupLesson
+                  ? Color.alphaBlend(
+                      palette.accentIcon
+                          .withValues(alpha: palette.isDark ? 0.10 : 0.06),
+                      palette.card,
+                    )
+                  : palette.card,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: palette.accentIcon.withValues(alpha: 0.4),
+                color: palette.accentIcon
+                    .withValues(alpha: isGroupLesson ? 0.7 : 0.4),
+                width: isGroupLesson ? 1.5 : 1,
               ),
             ),
             child: bodyColumn,
@@ -1444,21 +1504,22 @@ class _LessonRow extends StatelessWidget {
       children: [
         if (!isLast)
           Positioned(
-            left: _rail / 2 - 1,
+            left: rail / 2 - 1,
             width: 2,
-            top: _rail,
+            top: rail,
             bottom: 0,
             child: ColoredBox(color: connectorColor),
           ),
         Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : _gap),
+          padding: EdgeInsets.only(bottom: isLast ? 0 : gap),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _LessonStatusMarker(
                 status: status,
                 number: topic.position + 1,
-                size: _rail,
+                size: rail,
+                highlighted: isGroupLesson,
               ),
               const SizedBox(width: 12),
               Expanded(child: body),
@@ -1497,10 +1558,14 @@ class _LessonStatusMarker extends StatelessWidget {
   final int number;
   final double size;
 
+  /// Draws an accent ring around the marker for the group's current lesson.
+  final bool highlighted;
+
   const _LessonStatusMarker({
     required this.status,
     required this.number,
     required this.size,
+    this.highlighted = false,
   });
 
   @override
@@ -1562,6 +1627,14 @@ class _LessonStatusMarker extends StatelessWidget {
           color: fill,
           shape: BoxShape.circle,
           border: border,
+          // Accent halo with a page-coloured gap, outside the rail size so
+          // the row layout is unchanged.
+          boxShadow: highlighted
+              ? [
+                  BoxShadow(color: palette.accentIcon, spreadRadius: 4.5),
+                  BoxShadow(color: palette.page, spreadRadius: 2.5),
+                ]
+              : null,
         ),
         alignment: Alignment.center,
         child: child,
@@ -1600,6 +1673,18 @@ class _LessonTag extends StatelessWidget {
         fontSize: 11,
         fontWeight: FontWeight.w700,
       );
+
+  /// Accent-outlined "Group is here" tag marking the group's current lesson.
+  factory _LessonTag.groupHere(BuildContext context, String label) {
+    final palette = ReaderPalette.of(context);
+    return _LessonTag(
+      label: label,
+      icon: Icons.location_on_rounded,
+      fill: palette.accentIcon.withValues(alpha: palette.isDark ? 0.20 : 0.12),
+      ink: palette.accentIcon,
+      fontWeight: FontWeight.w700,
+    );
+  }
 
   /// Gold-tinted flag tag for milestone lessons.
   factory _LessonTag.milestone(BuildContext context, String label) {

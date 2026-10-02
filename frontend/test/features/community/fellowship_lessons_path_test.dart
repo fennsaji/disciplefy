@@ -596,4 +596,100 @@ void main() {
     expect(find.text('Change learning path'), findsNothing);
     expect(find.text('Baptism and Communion'), findsOneWidget);
   });
+
+  group('group lesson marker', () {
+    Finder rowOf(String title) => find.ancestor(
+          of: find.text(title),
+          matching: find.byWidgetPredicate(
+              (w) => w.runtimeType.toString() == '_LessonRow'),
+        );
+
+    Future<String> label(AppLanguage language) async =>
+        (await AppLocalizations.delegate.load(Locale(language.code)))
+            .lessonsGroupIsHere;
+
+    final allDone = [
+      for (final t in _topics)
+        _topic(t.position, t.title, completed: true, milestone: t.isMilestone),
+    ];
+
+    testWidgets('marks the group lesson when it is not completed',
+        (tester) async {
+      await _pump(tester, size: const Size(360, 2400));
+      final pill = find.text(await label(AppLanguage.english));
+      expect(pill, findsOneWidget);
+      expect(
+        find.descendant(of: rowOf('What is the Gospel?').last, matching: pill),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('marks the group lesson the member already completed',
+        (tester) async {
+      when(() => _paths.state)
+          .thenReturn(LearningPathDetailLoaded(pathDetail: _path(allDone)));
+      when(() => _study.state)
+          .thenReturn(_studyState.copyWith(currentGuideIndex: 7));
+      await _pump(tester, size: const Size(360, 2400));
+      final pill = find.text(await label(AppLanguage.english));
+      expect(pill, findsOneWidget);
+      expect(
+        find.descendant(
+            of: rowOf('Baptism and Communion').last, matching: pill),
+        findsOneWidget,
+      );
+      // Still shown as personally completed.
+      expect(find.byIcon(Icons.check_rounded), findsNWidgets(8));
+    });
+
+    testWidgets('mentor view marks it too', (tester) async {
+      when(() => _paths.state)
+          .thenReturn(LearningPathDetailLoaded(pathDetail: _path(allDone)));
+      when(() => _study.state).thenReturn(
+          _studyState.copyWith(isMentor: true, currentGuideIndex: 5));
+      await _pump(tester, size: const Size(360, 2600));
+      expect(
+        find.descendant(
+            of: rowOf('Importance of Prayer').last,
+            matching: find.text(await label(AppLanguage.english))),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('absent once the group finished the path', (tester) async {
+      when(() => _paths.state)
+          .thenReturn(LearningPathDetailLoaded(pathDetail: _path(allDone)));
+      when(() => _study.state).thenReturn(
+          _studyState.copyWith(currentGuideIndex: 7, studyCompleted: true));
+      await _pump(tester, size: const Size(360, 2400));
+      expect(find.text(await label(AppLanguage.english)), findsNothing);
+    });
+
+    testWidgets('scrolls the group lesson into view', (tester) async {
+      when(() => _paths.state)
+          .thenReturn(LearningPathDetailLoaded(pathDetail: _path(allDone)));
+      when(() => _study.state)
+          .thenReturn(_studyState.copyWith(currentGuideIndex: 7));
+      await _pump(tester, size: const Size(360, 640));
+      await tester.pumpAndSettle();
+      final pill = find.text(await label(AppLanguage.english));
+      final rect = tester.getRect(pill);
+      expect(rect.bottom, lessThanOrEqualTo(640));
+      expect(rect.top, greaterThanOrEqualTo(0));
+    });
+
+    for (final v in _variants) {
+      testWidgets('fits 360 ${v.$1.code} ${v.$2 ? 'dark' : 'light'}',
+          (tester) async {
+        when(() => _paths.state)
+            .thenReturn(LearningPathDetailLoaded(pathDetail: _path(allDone)));
+        when(() => _study.state)
+            .thenReturn(_studyState.copyWith(currentGuideIndex: 7));
+        await _pump(tester,
+            language: v.$1, dark: v.$2, size: const Size(360, 2400));
+        _expectClean(tester);
+        expect(find.text(await label(v.$1)), findsOneWidget);
+      });
+    }
+  });
 }
