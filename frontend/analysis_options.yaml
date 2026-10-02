@@ -6,6 +6,8 @@ analyzer:
   # otherwise walk and report thousands of errors from.
   exclude:
     - build/**
+    # Vendored third-party package, kept as close to upstream as possible.
+    - packages/**
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false
