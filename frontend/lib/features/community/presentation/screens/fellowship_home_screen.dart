@@ -906,7 +906,7 @@ class _StudyingTogetherCard extends StatelessWidget {
                         const SizedBox(height: 10),
                       ],
                       Text(
-                        total != null
+                        total != null && total > 0
                             ? '$groupProgress · ${context.tr(TranslationKeys.communitySharedProgress, {
                                     'current': guideIndex + 1,
                                     'total': total,

@@ -308,6 +308,18 @@ void main() {
     expect(find.text('Lesson 1 of 5 · Rooted lesson 1'), findsOneWidget);
   });
 
+  testWidgets('a path with no lessons is not shown as completed',
+      (tester) async {
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    when(() => _paths.state)
+        .thenReturn(LearningPathDetailLoaded(pathDetail: _path(const [])));
+    when(() => _study.state)
+        .thenReturn(_studyState.copyWith(currentGuideIndex: 0, totalGuides: 0));
+    await _pump(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text(l10n.lessonsCompleted), findsNothing);
+  });
+
   testWidgets('a finished group shows the finished state', (tester) async {
     when(() => _study.state)
         .thenReturn(_studyState.copyWith(studyCompleted: true));

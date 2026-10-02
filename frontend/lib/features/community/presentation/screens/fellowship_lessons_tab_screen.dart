@@ -888,7 +888,9 @@ class _LessonsSummaryCard extends StatelessWidget {
             {'number': lessonNumber, 'total': total})
         : context.tr(
             TranslationKeys.communitySharedLesson, {'number': lessonNumber});
-    final allDone = state.studyCompleted || (detail != null && now == null);
+    // A path with no lessons (all retired) has nothing to finish.
+    final allDone = state.studyCompleted ||
+        (detail != null && detail!.topics.isNotEmpty && now == null);
 
     final xpEarned = detail == null
         ? 0
