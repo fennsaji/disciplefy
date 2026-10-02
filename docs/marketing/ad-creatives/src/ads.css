@@ -1,0 +1,26 @@
+:root{--ind:#4F46E5;--ind5:#6366F1;--ink:#1E1E1E;--slate:#4B5563;--gold:#FFEEC0;--dgold:#B8860B;--coral:#FF6B6B;--cream:#FAF8F5}
+*{margin:0;box-sizing:border-box}
+body{width:var(--w);height:var(--h);overflow:hidden;background:var(--cream);font-family:Inter,sans-serif;color:var(--ink);position:relative}
+.blob{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,#E6E4FF,#D9D6FF 60%,#CFCBFA);}
+.blob2{position:absolute;border-radius:50%;background:var(--gold);opacity:.8}
+.top{position:absolute;left:72px;right:72px;display:flex;justify-content:space-between;align-items:center}
+.logo{height:124px;width:auto}
+.tag{font:600 26px Inter;color:var(--ind);background:#fff;border:2px solid #D9D6FF;padding:12px 26px;border-radius:99px}
+.head{position:absolute;left:72px;right:72px}
+h1{font-family:Poppins;letter-spacing:-.02em;line-height:1.02}
+.l1{display:block;font-weight:600}
+.l2{display:block;font-weight:800;font-style:italic;color:var(--ind)}
+.sub{font-size:34px;line-height:1.4;color:var(--slate);margin-top:24px;max-width:880px}
+.flow{display:flex;align-items:center;gap:14px;margin-top:40px;flex-wrap:nowrap}
+.pill{font:700 23px Inter;letter-spacing:.06em;text-transform:uppercase;padding:16px 24px;border-radius:99px;white-space:nowrap}
+.p0{background:var(--ind);color:#fff}.p1{background:var(--gold);color:#7A5A06}.p2{background:#FFE1E1;color:#B33A3A}
+.arr{font-size:30px;color:var(--slate)}
+.try{display:inline-flex;align-items:center;gap:12px;margin-top:36px;font:600 28px Inter;background:var(--ink);color:#fff;padding:16px 30px;border-radius:99px}
+.phone{position:absolute;background:#000;border-radius:64px;padding:14px;box-shadow:0 40px 80px rgba(30,27,75,.28)}
+.phone img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:52px}
+.phone::after{content:"";position:absolute;top:30px;left:50%;transform:translateX(-50%);width:110px;height:30px;background:#000;border-radius:20px}
+.back{transform:rotate(-6deg)}.front{transform:rotate(4deg)}
+.card{position:absolute;background:#fff;border-radius:28px;padding:24px 30px;display:flex;gap:20px;align-items:center;box-shadow:0 24px 50px rgba(30,27,75,.22);z-index:5}
+.card i{width:56px;height:56px;border-radius:50%;background:var(--ind);color:#fff;font:700 30px Inter;display:grid;place-items:center;font-style:normal;flex:none}
+.card b{display:block;font:700 22px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--ind)}
+.card span{display:block;font-size:26px;color:var(--ink);margin-top:4px}

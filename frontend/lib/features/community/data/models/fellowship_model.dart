@@ -119,7 +119,10 @@ class FellowshipModel {
 
   /// Creates a [FellowshipModel] from a JSON map (API response).
   factory FellowshipModel.fromJson(Map<String, dynamic> json) {
-    final currentStudyJson = json['current_study'] as Map<String, dynamic>?;
+    // A path the group has finished (and not yet replaced) is kept as its
+    // study, marked by completed_at, so the app can show it as finished.
+    final currentStudyJson = (json['current_study'] ?? json['finished_study'])
+        as Map<String, dynamic>?;
     final mentorsJson = (json['mentors'] as List<dynamic>?) ?? [];
 
     return FellowshipModel(

@@ -179,7 +179,11 @@ void main() {
       // names it.
       expect(find.textContaining('Romans Foundations'), findsOneWidget);
       expect(find.text('Later'), findsOneWidget);
-      expect(find.text('Choose Next Path'), findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('Choose Next Path')),
+          findsOneWidget);
     });
 
     testWidgets('"Later" dismisses the dialog', (tester) async {

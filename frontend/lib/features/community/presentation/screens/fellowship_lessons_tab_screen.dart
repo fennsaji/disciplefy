@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_study/fellowship_study_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_study/fellowship_study_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_guide_detail_screen.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/group_study_progress.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_confirm_dialog.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
@@ -160,6 +161,12 @@ class _FellowshipLessonsTabScreenState
           if (state.setStatus == FellowshipStudySetStatus.success) {
             showAppSnackBar(context, l10n.lessonsPathAssignedSuccess,
                 tone: AppSnackTone.success);
+            // Member progress is counted on the group's path: reload it for
+            // the new one.
+            context.read<FellowshipMembersBloc>().add(
+                  FellowshipMembersLoadRequested(
+                      fellowshipId: widget.fellowshipId),
+                );
           } else if (state.setStatus == FellowshipStudySetStatus.failure) {
             showAppSnackBar(
                 context,
@@ -592,6 +599,20 @@ class _StudyContent extends StatelessWidget {
                   currentGuideIndex,
                   detail.allowNonSequentialAccess,
                 );
+          // The lesson the group is on (none once it has finished the path).
+          final LearningPathTopic? groupTopic =
+              (detail == null || state.studyCompleted)
+                  ? null
+                  : detail.topics
+                      .where((t) => t.position == currentGuideIndex)
+                      .firstOrNull;
+          // A member who has finished every lesson alone still sees the
+          // group's lesson on the card — the path is not "completed" for the
+          // group until it finishes it together.
+          final cardNow = now ??
+              (groupTopic == null
+                  ? null
+                  : _NowTopic(groupTopic.position, groupTopic));
 
           // Clear the floating tab dock (its height is in the bottom padding).
           final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -604,13 +625,15 @@ class _StudyContent extends StatelessWidget {
                   child: _LessonsSummaryCard(
                     state: state,
                     detail: detail,
-                    now: now,
+                    now: cardNow,
+                    groupTopic: groupTopic,
                     isMentor: isMentor,
                     isAdvancing: isAdvancing,
                     onAdvanceTap: onAdvanceTap,
-                    onOpenNow: now == null
+                    onOpenNow: cardNow == null
                         ? null
-                        : () => _openLesson(context, now.topic, lessonContext),
+                        : () =>
+                            _openLesson(context, cardNow.topic, lessonContext),
                   ),
                 ),
               ),
@@ -624,6 +647,7 @@ class _StudyContent extends StatelessWidget {
                       isLoading:
                           state.setStatus == FellowshipStudySetStatus.loading,
                       hasStudy: true,
+                      finished: state.studyCompleted,
                       onTap: onPathPickerTap,
                     ),
                   ),
@@ -817,6 +841,9 @@ class _LessonsSummaryCard extends StatelessWidget {
   final FellowshipStudyState state;
   final LearningPathDetail? detail;
   final _NowTopic? now;
+
+  /// The lesson the group is on; null once the group has finished.
+  final LearningPathTopic? groupTopic;
   final bool isMentor;
   final bool isAdvancing;
   final VoidCallback onAdvanceTap;
@@ -826,6 +853,7 @@ class _LessonsSummaryCard extends StatelessWidget {
     required this.state,
     required this.detail,
     required this.now,
+    required this.groupTopic,
     required this.isMentor,
     required this.isAdvancing,
     required this.onAdvanceTap,
@@ -837,18 +865,24 @@ class _LessonsSummaryCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
 
+    // The loaded lessons are authoritative when they are the group's path;
+    // the study's stored count is the fallback while they load.
     int? total = state.totalGuides;
-    if ((total == null || total <= 0) &&
-        detail != null &&
-        detail!.topics.isNotEmpty) {
+    if (detail != null &&
+        detail!.topics.isNotEmpty &&
+        (total == null ||
+            total <= 0 ||
+            detail!.id == state.currentLearningPathId)) {
       total = detail!.topics.length;
     }
     final hasTotal = total != null && total > 0;
     final guideIndex = state.currentGuideIndex ?? 0;
     // Lessons the group has finished: everything before its current one.
-    final groupDone = state.studyCompleted
-        ? (total ?? 0)
-        : (hasTotal ? guideIndex.clamp(0, total) : guideIndex);
+    final progress = GroupStudyProgress.of(
+      currentGuideIndex: guideIndex,
+      totalGuides: total,
+      completed: state.studyCompleted,
+    );
 
     // The lesson this member is on, or the group's position while the
     // lessons are still loading.
@@ -858,7 +892,9 @@ class _LessonsSummaryCard extends StatelessWidget {
             {'number': lessonNumber, 'total': total})
         : context.tr(
             TranslationKeys.communitySharedLesson, {'number': lessonNumber});
-    final allDone = state.studyCompleted || (detail != null && now == null);
+    // A path with no lessons (all retired) has nothing to finish.
+    final allDone = state.studyCompleted ||
+        (detail != null && detail!.topics.isNotEmpty && now == null);
 
     final xpEarned = detail == null
         ? 0
@@ -869,8 +905,21 @@ class _LessonsSummaryCard extends StatelessWidget {
     final groupProgress =
         context.tr(TranslationKeys.communityFellowshipGroupProgress);
     final isLastGuide = state.currentGuideIndex != null &&
-        state.totalGuides != null &&
-        state.currentGuideIndex! >= state.totalGuides! - 1;
+        hasTotal &&
+        state.currentGuideIndex! >= total - 1;
+
+    // The group's own lesson, next to its progress — only when it differs
+    // from the lesson the header already shows (a member ahead of the group).
+    final String? groupLesson = !hasTotal
+        ? null
+        : state.studyCompleted
+            ? progress.finishedLabel(context)
+            : groupTopic == null || groupTopic!.position == now?.position
+                ? null
+                : '${context.tr(TranslationKeys.communitySharedLessonOf, {
+                        'number': groupTopic!.position + 1,
+                        'total': total,
+                      })} · ${groupTopic!.title}';
 
     final body = Padding(
       padding: const EdgeInsets.all(16),
@@ -932,11 +981,9 @@ class _LessonsSummaryCard extends StatelessWidget {
               ],
             ),
           ],
-          if (hasTotal) ...[
+          if (progress.fraction != null) ...[
             const SizedBox(height: 10),
-            _GoldProgressBar(
-              value: (groupDone / total).clamp(0.0, 1.0).toDouble(),
-            ),
+            _GoldProgressBar(value: progress.fraction!),
           ],
           const SizedBox(height: 10),
           Row(
@@ -945,11 +992,8 @@ class _LessonsSummaryCard extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: Text(
-                  hasTotal
-                      ? '$groupProgress · ${context.tr(TranslationKeys.communityLessonsGroupDone, {
-                              'done': groupDone,
-                              'total': total,
-                            })}'
+                  progress.hasTotal
+                      ? '$groupProgress · ${progress.doneLabel(context)}'
                       : groupProgress,
                   style: AppFonts.inter(fontSize: 13, color: palette.muted),
                 ),
@@ -972,6 +1016,36 @@ class _LessonsSummaryCard extends StatelessWidget {
               ],
             ],
           ),
+          if (groupLesson != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    state.studyCompleted
+                        ? Icons.check_circle_rounded
+                        : Icons.groups_rounded,
+                    size: 16,
+                    color: palette.accentIcon,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    groupLesson,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           // Advance guide button (mentor only, study not complete).
           if (isMentor && !state.studyCompleted) ...[
             const SizedBox(height: 14),
@@ -1686,11 +1760,15 @@ class _AdvanceGuideButton extends StatelessWidget {
 class _AssignPathButton extends StatelessWidget {
   final bool isLoading;
   final bool hasStudy;
+
+  /// The group has finished its path: the button picks the next one.
+  final bool finished;
   final VoidCallback onTap;
 
   const _AssignPathButton({
     required this.isLoading,
     required this.hasStudy,
+    this.finished = false,
     required this.onTap,
   });
 
@@ -1709,7 +1787,8 @@ class _AssignPathButton extends StatelessWidget {
     }
 
     final palette = ReaderPalette.of(context);
-    final label = l10n.lessonsChangePath;
+    final label =
+        finished ? l10n.lessonsChooseNextPath : l10n.lessonsChangePath;
     final border = palette.isDark
         ? Colors.white.withValues(alpha: 0.24)
         : palette.hairline;

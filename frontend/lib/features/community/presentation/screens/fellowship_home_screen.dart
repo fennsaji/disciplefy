@@ -39,6 +39,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/screens/s
 import 'package:disciplefy_bible_study/features/community/presentation/utils/auth_helpers.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/utils/feed_sort.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/utils/share_helpers.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/group_study_progress.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/block_user_dialog.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_confirm_dialog.dart';
@@ -195,6 +196,7 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
               currentPathTitle: fellowship?.currentStudy?.learningPathTitle,
               currentGuideIndex: fellowship?.currentStudy?.currentGuideIndex,
               currentTotalGuides: fellowship?.currentStudy?.totalGuides,
+              studyCompleted: fellowship?.currentStudy?.completedAt != null,
             ))
             ..add(const FellowshipStudyRefreshRequested()),
         ),
@@ -804,7 +806,8 @@ class _StudyingTogetherCard extends StatelessWidget {
           prev.currentLearningPathId != curr.currentLearningPathId ||
           prev.currentPathTitle != curr.currentPathTitle ||
           prev.currentGuideIndex != curr.currentGuideIndex ||
-          prev.totalGuides != curr.totalGuides,
+          prev.totalGuides != curr.totalGuides ||
+          prev.studyCompleted != curr.studyCompleted,
       builder: (ctx, studyState) {
         final l10n = AppLocalizations.of(context)!;
         if (studyState.currentLearningPathId == null) {
@@ -840,8 +843,14 @@ class _StudyingTogetherCard extends StatelessWidget {
         final lesson = context.tr(
             TranslationKeys.communitySharedLesson, {'number': guideIndex + 1});
         final path = studyState.currentPathTitle?.trim();
-        final heading =
-            (path != null && path.isNotEmpty) ? '$path · $lesson' : lesson;
+        final hasPath = path != null && path.isNotEmpty;
+        // A finished path is named on its own; the progress line below says
+        // it is finished.
+        final heading = studyState.studyCompleted
+            ? (hasPath ? path : l10n.lessonsCompleted)
+            : hasPath
+                ? '$path · $lesson'
+                : lesson;
 
         return FellowshipCardShell(
           onTap: onLessonTap,
@@ -887,30 +896,34 @@ class _StudyingTogetherCard extends StatelessWidget {
               BlocBuilder<LearningPathsBloc, LearningPathsState>(
                 builder: (ctx, pathsState) {
                   int? total = studyState.totalGuides;
-                  if (total == null && pathsState is LearningPathDetailLoaded) {
+                  // The loaded lessons, when they are this group's path.
+                  if ((total == null || total <= 0) &&
+                      pathsState is LearningPathDetailLoaded &&
+                      pathsState.pathDetail.id ==
+                          studyState.currentLearningPathId) {
                     final count = pathsState.pathDetail.topics.length;
                     if (count > 0) total = count;
                   }
+                  final progress = GroupStudyProgress.of(
+                    currentGuideIndex: guideIndex,
+                    totalGuides: total,
+                    completed: studyState.studyCompleted,
+                  );
                   final groupProgress = context
                       .tr(TranslationKeys.communityFellowshipGroupProgress);
+                  final detail = progress.finishedLabel(context) ??
+                      progress.doneLabel(context);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 14),
-                      if (total != null && total > 0) ...[
-                        CommunityProgressBar(
-                          value: ((guideIndex + 1) / total)
-                              .clamp(0.0, 1.0)
-                              .toDouble(),
-                        ),
+                      if (progress.fraction != null) ...[
+                        CommunityProgressBar(value: progress.fraction!),
                         const SizedBox(height: 10),
                       ],
                       Text(
-                        total != null
-                            ? '$groupProgress · ${context.tr(TranslationKeys.communitySharedProgress, {
-                                    'current': guideIndex + 1,
-                                    'total': total,
-                                  })}'
+                        detail != null
+                            ? '$groupProgress · $detail'
                             : groupProgress,
                         style: AppFonts.inter(
                           fontSize: 14,

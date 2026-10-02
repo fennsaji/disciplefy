@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/current_study_entity.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/group_study_progress.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/public_fellowship_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
@@ -272,15 +273,24 @@ class FellowshipCurrentStudyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final lessonNumber = study.currentGuideIndex + 1;
-    final total = study.totalGuides;
-    final lesson = context
-        .tr(TranslationKeys.communitySharedLesson, {'number': lessonNumber});
+    final finished = study.completedAt != null;
+    final progressInfo = GroupStudyProgress.of(
+      currentGuideIndex: study.currentGuideIndex,
+      totalGuides: study.totalGuides,
+      completed: finished,
+    );
+    final lesson = context.tr(TranslationKeys.communitySharedLesson,
+        {'number': study.currentGuideIndex + 1});
     final path = study.learningPathTitle?.trim();
-    final title = path != null && path.isNotEmpty ? '$path · $lesson' : lesson;
-    final hasTotal = total != null && total > 0;
-    final progress =
-        hasTotal ? (lessonNumber / total).clamp(0.0, 1.0).toDouble() : null;
+    final hasPath = path != null && path.isNotEmpty;
+    // A finished path is named on its own; the progress says it is done.
+    final title = finished
+        ? (hasPath ? path : progressInfo.finishedLabel(context) ?? '')
+        : hasPath
+            ? '$path · $lesson'
+            : lesson;
+    final doneLabel = progressInfo.doneLabel(context);
+    final progress = progressInfo.fraction;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -298,11 +308,16 @@ class FellowshipCurrentStudyRow extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 1),
-                child: Icon(Icons.menu_book_outlined,
-                    size: 18, color: palette.gold),
+                child: Icon(
+                    finished
+                        ? Icons.check_circle_rounded
+                        : Icons.menu_book_outlined,
+                    size: 18,
+                    color: palette.gold),
               ),
               const SizedBox(width: 10),
               Expanded(
+                flex: 3,
                 child: Text(
                   title,
                   style: AppFonts.inter(
@@ -313,17 +328,19 @@ class FellowshipCurrentStudyRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (hasTotal) ...[
+              if (doneLabel != null) ...[
                 const SizedBox(width: 10),
-                Text(
-                  context.tr(TranslationKeys.communitySharedProgress, {
-                    'current': lessonNumber.clamp(0, total),
-                    'total': total,
-                  }),
-                  style: AppFonts.inter(
-                    fontSize: 13.5,
-                    color: palette.muted,
-                    height: 1.35,
+                // Wraps (never clips) when a translation runs long.
+                Flexible(
+                  flex: 2,
+                  child: Text(
+                    doneLabel,
+                    textAlign: TextAlign.end,
+                    style: AppFonts.inter(
+                      fontSize: 13.5,
+                      color: palette.muted,
+                      height: 1.35,
+                    ),
                   ),
                 ),
               ],

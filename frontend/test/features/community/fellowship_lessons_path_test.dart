@@ -245,6 +245,123 @@ void main() {
     expect(find.text('+100 XP earned'), findsOneWidget);
   });
 
+  testWidgets('the group lesson is not repeated when the header shows it',
+      (tester) async {
+    await _pump(tester);
+    // Header: "Lesson 3 of 8" + the title; no second line saying the same.
+    expect(find.text('Lesson 3 of 8'), findsOneWidget);
+    expect(find.text('Lesson 3 of 8 · What is the Gospel?'), findsNothing);
+    expect(find.byIcon(Icons.groups_rounded), findsNothing);
+  });
+
+  testWidgets('the group lesson follows the group, not this member',
+      (tester) async {
+    // This member finished lessons 1-4 alone; the group is on lesson 2.
+    when(() => _paths.state).thenReturn(LearningPathDetailLoaded(
+      pathDetail: _path([
+        for (final t in _topics.take(4))
+          _topic(t.position, t.title, completed: true),
+        ..._topics.skip(4),
+      ]),
+    ));
+    when(() => _study.state)
+        .thenReturn(_studyState.copyWith(currentGuideIndex: 1));
+    await _pump(tester);
+    expect(find.text('Lesson 2 of 8 · One God, Three Persons'), findsOneWidget);
+    expect(find.text('Group progress · 1 of 8 done'), findsOneWidget);
+  });
+
+  testWidgets(
+      'a freshly assigned path the member finished alone is not "completed"',
+      (tester) async {
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final rooted = [
+      _topic(0, 'Rooted in Grace', completed: true),
+      _topic(1, 'Dealing with Doubt and Fear', completed: true),
+      _topic(2, 'Walking in the Spirit', completed: true),
+    ];
+    when(() => _paths.state)
+        .thenReturn(LearningPathDetailLoaded(pathDetail: _path(rooted)));
+    when(() => _study.state).thenReturn(_studyState.copyWith(
+      isMentor: true,
+      currentGuideIndex: 0,
+      totalGuides: 3,
+    ));
+    await _pump(tester, size: const Size(320, 2400));
+    _expectClean(tester);
+    expect(find.text(l10n.lessonsCompleted), findsNothing);
+    expect(find.text('Finish Path'), findsNothing);
+    expect(find.text('Group progress · 0 of 3 done'), findsOneWidget);
+    // The card shows (and opens) the group's lesson, named once.
+    expect(find.text('Lesson 1 of 3'), findsOneWidget);
+    expect(find.text('Lesson 1 of 3 · Rooted in Grace'), findsNothing);
+    expect(find.text('Rooted in Grace'), findsNWidgets(2)); // card + row
+  });
+
+  testWidgets('loaded lessons of the group path win over a stale count',
+      (tester) async {
+    final rooted = [
+      for (var i = 0; i < 5; i++) _topic(i, 'Rooted lesson ${i + 1}'),
+    ];
+    when(() => _paths.state)
+        .thenReturn(LearningPathDetailLoaded(pathDetail: _path(rooted)));
+    when(() => _study.state)
+        .thenReturn(_studyState.copyWith(currentGuideIndex: 0, totalGuides: 8));
+    await _pump(tester);
+    expect(find.text('Group progress · 0 of 5 done'), findsOneWidget);
+    expect(find.text('Lesson 1 of 5'), findsOneWidget);
+  });
+
+  testWidgets('a path with no lessons is not shown as completed',
+      (tester) async {
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    when(() => _paths.state)
+        .thenReturn(LearningPathDetailLoaded(pathDetail: _path(const [])));
+    when(() => _study.state)
+        .thenReturn(_studyState.copyWith(currentGuideIndex: 0, totalGuides: 0));
+    await _pump(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text(l10n.lessonsCompleted), findsNothing);
+  });
+
+  testWidgets('a finished path loaded on reload shows the finished state',
+      (tester) async {
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    // As restored from finished_study: last index, completed.
+    when(() => _study.state).thenReturn(_studyState.copyWith(
+        isMentor: true, currentGuideIndex: 7, studyCompleted: true));
+    await _pump(tester);
+    _expectClean(tester);
+    expect(find.text(l10n.lessonsCompleted), findsOneWidget);
+    expect(find.text('Finished all 8 lessons together'), findsOneWidget);
+    expect(find.text('Group progress · 8 of 8 done'), findsOneWidget);
+    expect(find.text(l10n.lessonsChooseNextPath), findsOneWidget);
+    expect(find.text('Finish Path'), findsNothing);
+  });
+
+  testWidgets('on the last lesson the path is not yet done', (tester) async {
+    when(() => _study.state)
+        .thenReturn(_studyState.copyWith(currentGuideIndex: 7));
+    await _pump(tester);
+    expect(find.text('Group progress · 7 of 8 done'), findsOneWidget);
+  });
+
+  testWidgets('a finished group shows the finished state', (tester) async {
+    when(() => _study.state)
+        .thenReturn(_studyState.copyWith(studyCompleted: true));
+    await _pump(tester);
+    _expectClean(tester);
+    expect(find.text('Finished all 8 lessons together'), findsOneWidget);
+    expect(find.text('Group progress · 8 of 8 done'), findsOneWidget);
+  });
+
+  for (final v in _variants) {
+    testWidgets('group lesson line fits ${v.$1.code}', (tester) async {
+      await _pump(tester, language: v.$1, dark: v.$2);
+      _expectClean(tester);
+    });
+  }
+
   testWidgets('status markers: done, now, locked', (tester) async {
     await _pump(tester);
     // Two completed lessons: green check marker + "Completed" meta.
@@ -407,6 +524,22 @@ void main() {
       // Mentors still see and can open the whole lesson path.
       expect(find.text('Who is Jesus Christ?'), findsOneWidget);
       expect(find.text('Baptism and Communion'), findsOneWidget);
+    });
+
+    testWidgets('assigning a path reloads member progress', (tester) async {
+      final mentorState = _studyState.copyWith(isMentor: true);
+      whenListen(
+        _study,
+        Stream.fromIterable([
+          mentorState.copyWith(setStatus: FellowshipStudySetStatus.loading),
+          mentorState.copyWith(setStatus: FellowshipStudySetStatus.success),
+        ]),
+        initialState: mentorState,
+      );
+      await _pump(tester, size: const Size(320, 2400));
+      await tester.pump();
+      verify(() => _members.add(
+          const FellowshipMembersLoadRequested(fellowshipId: 'f1'))).called(1);
     });
 
     testWidgets('change path sits above member progress', (tester) async {

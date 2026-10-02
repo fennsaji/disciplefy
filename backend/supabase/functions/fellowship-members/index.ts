@@ -14,6 +14,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
+import { countPathTopicsCompleted } from './path-progress.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -68,8 +69,11 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
     db.from('fellowship_members').select('user_id, role, joined_at, mentor_whatsapp, mentor_email')
       .eq('fellowship_id', fellowshipId).eq('is_active', true).order('joined_at', { ascending: true }),
     db.from('fellowship_mutes').select('muted_user_id').eq('fellowship_id', fellowshipId),
-    db.from('fellowship_study').select('learning_path_id, current_guide_index')
-      .eq('fellowship_id', fellowshipId).is('completed_at', null).maybeSingle(),
+    // The group's path whether or not it has been finished: progress on a
+    // finished path is still progress (the mentor sees it right after the
+    // last lesson), and a path change shows the new path straight away.
+    db.from('fellowship_study').select('learning_path_id')
+      .eq('fellowship_id', fellowshipId).maybeSingle(),
     db.from('fellowships').select('mentor_user_id').eq('id', fellowshipId).maybeSingle()
   ])
   const ownerId: string | null = fellowshipResult.data?.mentor_user_id ?? null
@@ -86,38 +90,12 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
   const memberRows = (membersResult.data ?? []) as FellowshipMemberRow[]
   const mutedUserIds = new Set((mutesResult.data ?? []).map((r: { muted_user_id: string }) => r.muted_user_id))
 
-  const activeLearningPathId = studyResult.data?.learning_path_id ?? null
-  const currentGuideIndex: number = studyResult.data?.current_guide_index ?? 0
-  const progressByUserId = new Map<string, number>()
-
-  if (activeLearningPathId && memberRows.length > 0) {
-    const memberUserIds = memberRows.map((r) => r.user_id)
-
-    // Fetch topic IDs for the active path, then count each member's completions
-    // directly from user_topic_progress. This avoids requiring enrollment in
-    // user_learning_path_progress (fellowship members complete guides without
-    // individually enrolling in the path).
-    const { data: pathTopics } = await db
-      .from('learning_path_topics')
-      .select('topic_id')
-      .eq('learning_path_id', activeLearningPathId)
-      .eq('is_active', true)
-
-    const topicIds = (pathTopics ?? []).map((r: { topic_id: string }) => r.topic_id)
-
-    if (topicIds.length > 0) {
-      const { data: completedRows } = await db
-        .from('user_topic_progress')
-        .select('user_id')
-        .in('user_id', memberUserIds)
-        .in('topic_id', topicIds)
-        .not('completed_at', 'is', null)
-
-      for (const row of completedRows ?? []) {
-        progressByUserId.set(row.user_id, (progressByUserId.get(row.user_id) ?? 0) + 1)
-      }
-    }
-  }
+  const activeLearningPathId: string | null = studyResult.data?.learning_path_id ?? null
+  // Each member's completed lessons on the group's path, counted from their
+  // own topic progress (not enrolment) — the same source as the lesson ticks.
+  const progressByUserId = activeLearningPathId
+    ? await countPathTopicsCompleted(db, activeLearningPathId, memberRows.map((r) => r.user_id))
+    : new Map<string, number>()
 
   memberRows.sort((a, b) => {
     const rolePriority = (role: string) => (role === 'mentor' ? 0 : 1)

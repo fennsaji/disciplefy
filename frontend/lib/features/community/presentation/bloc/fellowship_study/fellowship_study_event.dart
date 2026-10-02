@@ -27,6 +27,9 @@ class FellowshipStudyInitialized extends FellowshipStudyEvent {
   /// Total number of guides in the learning path, or null if unknown.
   final int? currentTotalGuides;
 
+  /// Whether the group has finished this path (no new one assigned yet).
+  final bool studyCompleted;
+
   const FellowshipStudyInitialized({
     required this.fellowshipId,
     required this.isMentor,
@@ -34,6 +37,7 @@ class FellowshipStudyInitialized extends FellowshipStudyEvent {
     this.currentPathTitle,
     this.currentGuideIndex,
     this.currentTotalGuides,
+    this.studyCompleted = false,
   });
 
   @override
@@ -44,6 +48,7 @@ class FellowshipStudyInitialized extends FellowshipStudyEvent {
         currentPathTitle,
         currentGuideIndex,
         currentTotalGuides,
+        studyCompleted,
       ];
 }
 

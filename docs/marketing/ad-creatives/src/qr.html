@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,600;0,800;1,800&family=Inter:wght@400;600;700&family=Noto+Sans+Devanagari:wght@600&family=Noto+Sans+Malayalam:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ads.css"><style>
+:root{--w:1080px;--h:1920px}
+.qrbox{position:absolute;background:#fff;border-radius:40px;padding:28px;box-shadow:0 30px 70px rgba(30,27,75,.22);text-align:center;z-index:4}
+.qr{position:relative;width:var(--q);height:var(--q)}.qr>img{width:100%;height:100%;display:block;image-rendering:pixelated}
+.mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(var(--q)*.2);height:calc(var(--q)*.2);background:#fff;border-radius:12px;display:grid;place-items:center}
+.mid img{width:62%;height:auto;max-height:80%;object-fit:contain}
+.url{font:700 30px Inter;color:var(--ind);margin-top:14px}
+.stores{font:600 26px Inter;color:var(--slate);margin-top:20px}
+h1{font-size:96px}
+.feats{position:absolute;left:72px;top:1500px;list-style:none;padding:0;display:flex;flex-direction:column;gap:22px;z-index:4}.feats li{font:600 32px Inter;display:flex;align-items:center;gap:18px}.feats i{width:48px;height:48px;border-radius:50%;background:var(--ind);color:#fff;font:700 26px Inter;display:grid;place-items:center;font-style:normal}body.feed .feats{display:none}
+body.story .blob{width:1500px;height:1500px;left:-200px;top:900px}body.story .blob2{width:260px;height:260px;right:-80px;top:220px}
+body.story .top{top:72px}body.story .head{top:220px}
+body.story .qrbox{--q:540px;left:72px;top:720px}
+body.story .phone{width:420px;height:909px;left:700px;top:1020px}
+body.feed{--h:1350px}body.feed h1{font-size:80px}
+body.feed .blob{width:1100px;height:1100px;left:420px;top:420px}body.feed .blob2{width:200px;height:200px;left:-70px;top:1180px}
+body.feed .top{top:56px}body.feed .head{top:170px}
+body.feed .qrbox{--q:440px;left:72px;top:520px}
+body.feed .phone{width:400px;height:866px;left:640px;top:440px}
+</style></head><body>
+<div class="blob"></div><div class="blob2"></div>
+<div class="top"><img class="logo" src="../../../../marketing/public/logo-light.png" alt="Disciplefy"><div class="tag">Free download</div></div>
+<div class="head"><h1><span class="l1">Get Disciplefy.</span><span class="l2">Scan to start.</span></h1>
+<p class="sub">Bible study guides, daily verses and fellowship, all in one app.</p></div>
+<div class="qrbox"><div class="qr"><img src="qr.svg"><div class="mid"><img src="../../../../frontend/assets/images/logo_transparent.png"></div></div>
+<div class="url">go.disciplefy.in/download</div><div class="stores">App Store · Google Play</div></div>
+<ul class="feats"><li><i>✓</i>Bible study guides</li><li><i>✓</i>Daily verse &amp; memory</li><li><i>✓</i>Study with your group</li><li><i>✓</i>English · हिन्दी · മലയാളം</li></ul>
+<div class="phone front"><img src="../screenshots/home-en.png"></div>
+<script>document.body.className=new URLSearchParams(location.search).get('f')||'story'</script>
+</body></html>

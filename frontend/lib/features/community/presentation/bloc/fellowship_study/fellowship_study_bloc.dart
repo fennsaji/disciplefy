@@ -45,6 +45,8 @@ class FellowshipStudyBloc
       currentPathTitle: event.currentPathTitle,
       currentGuideIndex: event.currentGuideIndex,
       totalGuides: event.currentTotalGuides,
+      studyCompleted:
+          event.currentLearningPathId != null && event.studyCompleted,
     ));
   }
 
@@ -63,7 +65,11 @@ class FellowshipStudyBloc
         // Silently keep existing state on failure — screen already shows data.
       },
       (data) {
-        final activeStudy = data['active_study'] as Map<String, dynamic>?;
+        // A finished path stays on screen as finished until a new one is
+        // assigned (finished_study); older servers only send active_study.
+        final active = data['active_study'] as Map<String, dynamic>?;
+        final finished = data['finished_study'] as Map<String, dynamic>?;
+        final activeStudy = active ?? finished;
         final fellowshipLanguage = data['language'] as String?;
         final fellowshipName = data['name'] as String?;
         if (activeStudy != null) {
@@ -72,6 +78,7 @@ class FellowshipStudyBloc
             currentPathTitle: activeStudy['learning_path_title'] as String?,
             currentGuideIndex: activeStudy['current_guide_index'] as int?,
             totalGuides: activeStudy['total_guides'] as int?,
+            studyCompleted: active == null,
             fellowshipLanguage: fellowshipLanguage,
             fellowshipName: fellowshipName,
           ));
@@ -79,6 +86,7 @@ class FellowshipStudyBloc
           emit(state.copyWith(
             clearCurrentLearningPathId: true,
             clearCurrentPathTitle: true,
+            studyCompleted: false,
             fellowshipLanguage: fellowshipLanguage,
             fellowshipName: fellowshipName,
           ));
@@ -108,11 +116,21 @@ class FellowshipStudyBloc
         setStatus: FellowshipStudySetStatus.failure,
         setError: ErrorMessageSanitizer.sanitize(failure),
       )),
-      (title) => emit(state.copyWith(
-        setStatus: FellowshipStudySetStatus.success,
-        currentLearningPathId: event.learningPathId,
-        currentPathTitle: title.isNotEmpty ? title : event.learningPathTitle,
-      )),
+      (title) {
+        // A new path starts at its first lesson. The previous path's index
+        // and length must not carry over (they made a 5-lesson path read
+        // "7 of 8 done" and "Study Completed!"). The new length arrives with
+        // the refresh below; until then the screen uses the loaded lessons.
+        emit(state.copyWith(
+          setStatus: FellowshipStudySetStatus.success,
+          currentLearningPathId: event.learningPathId,
+          currentPathTitle: title.isNotEmpty ? title : event.learningPathTitle,
+          currentGuideIndex: 0,
+          clearTotalGuides: true,
+          studyCompleted: false,
+        ));
+        add(const FellowshipStudyRefreshRequested());
+      },
     );
   }
 

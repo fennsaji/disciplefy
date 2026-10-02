@@ -1164,7 +1164,7 @@ class AppLocalizations {
       'lessonsPathCompleteBody':
           'आपकी संगति ने "{pathTitle}" पूरा कर लिया है। अगला शुरू करना चाहते हैं?',
       'lessonsLater': 'बाद में',
-      'lessonsChooseNextPath': 'अगला पाठ चुनें',
+      'lessonsChooseNextPath': 'अगला पथ चुनें',
       'lessonsPathAssignedSuccess': 'शिक्षण पथ सफलतापूर्वक सौंपा गया!',
       'lessonsProgressResetSuccess': 'प्रगति गाइड 1 पर रीसेट की गई।',
       'lessonsResetConfirm':

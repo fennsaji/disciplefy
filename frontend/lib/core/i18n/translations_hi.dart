@@ -291,6 +291,7 @@ const Map<String, dynamic> hindiTranslations = {
     'status_locked': 'लॉक है',
     'group_done': '{total} में से {done} पूरे',
     'xp_earned': '+{xp} XP अर्जित',
+    'group_finished': 'सभी {total} पाठ साथ में पूरे किए',
     // Mentor view: advance hint and member caught-up count.
     'advance_hint': 'सभी को पाठ {number} पर ले जाता है',
     'caught_up': '{total} में से {count} साथ चल रहे हैं',

@@ -289,6 +289,7 @@ const Map<String, dynamic> englishTranslations = {
     'status_locked': 'Locked',
     'group_done': '{done} of {total} done',
     'xp_earned': '+{xp} XP earned',
+    'group_finished': 'Finished all {total} lessons together',
     // Mentor view: advance hint and member caught-up count.
     'advance_hint': 'Moves everyone to lesson {number}',
     'caught_up': '{count} of {total} caught up',
