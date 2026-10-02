@@ -1,5 +1,6 @@
 name: disciplefy_bible_study
 description: AI-powered Bible study guide application following  methodology
+publish_to: none
 version: 1.0.8+8
 
 environment:
@@ -53,7 +54,9 @@ dependencies:
   google_fonts: ^8.2.0
   smooth_page_indicator: ^1.1.0
   share_plus: ^11.0.0
-  showcaseview: ^3.0.0
+  # Patched copy: guards measuring targets that are not laid out (see its README).
+  showcaseview:
+    path: packages/showcaseview
   url_launcher: ^6.3.1
   
   # Deep Links
