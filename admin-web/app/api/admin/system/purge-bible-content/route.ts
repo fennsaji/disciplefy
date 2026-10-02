@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
- * POST - Purge cached Bible content (daily_verses_cache + API.Bible-sourced memory_verses)
+ * POST - Purge cached Bible content (daily_verses_cache + daily-verse memory_verses text)
  */
 export async function POST(request: NextRequest) {
   try {

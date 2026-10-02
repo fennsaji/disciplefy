@@ -1,7 +1,7 @@
 name: disciplefy_bible_study
 description: AI-powered Bible study guide application following  methodology
 publish_to: none
-version: 1.0.8+8
+version: 1.1.0+9
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

@@ -14,15 +14,15 @@
 
 import { createServiceRoleFunction } from '../_shared/core/function-factory.ts'
 import { fetchBibleVerse } from '../_shared/services/bible-text-service.ts'
-import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
+import { isBibleTextLookupsEnabled } from '../_shared/services/bible-availability.ts'
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
 const BATCH_LIMIT = 200
 
 createServiceRoleFunction(async (_req, supabase) => {
-  if (!(await isBibleApiCallsEnabled())) {
-    console.log('[REFRESH-MEMORY-VERSES] bible_api_calls_enabled is OFF — skipping run')
-    return { success: true, skipped: true, reason: 'bible_api_calls_enabled is off', refreshed_count: 0, failed_count: 0 }
+  if (!(await isBibleTextLookupsEnabled())) {
+    console.log('[REFRESH-MEMORY-VERSES] bible_text_lookups_enabled is OFF — skipping run')
+    return { success: true, skipped: true, reason: 'bible_text_lookups_enabled is off', refreshed_count: 0, failed_count: 0 }
   }
 
   const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString()

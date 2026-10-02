@@ -1,6 +1,7 @@
 import { getFeatureFlag } from './feature-flag-service.ts'
 
-export const BIBLE_API_CALLS_FLAG = 'bible_api_calls_enabled'
+/** Operational switch: when off, no new Bible text lookups (cache + fallbacks only). */
+export const BIBLE_TEXT_LOOKUPS_FLAG = 'bible_text_lookups_enabled'
 export const BIBLE_CONTENT_FLAG = 'bible_content_enabled'
 
 /**
@@ -22,8 +23,8 @@ export function featureFlagEnabled(flag: { isEnabled?: boolean } | undefined | n
   return flagEnabled(flag ? { is_enabled: flag.isEnabled } : undefined)
 }
 
-export async function isBibleApiCallsEnabled(): Promise<boolean> {
-  return featureFlagEnabled(await getFeatureFlag(BIBLE_API_CALLS_FLAG))
+export async function isBibleTextLookupsEnabled(): Promise<boolean> {
+  return featureFlagEnabled(await getFeatureFlag(BIBLE_TEXT_LOOKUPS_FLAG))
 }
 
 export async function isBibleContentEnabled(): Promise<boolean> {

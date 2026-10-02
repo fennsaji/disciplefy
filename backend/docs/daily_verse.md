@@ -63,7 +63,7 @@ The `DailyVerseService` class encapsulates the main business logic for the daily
     *   **Error Fallback**: If any error occurs during fetching or generation, it falls back to `getFallbackVerse` to ensure a verse is always returned.
 -   **`generateDailyVerse(date: Date): Promise<DailyVerseData>`**:
     *   **Current Implementation (MVP)**: Uses a deterministic selection from `FALLBACK_VERSES` based on the date. This ensures the same verse is served for a given date across all users and provides high reliability without external API dependencies.
-    *   **Future Enhancement (TODO)**: Comments indicate a plan to integrate with external Bible APIs (e.g., `api.bible` or `bible-api.com`) for more dynamic verse selection.
+    *   **Verse wording**: comes from the self-hosted Bible text service (rs-backend, `BIBLE_TEXT_URL`): BSB for English, IRV for Hindi/Malayalam. The LLM only picks the reference.
 -   **`getDeterministicVerseIndex(date: Date): number`**:
     *   Calculates an index into `FALLBACK_VERSES` based on the year and day of the year. This makes the verse selection predictable and consistent.
 -   **`getCachedVerse(dateKey: string): Promise<DailyVerseData | null>`**:
@@ -102,6 +102,6 @@ The `daily-verse` function employs a robust caching strategy:
 
 ## 8. Future Enhancements (as per comments)
 
--   Integration with external Bible APIs (e.g., `api.bible` or `bible-api.com`) to provide a wider variety of verses beyond the hardcoded fallbacks. This would require managing API keys and mapping translations.
+-   None pending: verse wording is served by the self-hosted Bible text service; the `bible_text_lookups_enabled` feature flag pauses lookups (cache + fallbacks only).
 
 This function is a well-designed example of an Edge Function that combines API interaction, database caching, and robust error handling to deliver a reliable and performant service.

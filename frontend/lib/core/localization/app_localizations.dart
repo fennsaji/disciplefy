@@ -319,6 +319,7 @@ class AppLocalizations {
       'lessonsCurrentLesson': 'Current lesson',
       'lessonsAllLessons': 'All lessons',
       'lessonsGroupMovedOn': 'Group moved on',
+      'lessonsGroupIsHere': 'Group is here',
       'lessonsMemberProgress': 'Member Progress',
       'lessonsMembersCompleted': 'completed',
       'membersInvite': 'Invite',
@@ -1109,6 +1110,7 @@ class AppLocalizations {
       'lessonsCurrentLesson': 'वर्तमान पाठ',
       'lessonsAllLessons': 'सभी पाठ',
       'lessonsGroupMovedOn': 'समूह आगे बढ़ गया',
+      'lessonsGroupIsHere': 'समूह यहाँ है',
       'lessonsMemberProgress': 'सदस्य प्रगति',
       'lessonsMembersCompleted': 'पूर्ण',
       'membersInvite': 'आमंत्रित करें',
@@ -1903,6 +1905,7 @@ class AppLocalizations {
       'lessonsCurrentLesson': 'നിലവിലെ പാഠം',
       'lessonsAllLessons': 'എല്ലാ പാഠങ്ങളും',
       'lessonsGroupMovedOn': 'ഗ്രൂപ്പ് മുന്നോട്ട് പോയി',
+      'lessonsGroupIsHere': 'ഗ്രൂപ്പ് ഇവിടെയാണ്',
       'lessonsMemberProgress': 'അംഗ പുരോഗതി',
       'lessonsMembersCompleted': 'പൂർത്തിയാക്കി',
       'membersInvite': 'ക്ഷണിക്കുക',
@@ -2753,6 +2756,8 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsAllLessons']!;
   String get lessonsGroupMovedOn =>
       _localizedValues[locale.languageCode]!['lessonsGroupMovedOn']!;
+  String get lessonsGroupIsHere =>
+      _localizedValues[locale.languageCode]!['lessonsGroupIsHere']!;
   String get lessonsMemberProgress =>
       _localizedValues[locale.languageCode]!['lessonsMemberProgress']!;
   String get lessonsMembersCompleted =>

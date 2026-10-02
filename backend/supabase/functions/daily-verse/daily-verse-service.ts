@@ -1,6 +1,6 @@
 // Supabase client is now injected via DI container - no need to import createClient
 import type { LLMService } from '../_shared/services/llm-service.ts'
-import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
+import { isBibleTextLookupsEnabled } from '../_shared/services/bible-availability.ts'
 import { TtlCache, msUntilNextUtcMidnight } from '../_shared/utils/ttl-cache.ts'
 import { fetchVerseAllLanguages } from '../_shared/services/bible-text-service.ts'
 
@@ -9,8 +9,8 @@ export type VerseTextFetcher = (reference: string) => Promise<Record<'en' | 'hi'
 
 /**
  * daily_verses_cache.text_source of rows whose wording came from the current
- * Bible text source. Rows with any other value (e.g. 'bible_api', KJV wording
- * from API.Bible) are refreshed in place on read, keeping their reference.
+ * Bible text source. Rows with any other value (e.g. 'bible_api', older
+ * KJV wording) are refreshed in place on read, keeping their reference.
  */
 export const TEXT_SOURCE = 'bible_text_bsb_irv'
 
@@ -74,13 +74,6 @@ interface DailyVerseData {
   }
   date: string
   fromCache?: boolean // signals whether this came from cache (true) or was LLM-generated (false)
-}
-
-interface BibleApiResponse {
-  reference: string
-  text: string
-  translation_id?: string
-  translation_name?: string
 }
 
 export class DailyVerseService {
@@ -161,7 +154,7 @@ export class DailyVerseService {
     private readonly supabase: any,
     private readonly getLlmService: () => Promise<LLMService>,
     private readonly fetchVerseText: VerseTextFetcher = defaultVerseTextFetcher,
-    private readonly bibleApiCallsEnabled: () => Promise<boolean> = isBibleApiCallsEnabled
+    private readonly bibleTextLookupsEnabled: () => Promise<boolean> = isBibleTextLookupsEnabled
   ) {
     // Supabase client and LLM service injected via DI container
   }
@@ -212,8 +205,8 @@ export class DailyVerseService {
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
 
       // Operational kill-switch: skip Bible text lookups, use deterministic fallback.
-      if (!(await this.bibleApiCallsEnabled())) {
-        console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no Bible text lookup')
+      if (!(await this.bibleTextLookupsEnabled())) {
+        console.warn('[DailyVerse] bible_text_lookups_enabled is OFF — using fallback verse, no Bible text lookup')
         const fallback = this.getFallbackVerse(targetDate)
         // Keep the cached row's UUID on the verse: a verse handed to the client
         // without an id gets a synthetic `temp-<date>` id there, and every
@@ -232,8 +225,8 @@ export class DailyVerseService {
 
       // Try to cache the new verse and get the UUID
       try {
-        const fromBibleApi = !this.EMERGENCY_FALLBACK_VERSES.some(v => v.translations.esv === newVerse.translations.esv)
-        const uuid = await this.cacheVerse(dateKey, newVerse, fromBibleApi ? TEXT_SOURCE : null)
+        const fromBibleText = !this.EMERGENCY_FALLBACK_VERSES.some(v => v.translations.esv === newVerse.translations.esv)
+        const uuid = await this.cacheVerse(dateKey, newVerse, fromBibleText ? TEXT_SOURCE : null)
         // Add the UUID to the verse data
         newVerse.id = uuid
         console.log(`Daily verse cached successfully for date: ${dateKey}, UUID: ${uuid}`)
@@ -486,7 +479,7 @@ export class DailyVerseService {
    */
   private async refreshVerseText(dateKey: string, verse: DailyVerseData): Promise<DailyVerseData | null> {
     try {
-      if (!(await this.bibleApiCallsEnabled())) return null
+      if (!(await this.bibleTextLookupsEnabled())) return null
       const texts = await this.fetchVerseText(verse.reference)
       const translations = {
         esv: tidyVerseText(texts.en?.text ?? ''),
@@ -596,16 +589,4 @@ export class DailyVerseService {
     expirationDate.setDate(expirationDate.getDate() + 30)
     return expirationDate.toISOString()
   }
-
-  /**
-   * Future enhancement: Fetch verse from external Bible API
-   * Currently commented out to avoid external dependencies
-   */
-  /*
-  private async fetchFromBibleApi(date: Date): Promise<DailyVerseData> {
-    // Implementation for api.bible or bible-api.com
-    // Would require API keys and translation mapping
-    throw new Error('External API integration not yet implemented')
-  }
-  */
 }

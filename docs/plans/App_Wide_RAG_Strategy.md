@@ -43,7 +43,7 @@ Two facts reframe the whole question:
 | Fellowship posts/comments | ❌ | User content | Weak/future | Thread summarization someday |
 | Learning Paths / Continue Learning | ❌ | Curated DB | N/A | Recommender, not RAG |
 | Recommended Topics / Suggested Verses | ❌ | Curated DB | N/A | Pure serving |
-| Fetch Verse | ❌ | API.Bible direct | N/A | Already retrieval |
+| Fetch Verse | ❌ | Self-hosted Bible text | N/A | Already retrieval |
 
 **Corpora that exist to retrieve against:** `study_guides`, `recommended_topics` (+ translations), `suggested_verses` (+ translations), `learning_paths`, `conversation_messages`, `memory_verses`, fellowship content. **Missing:** any commentary/confession corpus, and full Bible verse text at rest.
 

@@ -193,9 +193,6 @@ jobs:
         ANTHROPIC_ADMIN_KEY=${{ secrets.ANTHROPIC_ADMIN_KEY }}
         ANTHROPIC_WORKSPACE_ID=${{ secrets.ANTHROPIC_WORKSPACE_ID }}
 
-        # Bible API Configuration (${{ env.DEPLOY_ENV }})
-        BIBLE_API=${{ secrets.BIBLE_API }}
-
         # Firebase/FCM Configuration (${{ env.DEPLOY_ENV }})
         FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
         FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}
