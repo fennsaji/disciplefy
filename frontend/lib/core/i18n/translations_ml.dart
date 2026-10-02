@@ -297,6 +297,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'status_locked': 'ലോക്ക് ചെയ്തു',
     'group_done': '{total}-ൽ {done} പൂർത്തിയായി',
     'xp_earned': '+{xp} XP നേടി',
+    'group_finished': 'എല്ലാ {total} പാഠങ്ങളും ഒരുമിച്ച് പൂർത്തിയാക്കി',
     // Mentor view: advance hint and member caught-up count.
     'advance_hint': 'എല്ലാവരെയും പാഠം {number}-ലേക്ക് നീക്കുന്നു',
     'caught_up': '{total}-ൽ {count} പേർ ഒപ്പമുണ്ട്',

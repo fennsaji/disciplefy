@@ -116,6 +116,9 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
   // Remove the newly assigned path from completed set (it's being restarted)
   newCompleted.delete(body.learning_path_id)
 
+  // A newly assigned path always starts at its first lesson — including one
+  // the group studied before: the index only ever describes the current path
+  // (a DB trigger also enforces this for every other writer).
   const { data: study, error } = await db
     .from('fellowship_study')
     .upsert({
@@ -141,6 +144,14 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
     completed: false,
   })
 
+  // The new path's length, so the app can show "Lesson 1 of N" straight away
+  // instead of the previous path's count.
+  const { count: totalGuides } = await db
+    .from('learning_path_topics')
+    .select('id', { count: 'exact', head: true })
+    .eq('learning_path_id', body.learning_path_id)
+    .eq('is_active', true)
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -149,6 +160,7 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
         learning_path_id: study.learning_path_id,
         learning_path_title: learningPath.title,
         current_guide_index: study.current_guide_index,
+        total_guides: totalGuides ?? null,
         started_at: study.started_at
       }
     }),

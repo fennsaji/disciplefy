@@ -3333,6 +3333,10 @@ class TranslationKeys {
   /// "+{xp} XP earned".
   static const communityLessonsXpEarned = 'community_lessons.xp_earned';
 
+  /// "Finished all {total} lessons together" (group finished its path).
+  static const communityLessonsGroupFinished =
+      'community_lessons.group_finished';
+
   /// "Moves everyone to lesson {number}" (mentor advance hint).
   static const communityLessonsAdvanceHint = 'community_lessons.advance_hint';
 

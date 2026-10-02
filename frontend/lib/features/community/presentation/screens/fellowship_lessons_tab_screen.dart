@@ -160,6 +160,12 @@ class _FellowshipLessonsTabScreenState
           if (state.setStatus == FellowshipStudySetStatus.success) {
             showAppSnackBar(context, l10n.lessonsPathAssignedSuccess,
                 tone: AppSnackTone.success);
+            // Member progress is counted on the group's path: reload it for
+            // the new one.
+            context.read<FellowshipMembersBloc>().add(
+                  FellowshipMembersLoadRequested(
+                      fellowshipId: widget.fellowshipId),
+                );
           } else if (state.setStatus == FellowshipStudySetStatus.failure) {
             showAppSnackBar(
                 context,
@@ -592,6 +598,20 @@ class _StudyContent extends StatelessWidget {
                   currentGuideIndex,
                   detail.allowNonSequentialAccess,
                 );
+          // The lesson the group is on (none once it has finished the path).
+          final LearningPathTopic? groupTopic =
+              (detail == null || state.studyCompleted)
+                  ? null
+                  : detail.topics
+                      .where((t) => t.position == currentGuideIndex)
+                      .firstOrNull;
+          // A member who has finished every lesson alone still sees the
+          // group's lesson on the card — the path is not "completed" for the
+          // group until it finishes it together.
+          final cardNow = now ??
+              (groupTopic == null
+                  ? null
+                  : _NowTopic(groupTopic.position, groupTopic));
 
           // Clear the floating tab dock (its height is in the bottom padding).
           final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -604,13 +624,15 @@ class _StudyContent extends StatelessWidget {
                   child: _LessonsSummaryCard(
                     state: state,
                     detail: detail,
-                    now: now,
+                    now: cardNow,
+                    groupTopic: groupTopic,
                     isMentor: isMentor,
                     isAdvancing: isAdvancing,
                     onAdvanceTap: onAdvanceTap,
-                    onOpenNow: now == null
+                    onOpenNow: cardNow == null
                         ? null
-                        : () => _openLesson(context, now.topic, lessonContext),
+                        : () =>
+                            _openLesson(context, cardNow.topic, lessonContext),
                   ),
                 ),
               ),
@@ -817,6 +839,9 @@ class _LessonsSummaryCard extends StatelessWidget {
   final FellowshipStudyState state;
   final LearningPathDetail? detail;
   final _NowTopic? now;
+
+  /// The lesson the group is on; null once the group has finished.
+  final LearningPathTopic? groupTopic;
   final bool isMentor;
   final bool isAdvancing;
   final VoidCallback onAdvanceTap;
@@ -826,6 +851,7 @@ class _LessonsSummaryCard extends StatelessWidget {
     required this.state,
     required this.detail,
     required this.now,
+    required this.groupTopic,
     required this.isMentor,
     required this.isAdvancing,
     required this.onAdvanceTap,
@@ -837,10 +863,14 @@ class _LessonsSummaryCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
 
+    // The loaded lessons are authoritative when they are the group's path;
+    // the study's stored count is the fallback while they load.
     int? total = state.totalGuides;
-    if ((total == null || total <= 0) &&
-        detail != null &&
-        detail!.topics.isNotEmpty) {
+    if (detail != null &&
+        detail!.topics.isNotEmpty &&
+        (total == null ||
+            total <= 0 ||
+            detail!.id == state.currentLearningPathId)) {
       total = detail!.topics.length;
     }
     final hasTotal = total != null && total > 0;
@@ -869,8 +899,21 @@ class _LessonsSummaryCard extends StatelessWidget {
     final groupProgress =
         context.tr(TranslationKeys.communityFellowshipGroupProgress);
     final isLastGuide = state.currentGuideIndex != null &&
-        state.totalGuides != null &&
-        state.currentGuideIndex! >= state.totalGuides! - 1;
+        hasTotal &&
+        state.currentGuideIndex! >= total - 1;
+
+    // The group's own lesson, next to its progress.
+    final String? groupLesson = !hasTotal
+        ? null
+        : state.studyCompleted
+            ? context.tr(
+                TranslationKeys.communityLessonsGroupFinished, {'total': total})
+            : groupTopic == null
+                ? null
+                : '${context.tr(TranslationKeys.communitySharedLessonOf, {
+                        'number': groupTopic!.position + 1,
+                        'total': total,
+                      })} · ${groupTopic!.title}';
 
     final body = Padding(
       padding: const EdgeInsets.all(16),
@@ -972,6 +1015,36 @@ class _LessonsSummaryCard extends StatelessWidget {
               ],
             ],
           ),
+          if (groupLesson != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    state.studyCompleted
+                        ? Icons.check_circle_rounded
+                        : Icons.groups_rounded,
+                    size: 16,
+                    color: palette.accentIcon,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    groupLesson,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           // Advance guide button (mentor only, study not complete).
           if (isMentor && !state.studyCompleted) ...[
             const SizedBox(height: 14),
