@@ -86,7 +86,7 @@ _shared/
 │   ├── security-validator.ts     # 4-layer input validation (format, sanitize, injection, rate limit)
 │   ├── rate-limiter.ts           # Anonymous: 3/hr, Authenticated: 30/hr
 │   └── error-handler.ts         # Standardized error codes and responses
-├── services/                 # 20+ services (llm, auth, analytics, bible-api, fcm, cost-tracking)
+├── services/                 # 20+ services (llm, auth, analytics, bible-text, fcm, cost-tracking)
 ├── prompts/                  # LLM prompt templates
 ├── repositories/             # Data access layer
 └── types/                    # TypeScript type definitions (auto-generated DB types)

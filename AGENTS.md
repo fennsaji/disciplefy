@@ -81,7 +81,7 @@ npm run build
 
 **Admin data at scale** — `auth.admin.listUsers()` is capped at 50/page (use `lib/supabase/list-all-users.ts`); PostgREST caps unbounded selects at 1000 rows (use `lib/supabase/fetch-all-rows.ts` for aggregations). `admin-web/middleware.ts` refreshes sessions — without it, rotated tokens log admins out.
 
-**API.Bible compliance** — free non-commercial tier while commercially launched: copyrighted verse text must not reach the LLM or TTS. Use Public Domain text for AI/RAG/TTS.
+**Bible text licensing** — Bible text is self-hosted (rs-backend). Copyrighted verse text must not reach the LLM or TTS; use Public Domain text (BSB) for AI/RAG/TTS.
 
 ## Before you finish
 

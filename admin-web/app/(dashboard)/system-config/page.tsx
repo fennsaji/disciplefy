@@ -500,14 +500,14 @@ export default function SystemConfigPage() {
                 🗑️ Purge Cached Bible Content
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Deletes all cached daily verses and blanks API.Bible-sourced memory-verse text.
-                Use after disabling &quot;Bible API — content&quot;. Irreversible (content re-fetches on re-enable).
+                Deletes all cached daily verses and blanks daily-verse memory-verse text.
+                Use after disabling &quot;Bible text — content&quot;. Irreversible (text re-fetches on re-enable).
               </p>
             </div>
           </div>
           <button
             onClick={async () => {
-              if (!confirm('Permanently delete cached API.Bible content? This cannot be undone.')) return
+              if (!confirm('Permanently delete cached Bible text? This cannot be undone.')) return
               try {
                 const res = await fetch('/api/admin/system/purge-bible-content', {
                   method: 'POST',

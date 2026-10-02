@@ -15,7 +15,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { isBibleContentEnabled, isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
+import { isBibleContentEnabled, isBibleTextLookupsEnabled } from '../_shared/services/bible-availability.ts'
 import { parseCrossChapterRange, parseVerseNumbers } from './passage.ts'
 import { lookupVerses, VerseLookupError, type VerseLookupData, type VerseLookupRequest } from './verse-lookup.ts'
 
@@ -48,8 +48,8 @@ async function handleFetchVerse(
   if (!(await isBibleContentEnabled())) {
     throw new AppError('BIBLE_CONTENT_DISABLED', 'Bible content is currently unavailable.', 503)
   }
-  if (!(await isBibleApiCallsEnabled())) {
-    throw new AppError('BIBLE_API_DISABLED', 'Bible lookups are temporarily unavailable.', 503)
+  if (!(await isBibleTextLookupsEnabled())) {
+    throw new AppError('BIBLE_TEXT_LOOKUPS_DISABLED', 'Bible lookups are temporarily unavailable.', 503)
   }
 
   // Parse and validate request body

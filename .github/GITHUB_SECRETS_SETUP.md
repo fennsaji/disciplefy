@@ -82,14 +82,6 @@ Navigate to your GitHub repository → Settings → Secrets and Variables → Ac
 | `OPENAI_API_KEY_DEV` | OpenAI API key (development) | Create separate key for dev/testing | 🔶 Optional |
 | `ANTHROPIC_API_KEY_DEV` | Anthropic Claude API key (development) | Create separate key for dev/testing | 🔶 Optional |
 
-### 📖 Bible API Configuration
-
-| Secret Name | Description | How to Get | Required |
-|-------------|-------------|------------|----------|
-| `BIBLE_API` | API.Bible API key | [API.Bible Signup](https://scripture.api.bible/signup) → Create account → Copy API key | ✅ Yes |
-
-> **Note**: The same API key can be used for both production and development environments. API.Bible offers 5,000 free queries per day for non-commercial use.
-
 ### 🔐 Authentication Configuration
 
 #### Production Environment
@@ -346,9 +338,6 @@ gh secret set FIREBASE_CLIENT_EMAIL -b "firebase-adminsdk-xxx@xxx.iam.gserviceac
 gh secret set OPENAI_API_KEY -b "sk-proj-xxx"
 gh secret set ANTHROPIC_API_KEY -b "sk-ant-xxx"
 gh secret set LLM_PROVIDER -b "openai"
-
-# Bible API
-gh secret set BIBLE_API -b "your-bible-api-key"
 
 # OAuth Production
 gh secret set GOOGLE_OAUTH_CLIENT_ID -b "your-client-id"
@@ -621,7 +610,6 @@ Before asking for help, ensure:
 - [ ] `FIREBASE_PRIVATE_KEY`
 - [ ] `FIREBASE_CLIENT_EMAIL`
 - [ ] `OPENAI_API_KEY`
-- [ ] `BIBLE_API`
 - [ ] `GOOGLE_OAUTH_CLIENT_ID`
 - [ ] `GOOGLE_OAUTH_CLIENT_SECRET`
 - [ ] `JWT_SECRET`
