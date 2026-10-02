@@ -195,6 +195,8 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
   const completedPathsByFellowship = new Map<string, string[]>()
   // The study in progress (completed_at null), per fellowship.
   const currentStudyByFellowship = new Map<string, any>()
+  // The path the group has just finished, while no new one is assigned.
+  const finishedStudyByFellowship = new Map<string, any>()
   // The row is reused as the group moves from path to path: the history lives
   // in completed_path_ids, and completed_at only ever describes the path
   // currently assigned, so both are read.
@@ -208,6 +210,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     if (row.completed_at && row.learning_path_id) done.add(row.learning_path_id)
     if (done.size > 0) completedPathsByFellowship.set(row.fellowship_id, [...done])
     if (row.completed_at === null) currentStudyByFellowship.set(row.fellowship_id, row)
+    else if (row.learning_path_id) finishedStudyByFellowship.set(row.fellowship_id, row)
   }
 
   const fellowships = await Promise.all(
@@ -217,6 +220,14 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
 
       const memberCount = memberCounts.get(fellowshipId) ?? 0
       const study = currentStudyByFellowship.get(fellowshipId) ?? null
+      const finished = finishedStudyByFellowship.get(fellowshipId) ?? null
+      const studyJson = (row: any) => ({
+        learning_path_id: row.learning_path_id,
+        learning_path_title: (row.learning_paths as any)?.title ?? null,
+        current_guide_index: row.current_guide_index,
+        started_at: row.started_at,
+        completed_at: row.completed_at,
+      })
 
       return {
         id: fellowship.id,
@@ -248,15 +259,10 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
         my_notifications_muted: (membership as any).notifications_muted ?? false,
         completed_path_ids: completedPathsByFellowship.get(fellowshipId) ?? [],
-        current_study: study
-          ? {
-              learning_path_id: study.learning_path_id,
-              learning_path_title: (study.learning_paths as any)?.title ?? null,
-              current_guide_index: study.current_guide_index,
-              started_at: study.started_at,
-              completed_at: study.completed_at
-            }
-          : null
+        // In progress only: older apps treat any current_study as active.
+        current_study: study ? studyJson(study) : null,
+        // Finished and not yet replaced by a new path (newer apps).
+        finished_study: finished ? studyJson(finished) : null,
       }
     })
   )
@@ -264,7 +270,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
   // Batch-fetch translations + topic counts for active studies
   const pathIds = [...new Set(
     fellowships
-      .map(f => f.current_study?.learning_path_id)
+      .flatMap(f => [f.current_study?.learning_path_id, f.finished_study?.learning_path_id])
       .filter((id): id is string => !!id)
   )]
 
@@ -293,13 +299,13 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     }
 
     for (const f of fellowships) {
-      if (!f.current_study) continue
-      const pathId = f.current_study.learning_path_id
-      if (!pathId) continue
-      const cs = f.current_study as any
-      const translated = translationMap.get(pathId)
-      if (translated) cs.learning_path_title = translated
-      cs.total_guides = topicsCountMap.get(pathId) ?? null
+      for (const cs of [f.current_study, f.finished_study] as any[]) {
+        const pathId = cs?.learning_path_id
+        if (!pathId) continue
+        const translated = translationMap.get(pathId)
+        if (translated) cs.learning_path_title = translated
+        cs.total_guides = topicsCountMap.get(pathId) ?? null
+      }
     }
   }
 
@@ -339,11 +345,14 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
 
   if (countError) console.error('[fellowship/get] Count query error:', countError)
 
+  // The group's study, finished or not (one row per fellowship). A finished
+  // one goes out as finished_study so the app can show "finished" rather
+  // than "no study"; active_study stays in-progress only, since older apps
+  // treat any active_study as a study they can advance.
   const { data: study } = await db
     .from('fellowship_study')
-    .select(`current_guide_index, started_at, learning_paths (id, title)`)
+    .select(`current_guide_index, started_at, completed_at, learning_paths (id, title)`)
     .eq('fellowship_id', fellowshipId)
-    .is('completed_at', null)
     .maybeSingle()
 
   let learningPathTitle = (study?.learning_paths as any)?.title ?? null
@@ -414,11 +423,19 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
         // someone opened a shared link, and walked them into a screen that
         // could only fail.
         is_public: fellowship.is_public ?? false,
-        active_study: study ? {
+        active_study: study && !study.completed_at ? {
           learning_path_id: learningPathId,
           learning_path_title: learningPathTitle,
           current_guide_index: study.current_guide_index,
           started_at: study.started_at,
+          total_guides: totalGuides,
+        } : null,
+        finished_study: study?.completed_at && learningPathId ? {
+          learning_path_id: learningPathId,
+          learning_path_title: learningPathTitle,
+          current_guide_index: study.current_guide_index,
+          started_at: study.started_at,
+          completed_at: study.completed_at,
           total_guides: totalGuides,
         } : null,
         caller_is_member: isMember,

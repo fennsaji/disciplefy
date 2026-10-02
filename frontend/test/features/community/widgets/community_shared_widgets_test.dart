@@ -295,10 +295,33 @@ void main() {
       await pump(tester, const FellowshipCurrentStudyRow(study: study));
 
       expect(find.text('The Gospel of Matthew · Lesson 3'), findsOneWidget);
-      expect(find.text('3 of 29'), findsOneWidget);
+      // Lessons done: the ones before the group's current lesson.
+      expect(find.text('2 of 29 done'), findsOneWidget);
       final bar = tester.widget<LinearProgressIndicator>(
           find.byType(LinearProgressIndicator));
-      expect(bar.value, closeTo(3 / 29, 1e-9));
+      expect(bar.value, closeTo(2 / 29, 1e-9));
+    });
+
+    testWidgets('a finished study names the path and fills the bar',
+        (tester) async {
+      await pump(
+        tester,
+        const FellowshipCurrentStudyRow(
+          study: CurrentStudyEntity(
+            learningPathId: 'p',
+            learningPathTitle: 'The Gospel of Matthew',
+            currentGuideIndex: 28,
+            startedAt: '2026-01-01',
+            completedAt: '2026-02-01',
+            totalGuides: 29,
+          ),
+        ),
+      );
+      expect(find.text('The Gospel of Matthew'), findsOneWidget);
+      expect(find.text('29 of 29 done'), findsOneWidget);
+      final bar = tester.widget<LinearProgressIndicator>(
+          find.byType(LinearProgressIndicator));
+      expect(bar.value, 1.0);
     });
 
     testWidgets('current study without a total hides count and bar',

@@ -687,7 +687,7 @@ void main() {
       expect(find.text('Message mentor'), findsOneWidget);
       expect(find.text('STUDYING TOGETHER'), findsOneWidget);
       expect(find.text('New Believer Essentials · Lesson 1'), findsOneWidget);
-      expect(find.text('Group progress · 1 of 8'), findsOneWidget);
+      expect(find.text('Group progress · 0 of 8 done'), findsOneWidget);
       expect(find.text('Next: Sunday Bible Study'), findsOneWidget);
       expect(find.text('Recent Activity'), findsOneWidget);
       expect(find.text('Start study'), findsOneWidget);

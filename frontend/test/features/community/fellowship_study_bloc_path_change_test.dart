@@ -92,4 +92,53 @@ void main() {
       expect(bloc.state.totalGuides, isNull);
     },
   );
+
+  blocTest<FellowshipStudyBloc, FellowshipStudyState>(
+    'a finished path is restored as finished, not as no study',
+    build: () => FellowshipStudyBloc(repository: repository),
+    seed: () => const FellowshipStudyState(fellowshipId: 'f1'),
+    setUp: () => when(() => repository.getFellowship(any(), any()))
+        .thenAnswer((_) async => const Right({
+              'active_study': null,
+              'finished_study': {
+                'learning_path_id': 'rooted',
+                'learning_path_title': 'Rooted in Christ',
+                'current_guide_index': 4,
+                'completed_at': '2026-10-02T05:00:00Z',
+                'total_guides': 5,
+              },
+            })),
+    act: (bloc) => bloc.add(const FellowshipStudyRefreshRequested()),
+    verify: (bloc) {
+      final s = bloc.state;
+      expect(s.currentLearningPathId, 'rooted');
+      expect(s.totalGuides, 5);
+      expect(s.studyCompleted, isTrue);
+    },
+  );
+
+  blocTest<FellowshipStudyBloc, FellowshipStudyState>(
+    'an active study clears an earlier finished state',
+    build: () => FellowshipStudyBloc(repository: repository),
+    seed: () => onOldPath.copyWith(studyCompleted: true),
+    act: (bloc) => bloc.add(const FellowshipStudyRefreshRequested()),
+    verify: (bloc) {
+      expect(bloc.state.currentLearningPathId, 'rooted');
+      expect(bloc.state.studyCompleted, isFalse);
+    },
+  );
+
+  blocTest<FellowshipStudyBloc, FellowshipStudyState>(
+    'initial state from a cached finished study is finished',
+    build: () => FellowshipStudyBloc(repository: repository),
+    act: (bloc) => bloc.add(const FellowshipStudyInitialized(
+      fellowshipId: 'f1',
+      isMentor: true,
+      currentLearningPathId: 'rooted',
+      currentGuideIndex: 4,
+      currentTotalGuides: 5,
+      studyCompleted: true,
+    )),
+    verify: (bloc) => expect(bloc.state.studyCompleted, isTrue),
+  );
 }

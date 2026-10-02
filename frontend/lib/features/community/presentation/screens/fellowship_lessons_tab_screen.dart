@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_study/fellowship_study_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_study/fellowship_study_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_guide_detail_screen.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/group_study_progress.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_confirm_dialog.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_text_field.dart';
@@ -646,6 +647,7 @@ class _StudyContent extends StatelessWidget {
                       isLoading:
                           state.setStatus == FellowshipStudySetStatus.loading,
                       hasStudy: true,
+                      finished: state.studyCompleted,
                       onTap: onPathPickerTap,
                     ),
                   ),
@@ -876,9 +878,11 @@ class _LessonsSummaryCard extends StatelessWidget {
     final hasTotal = total != null && total > 0;
     final guideIndex = state.currentGuideIndex ?? 0;
     // Lessons the group has finished: everything before its current one.
-    final groupDone = state.studyCompleted
-        ? (total ?? 0)
-        : (hasTotal ? guideIndex.clamp(0, total) : guideIndex);
+    final progress = GroupStudyProgress.of(
+      currentGuideIndex: guideIndex,
+      totalGuides: total,
+      completed: state.studyCompleted,
+    );
 
     // The lesson this member is on, or the group's position while the
     // lessons are still loading.
@@ -904,13 +908,13 @@ class _LessonsSummaryCard extends StatelessWidget {
         hasTotal &&
         state.currentGuideIndex! >= total - 1;
 
-    // The group's own lesson, next to its progress.
+    // The group's own lesson, next to its progress — only when it differs
+    // from the lesson the header already shows (a member ahead of the group).
     final String? groupLesson = !hasTotal
         ? null
         : state.studyCompleted
-            ? context.tr(
-                TranslationKeys.communityLessonsGroupFinished, {'total': total})
-            : groupTopic == null
+            ? progress.finishedLabel(context)
+            : groupTopic == null || groupTopic!.position == now?.position
                 ? null
                 : '${context.tr(TranslationKeys.communitySharedLessonOf, {
                         'number': groupTopic!.position + 1,
@@ -977,11 +981,9 @@ class _LessonsSummaryCard extends StatelessWidget {
               ],
             ),
           ],
-          if (hasTotal) ...[
+          if (progress.fraction != null) ...[
             const SizedBox(height: 10),
-            _GoldProgressBar(
-              value: (groupDone / total).clamp(0.0, 1.0).toDouble(),
-            ),
+            _GoldProgressBar(value: progress.fraction!),
           ],
           const SizedBox(height: 10),
           Row(
@@ -990,11 +992,8 @@ class _LessonsSummaryCard extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: Text(
-                  hasTotal
-                      ? '$groupProgress · ${context.tr(TranslationKeys.communityLessonsGroupDone, {
-                              'done': groupDone,
-                              'total': total,
-                            })}'
+                  progress.hasTotal
+                      ? '$groupProgress · ${progress.doneLabel(context)}'
                       : groupProgress,
                   style: AppFonts.inter(fontSize: 13, color: palette.muted),
                 ),
@@ -1761,11 +1760,15 @@ class _AdvanceGuideButton extends StatelessWidget {
 class _AssignPathButton extends StatelessWidget {
   final bool isLoading;
   final bool hasStudy;
+
+  /// The group has finished its path: the button picks the next one.
+  final bool finished;
   final VoidCallback onTap;
 
   const _AssignPathButton({
     required this.isLoading,
     required this.hasStudy,
+    this.finished = false,
     required this.onTap,
   });
 
@@ -1784,7 +1787,8 @@ class _AssignPathButton extends StatelessWidget {
     }
 
     final palette = ReaderPalette.of(context);
-    final label = l10n.lessonsChangePath;
+    final label =
+        finished ? l10n.lessonsChooseNextPath : l10n.lessonsChangePath;
     final border = palette.isDark
         ? Colors.white.withValues(alpha: 0.24)
         : palette.hairline;

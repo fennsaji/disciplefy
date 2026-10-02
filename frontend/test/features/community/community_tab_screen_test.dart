@@ -269,9 +269,9 @@ void main() {
     expect(find.text('Mentor: Discipler · 3 members'), findsOneWidget);
     expect(find.text('Mentor: Fenn (you) · 1 member'), findsOneWidget);
     expect(find.text('New Believer Essentials · Lesson 1'), findsOneWidget);
-    expect(find.text('1 of 8'), findsOneWidget);
+    expect(find.text('0 of 8 done'), findsOneWidget);
     expect(find.text('The Gospel of Matthew · Lesson 3'), findsOneWidget);
-    expect(find.text('3 of 29'), findsOneWidget);
+    expect(find.text('2 of 29 done'), findsOneWidget);
     expect(find.text('Official'), findsOneWidget);
     expect(find.byType(DisciplerAvatar), findsOneWidget);
     // The role pill ("Member"/"Mentor") is gone in the redesign.
