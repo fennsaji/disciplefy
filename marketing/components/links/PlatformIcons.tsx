@@ -1,13 +1,7 @@
 // marketing/components/links/PlatformIcons.tsx
-// Non-social icons used by the /links page.
+// Store, web and mail icons used by the /links page.
 
 type IconProps = { className?: string };
-
-export const AndroidIcon = ({ className = "w-5 h-5" }: IconProps) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M17.6 9.48l1.84-3.18a.4.4 0 00-.7-.4l-1.86 3.22a11.5 11.5 0 00-9.76 0L5.26 5.9a.4.4 0 10-.7.4L6.4 9.48A10.8 10.8 0 001 18h22a10.8 10.8 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z" />
-  </svg>
-);
 
 export const AppleIcon = ({ className = "w-5 h-5" }: IconProps) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -26,5 +20,11 @@ export const MailIcon = ({ className = "w-5 h-5" }: IconProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
     <path d="M3 6.5l9 6.5 9-6.5" />
+  </svg>
+);
+
+export const GooglePlayIcon = ({ className = "w-5 h-5" }: IconProps) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M3.18 23.76c.37.2.8.19 1.17-.03L16.83 12 12.5 7.67 3.18 23.76zm-1.62-2.1c-.12-.22-.18-.47-.18-.73V3.07c0-.26.06-.51.18-.73l9.5 9.66-9.5 9.66zm20.28-9.19c.41.22.66.61.66 1.02 0 .41-.25.8-.66 1.02l-2.7 1.54-3.45-3.51 3.45-3.51 2.7 1.44zM4.35.27l11.48 6.57L12.5 10.17 3.35.24c.37-.17.79-.16 1-.03z" />
   </svg>
 );

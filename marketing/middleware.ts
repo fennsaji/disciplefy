@@ -26,11 +26,11 @@ export default function middleware(req: NextRequest) {
   // landing pages live. Done before the intl middleware so a locale prefix is
   // never inserted into a link people have already shared.
   if (host.startsWith("go.")) {
-    // /download goes straight to the visitor's store (or the web app on
-    // desktop). Link-preview crawlers still get the page so shares keep their
-    // preview card.
+    // /download, and the bare host root, go straight to the visitor's store
+    // (or the web app on desktop). Link-preview crawlers get the download
+    // page instead so shares keep their preview card.
     const path = req.nextUrl.pathname.replace(/\/+$/, "");
-    if (path === "/download") {
+    if (path === "/download" || path === "") {
       const target = downloadRedirectUrl(req.headers.get("user-agent") ?? "");
       if (target) {
         const res = NextResponse.redirect(target, 302);
@@ -38,6 +38,7 @@ export default function middleware(req: NextRequest) {
         res.headers.set("Vary", "User-Agent");
         return res;
       }
+      return NextResponse.rewrite(new URL("/go/download", req.url));
     }
     return NextResponse.rewrite(new URL(`/go${req.nextUrl.pathname}`, req.url));
   }
