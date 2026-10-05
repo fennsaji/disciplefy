@@ -32,7 +32,7 @@ import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lea
 
 /// Regex matching a mention token like `@Discipler` or `@Jane.Doe` in post
 /// or comment content.
-final RegExp _mentionRegex = RegExp(r'(@[A-Za-z][\w.]*)');
+final RegExp _mentionRegex = RegExp(r'(@[A-Za-z]\w*(?:\.\w+)*)');
 
 /// Splits [text] into [TextSpan]s, styling `@mention` tokens with
 /// [mentionStyle] and everything else with [baseStyle].
@@ -111,7 +111,9 @@ Future<void> editDisciplerPost(
 ///
 /// Daily study posts (`postType == 'daily'`) render as a [DailyPostCard].
 ///
-/// Use [maxContentLines] to truncate content for preview contexts.
+/// Feeds pass [feedMaxContentLines] as [maxContentLines]: the whole post
+/// shows, and only an unusually long one is clamped — with an ellipsis and a
+/// "Read more" link that opens it. The post page passes nothing (no clamp).
 class FellowshipPostCard extends StatelessWidget {
   final FellowshipPostEntity post;
   final String fellowshipId;
@@ -122,8 +124,15 @@ class FellowshipPostCard extends StatelessWidget {
   /// Set to `false` for the Recent Activity preview.
   final bool interactive;
 
-  /// Truncates the content text. `null` = no limit.
+  /// Clamps the content text, adding a "Read more" link (which calls
+  /// [onPostTap]) when it overflows. `null` = no limit. Ignored when
+  /// [onPostTap] is null, since nothing could then show the rest.
   final int? maxContentLines;
+
+  /// Clamp used by feed cards. Generous on purpose: members' posts are
+  /// short reflections and should read in full; this only stops a wall of
+  /// text from swallowing the feed.
+  static const int feedMaxContentLines = 12;
 
   /// Called when the comment button is tapped (interactive mode only).
   /// If null, comment button is hidden.
@@ -302,27 +311,10 @@ class FellowshipPostCard extends StatelessWidget {
             if (post.content.isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(right: interactive ? 12 : 0),
-                child: Text.rich(
-                  TextSpan(
-                    children: mentionSpans(
-                      post.content,
-                      AppFonts.inter(
-                        fontSize: 15.5,
-                        color: palette.text,
-                        height: 1.55,
-                      ),
-                      AppFonts.inter(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w600,
-                        color: palette.accentIcon,
-                        height: 1.55,
-                      ),
-                    ),
-                  ),
+                child: FellowshipPostContent(
+                  content: post.content,
                   maxLines: maxContentLines,
-                  overflow: maxContentLines != null
-                      ? TextOverflow.ellipsis
-                      : TextOverflow.visible,
+                  onReadMore: onPostTap,
                 ),
               ),
 
@@ -377,6 +369,93 @@ class FellowshipPostCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Post body
+// ---------------------------------------------------------------------------
+
+/// A member post's text: every paragraph and line break as written, with
+/// `@mentions` in the accent colour.
+///
+/// With [maxLines] and [onReadMore] both set, text that would run past
+/// [maxLines] ends in an ellipsis followed by a visible "Read more" link
+/// that calls [onReadMore] — so a clamped post never looks complete.
+class FellowshipPostContent extends StatelessWidget {
+  final String content;
+  final int? maxLines;
+  final VoidCallback? onReadMore;
+
+  const FellowshipPostContent({
+    required this.content,
+    this.maxLines,
+    this.onReadMore,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final span = TextSpan(
+      children: mentionSpans(
+        content,
+        AppFonts.inter(fontSize: 15.5, color: palette.text, height: 1.55),
+        AppFonts.inter(
+          fontSize: 15.5,
+          fontWeight: FontWeight.w600,
+          color: palette.accentIcon,
+          height: 1.55,
+        ),
+      ),
+    );
+    final limit = maxLines;
+    if (limit == null || onReadMore == null) {
+      return Text.rich(span, key: const Key('post_content'));
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final painter = TextPainter(
+        text: span,
+        maxLines: limit,
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        locale: Localizations.maybeLocaleOf(context),
+      )..layout(maxWidth: constraints.maxWidth);
+      final overflows = painter.didExceedMaxLines;
+      painter.dispose();
+      if (!overflows) return Text.rich(span, key: const Key('post_content'));
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            span,
+            key: const Key('post_content'),
+            maxLines: limit,
+            overflow: TextOverflow.ellipsis,
+          ),
+          TextButton(
+            key: const Key('post_read_more'),
+            onPressed: onReadMore,
+            style: TextButton.styleFrom(
+              foregroundColor: palette.accentIcon,
+              minimumSize: const Size(48, 48),
+              padding: EdgeInsets.zero,
+              alignment: Alignment.centerLeft,
+            ),
+            child: Text(
+              AppLocalizations.of(context)!.feedReadMore,
+              style: AppFonts.inter(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+                color: palette.accentIcon,
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 

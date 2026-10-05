@@ -274,6 +274,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       isMentor: state.isMentor,
                       currentUserId: state.currentUserId,
                       isAdmin: isAdmin,
+                      maxContentLines: FellowshipPostCard.feedMaxContentLines,
                       onPostTap: () {
                         final bloc = context.read<FellowshipFeedBloc>();
                         Navigator.of(context).push(

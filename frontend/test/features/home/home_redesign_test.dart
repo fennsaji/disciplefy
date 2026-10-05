@@ -1118,6 +1118,37 @@ void main() {
       expect(find.text('Romans 8 — Worth reading together'), findsOneWidget);
     });
 
+    testWidgets('a clamped member post says so with "Read more"',
+        (tester) async {
+      usePosts([
+        post('long', 'general',
+            content: 'Romans 12:2 has been on my mind for the last few days.'
+                '\n\nI keep asking what it means to be transformed by the '
+                'renewing of my mind in ordinary work and conversations.'
+                '\n\n@Discipler how do I start?'),
+        post('short', 'general', content: 'Amen!', minutesAgo: 8),
+      ]);
+      await pumpSection(tester);
+      expect(find.byKey(const Key('home_activity_read_more')), findsOneWidget);
+      expect(find.text('Read more'), findsOneWidget);
+      await tester.tap(find.text('Read more'));
+      await tester.pumpAndSettle();
+      expect(find.text('post f1/long'), findsOneWidget);
+    });
+
+    testWidgets('the daily study row keeps its summary without "Read more"',
+        (tester) async {
+      usePosts([
+        post('d', 'daily',
+            author: 'Discipler',
+            authorId: kDisciplerUserId,
+            content: '📖 A long lesson title that keeps going and going\n'
+                '✨ ${'An opening hook that runs on for a while. ' * 4}'),
+      ]);
+      await pumpSection(tester, width: 320);
+      expect(find.byKey(const Key('home_activity_read_more')), findsNothing);
+    });
+
     for (final (lang, locale) in [
       (AppLanguage.english, const Locale('en')),
       (AppLanguage.hindi, const Locale('hi')),

@@ -1034,7 +1034,7 @@ class _FeedPreviewSection extends StatelessWidget {
                       // posts, so reacting and replying belong here too.
                       isMentor: state.isMentor,
                       currentUserId: state.currentUserId,
-                      maxContentLines: 3,
+                      maxContentLines: FellowshipPostCard.feedMaxContentLines,
                       isAdmin: isAdmin,
                       onPostTap: () {
                         final bloc = context.read<FellowshipFeedBloc>();

@@ -696,16 +696,11 @@ class _ActivityRow extends StatelessWidget {
                     ),
                     if (preview.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(
-                        preview,
-                        key: const Key('home_activity_preview'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(
-                          fontSize: 13.5,
-                          height: 1.45,
-                          color: context.appTextSecondary,
-                        ),
+                      _ActivityPreview(
+                        preview: preview,
+                        // Daily studies are summarised by design; only a
+                        // member's own words need the "Read more" cue.
+                        showReadMore: !post.isDaily,
                       ),
                     ],
                     const SizedBox(height: 6),
@@ -722,6 +717,71 @@ class _ActivityRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The two-line preview under a home activity row. The row is a compact
+/// summary, so the text is clamped — but when it is, an ellipsis and a
+/// "Read more" cue make that plain (tapping the row opens the full post).
+class _ActivityPreview extends StatelessWidget {
+  final String preview;
+  final bool showReadMore;
+
+  const _ActivityPreview({required this.preview, required this.showReadMore});
+
+  static const int _maxLines = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final base = AppFonts.inter(
+      fontSize: 13.5,
+      height: 1.45,
+      color: context.appTextSecondary,
+    );
+    final span = TextSpan(
+      children: mentionSpans(
+        preview,
+        base,
+        base.copyWith(fontWeight: FontWeight.w600, color: palette.accentIcon),
+      ),
+    );
+    final text = Text.rich(
+      span,
+      key: const Key('home_activity_preview'),
+      maxLines: _maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (!showReadMore) return text;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final painter = TextPainter(
+        text: span,
+        maxLines: _maxLines,
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        locale: Localizations.maybeLocaleOf(context),
+      )..layout(maxWidth: constraints.maxWidth);
+      final overflows = painter.didExceedMaxLines;
+      painter.dispose();
+      if (!overflows) return text;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          text,
+          const SizedBox(height: 2),
+          Text(
+            AppLocalizations.of(context)!.feedReadMore,
+            key: const Key('home_activity_read_more'),
+            style: AppFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: palette.accentIcon,
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 

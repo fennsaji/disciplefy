@@ -469,6 +469,7 @@ class AppLocalizations {
       'homeNoPathAssigned': 'No study path assigned',
       'fellowshipRecentActivity': 'Recent Activity',
       'fellowshipViewAll': 'View All',
+      'feedReadMore': 'Read more',
       'feedPostSomething': 'Post something',
       'meetingsTitle': 'Meetings',
       'meetingsSchedule': 'Schedule',
@@ -1258,6 +1259,7 @@ class AppLocalizations {
       'homeNoPathAssigned': 'कोई अध्ययन पथ नहीं',
       'fellowshipRecentActivity': 'हाल की गतिविधि',
       'fellowshipViewAll': 'सभी देखें',
+      'feedReadMore': 'और पढ़ें',
       'feedPostSomething': 'कुछ पोस्ट करें',
       'meetingsTitle': 'मीटिंग',
       'meetingsSchedule': 'शेड्यूल करें',
@@ -2056,6 +2058,7 @@ class AppLocalizations {
       'homeNoPathAssigned': 'പഠന പാത ഇല്ല',
       'fellowshipRecentActivity': 'സമീപകാല പ്രവർത്തനം',
       'fellowshipViewAll': 'എല്ലാം കാണുക',
+      'feedReadMore': 'കൂടുതൽ വായിക്കുക',
       'feedPostSomething': 'എന്തെങ്കിലും പോസ്റ്റ് ചെയ്യുക',
       'meetingsTitle': 'മീറ്റിംഗുകൾ',
       'meetingsSchedule': 'ഷെഡ്യൂൾ ചെയ്യുക',
@@ -3032,6 +3035,10 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['fellowshipRecentActivity']!;
   String get fellowshipViewAll =>
       _localizedValues[locale.languageCode]!['fellowshipViewAll']!;
+
+  /// Link under a feed post whose text is clamped; opens the full post.
+  String get feedReadMore =>
+      _localizedValues[locale.languageCode]!['feedReadMore']!;
   String get feedPostSomething =>
       _localizedValues[locale.languageCode]!['feedPostSomething']!;
   String get meetingsTitle =>
