@@ -58,6 +58,7 @@ import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/language_pill.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -1149,117 +1150,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Short code for a study language, as shown on the language pill.
-  static String _languageCode(StudyLanguage language) {
-    switch (language) {
-      case StudyLanguage.english:
-        return 'EN';
-      case StudyLanguage.hindi:
-        return 'हिं';
-      case StudyLanguage.malayalam:
-        return 'മ';
-    }
-  }
-
-  /// Language pill inside the search field (EN / हिं / മ). When the study
-  /// language follows the default, the pill shows the default's code so the
-  /// user can see which language the guide will be in.
-  Widget _buildCompactLanguageSelector() {
-    String getLanguageLabel() => _languageCode(_selectedLanguage);
-
-    return PopupMenuButton<StudyLanguage?>(
-      key: const Key('generate_language_pill'),
-      initialValue: _isLanguageDefault ? null : _selectedLanguage,
-      onSelected: _switchLanguage,
-      offset: const Offset(0, 44),
-      color: ReaderPalette.of(context).card,
-      surfaceTintColor: Colors.transparent,
-      elevation: 6,
-      tooltip: context.tr(TranslationKeys.generateStudyLanguage),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: ReaderPalette.of(context).hairline),
-      ),
-      itemBuilder: (context) => [
-        _buildLanguageMenuItem(null,
-            '${context.tr(TranslationKeys.generateStudyDefaultLanguage)} (${_languageCode(_selectedLanguage)})'),
-        PopupMenuDivider(color: ReaderPalette.of(context).hairline),
-        _buildLanguageMenuItem(StudyLanguage.english, 'English'),
-        _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
-        _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
-      ],
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 96),
-        padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
-        decoration: BoxDecoration(
-          color: _searchPillFill,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // "Default" in Hindi/Malayalam shrinks to fit the pill.
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  getLanguageLabel(),
-                  maxLines: 1,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _searchInk,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 2),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: _searchMuted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // The search field is white in both themes (design), so its contents use
   // fixed light-surface colours rather than the theme's.
-  static const Color _searchInk = Color(0xFF16161D);
-  static const Color _searchMuted = Color(0xFF5B6070);
-  static const Color _searchHint = Color(0xFF8A8F9C);
-  static const Color _searchPillFill = Color(0xFFF0EEEA);
-
-  PopupMenuItem<StudyLanguage?> _buildLanguageMenuItem(
-    StudyLanguage? language,
-    String label,
-  ) {
-    final isSelected = language == null
-        ? _isLanguageDefault
-        : (!_isLanguageDefault && _selectedLanguage == language);
-    final palette = ReaderPalette.of(context);
-    return PopupMenuItem<StudyLanguage?>(
-      value: language,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? palette.accentIcon : palette.text,
-              ),
-            ),
-          ),
-          if (isSelected)
-            Icon(Icons.check_rounded, color: palette.accentIcon, size: 18),
-        ],
-      ),
-    );
-  }
+  static const Color _searchInk = SearchFieldColors.ink;
+  static const Color _searchMuted = SearchFieldColors.muted;
+  static const Color _searchHint = SearchFieldColors.hint;
 
   /// Compact "Talk to Discipler" (voice) row. The dock's Discipler tab is
   /// the text chat; this keeps the voice conversation entry and its
@@ -1448,7 +1343,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                 ),
               Padding(
                 padding: EdgeInsets.only(top: isQuestion ? 4 : 0),
-                child: _buildCompactLanguageSelector(),
+                child: LanguagePill(
+                  selected: _selectedLanguage,
+                  isDefault: _isLanguageDefault,
+                  onSelected: _switchLanguage,
+                ),
               ),
             ],
           ),

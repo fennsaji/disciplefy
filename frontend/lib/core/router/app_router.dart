@@ -25,7 +25,7 @@ import '../../features/profile_setup/presentation/pages/profile_setup_screen.dar
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
-import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/pages/generate_tab_page.dart';
 import '../navigation/study_navigator.dart';
 import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
@@ -194,8 +194,11 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.generateStudy,
                 name: 'generate_study',
-                builder: (context, state) =>
-                    const MaxWidthWrapper(child: GenerateStudyScreen()),
+                // generate_single_input picks the screen; off keeps the
+                // shipped one.
+                builder: (context, state) => MaxWidthWrapper(
+                    child: GenerateTabPage(
+                        prefill: state.uri.queryParameters['prefill'])),
               ),
             ],
           ),

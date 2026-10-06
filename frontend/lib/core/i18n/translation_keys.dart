@@ -3581,4 +3581,19 @@ class TranslationKeys {
   static const creditsGet = 'credits.get';
   static const creditsViewSaved = 'credits.view_saved';
   static const creditsMaybeLater = 'credits.maybe_later';
+
+  // Single-input Generate screen.
+  static const generateSimpleEyebrow = 'generate_simple.eyebrow';
+  static const generateSimpleTitle = 'generate_simple.title';
+  static const generateSimpleHint = 'generate_simple.hint';
+  static const generateSimpleTypeScripture = 'generate_simple.type_scripture';
+  static const generateSimpleTypeTopic = 'generate_simple.type_topic';
+  static const generateSimpleTypeQuestion = 'generate_simple.type_question';
+  static const generateSimpleChooseDepth = 'generate_simple.choose_depth';
+  static const generateSimpleAllDepths = 'generate_simple.all_depths';
+  static const generateSimpleGenerate = 'generate_simple.generate';
+
+  /// "Using {n} credits" under the Generate button.
+  static const generateSimpleUsingCredits = 'generate_simple.using_credits';
+  static const generateSimpleVerseOfDay = 'generate_simple.verse_of_day';
 }
