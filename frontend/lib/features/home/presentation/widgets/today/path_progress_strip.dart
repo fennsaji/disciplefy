@@ -35,14 +35,23 @@ class PathProgressStrip extends StatelessWidget {
 
   static const double _dotSize = 22;
 
+  // Normalised inputs: callers may pass out-of-range values.
+  int get _total => total < 0 ? 0 : total;
+  int get _completed => completed.clamp(0, _total);
+  int get _current => _total == 0 ? 0 : current.clamp(1, _total);
+  List<int> get _milestones => {
+        for (final m in milestones)
+          if (m >= 1 && m <= _total) m
+      }.toList();
+
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final safeTotal = total < 1 ? 1 : total;
-    final slot = (current.clamp(1, safeTotal) - 0.5) / safeTotal;
+    final safeTotal = _total < 1 ? 1 : _total;
+    final slot = (_current.clamp(1, safeTotal) - 0.5) / safeTotal;
 
     final Widget strip;
-    switch (stripTierFor(total)) {
+    switch (stripTierFor(_total)) {
       case StripTier.dots:
         strip = _dots(palette);
       case StripTier.segments:
@@ -53,7 +62,7 @@ class PathProgressStrip extends StatelessWidget {
 
     return Semantics(
       button: onTap != null,
-      label: '$completed/$total',
+      label: '$_completed/$_total',
       excludeSemantics: true,
       child: Material(
         color: palette.card,
@@ -91,19 +100,19 @@ class PathProgressStrip extends StatelessWidget {
   Widget _dots(ReaderPalette palette) {
     // The connector between lesson n-1 and n is gold once n is reached.
     Widget connector(int toLesson) => Expanded(
-          child: toLesson < 2 || toLesson > total
+          child: toLesson < 2 || toLesson > _total
               ? const SizedBox.shrink()
               : Container(
                   height: 2,
-                  color: (toLesson <= completed || toLesson == current)
+                  color: (toLesson <= _completed || toLesson == _current)
                       ? palette.gold
                       : palette.hairline,
                 ),
         );
 
     Widget dot(int n) {
-      final done = n <= completed;
-      final isCurrent = n == current;
+      final done = n <= _completed;
+      final isCurrent = n == _current;
       return Container(
         key: Key('strip_dot_$n'),
         width: _dotSize,
@@ -134,7 +143,7 @@ class PathProgressStrip extends StatelessWidget {
 
     return Row(
       children: [
-        for (var n = 1; n <= total; n++)
+        for (var n = 1; n <= _total; n++)
           Expanded(
             child: Row(
               children: [connector(n), dot(n), connector(n + 1)],
@@ -149,15 +158,15 @@ class PathProgressStrip extends StatelessWidget {
       height: 9,
       child: Row(
         children: [
-          for (var n = 1; n <= total; n++)
+          for (var n = 1; n <= _total; n++)
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(left: n == 1 ? 0 : 3),
                 child: Container(
                   key: Key('strip_segment_$n'),
-                  height: n == current ? 9 : 6,
+                  height: n == _current ? 9 : 6,
                   decoration: BoxDecoration(
-                    color: (n <= completed || n == current)
+                    color: (n <= _completed || n == _current)
                         ? palette.gold
                         : palette.hairline,
                     borderRadius: BorderRadius.circular(3),
@@ -174,7 +183,7 @@ class PathProgressStrip extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final safeTotal = total < 1 ? 1 : total;
+        final safeTotal = _total < 1 ? 1 : _total;
         double at(num lesson) => width * (lesson - 0.5) / safeTotal;
         return SizedBox(
           height: 14,
@@ -191,13 +200,13 @@ class PathProgressStrip extends StatelessWidget {
               ),
               Container(
                 height: 6,
-                width: width * (completed / safeTotal).clamp(0.0, 1.0),
+                width: width * (_completed / safeTotal).clamp(0.0, 1.0),
                 decoration: BoxDecoration(
                   color: palette.gold,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
-              for (final m in milestones)
+              for (final m in _milestones)
                 Positioned(
                   left: at(m) - 1,
                   child: Container(
@@ -208,7 +217,7 @@ class PathProgressStrip extends StatelessWidget {
                   ),
                 ),
               Positioned(
-                left: at(current.clamp(1, safeTotal)) - 5,
+                left: at(_current.clamp(1, safeTotal)) - 5,
                 child: Container(
                   width: 10,
                   height: 10,

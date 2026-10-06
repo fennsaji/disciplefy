@@ -88,13 +88,16 @@ Widget welcomeApp({
   String? language,
 }) {
   if (language != null) {
-    final service = sl<TranslationService>();
-    if (service is FakeTranslationService) {
-      service.language = AppLanguage.values.firstWhere(
-        (l) => l.code == language,
-        orElse: () => AppLanguage.english,
+    final service =
+        sl.isRegistered<TranslationService>() ? sl<TranslationService>() : null;
+    if (service is! FakeTranslationService) {
+      throw StateError(
+        'welcomeApp(language:) needs a FakeTranslationService registered in sl',
       );
     }
+    final previous = service.language;
+    addTearDown(() => service.language = previous);
+    service.language = AppLanguage.fromCode(language);
   }
   final router = GoRouter(
     initialLocation: path,

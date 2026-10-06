@@ -91,4 +91,60 @@ void main() {
       }
     }
   }
+
+  group('edge cases', () {
+    final cases = <String, PathProgressStrip>{
+      'total 0': const PathProgressStrip(total: 0, completed: 0, current: 0),
+      'total 1': const PathProgressStrip(total: 1, completed: 0, current: 1),
+      'completed > total':
+          const PathProgressStrip(total: 8, completed: 12, current: 8),
+      'current beyond total':
+          const PathProgressStrip(total: 12, completed: 3, current: 40),
+      'finished 10':
+          const PathProgressStrip(total: 10, completed: 10, current: 10),
+      'finished 16':
+          const PathProgressStrip(total: 16, completed: 16, current: 16),
+      'finished 29': const PathProgressStrip(
+          total: 29, completed: 29, current: 29, milestones: [5, 17]),
+      'bad milestones 8': const PathProgressStrip(
+          total: 8, completed: 2, current: 3, milestones: [0, -1, 9, 4, 4]),
+      'bad milestones 16': const PathProgressStrip(
+          total: 16, completed: 2, current: 3, milestones: [0, -1, 17, 4, 4]),
+      'bad milestones 29': const PathProgressStrip(
+          total: 29, completed: 2, current: 3, milestones: [0, -1, 30, 4, 4]),
+    };
+    for (final entry in cases.entries) {
+      testWidgets('${entry.key}: no exception, no overflow', (tester) async {
+        useSurface(tester, const Size(320, 200));
+        await tester.pumpWidget(welcomeApp(
+            screen: Padding(
+                padding: const EdgeInsets.all(16), child: entry.value)));
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+      });
+    }
+
+    testWidgets('smooth ticks only for in-range milestones, once',
+        (tester) async {
+      await tester.pumpWidget(welcomeApp(
+          screen: const PathProgressStrip(
+              total: 29,
+              completed: 2,
+              current: 3,
+              milestones: [0, -1, 30, 4, 4, 29])));
+      expect(find.byKey(const Key('strip_tick_4')), findsOneWidget);
+      expect(find.byKey(const Key('strip_tick_29')), findsOneWidget);
+      expect(find.byKey(const Key('strip_tick_0')), findsNothing);
+      expect(find.byKey(const Key('strip_tick_-1')), findsNothing);
+      expect(find.byKey(const Key('strip_tick_30')), findsNothing);
+    });
+
+    testWidgets('finished 8: all checked, none beyond total', (tester) async {
+      await tester.pumpWidget(welcomeApp(
+          screen:
+              const PathProgressStrip(total: 8, completed: 12, current: 99)));
+      expect(find.byIcon(Icons.check_rounded), findsNWidgets(8));
+      expect(find.byKey(const Key('strip_dot_9')), findsNothing);
+    });
+  });
 }
