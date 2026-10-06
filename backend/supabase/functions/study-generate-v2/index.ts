@@ -41,6 +41,7 @@ import {
   ParsedSection,
   CompleteStudyGuide
 } from '../_shared/services/streaming-json-parser.ts'
+import { expectedSectionTotal } from '../_shared/services/mode-sections.ts'
 
 /**
  * Type definitions for multi-pass generation data
@@ -1009,7 +1010,8 @@ async function handleStudyGenerateV2(
               controller,
               studyGuideRepository.getSupabaseClient(),
               emit,
-              encoder
+              encoder,
+              expectedSectionTotal(study_mode)
             )
             return
           }
@@ -1112,6 +1114,11 @@ async function handleStudyGenerateV2(
         )
         console.log(`🔍 [STUDY-V2] Multi-pass check: mode=${study_mode}, lang=${targetLanguage}, useMultiPass=${useMultiPass}`)
 
+        // Every section event carries the same total: the sections this mode
+        // streams. Multi-pass re-sends interpretation as parts arrive, so the
+        // client counts distinct sections against this total.
+        const sectionTotal = expectedSectionTotal(study_mode)
+
         // Declare streamingUsage variable for all paths
         let streamingUsage: LLMUsageMetadata | null = null
 
@@ -1179,7 +1186,7 @@ async function handleStudyGenerateV2(
               pass1Stream,
               'Sermon Pass 1/4',
               emit,
-              14,
+              sectionTotal,
               ['summary', 'context', 'passage']
             )
             const pass1Data = pass1Result.data as unknown as SermonPass1Data
@@ -1191,15 +1198,15 @@ async function handleStudyGenerateV2(
             // Safety nets: emit summary/context/passage if streaming parser missed them
             if (pass1Data.summary && !pass1Result.emittedSections.has('summary')) {
               console.log(`[LLM-MultiPass] ⚠️ Summary not emitted during streaming, emitting now (safety net)`)
-              emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, 14))
+              emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, sectionTotal))
             }
             if (pass1Data.context && !pass1Result.emittedSections.has('context')) {
               console.log(`[LLM-MultiPass] ⚠️ Context not emitted during streaming, emitting now (safety net)`)
-              emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, 14))
+              emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, sectionTotal))
             }
             if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
               console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
-              emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))
+              emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, sectionTotal))
             }
 
             // PROGRESSIVE SAVE: Save Pass 1 sections to in-progress table
@@ -1217,7 +1224,7 @@ async function handleStudyGenerateV2(
                 type: 'interpretation',
                 content: pass1Data.interpretationPart1,
                 index: 2
-              }, 14))
+              }, sectionTotal))
             }
 
             // PASS 2: Interpretation Part 2 (Point 2 ONLY) (STREAMING)
@@ -1250,7 +1257,7 @@ async function handleStudyGenerateV2(
               pass2Stream,
               'Sermon Pass 2/4',
               emit,
-              14,
+              sectionTotal,
               []
             )
             const pass2Data = pass2Result.data as unknown as SermonPass2Data
@@ -1272,7 +1279,7 @@ async function handleStudyGenerateV2(
                 type: 'interpretation',
                 content: combinedInterpretation,
                 index: 2
-              }, 14))
+              }, sectionTotal))
             }
 
             // PASS 3: Interpretation Part 3 (Point 3 ONLY) (STREAMING)
@@ -1306,7 +1313,7 @@ async function handleStudyGenerateV2(
               pass3Stream,
               'Sermon Pass 3/4',
               emit,
-              14,
+              sectionTotal,
               []
             )
             const pass3Data = pass3Result.data as unknown as SermonPass3Data
@@ -1328,7 +1335,7 @@ async function handleStudyGenerateV2(
                 type: 'interpretation',
                 content: combinedInterpretation,
                 index: 2
-              }, 14))
+              }, sectionTotal))
             }
 
             // PASS 4: Conclusion + Altar Call + Supporting Fields (STREAMING)
@@ -1367,7 +1374,7 @@ async function handleStudyGenerateV2(
               pass4Stream,
               'Sermon Pass 4/4',
               emit,
-              14,
+              sectionTotal,
               pass1Data,
               pass2Data,
               pass3Data,
@@ -1408,7 +1415,7 @@ async function handleStudyGenerateV2(
             // Safety net: emit full 4-part interpretation if parser missed interpretationPart4 during streaming
             if (!pass4Result.emittedSections.has('interpretationPart4') && studyGuideData.interpretation) {
               console.log(`[LLM-MultiPass] ⚠️ interpretationPart4 not emitted during streaming, emitting full sermon interpretation now (${studyGuideData.interpretation.length} chars)`)
-              emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, 14))
+              emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, sectionTotal))
             }
 
             // Emit optional sections (6+) immediately
@@ -1470,7 +1477,7 @@ async function handleStudyGenerateV2(
                 pass1Stream,
                 `${modeName} Pass 1/2`,
                 emit,
-                14,
+                sectionTotal,
                 ['summary', 'context', 'passage']  // Add passage to emit during Pass 1
               )
               const pass1Data = pass1Result.data as unknown as StandardPass1Data
@@ -1482,15 +1489,15 @@ async function handleStudyGenerateV2(
               // (can happen when LLM embeds unescaped quotes that confuse the streaming parser)
               if (pass1Data.summary && !pass1Result.emittedSections.has('summary')) {
                 console.log(`[LLM-MultiPass] ⚠️ Summary not emitted during streaming, emitting now (safety net)`)
-                emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, 14))
+                emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, sectionTotal))
               }
               if (pass1Data.context && !pass1Result.emittedSections.has('context')) {
                 console.log(`[LLM-MultiPass] ⚠️ Context not emitted during streaming, emitting now (safety net)`)
-                emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, 14))
+                emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, sectionTotal))
               }
               if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
                 console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
-                emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))
+                emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, sectionTotal))
               } else if (!pass1Data.passage) {
                 console.warn(`[LLM-MultiPass] ⚠️ LLM did not generate passage field in Pass 1`)
               }
@@ -1510,7 +1517,7 @@ async function handleStudyGenerateV2(
                   type: 'interpretation',
                   content: pass1Data.interpretationPart1,
                   index: 2
-                }, 14))
+                }, sectionTotal))
               }
 
               // PASS 2: Interpretation Part 2 + Supporting Fields (STREAMING)
@@ -1544,7 +1551,7 @@ async function handleStudyGenerateV2(
                 pass2Stream,
                 `${modeName} Pass 2/2`,
                 emit,
-                14,
+                sectionTotal,
                 pass1Data,
                 combinePasses
               )
@@ -1575,7 +1582,7 @@ async function handleStudyGenerateV2(
               // Safety net: emit combined interpretation if parser missed interpretationPart2 during streaming
               if (!pass2Result.emittedSections.has('interpretationPart2') && studyGuideData.interpretation) {
                 console.log(`[LLM-MultiPass] ⚠️ interpretationPart2 not emitted during streaming, emitting combined interpretation now (${studyGuideData.interpretation.length} chars)`)
-                emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, 14))
+                emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, sectionTotal))
               }
             }
 
@@ -1706,11 +1713,9 @@ async function handleStudyGenerateV2(
             // Add optional sections if present (in SECTION_ORDER)
 
 
-            const totalSections = allSections.length
-
             for (let i = emittedCount; i < allSections.length; i++) {
               const section = allSections[i]
-              emit(createSectionEvent(section, totalSections))
+              emit(createSectionEvent(section, sectionTotal))
 
               // Progressive save: Update in-progress record with fallback-emitted section
               if (inProgressId && section.content) {
@@ -1953,7 +1958,8 @@ async function pollForInProgressCompletion(
   controller: ReadableStreamDefaultController,
   supabase: any,
   emit: (data: string) => void,
-  encoder: TextEncoder
+  encoder: TextEncoder,
+  sectionTotal: number
 ): Promise<void> {
   const MAX_POLL_DURATION = 300000 // 5 minutes
   const POLL_INTERVAL = 2000 // 2 seconds
@@ -1986,7 +1992,7 @@ async function pollForInProgressCompletion(
               content: content as string,
               index: emittedSections.size
             },
-            10 // Total sections is approximate
+            sectionTotal
           ))
           emittedSections.add(sectionType)
         }

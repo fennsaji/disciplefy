@@ -219,8 +219,9 @@ class StreamingStudyGuideContent {
   }
 
   /// Progress from 0.0 to 1.0
-  double get progress =>
-      totalSections > 0 ? sectionsLoaded / totalSections : 0.0;
+  double get progress => totalSections > 0
+      ? (sectionsLoaded / totalSections).clamp(0.0, 1.0)
+      : 0.0;
 
   /// Whether all required sections have been loaded
   /// Changed from hardcoded 6 to dynamic totalSections to support all study modes
@@ -245,9 +246,24 @@ class StreamingStudyGuideContent {
       prayerPoints != null &&
       prayerPoints!.isNotEmpty;
 
-  /// Create a copy with a new section added
+  /// How many distinct section types have arrived.
+  int get _distinctSectionsLoaded => [
+        summary,
+        interpretation,
+        context,
+        passage,
+        relatedVerses,
+        reflectionQuestions,
+        prayerPoints,
+      ].where((field) => field != null).length;
+
+  /// Create a copy with a new section added.
+  ///
+  /// Multi-pass streams re-send `interpretation` as each pass adds to it, so
+  /// [sectionsLoaded] counts distinct section types, not events: a re-sent
+  /// section neither advances progress nor completes the stream early.
   StreamingStudyGuideContent copyWithSection(StudyStreamSectionEvent section) {
-    return StreamingStudyGuideContent(
+    final updated = StreamingStudyGuideContent(
       summary: section.type == StudyStreamSectionType.summary
           ? section.contentAsString
           : summary,
@@ -270,10 +286,10 @@ class StreamingStudyGuideContent {
       prayerPoints: section.type == StudyStreamSectionType.prayerPoints
           ? section.contentAsList
           : prayerPoints,
-      sectionsLoaded: sectionsLoaded + 1,
       totalSections: section.total,
       isFromCache: isFromCache,
     );
+    return updated.copyWith(sectionsLoaded: updated._distinctSectionsLoaded);
   }
 
   /// Create initial state with cache flag
