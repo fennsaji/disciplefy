@@ -581,6 +581,12 @@ const Map<String, dynamic> englishTranslations = {
   },
   'home_today': {
     'today_label': 'Today',
+    'lesson_eyebrow': 'TODAY · LESSON {n}',
+    'start_lesson': 'Start lesson {n}',
+    'mode_quick': 'Quick read · {min} min',
+    'mode_standard': 'Full guide · {min} min',
+    'path_finished': 'You finished {path}',
+    'choose_next_path': 'Choose your next path',
   },
   'home': {
     'welcome_back': 'Welcome back, {name}',

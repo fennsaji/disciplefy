@@ -579,6 +579,12 @@ const Map<String, dynamic> hindiTranslations = {
   },
   'home_today': {
     'today_label': 'आज',
+    'lesson_eyebrow': 'आज · पाठ {n}',
+    'start_lesson': 'पाठ {n} शुरू करें',
+    'mode_quick': 'क्विक · {min} मि',
+    'mode_standard': 'पूरी गाइड · {min} मि',
+    'path_finished': 'आपने {path} पूरा किया',
+    'choose_next_path': 'अगला पथ चुनें',
   },
   'home': {
     'welcome_back': 'वापस स्वागत है, {name}',

@@ -589,6 +589,12 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'home_today': {
     'today_label': 'ഇന്ന്',
+    'lesson_eyebrow': 'ഇന്ന് · പാഠം {n}',
+    'start_lesson': 'പാഠം {n} തുടങ്ങാം',
+    'mode_quick': 'ക്വിക്ക് · {min} മി',
+    'mode_standard': 'മുഴുവൻ · {min} മി',
+    'path_finished': '{path} പൂർത്തിയാക്കി',
+    'choose_next_path': 'അടുത്ത പാത',
   },
   'home': {
     'welcome_back': 'സ്വാഗതം, {name}',

@@ -248,6 +248,12 @@ class TranslationKeys {
 
   // Home Today
   static const homeTodayLabel = 'home_today.today_label';
+  static const homeTodayLessonEyebrow = 'home_today.lesson_eyebrow';
+  static const homeTodayStartLesson = 'home_today.start_lesson';
+  static const homeTodayModeQuick = 'home_today.mode_quick';
+  static const homeTodayModeStandard = 'home_today.mode_standard';
+  static const homeTodayPathFinished = 'home_today.path_finished';
+  static const homeTodayChooseNextPath = 'home_today.choose_next_path';
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';

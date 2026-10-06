@@ -15,22 +15,49 @@ String buildLessonLaunchLocation({
   final ordered = [...path.topics]
     ..sort((a, b) => a.position.compareTo(b.position));
   final index = ordered.indexWhere((t) => t.topicId == topic.topicId);
-  final ref = LessonRef(
-    pathId: path.id,
-    pathTitle: path.title,
-    lessonNumber: index < 0 ? 1 : index + 1,
-    lessonTotal: ordered.length,
+  return buildLessonLocation(
+    input: topic.title,
+    inputType: topic.inputType,
+    topicId: topic.topicId,
+    description: topic.description,
+    pathDescription: path.description,
+    discipleLevel: path.discipleLevel,
+    ref: LessonRef(
+      pathId: path.id,
+      pathTitle: path.title,
+      lessonNumber: index < 0 ? 1 : index + 1,
+      lessonTotal: ordered.length,
+    ),
+    mode: mode,
+    language: language,
+    source: source,
   );
+}
+
+/// Study-guide URL for one lesson of a path. Every path-lesson launcher goes
+/// through here so the query keys stay identical.
+String buildLessonLocation({
+  required String input,
+  required String inputType,
+  required String topicId,
+  required String description,
+  required String pathDescription,
+  required String discipleLevel,
+  required LessonRef ref,
+  required StudyMode mode,
+  required String language,
+  String source = 'learningPath',
+}) {
   final query = <String, String>{
-    'input': topic.title,
-    'type': topic.inputType,
+    'input': input,
+    'type': inputType,
     'language': language,
     'mode': mode.name,
     'source': source,
-    if (topic.topicId.isNotEmpty) 'topic_id': topic.topicId,
-    if (topic.description.isNotEmpty) 'description': topic.description,
-    if (path.description.isNotEmpty) 'path_description': path.description,
-    if (path.discipleLevel.isNotEmpty) 'disciple_level': path.discipleLevel,
+    if (topicId.isNotEmpty) 'topic_id': topicId,
+    if (description.isNotEmpty) 'description': description,
+    if (pathDescription.isNotEmpty) 'path_description': pathDescription,
+    if (discipleLevel.isNotEmpty) 'disciple_level': discipleLevel,
     ...ref.toQuery(),
   };
   return Uri(path: AppRoutes.studyGuideV2, queryParameters: query).toString();
