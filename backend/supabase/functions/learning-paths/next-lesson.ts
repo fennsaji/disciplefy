@@ -43,3 +43,42 @@ export function milestonePositions(topics: PathTopicRow[]): number[] {
 export function countCompleted(topics: PathTopicRow[], completed: Set<string>): number {
   return topics.filter(t => completed.has(t.topic_id)).length
 }
+
+export interface RecommendedExtras {
+  next_lesson: NextLessonJson | null
+  topics_completed: number
+  milestone_positions: number[]
+}
+
+/**
+ * Pure mapping from raw get_learning_path_details topics (may be null for a
+ * path with no active topics) to the recommended-path fields. Guests
+ * (`signedIn` false) have nothing completed. A blank topic title falls back
+ * to `fallbackTitle` so next_lesson.title is never empty.
+ */
+export function buildRecommendedExtras(
+  rawTopics: Array<Record<string, unknown>> | null | undefined,
+  signedIn: boolean,
+  fallbackTitle: string,
+): RecommendedExtras {
+  const raw = rawTopics || []
+  const topics: PathTopicRow[] = raw.map(t => {
+    const title = typeof t.title === 'string' ? t.title.trim() : ''
+    return {
+      topic_id: t.topic_id as string,
+      position: t.position as number,
+      is_milestone: !!t.is_milestone,
+      title: title || fallbackTitle,
+      description: typeof t.description === 'string' ? t.description : '',
+      input_type: typeof t.input_type === 'string' ? t.input_type : '',
+    }
+  })
+  const completed = new Set<string>(
+    signedIn ? raw.filter(t => t.is_completed).map(t => t.topic_id as string) : [],
+  )
+  return {
+    next_lesson: buildNextLesson(topics, completed),
+    topics_completed: countCompleted(topics, completed),
+    milestone_positions: milestonePositions(topics),
+  }
+}

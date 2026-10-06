@@ -25,3 +25,18 @@ Deno.test('milestone in the middle uses sorted position', () => {
 Deno.test('topics_completed counts only this path topic ids', () => {
   assertEquals(countCompleted(rows, new Set(['t1', 'other', 'x'])), 1)
 })
+
+import { buildRecommendedExtras } from './next-lesson.ts'
+
+Deno.test('null topics (zero active topics) still return the full shape', () => {
+  for (const signedIn of [true, false]) {
+    assertEquals(buildRecommendedExtras(null, signedIn, 'P'), { next_lesson: null, topics_completed: 0, milestone_positions: [] })
+  }
+})
+Deno.test('guest has nothing completed; blank title falls back', () => {
+  const raw = [{ topic_id: 'a', position: 1, is_milestone: false, title: '  ', is_completed: true }]
+  const g = buildRecommendedExtras(raw, false, 'Path')
+  assertEquals(g.topics_completed, 0)
+  assertEquals(g.next_lesson?.title, 'Path')
+  assertEquals(buildRecommendedExtras(raw, true, 'Path').next_lesson, null)
+})

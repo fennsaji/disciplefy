@@ -16,7 +16,7 @@ import { AppError } from '../_shared/utils/error-handler.ts';
 import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
-import { buildNextLesson, countCompleted, milestonePositions, type NextLessonJson, type PathTopicRow } from './next-lesson.ts';
+import { buildRecommendedExtras, type NextLessonJson } from './next-lesson.ts';
 import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations, pathProgressPercentage } from './batch-loaders.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
@@ -423,29 +423,9 @@ async function withNextTopic(
       p_language: language,
     });
     if (error || !data || data.length === 0) return path;
-    const topics: PathTopicRow[] = ((data[0].topics || []) as Array<Record<string, unknown>>).map((t) => ({
-      topic_id: t.topic_id as string,
-      position: t.position as number,
-      is_milestone: !!t.is_milestone,
-      title: typeof t.title === 'string' ? t.title.trim() : '',
-      description: typeof t.description === 'string' ? t.description : '',
-      input_type: typeof t.input_type === 'string' ? t.input_type : '',
-    }));
-    const completed = new Set<string>(
-      userId
-        ? (data[0].topics as Array<Record<string, unknown>>)
-            .filter((t) => t.is_completed)
-            .map((t) => t.topic_id as string)
-        : []
-    );
-    const nextLesson = buildNextLesson(topics, completed);
-    const enriched: LearningPath = {
-      ...path,
-      topics_completed: countCompleted(topics, completed),
-      next_lesson: nextLesson,
-      milestone_positions: milestonePositions(topics),
-    };
-    if (nextLesson && nextLesson.title) enriched.next_topic_title = nextLesson.title;
+    const extras = buildRecommendedExtras(data[0].topics, !!userId, path.title);
+    const enriched: LearningPath = { ...path, ...extras };
+    if (extras.next_lesson) enriched.next_topic_title = extras.next_lesson.title;
     return enriched;
   } catch (e) {
     console.error('[RECOMMENDED_PATH] Next lesson lookup failed:', e instanceof Error ? e.message : 'unknown');
