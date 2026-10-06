@@ -395,10 +395,12 @@ export class StudyGuideRepository {
       )
     }
 
-    // PostgREST returns the to-one study_guides relation as an object.
-    // deno-lint-ignore no-explicit-any
-    let rows = (data ?? []) as any[]
+    // PostgREST returns the to-one study_guides relation as an object, but
+    // the untyped client infers an array, hence the cast.
+    let rows = (data ?? []) as unknown as Array<{ study_guides: { topic_id: string | null } | null }>
     if (ownOnly) {
+      // Paging is unsupported with ownOnly (over-fetch + slice; total/hasMore
+      // count all guides). Fine for the limit-5 Continue reading list.
       const pathTopicIds = await loadPathTopicIds(this.supabase)
       rows = excludePathLessons(rows, pathTopicIds).slice(0, limit)
     }
