@@ -34,6 +34,7 @@ import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/settings/presentation/pages/offline_guides_screen.dart';
 import '../../features/community/presentation/screens/blocked_users_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
+import '../../features/study_topics/domain/entities/lesson_ref.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/token_purchase_page.dart';
@@ -1204,6 +1205,7 @@ class AppRouter {
           final language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
           final modeString = state.uri.queryParameters['mode'];
+          final lesson = LessonRef.fromQuery(state.uri.queryParameters);
 
           // Parse navigation source
           final navigationSource =
@@ -1226,6 +1228,7 @@ class AppRouter {
                 language: language,
                 navigationSource: navigationSource,
                 studyMode: studyMode,
+                lesson: lesson,
               ),
             ),
             state: state,

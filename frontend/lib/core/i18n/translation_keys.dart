@@ -3546,4 +3546,7 @@ class TranslationKeys {
   static const studyUiGenerationTimeout = 'study_ui.generation_timeout';
   static const studyUiOfflineGenerate = 'study_ui.offline_generate';
   static const studyUiTokensPerGuide = 'study_ui.tokens_per_guide';
+
+  // Path lesson eyebrow on the study guide header.
+  static const lessonEyebrow = 'lesson.eyebrow';
 }

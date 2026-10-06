@@ -50,6 +50,7 @@ import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
 import '../../../../shared/widgets/sign_in_required_dialog.dart';
 import '../widgets/study_reading_tracker.dart';
+import '../../../study_topics/domain/entities/lesson_ref.dart';
 import '../../data/services/reading_progress_store.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
@@ -168,6 +169,9 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Existing guide data from saved/recent guides (skips generation if provided)
   final Map<String, dynamic>? existingGuideData;
 
+  /// Set when opened as a lesson of a learning path.
+  final LessonRef? lesson;
+
   const StudyGuideScreenV2({
     super.key,
     this.topicId,
@@ -181,6 +185,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.navigationSource = StudyNavigationSource.home,
     this.studyMode = StudyMode.standard,
     this.existingGuideData,
+    this.lesson,
   });
 
   @override
@@ -198,6 +203,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
           navigationSource: navigationSource,
           studyMode: studyMode,
           existingGuideData: existingGuideData,
+          lesson: lesson,
         ),
       );
 }
@@ -214,6 +220,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final StudyNavigationSource navigationSource;
   final StudyMode studyMode;
   final Map<String, dynamic>? existingGuideData;
+  final LessonRef? lesson;
 
   const _StudyGuideScreenV2Content({
     this.topicId,
@@ -227,6 +234,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     required this.navigationSource,
     required this.studyMode,
     this.existingGuideData,
+    this.lesson,
   });
 
   @override
@@ -2522,6 +2530,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               studyMode: widget.studyMode,
               contentFontSize: _contentFontSize,
               tracker: _readingTracker,
+              lesson: widget.lesson,
               onComplete:
                   state.content.isComplete && state.content.studyGuideId != null
                       ? () => _handleStreamingComplete(state)
@@ -2607,6 +2616,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             contentFontSize: _contentFontSize,
             isPartial: true,
             tracker: _readingTracker,
+            lesson: widget.lesson,
           ),
         ),
       ],
@@ -2808,6 +2818,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   : null,
               interpretationKey: _interpretationKey,
               tracker: _readingTracker,
+              lesson: widget.lesson,
             ),
           ),
 

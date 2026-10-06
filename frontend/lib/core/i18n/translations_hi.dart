@@ -878,6 +878,9 @@ const Map<String, dynamic> hindiTranslations = {
     'resend_short': 'फिर भेजें',
     'sent': 'सत्यापन ईमेल भेजा गया! अपना इनबॉक्स देखें।',
   },
+  'lesson': {
+    'eyebrow': 'पाठ {n}/{total}',
+  },
   'onboarding': {
     'skip_intro': 'छोड़ें',
     'get_started': 'शुरू करें',

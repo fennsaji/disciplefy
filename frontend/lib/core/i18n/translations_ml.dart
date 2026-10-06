@@ -896,6 +896,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'resend_short': 'വീണ്ടും അയയ്ക്കുക',
     'sent': 'സ്ഥിരീകരണ ഇമെയിൽ അയച്ചു! നിങ്ങളുടെ ഇൻബോക്സ് പരിശോധിക്കുക.',
   },
+  'lesson': {
+    'eyebrow': 'പാഠം {n}/{total}',
+  },
   'onboarding': {
     'skip_intro': 'ഒഴിവാക്കുക',
     'get_started': 'ആരംഭിക്കുക',

@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_stream_event.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_reading_tracker.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lesson_ref.dart';
 import 'package:disciplefy_bible_study/shared/widgets/markdown_with_scripture.dart';
 import 'package:disciplefy_bible_study/shared/widgets/numbered_section_header.dart';
 import '../../../../shared/widgets/app_snackbar.dart';
@@ -144,6 +145,9 @@ class StudyGuideBody extends StatelessWidget {
   /// empty.
   final StudyReadingTracker? tracker;
 
+  /// Set when the guide is a lesson of a learning path.
+  final LessonRef? lesson;
+
   const StudyGuideBody({
     super.key,
     required this.studyMode,
@@ -154,6 +158,7 @@ class StudyGuideBody extends StatelessWidget {
     this.readingSectionIndex,
     this.interpretationKey,
     this.tracker,
+    this.lesson,
   });
 
   /// How many numbered sections [StudyGuideBody] renders for [sections] —
@@ -187,6 +192,7 @@ class StudyGuideBody extends StatelessWidget {
           studyMode: studyMode,
           sectionCount: sectionWidgets.length,
           tracker: tracker,
+          lesson: lesson,
         ),
         Padding(
           padding: StudyGuideLayout.sidePadding,
@@ -514,6 +520,7 @@ class StudyGuideHero extends StatelessWidget {
   final StudyMode studyMode;
   final int sectionCount;
   final StudyReadingTracker? tracker;
+  final LessonRef? lesson;
 
   const StudyGuideHero({
     super.key,
@@ -522,6 +529,7 @@ class StudyGuideHero extends StatelessWidget {
     required this.studyMode,
     required this.sectionCount,
     this.tracker,
+    this.lesson,
   });
 
   @override
@@ -589,6 +597,7 @@ class StudyGuideHero extends StatelessWidget {
                 inputType: inputType,
                 title: title,
                 studyMode: studyMode,
+                lesson: lesson,
               ),
               const SizedBox(height: 16),
               StudyGuideSegmentedProgress(
@@ -608,12 +617,14 @@ class StudyGuideTopicTitle extends StatelessWidget {
   final String inputType;
   final String title;
   final StudyMode? studyMode;
+  final LessonRef? lesson;
 
   const StudyGuideTopicTitle({
     super.key,
     required this.inputType,
     required this.title,
     this.studyMode,
+    this.lesson,
   });
 
   /// "TOPIC · STANDARD STUDY · 8 MIN", localised.
@@ -621,13 +632,22 @@ class StudyGuideTopicTitle extends StatelessWidget {
     BuildContext context, {
     required String inputType,
     StudyMode? studyMode,
+    LessonRef? lesson,
   }) {
     final type = switch (inputType) {
       'scripture' => context.tr('generate_study.scripture_mode'),
       'question' => context.tr('generate_study.question_mode'),
       _ => context.tr('generate_study.topic_mode'),
     };
-    final parts = <String>[type];
+    final parts = <String>[
+      if (lesson != null)
+        context.tr(TranslationKeys.lessonEyebrow, {
+          'n': lesson.lessonNumber,
+          'total': lesson.lessonTotal,
+        })
+      else
+        type,
+    ];
     if (studyMode != null) {
       parts.add(context.tr(switch (studyMode) {
         StudyMode.quick => TranslationKeys.studyModeQuickName,
@@ -659,7 +679,12 @@ class StudyGuideTopicTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          eyebrow(context, inputType: inputType, studyMode: studyMode),
+          eyebrow(
+            context,
+            inputType: inputType,
+            studyMode: studyMode,
+            lesson: lesson,
+          ),
           style: AppFonts.inter(
             fontSize: 11,
             fontWeight: FontWeight.w700,

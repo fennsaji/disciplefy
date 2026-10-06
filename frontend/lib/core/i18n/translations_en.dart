@@ -885,6 +885,9 @@ const Map<String, dynamic> englishTranslations = {
     'resend_short': 'Resend',
     'sent': 'Verification email sent! Check your inbox.',
   },
+  'lesson': {
+    'eyebrow': 'Lesson {n} of {total}',
+  },
   'onboarding': {
     'skip_intro': 'Skip',
     'get_started': 'Get Started',
