@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_from_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
@@ -175,6 +176,35 @@ void main() {
     expect(find.text('Quick read · 3 min'), findsOneWidget);
     expect(find.textContaining('Full guide'), findsNothing);
   });
+
+  for (final dark in [false, true]) {
+    testWidgets('start button fill in ${dark ? 'dark' : 'light'} theme',
+        (tester) async {
+      await tester.pumpWidget(welcomeApp(
+          dark: dark,
+          screen: Scaffold(
+            body: TodayLessonCard(
+                summary: summary4of8,
+                mode: StudyMode.standard,
+                onModeChanged: (_) {},
+                onStart: () {}),
+          )));
+      final context = tester.element(find.byType(TodayLessonCard));
+      final palette = ReaderPalette.of(context);
+      final style =
+          tester.widget<FilledButton>(find.byType(FilledButton)).style!;
+      final fill = style.backgroundColor!.resolve({});
+      final ink = style.foregroundColor!.resolve({});
+      if (dark) {
+        expect(fill, Colors.white);
+        expect(ink, palette.ctaInk);
+      } else {
+        expect(fill, palette.text);
+        expect(ink, Colors.white);
+      }
+      expect(fill, isNot(palette.gold));
+    });
+  }
 
   testWidgets('finished path shows Choose your next path', (tester) async {
     var chose = 0;

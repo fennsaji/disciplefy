@@ -95,7 +95,7 @@ class TodayLessonCard extends StatelessWidget {
           child: FilledButton(
             onPressed: onStart,
             style: FilledButton.styleFrom(
-              backgroundColor: palette.isDark ? palette.ctaFill : palette.gold,
+              backgroundColor: palette.isDark ? palette.ctaFill : palette.text,
               foregroundColor: palette.isDark ? palette.ctaInk : Colors.white,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 16),
