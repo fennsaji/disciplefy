@@ -48,6 +48,7 @@ import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../data/models/learning_path_download_model.dart';
 import '../../data/services/learning_path_download_service.dart';
 import '../../domain/entities/learning_path.dart';
+import '../../domain/utils/lesson_launch.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
@@ -335,32 +336,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       languageService.saveStudyModePreference(mode);
     }
 
-    final encodedTitle = Uri.encodeComponent(topic.title);
-    final encodedDescription = Uri.encodeComponent(topic.description);
-    final encodedInputType = Uri.encodeComponent(topic.inputType);
-    final encodedPathTitle = Uri.encodeComponent(path.title);
-    final encodedPathDescription = Uri.encodeComponent(path.description);
-    final topicIdParam =
-        topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
-    final descriptionParam =
-        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
-    final pathIdParam = path.id.isNotEmpty ? '&path_id=${path.id}' : '';
-    final pathTitleParam =
-        path.title.isNotEmpty ? '&path_title=$encodedPathTitle' : '';
-    final pathDescriptionParam = path.description.isNotEmpty
-        ? '&path_description=$encodedPathDescription'
-        : '';
-    final discipleLevelParam = path.discipleLevel.isNotEmpty
-        ? '&disciple_level=${Uri.encodeComponent(path.discipleLevel)}'
-        : '';
-
     Logger.debug(
         '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}, path: ${path.title}, level: ${path.discipleLevel}');
 
     // Use push and await the result - when user returns, refresh the data
-    await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam$pathTitleParam$pathDescriptionParam$discipleLevelParam',
-    );
+    await context.push(buildLessonLaunchLocation(
+        path: path, topic: topic, mode: mode, language: _currentLanguage));
 
     // Persist that this topic was accessed so future visits bypass the token check
     _markTopicAsAccessed(topic);

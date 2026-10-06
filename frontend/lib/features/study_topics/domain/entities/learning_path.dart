@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 /// Represents a learning path - a curated collection of topics
 /// for structured learning journeys.
@@ -183,6 +184,27 @@ class LearningPathDetail extends LearningPath {
     this.enrolledAt,
     this.topics = const [],
   });
+
+  @visibleForTesting
+  factory LearningPathDetail.forTest({
+    required String id,
+    required String title,
+    required String description,
+    required List<LearningPathTopic> topics,
+  }) =>
+      LearningPathDetail(
+        id: id,
+        slug: '',
+        title: title,
+        description: description,
+        iconName: '',
+        color: '',
+        totalXp: 0,
+        estimatedDays: 0,
+        discipleLevel: '',
+        isEnrolled: true,
+        topics: topics,
+      );
 
   @override
   List<Object?> get props => [
