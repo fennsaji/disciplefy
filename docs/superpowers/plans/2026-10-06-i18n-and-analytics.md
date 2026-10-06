@@ -72,11 +72,11 @@ Phase-specific:
 | `frontend/test/core/i18n/redesign_keys.dart` (new) | The list of keys used on redesigned screens + the style each renders in |
 | `frontend/test/core/i18n/short_string_audit_test.dart` (new) | Width audit (fails with a table) |
 | `frontend/lib/core/i18n/translations_hi.dart`, `translations_ml.dart`, `frontend/lib/core/localization/app_localizations.dart` | Shorter strings |
-| `backend/supabase/migrations/20261006120000_learning_path_short_titles.sql` (new) | `short_title` columns + seeds |
+| `backend/supabase/migrations/20261006140000_learning_path_short_titles.sql` (new) | `short_title` columns + seeds |
 | `backend/supabase/functions/learning-paths/index.ts:271-309` (+ list/recommended builders) | Return `short_title` |
 | `frontend/lib/features/study_topics/data/models/learning_path_model.dart`, `domain/entities/learning_path.dart` | `shortTitle` |
 | `frontend/test/features/home/presentation/fit_360_test.dart` (new) | 360px overflow tests |
-| `backend/supabase/migrations/20261006120100_nux_analytics_views.sql` (new) | Indexes, views, retention exception |
+| `backend/supabase/migrations/20261006140100_nux_analytics_views.sql` (new) | Indexes, views, retention exception |
 | `frontend/lib/core/services/activation_analytics.dart` (new) | Event API + offline queue |
 | Hook sites (listed in Task 7) | Event calls |
 
@@ -232,7 +232,7 @@ git commit -am "fix(i18n): shorter Hindi and Malayalam labels on the redesigned 
 ### Task 3: `short_title` for learning paths (migration + API + app)
 
 **Files:**
-- Create: `backend/supabase/migrations/20261006120000_learning_path_short_titles.sql`
+- Create: `backend/supabase/migrations/20261006140000_learning_path_short_titles.sql`
 - Modify: `backend/supabase/functions/learning-paths/index.ts` (`getLocalizedTitleDescription` L271-309 → also `short_title`; every path JSON builder adds `short_title`; `batch-loaders.ts` `groupPathTranslations` carries it)
 - Modify: `backend/supabase/functions/admin-learning-paths/index.ts` (accept `short_title` per language on create/update; validate ≤ 28 chars)
 - Modify: `frontend/lib/features/study_topics/domain/entities/learning_path.dart` (add `final String? shortTitle;` and `String get displayTitle`), `data/models/learning_path_model.dart` (parse `short_title`), `ActivePathSummaryModel` already reads it (Phase C)
@@ -390,7 +390,7 @@ git commit -am "test(i18n): Hindi and Malayalam fit at 360px on Home and the doc
 ### Task 5: Analytics storage — indexes, retention exception, metric views
 
 **Files:**
-- Create: `backend/supabase/migrations/20261006120100_nux_analytics_views.sql`
+- Create: `backend/supabase/migrations/20261006140100_nux_analytics_views.sql`
 - Test: a SQL check (below), run in a transaction
 
 **Interfaces:**

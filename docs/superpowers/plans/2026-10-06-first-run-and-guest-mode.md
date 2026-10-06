@@ -63,7 +63,7 @@ Tests for these are in Tasks 2, 7, 8, 9 and 10.
 
 | File | Responsibility |
 |---|---|
-| `backend/supabase/migrations/20261006110000_rollout_flags_first_run.sql` | Flag rows `new_first_run`, `guest_mode`, `home_today_layout`, `generate_single_input` |
+| `backend/supabase/migrations/20261006130000_rollout_flags_first_run.sql` | Flag rows `new_first_run`, `guest_mode`, `home_today_layout`, `generate_single_input` |
 | `backend/supabase/config.toml:152` | `enable_manual_linking = true` (local only) |
 | `backend/supabase/functions/_shared/auth/user-context.ts` (new) | Pure `toUserContext(identity)`, `isGuest`, `assertFullAccount` |
 | `backend/supabase/functions/_shared/types/index.ts:17-23` | `UserContext.isGuest?: boolean` |
@@ -72,7 +72,7 @@ Tests for these are in Tasks 2, 7, 8, 9 and 10.
 | `backend/supabase/functions/_shared/utils/lesson-pricing.ts` (new) | `isFreeCatalogueLesson` |
 | `backend/supabase/functions/learning-paths/index.ts:913+` | Enrol by `slug`; guests are limited to one path |
 | `backend/supabase/functions/user-profile/index.ts` | `action=merge_guest` |
-| `backend/supabase/migrations/20261006110100_merge_guest_progress.sql` | `merge_guest_progress(p_guest, p_user)` |
+| `backend/supabase/migrations/20261006130100_merge_guest_progress.sql` | `merge_guest_progress(p_guest, p_user)` |
 | `frontend/lib/core/services/rollout_flags.dart` (new) | Flag getters |
 | `frontend/lib/features/auth/data/services/guest_session_service.dart` (new) | Anonymous sign-in, linking, merge fallback |
 | `frontend/lib/features/auth/presentation/widgets/account_needed_sheet.dart` (new) | "Groups need an account" sheet + `requireAccount()` guard |
@@ -89,7 +89,7 @@ Tests for these are in Tasks 2, 7, 8, 9 and 10.
 ### Task 1: Rollout flags (migration + `RolloutFlags`)
 
 **Files:**
-- Create: `backend/supabase/migrations/20261006110000_rollout_flags_first_run.sql`
+- Create: `backend/supabase/migrations/20261006130000_rollout_flags_first_run.sql`
 - Create: `frontend/lib/core/services/rollout_flags.dart`
 - Modify: `frontend/lib/core/di/injection_container.dart` (near the `SystemConfigService` registration, ~L282): `sl.registerLazySingleton(() => RolloutFlags(sl()))`
 - Test: `frontend/test/core/services/rollout_flags_test.dart`
@@ -383,7 +383,7 @@ git commit -am "feat(study): path lessons are free in Quick Read"
 ### Task 5: Guest progress merge (SQL + `user-profile?action=merge_guest`)
 
 **Files:**
-- Create: `backend/supabase/migrations/20261006110100_merge_guest_progress.sql`
+- Create: `backend/supabase/migrations/20261006130100_merge_guest_progress.sql`
 - Modify: `backend/supabase/functions/user-profile/index.ts` (new action)
 - Test: SQL check below; `backend/supabase/functions/user-profile/merge-guest.test.ts` (pure validation)
 
