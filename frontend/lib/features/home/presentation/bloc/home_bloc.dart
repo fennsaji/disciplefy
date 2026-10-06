@@ -163,6 +163,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             activeLearningPath: currentState.activeLearningPath,
             learningPathReason: currentState.learningPathReason,
             isLoadingActivePath: currentState.isLoadingActivePath,
+            activePathSummary: currentState.activePathSummary,
           ));
           break;
         case final generation_states.HomeStudyGenerationError error:
@@ -372,6 +373,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
               activeLearningPath: offlinePath,
               learningPathReason:
                   LearningPathRecommendationReason.offlineAvailable,
+              clearActivePathSummary: true,
             ));
           } else {
             _activePathScope = null;
@@ -424,6 +426,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             isLoadingActivePath: false,
             activeLearningPath: path,
             learningPathReason: reason,
+            activePathSummary: recommended.summary,
+            clearActivePathSummary: recommended.summary == null,
           ));
         }
       }
@@ -463,6 +467,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isLoadingActivePath: true,
         activeLearningPath: cached.path,
         learningPathReason: cached.reason,
+        activePathSummary: cached.summary,
+        clearActivePathSummary: cached.summary == null,
       ));
     } else {
       _activePathScope = null;

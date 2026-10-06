@@ -1,3 +1,5 @@
+import '../../../home/data/models/active_path_summary_model.dart';
+import '../../../home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/learning_path.dart';
 
 /// Model for parsing learning path data from API.
@@ -427,10 +429,12 @@ class PersonalizedPathsResponseModel {
 class RecommendedPathResponseModel {
   final LearningPathModel? path;
   final String reason;
+  final ActivePathSummary? summary;
 
   const RecommendedPathResponseModel({
     required this.path,
     required this.reason,
+    this.summary,
   });
 
   factory RecommendedPathResponseModel.fromJson(Map<String, dynamic> json) {
@@ -440,6 +444,8 @@ class RecommendedPathResponseModel {
     return RecommendedPathResponseModel(
       path: pathJson != null ? LearningPathModel.fromJson(pathJson) : null,
       reason: data['reason'] as String? ?? 'featured',
+      summary:
+          pathJson != null ? ActivePathSummaryModel.fromJson(pathJson) : null,
     );
   }
 
@@ -448,6 +454,7 @@ class RecommendedPathResponseModel {
     return RecommendedPathResult(
       path: path!,
       reason: RecommendedPathResult.parseReason(reason),
+      summary: summary,
     );
   }
 }

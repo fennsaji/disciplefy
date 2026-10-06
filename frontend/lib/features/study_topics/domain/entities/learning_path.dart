@@ -1,3 +1,4 @@
+import '../../../home/domain/entities/active_path_summary.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
@@ -335,9 +336,13 @@ class RecommendedPathResult {
   final LearningPath path;
   final LearningPathRecommendationReason reason;
 
+  /// Home summary (next lesson, completion, milestones). Null when absent.
+  final ActivePathSummary? summary;
+
   const RecommendedPathResult({
     required this.path,
     required this.reason,
+    this.summary,
   });
 
   /// Helper to parse reason from string
