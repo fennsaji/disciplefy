@@ -12,6 +12,7 @@ class AppRoutes {
   static const String generateStudy = '/generate-study';
   static const String studyGuide = '/study-guide';
   static const String studyGuideV2 = '/study-guide-v2';
+  static const String lessonComplete = '/lesson-complete';
   static const String settings = '/settings';
   static const String bibleAttribution = '/settings/bible-attribution';
   static const String notificationSettings = '/notification-settings';

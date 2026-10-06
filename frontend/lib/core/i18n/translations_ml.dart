@@ -898,6 +898,13 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'lesson': {
     'eyebrow': 'പാഠം {n}/{total}',
+    'mark_complete': 'പൂർത്തിയായി · പാഠം {n}/{total}',
+    'complete_title': 'പാഠം {n} പൂർത്തിയായി',
+    'up_next': 'അടുത്തത്',
+    'continue_to': 'പാഠം {n} തുടരാം',
+    'back_home': 'ഹോമിലേക്ക്',
+    'path_finished': '{path} പൂർത്തിയാക്കി',
+    'full_guide_link': 'മുഴുവൻ പഠനം വായിക്കാം',
   },
   'onboarding': {
     'skip_intro': 'ഒഴിവാക്കുക',

@@ -887,6 +887,13 @@ const Map<String, dynamic> englishTranslations = {
   },
   'lesson': {
     'eyebrow': 'Lesson {n} of {total}',
+    'mark_complete': 'Mark complete · Lesson {n} of {total}',
+    'complete_title': 'Lesson {n} complete',
+    'up_next': 'Up next',
+    'continue_to': 'Continue to lesson {n}',
+    'back_home': 'Back to Home',
+    'path_finished': 'You finished {path}',
+    'full_guide_link': 'Want the full study? Read the full guide',
   },
   'onboarding': {
     'skip_intro': 'Skip',

@@ -880,6 +880,13 @@ const Map<String, dynamic> hindiTranslations = {
   },
   'lesson': {
     'eyebrow': 'पाठ {n}/{total}',
+    'mark_complete': 'पूरा करें · पाठ {n}/{total}',
+    'complete_title': 'पाठ {n} पूरा',
+    'up_next': 'आगे',
+    'continue_to': 'पाठ {n} पर जाएँ',
+    'back_home': 'होम पर जाएँ',
+    'path_finished': 'आपने {path} पूरा किया',
+    'full_guide_link': 'पूरा अध्ययन? पूरी गाइड पढ़ें',
   },
   'onboarding': {
     'skip_intro': 'छोड़ें',

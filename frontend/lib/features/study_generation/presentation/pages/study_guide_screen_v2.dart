@@ -50,7 +50,10 @@ import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
 import '../../../../shared/widgets/sign_in_required_dialog.dart';
 import '../widgets/study_reading_tracker.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import '../../../study_topics/domain/entities/lesson_ref.dart';
+import '../../../study_topics/presentation/pages/lesson_complete_page.dart';
+import '../../../study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
 import '../../data/services/reading_progress_store.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
@@ -1572,6 +1575,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// show the completion sheet after [_inactivitySeconds] of silence at the
   /// absolute bottom.
   void _startInactivityCountdown() {
+    // Path lessons end with "Mark complete", not a timed sheet.
+    if (widget.lesson != null) return;
     if (_isTopicCompletedFromPath) return;
     if (_phase2WalkthroughStarted) return;
     if (!_completionMarked) return;
@@ -1819,6 +1824,79 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // the user reaches the absolute bottom — never mid-read.
   }
 
+  /// "Mark complete" on a path lesson: record completion, then open the
+  /// Lesson complete page in place of this guide.
+  Future<void> _completeLessonNow() async {
+    final lesson = widget.lesson;
+    if (lesson == null) return;
+    _markStudyGuideComplete(isManual: true);
+    await (_topicProgressFuture ??= _completeTopicProgress());
+    if (!mounted) return;
+    context.pushReplacement(
+      AppRoutes.lessonComplete,
+      extra: LessonCompleteArgs(
+        lesson: lesson,
+        lessonTitle: _getDisplayTitle(),
+        mode: widget.studyMode,
+        language: widget.language ?? _currentStudyGuide?.language ?? 'en',
+      ),
+    );
+  }
+
+  /// Share and follow-up buttons under "Mark complete".
+  Widget? _buildLessonSecondaryActions(BuildContext context) {
+    final guide = _currentStudyGuide;
+    final palette = ReaderPalette.of(context);
+    final canShare = guide != null && _userFellowships?.isNotEmpty == true;
+    final canChat = _shouldShowStudyChat();
+    if (!canShare && !canChat) return null;
+    ButtonStyle style() => OutlinedButton.styleFrom(
+          foregroundColor: palette.text,
+          side: BorderSide(color: palette.outline),
+          minimumSize: const Size(0, 32),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        );
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        if (canShare)
+          OutlinedButton.icon(
+            style: style(),
+            icon: const Icon(Icons.people_outline_rounded, size: 14),
+            label: Text(context.tr(TranslationKeys.popupShareFellowship)),
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => ShareGuideSheet(
+                studyGuideId: guide.id,
+                guideTitle: _getDisplayTitle(),
+                guideInputType: guide.inputType,
+                guideLanguage: guide.language,
+                guideStudyMode: guide.studyMode ?? widget.studyMode.name,
+                guideSummary: guide.summary,
+                fellowships: _userFellowships!,
+              ),
+            ),
+          ),
+        if (canChat)
+          OutlinedButton.icon(
+            style: style(),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+            label: Text(context.tr(TranslationKeys.popupAskDiscipler)),
+            onPressed: _openDisciplerChat,
+          ),
+      ],
+    );
+  }
+
   /// Complete topic progress tracking when study guide is finished.
   ///
   /// This is called after StudyCompletionSuccess to track the user's
@@ -1915,6 +1993,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// follow-up actions (e.g. Phase 2 walkthrough) without visual overlap.
   void _showLearningPathCompletionSheet({VoidCallback? onDismissed}) {
     if (!mounted) return;
+    if (widget.lesson != null) return;
     // Guard: only show once
     if (_isTopicCompletedFromPath) return;
     setState(() => _isTopicCompletedFromPath = true);
@@ -2154,7 +2233,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
                 // Track topic progress completion (XP, first-completion badge, etc.)
                 // Store the future so _handleBackNavigation can await it.
-                _topicProgressFuture = _completeTopicProgress();
+                _topicProgressFuture ??= _completeTopicProgress();
 
                 // Anything that pops up waits until the user has reached the
                 // bottom of the guide. That includes the streak update: it
@@ -2821,6 +2900,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               lesson: widget.lesson,
             ),
           ),
+
+          if (widget.lesson != null)
+            Padding(
+              padding: sidePadding.add(const EdgeInsets.only(top: 20)),
+              child: LessonMarkCompleteBar(
+                lesson: widget.lesson!,
+                onComplete: _completeLessonNow,
+                secondary: _buildLessonSecondaryActions(context),
+              ),
+            ),
 
           // Share with fellowship — a reflection, question, or insight
           if (showShare)

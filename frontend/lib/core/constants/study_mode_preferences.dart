@@ -8,6 +8,10 @@
 /// - `learning_path_study_mode` in user_preferences (learning path mode)
 library;
 
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+
 /// Special preference values used across both general and learning path modes
 class StudyModePreferences {
   // ============================================================================
@@ -73,4 +77,12 @@ class StudyModePreferences {
     const validModes = ['quick', 'standard', 'deep', 'lectio', 'sermon'];
     return validModes.contains(value);
   }
+}
+
+/// Mode for lessons 2+ of a path: the user's concrete learning-path mode, or
+/// Standard when they chose 'recommended', 'ask' or nothing.
+Future<StudyMode> resolveNextLessonMode() async {
+  final raw =
+      sl<LanguagePreferenceService>().getLearningPathStudyModePreferenceRaw();
+  return studyModeFromString(raw) ?? StudyMode.standard;
 }

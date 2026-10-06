@@ -3552,4 +3552,11 @@ class TranslationKeys {
 
   // Path lesson eyebrow on the study guide header.
   static const lessonEyebrow = 'lesson.eyebrow';
+  static const lessonMarkComplete = 'lesson.mark_complete';
+  static const lessonCompleteTitle = 'lesson.complete_title';
+  static const lessonUpNext = 'lesson.up_next';
+  static const lessonContinueTo = 'lesson.continue_to';
+  static const lessonBackHome = 'lesson.back_home';
+  static const lessonPathFinished = 'lesson.path_finished';
+  static const lessonFullGuideLink = 'lesson.full_guide_link';
 }

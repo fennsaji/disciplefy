@@ -35,6 +35,7 @@ import '../../features/settings/presentation/pages/offline_guides_screen.dart';
 import '../../features/community/presentation/screens/blocked_users_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/domain/entities/lesson_ref.dart';
+import '../../features/study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/token_purchase_page.dart';
@@ -1189,6 +1190,26 @@ class AppRouter {
         },
       ),
 
+      // Lesson complete - shown after "Mark complete" on a path lesson.
+      GoRoute(
+        path: AppRoutes.lessonComplete,
+        name: 'lesson_complete',
+        pageBuilder: (context, state) {
+          final args = state.extra;
+          // A cold start or restored URL has no extra: nothing to show.
+          if (args is! LessonCompleteArgs) {
+            return slideRightTransitionPage(
+              child: const _RedirectHome(),
+              state: state,
+            );
+          }
+          return slideRightTransitionPage(
+            child: MaxWidthWrapper(child: LessonCompletePage(args: args)),
+            state: state,
+          );
+        },
+      ),
+
       // Study Guide V2 - Dynamic generation from query parameters
       GoRoute(
         path: AppRoutes.studyGuideV2,
@@ -1460,4 +1481,25 @@ extension AppRouterExtension on GoRouter {
   /// Navigates to the members tab of a specific fellowship.
   void goToFellowshipMembers(String fellowshipId) =>
       go('/community/$fellowshipId/members');
+}
+
+/// Sends the user home on the next frame (route with no usable arguments).
+class _RedirectHome extends StatefulWidget {
+  const _RedirectHome();
+
+  @override
+  State<_RedirectHome> createState() => _RedirectHomeState();
+}
+
+class _RedirectHomeState extends State<_RedirectHome> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(AppRoutes.home);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const Scaffold();
 }

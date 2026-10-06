@@ -1,0 +1,74 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lesson_ref.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
+
+import '../../../../helpers/welcome_test_harness.dart';
+
+const _lesson =
+    LessonRef(pathId: 'p', pathTitle: 'P', lessonNumber: 4, lessonTotal: 8);
+
+Widget _app(Widget child) => MaterialApp(
+      theme: AppTheme.darkTheme,
+      home: Scaffold(body: child),
+    );
+
+void main() {
+  setUp(() {
+    sl.registerSingleton<TranslationService>(FakeTranslationService());
+  });
+  tearDown(() => sl.reset());
+
+  testWidgets('tapping completes immediately, 40px gold button',
+      (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(_app(LessonMarkCompleteBar(
+      lesson: _lesson,
+      onComplete: () async => calls++,
+    )));
+    expect(tester.getSize(find.byType(FilledButton)).height, 40);
+    await tester.tap(find.text('Mark complete · Lesson 4 of 8'));
+    await tester.pump();
+    expect(calls, 1);
+  });
+
+  testWidgets('shows a spinner and ignores taps while completing',
+      (tester) async {
+    final done = Completer<void>();
+    var calls = 0;
+    await tester.pumpWidget(_app(LessonMarkCompleteBar(
+      lesson: _lesson,
+      onComplete: () {
+        calls++;
+        return done.future;
+      },
+    )));
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.tap(find.byType(FilledButton), warnIfMissed: false);
+    await tester.pump();
+    expect(calls, 1);
+    done.complete();
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('secondary is hidden when null and shown when given',
+      (tester) async {
+    await tester.pumpWidget(
+        _app(LessonMarkCompleteBar(lesson: _lesson, onComplete: () async {})));
+    expect(find.text('sec'), findsNothing);
+    await tester.pumpWidget(_app(LessonMarkCompleteBar(
+        lesson: _lesson,
+        onComplete: () async {},
+        secondary: const Text('sec'))));
+    expect(find.text('sec'), findsOneWidget);
+  });
+}
