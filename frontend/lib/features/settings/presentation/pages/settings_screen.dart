@@ -242,12 +242,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   // Sections
   // -------------------------------------------------------------------------
 
-  String _userPlan() {
-    final tokenState = sl<TokenBloc>().state;
-    return tokenState is TokenLoaded
-        ? tokenState.tokenStatus.userPlan.name
-        : 'free';
-  }
+  String _userPlan() => currentPlanCode(sl<TokenBloc>().state);
 
   List<Widget> _youSection(BuildContext context) {
     final userPlan = _userPlan();

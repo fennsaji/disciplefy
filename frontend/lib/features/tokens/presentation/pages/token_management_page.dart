@@ -368,14 +368,19 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               sub.status == SubscriptionStatus.pending_cancellation;
         }
 
-        // Trial end date for Standard plan — use backend value when available
+        // Trial end date from the backend only — the status call's, else the
+        // trial row's own period end. Unknown means no "Free until" line.
         final subscriptionStatus =
             subscriptionState is UserSubscriptionStatusLoaded
                 ? subscriptionState.subscriptionStatus
                 : null;
-        final trialEndDate =
-            subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
-        final isTrialActive = DateTime.now().isBefore(trialEndDate);
+        final isTrialRow = subscription != null &&
+            (subscription.status == SubscriptionStatus.trial ||
+                subscription.provider == 'trial');
+        final trialEndDate = subscriptionStatus?.trialEndDate ??
+            (isTrialRow ? subscription.currentPeriodEnd : null);
+        final isTrialActive =
+            trialEndDate != null && DateTime.now().isBefore(trialEndDate);
 
         // Standard user in trial (no subscription yet)
         final isStandardTrialUser = tokenStatus.userPlan == UserPlan.standard &&
@@ -454,6 +459,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       '${context.tr(TranslationKeys.myPlanFreeUntil)} ${DateFormat('MMMM d, y').format(trialEndDate)}',
                 ),
               ],
+              const LedgerHairline(verticalMargin: 14),
+              const _StudyCosts(),
               const LedgerHairline(verticalMargin: 14),
               _PlanAllowances(current: tokenStatus.userPlan),
               const LedgerHairline(verticalMargin: 14),
@@ -763,6 +770,34 @@ class _PlanRow extends StatelessWidget {
           key: const Key('credits_manage_plan'),
           label: context.tr('tokens.plans.manage'),
           onTap: onManage,
+        ),
+      ],
+    );
+  }
+}
+
+/// What a study costs, in one line. The exact cost (which varies by study
+/// language) is shown before each study, not here.
+class _StudyCosts extends StatelessWidget {
+  const _StudyCosts();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LedgerSectionLabel(
+          context.tr(TranslationKeys.ledgerStudyCostsTitle),
+          padding: const EdgeInsets.only(top: 4, bottom: 6),
+        ),
+        Text(
+          context.tr(TranslationKeys.ledgerStudyCostsLine),
+          style: AppFonts.inter(
+            fontSize: 13,
+            color: palette.muted,
+            height: 1.45,
+          ),
         ),
       ],
     );

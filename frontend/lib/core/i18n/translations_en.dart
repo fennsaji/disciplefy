@@ -17,7 +17,7 @@ const Map<String, dynamic> englishTranslations = {
     'generation_timeout':
         'Study generation is taking longer than expected. Please try again.',
     'offline_generate': 'Connect to the internet to generate a study guide',
-    'tokens_per_guide': '{count} tokens',
+    'tokens_per_guide': '{count} credits',
   },
   // App status: maintenance, error page, exit/join prompts, shell toasts.
   'app_status': {
@@ -63,14 +63,14 @@ const Map<String, dynamic> englishTranslations = {
     'report_body':
         'Describe the issue with your purchase. Our team will review and respond within 24-48 hours.',
     'transaction_details': 'Transaction details',
-    'tokens': 'Tokens',
+    'tokens': 'Credits',
     'amount': 'Amount',
     'date': 'Date',
     'payment_id': 'Payment ID',
     'issue_type': 'Issue type',
     'issue_wrong_amount': 'Wrong Amount Charged',
     'issue_payment_failed': 'Payment Failed',
-    'issue_tokens_not_credited': 'Tokens Not Credited',
+    'issue_tokens_not_credited': 'Credits Not Added',
     'issue_duplicate_charge': 'Duplicate Charge',
     'issue_refund_request': 'Refund Request',
     'issue_other': 'Other Issue',
@@ -481,9 +481,9 @@ const Map<String, dynamic> englishTranslations = {
     'select_all': 'Select all',
     'deselect_all': 'Deselect all',
     'download_count': 'Download {count} guides',
-    'download_count_with_cost': 'Download {count} guides ({cost} tokens)',
+    'download_count_with_cost': 'Download {count} guides ({cost} credits)',
     'select_at_least_one': 'Select at least one guide',
-    'guides_with_cost': '{count} guides · {cost} tokens',
+    'guides_with_cost': '{count} guides · {cost} credits',
     'guides_selected': '{count} guides selected',
     'status_downloaded': 'Downloaded',
     'status_downloading': 'Downloading…',
@@ -1700,6 +1700,9 @@ const Map<String, dynamic> englishTranslations = {
     'start_study': 'Start a study',
     'back_to_credits': 'Back to credits',
     'since': 'Since {date}',
+    'study_costs_title': 'What a study costs',
+    'study_costs_line':
+        'Quick Read from 10 · Standard from 20 · Deep Dive from 30 · Follow-up 5. You see the exact cost before each study.',
     'credits_used': 'credits used',
     'studies': 'studies',
     'avg_per_study': 'avg / study',
@@ -1814,7 +1817,7 @@ const Map<String, dynamic> englishTranslations = {
     'purchase': {
       'title': 'Get Credits',
       'iap_success':
-          'Purchase successful! {tokens} tokens added to your account.',
+          'Purchase successful! {tokens} credits added to your account.',
       'choose_package': 'Choose a Package',
       'choose_amount': 'Choose Amount',
       'custom': 'Custom',
@@ -2406,8 +2409,7 @@ const Map<String, dynamic> englishTranslations = {
     'trial_ended': 'Your Trial Has Ended',
     'subscribe_to_continue': 'Subscribe to continue using Standard features',
     'unlock_standard_features': 'Unlock Standard Features',
-    'get_tokens_daily':
-        'Get 20 study credits daily, study guides & more for just {price}',
+    'get_tokens_daily': 'Get 40 credits a day, Deep Dive studies and more',
     'enjoying_premium': 'Enjoying Premium Features',
     'premium_trial_ends_soon': 'Premium trial ends soon!',
     'days_remaining_in_trial': '{days} day remaining in your free trial',
@@ -2424,7 +2426,7 @@ const Map<String, dynamic> englishTranslations = {
     'keep_standard_access': 'Keep Standard access for {price}',
     'get_all_features': 'Get all features for {price}',
     'regain_access': 'Regain access for {price}',
-    'get_tokens_daily_for': 'Get 20 credits daily for {price}',
+    'get_tokens_daily_for': 'Get 40 credits a day for {price}',
     'unlimited_tokens_for': 'Unlimited credits for {price}',
     'continue_after_trial': 'Continue after trial for {price}',
     'continue_subscription': 'Continue Subscription',
@@ -2433,6 +2435,12 @@ const Map<String, dynamic> englishTranslations = {
     'cancel_at_period_end': 'Cancel at period end',
     'resubscribe': 'Resubscribe',
     'renew_subscription': 'Renew your subscription',
+    'view_plans': 'View plans',
+    'trial_pill': 'Trial',
+    'free_trial_until': 'Free trial until {date}',
+    'trial_no_payment':
+        'No payment method yet. Choose a plan before your trial ends.',
+    'no_features': 'No features available',
   },
   'upgrade_dialog': {
     'title': 'Upgrade to Unlock {feature}',
@@ -2440,7 +2448,7 @@ const Map<String, dynamic> englishTranslations = {
     'price': 'Just {price}',
     'benefit_voice': 'Discipler voice sessions',
     'benefit_memory': 'Memory verse memorization',
-    'benefit_tokens': '20 credits daily + buy more',
+    'benefit_tokens': '40 credits a day + buy more',
     'upgrade_button': 'Upgrade to Standard',
     'maybe_later': 'Maybe Later',
   },

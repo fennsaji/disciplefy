@@ -17,7 +17,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'generation_timeout':
         'പഠന ഗൈഡ് തയ്യാറാക്കാൻ പ്രതീക്ഷിച്ചതിലും കൂടുതൽ സമയമെടുക്കുന്നു. വീണ്ടും ശ്രമിക്കുക.',
     'offline_generate': 'പഠന ഗൈഡ് തയ്യാറാക്കാൻ ഇന്റർനെറ്റുമായി ബന്ധിപ്പിക്കുക',
-    'tokens_per_guide': '{count} ടോക്കണുകൾ',
+    'tokens_per_guide': '{count} ക്രെഡിറ്റ്',
   },
   // App status: maintenance, error page, exit/join prompts, shell toasts.
   'app_status': {
@@ -66,14 +66,14 @@ const Map<String, dynamic> malayalamTranslations = {
     'report_body':
         'നിങ്ങളുടെ വാങ്ങലിലെ പ്രശ്നം വിവരിക്കുക. ഞങ്ങളുടെ ടീം 24-48 മണിക്കൂറിനുള്ളിൽ പരിശോധിച്ച് മറുപടി നൽകും.',
     'transaction_details': 'ഇടപാട് വിവരങ്ങൾ',
-    'tokens': 'ടോക്കണുകൾ',
+    'tokens': 'ക്രെഡിറ്റുകൾ',
     'amount': 'തുക',
     'date': 'തീയതി',
     'payment_id': 'പേയ്‌മെന്റ് ID',
     'issue_type': 'പ്രശ്നത്തിന്റെ തരം',
     'issue_wrong_amount': 'തെറ്റായ തുക ഈടാക്കി',
     'issue_payment_failed': 'പേയ്‌മെന്റ് പരാജയപ്പെട്ടു',
-    'issue_tokens_not_credited': 'ടോക്കണുകൾ ക്രെഡിറ്റ് ആയില്ല',
+    'issue_tokens_not_credited': 'ക്രെഡിറ്റുകൾ ചേർന്നില്ല',
     'issue_duplicate_charge': 'ഇരട്ടി ചാർജ് ഈടാക്കി',
     'issue_refund_request': 'റീഫണ്ട് അഭ്യർത്ഥന',
     'issue_other': 'മറ്റ് പ്രശ്നം',
@@ -490,9 +490,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'deselect_all': 'തിരഞ്ഞെടുപ്പ് മാറ്റുക',
     'download_count': '{count} ഗൈഡുകൾ ഡൗൺലോഡ് ചെയ്യുക',
     'download_count_with_cost':
-        '{count} ഗൈഡുകൾ ഡൗൺലോഡ് ചെയ്യുക ({cost} ടോക്കണുകൾ)',
+        '{count} ഗൈഡുകൾ ഡൗൺലോഡ് ചെയ്യുക ({cost} ക്രെഡിറ്റ്)',
     'select_at_least_one': 'കുറഞ്ഞത് ഒരു ഗൈഡ് തിരഞ്ഞെടുക്കുക',
-    'guides_with_cost': '{count} ഗൈഡുകൾ · {cost} ടോക്കണുകൾ',
+    'guides_with_cost': '{count} ഗൈഡുകൾ · {cost} ക്രെഡിറ്റ്',
     'guides_selected': '{count} ഗൈഡുകൾ തിരഞ്ഞെടുത്തു',
     'status_downloaded': 'ഡൗൺലോഡ് ചെയ്തു',
     'status_downloading': 'ഡൗൺലോഡ് ചെയ്യുന്നു…',
@@ -1740,6 +1740,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'start_study': 'പഠനം തുടങ്ങൂ',
     'back_to_credits': 'ക്രെഡിറ്റുകളിലേക്ക് മടങ്ങൂ',
     'since': '{date} മുതൽ',
+    'study_costs_title': 'ഒരു പഠനത്തിന്റെ ചെലവ്',
+    'study_costs_line':
+        'ക്വിക്ക് റീഡ് 10 മുതൽ · സ്റ്റാൻഡേർഡ് 20 മുതൽ · ഡീപ്പ് ഡൈവ് 30 മുതൽ · ചോദ്യം 5. ഓരോ പഠനത്തിനും മുമ്പ് കൃത്യമായ ചെലവ് കാണാം.',
     'credits_used': 'ക്രെഡിറ്റുകൾ ഉപയോഗിച്ചു',
     'studies': 'പഠനങ്ങൾ',
     'avg_per_study': 'ശരാശരി / പഠനം',
@@ -1855,7 +1858,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'purchase': {
       'title': 'ക്രെഡിറ്റുകൾ നേടുക',
       'iap_success':
-          'വാങ്ങൽ വിജയകരം! {tokens} ടോക്കണുകൾ നിങ്ങളുടെ അക്കൗണ്ടിൽ ചേർത്തു.',
+          'വാങ്ങൽ വിജയകരം! {tokens} ക്രെഡിറ്റുകൾ നിങ്ങളുടെ അക്കൗണ്ടിൽ ചേർത്തു.',
       'choose_package': 'ഒരു പാക്കേജ് തിരഞ്ഞെടുക്കുക',
       'choose_amount': 'തുക തിരഞ്ഞെടുക്കുക',
       'custom': 'കസ്റ്റം',
@@ -2505,8 +2508,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'subscribe_to_continue':
         'സ്റ്റാൻഡേർഡ് സവിശേഷതകൾ തുടരാൻ സബ്‌സ്‌ക്രൈബ് ചെയ്യുക',
     'unlock_standard_features': 'സ്റ്റാൻഡേർഡ് സവിശേഷതകൾ അൺലോക്ക് ചെയ്യുക',
-    'get_tokens_daily':
-        'വെറും {price} 20 പഠന ക്രെഡിറ്റുകൾ ദിവസവും, സ്റ്റഡി ഗൈഡുകൾ എന്നിവയും അതിലേറെയും',
+    'get_tokens_daily': 'ദിവസം 40 ക്രെഡിറ്റ്, ഡീപ്പ് ഡൈവ് പഠനങ്ങളും മറ്റും',
     'enjoying_premium': 'പ്രീമിയം സവിശേഷതകൾ ആസ്വദിക്കുന്നു',
     'premium_trial_ends_soon': 'പ്രീമിയം ട്രയൽ ഉടൻ അവസാനിക്കും!',
     'days_remaining_in_trial': 'നിങ്ങളുടെ സൗജന്യ ട്രയലിൽ {days} ദിവസം ബാക്കി',
@@ -2524,7 +2526,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'keep_standard_access': '{price} സ്റ്റാൻഡേർഡ് ആക്‌സസ് നിലനിർത്തുക',
     'get_all_features': '{price} എല്ലാ സവിശേഷതകളും നേടുക',
     'regain_access': '{price} വീണ്ടും ആക്‌സസ് നേടുക',
-    'get_tokens_daily_for': '{price} 20 ക്രെഡിറ്റുകൾ ദിവസവും നേടുക',
+    'get_tokens_daily_for': '{price} — ദിവസം 40 ക്രെഡിറ്റ്',
     'unlimited_tokens_for': '{price} അൺലിമിറ്റഡ് ക്രെഡിറ്റുകൾ',
     'continue_after_trial': 'ട്രയലിന് ശേഷം {price} തുടരുക',
     'continue_subscription': 'സബ്‌സ്‌ക്രിപ്ഷൻ തുടരുക',
@@ -2533,6 +2535,12 @@ const Map<String, dynamic> malayalamTranslations = {
     'cancel_at_period_end': 'കാലയളവ് അവസാനിക്കുമ്പോൾ റദ്ദാക്കുക',
     'resubscribe': 'വീണ്ടും സബ്‌സ്‌ക്രൈബ് ചെയ്യുക',
     'renew_subscription': 'നിങ്ങളുടെ സബ്‌സ്‌ക്രിപ്ഷൻ പുതുക്കുക',
+    'view_plans': 'പ്ലാനുകൾ കാണുക',
+    'trial_pill': 'ട്രയൽ',
+    'free_trial_until': '{date} വരെ സൗജന്യ ട്രയൽ',
+    'trial_no_payment':
+        'ഇപ്പോൾ പണമടയ്ക്കേണ്ട. ട്രയൽ തീരും മുമ്പ് പ്ലാൻ തിരഞ്ഞെടുക്കുക.',
+    'no_features': 'സവിശേഷതകൾ ലഭ്യമല്ല',
   },
 
   // Upgrade Required Dialog
@@ -2542,7 +2550,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'price': 'വെറും {price}',
     'benefit_voice': 'Discipler വോയ്‌സ് സെഷനുകൾ',
     'benefit_memory': 'മെമ്മറി വചനം മനഃപാഠമാക്കൽ',
-    'benefit_tokens': '20 ക്രെഡിറ്റുകൾ ദിവസവും + കൂടുതൽ വാങ്ങുക',
+    'benefit_tokens': 'ദിവസം 40 ക്രെഡിറ്റ് + കൂടുതൽ വാങ്ങാം',
     'upgrade_button': 'സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക',
     'maybe_later': 'പിന്നീട്',
   },

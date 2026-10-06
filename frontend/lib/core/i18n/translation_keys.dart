@@ -1822,6 +1822,11 @@ class TranslationKeys {
   static const myPlanCancelAtPeriodEnd = 'my_plan.cancel_at_period_end';
   static const myPlanResubscribe = 'my_plan.resubscribe';
   static const myPlanRenewSubscription = 'my_plan.renew_subscription';
+  static const myPlanViewPlans = 'my_plan.view_plans';
+  static const myPlanTrialPill = 'my_plan.trial_pill';
+  static const myPlanFreeTrialUntil = 'my_plan.free_trial_until';
+  static const myPlanTrialNoPayment = 'my_plan.trial_no_payment';
+  static const myPlanNoFeatures = 'my_plan.no_features';
 
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
@@ -3253,6 +3258,8 @@ class TranslationKeys {
   static const ledgerCancelPlan = 'ledger.cancel_plan';
   static const ledgerDowngrade = 'ledger.downgrade';
   static const ledgerStatusActive = 'ledger.status_active';
+  static const ledgerStudyCostsTitle = 'ledger.study_costs_title';
+  static const ledgerStudyCostsLine = 'ledger.study_costs_line';
   static const ledgerCancelEyebrow = 'ledger.cancel_eyebrow';
   static const ledgerCancelTitle = 'ledger.cancel_title';
   static const ledgerCancelBody = 'ledger.cancel_body';

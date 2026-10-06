@@ -31,8 +31,8 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/c
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
@@ -236,7 +236,7 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
   /// or shown with a lock badge and an upsell when the plan lacks it.
   Widget _buildTopActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+    return BlocBuilder<TokenBloc, TokenState>(
       builder: (context, _) =>
           BlocBuilder<FellowshipListBloc, FellowshipListState>(
         buildWhen: (prev, curr) =>
@@ -334,7 +334,7 @@ class _MyFellowshipsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+    return BlocBuilder<TokenBloc, TokenState>(
       builder: (context, _) =>
           BlocConsumer<FellowshipListBloc, FellowshipListState>(
         listenWhen: (previous, current) =>
@@ -1131,13 +1131,15 @@ class _JoinButton extends StatelessWidget {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Current plan code, defaulting to free when the subscription is unknown.
+/// Current plan code from the one plan source (TokenBloc), defaulting to free
+/// while it is unknown. The subscription bloc only carries the plan in one of
+/// its many states, which made the paywall read "Free" for a Standard user.
 String _currentPlan(BuildContext context) {
   try {
-    final subState = context.read<SubscriptionBloc>().state;
-    if (subState is UserSubscriptionStatusLoaded) return subState.currentPlan;
-  } catch (_) {}
-  return 'free';
+    return currentPlanCode(context.read<TokenBloc>().state);
+  } catch (_) {
+    return 'free';
+  }
 }
 
 /// Whether the flag says to hide Create Fellowship entirely.
@@ -1178,14 +1180,6 @@ bool _canCreateFellowship(BuildContext context, FellowshipListState listState) {
     }
   } catch (_) {}
   if (listState.fellowships.any((f) => f.userRole == 'mentor')) return true;
-  try {
-    final subState = context.read<SubscriptionBloc>().state;
-    if (subState is UserSubscriptionStatusLoaded) {
-      final plan = subState.currentPlan;
-      if (plan == 'plus' || plan == 'premium') {
-        return true;
-      }
-    }
-  } catch (_) {}
-  return false;
+  final plan = _currentPlan(context);
+  return plan == 'plus' || plan == 'premium';
 }

@@ -15,9 +15,11 @@ import 'package:disciplefy_bible_study/core/services/system_config_service.dart'
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/subscription/data/datasources/subscription_remote_data_source.dart';
 import 'package:disciplefy_bible_study/features/subscription/domain/entities/subscription.dart';
 import 'package:disciplefy_bible_study/features/subscription/domain/entities/user_subscription_status.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/utils/plan_code.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
@@ -116,16 +118,13 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
   /// downgrades (token state can be stale at page-open time).
   Future<void> _loadPlanFeatures({String? planCode}) async {
     try {
-      String resolvedPlanCode;
-      if (planCode != null && planCode.isNotEmpty) {
-        resolvedPlanCode = planCode;
-      } else {
-        final tokenState = sl<TokenBloc>().state;
-        final userPlan = tokenState is TokenLoaded
-            ? tokenState.tokenStatus.userPlan
-            : UserPlan.free;
-        resolvedPlanCode = userPlan.name;
-      }
+      // A trial is stored as 'standard_trial' and a paid plan as
+      // 'standard_monthly'; plans are keyed by the bare code ('standard').
+      final resolvedPlanCode = normalizePlanCode(
+        planCode != null && planCode.isNotEmpty
+            ? planCode
+            : currentPlanCode(sl<TokenBloc>().state),
+      );
 
       // Use the platform's preferred provider so the price matches what the
       // user was actually charged (e.g. Google Play price on Android, not
@@ -140,19 +139,23 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
 
       final matchingPlans =
           response.plans.where((p) => p.planCode == resolvedPlanCode).toList();
-      // Fall back to the first plan only for features (not price) when the
-      // exact plan code isn't found (e.g. free users or unexpected plan codes).
-      final plan =
-          matchingPlans.isNotEmpty ? matchingPlans.first : response.plans.first;
-      final exactMatch = matchingPlans.isNotEmpty;
+      // Never borrow another plan's features: falling back to the first
+      // (Free) plan made a Standard trial list Free's limits.
+      final plan = matchingPlans.isNotEmpty ? matchingPlans.first : null;
+      if (plan == null) {
+        Logger.warning(
+          'No plan matches "$resolvedPlanCode"; showing no features',
+          tag: 'MY_PLAN',
+        );
+      }
 
       if (mounted) {
         setState(() {
           _loadedForPlanCode = resolvedPlanCode;
-          _planFeatures = PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
-          // Only set display price when we found the exact plan — don't show
-          // a fallback plan's price as it would be wrong.
-          _planDisplayPrice = exactMatch ? plan.displayPrice : null;
+          _planFeatures = plan == null
+              ? []
+              : PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
+          _planDisplayPrice = plan?.displayPrice;
           _featuresLoading = false;
           _isPriceLoading = false;
         });
@@ -221,12 +224,8 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                   state.activeSubscription != null) {
                 // Re-fetch plan price if the loaded plan differs from what
                 // was used at initState (e.g. after an upgrade/downgrade).
-                // planType is stored as '<code>_monthly' (e.g. 'premium_monthly'),
-                // but get-plans API uses the plain code ('premium').
-                final rawPlanType = state.activeSubscription!.planType;
-                final subPlanCode = rawPlanType.endsWith('_monthly')
-                    ? rawPlanType.replaceFirst('_monthly', '')
-                    : rawPlanType;
+                final subPlanCode =
+                    normalizePlanCode(state.activeSubscription!.planType);
                 if (subPlanCode != _loadedForPlanCode) {
                   setState(() => _isPriceLoading = true);
                   _loadPlanFeatures(planCode: subPlanCode);
@@ -300,6 +299,11 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                 isTrialActive,
                 subscriptionStatus,
               );
+              final onTrialSubscription = _isTrialSubscription(subscription);
+              // The row's own end date first; the status call's as backup.
+              final trialUntil = onTrialSubscription
+                  ? (subscription!.currentPeriodEnd ?? trialEndDate)
+                  : null;
 
               final isFetching =
                   state is SubscriptionLoading && state.operation == 'fetching';
@@ -335,7 +339,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                           children: [
                             _buildPlanStatusCard(
-                                tokenStatus, subscription, status),
+                                tokenStatus, status, trialUntil),
                             ..._buildNotices(
                               tokenStatus,
                               subscription,
@@ -343,9 +347,12 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                               trialEndDate,
                               subscriptionStatus,
                             ),
-                            if (subscription != null)
+                            // A trial bills nothing: no amount, store or
+                            // billing date to show.
+                            if (subscription != null && !onTrialSubscription)
                               _buildSubscriptionDetails(subscription),
                             _buildPlanFeatures(),
+                            if (onTrialSubscription) _buildTrialNote(),
                             if (invoices.isNotEmpty)
                               _buildRecentPayments(tokenStatus, invoices),
                             const LedgerHairline(verticalMargin: 18),
@@ -385,6 +392,13 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       }
       return _PlanStatus(context.tr(TranslationKeys.myPlanPremiumTrialActive),
           LedgerTone.accent);
+    } else if (_isTrialSubscription(subscription) ||
+        (userPlan == UserPlan.standard && isTrialActive)) {
+      // Checked before isActive: a trial row counts as active, and calling it
+      // an "Active Subscription" told trial users they were paying.
+      return _PlanStatus(
+          context.tr(TranslationKeys.myPlanTrialActive), LedgerTone.accent,
+          pill: context.tr(TranslationKeys.myPlanTrialPill));
     } else if (subscription != null && subscription.isActive) {
       if (subscription.isPendingUserCancellation) {
         return _PlanStatus(
@@ -403,9 +417,6 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
     } else if (subscriptionStatus?.isNewUserWithoutTrial == true) {
       return _PlanStatus(
           context.tr(TranslationKeys.myPlanFreePlan), LedgerTone.neutral);
-    } else if (userPlan == UserPlan.standard && isTrialActive) {
-      return _PlanStatus(
-          context.tr(TranslationKeys.myPlanTrialActive), LedgerTone.accent);
     } else if (userPlan == UserPlan.free) {
       return _PlanStatus(
           context.tr(TranslationKeys.myPlanFreePlan), LedgerTone.neutral);
@@ -414,16 +425,25 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         context.tr(TranslationKeys.myPlanSubscriptionNeeded), LedgerTone.error);
   }
 
-  /// The one raised block of the page: crown, plan name, status pill and a
-  /// one-line summary of what the plan includes.
+  /// True for the row the backend writes for a free trial. It has no store
+  /// and nothing to cancel, whatever platform the user is on.
+  bool _isTrialSubscription(Subscription? sub) =>
+      sub != null &&
+      (sub.status == SubscriptionStatus.trial || sub.provider == 'trial');
+
+  /// The one raised block of the page: crown, plan name, status pill and,
+  /// on a trial, when it ends. The features are listed once, below.
   Widget _buildPlanStatusCard(
     TokenStatus? tokenStatus,
-    Subscription? subscription,
     _PlanStatus status,
+    DateTime? trialUntil,
   ) {
     final palette = ReaderPalette.of(context);
     final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
-    final summary = _planFeatures.take(3).join(' · ');
+    final summary = trialUntil == null
+        ? ''
+        : context.tr(TranslationKeys.myPlanFreeTrialUntil,
+            {'date': _formatDate(trialUntil)});
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -464,7 +484,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
               summary,
               style: AppFonts.inter(
                 fontSize: 13.5,
-                color: palette.muted,
+                color: palette.gold,
                 height: 1.45,
               ),
             ),
@@ -571,10 +591,11 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         LedgerSectionLabel(context.tr(TranslationKeys.ledgerBilling)),
         _buildAmountRow(subscription),
         _buildBillingDateRow(subscription),
-        LedgerRow(
-          label: context.tr(TranslationKeys.ledgerPaidWith),
-          value: _providerLabel(subscription.provider),
-        ),
+        if (providerLabelOrNull(subscription.provider) case final store?)
+          LedgerRow(
+            label: context.tr(TranslationKeys.ledgerPaidWith),
+            value: store,
+          ),
         LedgerRow(
           label: context.tr(TranslationKeys.myPlanStatus),
           // A sub parked for an in-flight upgrade is still the user's live
@@ -588,17 +609,6 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         ),
       ],
     );
-  }
-
-  String _providerLabel(String provider) {
-    switch (provider) {
-      case 'google_play':
-        return 'Google Play';
-      case 'razorpay':
-        return 'Razorpay';
-      default:
-        return 'App Store';
-    }
   }
 
   /// Builds the Amount billing row.
@@ -651,9 +661,8 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       return LedgerRow(label: label, value: _formatDate(billingDate));
     }
 
-    if (subscription.isIAPSubscription) {
-      final store =
-          subscription.provider == 'google_play' ? 'Google Play' : 'App Store';
+    final store = providerLabelOrNull(subscription.provider);
+    if (subscription.isIAPSubscription && store != null) {
       return LedgerRow(label: label, value: 'Via $store');
     }
 
@@ -673,12 +682,27 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
           )
         else if (_planFeatures.isEmpty)
           Text(
-            'No features available',
+            context.tr(TranslationKeys.myPlanNoFeatures),
             style: AppFonts.inter(fontSize: 14, color: palette.muted),
           )
         else
           for (final f in _planFeatures) LedgerCheckRow(f),
       ],
+    );
+  }
+
+  /// Under the features on a trial: nothing is billed yet.
+  Widget _buildTrialNote() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Text(
+        context.tr(TranslationKeys.myPlanTrialNoPayment),
+        style: AppFonts.inter(
+          fontSize: 12.5,
+          color: ReaderPalette.of(context).muted,
+          height: 1.45,
+        ),
+      ),
     );
   }
 
@@ -732,6 +756,16 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
     final subscriptionsEnabled =
         sl<SystemConfigService>().isNewSubscriptionsEnabled;
     final upgradeLabel = context.tr(TranslationKeys.ledgerUpgrade);
+
+    // A trial has nothing to cancel: the only step is choosing a plan.
+    if (_isTrialSubscription(subscription)) {
+      if (!subscriptionsEnabled) return const SizedBox.shrink();
+      return LedgerPrimaryButton(
+        key: const Key('my_plan_view_plans'),
+        label: context.tr(TranslationKeys.myPlanViewPlans),
+        onPressed: () => context.push(AppRoutes.pricing),
+      );
+    }
 
     // Pending cancellation: resume button + upgrade (downgrade blocked until cycle ends)
     if (subscription?.isPendingUserCancellation == true) {
@@ -902,7 +936,7 @@ class _PlanStatus {
   final String label;
   final LedgerTone tone;
 
-  /// Short pill text on the plan card (only for an active subscription).
+  /// Short pill text on the plan card (an active subscription or a trial).
   final String? pill;
 
   const _PlanStatus(this.label, this.tone, {this.pill});

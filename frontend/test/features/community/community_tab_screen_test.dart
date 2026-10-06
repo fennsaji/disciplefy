@@ -26,9 +26,10 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/community_tab_screen.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
@@ -41,9 +42,8 @@ class _MockListBloc extends MockBloc<FellowshipListEvent, FellowshipListState>
 class _MockDiscoverBloc extends MockBloc<DiscoverEvent, DiscoverState>
     implements DiscoverBloc {}
 
-class _MockSubscriptionBloc
-    extends MockBloc<SubscriptionEvent, SubscriptionState>
-    implements SubscriptionBloc {}
+class _MockTokenBloc extends MockBloc<TokenEvent, TokenState>
+    implements TokenBloc {}
 
 class _MockConnectivityBloc
     extends MockBloc<ConnectivityEvent, ConnectivityState>
@@ -120,7 +120,7 @@ const _publicFellowships = [
 void main() {
   late _MockListBloc listBloc;
   late _MockDiscoverBloc discoverBloc;
-  late _MockSubscriptionBloc subscriptionBloc;
+  late _MockTokenBloc tokenBloc;
   late _MockConnectivityBloc connectivityBloc;
   late MockAuthBloc authBloc;
   late FakeTranslationService translations;
@@ -138,7 +138,7 @@ void main() {
 
     listBloc = _MockListBloc();
     discoverBloc = _MockDiscoverBloc();
-    subscriptionBloc = _MockSubscriptionBloc();
+    tokenBloc = _MockTokenBloc();
     connectivityBloc = _MockConnectivityBloc();
     authBloc = MockAuthBloc();
     visited = [];
@@ -151,7 +151,7 @@ void main() {
       status: DiscoverStatus.success,
       fellowships: _publicFellowships,
     ));
-    when(() => subscriptionBloc.state).thenReturn(const SubscriptionInitial());
+    when(() => tokenBloc.state).thenReturn(const TokenInitial());
     when(() => connectivityBloc.state).thenReturn(ConnectivityOnline());
     when(() => authBloc.state).thenReturn(AuthenticatedState(
       user: User(
@@ -210,7 +210,7 @@ void main() {
     );
     return MultiBlocProvider(
       providers: [
-        BlocProvider<SubscriptionBloc>.value(value: subscriptionBloc),
+        BlocProvider<TokenBloc>.value(value: tokenBloc),
         BlocProvider<ConnectivityBloc>.value(value: connectivityBloc),
         BlocProvider<AuthBloc>.value(value: authBloc),
       ],
@@ -316,6 +316,40 @@ void main() {
     await pump(tester);
 
     expect(find.byTooltip('Create a fellowship (upgrade)'), findsOneWidget);
+  });
+
+  testWidgets('the create upsell names the plan from TokenBloc (Standard)',
+      (tester) async {
+    when(() => listBloc.state).thenReturn(FellowshipListState(
+      status: FellowshipListStatus.success,
+      fellowships: [_fellowships.first],
+    ));
+    when(() => tokenBloc.state).thenReturn(TokenLoaded(
+      tokenStatus: TokenStatus(
+        availableTokens: 30,
+        purchasedTokens: 0,
+        totalTokens: 30,
+        dailyLimit: 40,
+        totalConsumedToday: 10,
+        userPlan: UserPlan.standard,
+        lastReset: DateTime(2026, 10, 6),
+        nextResetTime: DateTime(2026, 10, 7),
+        authenticationType: AuthenticationType.authenticated,
+        isPremium: false,
+        unlimitedUsage: false,
+        canPurchaseTokens: true,
+        planDescription: '',
+      ),
+      lastUpdated: DateTime(2026, 10, 6),
+    ));
+    useSurface(tester, const Size(390, 900));
+    await pump(tester);
+
+    await tester.tap(find.byTooltip('Create a fellowship (upgrade)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your plan: Standard'), findsOneWidget);
+    expect(find.text('Your plan: Free'), findsNothing);
+    expect(visited, isEmpty);
   });
 
   testWidgets('a mentor can create a fellowship', (tester) async {

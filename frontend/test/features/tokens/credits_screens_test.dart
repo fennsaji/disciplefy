@@ -559,6 +559,42 @@ void main() {
           .called(greaterThan(0));
     });
 
+    for (final end in [null, DateTime(2027, 3, 31)]) {
+      testWidgets(
+          'credits: trial with ${end == null ? 'no' : 'a'} end date; '
+          'one-line study costs', (tester) async {
+        when(() => subscriptionBloc.state).thenReturn(SubscriptionLoaded(
+          activeSubscription: Subscription(
+            id: 't1',
+            userId: 'u1',
+            razorpaySubscriptionId: '',
+            provider: 'trial',
+            status: SubscriptionStatus.trial,
+            planType: 'standard_trial',
+            amountPaise: 0,
+            currency: 'INR',
+            currentPeriodEnd: end,
+            paidCount: 0,
+            cancelAtCycleEnd: false,
+            createdAt: DateTime(2026, 10, 2),
+            updatedAt: DateTime(2026, 10, 2),
+          ),
+          lastUpdated: DateTime(2026),
+        ));
+        useSurface(tester, const Size(390, 1600));
+        await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
+        await tester.pumpAndSettle();
+
+        // Never a made-up date: the line shows only when the backend gave one.
+        expect(find.text('Free until March 31, 2027'),
+            end == null ? findsNothing : findsOneWidget);
+        expect(find.textContaining('Free until'),
+            end == null ? findsNothing : findsOneWidget);
+        expect(find.textContaining('Quick Read from 10'), findsOneWidget);
+        expect(find.textContaining('oken'), findsNothing);
+      });
+    }
+
     testWidgets('credits: low balance reads "Running Low"', (tester) async {
       when(() => tokenBloc.state).thenReturn(TokenLoaded(
           tokenStatus: TokenStatus(
