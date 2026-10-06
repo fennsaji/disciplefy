@@ -1,5 +1,5 @@
-import '../../../home/data/models/active_path_summary_model.dart';
-import '../../../home/domain/entities/active_path_summary.dart';
+import 'package:disciplefy_bible_study/features/home/data/models/active_path_summary_model.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/learning_path.dart';
 
 /// Model for parsing learning path data from API.

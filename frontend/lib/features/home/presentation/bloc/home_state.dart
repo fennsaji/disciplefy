@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/active_path_summary.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../study_generation/domain/entities/study_guide.dart';
 import '../../../study_topics/domain/entities/learning_path.dart';

@@ -1,4 +1,4 @@
-import '../../../home/domain/entities/active_path_summary.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 

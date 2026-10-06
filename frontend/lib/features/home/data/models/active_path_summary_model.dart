@@ -1,4 +1,4 @@
-import '../../domain/entities/active_path_summary.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 
 /// Parses [ActivePathSummary] from the recommended-path JSON. Defensive:
 /// missing or malformed fields (older backend, stale cache) never throw.
@@ -13,6 +13,7 @@ class ActivePathSummaryModel {
     final nextJson = pathJson['next_lesson'];
     final next =
         nextJson is Map ? _next(Map<String, dynamic>.from(nextJson)) : null;
+    // The backend does not send recommended_mode yet; Task 8 chooses the mode.
     final mode = pathJson['recommended_mode'];
 
     return ActivePathSummary(
