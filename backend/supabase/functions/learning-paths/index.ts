@@ -16,6 +16,7 @@ import { AppError } from '../_shared/utils/error-handler.ts';
 import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
+import { buildNextLesson, countCompleted, milestonePositions, type NextLessonJson, type PathTopicRow } from './next-lesson.ts';
 import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations, pathProgressPercentage } from './batch-loaders.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
@@ -89,6 +90,10 @@ interface LearningPath {
   display_order?: number;
   /** Localized title of the first unfinished topic; recommended path only. */
   next_topic_title?: string;
+  /** First incomplete lesson; null when finished. Recommended path only. */
+  next_lesson?: NextLessonJson | null;
+  /** 1-based lesson numbers of milestones. Recommended path only. */
+  milestone_positions?: number[];
 }
 
 interface LearningPathDetail extends LearningPath {
@@ -397,9 +402,11 @@ function buildLearningPathResponse(
 }
 
 /**
- * Adds the localized title of the path's first unfinished topic to a started
- * recommended path, so Home can show "Next: …" without a second request.
- * Best effort: any failure returns the path unchanged (older apps ignore it).
+ * Adds next_lesson, topics_completed, milestone_positions (and the legacy
+ * next_topic_title) to the recommended path. Topics and localized titles come
+ * from get_learning_path_details, the same lookup the detail endpoint uses.
+ * Guests get the same shape with nothing completed. Best effort: any failure
+ * returns the path unchanged (older apps ignore the new fields).
  */
 async function withNextTopic(
   // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
@@ -408,24 +415,40 @@ async function withNextTopic(
   userId: string | null | undefined,
   language: string
 ): Promise<LearningPath | null> {
-  if (!path || !userId) return path;
-  const started = path.is_enrolled || path.topics_completed > 0 || path.progress_percentage > 0;
-  if (!started || path.topics_completed >= path.topics_count) return path;
+  if (!path) return path;
   try {
     const { data, error } = await supabaseClient.rpc('get_learning_path_details', {
       p_path_id: path.id,
-      p_user_id: userId,
+      p_user_id: userId ?? null,
       p_language: language,
     });
     if (error || !data || data.length === 0) return path;
-    const topics = ((data[0].topics || []) as Array<Record<string, unknown>>)
-      .slice()
-      .sort((a, b) => (a.position as number) - (b.position as number));
-    const next = topics.find((t) => !t.is_completed);
-    const title = typeof next?.title === 'string' ? next.title.trim() : '';
-    return title ? { ...path, next_topic_title: title } : path;
+    const topics: PathTopicRow[] = ((data[0].topics || []) as Array<Record<string, unknown>>).map((t) => ({
+      topic_id: t.topic_id as string,
+      position: t.position as number,
+      is_milestone: !!t.is_milestone,
+      title: typeof t.title === 'string' ? t.title.trim() : '',
+      description: typeof t.description === 'string' ? t.description : '',
+      input_type: typeof t.input_type === 'string' ? t.input_type : '',
+    }));
+    const completed = new Set<string>(
+      userId
+        ? (data[0].topics as Array<Record<string, unknown>>)
+            .filter((t) => t.is_completed)
+            .map((t) => t.topic_id as string)
+        : []
+    );
+    const nextLesson = buildNextLesson(topics, completed);
+    const enriched: LearningPath = {
+      ...path,
+      topics_completed: countCompleted(topics, completed),
+      next_lesson: nextLesson,
+      milestone_positions: milestonePositions(topics),
+    };
+    if (nextLesson && nextLesson.title) enriched.next_topic_title = nextLesson.title;
+    return enriched;
   } catch (e) {
-    console.error('[RECOMMENDED_PATH] Next topic lookup failed:', e instanceof Error ? e.message : 'unknown');
+    console.error('[RECOMMENDED_PATH] Next lesson lookup failed:', e instanceof Error ? e.message : 'unknown');
     return path;
   }
 }
