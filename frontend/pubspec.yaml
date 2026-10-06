@@ -180,6 +180,24 @@ flutter:
           weight: 600
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
+    - family: NotoSansDevanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
+        - asset: assets/fonts/NotoSansDevanagari-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansDevanagari-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansDevanagari-Bold.ttf
+          weight: 700
+    - family: NotoSansMalayalam
+      fonts:
+        - asset: assets/fonts/NotoSansMalayalam-Regular.ttf
+        - asset: assets/fonts/NotoSansMalayalam-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansMalayalam-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansMalayalam-Bold.ttf
+          weight: 700
 
 # Flutter Launcher Icons Configuration
 flutter_launcher_icons:

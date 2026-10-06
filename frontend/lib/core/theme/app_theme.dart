@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_fonts.dart';
 import 'app_colors.dart';
 import 'reader_palette.dart';
 // Note: Using bundled fonts directly from pubspec.yaml instead of GoogleFonts
@@ -124,7 +125,7 @@ class AppTheme {
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),
-        ),
+        ).apply(fontFamilyFallback: AppFonts.indicFallback),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -277,7 +278,7 @@ class AppTheme {
             letterSpacing: 0.5,
             color: AppColors.darkTextSecondary,
           ),
-        ),
+        ).apply(fontFamilyFallback: AppFonts.indicFallback),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

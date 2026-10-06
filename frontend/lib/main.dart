@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -201,6 +202,7 @@ void main() async {
     // here delayed startup for every user on every launch.
 
     Logger.debug('🎉 [MAIN] All initialization completed, starting app...');
+    await initializeDateFormatting();
     runApp(const DisciplefyBibleStudyApp());
 
     // Work the first frame does not need runs once it has been drawn.

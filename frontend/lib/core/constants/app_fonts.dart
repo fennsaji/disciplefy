@@ -16,6 +16,12 @@ class AppFonts {
   static const String interFamily = 'Inter';
   static const String poppinsFamily = 'Poppins';
 
+  /// Bundled Hindi/Malayalam families used when Inter/Poppins lack a glyph.
+  static const List<String> indicFallback = [
+    'NotoSansDevanagari',
+    'NotoSansMalayalam',
+  ];
+
   /// Creates a TextStyle using the Inter font family (bundled).
   ///
   /// Inter is used for body text, titles, labels, and UI elements
@@ -42,6 +48,7 @@ class AppFonts {
   }) {
     return TextStyle(
       fontFamily: interFamily,
+      fontFamilyFallback: indicFallback,
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,
@@ -89,6 +96,7 @@ class AppFonts {
   }) {
     return TextStyle(
       fontFamily: poppinsFamily,
+      fontFamilyFallback: indicFallback,
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,

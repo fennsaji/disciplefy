@@ -21,6 +21,10 @@ mixin VerseDataStateMixin {
 
   /// Get formatted date
   String get formattedDate => verse.formattedDate;
+
+  /// Formatted date in [languageCode] (the app language).
+  String formattedDateFor(String languageCode) =>
+      verse.formattedDateFor(languageCode);
 }
 
 /// Initial state

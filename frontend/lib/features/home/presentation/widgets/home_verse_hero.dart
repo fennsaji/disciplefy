@@ -276,7 +276,12 @@ class HomeDailyVerseView extends StatelessWidget {
     return _loading(context);
   }
 
+  String _appLanguage(BuildContext context) =>
+      Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+
   Widget _eyebrow(BuildContext context, String date) {
+    final latin = _appLanguage(context) == 'en';
+    String caps(String text) => latin ? text.toUpperCase() : text;
     final label = context.tr(TranslationKeys.dailyVerseOfTheDay);
     final style = AppFonts.inter(
       fontSize: 10.5,
@@ -290,8 +295,8 @@ class HomeDailyVerseView extends StatelessWidget {
       spacing: 6,
       runSpacing: 4,
       children: [
-        Text(label.toUpperCase(), style: style),
-        Text('· ${date.toUpperCase()}', style: style),
+        Text(caps(label), style: style),
+        Text('· ${caps(date)}', style: style),
       ],
     );
   }
@@ -322,7 +327,7 @@ class HomeDailyVerseView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _eyebrow(context, s.formattedDate),
+          _eyebrow(context, s.formattedDateFor(_appLanguage(context))),
           const SizedBox(height: 10),
           GestureDetector(
             onTap: enabled ? onStudy : null,
