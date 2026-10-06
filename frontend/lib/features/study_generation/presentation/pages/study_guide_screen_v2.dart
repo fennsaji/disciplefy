@@ -87,6 +87,7 @@ import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/lesson_completion_refresh.dart';
 
 /// Lightens a color for better contrast in dark mode
 Color _lightenColor(Color color, [double amount = 0.2]) {
@@ -1931,12 +1932,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               '❌ [TOPIC_PROGRESS] Failed to complete topic: ${ErrorMessageSanitizer.sanitize(failure)}');
         },
         (completionResult) {
-          // Completing a topic changes the progress of whatever path it
-          // belongs to, and both the learning path lists and the per-path
-          // detail are cached — the persisted copy outlives the process. Left
-          // alone, Topics kept showing the progress from before this
-          // completion: a path just advanced still read "0/4 Topics".
-          sl<LearningPathsRepository>().clearCache();
+          // Path progress and XP totals changed: drop the cached path
+          // progress (a path just advanced still read "0/4 Topics") and
+          // reload the gamification stats so XP agrees everywhere.
+          // GamificationBloc is a GetIt singleton, not provided on every
+          // route, so it is reached through sl rather than context.read.
+          refreshAfterLessonCompletion(
+            learningPaths: sl<LearningPathsRepository>(),
+            gamification: sl<GamificationBloc>(),
+          );
 
           // A finished lesson counts toward the daily streak, like reading
           // the verse of the day (once per day either way).
@@ -3436,13 +3440,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     //    Await it so the DB write finishes before we leave.
     // 2. Guide is marked complete (_completionMarked=true) but
     //    mark-study-guide-complete is still in-flight, so StudyCompletionSuccess
-    //    hasn't fired yet → call _completeTopicProgress() directly and await it.
-    if (_topicProgressFuture != null) {
-      await _topicProgressFuture;
-    } else if (_completionMarked) {
-      await _completeTopicProgress();
+    //    hasn't fired yet → start _completeTopicProgress() and await it. It is
+    //    stored in _topicProgressFuture so a StudyCompletionSuccess arriving
+    //    meanwhile does not record (and refresh stats for) the lesson twice.
+    if (_topicProgressFuture != null || _completionMarked) {
+      await (_topicProgressFuture ??= _completeTopicProgress());
     }
-    _topicProgressFuture = null;
     if (!mounted) return;
     sl<StudyNavigator>().navigateBack(
       context,
