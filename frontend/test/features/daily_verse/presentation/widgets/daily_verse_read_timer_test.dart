@@ -70,6 +70,68 @@ void main() {
     expect(reads, 0);
   });
 
+  testWidgets('a backgrounded app does not count, and resuming restarts',
+      (tester) async {
+    var reads = 0;
+    await tester.pumpWidget(host(onRead: () => reads++));
+    await tester.pump(const Duration(seconds: 3));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump(const Duration(seconds: 10));
+    expect(reads, 0);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(seconds: 4));
+    expect(reads, 0);
+    await tester.pump(const Duration(seconds: 1));
+    expect(reads, 1);
+  });
+
+  testWidgets('left open past midnight, the new day counts again',
+      (tester) async {
+    var reads = 0;
+    var now = DateTime(2026, 10, 6, 23, 59);
+    await tester.pumpWidget(MaterialApp(
+      home: DailyVerseReadTimer(
+        onRead: () => reads++,
+        now: () => now,
+        child: const Text('verse'),
+      ),
+    ));
+    await tester.pump(const Duration(seconds: 5));
+    expect(reads, 1);
+
+    // Still the same day: nothing more.
+    await tester.pump(const Duration(seconds: 30));
+    expect(reads, 1);
+
+    // Midnight passes while the verse stays on screen.
+    now = DateTime(2026, 10, 7, 0, 0, 2);
+    await tester.pump(const Duration(seconds: 31));
+    expect(reads, 1);
+    await tester.pump(const Duration(seconds: 5));
+    expect(reads, 2);
+  });
+
+  testWidgets('a new day noticed on resume counts again', (tester) async {
+    var reads = 0;
+    var now = DateTime(2026, 10, 6, 22);
+    await tester.pumpWidget(MaterialApp(
+      home: DailyVerseReadTimer(
+        onRead: () => reads++,
+        now: () => now,
+        child: const Text('verse'),
+      ),
+    ));
+    await tester.pump(const Duration(seconds: 5));
+    expect(reads, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    now = DateTime(2026, 10, 7, 8);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(seconds: 5));
+    expect(reads, 2);
+  });
+
   test('the streak day is the local date in ASCII yyyy-MM-dd', () {
     expect(streakLocalDate(DateTime(2026, 1, 5, 23, 59)), '2026-01-05');
     expect(streakLocalDate(DateTime(2026, 10, 6)), '2026-10-06');

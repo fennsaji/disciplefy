@@ -438,8 +438,10 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       // Check for milestone achievement or streak lost
       await _checkAndSendStreakNotifications(previousStreak, updatedStreak);
     } catch (e) {
-      // Silently fail - streak is optional feature
-      // Don't emit error state as verse is still valid
+      // Streak is secondary: keep the verse on screen, no error state. The
+      // day stays unmarked, so the next read retries.
+      Logger.warning(
+          '[DAILY_VERSE] Streak not updated (${e.runtimeType}); will retry');
     }
   }
 

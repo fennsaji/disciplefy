@@ -11,10 +11,12 @@ import 'package:disciplefy_bible_study/core/localization/app_localizations.dart'
 import 'package:disciplefy_bible_study/core/router/app_router.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_streak.dart';
 import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_level.dart';
+import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_stats.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
@@ -208,18 +210,28 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
   }
 
   /// The one daily streak, as Home shows it: the app-wide daily verse
-  /// bloc's count when it has one (it updates the moment the verse is read
-  /// or a lesson finished), else the same streak as the stats loaded it.
-  int _dailyStreak(BuildContext context, int fromStats) {
+  /// bloc's copy when it has one (it updates the moment the verse is read
+  /// or a lesson finished), else null and the stats' copy of the same
+  /// streak is used.
+  DailyVerseStreak? _liveDailyStreak(BuildContext context) {
     try {
       final verseState = context.watch<DailyVerseBloc>().state;
-      if (verseState is DailyVerseLoaded && verseState.streak != null) {
-        return verseState.streak!.currentStreak;
-      }
+      if (verseState is DailyVerseLoaded) return verseState.streak;
     } on ProviderNotFoundException {
       // No daily verse bloc above this page (e.g. opened in isolation).
     }
-    return fromStats;
+    return null;
+  }
+
+  int _dailyStreak(BuildContext context, UserStats stats) =>
+      _liveDailyStreak(context)?.currentStreak ?? stats.verseCurrentStreak;
+
+  /// Best run of the same daily streak; never below the current one.
+  int _dailyBest(BuildContext context, UserStats stats) {
+    final live = _liveDailyStreak(context);
+    final longest = live?.longestStreak ?? stats.verseLongestStreak;
+    final current = live?.currentStreak ?? stats.verseCurrentStreak;
+    return longest > current ? longest : current;
   }
 
   Widget _buildHeadlineStats(BuildContext context, GamificationState state) {
@@ -232,7 +244,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             child: SettingsStatTile(
               icon: Icons.local_fire_department_outlined,
               tone: SettingsTone.gold,
-              value: '${_dailyStreak(context, stats.verseCurrentStreak)}',
+              value: '${_dailyStreak(context, stats)}',
               label: context.tr(TranslationKeys.gamificationDayStreakLabel),
             ),
           ),
@@ -258,34 +270,24 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     );
   }
 
+  /// The current daily streak is the headline "Day streak" tile; this
+  /// section adds its best run. There is one streak, so no separate study
+  /// or verse streak rows.
   List<Widget> _buildStreaksSection(
       BuildContext context, GamificationState state) {
     final l10n = AppLocalizations.of(context)!;
-    final stats = state.stats!;
-    String days(int n) => '$n ${l10n.progressDays}';
+    final best = _dailyBest(context, state.stats!);
+    if (best <= 0) return const [];
     return [
       SettingsSectionLabel(l10n.progressStreaks),
       SettingsGroup(
         children: [
           SettingsRow(
-            icon: Icons.local_fire_department_outlined,
+            icon: Icons.emoji_events_outlined,
             tone: SettingsTone.gold,
-            title: l10n.progressStudyStreak,
-            value: days(stats.studyCurrentStreak),
+            title: l10n.progressPersonalBest,
+            value: '$best ${l10n.progressDays}',
           ),
-          SettingsRow(
-            icon: Icons.auto_stories_outlined,
-            tone: SettingsTone.sky,
-            title: l10n.progressVerseStreak,
-            value: days(_dailyStreak(context, stats.verseCurrentStreak)),
-          ),
-          if (stats.studyLongestStreak > 0)
-            SettingsRow(
-              icon: Icons.emoji_events_outlined,
-              tone: SettingsTone.gold,
-              title: l10n.progressPersonalBest,
-              value: days(stats.studyLongestStreak),
-            ),
         ],
       ),
     ];
