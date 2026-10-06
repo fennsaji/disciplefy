@@ -21,6 +21,7 @@ import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-servic
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { THEOLOGICAL_FOUNDATION } from '../_shared/services/llm-utils/prompt-builder.ts'
+import { getFollowUpLimit } from './follow-up-limits.ts'
 
 /** Verses of passage text given to follow-up answers as grounding. */
 const FOLLOWUP_GROUNDING_VERSES = 8
@@ -443,14 +444,7 @@ async function handleStudyFollowUp(
   })
   const followUpTokenCost = 5 // Fixed 5 tokens for follow-up questions
 
-  // Define follow-up limits per plan
-  const followUpLimits: Record<string, number> = {
-    'free': 3,
-    'standard': 10,
-    'premium': 20
-  }
-
-  const maxFollowUps = followUpLimits[userPlan] || followUpLimits['free']
+  const maxFollowUps = getFollowUpLimit(userPlan)
   console.log('📊 [FOLLOW-UP] Plan limits:', {
     userPlan,
     maxFollowUps

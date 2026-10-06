@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { buildMarketingFeatures } from '@/lib/utils/plan-marketing-features'
+import { planMarketingUpdate } from '@/lib/utils/plan-marketing-features'
 
 /**
  * GET - Fetch subscription configuration
@@ -196,11 +196,26 @@ export async function PATCH(request: NextRequest) {
       followups: features?.followups ?? 0
     }
 
+    // Copy is rebuilt from the enforced limits, in every locale.
+    const { data: existingPlan } = await supabaseAdmin
+      .from('subscription_plans')
+      .select('plan_code, marketing_features_i18n')
+      .eq('id', id)
+      .single()
+    const marketing = existingPlan
+      ? await planMarketingUpdate(
+          supabaseAdmin,
+          existingPlan.plan_code,
+          updatedFeatures,
+          existingPlan.marketing_features_i18n
+        )
+      : null
+
     const { data: planData, error: planError } = await supabaseAdmin
       .from('subscription_plans')
       .update({
         features: updatedFeatures,
-        marketing_features: buildMarketingFeatures(updatedFeatures),
+        ...(marketing ?? {}),
         is_active: is_active ?? true,
         updated_at: new Date().toISOString()
       })
