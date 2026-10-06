@@ -39,7 +39,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import '../../data/repositories/token_cost_repository.dart';
-import '../../data/datasources/study_local_data_source.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/constants/bible_books.dart';
 import '../../../../core/constants/bible_book_transliterations.dart';
@@ -1945,38 +1945,35 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
             : 'question';
     final languageCode = _selectedLanguage.code;
 
-    // Check local cache first — cached guides bypass the token check entirely
-    final hasCached =
-        await _hasCachedStudyGuide(input, inputType, languageCode);
-    if (hasCached && mounted) {
-      Logger.info('📦 [GENERATE_STUDY] Cache hit — bypassing token check');
-      _hasNavigatedAway = true;
-      final encodedInput = Uri.encodeComponent(input);
-      context.go(
-        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate',
-      );
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) setState(() => _isNavigating = false);
-      });
-      return;
-    }
-
-    // Check if user has sufficient tokens for this mode
-    if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
+    // Cost comes from the same source as the mode cards; only needed when
+    // the plan is metered (a failed lookup counts as 0 — backend decides).
+    final status = _currentTokenStatus;
+    var requiredCost = 0;
+    if (status != null && !status.isPremium && !status.unlimitedUsage) {
       final costResult =
           await _tokenCostRepository.getTokenCost(languageCode, mode.value);
-      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
-      if (requiredCost > 0 &&
-          _currentTokenStatus!.totalTokens < requiredCost &&
-          mounted) {
-        setState(() => _isNavigating = false);
-        await InsufficientTokensDialog.show(
-          context,
-          tokenStatus: _currentTokenStatus!,
-          requiredTokens: requiredCost,
-        );
-        return;
-      }
+      requiredCost = costResult.fold((f) => 0, (cost) => cost);
+    }
+
+    // Cached guides bypass the token check entirely.
+    final launch = GetIt.instance<StudyLaunchService>();
+    final decision = await launch.decide(
+      input: input,
+      type: inputType,
+      language: languageCode,
+      mode: mode,
+      status: status,
+      cost: requiredCost,
+    );
+
+    if (decision == LaunchDecision.needCredits && mounted) {
+      setState(() => _isNavigating = false);
+      await InsufficientTokensDialog.show(
+        context,
+        tokenStatus: status!,
+        requiredTokens: requiredCost,
+      );
+      return;
     }
 
     // Backend will handle actual token consumption; token status is
@@ -1986,16 +1983,22 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       return;
     }
 
+    if (decision == LaunchDecision.openCached) {
+      Logger.info('📦 [GENERATE_STUDY] Cache hit — bypassing token check');
+    }
+
     // Set flag to indicate navigation away (will trigger token refresh on return)
     _hasNavigatedAway = true;
-
-    final encodedInput = Uri.encodeComponent(input);
 
     Logger.debug(
         '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType with mode: ${mode.name}');
 
-    context.go(
-        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate');
+    context.go(launch.location(
+      input: input,
+      type: inputType,
+      language: languageCode,
+      mode: mode,
+    ));
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -2005,28 +2008,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         });
       }
     });
-  }
-
-  /// Returns true if a study guide matching [input]/[inputType]/[language]
-  /// already exists in the local Hive cache.
-  Future<bool> _hasCachedStudyGuide(
-    String input,
-    String inputType,
-    String language,
-  ) async {
-    try {
-      final cached =
-          await GetIt.instance<StudyLocalDataSource>().getCachedStudyGuides();
-      final normalizedInput = input.trim().toLowerCase();
-      return cached.any(
-        (g) =>
-            g.input.trim().toLowerCase() == normalizedInput &&
-            g.inputType == inputType &&
-            g.language == language,
-      );
-    } catch (_) {
-      return false;
-    }
   }
 
   void _showErrorDialog(

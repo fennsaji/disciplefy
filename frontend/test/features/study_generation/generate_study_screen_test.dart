@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
@@ -156,6 +157,8 @@ Future<void> _register({
     ..registerSingleton<GetDefaultStudyLanguage>(_FakeDefaultLanguage())
     ..registerSingleton<WalkthroughRepository>(_FakeWalkthrough())
     ..registerSingleton<StudyLocalDataSource>(_FakeLocalData())
+    ..registerSingleton<StudyLaunchService>(
+        StudyLaunchService(_FakeLocalData()))
     ..registerSingleton<SubscriptionRepository>(_FakeSubscriptions())
     ..registerSingleton<UnifiedSavedGuidesBloc>(savedGuides);
 }

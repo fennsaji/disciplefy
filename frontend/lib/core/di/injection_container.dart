@@ -26,6 +26,7 @@ import '../../features/auth/presentation/bloc/phone_auth_bloc.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
 import '../../features/study_generation/data/repositories/token_cost_repository.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import '../../features/study_generation/data/services/tts_notification_service.dart';
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
 import '../../features/study_generation/data/datasources/study_local_data_source.dart';
@@ -421,6 +422,11 @@ Future<void> initializeDependencies() async {
   // Token Cost Repository for fetching token costs from backend
   sl.registerLazySingleton<TokenCostRepository>(
     () => TokenCostRepository(supabaseClient: sl()),
+  );
+
+  // Shared cache → credits → navigate checks for starting a study
+  sl.registerLazySingleton<StudyLaunchService>(
+    () => StudyLaunchService(sl<StudyLocalDataSource>()),
   );
 
   //! Reflections (Reflect Mode)
