@@ -481,6 +481,7 @@ async function handleVoiceConversation(
 
 // Export using function factory
 createFunction(handleVoiceConversation, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST', 'OPTIONS'],
   requireAuth: false, // We handle auth manually for SSE support
   enableAnalytics: true,

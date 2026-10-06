@@ -48,6 +48,8 @@ export interface UserContext {
   readonly type: 'authenticated' | 'anonymous'
   readonly userId?: string
   readonly sessionId?: string
+  /** Supabase anonymous user (authenticated, no full account yet). */
+  readonly isGuest?: boolean
 }
 
 /**

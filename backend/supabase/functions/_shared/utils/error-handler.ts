@@ -310,6 +310,14 @@ export class ErrorHandler {
   }
 
   /**
+   * Creates the error returned to a guest (Supabase anonymous user) on an
+   * account-only feature. Code `ACCOUNT_REQUIRED`, HTTP 403.
+   */
+  static createAccountRequiredError(message = 'Create an account to use this.'): AppError {
+    return new AppError('ACCOUNT_REQUIRED', message, 403)
+  }
+
+  /**
    * Creates a configuration error for missing environment variables.
    * 
    * @param missingVars - Array of missing variable names

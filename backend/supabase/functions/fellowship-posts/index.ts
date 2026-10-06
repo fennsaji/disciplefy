@@ -852,6 +852,7 @@ async function handlePosts(req: Request, services: ServiceContainer): Promise<Re
 }
 
 createSimpleFunction(handlePosts, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST', 'DELETE', 'PATCH'],
   enableAnalytics: true,
   timeout: 15000,

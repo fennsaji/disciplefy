@@ -507,6 +507,7 @@ async function handleMembers(req: Request, services: ServiceContainer): Promise<
 }
 
 createSimpleFunction(handleMembers, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST'],
   enableAnalytics: true,
   timeout: 15000,

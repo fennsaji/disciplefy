@@ -12,7 +12,7 @@ Deno.env.set('SUPABASE_ANON_KEY', ANON_KEY)
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key')
 Deno.env.set('SUPABASE_JWKS', JSON.stringify({ keys: [jwk] }))
 
-const { parseUserContext } = await import('./function-factory.ts')
+const { parseUserContext, presentsUserJwt } = await import('./function-factory.ts')
 
 const primed: unknown[] = []
 const services = { authService: { primeVerifiedIdentity: (_r: Request, id: unknown) => primed.push(id) } } as never
@@ -41,15 +41,15 @@ Deno.test('valid user JWT verified locally, context + primed identity', async ()
   const token = await sign()
   const r = req(`Bearer ${token}`)
   assertEquals(await parseUserContext(r, services), {
-    type: 'authenticated', userId: USER_ID, sessionId: undefined, email: 'a@b.c',
+    type: 'authenticated', userId: USER_ID, isGuest: false, email: 'a@b.c',
   })
   assertEquals((primed.at(-1) as { token: string; source: string }).source, 'local')
 })
 
-Deno.test('is_anonymous user -> anonymous context with sessionId = user id', async () => {
+Deno.test('is_anonymous user -> authenticated guest with its own userId', async () => {
   const token = await sign('1h', { is_anonymous: true })
   assertEquals(await parseUserContext(req(`Bearer ${token}`), services), {
-    type: 'anonymous', userId: undefined, sessionId: USER_ID, email: undefined,
+    type: 'authenticated', userId: USER_ID, isGuest: true, email: undefined,
   })
 })
 
@@ -63,4 +63,11 @@ Deno.test('expired / tampered JWT -> Authentication failed; guest fallback only 
     await parseUserContext(req(`Bearer ${expired}`, { 'x-session-id': 's2' }), services, true),
     { type: 'anonymous', userId: undefined, sessionId: 's2' },
   )
+})
+
+Deno.test('presentsUserJwt: only a non-anon-key bearer claims a user identity', () => {
+  assertEquals(presentsUserJwt(req()), false)
+  assertEquals(presentsUserJwt(req(`Bearer ${ANON_KEY}`)), false)
+  assertEquals(presentsUserJwt(req('Bearer some.user.jwt')), true)
+  assertEquals(presentsUserJwt(new Request('http://localhost/fn?authorization=some.user.jwt')), true)
 })

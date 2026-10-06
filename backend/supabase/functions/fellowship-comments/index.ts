@@ -486,6 +486,7 @@ async function handleComments(req: Request, services: ServiceContainer): Promise
 }
 
 createSimpleFunction(handleComments, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST', 'DELETE', 'PATCH'],
   enableAnalytics: true,
   timeout: 10000,

@@ -280,4 +280,6 @@ async function loadConversationHistory(
 }
 
 // Wrap the handler in the authenticated function factory
-createAuthenticatedFunction(handleConversationHistory);
+createAuthenticatedFunction(handleConversationHistory, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
+});

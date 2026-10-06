@@ -953,6 +953,7 @@ async function handleMeetings(req: Request, services: ServiceContainer): Promise
 }
 
 createSimpleFunction(handleMeetings, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST'],
   enableAnalytics: true,
   timeout: 20000,

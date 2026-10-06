@@ -22,6 +22,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
+import { isAnonymousAuthUser, ACCOUNT_REQUIRED_CODE, ACCOUNT_REQUIRED_MESSAGE } from '../_shared/auth/user-context.ts'
 
 interface ValidatePromoRequest {
   promo_code: string
@@ -87,6 +88,21 @@ serve(async (req) => {
         }),
         {
           status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Guests (Supabase anonymous users) need a full account to pay.
+    if (isAnonymousAuthUser(user)) {
+      return new Response(
+        JSON.stringify({
+          valid: false,
+          message: ACCOUNT_REQUIRED_MESSAGE,
+          code: ACCOUNT_REQUIRED_CODE
+        }),
+        {
+          status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )

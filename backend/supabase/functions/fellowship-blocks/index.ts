@@ -195,6 +195,7 @@ async function handleBlocks(req: Request, services: ServiceContainer): Promise<R
 }
 
 createSimpleFunction(handleBlocks, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST', 'DELETE'],
   enableAnalytics: true,
   timeout: 15000,

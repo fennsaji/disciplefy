@@ -360,6 +360,7 @@ async function handleStudy(req: Request, services: ServiceContainer): Promise<Re
 }
 
 createSimpleFunction(handleStudy, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['POST'],
   enableAnalytics: true,
   timeout: 10000,

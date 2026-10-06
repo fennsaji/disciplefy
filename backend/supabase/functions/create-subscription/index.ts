@@ -116,6 +116,7 @@ async function handleCreateSubscription(
  * Export Edge Function using function factory
  */
 createSimpleFunction(handleCreateSubscription, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   // Payments / subscription / account / admin: session revocation must be honoured.
   verifyWithAuthServer: true,
   enableAnalytics: true,
