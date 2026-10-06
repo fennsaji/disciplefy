@@ -25,6 +25,7 @@ import 'package:disciplefy_bible_study/features/study_generation/data/repositori
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/mappers/app_language_mapper.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/utils/detect_study_input.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/utils/scripture_reference.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/pages/generate_study_screen.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
@@ -62,6 +63,8 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
 
   DetectedInput _detected = detectStudyInput('');
   DetectedInputType? _override;
+  String _lastText = '';
+  String? _error;
   StudyMode _mode = StudyMode.quick;
   final Map<StudyMode, int> _costs = {};
 
@@ -99,6 +102,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
       _controller.text = prefill;
       _detected = detectStudyInput(prefill);
     }
+    _lastText = _controller.text;
     _controller.addListener(_onTextChanged);
     _languageChanges = _languages.languageChanges.listen((_) async {
       if (mounted) await _loadLanguage();
@@ -168,17 +172,28 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   // ---------------------------------------------------------------------------
 
   /// Detection rebuilds the scripture pattern, so it runs once typing pauses.
+  ///
+  /// Any edit to the text drops the manual type (the user re-taps the tag if
+  /// detection is still wrong) and the scripture error. Cursor moves alone
+  /// keep both.
   void _onTextChanged() {
+    final text = _controller.text;
+    if (text == _lastText) return;
+    _lastText = text;
     _detectTimer?.cancel();
-    if (_controller.text.trim().isEmpty) {
+    if (text.trim().isEmpty) {
       setState(() {
         _detected = detectStudyInput('');
         _override = null;
+        _error = null;
       });
       return;
     }
     // Rebuild for the clear button; the tag follows after the pause.
-    setState(() {});
+    setState(() {
+      _override = null;
+      _error = null;
+    });
     _detectTimer = Timer(_detectDelay, _detectNow);
   }
 
@@ -201,7 +216,10 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   }
 
   void _cycleType() {
-    setState(() => _override = InputTypeTag.next(_input.type));
+    setState(() {
+      _override = InputTypeTag.next(_input.type);
+      _error = null;
+    });
   }
 
   void _fill(String text) {
@@ -346,6 +364,15 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
 
   Future<void> _launch(String text, DetectedInputType type) async {
     if (_launching) return;
+    // Never send a non-reference as scripture (e.g. a manual type change):
+    // the same reference check as the shipped screen.
+    if (type == DetectedInputType.scripture &&
+        detectStudyInput(text).type != DetectedInputType.scripture &&
+        !isScriptureReference(text)) {
+      setState(() =>
+          _error = context.tr(TranslationKeys.generateStudyScriptureError));
+      return;
+    }
     if (context.read<ConnectivityBloc>().state is ConnectivityOffline) {
       showAppSnackBar(
         context,
@@ -427,6 +454,19 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 _header(),
                 const SizedBox(height: 20),
                 _inputField(),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      _error!,
+                      key: const Key('generate_simple_error'),
+                      style: AppFonts.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
                 if (showTag) ...[
                   const SizedBox(height: 10),
                   Align(

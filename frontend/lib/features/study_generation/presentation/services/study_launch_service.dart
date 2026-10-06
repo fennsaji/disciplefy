@@ -26,6 +26,9 @@ class StudyLaunchService {
   /// [language]) always opens without a credit check. Premium/unlimited plans
   /// and an unknown [status] go straight to generation; otherwise the user
   /// needs at least [cost] credits. A [cost] of 0 (unknown) never blocks.
+  ///
+  /// [mode] is reserved: the cache match ignores mode, same as the shipped
+  /// screen.
   Future<LaunchDecision> decide({
     required String input,
     required String type,

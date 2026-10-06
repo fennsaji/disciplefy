@@ -322,6 +322,61 @@ void main() {
     expect(find.text('Question'), findsOneWidget);
   });
 
+  testWidgets('editing the text drops the manual type', (tester) async {
+    await pumpSimple(tester);
+    await _type(tester, 'Romans 8');
+    await tester.tap(find.byKey(const Key('input_type_tag')));
+    await tester.pump();
+    expect(find.text('Topic'), findsOneWidget);
+
+    await _type(tester, 'Romans 8:28');
+    expect(find.text('Scripture'), findsOneWidget);
+    expect(find.text('Topic'), findsNothing);
+  });
+
+  testWidgets('a non-reference forced to scripture is blocked with a message',
+      (tester) async {
+    await pumpSimple(tester);
+    await _type(tester, 'Forgiveness');
+    // topic → question → scripture
+    await tester.tap(find.byKey(const Key('input_type_tag')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('input_type_tag')));
+    await tester.pump();
+    expect(find.text('Scripture'), findsOneWidget);
+
+    await _tapGenerate(tester);
+    expect(find.textContaining('guide:'), findsNothing);
+    expect(find.byKey(const Key('generate_simple_error')), findsOneWidget);
+    expect(find.textContaining('valid scripture reference'), findsOneWidget);
+
+    // Editing clears the message.
+    await _type(tester, 'Forgiveness of sins');
+    expect(find.byKey(const Key('generate_simple_error')), findsNothing);
+  });
+
+  testWidgets('a reference forced to scripture passes the check',
+      (tester) async {
+    await pumpSimple(tester);
+    // "Psalms 23" shape passes the reference check whatever detection says.
+    await _type(tester, 'Hope 3');
+    while (tester
+            .widget<Text>(find.descendant(
+                of: find.byKey(const Key('input_type_tag')),
+                matching: find.byType(Text)))
+            .data !=
+        'Scripture') {
+      await tester.tap(find.byKey(const Key('input_type_tag')));
+      await tester.pump();
+    }
+    await _tapGenerate(tester);
+
+    expect(find.byKey(const Key('generate_simple_error')), findsNothing);
+    final text = tester.widget<Text>(find.textContaining('guide:')).data!;
+    expect(text, contains('type=scripture'));
+    expect(text, contains('input=Hope%203'));
+  });
+
   testWidgets('Generate opens the streaming guide directly', (tester) async {
     await pumpSimple(tester);
     await _type(tester, 'Romans 8');

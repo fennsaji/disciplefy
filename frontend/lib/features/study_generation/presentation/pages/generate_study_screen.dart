@@ -59,6 +59,7 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/wi
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/language_pill.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/utils/scripture_reference.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -428,7 +429,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         _isInputValid = false;
         _validationError = null;
       } else if (_selectedMode == StudyInputMode.scripture) {
-        _isInputValid = _validateScriptureReference(text);
+        _isInputValid = isScriptureReference(text);
         // Don't show error while user is still typing the book name (no digit yet)
         final hasDigit = text.runes.any((r) => r >= 48 && r <= 57);
         _validationError = (_isInputValid || !hasDigit)
@@ -459,18 +460,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         }
       }
     });
-  }
-
-  bool _validateScriptureReference(String text) {
-    // Unicode-aware regex pattern for scripture references
-    // Uses [\p{L}\p{M}]+ to match letters AND combining marks
-    // (required for Malayalam, Hindi, and other Indic scripts)
-    // Allows multi-word book names like "भजन संहिता" or "Song of Solomon"
-    final scripturePattern = RegExp(
-      r'^[1-3]?\s*[\p{L}\p{M}]+(?:\s+[\p{L}\p{M}]+)*\s+\d+(?::\d+(?:-\d+)?)?$',
-      unicode: true,
-    );
-    return scripturePattern.hasMatch(text);
   }
 
   /// Fetch the credit cost of every mode for the selected language (shown on
