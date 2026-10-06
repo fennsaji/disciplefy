@@ -254,9 +254,15 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             }
           },
         ),
-        // Subscription BLoC listener
+        // Subscription BLoC listener. Page level, so the row is latched even
+        // while the token status is still loading.
         BlocListener<SubscriptionBloc, SubscriptionState>(
           listener: (context, state) {
+            if (state is SubscriptionLoaded ||
+                (state is SubscriptionError &&
+                    state.previousSubscription != null)) {
+              setState(() => _latchSubscription(state));
+            }
             if (state is SubscriptionResumed) {
               showAppSnackBar(
                 context,
@@ -364,8 +370,9 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   }
 
   Widget _buildTokenManagement(TokenStatus tokenStatus) {
-    return BlocConsumer<SubscriptionBloc, SubscriptionState>(
-      listener: (context, state) => setState(() => _latchSubscription(state)),
+    // Rebuilds on subscription states; the row itself is latched by the
+    // page-level listener in build().
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
       builder: (context, subscriptionState) {
         final subscription = _subscription;
         final isCancelledButActive =

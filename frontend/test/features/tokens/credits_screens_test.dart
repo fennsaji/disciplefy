@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc_test/bloc_test.dart';
@@ -595,6 +596,67 @@ void main() {
         expect(find.textContaining('Free until'), findsNothing);
         expect(find.textContaining('Quick Read from 10'), findsOneWidget);
         expect(find.textContaining('oken'), findsNothing);
+      });
+    }
+
+    for (final pending in [false, true]) {
+      testWidgets(
+          'credits: the row arriving while credits still load is kept '
+          '(${pending ? 'pending cancel' : 'renews'})', (tester) async {
+        final tokens = StreamController<TokenState>();
+        final subs = StreamController<SubscriptionState>();
+        whenListen(tokenBloc, tokens.stream,
+            initialState: const TokenLoading(operation: 'fetching'));
+        whenListen(subscriptionBloc, subs.stream,
+            initialState: const SubscriptionInitial());
+        useSurface(tester, const Size(390, 1600));
+        await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
+        await tester.pump();
+
+        final row = Subscription(
+          id: 's1',
+          userId: 'u1',
+          razorpaySubscriptionId: 'sub_1',
+          status: pending
+              ? SubscriptionStatus.pending_cancellation
+              : SubscriptionStatus.active,
+          planType: 'standard_monthly',
+          amountPaise: 7900,
+          currency: 'INR',
+          currentPeriodEnd: DateTime(2026, 10, 29),
+          nextBillingAt: DateTime(2026, 10, 29),
+          paidCount: 2,
+          cancelAtCycleEnd: pending,
+          createdAt: DateTime(2026, 8, 29),
+          updatedAt: DateTime(2026, 9, 29),
+        );
+        // Row, then the status call, both before the credits load.
+        subs.add(SubscriptionLoaded(
+            activeSubscription: row, lastUpdated: DateTime(2026)));
+        await tester.pump();
+        subs.add(UserSubscriptionStatusLoaded(
+          subscriptionStatus: UserSubscriptionStatus(
+            currentPlan: 'standard',
+            isTrialActive: true,
+            daysUntilTrialEnd: 200,
+            hasSubscription: true,
+            trialEndDate: DateTime.now().add(const Duration(days: 200)),
+          ),
+          lastUpdated: DateTime(2026),
+        ));
+        await tester.pump();
+        tokens.add(
+            TokenLoaded(tokenStatus: _status(), lastUpdated: DateTime(2026)));
+        await tester.pumpAndSettle();
+
+        expect(find.text('₹79/month · renews Oct 29'), findsOneWidget);
+        expect(find.byKey(const Key('credits_trial_pill')), findsNothing);
+        expect(find.textContaining('Free until'), findsNothing);
+        if (pending) {
+          expect(find.byType(LedgerNotice), findsOneWidget);
+        }
+        await tokens.close();
+        await subs.close();
       });
     }
 
