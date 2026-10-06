@@ -362,12 +362,12 @@ class _SubscriptionManagementPageState
           ]
         : isPlusPlan
             ? [
-                '50 daily tokens (all study modes)',
-                '10 follow-ups per guide',
-                '10 Discipler conversations/month',
-                '10 active memory verses',
-                '3 practice sessions per verse per day',
-                'All 8 practice modes',
+                context.tr(TranslationKeys.pricingPlusFeature1),
+                context.tr(TranslationKeys.pricingPlusFeature2),
+                context.tr(TranslationKeys.pricingPlusFeature3),
+                context.tr(TranslationKeys.pricingPlusFeature4),
+                context.tr(TranslationKeys.pricingPlusFeature5),
+                context.tr(TranslationKeys.pricingPlusFeature6),
               ]
             : [
                 context.tr(TranslationKeys.pricingPremiumFeature1),

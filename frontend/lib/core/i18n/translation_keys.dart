@@ -1757,6 +1757,12 @@ class TranslationKeys {
   static const pricingStandardFeature4 = 'pricing.standard.feature4';
   static const pricingStandardFeature5 = 'pricing.standard.feature5';
   // Premium Plan Features
+  static const pricingPlusFeature1 = 'pricing.plus.feature1';
+  static const pricingPlusFeature2 = 'pricing.plus.feature2';
+  static const pricingPlusFeature3 = 'pricing.plus.feature3';
+  static const pricingPlusFeature4 = 'pricing.plus.feature4';
+  static const pricingPlusFeature5 = 'pricing.plus.feature5';
+  static const pricingPlusFeature6 = 'pricing.plus.feature6';
   static const pricingPremiumFeature1 = 'pricing.premium.feature1';
   static const pricingPremiumFeature2 = 'pricing.premium.feature2';
   static const pricingPremiumFeature3 = 'pricing.premium.feature3';

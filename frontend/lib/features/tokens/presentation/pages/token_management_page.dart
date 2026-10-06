@@ -44,9 +44,23 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   // Payment confirmation guard to prevent duplicate calls
   final Set<String> _processingPayments = <String>{};
 
+  // The bloc emits the subscription row and the status call as separate
+  // states; latch the row so the status call settling doesn't drop it.
+  Subscription? _subscription;
+
+  void _latchSubscription(SubscriptionState state) {
+    if (state is SubscriptionLoaded) {
+      _subscription = state.activeSubscription;
+    } else if (state is SubscriptionError &&
+        state.previousSubscription != null) {
+      _subscription = state.previousSubscription;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _latchSubscription(context.read<SubscriptionBloc>().state);
     // Add lifecycle observer to detect when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Load token status when page opens
@@ -350,42 +364,12 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   }
 
   Widget _buildTokenManagement(TokenStatus tokenStatus) {
-    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+    return BlocConsumer<SubscriptionBloc, SubscriptionState>(
+      listener: (context, state) => setState(() => _latchSubscription(state)),
       builder: (context, subscriptionState) {
-        Subscription? subscription;
-        bool isCancelledButActive = false;
-        bool hasActiveSubscription = false;
-
-        if (subscriptionState is SubscriptionLoaded &&
-            subscriptionState.activeSubscription != null) {
-          final sub = subscriptionState.activeSubscription!;
-          subscription = sub;
-          isCancelledButActive =
-              sub.status == SubscriptionStatus.pending_cancellation;
-          hasActiveSubscription = sub.status == SubscriptionStatus.active ||
-              sub.status == SubscriptionStatus.authenticated ||
-              sub.status == SubscriptionStatus.created ||
-              sub.status == SubscriptionStatus.pending_cancellation;
-        }
-
-        // Trial end date from the backend only — the status call's, else the
-        // trial row's own period end. Unknown means no "Free until" line.
-        final subscriptionStatus =
-            subscriptionState is UserSubscriptionStatusLoaded
-                ? subscriptionState.subscriptionStatus
-                : null;
-        final isTrialRow = subscription != null &&
-            (subscription.status == SubscriptionStatus.trial ||
-                subscription.provider == 'trial');
-        final trialEndDate = subscriptionStatus?.trialEndDate ??
-            (isTrialRow ? subscription.currentPeriodEnd : null);
-        final isTrialActive =
-            trialEndDate != null && DateTime.now().isBefore(trialEndDate);
-
-        // Standard user in trial (no subscription yet)
-        final isStandardTrialUser = tokenStatus.userPlan == UserPlan.standard &&
-            isTrialActive &&
-            !hasActiveSubscription;
+        final subscription = _subscription;
+        final isCancelledButActive =
+            subscription?.status == SubscriptionStatus.pending_cancellation;
 
         final purchaseEnabled =
             sl<SystemConfigService>().isTokenPurchaseEnabled;
@@ -450,13 +434,6 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                   icon: Icons.info_outline_rounded,
                   tone: LedgerTone.warning,
                   text: context.tr(TranslationKeys.plansCancelledNotice),
-                ),
-              ] else if (isStandardTrialUser) ...[
-                const SizedBox(height: 10),
-                LedgerNotice(
-                  icon: Icons.auto_awesome_outlined,
-                  text:
-                      '${context.tr(TranslationKeys.myPlanFreeUntil)} ${DateFormat('MMMM d, y').format(trialEndDate)}',
                 ),
               ],
               const LedgerHairline(verticalMargin: 14),
@@ -722,8 +699,16 @@ class _PlanRow extends StatelessWidget {
     final plan = tokenStatus.userPlan;
     final sub = subscription;
     final renewal = sub?.nextBillingAt ?? sub?.currentPeriodEnd;
+    // Only the trial row itself makes this a trial, with its own end date —
+    // never the status call's trial date, which every user receives.
+    final isTrialRow = sub != null &&
+        (sub.status == SubscriptionStatus.trial || sub.provider == 'trial');
+    final trialUntil = isTrialRow ? sub.currentPeriodEnd : null;
     final String detail;
-    if (sub != null && sub.amountPaise > 0 && renewal != null) {
+    if (trialUntil != null) {
+      detail = context.tr(TranslationKeys.myPlanFreeTrialUntil,
+          {'date': DateFormat('MMM d, y').format(trialUntil)});
+    } else if (sub != null && sub.amountPaise > 0 && renewal != null) {
       detail = context.tr(TranslationKeys.ledgerPriceRenews, {
         'price': '₹${sub.amountRupees.toStringAsFixed(0)}',
         'date': DateFormat('MMM d').format(renewal),
@@ -744,14 +729,29 @@ class _PlanRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                context.tr(
-                    TranslationKeys.ledgerPlanName, {'plan': plan.displayName}),
-                style: AppFonts.inter(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w600,
-                  color: palette.text,
-                ),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      context.tr(TranslationKeys.ledgerPlanName,
+                          {'plan': plan.displayName}),
+                      style: AppFonts.inter(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
+                      ),
+                    ),
+                  ),
+                  // The pill never shows without its "Free trial until" line.
+                  if (trialUntil != null) ...[
+                    const SizedBox(width: 8),
+                    LedgerStatusPill(
+                      key: const Key('credits_trial_pill'),
+                      label: context.tr(TranslationKeys.myPlanTrialPill),
+                      tone: LedgerTone.accent,
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 2),
               Text(

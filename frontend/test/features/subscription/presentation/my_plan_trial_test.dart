@@ -13,6 +13,7 @@ import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/subscription/data/datasources/subscription_remote_data_source.dart';
 import 'package:disciplefy_bible_study/features/subscription/data/models/subscription_v2_models.dart';
 import 'package:disciplefy_bible_study/features/subscription/domain/entities/subscription.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/entities/user_subscription_status.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
@@ -199,6 +200,89 @@ void main() {
     await tester.tap(find.text('View plans'));
     await tester.pumpAndSettle();
     expect(find.text('stub:/pricing'), findsOneWidget);
+  });
+
+  testWidgets(
+      'a paying Standard subscriber is not shown as a trial while the '
+      'global trial date is still ahead', (tester) async {
+    final paid = Subscription(
+      id: 'sub-1',
+      userId: 'u1',
+      razorpaySubscriptionId: 'rzp-1',
+      status: SubscriptionStatus.active,
+      planType: 'standard_monthly',
+      amountPaise: 7900,
+      currency: 'INR',
+      currentPeriodEnd: DateTime(2026, 11, 2),
+      nextBillingAt: DateTime(2026, 11, 2),
+      paidCount: 1,
+      cancelAtCycleEnd: false,
+      createdAt: DateTime(2026, 10, 2),
+      updatedAt: DateTime(2026, 10, 2),
+    );
+    whenListen(
+      subscriptionBloc,
+      Stream<SubscriptionState>.fromIterable([
+        SubscriptionLoaded(
+            activeSubscription: paid, lastUpdated: DateTime(2026)),
+        // get_subscription_status returns the same trial end date to everyone.
+        UserSubscriptionStatusLoaded(
+          subscriptionStatus: UserSubscriptionStatus(
+            currentPlan: 'standard',
+            isTrialActive: true,
+            daysUntilTrialEnd: 200,
+            hasSubscription: true,
+            trialEndDate: DateTime.now().add(const Duration(days: 200)),
+          ),
+          lastUpdated: DateTime(2026),
+        ),
+      ]),
+      initialState: const SubscriptionInitial(),
+    );
+    useSurface(tester, const Size(390, 1400));
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Trial'), findsNothing);
+    expect(find.text('Trial Active'), findsNothing);
+    expect(find.text('Active Subscription'), findsOneWidget);
+    expect(find.text('Active'), findsWidgets);
+    expect(find.text('BILLING'), findsOneWidget);
+    expect(find.text('Razorpay'), findsOneWidget);
+    expect(find.text('Cancel plan'), findsOneWidget);
+    expect(find.text('View plans'), findsNothing);
+  });
+
+  testWidgets('no Trial pill without its end date', (tester) async {
+    final undated = Subscription(
+      id: 'trial-2',
+      userId: 'u1',
+      razorpaySubscriptionId: '',
+      provider: 'trial',
+      status: SubscriptionStatus.trial,
+      planType: 'standard_trial',
+      amountPaise: 0,
+      currency: 'INR',
+      paidCount: 0,
+      cancelAtCycleEnd: false,
+      createdAt: DateTime(2026, 10, 2),
+      updatedAt: DateTime(2026, 10, 2),
+    );
+    whenListen(
+      subscriptionBloc,
+      Stream<SubscriptionState>.fromIterable([
+        SubscriptionLoaded(
+            activeSubscription: undated, lastUpdated: DateTime(2026)),
+      ]),
+      initialState: const SubscriptionInitial(),
+    );
+    useSurface(tester, const Size(390, 1400));
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Trial'), findsNothing);
+    expect(find.textContaining('Free trial until'), findsNothing);
+    expect(find.text('Cancel plan'), findsNothing);
   });
 
   for (final language in AppLanguage.values) {

@@ -293,17 +293,18 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
               final isTrialActive =
                   trialEndDate != null && DateTime.now().isBefore(trialEndDate);
 
-              final status = _planStatus(
-                tokenStatus,
-                subscription,
-                isTrialActive,
-                subscriptionStatus,
-              );
               final onTrialSubscription = _isTrialSubscription(subscription);
               // The row's own end date first; the status call's as backup.
               final trialUntil = onTrialSubscription
                   ? (subscription!.currentPeriodEnd ?? trialEndDate)
                   : null;
+              final status = _planStatus(
+                tokenStatus,
+                subscription,
+                isTrialActive,
+                subscriptionStatus,
+                trialUntil,
+              );
 
               final isFetching =
                   state is SubscriptionLoading && state.operation == 'fetching';
@@ -380,6 +381,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
     Subscription? subscription,
     bool isTrialActive,
     UserSubscriptionStatus? subscriptionStatus,
+    DateTime? trialUntil,
   ) {
     final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
 
@@ -392,13 +394,17 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       }
       return _PlanStatus(context.tr(TranslationKeys.myPlanPremiumTrialActive),
           LedgerTone.accent);
-    } else if (_isTrialSubscription(subscription) ||
-        (userPlan == UserPlan.standard && isTrialActive)) {
+    } else if (_isTrialSubscription(subscription)) {
       // Checked before isActive: a trial row counts as active, and calling it
-      // an "Active Subscription" told trial users they were paying.
+      // an "Active Subscription" told trial users they were paying. Only the
+      // row itself decides this — the status call's trial end date is one
+      // global date returned to every user, paying subscribers included.
+      // The pill only appears with its "Free trial until" line.
       return _PlanStatus(
           context.tr(TranslationKeys.myPlanTrialActive), LedgerTone.accent,
-          pill: context.tr(TranslationKeys.myPlanTrialPill));
+          pill: trialUntil == null
+              ? null
+              : context.tr(TranslationKeys.myPlanTrialPill));
     } else if (subscription != null && subscription.isActive) {
       if (subscription.isPendingUserCancellation) {
         return _PlanStatus(
@@ -417,6 +423,9 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
     } else if (subscriptionStatus?.isNewUserWithoutTrial == true) {
       return _PlanStatus(
           context.tr(TranslationKeys.myPlanFreePlan), LedgerTone.neutral);
+    } else if (userPlan == UserPlan.standard && isTrialActive) {
+      return _PlanStatus(
+          context.tr(TranslationKeys.myPlanTrialActive), LedgerTone.accent);
     } else if (userPlan == UserPlan.free) {
       return _PlanStatus(
           context.tr(TranslationKeys.myPlanFreePlan), LedgerTone.neutral);

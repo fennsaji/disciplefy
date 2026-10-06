@@ -18,6 +18,7 @@ import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/subscription/data/datasources/subscription_remote_data_source.dart';
 import 'package:disciplefy_bible_study/features/subscription/data/models/subscription_v2_models.dart';
 import 'package:disciplefy_bible_study/features/subscription/domain/entities/subscription.dart';
+import 'package:disciplefy_bible_study/features/subscription/domain/entities/user_subscription_status.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
@@ -585,15 +586,52 @@ void main() {
         await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
         await tester.pumpAndSettle();
 
-        // Never a made-up date: the line shows only when the backend gave one.
-        expect(find.text('Free until March 31, 2027'),
+        // Never a made-up date: the pill and its line show only when the
+        // trial row carries an end date, and never one without the other.
+        expect(find.text('Free trial until Mar 31, 2027'),
             end == null ? findsNothing : findsOneWidget);
-        expect(find.textContaining('Free until'),
+        expect(find.byKey(const Key('credits_trial_pill')),
             end == null ? findsNothing : findsOneWidget);
+        expect(find.textContaining('Free until'), findsNothing);
         expect(find.textContaining('Quick Read from 10'), findsOneWidget);
         expect(find.textContaining('oken'), findsNothing);
       });
     }
+
+    testWidgets(
+        'credits: a paying Standard subscriber gets no trial pill even while '
+        'the global trial date is ahead', (tester) async {
+      whenListen(
+        subscriptionBloc,
+        Stream<SubscriptionState>.fromIterable([
+          SubscriptionLoaded(
+            activeSubscription: _subscription(),
+            lastUpdated: DateTime(2026),
+          ),
+          // get_subscription_status returns the same trial date to everyone.
+          UserSubscriptionStatusLoaded(
+            subscriptionStatus: UserSubscriptionStatus(
+              currentPlan: 'standard',
+              isTrialActive: true,
+              daysUntilTrialEnd: 200,
+              hasSubscription: true,
+              trialEndDate: DateTime.now().add(const Duration(days: 200)),
+            ),
+            lastUpdated: DateTime(2026),
+          ),
+        ]),
+        initialState: const SubscriptionInitial(),
+      );
+      useSurface(tester, const Size(390, 1600));
+      await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('credits_trial_pill')), findsNothing);
+      expect(find.textContaining('Free trial until'), findsNothing);
+      expect(find.textContaining('Free until'), findsNothing);
+      // The row survives the status call settling after it.
+      expect(find.text('₹79/month · renews Oct 29'), findsOneWidget);
+    });
 
     testWidgets('credits: low balance reads "Running Low"', (tester) async {
       when(() => tokenBloc.state).thenReturn(TokenLoaded(
