@@ -282,9 +282,13 @@ class _DockItemLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 60,
+    // At least 60px so Inter labels keep their place; Devanagari and
+    // Malayalam lines are taller, so the item grows into the dock's spare
+    // height instead of overflowing.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 60),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Every item gets the same 44px icon row (the Discipler ring's
@@ -292,19 +296,23 @@ class _DockItemLayout extends StatelessWidget {
           // the row sits centred in the dock.
           SizedBox(height: 44, child: Center(child: visual)),
           const SizedBox(height: 3),
-          AnimatedDefaultTextStyle(
-            duration: AppAnimations.fast,
-            curve: AppAnimations.defaultCurve,
-            style: AppFonts.inter(
-              fontSize: 10.5,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? palette.selected : palette.inactive,
-            ),
-            // Shrinks rather than cuts: on a very narrow phone five slots are
-            // ~56px, less than "Community" or the Malayalam labels need.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(label, maxLines: 1, textAlign: TextAlign.center),
+          // Flexible so a very large text size scales the label down to the
+          // dock height rather than overflowing it.
+          Flexible(
+            child: AnimatedDefaultTextStyle(
+              duration: AppAnimations.fast,
+              curve: AppAnimations.defaultCurve,
+              style: AppFonts.inter(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? palette.selected : palette.inactive,
+              ),
+              // Shrinks rather than cuts: on a very narrow phone five slots are
+              // ~56px, less than "Community" or the Malayalam labels need.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, maxLines: 1, textAlign: TextAlign.center),
+              ),
             ),
           ),
         ],
