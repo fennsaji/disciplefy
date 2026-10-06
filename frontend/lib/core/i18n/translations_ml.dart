@@ -587,6 +587,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'tap_to_speak': 'സംസാരിക്കാൻ ടാപ്പ് ചെയ്യൂ',
     'speech_not_available': 'ഈ ഉപകരണത്തിൽ സ്പീച്ച് ലഭ്യമല്ല',
   },
+  'home_today': {
+    'today_label': 'ഇന്ന്',
+  },
   'home': {
     'welcome_back': 'സ്വാഗതം, {name}',
     'good_morning': 'സുപ്രഭാതം, {name}',

@@ -246,6 +246,9 @@ class TranslationKeys {
   static const followUpChatSpeechNotAvailable =
       'follow_up_chat.speech_not_available';
 
+  // Home Today
+  static const homeTodayLabel = 'home_today.today_label';
+
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
   static const homeGoodMorning = 'home.good_morning';

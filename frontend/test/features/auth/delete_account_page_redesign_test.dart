@@ -121,9 +121,7 @@ void main() {
 
     testWidgets('back arrow only when the page can pop', (tester) async {
       await tester.pumpWidget(welcomeApp(
-          screen: const DeleteAccountPage(),
-          path: '/delete-account',
-          dark: false));
+          screen: const DeleteAccountPage(), path: '/delete-account'));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.arrow_back), findsNothing);
     });

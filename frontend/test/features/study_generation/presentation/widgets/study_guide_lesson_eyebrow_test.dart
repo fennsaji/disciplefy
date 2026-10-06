@@ -26,7 +26,6 @@ void main() {
     late String eyebrow;
     await tester.pumpWidget(welcomeApp(
       path: '/guide',
-      dark: false,
       screen: Builder(builder: (c) {
         eyebrow = StudyGuideTopicTitle.eyebrow(
           c,

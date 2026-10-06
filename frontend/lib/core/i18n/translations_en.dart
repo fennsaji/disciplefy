@@ -579,6 +579,9 @@ const Map<String, dynamic> englishTranslations = {
     'speech_not_available':
         'Speech recognition is not available on this device',
   },
+  'home_today': {
+    'today_label': 'Today',
+  },
   'home': {
     'welcome_back': 'Welcome back, {name}',
     'good_morning': 'Good morning, {name}',

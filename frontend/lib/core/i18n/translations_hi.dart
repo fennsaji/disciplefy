@@ -577,6 +577,9 @@ const Map<String, dynamic> hindiTranslations = {
     'tap_to_speak': 'बोलने के लिए टैप करें',
     'speech_not_available': 'इस डिवाइस पर स्पीच नहीं चलता',
   },
+  'home_today': {
+    'today_label': 'आज',
+  },
   'home': {
     'welcome_back': 'वापस स्वागत है, {name}',
     'good_morning': 'सुप्रभात, {name}',
