@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/expected_sections.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+
 /// Section types that can be streamed from the study guide generation
 enum StudyStreamSectionType {
   summary,
@@ -201,14 +204,18 @@ class StreamingStudyGuideContent {
     this.reflectionQuestions,
     this.prayerPoints,
     this.sectionsLoaded = 0,
-    this.totalSections = 14,
+    // expectedSectionsFor(StudyMode.standard); a default must be const.
+    // Use [StreamingStudyGuideContent.empty] to default from a mode.
+    this.totalSections = 7,
     this.isFromCache = false,
     this.studyGuideId,
   });
 
-  /// Create an empty streaming content
-  factory StreamingStudyGuideContent.empty() {
-    return const StreamingStudyGuideContent();
+  /// Empty streaming content expecting the sections a [mode] stream sends,
+  /// until the backend's init and section events report the real total.
+  factory StreamingStudyGuideContent.empty(
+      {StudyMode mode = StudyMode.standard}) {
+    return StreamingStudyGuideContent(totalSections: expectedSectionsFor(mode));
   }
 
   /// Progress from 0.0 to 1.0

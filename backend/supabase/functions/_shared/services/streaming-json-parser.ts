@@ -14,6 +14,9 @@
  * 7. prayerPoints (array of strings) - Required
  */
 
+import type { StudyMode } from './llm-types.ts'
+import { expectedSectionTotal } from './mode-sections.ts'
+
 /**
  * Section types in the order they appear in the study guide
  */
@@ -182,6 +185,13 @@ export class StreamingJsonParser {
    * re-scanning from position 0 for every field that hasn't started yet.
    */
   private keySearchProgress: Map<string, number> = new Map()
+
+  /**
+   * @param mode - Study mode being streamed; sets the section total reported
+   *   to the client (see mode-sections.ts). Defaults to 'standard' for
+   *   callers that only parse and never report a total.
+   */
+  constructor(private readonly mode: StudyMode = 'standard') {}
 
   /**
    * Finds `"fieldName":` style openers without re-scanning already-searched
@@ -454,10 +464,12 @@ export class StreamingJsonParser {
   }
 
   /**
-   * Returns the total number of sections expected
+   * Number of section events the client receives for this stream's mode.
+   * Not SECTION_ORDER.length: the multi-pass interpretation parts are
+   * combined into one `interpretation` event before they are sent.
    */
   getTotalSections(): number {
-    return SECTION_ORDER.length
+    return expectedSectionTotal(this.mode)
   }
 
   /**

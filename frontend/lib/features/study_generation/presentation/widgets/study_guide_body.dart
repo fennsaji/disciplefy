@@ -12,6 +12,7 @@ import 'package:disciplefy_bible_study/core/extensions/translation_extension.dar
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/expected_sections.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_guide.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_stream_event.dart';
@@ -169,13 +170,21 @@ class StudyGuideBody extends StatelessWidget {
     required StudyGuideSections sections,
   }) =>
       _specsFor(context, studyMode, sections)
-          .where((spec) => _isVisible(spec, sections))
+          .where((spec) => _isVisible(spec, sections, studyMode))
           .length;
 
-  static bool _isVisible(_SectionSpec spec, StudyGuideSections sections) {
+  /// A section with content always shows. An empty one shows a skeleton
+  /// only while it is still loading and the [studyMode] stream sends it.
+  static bool _isVisible(
+    _SectionSpec spec,
+    StudyGuideSections sections,
+    StudyMode studyMode,
+  ) {
     final text = spec.content;
     if (text != null && text.isNotEmpty) return true;
-    return !spec.optional && sections.isLoading(spec.index);
+    return !spec.optional &&
+        sections.isLoading(spec.index) &&
+        expectedSectionKeysFor(studyMode).contains(spec.key);
   }
 
   @override
@@ -218,7 +227,7 @@ class StudyGuideBody extends StatelessWidget {
 
     final children = <Widget>[];
     for (final spec in specs) {
-      if (!_isVisible(spec, sections)) continue;
+      if (!_isVisible(spec, sections, studyMode)) continue;
       final number = children.length + 1;
       final text = spec.content;
       Widget child;
@@ -277,6 +286,7 @@ class StudyGuideBody extends StatelessWidget {
     String? paragraphs(List<String>? items) => items?.join('\n\n');
     final passage = _SectionSpec(
       index: 2,
+      key: 'passage',
       title: context.tr(TranslationKeys.studyGuidePassageReading),
       icon: studyMode == StudyMode.quick
           ? Icons.menu_book_outlined
@@ -289,32 +299,38 @@ class StudyGuideBody extends StatelessWidget {
       StudyMode.standard => [
           _SectionSpec(
               index: 0,
+              key: 'summary',
               title: context.tr(TranslationKeys.studyGuideSummary),
               icon: Icons.summarize,
               content: s.summary),
           _SectionSpec(
               index: 1,
+              key: 'context',
               title: context.tr(TranslationKeys.studyGuideContext),
               icon: Icons.history_edu,
               content: s.context),
           passage,
           _SectionSpec(
               index: 3,
+              key: 'interpretation',
               title: context.tr(TranslationKeys.studyGuideInterpretation),
               icon: Icons.lightbulb_outline,
               content: s.interpretation),
           _SectionSpec(
               index: 4,
+              key: 'relatedVerses',
               title: context.tr(TranslationKeys.studyGuideRelatedVerses),
               icon: Icons.menu_book,
               content: paragraphs(s.relatedVerses)),
           _SectionSpec(
               index: 5,
+              key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
               icon: Icons.quiz,
               content: numbered(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
+              key: 'prayerPoints',
               title: context.tr(TranslationKeys.studyGuidePrayerPoints),
               icon: Icons.favorite,
               content: prayer(s.prayerPoints)),
@@ -322,32 +338,38 @@ class StudyGuideBody extends StatelessWidget {
       StudyMode.sermon => [
           _SectionSpec(
               index: 0,
+              key: 'summary',
               title: context.tr(TranslationKeys.sermonThesis),
               icon: Icons.lightbulb_outline,
               content: s.summary),
           _SectionSpec(
               index: 1,
+              key: 'context',
               title: context.tr(TranslationKeys.sermonContext),
               icon: Icons.history_edu,
               content: s.context),
           passage,
           _SectionSpec(
               index: 3,
+              key: 'interpretation',
               title: context.tr(TranslationKeys.sermonBody),
               icon: Icons.menu_book,
               content: s.interpretation),
           _SectionSpec(
               index: 4,
+              key: 'relatedVerses',
               title: context.tr(TranslationKeys.sermonSupportingVerses),
               icon: Icons.bookmark_border,
               content: paragraphs(s.relatedVerses)),
           _SectionSpec(
               index: 5,
+              key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.sermonDiscussionQuestions),
               icon: Icons.question_answer,
               content: numbered(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
+              key: 'prayerPoints',
               title: context.tr(TranslationKeys.sermonAltarCall),
               icon: Icons.volunteer_activism,
               content: paragraphs(s.prayerPoints),
@@ -356,33 +378,39 @@ class StudyGuideBody extends StatelessWidget {
       StudyMode.quick => [
           _SectionSpec(
               index: 0,
+              key: 'summary',
               title: context.tr(TranslationKeys.studyGuideKeyInsight),
               icon: Icons.lightbulb_outline,
               content: s.summary,
               isHighlight: true),
           _SectionSpec(
               index: 1,
+              key: 'context',
               title: context.tr(TranslationKeys.studyGuideContext),
               icon: Icons.history_edu_outlined,
               content: s.context),
           passage,
           _SectionSpec(
               index: 3,
+              key: 'interpretation',
               title: context.tr(TranslationKeys.studyGuideKeyVerse),
               icon: Icons.auto_stories_outlined,
               content: s.interpretation),
           _SectionSpec(
               index: 4,
+              key: 'relatedVerses',
               title: context.tr(TranslationKeys.studyGuideRelatedVerses),
               icon: Icons.format_list_bulleted,
               content: paragraphs(s.relatedVerses)),
           _SectionSpec(
               index: 5,
+              key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
               icon: Icons.forum_outlined,
               content: numbered(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
+              key: 'prayerPoints',
               title: context.tr(TranslationKeys.studyGuidePrayerPoints),
               icon: Icons.volunteer_activism_outlined,
               content: prayer(s.prayerPoints)),
@@ -390,34 +418,40 @@ class StudyGuideBody extends StatelessWidget {
       StudyMode.deep => [
           _SectionSpec(
               index: 0,
+              key: 'summary',
               title:
                   context.tr(TranslationKeys.studyGuideComprehensiveOverview),
               icon: Icons.summarize,
               content: s.summary),
           _SectionSpec(
               index: 1,
+              key: 'context',
               title: context.tr(TranslationKeys.studyGuideHistoricalContext),
               icon: Icons.history_edu,
               content: s.context),
           passage,
           _SectionSpec(
               index: 3,
+              key: 'interpretation',
               title:
                   context.tr(TranslationKeys.studyGuideInDepthInterpretation),
               icon: Icons.lightbulb_outline,
               content: s.interpretation),
           _SectionSpec(
               index: 4,
+              key: 'relatedVerses',
               title: context.tr(TranslationKeys.studyGuideScriptureConnections),
               icon: Icons.menu_book,
               content: paragraphs(s.relatedVerses)),
           _SectionSpec(
               index: 5,
+              key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.studyGuideDeepReflection),
               icon: Icons.edit_note,
               content: numbered(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
+              key: 'prayerPoints',
               title: context.tr(TranslationKeys.studyGuidePrayerForApplication),
               icon: Icons.favorite,
               content: prayer(s.prayerPoints)),
@@ -425,34 +459,40 @@ class StudyGuideBody extends StatelessWidget {
       StudyMode.lectio => [
           _SectionSpec(
               index: 0,
+              key: 'summary',
               title: context.tr(TranslationKeys.lectioScriptureForMeditation),
               icon: Icons.menu_book,
               content: s.summary),
           _SectionSpec(
               index: 1,
+              key: 'context',
               title: context.tr(TranslationKeys.lectioAboutPracticeEmoji),
               icon: Icons.info_outline,
               content: s.context),
           passage,
           _SectionSpec(
               index: 3,
+              key: 'interpretation',
               title: context.tr(TranslationKeys.lectioLectioMeditatio),
               subtitle: context.tr(TranslationKeys.lectioReadMeditate),
               icon: Icons.auto_stories,
               content: s.interpretation),
           _SectionSpec(
               index: 4,
+              key: 'relatedVerses',
               title: context.tr(TranslationKeys.lectioFocusWordsEmoji),
               icon: Icons.highlight,
               content: bulleted(s.relatedVerses)),
           _SectionSpec(
               index: 5,
+              key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.lectioOratioContemplatio),
               subtitle: context.tr(TranslationKeys.lectioPrayRest),
               icon: Icons.self_improvement,
               content: numbered(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
+              key: 'prayerPoints',
               title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
               icon: Icons.wb_sunny_outlined,
               content: paragraphs(s.prayerPoints)),
@@ -463,6 +503,9 @@ class StudyGuideBody extends StatelessWidget {
 
 class _SectionSpec {
   final int index;
+
+  /// Stream section key ([expectedSectionKeysFor]) this card shows.
+  final String key;
   final String title;
   final String? subtitle;
   final IconData icon;
@@ -475,6 +518,7 @@ class _SectionSpec {
 
   const _SectionSpec({
     required this.index,
+    required this.key,
     required this.title,
     required this.icon,
     required this.content,

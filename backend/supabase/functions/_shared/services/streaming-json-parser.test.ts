@@ -11,26 +11,26 @@ function feedByChar(parser: StreamingJsonParser, text: string) {
 }
 
 Deno.test('a string field streamed one character at a time is extracted exactly', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const found = feedByChar(parser, '{"summary": "Grace is God\'s unearned favor.", "context": "Background."}')
   assertEquals(found.summary, "Grace is God's unearned favor.")
   assertEquals(found.context, 'Background.')
 })
 
 Deno.test('an unescaped quote inside a string value is kept as literal content', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const found = feedByChar(parser, '{"summary": "The word "faith" means trust.", "context": "x"}')
   assertEquals(found.summary, 'The word "faith" means trust.')
 })
 
 Deno.test('escaped characters are unescaped correctly', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const found = feedByChar(parser, '{"summary": "Line one\\nLine two, with a \\"quote\\".", "context": "x"}')
   assertEquals(found.summary, 'Line one\nLine two, with a "quote".')
 })
 
 Deno.test('a field is not emitted until its closing quote arrives', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   let sections = parser.addChunk('{"summary": "Still writ')
   assertEquals(sections.length, 0)
   sections = parser.addChunk('ing this sentence')
@@ -40,7 +40,7 @@ Deno.test('a field is not emitted until its closing quote arrives', () => {
 })
 
 Deno.test('an array field is extracted once its closing bracket arrives', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const found = feedByChar(
     parser,
     '{"summary": "s", "context": "c", "passage": "John 3:16", "interpretation": "i", ' +
@@ -52,13 +52,13 @@ Deno.test('an array field is extracted once its closing bracket arrives', () => 
 })
 
 Deno.test('a comma inside a quoted array element does not split it', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const found = feedByChar(parser, '{"summary":"s","context":"c","relatedVerses": ["Psalm 23:1-6, a psalm", "John 3:16"]}')
   assertEquals(found.relatedVerses, ['Psalm 23:1-6, a psalm', 'John 3:16'])
 })
 
 Deno.test('every field arriving in one chunk is still extracted correctly', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const whole =
     '{"summary": "s", "context": "c", "passage": "John 3:16", "interpretation": "i", ' +
     '"relatedVerses": ["Rom 5:8"], "reflectionQuestions": ["Q?"], "prayerPoints": ["P."]}'
@@ -70,7 +70,7 @@ Deno.test('every field arriving in one chunk is still extracted correctly', () =
 })
 
 Deno.test('a field is emitted only once even if addChunk is called again after completion', () => {
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const first = parser.addChunk('{"summary": "done."}')
   assertEquals(first.length, 1)
   const second = parser.addChunk(', "context": "more"}')
@@ -84,7 +84,7 @@ Deno.test('a large field streamed in many small chunks does not blow up quadrati
   // chunk is quadratic in the field's length; this asserts it finishes in a
   // time budget that a quadratic implementation would blow past for this size.
   const longValue = 'x'.repeat(60_000)
-  const parser = new StreamingJsonParser()
+  const parser = new StreamingJsonParser('standard')
   const chunks: string[] = [`{"summary": "s", "context": "c", "interpretation": "`]
   for (let i = 0; i < longValue.length; i += 20) chunks.push(longValue.slice(i, i + 20))
   chunks.push('"}')

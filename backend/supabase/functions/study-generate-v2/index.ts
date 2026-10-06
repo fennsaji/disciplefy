@@ -1126,7 +1126,7 @@ async function handleStudyGenerateV2(
           console.log(`🔄 [STUDY-V2] Using multi-pass generation for ${study_mode} in`, targetLanguage)
 
           // Emit init event
-          const parser = new StreamingJsonParser()
+          const parser = new StreamingJsonParser(study_mode)
           emit(createInitEvent('started', parser.getTotalSections()))
 
           try {
@@ -1593,7 +1593,7 @@ async function handleStudyGenerateV2(
         } else {
           // Use regular streaming generation for all other modes
           // Initialize streaming JSON parser
-          const parser = new StreamingJsonParser()
+          const parser = new StreamingJsonParser(study_mode)
 
           // Emit init event with expected total sections
           emit(createInitEvent('started', parser.getTotalSections()))

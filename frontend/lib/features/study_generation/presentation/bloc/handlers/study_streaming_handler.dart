@@ -44,7 +44,7 @@ class StudyStreamingHandler {
 
     // Emit initial streaming state
     emit(StudyGenerationStreaming(
-      content: StreamingStudyGuideContent.empty(),
+      content: StreamingStudyGuideContent.empty(mode: event.studyMode),
       inputType: event.inputType,
       inputValue: event.input,
       language: event.language,
