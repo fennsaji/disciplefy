@@ -109,7 +109,6 @@ class VoiceConversationBloc
     on<PlayResponse>(_onPlayResponse);
     on<StopPlayback>(_onStopPlayback);
     on<CheckQuota>(_onCheckQuota);
-    on<QuotaUpdatedFromStream>(_onQuotaUpdatedFromStream);
     on<LoadPreferences>(_onLoadPreferences);
     on<LoadConversationHistory>(_onLoadHistory);
     on<LoadConversation>(_onLoadConversation);
@@ -719,6 +718,10 @@ class VoiceConversationBloc
     }
   }
 
+  @visibleForTesting
+  void handleStreamingEventForTest(Map<String, dynamic> data) =>
+      _handleStreamingEvent(data);
+
   /// Handle individual streaming events from the backend
   void _handleStreamingEvent(Map<String, dynamic> data) {
     // The backend sends event type as a separate SSE field, but our bridge
@@ -767,14 +770,10 @@ class VoiceConversationBloc
       return;
     }
 
-    // Check for quota_status event: apply it so the quota chip stays current
+    // Check for quota_status event (informational, can ignore)
     if (data.containsKey('remaining') && data.containsKey('limit')) {
-      final remaining = (data['remaining'] as num?)?.toInt();
-      final limit = (data['limit'] as num?)?.toInt();
-      Logger.debug('🎙️ [VOICE] Quota status: $remaining/$limit');
-      if (remaining != null && limit != null) {
-        _safeAdd(QuotaUpdatedFromStream(remaining: remaining, limit: limit));
-      }
+      Logger.debug(
+          '🎙️ [VOICE] Quota status: ${data['remaining']}/${data['limit']}');
       return;
     }
 
@@ -1020,6 +1019,10 @@ class VoiceConversationBloc
     StreamCompleted event,
     Emitter<VoiceConversationState> emit,
   ) {
+    // The monthly conversation quota is not streamed; reload it so the chip
+    // reflects the server's count after each reply.
+    _safeAdd(const CheckQuota());
+
     // Add assistant message to local state
     final assistantMessage = ConversationMessageEntity(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -1369,23 +1372,6 @@ class VoiceConversationBloc
           errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (quota) => emit(state.copyWith(quota: quota)),
     );
-  }
-
-  void _onQuotaUpdatedFromStream(
-    QuotaUpdatedFromStream event,
-    Emitter<VoiceConversationState> emit,
-  ) {
-    final current = state.quota;
-    final unlimited = event.remaining < 0;
-    emit(state.copyWith(
-      quota: VoiceQuotaEntity(
-        canStart: unlimited || event.remaining > 0,
-        quotaLimit: event.limit,
-        quotaUsed: unlimited ? 0 : event.limit - event.remaining,
-        quotaRemaining: event.remaining,
-        tier: current?.tier ?? '',
-      ),
-    ));
   }
 
   Future<void> _onLoadHistory(
