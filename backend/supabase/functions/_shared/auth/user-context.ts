@@ -16,7 +16,7 @@
  *   raw `serve`): purchase-tokens, confirm-token-purchase, confirm-apple-purchase,
  *   create-subscription, create-standard-subscription, create-plus-subscription,
  *   cancel-subscription, resume-subscription, start-premium-trial,
- *   upload-profile-image (plus the rest of ACCOUNT_ONLY_FUNCTIONS below, which
+ *   upload-profile-image, report-purchase-issue (plus the rest of ACCOUNT_ONLY_FUNCTIONS below, which
  *   authenticate through getUserFromToken / the factory context).
  * - Guest-allowed, now pass for guests because guests are `authenticated`:
  *   daily-verse, learning-paths, topic-progress, continue-learning,
@@ -34,9 +34,9 @@
 
 import type { UserContext } from '../types/index.ts'
 import type { VerifiedIdentity } from './jwt-verifier.ts'
-import { AppError } from '../utils/error-handler.ts'
+import { ErrorHandler } from '../utils/error-handler.ts'
 
-/** Functions a guest may not use: fellowships, Discipler, payments, profile image. */
+/** Functions a guest may not use: fellowships, Discipler, payments, purchase issues, profile image. */
 export const ACCOUNT_ONLY_FUNCTIONS: readonly string[] = [
   'fellowship',
   'fellowship-blocks',
@@ -60,6 +60,7 @@ export const ACCOUNT_ONLY_FUNCTIONS: readonly string[] = [
   'start-premium-trial',
   'validate-promo-code',
   'upload-profile-image',
+  'report-purchase-issue',
 ]
 
 export const ACCOUNT_REQUIRED_CODE = 'ACCOUNT_REQUIRED'
@@ -78,7 +79,7 @@ export function toUserContext(identity: Pick<VerifiedIdentity, 'id' | 'email' | 
 /** Throws ACCOUNT_REQUIRED (403) unless the caller is a signed-in, non-guest user. */
 export function assertFullAccount(ctx?: UserContext): void {
   if (!ctx || ctx.type !== 'authenticated' || ctx.isGuest) {
-    throw new AppError(ACCOUNT_REQUIRED_CODE, ACCOUNT_REQUIRED_MESSAGE, 403)
+    throw ErrorHandler.createAccountRequiredError(ACCOUNT_REQUIRED_MESSAGE)
   }
 }
 
