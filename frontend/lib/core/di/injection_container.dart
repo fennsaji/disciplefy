@@ -121,6 +121,7 @@ import '../services/locale_service.dart';
 import '../services/font_scale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/system_config_service.dart';
+import '../services/rollout_flags.dart';
 import '../services/pricing_service.dart';
 import '../services/bible_books_service.dart';
 import '../services/iap_service.dart';
@@ -280,6 +281,7 @@ Future<void> initializeDependencies() async {
 
   // Register SystemConfigService (for maintenance mode, feature flags, app version)
   sl.registerLazySingleton(() => SystemConfigService());
+  sl.registerLazySingleton(() => RolloutFlags(sl()));
 
   // Register PricingService (for dynamic subscription pricing from database)
   sl.registerLazySingleton(() => PricingService());
