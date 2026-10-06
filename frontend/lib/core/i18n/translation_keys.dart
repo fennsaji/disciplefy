@@ -1630,6 +1630,9 @@ class TranslationKeys {
   static const learningPathsProgress = 'learning_paths.progress';
   static const learningPathsTopicsCompleted = 'learning_paths.topics_completed';
   static const learningPathsStartPath = 'learning_paths.start_path';
+  static const learningPathsStartLesson = 'learning_paths.start_lesson';
+  static const learningPathsContinueLesson = 'learning_paths.continue_lesson';
+  static const learningPathsReviewLesson = 'learning_paths.review_lesson';
   static const learningPathsResumePath = 'learning_paths.resume_path';
   static const learningPathsPathCompleted = 'learning_paths.path_completed';
   static const learningPathsEnrolledSuccess = 'learning_paths.enrolled_success';

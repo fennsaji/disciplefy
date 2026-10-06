@@ -191,6 +191,7 @@ class LearningPathDetail extends LearningPath {
     required String title,
     required String description,
     required List<LearningPathTopic> topics,
+    bool isEnrolled = true,
   }) =>
       LearningPathDetail(
         id: id,
@@ -202,7 +203,7 @@ class LearningPathDetail extends LearningPath {
         totalXp: 0,
         estimatedDays: 0,
         discipleLevel: '',
-        isEnrolled: true,
+        isEnrolled: isEnrolled,
         topics: topics,
       );
 

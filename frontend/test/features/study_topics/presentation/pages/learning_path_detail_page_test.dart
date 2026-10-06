@@ -202,8 +202,8 @@ void main() {
             // Path and topic titles are content; the test font renders
             // every glyph 1em wide, so they wrap far more than real text.
             'New Believer Essentials',
-            '${translations.getTranslation(TranslationKeys.learningPathsContinue)}'
-                ' · Confidence in Your Salvation',
+            translations.getTranslation(
+                TranslationKeys.learningPathsContinueLesson, {'n': 4}),
           });
           expect(find.byType(PathDetailCtaBar), findsOneWidget);
         });
@@ -228,9 +228,8 @@ void main() {
     expect(rows[4].status, PathTopicStatus.locked);
 
     expect(
-      find.text(
-          '${translations.getTranslation(TranslationKeys.learningPathsContinue)}'
-          ' · Confidence in Your Salvation'),
+      find.text(translations.getTranslation(
+          TranslationKeys.learningPathsContinueLesson, {'n': 4})),
       findsOneWidget,
     );
     expect(find.text('50%'), findsOneWidget);
@@ -241,8 +240,8 @@ void main() {
     await pump(
         tester, LearningPathDetailLoaded(pathDetail: _path(enrolled: false)));
 
-    final label =
-        translations.getTranslation(TranslationKeys.learningPathsStartPath);
+    final label = translations
+        .getTranslation(TranslationKeys.learningPathsStartLesson, {'n': 1});
     expect(find.text(label), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('path-detail-cta')));
     verify(() => bloc.add(const EnrollInLearningPath(pathId: 'path-1')))
@@ -359,8 +358,8 @@ void main() {
           expectNoTruncatedText(tester, allowed: {
             // The page behind the sheet: its clamped description and CTA.
             _path(enrolled: true).description,
-            '${translations.getTranslation(TranslationKeys.learningPathsContinue)}'
-                ' · Confidence in Your Salvation',
+            translations.getTranslation(
+                TranslationKeys.learningPathsContinueLesson, {'n': 4}),
             // Content titles; the test font renders every glyph 1em wide.
             'New Believer Essentials',
             'NEW BELIEVER ESSENTIALS',

@@ -49,6 +49,7 @@ import '../../data/models/learning_path_download_model.dart';
 import '../../data/services/learning_path_download_service.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/utils/lesson_launch.dart';
+import '../../domain/utils/path_primary_cta.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
@@ -88,6 +89,14 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   /// caller can refetch its own path list only when the data is actually stale
   /// — an ordinary look-and-go-back leaves the caller's state untouched.
   bool _progressChanged = false;
+
+  /// Set by the "Start lesson 1" tap on a path the user has not joined yet:
+  /// once enrolment succeeds the page opens lesson 1 instead of just
+  /// reloading, so one tap does both.
+  bool _startAfterEnroll = false;
+
+  /// Latest loaded detail, read by the enrolment listener.
+  LearningPathDetail? _lastLoadedDetail;
 
   @override
   void initState() {
@@ -138,9 +147,13 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   /// Navigate to topic and refresh on return
   Future<void> _navigateToTopic(
-      LearningPathTopic topic, LearningPathDetail path) async {
-    // Auto-enroll if not enrolled yet
-    if (!path.isEnrolled) {
+    LearningPathTopic topic,
+    LearningPathDetail path, {
+    bool alreadyEnrolled = false,
+  }) async {
+    // Auto-enroll if not enrolled yet (skipped when enrolment just succeeded
+    // and [path] is the pre-enrolment snapshot).
+    if (!path.isEnrolled && !alreadyEnrolled) {
       Logger.debug(
           '[LEARNING_PATH_DETAIL] Auto-enrolling user in path: ${path.title}');
       context
@@ -413,6 +426,15 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
               listener: (context, state) {
                 if (state is LearningPathEnrolled) {
+                  final path = _lastLoadedDetail;
+                  if (_startAfterEnroll && path != null) {
+                    _startAfterEnroll = false;
+                    final first = pathPrimaryCta(path)?.topic;
+                    if (first != null) {
+                      _navigateToTopic(first, path, alreadyEnrolled: true);
+                      return;
+                    }
+                  }
                   showAppSnackBar(
                     context,
                     context.tr(TranslationKeys.learningPathsEnrolledSuccess),
@@ -421,6 +443,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   // Reload details to show updated enrollment status
                   _loadPathDetails();
                 }
+                if (state is LearningPathsError) _startAfterEnroll = false;
               },
               builder: (context, state) {
                 if (state is LearningPathDetailLoading) {
@@ -432,6 +455,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 }
 
                 if (state is LearningPathDetailLoaded) {
+                  _lastLoadedDetail = state.pathDetail;
                   return _buildLoadedState(context, state.pathDetail);
                 }
 
@@ -596,40 +620,46 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     );
   }
 
-  /// The bottom pill: enroll when not enrolled, otherwise open the next
-  /// topic, or review from the start once the path is complete.
+  /// The bottom pill: one tap enrols (if needed) and opens the lesson it
+  /// names; a finished path reviews lesson 1.
   ({String label, IconData icon, VoidCallback onPressed})? _primaryAction(
     BuildContext context,
     LearningPathDetail path,
   ) {
-    if (!path.isEnrolled) {
-      return (
-        label: context.tr(TranslationKeys.learningPathsStartPath),
-        icon: Icons.play_arrow_outlined,
-        onPressed: () => _enroll(path),
-      );
+    final cta = pathPrimaryCta(path);
+    if (cta == null) return null;
+    final n = {'n': cta.lessonNumber};
+    switch (cta.kind) {
+      case PathCtaKind.enrollAndStart:
+        return (
+          label: context.tr(TranslationKeys.learningPathsStartLesson, n),
+          icon: Icons.play_arrow_outlined,
+          onPressed: () => _enrollAndStart(path),
+        );
+      case PathCtaKind.start:
+        return (
+          label: context.tr(TranslationKeys.learningPathsStartLesson, n),
+          icon: Icons.play_arrow_outlined,
+          onPressed: () => _navigateToTopic(cta.topic, path),
+        );
+      case PathCtaKind.resume:
+        return (
+          label: context.tr(TranslationKeys.learningPathsContinueLesson, n),
+          icon: Icons.play_arrow_outlined,
+          onPressed: () => _navigateToTopic(cta.topic, path),
+        );
+      case PathCtaKind.review:
+        return (
+          label: context.tr(TranslationKeys.learningPathsReviewLesson),
+          icon: Icons.replay_rounded,
+          onPressed: () => _navigateToTopic(cta.topic, path),
+        );
     }
-    if (path.topics.isEmpty) return null;
+  }
 
-    final next = path.nextTopic;
-    if (next == null) {
-      final first = path.topics.first;
-      return (
-        label:
-            '${context.tr(TranslationKeys.learningPathsReview)} · ${first.title}',
-        icon: Icons.replay_rounded,
-        onPressed: () => _navigateToTopic(first, path),
-      );
-    }
-    final started = path.topics.any((t) => t.isCompleted || t.isInProgress);
-    final verb = context.tr(started
-        ? TranslationKeys.learningPathsContinue
-        : TranslationKeys.learningPathsStartPath);
-    return (
-      label: '$verb · ${next.title}',
-      icon: Icons.play_arrow_outlined,
-      onPressed: () => _navigateToTopic(next, path),
-    );
+  void _enrollAndStart(LearningPathDetail path) {
+    _startAfterEnroll = true;
+    _enroll(path);
   }
 
   void _enroll(LearningPath path) {
