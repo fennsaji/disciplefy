@@ -3572,4 +3572,13 @@ class TranslationKeys {
   static const lessonBackHome = 'lesson.back_home';
   static const lessonPathFinished = 'lesson.path_finished';
   static const lessonFullGuideLink = 'lesson.full_guide_link';
+
+  // Out-of-credits sheet.
+  static const creditsOutEyebrow = 'credits.out_eyebrow';
+  static const creditsOutTitle = 'credits.out_title';
+  static const creditsOutBody = 'credits.out_body';
+  static const creditsOutNeed = 'credits.out_need';
+  static const creditsGet = 'credits.get';
+  static const creditsViewSaved = 'credits.view_saved';
+  static const creditsMaybeLater = 'credits.maybe_later';
 }

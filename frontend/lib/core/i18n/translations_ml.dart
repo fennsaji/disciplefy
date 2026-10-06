@@ -896,6 +896,15 @@ const Map<String, dynamic> malayalamTranslations = {
     'resend_short': 'വീണ്ടും അയയ്ക്കുക',
     'sent': 'സ്ഥിരീകരണ ഇമെയിൽ അയച്ചു! നിങ്ങളുടെ ഇൻബോക്സ് പരിശോധിക്കുക.',
   },
+  'credits': {
+    'out_eyebrow': 'ക്രെഡിറ്റ് തീർന്നു',
+    'out_title': 'പഠന ക്രെഡിറ്റ് തീർന്നു',
+    'out_body': 'നാളെ വീണ്ടും ലഭിക്കും, അല്ലെങ്കിൽ ഇപ്പോൾ വാങ്ങാം.',
+    'out_need': '{need} വേണം — ഇന്ന് {have} ബാക്കി.',
+    'get': 'ക്രെഡിറ്റ് വാങ്ങുക',
+    'view_saved': 'സേവ് ചെയ്തവ',
+    'maybe_later': 'പിന്നീട്',
+  },
   'lesson': {
     'eyebrow': 'പാഠം {n}/{total}',
     'mark_complete': 'പൂർത്തിയായി · പാഠം {n}/{total}',

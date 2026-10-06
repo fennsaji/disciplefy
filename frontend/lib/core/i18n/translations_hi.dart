@@ -878,6 +878,15 @@ const Map<String, dynamic> hindiTranslations = {
     'resend_short': 'फिर भेजें',
     'sent': 'सत्यापन ईमेल भेजा गया! अपना इनबॉक्स देखें।',
   },
+  'credits': {
+    'out_eyebrow': 'क्रेडिट खत्म',
+    'out_title': 'अध्ययन क्रेडिट खत्म',
+    'out_body': 'कल क्रेडिट फिर मिलेंगे, या अभी और लें।',
+    'out_need': '{need} क्रेडिट चाहिए — आज {have} बचे हैं।',
+    'get': 'क्रेडिट लें',
+    'view_saved': 'सहेजी गाइड देखें',
+    'maybe_later': 'बाद में',
+  },
   'lesson': {
     'eyebrow': 'पाठ {n}/{total}',
     'mark_complete': 'पूरा करें · पाठ {n}/{total}',

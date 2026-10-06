@@ -885,6 +885,16 @@ const Map<String, dynamic> englishTranslations = {
     'resend_short': 'Resend',
     'sent': 'Verification email sent! Check your inbox.',
   },
+  'credits': {
+    'out_eyebrow': 'Out of credits',
+    'out_title': 'Out of study credits',
+    'out_body':
+        'Come back tomorrow when your credits refresh, or get more now.',
+    'out_need': 'You need {need} credits — {have} left today.',
+    'get': 'Get credits',
+    'view_saved': 'View saved guides',
+    'maybe_later': 'Maybe later',
+  },
   'lesson': {
     'eyebrow': 'Lesson {n} of {total}',
     'mark_complete': 'Mark complete · Lesson {n} of {total}',
