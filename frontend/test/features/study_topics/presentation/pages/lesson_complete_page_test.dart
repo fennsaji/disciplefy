@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -75,7 +76,7 @@ void main() {
   });
   tearDown(() => sl.reset());
 
-  Future<void> pumpPage(WidgetTester tester, int n) async {
+  Future<void> pumpPage(WidgetTester tester, int n, {ThemeData? theme}) async {
     useSurface(tester, const Size(400, 800));
     router = GoRouter(
       initialLocation: '/lesson-complete',
@@ -101,7 +102,7 @@ void main() {
       ],
     );
     await tester.pumpWidget(MaterialApp.router(
-      theme: AppTheme.darkTheme,
+      theme: theme ?? AppTheme.darkTheme,
       routerConfig: router,
     ));
     await tester.pumpAndSettle();
@@ -143,5 +144,18 @@ void main() {
     expect(find.text('You finished NBE'), findsOneWidget);
     expect(find.textContaining('Continue to lesson'), findsNothing);
     expect(find.text('Back to Home'), findsOneWidget);
+  });
+
+  testWidgets('primary fill is white on dark and gold on light',
+      (tester) async {
+    Color? fill() => tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .style!
+        .backgroundColor!
+        .resolve({});
+    await pumpPage(tester, 1);
+    expect(fill(), Colors.white);
+    await pumpPage(tester, 1, theme: AppTheme.lightTheme);
+    expect(fill(), AppColors.brandGoldDeep);
   });
 }

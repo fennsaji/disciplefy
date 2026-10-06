@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lesson_ref.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
@@ -70,5 +71,24 @@ void main() {
         onComplete: () async {},
         secondary: const Text('sec'))));
     expect(find.text('sec'), findsOneWidget);
+  });
+
+  testWidgets('fill is white on dark and gold on light', (tester) async {
+    Color? fillOf() => tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .style!
+        .backgroundColor!
+        .resolve({});
+    Future<void> pumpWith(ThemeData t) => tester.pumpWidget(MaterialApp(
+          theme: t,
+          home: Scaffold(
+              body: LessonMarkCompleteBar(
+                  lesson: _lesson, onComplete: () async {})),
+        ));
+    await pumpWith(AppTheme.darkTheme);
+    expect(fillOf(), Colors.white);
+    await pumpWith(AppTheme.lightTheme);
+    await tester.pumpAndSettle();
+    expect(fillOf(), AppColors.brandGoldDeep);
   });
 }

@@ -40,6 +40,7 @@ class _LessonMarkCompleteBarState extends State<LessonMarkCompleteBar> {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    final fill = palette.isDark ? palette.ctaFill : palette.gold;
     final label = context.tr(TranslationKeys.lessonMarkComplete, {
       'n': widget.lesson.lessonNumber,
       'total': widget.lesson.lessonTotal,
@@ -50,9 +51,9 @@ class _LessonMarkCompleteBarState extends State<LessonMarkCompleteBar> {
         FilledButton.icon(
           onPressed: _busy ? null : _tap,
           style: FilledButton.styleFrom(
-            backgroundColor: palette.gold,
+            backgroundColor: fill,
             foregroundColor: AppColors.brandPrimaryInk,
-            disabledBackgroundColor: palette.gold.withValues(alpha: 0.6),
+            disabledBackgroundColor: fill.withValues(alpha: 0.6),
             disabledForegroundColor: AppColors.brandPrimaryInk,
             minimumSize: const Size.fromHeight(40),
             maximumSize: const Size.fromHeight(40),
