@@ -20,6 +20,7 @@ import 'package:disciplefy_bible_study/features/gamification/domain/entities/use
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/unlock_dates.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/widgets/achievement_unlock_dialog.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
@@ -466,7 +467,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ],
             if (achievement.isUnlocked && achievement.unlockedAt != null)
               Text(
-                '${l10n.progressUnlockedOn} ${_formatDate(achievement.unlockedAt!)}',
+                '${l10n.progressUnlockedOn} ${formatUnlockDate(achievement.unlockedAt!)}',
                 style: AppFonts.inter(fontSize: 12, color: palette.muted),
               )
             else if (!achievement.isUnlocked)
@@ -494,24 +495,6 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
         );
       },
     );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }
 
@@ -853,14 +836,13 @@ class _AchievementRow extends StatelessWidget {
 
   String _relativeDate(BuildContext context, DateTime date) {
     final l10n = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(date.year, date.month, date.day))
-        .inDays;
-    if (days <= 0) return l10n.progressToday;
-    if (days == 1) return l10n.progressYesterday;
-    if (days < 7) return '$days ${l10n.progressDaysAgo}';
-    return '${date.day}/${date.month}/${date.year}';
+    return relativeUnlockLabel(
+      date,
+      now: DateTime.now(),
+      today: l10n.progressToday,
+      yesterday: l10n.progressYesterday,
+      daysAgo: l10n.progressDaysAgo,
+    );
   }
 
   @override
