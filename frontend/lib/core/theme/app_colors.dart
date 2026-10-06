@@ -115,8 +115,9 @@ class AppColors {
   ///
   /// #E3B154 is tuned for the near-black splash and dark theme; on the light
   /// page it measures 1.85:1 and simply disappears. This deeper gold keeps the
-  /// hue but clears AA on both the page (4.4:1) and white cards (4.7:1).
-  static const Color brandGoldDeep = Color(0xFF9A6B10);
+  /// hue but clears AA on both the page (4.5:1) and white cards (4.8:1),
+  /// and white text on it as a fill measures 4.8:1.
+  static const Color brandGoldDeep = Color(0xFF986910);
 
   /// Brand gold for icons, hairlines and washes on light surfaces.
   /// Same hue and saturation as the logo, darkened only until it clears the
@@ -146,7 +147,9 @@ class AppColors {
   static const Color darkDivider = Color(0xFF2A2A2A);
   static const Color darkInputFill = Color(0xFF2A2A2A);
   static const Color darkInputBorder = Color(0xFF404040);
-  static const Color darkHintText = Color(0xFF808080);
+
+  /// 4.5:1 on [darkInputFill] (was #808080, 3.6:1).
+  static const Color darkHintText = Color(0xFF919191);
 
   // Splash / loading screen background (dark mode)
   static const Color splashBackgroundDark = Color(0xFF0B0B0B);

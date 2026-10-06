@@ -4,6 +4,8 @@ import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_s
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 import '../../helpers/text_fit.dart';
@@ -80,7 +82,7 @@ void main() {
 
         final step = tester.widget<Text>(find.text('2 / 5'));
         expect(step.style?.color,
-            dark ? const Color(0xFFE3B154) : const Color(0xFF9A6B10));
+            dark ? AppColors.brandGold : AppColors.brandGoldDeep);
         expectNoTruncatedText(tester);
       });
     }

@@ -28,6 +28,9 @@ class ReaderPalette {
 
   final Color text;
   final Color muted;
+
+  /// Tertiary text, placeholders and hints. Still clears 4.5:1 on the page,
+  /// the card and the raised fill.
   final Color dim;
 
   /// Accent for icons (lavender on dark, indigo on light).
@@ -35,6 +38,15 @@ class ReaderPalette {
 
   /// Gold for eyebrows, section numbers and progress.
   final Color gold;
+
+  /// Text and icons placed on a [gold] fill (white on the deep light-theme
+  /// gold, dark ink on the bright dark-theme gold).
+  final Color onGold;
+
+  /// Fill and label of a disabled primary action. The label keeps 3:1 on
+  /// the fill so the action stays legible while reading as unavailable.
+  final Color disabledFill;
+  final Color disabledInk;
 
   /// Primary call-to-action fill and the ink placed on it.
   final Color ctaFill;
@@ -52,6 +64,9 @@ class ReaderPalette {
     required this.dim,
     required this.accentIcon,
     required this.gold,
+    required this.onGold,
+    required this.disabledFill,
+    required this.disabledInk,
     required this.ctaFill,
     required this.ctaInk,
   });
@@ -60,13 +75,14 @@ class ReaderPalette {
   static const Color _darkRaised = Color(0xFF1F1F27);
   static const Color _darkText = Color(0xFFF2F2F4);
   static const Color _darkMuted = Color(0xFF9CA3AF);
-  static const Color _darkDim = Color(0xFF6B6B75);
+  static const Color _darkDim = Color(0xFF86868E);
   static const Color _darkAccent = Color(0xFFA9A6F5);
+  static const Color _darkOnGold = Color(0xFF1B1608);
 
   static const Color _lightInk = Color(0xFF16161D);
   static const Color _lightRaised = Color(0xFFEEEEF4);
   static const Color _lightMuted = Color(0xFF5B6070);
-  static const Color _lightDim = Color(0xFF8A8F9C);
+  static const Color _lightDim = Color(0xFF716C64);
 
   /// Selected-state fill (both themes); everything on it is white.
   static const Color selectedFill = AppColors.brandPrimary;
@@ -95,6 +111,9 @@ class ReaderPalette {
         dim: _darkDim,
         accentIcon: _darkAccent,
         gold: AppColors.brandGold,
+        onGold: _darkOnGold,
+        disabledFill: Colors.white.withValues(alpha: 0.10),
+        disabledInk: _darkDim,
         ctaFill: Colors.white,
         ctaInk: AppColors.brandPrimaryInk,
       );
@@ -111,6 +130,9 @@ class ReaderPalette {
       dim: _lightDim,
       accentIcon: AppColors.brandPrimary,
       gold: AppColors.brandGoldDeep,
+      onGold: Colors.white,
+      disabledFill: _lightInk.withValues(alpha: 0.08),
+      disabledInk: _lightDim,
       ctaFill: AppColors.brandPrimary,
       ctaInk: Colors.white,
     );

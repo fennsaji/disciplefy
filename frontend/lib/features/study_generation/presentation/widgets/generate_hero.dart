@@ -24,19 +24,22 @@ class GenerateHeroBackdrop extends StatelessWidget {
     final page = palette.page;
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
-    // Dark: a black shade that deepens into the page. Light: a heavy wash of
-    // the page colour at the top (dark ink title) thinning over the hills.
+    // Dark: a black shade over the header. Light: a heavy wash of the page
+    // colour at the top (dark ink title). Both close to the page colour
+    // below the search field: the chips, verse row and depth controls sit
+    // there, and at 94% the page colour keeps their text above 4.5:1 over
+    // even the brightest or darkest part of the photo.
     final shade = palette.isDark
         ? [
             Colors.black.withValues(alpha: 0.55),
-            Colors.black.withValues(alpha: 0.30),
-            page.withValues(alpha: 0.55),
+            Colors.black.withValues(alpha: 0.40),
+            page.withValues(alpha: 0.94),
             page,
           ]
         : [
             page.withValues(alpha: 0.88),
-            page.withValues(alpha: 0.62),
-            page.withValues(alpha: 0.30),
+            page.withValues(alpha: 0.72),
+            page.withValues(alpha: 0.94),
             page,
           ];
 
@@ -63,7 +66,7 @@ class GenerateHeroBackdrop extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: shade,
-                    stops: const [0, 0.42, 0.78, 1],
+                    stops: const [0, 0.40, 0.56, 0.72],
                   ),
                 ),
               ),
@@ -248,14 +251,8 @@ class GenerateStudyButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final active = enabled && !loading;
-    final fill = active
-        ? palette.ctaFill
-        : (palette.isDark
-            ? Colors.white.withValues(alpha: 0.10)
-            : palette.text.withValues(alpha: 0.08));
-    final ink = active
-        ? palette.ctaInk
-        : (palette.isDark ? Colors.white.withValues(alpha: 0.45) : palette.dim);
+    final fill = active ? palette.ctaFill : palette.disabledFill;
+    final ink = active ? palette.ctaInk : palette.disabledInk;
     // Cost chip: a soft indigo wash on the white dark-theme pill, a white
     // wash on the indigo light-theme pill.
     final chipFill = !active

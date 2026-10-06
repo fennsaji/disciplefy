@@ -735,7 +735,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
           key: const Key('generate_depth_all'),
           onPressed: _openAllDepths,
           style: TextButton.styleFrom(
-            foregroundColor: palette.muted,
+            foregroundColor: palette.text,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             minimumSize: const Size(44, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -747,11 +747,11 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 context.tr(TranslationKeys.generateSimpleAllDepths),
                 style: AppFonts.inter(
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: palette.muted,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, size: 16, color: palette.muted),
+              Icon(Icons.chevron_right_rounded, size: 16, color: palette.text),
             ],
           ),
         ),
@@ -762,14 +762,8 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   Widget _generateButton(bool inputValid) {
     final palette = ReaderPalette.of(context);
     final active = inputValid && !_launching;
-    final fill = active
-        ? palette.ctaFill
-        : (palette.isDark
-            ? Colors.white.withValues(alpha: 0.10)
-            : palette.text.withValues(alpha: 0.08));
-    final ink = active
-        ? palette.ctaInk
-        : (palette.isDark ? Colors.white.withValues(alpha: 0.45) : palette.dim);
+    final fill = active ? palette.ctaFill : palette.disabledFill;
+    final ink = active ? palette.ctaInk : palette.disabledInk;
     return Semantics(
       button: true,
       enabled: active,

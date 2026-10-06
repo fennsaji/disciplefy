@@ -26,9 +26,6 @@ class DepthSwitch extends StatelessWidget {
     this.locked = const {},
   });
 
-  /// Dark ink on the gold selected segment, readable in both themes.
-  static const Color _onGold = Color(0xFF1B1608);
-
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
@@ -55,8 +52,10 @@ class DepthSwitch extends StatelessWidget {
   Widget _segment(BuildContext context, ReaderPalette palette, StudyMode mode) {
     final isSelected = mode == selected;
     final isLocked = locked.contains(mode);
-    final ink = isSelected ? _onGold : palette.text;
-    final subInk = isSelected ? _onGold.withValues(alpha: 0.7) : palette.muted;
+    // The duration on the selected segment uses the same on-gold colour as
+    // the name: a faded tint of it dropped below a readable ratio.
+    final ink = isSelected ? palette.onGold : palette.text;
+    final subInk = isSelected ? palette.onGold : palette.muted;
 
     return Semantics(
       button: true,
@@ -89,7 +88,7 @@ class DepthSwitch extends StatelessWidget {
                               ? Icons.lock_outline_rounded
                               : mode.outlineIcon,
                           size: 15,
-                          color: isSelected ? _onGold : palette.gold,
+                          color: isSelected ? palette.onGold : palette.gold,
                         ),
                         const SizedBox(width: 5),
                         Flexible(

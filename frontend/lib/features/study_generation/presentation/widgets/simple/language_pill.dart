@@ -11,7 +11,10 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/pa
 abstract final class SearchFieldColors {
   static const Color ink = Color(0xFF16161D);
   static const Color muted = Color(0xFF5B6070);
-  static const Color hint = Color(0xFF8A8F9C);
+
+  /// Placeholder: the design's warm grey, darkened to 4.5:1 on the white
+  /// field (was #8A8F9C, 3.2:1).
+  static const Color hint = Color(0xFF7B766D);
   static const Color pillFill = Color(0xFFF0EEEA);
 }
 
