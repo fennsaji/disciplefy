@@ -109,6 +109,7 @@ class VoiceConversationBloc
     on<PlayResponse>(_onPlayResponse);
     on<StopPlayback>(_onStopPlayback);
     on<CheckQuota>(_onCheckQuota);
+    on<QuotaUpdatedFromStream>(_onQuotaUpdatedFromStream);
     on<LoadPreferences>(_onLoadPreferences);
     on<LoadConversationHistory>(_onLoadHistory);
     on<LoadConversation>(_onLoadConversation);
@@ -766,10 +767,14 @@ class VoiceConversationBloc
       return;
     }
 
-    // Check for quota_status event (informational, can ignore)
+    // Check for quota_status event: apply it so the quota chip stays current
     if (data.containsKey('remaining') && data.containsKey('limit')) {
-      Logger.debug(
-          '🎙️ [VOICE] Quota status: ${data['remaining']}/${data['limit']}');
+      final remaining = (data['remaining'] as num?)?.toInt();
+      final limit = (data['limit'] as num?)?.toInt();
+      Logger.debug('🎙️ [VOICE] Quota status: $remaining/$limit');
+      if (remaining != null && limit != null) {
+        _safeAdd(QuotaUpdatedFromStream(remaining: remaining, limit: limit));
+      }
       return;
     }
 
@@ -1364,6 +1369,23 @@ class VoiceConversationBloc
           errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (quota) => emit(state.copyWith(quota: quota)),
     );
+  }
+
+  void _onQuotaUpdatedFromStream(
+    QuotaUpdatedFromStream event,
+    Emitter<VoiceConversationState> emit,
+  ) {
+    final current = state.quota;
+    final unlimited = event.remaining < 0;
+    emit(state.copyWith(
+      quota: VoiceQuotaEntity(
+        canStart: unlimited || event.remaining > 0,
+        quotaLimit: event.limit,
+        quotaUsed: unlimited ? 0 : event.limit - event.remaining,
+        quotaRemaining: event.remaining,
+        tier: current?.tier ?? '',
+      ),
+    ));
   }
 
   Future<void> _onLoadHistory(

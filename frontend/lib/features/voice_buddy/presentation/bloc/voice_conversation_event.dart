@@ -163,6 +163,17 @@ class CheckQuota extends VoiceConversationEvent {
   const CheckQuota();
 }
 
+/// Apply the quota reported by the stream's quota_status event.
+class QuotaUpdatedFromStream extends VoiceConversationEvent {
+  final int remaining;
+  final int limit;
+
+  const QuotaUpdatedFromStream({required this.remaining, required this.limit});
+
+  @override
+  List<Object?> get props => [remaining, limit];
+}
+
 /// Load user's voice preferences to get default language.
 class LoadPreferences extends VoiceConversationEvent {
   const LoadPreferences();
