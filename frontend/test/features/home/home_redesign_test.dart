@@ -184,6 +184,7 @@ void main() {
   Widget hero(DailyVerseState state,
           {VoidCallback? onStudy,
           VoidCallback? onRetry,
+          VoidCallback? onRead,
           String name = 'Fenn'}) =>
       HomeVerseHero(
         imageAsset: homeHeroImages.first,
@@ -193,6 +194,7 @@ void main() {
           state: state,
           onStudy: onStudy,
           onRetry: onRetry ?? () {},
+          onRead: onRead,
         ),
       );
 
@@ -282,6 +284,28 @@ void main() {
       await tester.tap(find.text('Study now'));
       await tester.tap(find.text(_shortVerse));
       expect(studied, 2);
+    });
+
+    testWidgets(
+        'the verse counts as read after five seconds on screen, or at once '
+        'when copied or studied', (tester) async {
+      var reads = 0;
+      await pump(tester,
+          hero(_loaded(_shortVerse), onStudy: () {}, onRead: () => reads++));
+      await tester.pump(const Duration(seconds: 4));
+      expect(reads, 0);
+      await tester.pump(const Duration(seconds: 1));
+      expect(reads, 1);
+
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null));
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      expect(reads, 2);
+      await tester.tap(find.text('Study now'));
+      expect(reads, 3);
+      await tester.pump(const Duration(seconds: 5));
     });
 
     testWidgets('error: offers a retry and nothing else', (tester) async {

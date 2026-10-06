@@ -15,6 +15,7 @@ import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_actions.dart';
+import '../../../daily_verse/presentation/widgets/daily_verse_read_timer.dart';
 
 /// Scenery behind the home hero. One is picked per calendar day so the page
 /// changes with the verse but stays put through the day.
@@ -240,6 +241,10 @@ class HomeDailyVerse extends StatelessWidget {
         onRetry: () => context.read<DailyVerseBloc>().add(const RefreshVerse()),
         onInitial: () =>
             context.read<DailyVerseBloc>().add(const LoadTodaysVerse()),
+        // Reading the verse counts toward the daily streak; the bloc sends
+        // it to the server once per day however often this fires.
+        onRead: () =>
+            context.read<DailyVerseBloc>().add(const MarkVerseAsViewed()),
       ),
     );
   }
@@ -252,6 +257,10 @@ class HomeDailyVerseView extends StatelessWidget {
   final VoidCallback? onStudy;
   final VoidCallback onRetry;
   final VoidCallback? onInitial;
+
+  /// The loaded verse was read: on screen for [dailyVerseReadDelay], or
+  /// copied, shared, added to memory or opened with "Study now".
+  final VoidCallback? onRead;
   final bool isDisabled;
 
   const HomeDailyVerseView({
@@ -260,13 +269,20 @@ class HomeDailyVerseView extends StatelessWidget {
     required this.onRetry,
     this.onStudy,
     this.onInitial,
+    this.onRead,
     this.isDisabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final s = state;
-    if (s is DailyVerseLoaded) return _loaded(context, s);
+    if (s is DailyVerseLoaded) {
+      final read = onRead;
+      final view = _loaded(context, s);
+      return read == null
+          ? view
+          : DailyVerseReadTimer(onRead: read, child: view);
+    }
     if (s is DailyVerseOffline) return _offline(context, s);
     if (s is DailyVerseError) return _error(context);
     if (s is! DailyVerseLoading && onInitial != null) {
@@ -318,6 +334,12 @@ class HomeDailyVerseView extends StatelessWidget {
 
   Widget _loaded(BuildContext context, DailyVerseLoaded s) {
     final enabled = onStudy != null && !isDisabled;
+    final study = enabled
+        ? () {
+            onRead?.call();
+            onStudy!();
+          }
+        : null;
     final reference =
         '${s.verse.getReferenceText(s.currentLanguage)} · ${dailyVerseTranslationAbbr(s.currentLanguage)}';
 
@@ -330,7 +352,7 @@ class HomeDailyVerseView extends StatelessWidget {
           _eyebrow(context, s.formattedDateFor(_appLanguage(context))),
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: enabled ? onStudy : null,
+            onTap: study,
             child: _verseText(s.currentVerseText),
           ),
           const SizedBox(height: 10),
@@ -354,8 +376,13 @@ class HomeDailyVerseView extends StatelessWidget {
               spacing: 12,
               runSpacing: 10,
               children: [
-                _StudyNowButton(onPressed: enabled ? onStudy : null),
-                DailyVerseActions(state: s, iconColor: _onScene, gap: 4),
+                _StudyNowButton(onPressed: study),
+                DailyVerseActions(
+                  state: s,
+                  iconColor: _onScene,
+                  gap: 4,
+                  onUsed: onRead,
+                ),
               ],
             ),
           ),

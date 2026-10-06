@@ -33,9 +33,14 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   /// Whether a non-forced [LoadTodaysVerse] is being handled. The app-wide
   /// bloc is asked for today's verse by main.dart when it is created and by
   /// Home when it mounts — usually in the same frame — so a second request
-  /// while one is in flight is dropped instead of loading (and marking the
-  /// verse viewed) twice.
+  /// while one is in flight is dropped instead of loading twice.
   bool _isLoadingTodaysVerse = false;
+
+  /// Local calendar day the streak was last marked from this bloc.
+  DateTime? _streakMarkedOn;
+  String? _streakMarkedFor;
+
+  static DateTime _localDay(DateTime t) => DateTime(t.year, t.month, t.day);
 
   DailyVerseBloc({
     required this.getDailyVerse,
@@ -59,7 +64,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
     // `on<Event>` defaults to handling every event concurrently — if
     // MarkVerseAsViewed fires more than once for the same app open (e.g.
-    // _loadAndEmitVerse running more than once), each concurrent handler
+    // several read signals in the same moment), each concurrent handler
     // reads the SAME pre-update `state.streak` before any sibling's emit
     // lands, so each one independently sees the streak "cross" a milestone
     // and sends its own push. Same trigger, multiple identical notifications
@@ -379,17 +384,15 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
         // Load current streak for authenticated users
         final streak = await _loadStreak();
 
+        // Loading the verse does not count toward the streak: the UI sends
+        // MarkVerseAsViewed once the verse was actually read (on screen for
+        // a few seconds, copied, shared, studied).
         emit(DailyVerseLoaded(
           verse: verse,
           currentLanguage: preferredLanguage,
           preferredLanguage: preferredLanguage,
           streak: streak,
         ));
-
-        // Automatically mark verse as viewed for today (update streak)
-        if (verse.isToday) {
-          add(const MarkVerseAsViewed());
-        }
       },
     );
   }
@@ -413,9 +416,21 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     final currentState = state;
     if (currentState is! DailyVerseLoaded) return;
 
+    // The UI reports a read from several places (timer, copy, share, study);
+    // only the first one each local day reaches the server. A failed call
+    // leaves the day unmarked so the next read retries.
+    final today = _localDay(DateTime.now());
+    // Keyed by user too: the bloc is app-wide and outlives a sign-out.
+    if (_streakMarkedOn == today &&
+        _streakMarkedFor == currentState.streak?.userId) {
+      return;
+    }
+
     try {
       final previousStreak = currentState.streak;
       final updatedStreak = await streakRepository.markVerseAsViewed();
+      _streakMarkedOn = today;
+      _streakMarkedFor = updatedStreak.userId;
 
       // Emit updated state with new streak
       emit(currentState.copyWith(streak: updatedStreak));

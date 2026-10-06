@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/daily_streak_activity.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_fonts.dart';
@@ -1936,6 +1937,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           // alone, Topics kept showing the progress from before this
           // completion: a path just advanced still read "0/4 Topics".
           sl<LearningPathsRepository>().clearCache();
+
+          // A finished lesson counts toward the daily streak, like reading
+          // the verse of the day (once per day either way).
+          if (mounted) unawaited(countLessonTowardStreak(context));
 
           if (kDebugMode) {
             Logger.debug('✅ [TOPIC_PROGRESS] Topic completed successfully:');

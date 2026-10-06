@@ -11,6 +11,8 @@ import 'package:disciplefy_bible_study/core/localization/app_localizations.dart'
 import 'package:disciplefy_bible_study/core/router/app_router.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_level.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
@@ -205,6 +207,21 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     ];
   }
 
+  /// The one daily streak, as Home shows it: the app-wide daily verse
+  /// bloc's count when it has one (it updates the moment the verse is read
+  /// or a lesson finished), else the same streak as the stats loaded it.
+  int _dailyStreak(BuildContext context, int fromStats) {
+    try {
+      final verseState = context.watch<DailyVerseBloc>().state;
+      if (verseState is DailyVerseLoaded && verseState.streak != null) {
+        return verseState.streak!.currentStreak;
+      }
+    } on ProviderNotFoundException {
+      // No daily verse bloc above this page (e.g. opened in isolation).
+    }
+    return fromStats;
+  }
+
   Widget _buildHeadlineStats(BuildContext context, GamificationState state) {
     final stats = state.stats!;
     return IntrinsicHeight(
@@ -215,7 +232,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             child: SettingsStatTile(
               icon: Icons.local_fire_department_outlined,
               tone: SettingsTone.gold,
-              value: '${stats.studyCurrentStreak}',
+              value: '${_dailyStreak(context, stats.verseCurrentStreak)}',
               label: context.tr(TranslationKeys.gamificationDayStreakLabel),
             ),
           ),
@@ -260,7 +277,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             icon: Icons.auto_stories_outlined,
             tone: SettingsTone.sky,
             title: l10n.progressVerseStreak,
-            value: days(stats.verseCurrentStreak),
+            value: days(_dailyStreak(context, stats.verseCurrentStreak)),
           ),
           if (stats.studyLongestStreak > 0)
             SettingsRow(

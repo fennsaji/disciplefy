@@ -60,12 +60,17 @@ class DailyVerseActions extends StatelessWidget {
   final double iconSize;
   final double gap;
 
+  /// Called when any action is used (copy, share, add to memory); the
+  /// caller counts it as reading the verse.
+  final VoidCallback? onUsed;
+
   const DailyVerseActions({
     super.key,
     required this.state,
     this.iconColor = Colors.white,
     this.iconSize = 20,
     this.gap = 6,
+    this.onUsed,
   });
 
   @override
@@ -81,7 +86,10 @@ class DailyVerseActions extends StatelessWidget {
         ),
         SizedBox(width: gap),
         IconButton(
-          onPressed: () => Share.share(dailyVerseShareMessage(state)),
+          onPressed: () {
+            onUsed?.call();
+            Share.share(dailyVerseShareMessage(state));
+          },
           icon: Icon(Icons.share_outlined, color: iconColor, size: iconSize),
           tooltip: context.tr(TranslationKeys.dailyVerseShare),
           style: dailyVerseActionButtonStyle,
@@ -91,12 +99,14 @@ class DailyVerseActions extends StatelessWidget {
           verseState: state,
           iconColor: iconColor,
           iconSize: iconSize,
+          onUsed: onUsed,
         ),
       ],
     );
   }
 
   void _copy(BuildContext context) {
+    onUsed?.call();
     Clipboard.setData(ClipboardData(text: dailyVerseShareMessage(state)));
 
     showAppSnackBar(
@@ -116,11 +126,15 @@ class AddToMemoryButton extends StatefulWidget {
   final Color iconColor;
   final double iconSize;
 
+  /// Called when the verse is added (the tap passed the plan check).
+  final VoidCallback? onUsed;
+
   const AddToMemoryButton({
     super.key,
     required this.verseState,
     this.iconColor = Colors.white,
     this.iconSize = 20,
+    this.onUsed,
   });
 
   @override
@@ -152,6 +166,7 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
       return;
     }
 
+    widget.onUsed?.call();
     setState(() => _isLoading = true);
 
     // The screen's own bloc (home provides one). MemoryVerseBloc is a DI

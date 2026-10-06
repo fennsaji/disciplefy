@@ -6,9 +6,14 @@ abstract class StreakRepository {
   /// Returns null if user is not authenticated
   Future<DailyVerseStreak?> getStreak();
 
-  /// Update the streak when user views daily verse
-  /// Handles streak increment/reset logic based on last viewed date
+  /// Update the streak when user reads the daily verse.
+  /// Same as [markActivityToday].
   Future<DailyVerseStreak> markVerseAsViewed();
+
+  /// Count today (the device's local date) toward the one daily streak.
+  /// Called when the verse is read or a lesson is finished. Idempotent per
+  /// day: a second call the same day returns the streak unchanged.
+  Future<DailyVerseStreak> markActivityToday();
 
   /// Get streak for specific user (admin/testing purposes)
   Future<DailyVerseStreak?> getStreakForUser(String userId);
