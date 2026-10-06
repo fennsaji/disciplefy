@@ -119,6 +119,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
       limit: event.limit,
       offset: event.refresh ? 0 : recentPagination.offset,
       forceRefresh: event.refresh,
+      ownOnly: event.ownOnly,
     );
 
     // REFACTORED: Use centralized result handling

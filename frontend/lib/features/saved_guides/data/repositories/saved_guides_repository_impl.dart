@@ -153,11 +153,13 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
   Future<Either<Failure, List<SavedGuideEntity>>> fetchRecentGuidesFromApi({
     int limit = 20,
     int offset = 0,
+    bool ownOnly = false,
   }) async {
     try {
       final guides = await remoteDataSource.getRecentGuides(
         limit: limit,
         offset: offset,
+        ownOnly: ownOnly,
       );
       return Right(guides.map((model) => model.toEntity()).toList());
     } on ServerException catch (e) {
@@ -248,6 +250,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
     int limit = 20,
     int offset = 0,
     bool forceRefresh = false,
+    bool ownOnly = false,
   }) async {
     try {
       // If force refresh or cache is empty, fetch from API
@@ -255,6 +258,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
         final apiResult = await fetchRecentGuidesFromApi(
           limit: limit,
           offset: offset,
+          ownOnly: ownOnly,
         );
 
         return apiResult.fold(
@@ -277,7 +281,11 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
       }
 
       // For pagination beyond first page, always use API
-      return fetchRecentGuidesFromApi(limit: limit, offset: offset);
+      return fetchRecentGuidesFromApi(
+        limit: limit,
+        offset: offset,
+        ownOnly: ownOnly,
+      );
     } catch (e) {
       return Left(ServerFailure(message: 'Unexpected error: $e'));
     }

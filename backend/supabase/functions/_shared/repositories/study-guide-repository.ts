@@ -1,6 +1,7 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AppError } from '../utils/error-handler.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
+import { excludePathLessons, loadPathTopicIds } from './path-topic-ids.ts'
 
 /**
  * Study guide content for caching.
@@ -280,6 +281,7 @@ export class StudyGuideRepository {
       savedOnly?: boolean
       limit?: number
       offset?: number
+      ownOnly?: boolean
     } = {}
   ): Promise<StudyGuideResponse[]> {
     const result = await this.getUserStudyGuidesWithCount(userContext, options)
@@ -295,6 +297,7 @@ export class StudyGuideRepository {
       savedOnly?: boolean
       limit?: number
       offset?: number
+      ownOnly?: boolean
     } = {}
   ): Promise<{
     guides: StudyGuideResponse[]
@@ -310,7 +313,8 @@ export class StudyGuideRepository {
           userContext.userId!,
           options.savedOnly,
           limit,
-          offset
+          offset,
+          options.ownOnly ?? false
         ),
         this.getAuthenticatedUserGuidesCount(
           userContext.userId!,
@@ -340,8 +344,12 @@ export class StudyGuideRepository {
     userId: string,
     savedOnly?: boolean,
     limit = 20,
-    offset = 0
+    offset = 0,
+    ownOnly = false
   ): Promise<StudyGuideResponse[]> {
+    // ownOnly drops learning-path lessons after the fetch, so over-fetch to
+    // keep the small "Continue reading" list full.
+    const fetchLimit = ownOnly ? limit * 3 : limit
     let query = this.supabase
       .from('user_study_guides')
       .select(`
@@ -352,6 +360,7 @@ export class StudyGuideRepository {
         updated_at,
         study_guides (
           id,
+          topic_id,
           input_type,
           input_value,
           input_value_hash,
@@ -370,7 +379,7 @@ export class StudyGuideRepository {
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(offset, offset + fetchLimit - 1)
 
     if (savedOnly) {
       query = query.eq('is_saved', true)
@@ -386,7 +395,15 @@ export class StudyGuideRepository {
       )
     }
 
-    return (data ?? []).map(item => this.formatStudyGuideResponse(item, true))
+    // PostgREST returns the to-one study_guides relation as an object.
+    // deno-lint-ignore no-explicit-any
+    let rows = (data ?? []) as any[]
+    if (ownOnly) {
+      const pathTopicIds = await loadPathTopicIds(this.supabase)
+      rows = excludePathLessons(rows, pathTopicIds).slice(0, limit)
+    }
+
+    return rows.map(item => this.formatStudyGuideResponse(item, true))
   }
 
   /**

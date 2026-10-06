@@ -20,10 +20,12 @@ class StudyGuidesApiService {
   /// [savedOnly] - if true, only fetch saved guides
   /// [limit] - maximum number of guides to fetch
   /// [offset] - offset for pagination
+  /// [ownOnly] - if true, exclude guides generated from learning-path lessons
   Future<List<SavedGuideModel>> getStudyGuides({
     bool savedOnly = false,
     int limit = 20,
     int offset = 0,
+    bool ownOnly = false,
   }) async {
     try {
       // Build query parameters
@@ -36,6 +38,10 @@ class StudyGuidesApiService {
         queryParams['saved'] = 'true';
       } else {
         queryParams['saved'] = 'false';
+      }
+
+      if (ownOnly) {
+        queryParams['own_only'] = 'true';
       }
 
       final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint')

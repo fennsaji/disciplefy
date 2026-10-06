@@ -127,6 +127,7 @@ export class StudyGuideService {
       savedOnly?: boolean
       limit?: number
       offset?: number
+      ownOnly?: boolean
     } = {}
   ): Promise<StudyGuideResponse[]> {
     return await this.repository.getUserStudyGuides(userContext, options)
@@ -145,6 +146,7 @@ export class StudyGuideService {
       savedOnly?: boolean
       limit?: number
       offset?: number
+      ownOnly?: boolean
     } = {}
   ): Promise<{
     guides: StudyGuideResponse[]

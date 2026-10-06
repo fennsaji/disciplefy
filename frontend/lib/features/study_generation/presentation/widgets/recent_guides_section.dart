@@ -36,7 +36,8 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
 
   void _initializeBloc() {
     _bloc = sl<UnifiedSavedGuidesBloc>();
-    _bloc?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5));
+    _bloc?.add(
+        const LoadRecentGuidesFromApi(refresh: true, limit: 5, ownOnly: true));
   }
 
   @override
@@ -135,8 +136,8 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       title: context.tr(TranslationKeys.recentGuidesError),
       message: context.tr(TranslationKeys.recentGuidesErrorMessage),
       actionLabel: context.tr(TranslationKeys.homeTryAgain),
-      onAction: () =>
-          _bloc?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5)),
+      onAction: () => _bloc?.add(const LoadRecentGuidesFromApi(
+          refresh: true, limit: 5, ownOnly: true)),
     );
   }
 

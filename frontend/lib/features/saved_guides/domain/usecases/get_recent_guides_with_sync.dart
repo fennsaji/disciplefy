@@ -12,10 +12,12 @@ class GetRecentGuidesWithSync {
     int limit = 20,
     int offset = 0,
     bool forceRefresh = false,
+    bool ownOnly = false,
   }) async =>
       await repository.getRecentGuidesWithSync(
         limit: limit,
         offset: offset,
         forceRefresh: forceRefresh,
+        ownOnly: ownOnly,
       );
 }

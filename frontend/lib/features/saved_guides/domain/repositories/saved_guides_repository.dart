@@ -22,6 +22,7 @@ abstract class SavedGuidesRepository {
   Future<Either<Failure, List<SavedGuideEntity>>> fetchRecentGuidesFromApi({
     int limit = 20,
     int offset = 0,
+    bool ownOnly = false,
   });
   Future<Either<Failure, SavedGuideEntity>> toggleSaveGuideApi({
     required String guideId,
@@ -38,5 +39,6 @@ abstract class SavedGuidesRepository {
     int limit = 20,
     int offset = 0,
     bool forceRefresh = false,
+    bool ownOnly = false,
   });
 }
