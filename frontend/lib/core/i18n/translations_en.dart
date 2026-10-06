@@ -295,6 +295,7 @@ const Map<String, dynamic> englishTranslations = {
     'caught_up': '{count} of {total} caught up',
   },
   'community_post': {
+    'copy_text': 'Copy text',
     'open_guide': 'Open study guide',
     'on_topic': 'On: {title}',
     'input_scripture': 'Scripture',

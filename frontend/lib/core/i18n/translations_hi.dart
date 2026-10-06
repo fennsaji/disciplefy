@@ -297,6 +297,7 @@ const Map<String, dynamic> hindiTranslations = {
     'caught_up': '{total} में से {count} साथ चल रहे हैं',
   },
   'community_post': {
+    'copy_text': 'टेक्स्ट कॉपी करें',
     'open_guide': 'अध्ययन गाइड खोलें',
     'on_topic': 'विषय: {title}',
     'input_scripture': 'वचन',

@@ -14,6 +14,7 @@ import 'package:disciplefy_bible_study/features/community/domain/repositories/co
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/copy_text.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/utils/markdown_text.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/utils/mention_text.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/block_user_dialog.dart';
@@ -429,8 +430,29 @@ class _CommentTile extends StatelessWidget {
     required this.currentUserId,
   });
 
+  /// The reply as plain text for "Copy text": as typed for members (with
+  /// `@mentions`), without stray emphasis markers for the Discipler.
+  String get _copyText => (comment.authorIsSystem
+          ? stripEmphasisMarkers(comment.content)
+          : comment.content)
+      .trim();
+
   @override
   Widget build(BuildContext context) {
+    // Long-press anywhere on the reply opens its ⋮ menu.
+    return LongPressMenuScope(
+      builder: (context, menuKey) => GestureDetector(
+        onLongPress: () => openLongPressMenu(menuKey),
+        behavior: HitTestBehavior.opaque,
+        child: _buildTile(context, menuKey),
+      ),
+    );
+  }
+
+  Widget _buildTile(
+    BuildContext context,
+    GlobalKey<PopupMenuButtonState<String>> menuKey,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     final errorColor =
@@ -441,7 +463,9 @@ class _CommentTile extends StatelessWidget {
     final canReport =
         !isSystem && !isMentor && comment.authorUserId != currentUserId;
     final canBlock = !isSystem && comment.authorUserId != currentUserId;
-    final hasMenu = canEdit || canDelete || canReport || canBlock;
+    final copyText = _copyText;
+    final canCopy = copyText.isNotEmpty;
+    final hasMenu = canCopy || canEdit || canDelete || canReport || canBlock;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,14 +613,19 @@ class _CommentTile extends StatelessWidget {
                 // an X on someone's reply reads as "dismiss" when it
                 // actually deletes, and the icons gave no wording for
                 // what each one does.
-                if (canEdit || canDelete || canReport || canBlock)
+                if (hasMenu)
                   PopupMenuButton<String>(
+                    key: menuKey,
                     tooltip:
                         context.tr(TranslationKeys.communitySharedMoreOptions),
                     icon: Icon(Icons.more_vert, size: 20, color: palette.muted),
                     padding: EdgeInsets.zero,
                     color: palette.card,
                     onSelected: (value) async {
+                      if (value == 'copy') {
+                        await copyCommunityText(context, copyText);
+                        return;
+                      }
                       final bloc = context.read<FellowshipFeedBloc>();
                       if (value == 'edit') {
                         final text = await showDisciplerEditDialog(
@@ -642,6 +671,24 @@ class _CommentTile extends StatelessWidget {
                       }
                     },
                     itemBuilder: (_) => [
+                      if (canCopy)
+                        PopupMenuItem<String>(
+                          value: 'copy',
+                          child: Row(
+                            children: [
+                              Icon(Icons.copy_rounded,
+                                  color: palette.muted, size: 20),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  context.tr(
+                                      TranslationKeys.communityPostCopyText),
+                                  style: TextStyle(color: palette.text),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       if (canEdit)
                         PopupMenuItem<String>(
                           value: 'edit',

@@ -3347,6 +3347,9 @@ class TranslationKeys {
   /// "Open study guide".
   static const communityPostOpenGuide = 'community_post.open_guide';
 
+  /// "Copy text" (post and reply menus).
+  static const communityPostCopyText = 'community_post.copy_text';
+
   /// "On: {title}".
   static const communityPostOnTopic = 'community_post.on_topic';
   static const communityPostInputScripture = 'community_post.input_scripture';

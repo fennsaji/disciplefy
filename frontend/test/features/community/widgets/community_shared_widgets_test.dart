@@ -182,8 +182,13 @@ void main() {
     expect(find.text('Matthew 16:15-16'), findsOneWidget);
     // Narrow card: replies collapse to icon + count, full label in tooltip.
     expect(find.byTooltip('2 replies'), findsOneWidget);
-    // Only mentors/admins get the manage menu.
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    // Everyone gets the menu for Copy text; Edit/Delete stay with
+    // mentors and admins.
+    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Copy text'), findsOneWidget);
+    expect(find.text('Edit'), findsNothing);
   });
 
   testWidgets('a daily post without path data shows no eyebrow',

@@ -10,6 +10,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_post_entity.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/copy_text.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_buttons.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
@@ -66,6 +67,22 @@ class DailyPostBody extends StatelessWidget {
   }
 }
 
+/// The daily post as the reader sees it, as plain text for copying: the
+/// lesson title, the hook, the scripture reference and any other lines, with
+/// the leading marker emoji removed and the hidden `💬` question left out.
+String dailyPostPlainText(String content) => content
+    .split('\n')
+    .map((l) => l.trim())
+    .where((l) => l.isNotEmpty && !l.startsWith('💬'))
+    .map((l) {
+      for (final marker in const ['📖', '✨', '✝️', '✝']) {
+        if (l.startsWith(marker)) return l.substring(marker.length).trim();
+      }
+      return l;
+    })
+    .where((l) => l.isNotEmpty)
+    .join('\n');
+
 /// Card rendering for a system-generated daily study post (`postType ==
 /// 'daily'`).
 ///
@@ -80,7 +97,8 @@ class DailyPostCard extends StatelessWidget {
   final VoidCallback? onCommentTap;
   final VoidCallback? onShareTap;
 
-  /// Shows the Edit/Delete menu (mentors and admins in the live feed).
+  /// Adds Edit/Delete to the menu (mentors and admins in the live feed).
+  /// Everyone gets the menu's "Copy text" in interactive mode.
   final bool canManage;
 
   /// False renders read-only counts instead of the reaction/replies buttons
@@ -121,7 +139,30 @@ class DailyPostCard extends StatelessWidget {
     final gold = palette.gold;
     final eyebrow = _eyebrow(context);
     final radius = BorderRadius.circular(22);
+    final copyText = dailyPostPlainText(post.content);
+    final hasMenu = interactive && (canManage || copyText.isNotEmpty);
 
+    return LongPressMenuScope(
+      builder: (context, menuKey) => GestureDetector(
+        onLongPress: hasMenu ? () => openLongPressMenu(menuKey) : null,
+        behavior: HitTestBehavior.opaque,
+        child: _buildCard(context, l10n, palette, accent, gold, eyebrow, radius,
+            copyText, hasMenu ? menuKey : null),
+      ),
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    ReaderPalette palette,
+    Color accent,
+    Color gold,
+    String? eyebrow,
+    BorderRadius radius,
+    String copyText,
+    GlobalKey<PopupMenuButtonState<String>>? menuKey,
+  ) {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
@@ -186,8 +227,13 @@ class DailyPostCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (canManage)
-                  _DailyManageMenu(post: post)
+                if (menuKey != null)
+                  _DailyPostMenu(
+                    menuKey: menuKey,
+                    post: post,
+                    canManage: canManage,
+                    copyText: copyText,
+                  )
                 else
                   const SizedBox(width: 8),
               ],
@@ -270,22 +316,36 @@ class DailyStudyChip extends StatelessWidget {
   }
 }
 
-class _DailyManageMenu extends StatelessWidget {
+/// The daily post's ⋮ menu: "Copy text" for everyone, plus Edit and Delete
+/// for mentors and admins.
+class _DailyPostMenu extends StatelessWidget {
+  /// Lets a long-press on the card open this menu.
+  final GlobalKey<PopupMenuButtonState<String>> menuKey;
   final FellowshipPostEntity post;
+  final bool canManage;
+  final String copyText;
 
-  const _DailyManageMenu({required this.post});
+  const _DailyPostMenu({
+    required this.post,
+    required this.canManage,
+    required this.copyText,
+    required this.menuKey,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     return PopupMenuButton<String>(
+      key: menuKey,
       tooltip: context.tr(TranslationKeys.communitySharedMoreOptions),
       icon: Icon(Icons.more_vert, size: 20, color: palette.muted),
       color: palette.isDark ? palette.raised : palette.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       onSelected: (value) {
-        if (value == 'edit') {
+        if (value == 'copy') {
+          copyCommunityText(context, copyText);
+        } else if (value == 'edit') {
           editDisciplerPost(context, post);
         } else if (value == 'delete') {
           context
@@ -294,28 +354,47 @@ class _DailyManageMenu extends StatelessWidget {
         }
       },
       itemBuilder: (_) => [
-        PopupMenuItem<String>(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit_outlined, color: palette.muted, size: 20),
-              const SizedBox(width: 10),
-              Text(l10n.editAction, style: AppFonts.inter(color: palette.text)),
-            ],
+        if (copyText.isNotEmpty)
+          PopupMenuItem<String>(
+            value: 'copy',
+            child: Row(
+              children: [
+                Icon(Icons.copy_rounded, color: palette.muted, size: 20),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    context.tr(TranslationKeys.communityPostCopyText),
+                    style: AppFonts.inter(color: palette.text),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        PopupMenuItem<String>(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline_rounded,
-                  color: context.appError, size: 20),
-              const SizedBox(width: 10),
-              Text(l10n.deleteAction,
-                  style: AppFonts.inter(color: context.appError)),
-            ],
+        if (canManage) ...[
+          PopupMenuItem<String>(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit_outlined, color: palette.muted, size: 20),
+                const SizedBox(width: 10),
+                Text(l10n.editAction,
+                    style: AppFonts.inter(color: palette.text)),
+              ],
+            ),
           ),
-        ),
+          PopupMenuItem<String>(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline_rounded,
+                    color: context.appError, size: 20),
+                const SizedBox(width: 10),
+                Text(l10n.deleteAction,
+                    style: AppFonts.inter(color: context.appError)),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

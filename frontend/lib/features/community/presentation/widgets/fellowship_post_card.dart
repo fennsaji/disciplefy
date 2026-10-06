@@ -21,6 +21,8 @@ import 'package:disciplefy_bible_study/features/community/domain/entities/fellow
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_guide_detail_screen.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/copy_text.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/markdown_text.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/daily_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_edit_dialog.dart';
@@ -59,9 +61,26 @@ List<TextSpan> mentionSpans(
   return spans;
 }
 
+/// The whole of [post] as plain text for "Copy text" — never the clamped
+/// feed preview. `@mentions` stay as typed (`@Name`); Discipler text loses
+/// any stray markdown emphasis markers. A shared guide with no message falls
+/// back to the guide's title and summary. Empty when there is nothing to copy.
+String postCopyText(FellowshipPostEntity post) {
+  if (post.isDaily) return dailyPostPlainText(post.content);
+  final body =
+      (post.authorIsSystem ? stripEmphasisMarkers(post.content) : post.content)
+          .trim();
+  if (body.isNotEmpty) return body;
+  return [post.guideTitle?.trim(), post.guideSummary?.trim()]
+      .whereType<String>()
+      .where((s) => s.isNotEmpty)
+      .join('\n');
+}
+
 /// Returns the popup menu item keys to show for [post], in display order.
 ///
 /// - `'share'` is always present.
+/// - `'copy'` follows it whenever the post has text to copy.
 /// - `'delete'` is shown for mentors, admins, or the post's own author.
 /// - Discipler-authored (system) posts never show `'report'`/`'block'`.
 /// - `'report'` is shown for non-mentors viewing someone else's post.
@@ -72,7 +91,7 @@ List<String> postMenuItems(
   required bool isAdmin,
   String? currentUserId,
 }) {
-  final items = <String>['share'];
+  final items = <String>['share', if (postCopyText(post).isNotEmpty) 'copy'];
   final own = post.authorUserId == currentUserId;
   if ((isMentor || isAdmin) && post.authorIsSystem) items.add('edit');
   if (isMentor || isAdmin || own) items.add('delete');
@@ -191,10 +210,15 @@ class FellowshipPostCard extends StatelessWidget {
     final isSystem = post.authorIsSystem;
     final l10n = AppLocalizations.of(context)!;
 
-    return GestureDetector(
-      onTap: onPostTap,
-      behavior: HitTestBehavior.opaque,
-      child: _buildCard(context, palette, accentColor, isSystem, l10n),
+    // Long-press anywhere on the card opens its ⋮ menu (Copy text, Share…).
+    return LongPressMenuScope(
+      builder: (context, menuKey) => GestureDetector(
+        onTap: onPostTap,
+        onLongPress: interactive ? () => openLongPressMenu(menuKey) : null,
+        behavior: HitTestBehavior.opaque,
+        child:
+            _buildCard(context, palette, accentColor, isSystem, l10n, menuKey),
+      ),
     );
   }
 
@@ -204,6 +228,7 @@ class FellowshipPostCard extends StatelessWidget {
     Color accentColor,
     bool isSystem,
     AppLocalizations l10n,
+    GlobalKey<PopupMenuButtonState<String>> menuKey,
   ) {
     final radius = BorderRadius.circular(22);
     return DecoratedBox(
@@ -293,6 +318,7 @@ class FellowshipPostCard extends StatelessWidget {
                 // Overflow menu — interactive mode only
                 if (interactive)
                   _PostMenuButton(
+                    menuKey: menuKey,
                     post: post,
                     isMentor: isMentor,
                     isAdmin: isAdmin,
@@ -315,6 +341,10 @@ class FellowshipPostCard extends StatelessWidget {
                   content: post.content,
                   maxLines: maxContentLines,
                   onReadMore: onPostTap,
+                  // On the post's own page (no tap-through) the text can be
+                  // selected and partly copied; mentions are not links, so
+                  // nothing competes with the selection gestures.
+                  selectable: interactive && onPostTap == null,
                 ),
               ),
 
@@ -382,15 +412,20 @@ class FellowshipPostCard extends StatelessWidget {
 /// With [maxLines] and [onReadMore] both set, text that would run past
 /// [maxLines] ends in an ellipsis followed by a visible "Read more" link
 /// that calls [onReadMore] — so a clamped post never looks complete.
+///
+/// [selectable] lets the reader select (and copy part of) the unclamped
+/// text, as on the post's own page.
 class FellowshipPostContent extends StatelessWidget {
   final String content;
   final int? maxLines;
   final VoidCallback? onReadMore;
+  final bool selectable;
 
   const FellowshipPostContent({
     required this.content,
     this.maxLines,
     this.onReadMore,
+    this.selectable = false,
     super.key,
   });
 
@@ -411,7 +446,8 @@ class FellowshipPostContent extends StatelessWidget {
     );
     final limit = maxLines;
     if (limit == null || onReadMore == null) {
-      return Text.rich(span, key: const Key('post_content'));
+      final text = Text.rich(span, key: const Key('post_content'));
+      return selectable ? SelectionArea(child: text) : text;
     }
 
     return LayoutBuilder(builder: (context, constraints) {
@@ -464,6 +500,8 @@ class FellowshipPostContent extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PostMenuButton extends StatelessWidget {
+  /// Lets a long-press on the card open this menu.
+  final GlobalKey<PopupMenuButtonState<String>> menuKey;
   final FellowshipPostEntity post;
   final bool isMentor;
   final bool isAdmin;
@@ -480,6 +518,7 @@ class _PostMenuButton extends StatelessWidget {
     required this.onReportTap,
     required this.onBlockTap,
     required this.onShareTap,
+    required this.menuKey,
   });
 
   @override
@@ -511,12 +550,15 @@ class _PostMenuButton extends StatelessWidget {
     }
 
     return PopupMenuButton<String>(
+      key: menuKey,
       tooltip: context.tr(TranslationKeys.communitySharedMoreOptions),
       icon: Icon(Icons.more_vert, size: 20, color: palette.muted),
       color: palette.isDark ? palette.raised : palette.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       onSelected: (value) {
-        if (value == 'edit') {
+        if (value == 'copy') {
+          copyCommunityText(context, postCopyText(post));
+        } else if (value == 'edit') {
           editDisciplerPost(context, post);
         } else if (value == 'delete') {
           context.read<FellowshipFeedBloc>().add(
@@ -539,6 +581,8 @@ class _PostMenuButton extends StatelessWidget {
         ))
           switch (key) {
             'share' => item('share', Icons.share_outlined, l10n.sharePost),
+            'copy' => item('copy', Icons.copy_rounded,
+                context.tr(TranslationKeys.communityPostCopyText)),
             'edit' => item('edit', Icons.edit_outlined, l10n.editAction),
             'delete' => item(
                 'delete', Icons.delete_outline_rounded, l10n.deleteAction,

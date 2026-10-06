@@ -303,6 +303,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'caught_up': '{total}-ൽ {count} പേർ ഒപ്പമുണ്ട്',
   },
   'community_post': {
+    'copy_text': 'ടെക്സ്റ്റ് കോപ്പി ചെയ്യുക',
     'open_guide': 'പഠന ഗൈഡ് തുറക്കുക',
     'on_topic': 'വിഷയം: {title}',
     'input_scripture': 'വേദഭാഗം',
