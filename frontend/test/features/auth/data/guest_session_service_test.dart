@@ -465,7 +465,7 @@ void main() {
           LinkOutcome.mergedIntoExisting);
     });
 
-    test('a wrong password for the existing account propagates', () async {
+    test('a wrong password for the existing account is emailExists', () async {
       when(() => auth.updateUser(any()))
           .thenThrow(const AuthException('exists', code: 'email_exists'));
       when(() => auth.signInWithPassword(
@@ -473,11 +473,41 @@ void main() {
           .thenThrow(const AuthException('Invalid login credentials',
               code: 'invalid_credentials'));
 
-      await expectLater(
-          service.linkEmail(email: 'a@b.c', password: 'wrong', fullName: 'Ann'),
-          throwsA(isA<AuthException>()));
+      expect(
+          await service.linkEmail(
+              email: 'a@b.c', password: 'wrong', fullName: 'Ann'),
+          LinkOutcome.emailExists);
       verifyNever(
           () => functions.invoke(any(), headers: any(named: 'headers')));
+    });
+
+    test('an older server message without a code is also emailExists',
+        () async {
+      when(() => auth.updateUser(any()))
+          .thenThrow(const AuthException('exists', code: 'email_exists'));
+      when(() =>
+          auth.signInWithPassword(
+              email: any(named: 'email'),
+              password: any(named: 'password'))).thenThrow(
+          const AuthException('Invalid login credentials', statusCode: '400'));
+
+      expect(
+          await service.linkEmail(
+              email: 'a@b.c', password: 'wrong', fullName: 'Ann'),
+          LinkOutcome.emailExists);
+    });
+
+    test('any other sign-in failure still propagates', () async {
+      when(() => auth.updateUser(any()))
+          .thenThrow(const AuthException('exists', code: 'email_exists'));
+      when(() => auth.signInWithPassword(
+              email: any(named: 'email'), password: any(named: 'password')))
+          .thenThrow(const AuthException('Email not confirmed',
+              code: 'email_not_confirmed'));
+
+      await expectLater(
+          service.linkEmail(email: 'a@b.c', password: 'x', fullName: 'Ann'),
+          throwsA(isA<AuthException>()));
     });
   });
 

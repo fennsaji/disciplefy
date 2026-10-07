@@ -108,11 +108,17 @@ void main() {
       expect(find.text('Groups need an account'), findsNothing);
     });
 
-    testWidgets('guest mode off: always true, no sheet', (tester) async {
+    testWidgets(
+        'guest mode switched off: an existing guest still gets the sheet',
+        (tester) async {
+      // The flag only stops new guests; the router still blocks existing
+      // ones, so the sheet must still explain why.
       when(() => flags.guestMode).thenReturn(false);
       final result = await tapGo(tester, AccountReason.community);
-      expect(await result, isTrue);
-      expect(find.text('Groups need an account'), findsNothing);
+      expect(find.text('Groups need an account'), findsOneWidget);
+      await tester.tap(find.text('Continue as guest'));
+      await tester.pumpAndSettle();
+      expect(await result, isFalse);
     });
 
     testWidgets('linking with Google closes the sheet and returns true',
@@ -146,18 +152,21 @@ void main() {
       expect(find.byKey(const Key('account_note')), findsNothing);
     });
 
-    testWidgets('merge failed: not linked yet, sheet stays with a note',
-        (tester) async {
+    testWidgets(
+        'merge failed: already signed in, so the sheet closes with a '
+        'snackbar and returns true', (tester) async {
       when(() => guest.linkGoogle())
           .thenAnswer((_) async => LinkOutcome.mergeFailed);
       final result = await tapGo(tester, AccountReason.community);
       await tester.tap(find.text('Continue with Google'));
       await tester.pumpAndSettle();
+      // The user is signed in to the existing account: its buttons would
+      // throw (no guest any more), so the sheet must not stay open.
+      expect(find.text('Groups need an account'), findsNothing);
+      expect(await result, isTrue);
+      expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('Signed in. Your progress moves over soon.'),
           findsOneWidget);
-      await tester.tap(find.text('Continue as guest'));
-      await tester.pumpAndSettle();
-      expect(await result, isFalse);
     });
 
     testWidgets('redirecting (web) keeps the sheet', (tester) async {
@@ -202,6 +211,37 @@ void main() {
             password: 'secret123',
             fullName: 'Anu Mathew',
           )).called(1);
+      await tester.tap(find.text('Continue as guest'));
+      await tester.pumpAndSettle();
+      expect(await result, isFalse);
+    });
+
+    testWidgets(
+        'an email that already has an account says so, and the form stays',
+        (tester) async {
+      when(() => guest.linkEmail(
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            fullName: any(named: 'fullName'),
+          )).thenAnswer((_) async => LinkOutcome.emailExists);
+      useSurface(tester, const Size(400, 1000));
+      final result = await tapGo(tester, AccountReason.community);
+      await tester.tap(find.text('Continue with email'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.byKey(const Key('account_email_name')), 'Anu Mathew');
+      await tester.enterText(
+          find.byKey(const Key('account_email_address')), 'a@b.co');
+      await tester.enterText(
+          find.byKey(const Key('account_email_password')), 'secret123');
+      await tester.tap(find.byKey(const Key('account_email_submit')));
+      await tester.pumpAndSettle();
+      expect(
+          find.text('This email already has an account. '
+              'Enter its password, or reset it.'),
+          findsOneWidget);
+      expect(find.text("Couldn't sign up. Please try again."), findsNothing);
+      expect(find.byKey(const Key('account_email_password')), findsOneWidget);
       await tester.tap(find.text('Continue as guest'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);

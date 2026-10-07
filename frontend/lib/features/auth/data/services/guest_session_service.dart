@@ -38,6 +38,10 @@ enum LinkOutcome {
   /// Web only: the browser is leaving for the provider. The outcome is
   /// resolved by [GuestSessionService.resumePendingLink] after the redirect.
   redirecting,
+
+  /// Email sign-up: the email already has an account and the password given
+  /// is not its password. Nothing changed; the person is still a guest.
+  emailExists,
 }
 
 /// Starts a web OAuth redirect: links [provider] to the current user when
@@ -293,10 +297,17 @@ class GuestSessionService {
         rethrow;
       }
       Logger.info('[GUEST] Email belongs to another account: sign in + merge');
-      return _signInAndMerge(
-        'email',
-        () => _auth.signInWithPassword(email: email, password: password),
-      );
+      try {
+        return await _signInAndMerge(
+          'email',
+          () => _auth.signInWithPassword(email: email, password: password),
+        );
+      } on AuthException catch (signInError) {
+        if (!isInvalidCredentials(signInError)) rethrow;
+        // The form asked for a NEW password; it is not this account's.
+        Logger.info('[GUEST] Existing account: wrong password');
+        return LinkOutcome.emailExists;
+      }
     }
   }
 
@@ -508,6 +519,13 @@ class GuestSessionService {
     final haystack = '${e.code} ${e.statusCode} ${e.message}'.toLowerCase();
     return haystack.contains('identity_already_exists') ||
         haystack.contains('already linked');
+  }
+
+  /// True when a password sign-in was refused for wrong credentials.
+  @visibleForTesting
+  static bool isInvalidCredentials(AuthException e) {
+    if (e.code?.toLowerCase() == 'invalid_credentials') return true;
+    return e.message.toLowerCase().contains('invalid login credentials');
   }
 
   /// True when updateUser(email) hit an email owned by another account.

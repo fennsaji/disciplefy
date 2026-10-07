@@ -24,8 +24,9 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_even
 /// of the sign-up screen: the sign-up screen creates a new user, while
 /// linking keeps the guest's.
 class AccountLinkPanel extends StatefulWidget {
-  /// Called once the guest is a full account ([LinkOutcome.linked] or
-  /// [LinkOutcome.mergedIntoExisting]). The profile refresh is already sent.
+  /// Called once the guest is a full account ([LinkOutcome.linked],
+  /// [LinkOutcome.mergedIntoExisting], or [LinkOutcome.mergeFailed]: signed
+  /// in, progress still to move). The profile refresh is already sent.
   final ValueChanged<LinkOutcome> onLinked;
 
   const AccountLinkPanel({super.key, required this.onLinked});
@@ -92,7 +93,16 @@ class _AccountLinkPanelState extends State<AccountLinkPanel> {
           _emailOpen = false;
         });
       case LinkOutcome.mergeFailed:
-        setState(() => _noteKey = TranslationKeys.accountMergePending);
+        // Already signed in to the existing account (the merge is retried
+        // later): no guest is left for these buttons, so close like a link
+        // and say the progress follows.
+        _refreshProfile();
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+          content: Text(context.tr(TranslationKeys.accountMergePending)),
+        ));
+        widget.onLinked(LinkOutcome.mergeFailed);
+      case LinkOutcome.emailExists:
+        setState(() => _noteKey = TranslationKeys.accountEmailExists);
       case LinkOutcome.cancelled:
       case LinkOutcome.redirecting:
         break;
