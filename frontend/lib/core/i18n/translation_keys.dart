@@ -3658,6 +3658,17 @@ class TranslationKeys {
   static const creditsGet = 'credits.get';
   static const creditsViewSaved = 'credits.view_saved';
   static const creditsMaybeLater = 'credits.maybe_later';
+  static const creditsStudyCosts = 'credits.study_costs';
+  static const creditsFollowUp = 'credits.follow_up';
+  static const creditsExactCostNote = 'credits.exact_cost_note';
+
+  // My Plan summary card
+  static const planTrialUntil = 'plan.trial_until';
+  static const planLeftToday = 'plan.left_today';
+  static const planResetsAt = 'plan.resets_at';
+  static const planBilledVia = 'plan.billed_via';
+  static const planRenewsOn = 'plan.renews_on';
+  static const planViewPlans = 'plan.view_plans';
 
   // Single-input Generate screen.
   static const generateSimpleEyebrow = 'generate_simple.eyebrow';

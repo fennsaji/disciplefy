@@ -246,9 +246,9 @@ void main() {
     expect(find.text('Trial'), findsNothing);
     expect(find.text('Trial Active'), findsNothing);
     expect(find.text('Active Subscription'), findsOneWidget);
-    expect(find.text('Active'), findsWidgets);
     expect(find.text('BILLING'), findsOneWidget);
-    expect(find.text('Razorpay'), findsOneWidget);
+    expect(find.text('Billed via Razorpay'), findsOneWidget);
+    expect(find.textContaining('Renews '), findsOneWidget);
     expect(find.text('Cancel plan'), findsOneWidget);
     expect(find.text('View plans'), findsNothing);
   });

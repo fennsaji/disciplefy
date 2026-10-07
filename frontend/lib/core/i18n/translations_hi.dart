@@ -1016,6 +1016,14 @@ const Map<String, dynamic> hindiTranslations = {
     'using_credits': '{n} क्रेडिट लगेंगे',
     'verse_of_day': 'आज का वचन',
   },
+  'plan': {
+    'trial_until': '{date} तक मुफ़्त ट्रायल',
+    'left_today': 'आज {n} बचे',
+    'resets_at': '{time} पर फिर से',
+    'billed_via': '{provider} से बिलिंग',
+    'renews_on': '{date} को नवीनीकरण',
+    'view_plans': 'प्लान देखें',
+  },
   'credits': {
     'out_eyebrow': 'क्रेडिट खत्म',
     'out_title': 'अध्ययन क्रेडिट खत्म',
@@ -1024,6 +1032,9 @@ const Map<String, dynamic> hindiTranslations = {
     'get': 'क्रेडिट लें',
     'view_saved': 'सहेजी गाइड देखें',
     'maybe_later': 'बाद में',
+    'study_costs': 'एक अध्ययन की लागत',
+    'follow_up': 'प्रश्न',
+    'exact_cost_note': 'हर अध्ययन से पहले सही कीमत दिखती है।',
   },
   'lesson': {
     'eyebrow': 'पाठ {n}/{total}',

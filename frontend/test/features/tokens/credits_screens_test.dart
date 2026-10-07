@@ -485,7 +485,8 @@ void main() {
 
         expect(find.text('My Plan'), findsOneWidget);
         expect(find.text('Standard'), findsWidgets);
-        expect(find.text('Active'), findsWidgets);
+        expect(find.text('Active Subscription'), findsOneWidget);
+        expect(find.text('Renews October 29, 2026'), findsOneWidget);
         expect(find.text('BILLING'), findsOneWidget);
         expect(find.text('₹79/month'), findsOneWidget);
         expect(find.text('Cancel plan'), findsOneWidget);
@@ -538,9 +539,8 @@ void main() {
   });
 
   group('restored content', () {
-    testWidgets(
-        'credits: refresh, balance status, plan description, '
-        'who each plan is for', (tester) async {
+    testWidgets('credits: refresh, balance status, plan description',
+        (tester) async {
       useSurface(tester, const Size(390, 1600));
       await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
       await tester.pumpAndSettle();
@@ -551,10 +551,8 @@ void main() {
           find.text('40 daily credits plus ability to purchase more. '
               'Best for group leaders.'),
           findsOneWidget);
-      expect(find.text('Best for daily Bible study'), findsOneWidget);
-      expect(find.text('Best for group leaders'), findsOneWidget);
-      expect(find.text('Best for active Bible students'), findsOneWidget);
-      expect(find.text('Best for pastors and teachers'), findsOneWidget);
+      // The per-plan allowance table moved to the plans page.
+      expect(find.text('Best for pastors and teachers'), findsNothing);
 
       await tester.tap(find.byKey(const Key('credits_refresh')));
       verify(() => tokenBloc.add(const RefreshTokenStatus()))

@@ -1024,6 +1024,14 @@ const Map<String, dynamic> englishTranslations = {
     'using_credits': 'Using {n} credits',
     'verse_of_day': 'VERSE OF THE DAY',
   },
+  'plan': {
+    'trial_until': 'Free trial until {date}',
+    'left_today': '{n} left today',
+    'resets_at': 'Resets at {time}',
+    'billed_via': 'Billed via {provider}',
+    'renews_on': 'Renews {date}',
+    'view_plans': 'View plans',
+  },
   'credits': {
     'out_eyebrow': 'Out of credits',
     'out_title': 'Out of study credits',
@@ -1033,6 +1041,9 @@ const Map<String, dynamic> englishTranslations = {
     'get': 'Get credits',
     'view_saved': 'View saved guides',
     'maybe_later': 'Maybe later',
+    'study_costs': 'What a study costs',
+    'follow_up': 'Follow-up',
+    'exact_cost_note': 'You see the exact cost before each study.',
   },
   'lesson': {
     'eyebrow': 'Lesson {n} of {total}',

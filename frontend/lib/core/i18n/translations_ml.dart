@@ -1035,6 +1035,14 @@ const Map<String, dynamic> malayalamTranslations = {
     'using_credits': '{n} ക്രെഡിറ്റ്',
     'verse_of_day': 'ഇന്നത്തെ വചനം',
   },
+  'plan': {
+    'trial_until': '{date} വരെ സൗജന്യ ട്രയൽ',
+    'left_today': 'ഇന്ന് {n} ബാക്കി',
+    'resets_at': '{time}-ന് പുതുക്കും',
+    'billed_via': '{provider} വഴി ബില്ലിംഗ്',
+    'renews_on': '{date}-ന് പുതുക്കൽ',
+    'view_plans': 'പ്ലാനുകൾ',
+  },
   'credits': {
     'out_eyebrow': 'ക്രെഡിറ്റ് തീർന്നു',
     'out_title': 'പഠന ക്രെഡിറ്റ് തീർന്നു',
@@ -1043,6 +1051,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'get': 'ക്രെഡിറ്റ് വാങ്ങുക',
     'view_saved': 'സേവ് ചെയ്തവ',
     'maybe_later': 'പിന്നീട്',
+    'study_costs': 'ഒരു പഠനത്തിന്',
+    'follow_up': 'ചോദ്യം',
+    'exact_cost_note': 'ഓരോ പഠനത്തിനും മുമ്പ് കൃത്യമായ ചെലവ് കാണാം.',
   },
   'lesson': {
     'eyebrow': 'പാഠം {n}/{total}',

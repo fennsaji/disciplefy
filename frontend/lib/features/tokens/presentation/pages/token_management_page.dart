@@ -20,6 +20,8 @@ import 'package:disciplefy_bible_study/features/subscription/domain/entities/sub
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/plan_summary_card.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
@@ -31,7 +33,7 @@ import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 /// Credits ("token management") in the quiet-ledger design.
 ///
 /// Shows today's balance as the hero, the purchase / upgrade actions, the
-/// current plan, daily credits per plan and links to both histories.
+/// current plan, what a study costs and links to both histories.
 class TokenManagementPage extends StatefulWidget {
   const TokenManagementPage({super.key});
 
@@ -47,6 +49,15 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   // The bloc emits the subscription row and the status call as separate
   // states; latch the row so the status call settling doesn't drop it.
   Subscription? _subscription;
+
+  // Credit cost per study depth in the content language; empty until loaded
+  // (or when the cost table can't be reached).
+  Map<StudyMode, int> _costs = const {};
+
+  Future<void> _loadCosts() async {
+    final costs = await loadStudyCosts();
+    if (mounted) setState(() => _costs = costs);
+  }
 
   void _latchSubscription(SubscriptionState state) {
     if (state is SubscriptionLoaded) {
@@ -68,6 +79,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     // Load subscription status to check if user has active/cancelled subscription
     context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     context.read<SubscriptionBloc>().add(const LoadSubscriptionStatus());
+    _loadCosts();
   }
 
   @override
@@ -444,9 +456,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                 ),
               ],
               const LedgerHairline(verticalMargin: 14),
-              const _StudyCosts(),
-              const LedgerHairline(verticalMargin: 14),
-              _PlanAllowances(current: tokenStatus.userPlan),
+              _StudyCosts(costs: _costs),
               const LedgerHairline(verticalMargin: 14),
               LedgerSectionLabel(
                 context.tr(TranslationKeys.ledgerActivity),
@@ -659,6 +669,7 @@ class _ActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final buy = LedgerPrimaryButton(
       key: const Key('credits_get_credits'),
+      height: 40,
       label: context.tr(TranslationKeys.ledgerGetCredits),
       icon: Icons.add_rounded,
       onPressed: onBuy,
@@ -667,12 +678,14 @@ class _ActionsRow extends StatelessWidget {
     final upgrade = canBuy
         ? LedgerSecondaryButton(
             key: const Key('credits_upgrade'),
+            height: 40,
             label: upgradeLabel,
             icon: Icons.auto_awesome_outlined,
             onPressed: onUpgrade,
           )
         : LedgerPrimaryButton(
             key: const Key('credits_upgrade'),
+            height: 40,
             label: upgradeLabel,
             icon: Icons.auto_awesome_outlined,
             onPressed: onUpgrade,
@@ -783,76 +796,41 @@ class _PlanRow extends StatelessWidget {
   }
 }
 
-/// What a study costs, in one line. The exact cost (which varies by study
-/// language) is shown before each study, not here.
+/// What a study costs, in one line built from the backend's cost table for
+/// the content language. Until (or unless) that loads, the general "from"
+/// line is shown instead.
 class _StudyCosts extends StatelessWidget {
-  const _StudyCosts();
+  final Map<StudyMode, int> costs;
+
+  const _StudyCosts({required this.costs});
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        LedgerSectionLabel(
-          context.tr(TranslationKeys.ledgerStudyCostsTitle),
-          padding: const EdgeInsets.only(top: 4, bottom: 6),
-        ),
-        Text(
-          context.tr(TranslationKeys.ledgerStudyCostsLine),
-          style: AppFonts.inter(
-            fontSize: 13,
-            color: palette.muted,
-            height: 1.45,
-          ),
-        ),
-      ],
+    final style = AppFonts.inter(
+      fontSize: 13,
+      color: palette.muted,
+      height: 1.45,
+      fontFeatures: kLedgerTabular,
     );
-  }
-}
-
-/// Daily credits of every plan, the current one in gold.
-class _PlanAllowances extends StatelessWidget {
-  final UserPlan current;
-
-  const _PlanAllowances({required this.current});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = ReaderPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         LedgerSectionLabel(
-          context.tr(TranslationKeys.ledgerDailyByPlan),
+          context.tr(TranslationKeys.creditsStudyCosts),
           padding: const EdgeInsets.only(top: 4, bottom: 6),
         ),
-        for (final plan in UserPlan.values)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                LedgerRow(
-                  label: plan == current
-                      ? '${context.tr('tokens.plans.${plan.name}')} · ${context.tr('tokens.plans.current')}'
-                      : context.tr('tokens.plans.${plan.name}'),
-                  emphasizeLabel: plan == current,
-                  value: context.tr('tokens.plans.${plan.name}_subtitle'),
-                  valueColor: plan == current ? palette.gold : palette.muted,
-                ),
-                // Who the plan is for ("Best for group leaders").
-                Text(
-                  context.tr('tokens.plans.${plan.name}_desc'),
-                  style: AppFonts.inter(
-                    fontSize: 12.5,
-                    color: palette.dim,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
+        if (costs.isEmpty)
+          Text(context.tr(TranslationKeys.ledgerStudyCostsLine), style: style)
+        else ...[
+          Text(
+            studyCostsLine(context, costs, followUp: kFollowUpCredits),
+            key: const Key('credits_cost_line'),
+            style: style.copyWith(color: palette.text),
           ),
+          const SizedBox(height: 2),
+          Text(context.tr(TranslationKeys.creditsExactCostNote), style: style),
+        ],
       ],
     );
   }
