@@ -89,7 +89,6 @@ const Map<String, dynamic> englishTranslations = {
     'fellowship_path_complete':
         'Your fellowship has completed the entire study path!',
     'fellowship_next_guide': 'Your fellowship has moved to the next guide!',
-    'xp_earned': '+{xp} XP earned!',
     'notes_saved': 'Notes saved',
     'reflection_not_loaded':
         "Couldn't save your reflection: the study guide hasn't loaded.",
@@ -2281,7 +2280,7 @@ const Map<String, dynamic> englishTranslations = {
     'continue': 'Continue',
     'review': 'Review',
     'explore': 'Explore',
-    'topics': 'Topics',
+    'topics': 'Lessons',
     'days': 'days',
     'xp': 'XP',
     'progress': 'Progress',
@@ -2294,7 +2293,7 @@ const Map<String, dynamic> englishTranslations = {
     'path_completed': 'Path Completed!',
     'enrolled_success': 'Successfully enrolled in learning path',
     'enrolled_error': 'Failed to enroll in learning path',
-    'next_topic': 'Next Topic',
+    'next_topic': 'Next lesson',
     'locked': 'Locked',
     'unlocked': 'Unlocked',
     'milestone': 'Milestone',
@@ -2302,7 +2301,7 @@ const Map<String, dynamic> englishTranslations = {
     'enrolling': 'Enrolling in path...',
     'failed_to_load': 'Failed to load path details',
     'offline_title': "You're offline",
-    'loading_topics': 'Loading topics...',
+    'loading_topics': 'Loading lessons...',
     'percent_complete': '{percent}% complete',
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
@@ -2317,13 +2316,14 @@ const Map<String, dynamic> englishTranslations = {
   'all_paths': {
     'title': 'All paths',
     'count': '{n} paths',
+    'lessons_days': '{n} lessons · {d} days',
     'all': 'All',
     'current': 'Current',
     'lesson_of': 'Lesson {n} of {total}',
   },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
-    'continue_eyebrow': 'Continue · Topic {current} of {total}',
+    'continue_eyebrow': 'Continue · Lesson {current} of {total}',
     'next_topic': 'Next: {title}',
     'streak_value': '{count} days',
     'streak_value_one': '{count} day',

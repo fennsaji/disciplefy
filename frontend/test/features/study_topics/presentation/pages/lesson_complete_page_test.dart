@@ -7,6 +7,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
@@ -18,6 +21,10 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/
 import '../../../../helpers/welcome_test_harness.dart';
 
 class _MockRepo extends Mock implements LearningPathsRepository {}
+
+class _MockGuest extends Mock implements GuestSessionService {}
+
+class _MockFlags extends Mock implements RolloutFlags {}
 
 class _FakePrefs extends Fake implements LanguagePreferenceService {
   @override
@@ -74,7 +81,10 @@ void main() {
     sl.registerSingleton<LearningPathsRepository>(repo);
     sl.registerSingleton<LanguagePreferenceService>(_FakePrefs());
   });
-  tearDown(() => sl.reset());
+  tearDown(() {
+    AchievementPopupGate.reset();
+    return sl.reset();
+  });
 
   Future<void> pumpPage(WidgetTester tester, int n, {ThemeData? theme}) async {
     useSurface(tester, const Size(400, 800));
@@ -157,5 +167,42 @@ void main() {
     expect(fill(), Colors.white);
     await pumpPage(tester, 1, theme: AppTheme.lightTheme);
     expect(fill(), AppColors.brandHighlightDark);
+  });
+
+  group('achievement pop-ups', () {
+    testWidgets('wait until the page is shown, then may show over it',
+        (tester) async {
+      var flushes = 0;
+      void count() => flushes++;
+      AchievementPopupGate.flushRequests.addListener(count);
+      addTearDown(
+          () => AchievementPopupGate.flushRequests.removeListener(count));
+      expect(AchievementPopupGate.holdsAt('/lesson-complete'), isTrue);
+
+      await pumpPage(tester, 1);
+      expect(AchievementPopupGate.holdsAt('/lesson-complete'), isFalse);
+      expect(flushes, greaterThan(0));
+    });
+
+    testWidgets('leaving the page holds them on the next Lesson complete',
+        (tester) async {
+      await pumpPage(tester, 1);
+      await tester.tap(find.text('Back to Home'));
+      await tester.pumpAndSettle();
+      expect(AchievementPopupGate.holdsAt('/lesson-complete'), isTrue);
+    });
+
+    testWidgets("a guest's page (sign-up block) never shows them",
+        (tester) async {
+      final guest = _MockGuest();
+      final flags = _MockFlags();
+      when(() => guest.isGuest).thenReturn(true);
+      when(() => flags.guestMode).thenReturn(true);
+      sl.registerSingleton<GuestSessionService>(guest);
+      sl.registerSingleton<RolloutFlags>(flags);
+
+      await pumpPage(tester, 1);
+      expect(AchievementPopupGate.holdsAt('/lesson-complete'), isTrue);
+    });
   });
 }

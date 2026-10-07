@@ -44,15 +44,13 @@ class PathDetailTopBar extends StatelessWidget {
   }
 }
 
-/// Eyebrow, title, clamped description and meta row of a learning path.
+/// Eyebrow (the category), title, clamped description and meta row
+/// ("8 Lessons", "14 days") of a learning path. No level or XP.
 class PathDetailHeader extends StatefulWidget {
-  /// Localised disciple level, e.g. "Seeker".
-  final String levelLabel;
   final String category;
   final String title;
   final String description;
   final int topicsCount;
-  final int totalXp;
   final int estimatedDays;
 
   /// Large faint motif drawn behind the top-right of the header.
@@ -60,12 +58,10 @@ class PathDetailHeader extends StatefulWidget {
 
   const PathDetailHeader({
     super.key,
-    required this.levelLabel,
     required this.category,
     required this.title,
     required this.description,
     required this.topicsCount,
-    required this.totalXp,
     required this.estimatedDays,
     required this.icon,
   });
@@ -82,10 +78,7 @@ class _PathDetailHeaderState extends State<PathDetailHeader> {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final eyebrow = [
-      widget.levelLabel,
-      if (widget.category.trim().isNotEmpty) widget.category.trim(),
-    ].join(' · ').toUpperCase();
+    final eyebrow = widget.category.trim().toUpperCase();
 
     return Stack(
       children: [
@@ -105,16 +98,18 @@ class _PathDetailHeaderState extends State<PathDetailHeader> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                eyebrow,
-                style: AppFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: _trackingFor(eyebrow),
-                  color: palette.gold,
+              if (eyebrow.isNotEmpty) ...[
+                Text(
+                  eyebrow,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: _trackingFor(eyebrow),
+                    color: palette.gold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
+              ],
               Text(
                 widget.title,
                 style: AppFonts.poppins(
@@ -139,11 +134,6 @@ class _PathDetailHeaderState extends State<PathDetailHeader> {
                     icon: Icons.menu_book_outlined,
                     text:
                         '${widget.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}',
-                  ),
-                  _MetaItem(
-                    icon: Icons.star_outline_rounded,
-                    text:
-                        '${widget.totalXp} ${context.tr(TranslationKeys.learningPathsXp)}',
                   ),
                   _MetaItem(
                     icon: Icons.timer_outlined,
@@ -337,32 +327,25 @@ class PathDetailProgress extends StatelessWidget {
 /// Where a topic sits in the learner's progress through the path.
 enum PathTopicStatus { completed, current, upcoming, locked }
 
-/// One topic of a learning path.
+/// One lesson of a learning path: number disc, title and a "Milestone" tag
+/// where it applies. No XP or category.
 ///
-/// The current topic is a raised card with a gold hairline, a gold number
-/// disc and an "up next" line; the others are flat rows.
+/// The current lesson is a raised card with a gold hairline, a gold number
+/// disc and a gold "Today" caption; the others are flat rows.
 class PathTopicRow extends StatelessWidget {
   /// 1-based position shown in the disc.
   final int number;
   final String title;
-  final String category;
-  final int xp;
   final bool isMilestone;
   final PathTopicStatus status;
-
-  /// Detail line of the current topic, e.g. "Next Topic · Standard · 8 min".
-  final String? upNextLine;
   final VoidCallback? onTap;
 
   const PathTopicRow({
     super.key,
     required this.number,
     required this.title,
-    required this.category,
-    required this.xp,
     required this.status,
     this.isMilestone = false,
-    this.upNextLine,
     this.onTap,
   });
 
@@ -373,11 +356,6 @@ class PathTopicRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final radius = BorderRadius.circular(16);
-
-    final subline = _isCurrent
-        ? [if (upNextLine != null) upNextLine!, '+$xp XP'].join(' · ')
-        : [if (category.trim().isNotEmpty) category.trim(), '+$xp XP']
-            .join(' · ');
 
     final row = Row(
       children: [
@@ -411,15 +389,18 @@ class PathTopicRow extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 3),
-              Text(
-                subline,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: _isCurrent ? FontWeight.w500 : FontWeight.w400,
-                  color: _isCurrent ? palette.gold : palette.dim,
+              if (_isCurrent) ...[
+                const SizedBox(height: 3),
+                Text(
+                  context.tr(TranslationKeys.homeTodayLabel),
+                  key: const Key('path_lesson_today'),
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: palette.gold,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

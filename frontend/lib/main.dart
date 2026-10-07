@@ -41,6 +41,7 @@ import 'features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'features/gamification/presentation/bloc/gamification_event.dart';
 import 'features/gamification/presentation/bloc/gamification_state.dart';
 import 'features/gamification/presentation/widgets/achievement_unlock_dialog.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/locale_service.dart';
@@ -246,8 +247,8 @@ Future<void> _initializeLocalStorage() async {
   }
 
   await Hive.openBox('app_settings');
-}
   await Hive.openBox<dynamic>('nux_events');
+}
 
 /// Initializes Firebase for push notifications and crash reporting.
 ///
@@ -416,9 +417,13 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
   NotificationService? _notificationService;
   NotificationServiceWeb? _notificationServiceWeb;
 
+  /// An achievement pop-up is open; the next one waits for it to close.
+  bool _achievementDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
+    AchievementPopupGate.flushRequests.addListener(_showNextAchievement);
 
     // Initialize auth components
     // Note: AuthBloc constructor already adds AuthInitializeRequested internally,
@@ -493,6 +498,34 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
     }
   }
 
+  /// Location of the top route, or '' before the router has one.
+  String _currentLocation() {
+    try {
+      return AppRouter.router.state.uri.path;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Shows the head of the achievement queue unless one is already open or
+  /// the current route holds pop-ups (a study guide, or Lesson complete
+  /// before it is shown; see [AchievementPopupGate]).
+  void _showNextAchievement() {
+    final next = sl<GamificationBloc>().state.nextNotification;
+    final location = _currentLocation();
+    if (!AchievementPopupGate.shouldShow(
+      location: location,
+      hasPending: next != null,
+      alreadyShowing: _achievementDialogOpen,
+    )) {
+      if (next != null && !_achievementDialogOpen) {
+        Logger.debug('[MAIN] Achievement pop-up waits on $location');
+      }
+      return;
+    }
+    _showAchievementUnlockDialog(next!);
+  }
+
   /// Show achievement unlock dialog globally
   /// This is placed at the app level to catch achievements from ANY route,
   /// including Memory Verses which is outside AppShell
@@ -509,18 +542,19 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
     Logger.debug(
         '🏆 [MAIN] Showing achievement unlock dialog: ${result.achievementName}');
 
-    showDialog(
+    _achievementDialogOpen = true;
+    showDialog<void>(
       context: navigatorContext,
-      barrierDismissible: false,
       builder: (dialogContext) => AchievementUnlockDialog(
         achievement: result,
-        onDismiss: () {
-          Navigator.of(dialogContext).pop();
-          // Dismiss this notification from the queue
-          sl<GamificationBloc>().add(const DismissAchievementNotification());
-        },
+        onDismiss: () => Navigator.of(dialogContext).pop(),
       ),
-    );
+    ).whenComplete(() {
+      // However it closed (button or outside tap), it is shown once: take
+      // it off the queue, which surfaces the next one.
+      _achievementDialogOpen = false;
+      sl<GamificationBloc>().add(const DismissAchievementNotification());
+    });
   }
 
   @override
@@ -533,6 +567,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
 
   @override
   void dispose() {
+    AchievementPopupGate.flushRequests.removeListener(_showNextAchievement);
     if (!kIsWeb) {
       WidgetsBinding.instance.removeObserver(this);
     }
@@ -604,13 +639,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
             return current.nextNotification != null &&
                 current.nextNotification != previous.nextNotification;
           },
-          listener: (context, state) {
-            // Show achievement unlock dialog when there are pending notifications
-            if (state.hasPendingNotifications &&
-                state.nextNotification != null) {
-              _showAchievementUnlockDialog(state.nextNotification!);
-            }
-          },
+          // Shows it now, or leaves it queued while a lesson is open.
+          listener: (context, state) => _showNextAchievement(),
           child: ListenableBuilder(
             listenable: Listenable.merge(
                 [themeService, localeService, fontScaleService]),

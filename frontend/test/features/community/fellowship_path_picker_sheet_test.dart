@@ -218,9 +218,9 @@ void main() {
 
   testWidgets('meta, Current and Completed tags', (tester) async {
     await _open(tester, size: const Size(320, 2400));
-    expect(find.text('8 Topics · 400 XP · 14 days'), findsNWidgets(4));
+    expect(find.text('8 Lessons · 400 XP · 14 days'), findsNWidgets(4));
     // Zero XP / days are left out.
-    expect(find.text('8 Topics'), findsOneWidget);
+    expect(find.text('8 Lessons'), findsOneWidget);
     expect(find.text('Current'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(

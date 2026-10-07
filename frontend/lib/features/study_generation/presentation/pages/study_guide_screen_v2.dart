@@ -71,6 +71,7 @@ import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart'
     deferred as pdf_export;
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../../gamification/presentation/bloc/gamification_state.dart';
 import '../../domain/entities/study_mode.dart';
@@ -848,6 +849,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       sl<GamificationBloc>().add(const UpdateStudyStreak());
       sl<GamificationBloc>().add(const CheckStudyAchievements());
     }
+    // Pop-ups that waited while the guide was open show on the route the
+    // user lands on (Lesson complete still holds them until it is shown).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => AchievementPopupGate.flush());
     _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
@@ -1971,26 +1976,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 '   First completion: ${completionResult.isFirstCompletion}');
           }
 
-          final earnedXp = completionResult.isFirstCompletion &&
-              completionResult.xpEarned > 0;
-
-          // One snackbar replaces the previous, so when the fellowship
-          // advanced and XP was earned too, both go in a single message.
+          // XP is not announced here (it lives in My progress and the
+          // Leaderboard); only a fellowship moving on is.
           if (completionResult.fellowshipAdvanced) {
             _whenAtBottom(() {
               if (!mounted) return;
-              final advanced = context.tr(completionResult.studyCompleted
-                  ? TranslationKeys.guideFeedbackFellowshipPathComplete
-                  : TranslationKeys.guideFeedbackFellowshipNextGuide);
-              final message = earnedXp
-                  ? '$advanced  ·  ${_xpEarnedText(completionResult.xpEarned)}'
-                  : advanced;
-              showAppSnackBar(context, message, tone: AppSnackTone.success);
+              showAppSnackBar(
+                context,
+                context.tr(completionResult.studyCompleted
+                    ? TranslationKeys.guideFeedbackFellowshipPathComplete
+                    : TranslationKeys.guideFeedbackFellowshipNextGuide),
+                tone: AppSnackTone.success,
+              );
             });
-          } else if (earnedXp) {
-            // Show XP earned feedback if this is the first completion
-            _whenAtBottom(
-                () => _showXpEarnedFeedback(completionResult.xpEarned));
           }
         },
       );
@@ -1998,16 +1996,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       Logger.error('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
     }
   }
-
-  /// Show feedback when user earns XP for completing a topic.
-  void _showXpEarnedFeedback(int xpEarned) {
-    if (!mounted) return;
-    _showSnackBar(_xpEarnedText(xpEarned), AppSnackTone.success);
-  }
-
-  String _xpEarnedText(int xpEarned) => context
-      .tr(TranslationKeys.guideFeedbackXpEarned)
-      .replaceAll('{xp}', '$xpEarned');
 
   // _maybeShowLearningPathSheet() has been replaced by _startInactivityCountdown()
   // and _cancelInactivityCountdown() above.  The new approach verifies both the

@@ -11,6 +11,8 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -57,6 +59,7 @@ class LessonCompletePage extends StatefulWidget {
 
 class _LessonCompletePageState extends State<LessonCompletePage> {
   LearningPathDetail? _path;
+  bool _popupsScheduled = false;
 
   @override
   void initState() {
@@ -75,6 +78,43 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                 if (mounted) setState(() => _path = p);
               },
             ));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_popupsScheduled) return;
+    _popupsScheduled = true;
+    // Achievement pop-ups waited through the lesson; they may show once
+    // this page has finished sliding in.
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null || animation.isCompleted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _releasePopups());
+      return;
+    }
+    void onStatus(AnimationStatus status) {
+      if (status != AnimationStatus.completed) return;
+      animation.removeStatusListener(onStatus);
+      _releasePopups();
+    }
+
+    animation.addStatusListener(onStatus);
+  }
+
+  /// A guest's page carries the sign-up block, which a pop-up must not
+  /// cover: theirs wait until they leave the page.
+  void _releasePopups() {
+    if (!mounted || AccountGate.isActive) return;
+    AchievementPopupGate.release();
+  }
+
+  @override
+  void dispose() {
+    AchievementPopupGate.endRelease();
+    // Shown on the next route unless it holds them (another lesson).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => AchievementPopupGate.flush());
+    super.dispose();
   }
 
   List<LearningPathTopic> get _upNext {

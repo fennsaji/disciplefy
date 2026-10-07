@@ -926,12 +926,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         ? path.category
         : (widget.initialPath?.category ?? '');
     return PathDetailHeader(
-      levelLabel: _getTranslatedDiscipleLevel(context, path.discipleLevel),
       category: category,
       title: path.title,
       description: path.description,
       topicsCount: path.topicsCount,
-      totalXp: path.totalXp,
       estimatedDays: path.estimatedDays,
       icon: iconForPath(path.iconName, category: category),
     );
@@ -989,53 +987,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       // (fellowship_study.current_guide_index), so only the label is shifted.
       number: topic.position + 1,
       title: topic.title,
-      category: topic.category,
-      xp: topic.xpValue,
       isMilestone: topic.isMilestone,
       status: status,
-      upNextLine: isNext ? _upNextLine(context, path) : null,
       onTap: isLocked ? null : () => _navigateToTopic(topic, path),
     );
-  }
-
-  /// "Next Topic · Standard · 8 min" — the mode the topic will open in:
-  /// the mode fixed in Settings, else the path's recommended mode.
-  String _upNextLine(BuildContext context, LearningPathDetail path) {
-    final pref =
-        sl<LanguagePreferenceService>().getLearningPathStudyModePreferenceRaw();
-    final mode =
-        (StudyModePreferences.isSpecificMode(pref, isLearningPath: true)
-                ? studyModeFromString(pref)
-                : null) ??
-            studyModeFromString(path.recommendedMode) ??
-            StudyMode.standard;
-    return [
-      context.tr(TranslationKeys.learningPathsNextTopic),
-      mode.localizedShortName(context),
-      mode.localizedDuration(context),
-    ].join(' · ');
-  }
-
-  String _getTranslatedDiscipleLevel(BuildContext context, String level) {
-    switch (level.toLowerCase()) {
-      case 'seeker':
-        return context.tr(TranslationKeys.discipleLevelSeeker);
-      case 'believer':
-        return context.tr(TranslationKeys.discipleLevelBeliever);
-      case 'disciple':
-        return context.tr(TranslationKeys.discipleLevelDisciple);
-      case 'leader':
-        return context.tr(TranslationKeys.discipleLevelLeader);
-      case 'follower':
-        return context.tr(TranslationKeys.discipleLevelFollower);
-      default:
-        return _capitalize(level);
-    }
-  }
-
-  String _capitalize(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
   }
 }
 

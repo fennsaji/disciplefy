@@ -202,6 +202,8 @@ void main() {
             // Path and topic titles are content; the test font renders
             // every glyph 1em wide, so they wrap far more than real text.
             'New Believer Essentials',
+            'One God, Three Persons',
+            'Confidence in Your Salvation',
             translations.getTranslation(
                 TranslationKeys.learningPathsContinueLesson, {'n': 4}),
           });
@@ -224,7 +226,8 @@ void main() {
     expect(rows.take(3).every((r) => r.status == PathTopicStatus.completed),
         isTrue);
     expect(rows[3].status, PathTopicStatus.current);
-    expect(rows[3].upNextLine, contains('8 min'));
+    expect(find.byKey(const Key('path_lesson_today')), findsOneWidget);
+    expect(find.textContaining('XP', skipOffstage: false), findsNothing);
     expect(rows[4].status, PathTopicStatus.locked);
 
     expect(
@@ -233,7 +236,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('50%'), findsOneWidget);
-    expect(find.text('SEEKER · FOUNDATIONS'), findsOneWidget);
+    expect(find.text('FOUNDATIONS'), findsOneWidget);
+    expect(find.textContaining('SEEKER'), findsNothing);
   });
 
   testWidgets('not enrolled: CTA enrolls in the path', (tester) async {
@@ -304,16 +308,12 @@ void main() {
           PathTopicRow(
             number: 1,
             title: 'Open',
-            category: 'c',
-            xp: 10,
             status: PathTopicStatus.upcoming,
             onTap: () => taps++,
           ),
           PathTopicRow(
             number: 2,
             title: 'Locked',
-            category: 'c',
-            xp: 10,
             status: PathTopicStatus.locked,
             onTap: () => taps++,
           ),
@@ -363,6 +363,8 @@ void main() {
             // Content titles; the test font renders every glyph 1em wide.
             'New Believer Essentials',
             'NEW BELIEVER ESSENTIALS',
+            'One God, Three Persons',
+            'Confidence in Your Salvation',
           });
           expect(find.byKey(const Key('download_sheet_pause')), findsOneWidget);
           expect(

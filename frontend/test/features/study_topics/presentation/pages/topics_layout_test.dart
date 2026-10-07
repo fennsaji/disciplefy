@@ -185,6 +185,8 @@ void main() {
     expect(find.byType(ForYouLearningPathsSection), findsNothing);
     expect(find.byKey(const Key('learning_paths_chip_seeker')), findsNothing);
     expect(find.byKey(const Key('learning_paths_chip_all')), findsNothing);
+    expect(find.text('Seeker'), findsNothing);
+    expect(find.textContaining('XP'), findsNothing);
     // No XP or level on the card or the tiles.
     for (final scope in [
       find.byType(TopicsCurrentPathCard),

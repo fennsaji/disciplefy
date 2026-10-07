@@ -89,7 +89,6 @@ const Map<String, dynamic> hindiTranslations = {
     'completed_while_away': 'आपके दूर रहते हुए आपकी अध्ययन गाइड तैयार हो गई!',
     'fellowship_path_complete': 'आपकी फ़ेलोशिप ने पूरा अध्ययन पथ पूरा कर लिया!',
     'fellowship_next_guide': 'आपकी फ़ेलोशिप अगली गाइड पर पहुँच गई!',
-    'xp_earned': '+{xp} XP मिले!',
     'notes_saved': 'नोट्स सहेजे गए',
     'reflection_not_loaded':
         'आपका चिंतन सहेजा नहीं जा सका: अध्ययन गाइड लोड नहीं हुई है।',
@@ -2283,7 +2282,7 @@ const Map<String, dynamic> hindiTranslations = {
     'continue': 'जारी रखें',
     'review': 'समीक्षा',
     'explore': 'खोजें',
-    'topics': 'विषय',
+    'topics': 'पाठ',
     'days': 'दिन',
     'xp': 'XP',
     'progress': 'प्रगति',
@@ -2296,7 +2295,7 @@ const Map<String, dynamic> hindiTranslations = {
     'path_completed': 'रास्ता पूर्ण!',
     'enrolled_success': 'सीखने के रास्ते में सफलतापूर्वक नामांकन हुआ',
     'enrolled_error': 'सीखने के रास्ते में नामांकन नहीं हो सका',
-    'next_topic': 'अगला विषय',
+    'next_topic': 'अगला पाठ',
     'locked': 'बंद',
     'unlocked': 'खुला',
     'milestone': 'मील का पत्थर',
@@ -2304,7 +2303,7 @@ const Map<String, dynamic> hindiTranslations = {
     'enrolling': 'रास्ते में नामांकन हो रहा है...',
     'failed_to_load': 'रास्ते की जानकारी लोड नहीं हुई',
     'offline_title': 'आप ऑफ़लाइन हैं',
-    'loading_topics': 'विषय लोड हो रहे हैं...',
+    'loading_topics': 'पाठ लोड हो रहे हैं...',
     'percent_complete': '{percent}% पूर्ण',
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
@@ -2319,13 +2318,14 @@ const Map<String, dynamic> hindiTranslations = {
   'all_paths': {
     'title': 'सभी पथ',
     'count': '{n} पथ',
+    'lessons_days': '{n} पाठ · {d} दिन',
     'all': 'सभी',
     'current': 'वर्तमान',
     'lesson_of': 'पाठ {n}/{total}',
   },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
-    'continue_eyebrow': 'जारी रखें · विषय {current} / {total}',
+    'continue_eyebrow': 'जारी रखें · पाठ {current} / {total}',
     'next_topic': 'अगला: {title}',
     'streak_value': '{count} दिन',
     'streak_value_one': '{count} दिन',

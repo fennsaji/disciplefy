@@ -21,7 +21,6 @@ import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/g
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/utils/unlock_dates.dart';
-import 'package:disciplefy_bible_study/features/gamification/presentation/widgets/achievement_unlock_dialog.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/shared/widgets/gold_marks.dart';
@@ -95,13 +94,9 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
           ),
         ),
       ),
-      body: BlocConsumer<GamificationBloc, GamificationState>(
-        listener: (context, state) {
-          // Show achievement unlock notification
-          if (state.hasPendingNotifications && state.nextNotification != null) {
-            _showAchievementUnlockDialog(context, state.nextNotification!);
-          }
-        },
+      // Achievement pop-ups are shown once, app-wide (main.dart); showing
+      // them here too stacked a second copy on this page.
+      body: BlocBuilder<GamificationBloc, GamificationState>(
         builder: (context, state) {
           if (state.status == GamificationStatus.loading &&
               state.stats == null) {
@@ -377,24 +372,6 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showAchievementUnlockDialog(
-      BuildContext context, AchievementUnlockResult result) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AchievementUnlockDialog(
-        achievement: result,
-        onDismiss: () {
-          Navigator.of(dialogContext).pop();
-          // Dismiss the notification from the bloc
-          context
-              .read<GamificationBloc>()
-              .add(const DismissAchievementNotification());
-        },
       ),
     );
   }

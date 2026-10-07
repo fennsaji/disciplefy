@@ -421,7 +421,8 @@ void main() {
       verify(() =>
               bloc.add(const LoadMorePathsForCategory(category: 'Foundations')))
           .called(greaterThan(0));
-      expect(find.text('9 paths · Seeker to Leader'), findsOneWidget);
+      expect(find.text('9 paths'), findsOneWidget);
+      expect(find.textContaining('Seeker'), findsNothing);
 
       await tester.tap(find.byKey(const Key('path_category_row_c')));
       await tester.pumpAndSettle();

@@ -1710,6 +1710,7 @@ class TranslationKeys {
   static const learningPathsPercentComplete = 'learning_paths.percent_complete';
 
   // Disciple Levels
+  static const learningPathsLessonsDays = 'learning_paths.lessons_days';
   static const discipleLevelSeeker = 'disciple_level.seeker';
   static const discipleLevelBeliever = 'disciple_level.believer';
   static const discipleLevelDisciple = 'disciple_level.disciple';
@@ -3603,7 +3604,6 @@ class TranslationKeys {
       'guide_feedback.fellowship_path_complete';
   static const guideFeedbackFellowshipNextGuide =
       'guide_feedback.fellowship_next_guide';
-  static const guideFeedbackXpEarned = 'guide_feedback.xp_earned';
   static const guideFeedbackNotesSaved = 'guide_feedback.notes_saved';
   static const guideFeedbackReflectionNotLoaded =
       'guide_feedback.reflection_not_loaded';

@@ -92,7 +92,6 @@ const Map<String, dynamic> malayalamTranslations = {
     'fellowship_path_complete':
         'നിങ്ങളുടെ ഫെലോഷിപ്പ് മുഴുവൻ പഠന പാതയും പൂർത്തിയാക്കി!',
     'fellowship_next_guide': 'നിങ്ങളുടെ ഫെലോഷിപ്പ് അടുത്ത ഗൈഡിലേക്ക് നീങ്ങി!',
-    'xp_earned': '+{xp} XP ലഭിച്ചു!',
     'notes_saved': 'കുറിപ്പുകൾ സേവ് ചെയ്തു',
     'reflection_not_loaded':
         'നിങ്ങളുടെ ധ്യാനം സേവ് ചെയ്യാനായില്ല: പഠന ഗൈഡ് ലോഡ് ആയിട്ടില്ല.',
@@ -2377,7 +2376,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'continue': 'തുടരുക',
     'review': 'അവലോകനം',
     'explore': 'കണ്ടെത്തുക',
-    'topics': 'വിഷയങ്ങൾ',
+    'topics': 'പാഠം',
     'days': 'ദിവസങ്ങൾ',
     'xp': 'XP',
     'progress': 'പുരോഗതി',
@@ -2390,7 +2389,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'path_completed': 'പാത പൂർത്തിയായി!',
     'enrolled_success': 'പഠന പാതയിൽ വിജയകരമായി ചേർന്നു',
     'enrolled_error': 'പഠന പാതയിൽ ചേരാനായില്ല',
-    'next_topic': 'അടുത്ത വിഷയം',
+    'next_topic': 'അടുത്ത പാഠം',
     'locked': 'ലോക്ക് ചെയ്തത്',
     'unlocked': 'അൺലോക്ക് ചെയ്തത്',
     'milestone': 'നാഴികക്കല്ല്',
@@ -2398,7 +2397,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'enrolling': 'പാതയിൽ ചേരുന്നു...',
     'failed_to_load': 'പാതയുടെ വിശദാംശങ്ങൾ ലോഡ് ചെയ്യാനായില്ല',
     'offline_title': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്',
-    'loading_topics': 'വിഷയങ്ങൾ ലോഡ് ചെയ്യുന്നു...',
+    'loading_topics': 'പാഠങ്ങൾ ലോഡ് ചെയ്യുന്നു...',
     'percent_complete': '{percent}% പൂർത്തിയായി',
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
@@ -2413,13 +2412,14 @@ const Map<String, dynamic> malayalamTranslations = {
   'all_paths': {
     'title': 'എല്ലാ പാതകളും',
     'count': '{n} പാതകൾ',
+    'lessons_days': '{n} പാഠം · {d} ദിവസം',
     'all': 'എല്ലാം',
     'current': 'ഇപ്പോൾ',
     'lesson_of': 'പാഠം {n}/{total}',
   },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
-    'continue_eyebrow': 'തുടരുക · വിഷയം {current} / {total}',
+    'continue_eyebrow': 'തുടരുക · പാഠം {current} / {total}',
     'next_topic': 'അടുത്തത്: {title}',
     'streak_value': '{count} ദിവസം',
     'streak_value_one': '{count} ദിവസം',
