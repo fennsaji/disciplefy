@@ -149,6 +149,10 @@ class StudyGuideBody extends StatelessWidget {
   /// Set when the guide is a lesson of a learning path.
   final LessonRef? lesson;
 
+  /// Shown under the title, above the progress segments (the lesson's
+  /// Quick/Full switch).
+  final Widget? headerAccessory;
+
   const StudyGuideBody({
     super.key,
     required this.studyMode,
@@ -160,6 +164,7 @@ class StudyGuideBody extends StatelessWidget {
     this.interpretationKey,
     this.tracker,
     this.lesson,
+    this.headerAccessory,
   });
 
   /// How many numbered sections [StudyGuideBody] renders for [sections] —
@@ -202,6 +207,7 @@ class StudyGuideBody extends StatelessWidget {
           sectionCount: sectionWidgets.length,
           tracker: tracker,
           lesson: lesson,
+          accessory: headerAccessory,
         ),
         Padding(
           padding: StudyGuideLayout.sidePadding,
@@ -565,6 +571,7 @@ class StudyGuideHero extends StatelessWidget {
   final int sectionCount;
   final StudyReadingTracker? tracker;
   final LessonRef? lesson;
+  final Widget? accessory;
 
   const StudyGuideHero({
     super.key,
@@ -574,6 +581,7 @@ class StudyGuideHero extends StatelessWidget {
     required this.sectionCount,
     this.tracker,
     this.lesson,
+    this.accessory,
   });
 
   @override
@@ -643,6 +651,10 @@ class StudyGuideHero extends StatelessWidget {
                 studyMode: studyMode,
                 lesson: lesson,
               ),
+              if (accessory != null) ...[
+                const SizedBox(height: 12),
+                accessory!,
+              ],
               const SizedBox(height: 16),
               StudyGuideSegmentedProgress(
                 sectionCount: sectionCount,

@@ -936,6 +936,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'back_home': 'ഹോമിലേക്ക്',
     'path_finished': '{path} പൂർത്തിയാക്കി',
     'full_guide_link': 'മുഴുവൻ പഠനം വായിക്കാം',
+    'quick_read': 'ക്വിക്ക് · {min} മിനിറ്റ്',
+    'full_guide': 'മുഴുവൻ · {min} മിനിറ്റ്',
   },
   'onboarding': {
     'skip_intro': 'ഒഴിവാക്കുക',

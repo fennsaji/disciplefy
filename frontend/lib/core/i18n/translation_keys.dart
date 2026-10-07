@@ -3581,6 +3581,8 @@ class TranslationKeys {
   static const lessonBackHome = 'lesson.back_home';
   static const lessonPathFinished = 'lesson.path_finished';
   static const lessonFullGuideLink = 'lesson.full_guide_link';
+  static const lessonQuickRead = 'lesson.quick_read';
+  static const lessonFullGuide = 'lesson.full_guide';
 
   // Out-of-credits sheet.
   static const creditsOutEyebrow = 'credits.out_eyebrow';

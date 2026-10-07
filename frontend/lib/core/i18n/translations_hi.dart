@@ -918,6 +918,8 @@ const Map<String, dynamic> hindiTranslations = {
     'back_home': 'होम पर जाएँ',
     'path_finished': 'आपने {path} पूरा किया',
     'full_guide_link': 'पूरा अध्ययन? पूरी गाइड पढ़ें',
+    'quick_read': 'क्विक · {min} मिनट',
+    'full_guide': 'पूरी गाइड · {min} मिनट',
   },
   'onboarding': {
     'skip_intro': 'छोड़ें',

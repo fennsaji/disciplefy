@@ -55,6 +55,7 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import '../../../study_topics/domain/entities/lesson_ref.dart';
 import '../../../study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../../study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_mode_switch.dart';
 import '../../data/services/reading_progress_store.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
@@ -2619,6 +2620,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               contentFontSize: _contentFontSize,
               tracker: _readingTracker,
               lesson: widget.lesson,
+              headerAccessory: _buildLessonModeSwitch(),
               onComplete:
                   state.content.isComplete && state.content.studyGuideId != null
                       ? () => _handleStreamingComplete(state)
@@ -2705,6 +2707,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             isPartial: true,
             tracker: _readingTracker,
             lesson: widget.lesson,
+            headerAccessory: _buildLessonModeSwitch(),
           ),
         ),
       ],
@@ -2759,6 +2762,30 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           ),
       ],
     );
+  }
+
+  /// Quick/Full switch under a lesson's title; null outside lessons.
+  Widget? _buildLessonModeSwitch() {
+    if (widget.lesson == null) return null;
+    return LessonModeSwitch(
+      current: widget.studyMode,
+      onChanged: _switchLessonMode,
+    );
+  }
+
+  /// Reopens this lesson in [mode], keeping its other query parameters.
+  /// Cancels a stream still in flight first.
+  void _switchLessonMode(StudyMode mode) {
+    if (mode == widget.studyMode) return;
+    final bloc = context.read<StudyBloc>();
+    if (bloc.state is StudyGenerationStreaming) {
+      bloc.add(const CancelStudyStreamingRequested());
+    }
+    final uri = Uri.parse(GoRouterState.of(context).uri.toString());
+    context.pushReplacement(uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      'mode': mode.name,
+    }).toString());
   }
 
   Widget _buildErrorScreen() {
@@ -2907,12 +2934,36 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               interpretationKey: _interpretationKey,
               tracker: _readingTracker,
               lesson: widget.lesson,
+              headerAccessory: _buildLessonModeSwitch(),
             ),
           ),
 
-          if (widget.lesson != null)
+          if (widget.lesson != null && widget.studyMode == StudyMode.quick)
             Padding(
               padding: sidePadding.add(const EdgeInsets.only(top: 20)),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  key: const Key('lesson_read_full_guide'),
+                  onPressed: () => _switchLessonMode(StudyMode.standard),
+                  style: TextButton.styleFrom(
+                    foregroundColor: ReaderPalette.of(context).gold,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    minimumSize: const Size(0, 40),
+                    textStyle: AppFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  child: Text(
+                    '${context.tr(TranslationKeys.lessonFullGuideLink)} →',
+                  ),
+                ),
+              ),
+            ),
+
+          if (widget.lesson != null)
+            Padding(
+              padding: sidePadding.add(EdgeInsets.only(
+                  top: widget.studyMode == StudyMode.quick ? 4 : 20)),
               child: LessonMarkCompleteBar(
                 lesson: widget.lesson!,
                 onComplete: _completeLessonNow,

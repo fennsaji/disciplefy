@@ -48,6 +48,9 @@ class StreamingStudyContent extends StatelessWidget {
   /// Set when the guide is a lesson of a learning path.
   final LessonRef? lesson;
 
+  /// Shown under the title (the lesson's Quick/Full switch).
+  final Widget? headerAccessory;
+
   const StreamingStudyContent({
     super.key,
     required this.content,
@@ -61,6 +64,7 @@ class StreamingStudyContent extends StatelessWidget {
     this.contentFontSize = 18.0,
     this.tracker,
     this.lesson,
+    this.headerAccessory,
   });
 
   @override
@@ -90,6 +94,7 @@ class StreamingStudyContent extends StatelessWidget {
                 contentFontSize: contentFontSize,
                 tracker: tracker,
                 lesson: lesson,
+                headerAccessory: headerAccessory,
               ),
               SizedBox(height: StudyGuideLayout.endGap(context)),
             ],

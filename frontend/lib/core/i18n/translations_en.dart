@@ -926,6 +926,8 @@ const Map<String, dynamic> englishTranslations = {
     'back_home': 'Back to Home',
     'path_finished': 'You finished {path}',
     'full_guide_link': 'Want the full study? Read the full guide',
+    'quick_read': 'Quick read · {min} min',
+    'full_guide': 'Full guide · {min} min',
   },
   'onboarding': {
     'skip_intro': 'Skip',
