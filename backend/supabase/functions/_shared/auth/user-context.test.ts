@@ -6,6 +6,7 @@ import {
   enforceFullAccount,
   isAnonymousAuthUser,
   ACCOUNT_ONLY_FUNCTIONS,
+  DISCIPLER_FUNCTIONS,
   MEMORY_VERSE_FUNCTIONS,
   MEMORY_VERSE_JOBS,
 } from './user-context.ts'
@@ -142,4 +143,22 @@ Deno.test('every client-facing memory verse function requires a full account wit
       `${name} is a job: it must authenticate as service role or with the cron secret`,
     )
   }
+})
+
+const gateWithReason = (reason: string) =>
+  new RegExp(
+    `create(?:Simple|Authenticated)?Function\\(\\s*\\w+\\s*,\\s*\\{(?=[^}]*requireFullAccount:\\s*true)(?=[^}]*accountRequiredReason:\\s*'${reason}')[^}]*\\}`,
+    's',
+  )
+
+Deno.test('every Discipler function requires a full account with reason discipler', async () => {
+  for (const name of DISCIPLER_FUNCTIONS) {
+    const source = await Deno.readTextFile(new URL(`${name}/index.ts`, FUNCTIONS_DIR))
+    assert(gateWithReason('discipler').test(source), `${name} must set requireFullAccount: true and accountRequiredReason: 'discipler'`)
+    assert(ACCOUNT_ONLY_FUNCTIONS.includes(name), `${name} must be in ACCOUNT_ONLY_FUNCTIONS`)
+  }
+  // study-followup authenticates from the query token first, which the factory
+  // gate does not read first, so the handler checks the guest itself too.
+  const followup = await Deno.readTextFile(new URL('study-followup/index.ts', FUNCTIONS_DIR))
+  assert(/if \(userContext\.isGuest\)[\s\S]{0,200}reason: 'discipler'/.test(followup), 'study-followup must refuse guests in the handler')
 })

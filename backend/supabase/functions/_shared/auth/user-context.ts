@@ -48,6 +48,7 @@ export const ACCOUNT_ONLY_FUNCTIONS: readonly string[] = [
   'fellowship-study',
   'voice-conversation',
   'conversation-history',
+  'study-followup',
   'create-subscription',
   'create-subscription-v2',
   'create-standard-subscription',
@@ -72,6 +73,13 @@ export const ACCOUNT_ONLY_FUNCTIONS: readonly string[] = [
   'get-memory-streak',
   'submit-memory-practice',
   'submit-memory-verse-review',
+]
+
+/** Discipler functions (they spend model tokens): account-only, reason `discipler`. */
+export const DISCIPLER_FUNCTIONS: readonly string[] = [
+  'study-followup',
+  'voice-conversation',
+  'conversation-history',
 ]
 
 /** Memory verse functions a client calls: account-only, reason `memory_verses`. */

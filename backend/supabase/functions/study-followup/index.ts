@@ -13,7 +13,7 @@
 import { getPassageGroundingBlock } from '../_shared/services/passage-grounding.ts'
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
-import { AppError } from '../_shared/utils/error-handler.ts'
+import { AppError, ErrorHandler } from '../_shared/utils/error-handler.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
@@ -317,6 +317,16 @@ async function handleStudyFollowUp(
         message: error instanceof Error ? error.message : 'Authentication failed'
       }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Follow-ups are the Discipler and spend model tokens: guests need an
+  // account. The factory gate reads the header token first; this handler
+  // prefers the query token, so the identity it actually uses is checked here.
+  if (userContext.isGuest) {
+    throw ErrorHandler.createAccountRequiredError(
+      'Create an account to ask the Discipler.',
+      { reason: 'discipler' }
     )
   }
 
@@ -867,5 +877,8 @@ async function handleStudyFollowUp(
 // Wrap the handler in the simple function factory (bypasses Kong authentication)
 // Allow both GET (for EventSource) and POST (for regular requests)
 createSimpleFunction(handleStudyFollowUp, {
-  allowedMethods: ['GET', 'POST', 'OPTIONS']
+  allowedMethods: ['GET', 'POST', 'OPTIONS'],
+  // The Discipler needs an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'discipler'
 })
