@@ -2320,6 +2320,7 @@ const Map<String, dynamic> hindiTranslations = {
     'offline_title': 'आप ऑफ़लाइन हैं',
     'loading_topics': 'पाठ लोड हो रहे हैं...',
     'percent_complete': '{percent}% पूर्ण',
+    'lessons_days': '{n} पाठ · {d} दिन',
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
   'topics': {
@@ -2333,7 +2334,6 @@ const Map<String, dynamic> hindiTranslations = {
   'all_paths': {
     'title': 'सभी पथ',
     'count': '{n} पथ',
-    'lessons_days': '{n} पाठ · {d} दिन',
     'all': 'सभी',
     'current': 'वर्तमान',
     'lesson_of': 'पाठ {n}/{total}',

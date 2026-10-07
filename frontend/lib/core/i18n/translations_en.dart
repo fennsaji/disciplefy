@@ -2318,6 +2318,7 @@ const Map<String, dynamic> englishTranslations = {
     'offline_title': "You're offline",
     'loading_topics': 'Loading lessons...',
     'percent_complete': '{percent}% complete',
+    'lessons_days': '{n} lessons · {d} days',
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
   'topics': {
@@ -2331,7 +2332,6 @@ const Map<String, dynamic> englishTranslations = {
   'all_paths': {
     'title': 'All paths',
     'count': '{n} paths',
-    'lessons_days': '{n} lessons · {d} days',
     'all': 'All',
     'current': 'Current',
     'lesson_of': 'Lesson {n} of {total}',

@@ -2414,6 +2414,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'offline_title': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്',
     'loading_topics': 'പാഠങ്ങൾ ലോഡ് ചെയ്യുന്നു...',
     'percent_complete': '{percent}% പൂർത്തിയായി',
+    'lessons_days': '{n} പാഠം · {d} ദിവസം',
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
   'topics': {
@@ -2427,7 +2428,6 @@ const Map<String, dynamic> malayalamTranslations = {
   'all_paths': {
     'title': 'എല്ലാ പാതകളും',
     'count': '{n} പാതകൾ',
-    'lessons_days': '{n} പാഠം · {d} ദിവസം',
     'all': 'എല്ലാം',
     'current': 'ഇപ്പോൾ',
     'lesson_of': 'പാഠം {n}/{total}',

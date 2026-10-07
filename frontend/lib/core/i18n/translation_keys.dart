@@ -1710,9 +1710,9 @@ class TranslationKeys {
   static const learningPathsOfflineTitle = 'learning_paths.offline_title';
   static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
   static const learningPathsPercentComplete = 'learning_paths.percent_complete';
+  static const learningPathsLessonsDays = 'learning_paths.lessons_days';
 
   // Disciple Levels
-  static const learningPathsLessonsDays = 'learning_paths.lessons_days';
   static const discipleLevelSeeker = 'disciple_level.seeker';
   static const discipleLevelBeliever = 'disciple_level.believer';
   static const discipleLevelDisciple = 'disciple_level.disciple';
