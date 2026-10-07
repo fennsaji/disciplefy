@@ -1017,6 +1017,10 @@ const Map<String, dynamic> englishTranslations = {
     'content_language_follows_app': 'Same as app language ({language})',
     'account_actions': 'Account Actions',
     'sign_out': 'Sign Out',
+    'save_progress': 'Save progress to your account',
+    'save_progress_subtitle': 'Keep your lessons on any phone',
+    'guest_note':
+        "You're using a guest account. Progress is saved on this phone.",
     'delete_account': 'Delete Account',
     'delete_account_subtitle': 'Permanently delete your account and data',
     'delete_account_title': 'Delete Account',

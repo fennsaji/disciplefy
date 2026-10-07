@@ -14,6 +14,8 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/utils/lesson_launch.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
 /// Drives the first-run goal screen: saves the language and goal, starts a
 /// guest when nobody is signed in, enrols the goal's path and hands back the
@@ -26,6 +28,7 @@ class FirstRunCubit extends Cubit<FirstRunState> {
   final RolloutFlags _flags;
   final LanguagePreferenceService _language;
   final Box _settings;
+  final WalkthroughRepository _walkthrough;
 
   /// Hive `app_settings` key of the picked goal ([GrowthGoal.name]).
   static const String goalKey = 'first_run_goal';
@@ -46,11 +49,13 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     required RolloutFlags flags,
     required LanguagePreferenceService language,
     required Box settings,
+    required WalkthroughRepository walkthrough,
   })  : _guest = guest,
         _paths = paths,
         _flags = flags,
         _language = language,
         _settings = settings,
+        _walkthrough = walkthrough,
         super(const FirstRunIdle());
 
   /// True when the helper under the title should speak to a guest ("create
@@ -131,7 +136,22 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     }
     Logger.info('First run opens lesson 1',
         tag: 'FIRST_RUN', context: {'goal': goal.name});
+    await _markToursSeen();
     _emit(FirstRunReady(location));
+  }
+
+  /// First run stays quiet: no tour opens before lesson 1 is done. Writes to
+  /// Hive only for a guest. A failure here must not block lesson 1.
+  Future<void> _markToursSeen() async {
+    for (final screen in WalkthroughScreen.values) {
+      try {
+        await _walkthrough.markSeen(screen);
+      } catch (e) {
+        Logger.warning('First run could not mark a tour seen',
+            tag: 'FIRST_RUN',
+            context: {'screen': screen.key, 'error': e.runtimeType.toString()});
+      }
+    }
   }
 
   /// Emits unless the screen (and so the cubit) is already gone.

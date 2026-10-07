@@ -844,6 +844,7 @@ Future<void> initializeDependencies() async {
         flags: sl(),
         language: sl(),
         settings: Hive.box('app_settings'),
+        walkthrough: sl(),
       ));
 
   //! User Profile

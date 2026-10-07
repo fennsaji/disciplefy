@@ -22,6 +22,8 @@ import 'package:disciplefy_bible_study/features/onboarding/presentation/pages/gr
 import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/first_run_choice_row.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
 import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
@@ -31,6 +33,11 @@ class _MockGuest extends Mock implements GuestSessionService {}
 class _MockPaths extends Mock implements LearningPathsRepository {}
 
 class _MockFlags extends Mock implements RolloutFlags {}
+
+class _FakeWalkthrough extends Fake implements WalkthroughRepository {
+  @override
+  Future<void> markSeen(WalkthroughScreen screen) async {}
+}
 
 /// In-memory `app_settings`: real Hive writes do file I/O that never
 /// completes inside a widget test's fake async zone.
@@ -159,6 +166,7 @@ void main() {
                   flags: flags,
                   language: languageService,
                   settings: settings,
+                  walkthrough: _FakeWalkthrough(),
                 ),
                 child: const GrowthGoalPage(),
               ),

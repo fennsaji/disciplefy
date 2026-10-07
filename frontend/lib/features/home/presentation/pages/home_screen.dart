@@ -70,6 +70,7 @@ import 'package:dartz/dartz.dart' show Either;
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
+import '../../../onboarding/domain/first_run_flags.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
@@ -308,7 +309,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// opening over the walkthrough tooltips leaves two overlays fighting for
   /// the same tap. When the walkthrough is still due, the prompt is skipped
   /// for this session and offered on a later open.
+  ///
+  /// Also waits for lesson 1 on the quiet first run (see [FirstRunFlags]);
+  /// existing users are never held back by that.
   Future<bool> _homeWalkthroughDone() async {
+    if (!FirstRunFlags.notificationPromptsAllowed) return false;
     try {
       return await sl<WalkthroughRepository>().hasSeen(WalkthroughScreen.home);
     } catch (_) {

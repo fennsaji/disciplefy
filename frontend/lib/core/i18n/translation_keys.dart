@@ -642,6 +642,9 @@ class TranslationKeys {
       'settings.app_language_description';
   static const settingsAccountActions = 'settings.account_actions';
   static const settingsSignOut = 'settings.sign_out';
+  static const settingsSaveProgress = 'settings.save_progress';
+  static const settingsSaveProgressSubtitle = 'settings.save_progress_subtitle';
+  static const settingsGuestNote = 'settings.guest_note';
   static const settingsDeleteAccount = 'settings.delete_account';
   static const settingsDeleteAccountSubtitle =
       'settings.delete_account_subtitle';

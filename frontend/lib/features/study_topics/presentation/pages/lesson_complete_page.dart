@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +11,7 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lesson_ref.dart';
@@ -58,6 +61,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
   @override
   void initState() {
     super.initState();
+    unawaited(FirstRunFlags.markFirstLessonCompleted());
     sl<LearningPathsRepository>()
         .getLearningPathDetails(
           pathId: widget.args.lesson.pathId,

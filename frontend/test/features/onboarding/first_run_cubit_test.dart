@@ -17,6 +17,8 @@ import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/fir
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
 class _MockGuest extends Mock implements GuestSessionService {}
 
@@ -25,6 +27,11 @@ class _MockPaths extends Mock implements LearningPathsRepository {}
 class _MockFlags extends Mock implements RolloutFlags {}
 
 class _MockLanguage extends Mock implements LanguagePreferenceService {}
+
+class _FakeWalkthrough extends Fake implements WalkthroughRepository {
+  @override
+  Future<void> markSeen(WalkthroughScreen screen) async {}
+}
 
 EnrollmentResult _enrollment(String pathId) => EnrollmentResult(
       id: 'e1',
@@ -110,6 +117,7 @@ void main() {
         flags: flags,
         language: language,
         settings: settings,
+        walkthrough: _FakeWalkthrough(),
       );
 
   group('GrowthGoal', () {

@@ -23,11 +23,13 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/core/utils/platform_utils.dart';
 import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/auth/domain/utils/auth_validator.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
     as auth_states;
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
 import 'package:disciplefy_bible_study/features/feedback/presentation/widgets/feedback_bottom_sheet.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
@@ -207,11 +209,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   Widget _buildSettingsList(BuildContext context, SettingsLoaded state) {
     final authProvider = sl<AuthStateProvider>();
     final isAuthenticated = authProvider.isAuthenticated;
+    final isGuest = _isGuest;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
       children: [
-        if (isAuthenticated) ...[
+        if (isAuthenticated && isGuest) ...[
+          const _GuestNote(),
+          ..._youSection(context),
+        ] else if (isAuthenticated) ...[
           SettingsProfileCard(
             name: authProvider.profileBasedDisplayName,
             email: authProvider.userEmail ??
@@ -231,9 +237,9 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         ],
         ..._preferencesSection(context, state),
         if (isAuthenticated) ..._studySection(context, authProvider),
-        ..._helpSection(context),
+        ..._helpSection(context, isGuest: isGuest),
         ..._aboutSection(context, state),
-        ..._accountSection(context, isAuthenticated),
+        ..._accountSection(context, isAuthenticated, isGuest: isGuest),
       ],
     );
   }
@@ -241,6 +247,16 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   // -------------------------------------------------------------------------
   // Sections
   // -------------------------------------------------------------------------
+
+  /// True for an anonymous (guest) user. False when the service is missing.
+  bool get _isGuest {
+    try {
+      return sl.isRegistered<GuestSessionService>() &&
+          sl<GuestSessionService>().isGuest;
+    } catch (_) {
+      return false;
+    }
+  }
 
   String _userPlan() => currentPlanCode(sl<TokenBloc>().state);
 
@@ -428,7 +444,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     ];
   }
 
-  List<Widget> _helpSection(BuildContext context) => [
+  List<Widget> _helpSection(BuildContext context, {required bool isGuest}) => [
         SettingsSectionLabel(context.tr(TranslationKeys.settingsHelpSupport)),
         SettingsGroup(
           children: [
@@ -438,13 +454,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
               onTap: () => showFeedbackBottomSheet(context),
             ),
-            SettingsRow(
-              icon: Icons.receipt_long_outlined,
-              title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
-              subtitle: context
-                  .tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
-              onTap: () => context.push(AppRoutes.purchaseHistory),
-            ),
+            // A guest has no purchases to report.
+            if (!isGuest)
+              SettingsRow(
+                icon: Icons.receipt_long_outlined,
+                title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
+                subtitle: context
+                    .tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
+                onTap: () => context.push(AppRoutes.purchaseHistory),
+              ),
             SettingsRow(
               icon: Icons.mail_outline_rounded,
               tone: SettingsTone.sky,
@@ -516,18 +534,32 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         ),
       ];
 
-  List<Widget> _accountSection(BuildContext context, bool isAuthenticated) => [
+  List<Widget> _accountSection(BuildContext context, bool isAuthenticated,
+          {required bool isGuest}) =>
+      [
         SettingsSectionLabel(context.tr(TranslationKeys.settingsAccount)),
         SettingsGroup(
           children: [
-            SettingsRow(
-              icon: Icons.block,
-              title: context.tr(TranslationKeys.settingsBlockedUsers),
-              subtitle:
-                  context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
-              onTap: () => context.push(AppRoutes.blockedUsers),
-            ),
-            if (isAuthenticated) ...[
+            // Blocking is for Community, which a guest cannot use.
+            if (!isGuest)
+              SettingsRow(
+                icon: Icons.block,
+                title: context.tr(TranslationKeys.settingsBlockedUsers),
+                subtitle:
+                    context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
+                onTap: () => context.push(AppRoutes.blockedUsers),
+              ),
+            if (isAuthenticated && isGuest)
+              SettingsRow(
+                key: const Key('settings_save_progress'),
+                icon: Icons.cloud_upload_outlined,
+                title: context.tr(TranslationKeys.settingsSaveProgress),
+                subtitle:
+                    context.tr(TranslationKeys.settingsSaveProgressSubtitle),
+                onTap: () => AccountNeededSheet.show(
+                    context, AccountReason.saveProgress),
+              )
+            else if (isAuthenticated) ...[
               SettingsRow(
                 icon: Icons.logout_rounded,
                 title: context.tr(TranslationKeys.settingsSignOut),
@@ -944,5 +976,41 @@ class _ContentLanguageSubtitleState extends State<_ContentLanguageSubtitle> {
             {'language': appLanguage.displayName})
         : _language!.displayName;
     return widget.builder(subtitle);
+  }
+}
+
+/// "You're using a guest account…" line shown in place of the profile card.
+class _GuestNote extends StatelessWidget {
+  const _GuestNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      key: const Key('settings_guest_note'),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.person_outline_rounded, size: 22, color: palette.muted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              context.tr(TranslationKeys.settingsGuestNote),
+              style: AppFonts.inter(
+                fontSize: 14,
+                height: 1.4,
+                color: palette.text,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
