@@ -55,6 +55,8 @@ import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
 import '../../../../core/utils/logger.dart';
 import '../widgets/learning_path_detail_parts.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 
 /// Detail page for a learning path showing topics and progress.
 class LearningPathDetailPage extends StatefulWidget {
@@ -444,6 +446,11 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   _loadPathDetails();
                 }
                 if (state is LearningPathsError) _startAfterEnroll = false;
+                final accountReason =
+                    state is LearningPathsError ? state.accountReason : null;
+                if (accountReason != null) {
+                  _onAccountRequired(accountReason);
+                }
               },
               builder: (context, state) {
                 if (state is LearningPathDetailLoading) {
@@ -451,6 +458,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 }
 
                 if (state is LearningPathsError) {
+                  // A guest who needs an account sees the sheet over the
+                  // path, not an error page.
+                  final shown = _lastLoadedDetail;
+                  if (state.accountReason != null && shown != null) {
+                    return _buildLoadedState(context, shown);
+                  }
                   return _buildErrorState(context, state);
                 }
 
@@ -475,6 +488,16 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         ),
       ),
     );
+  }
+
+  /// Enrolling needs an account (a guest's second or other path): show the
+  /// account-needed sheet, then reload the path so the page is usable again.
+  Future<void> _onAccountRequired(String reason) async {
+    await AccountNeededSheet.show(
+      context,
+      AccountReasons.fromQuery(reason) ?? AccountReason.otherPath,
+    );
+    if (mounted) _loadPathDetails();
   }
 
   Widget _buildTopBar([LearningPathDetail? path]) {

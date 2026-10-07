@@ -178,6 +178,9 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Set when opened as a lesson of a learning path.
   final LessonRef? lesson;
 
+  /// Lesson 1 opened from the first run (`first_run=1`).
+  final bool firstRun;
+
   const StudyGuideScreenV2({
     super.key,
     this.topicId,
@@ -192,6 +195,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.studyMode = StudyMode.standard,
     this.existingGuideData,
     this.lesson,
+    this.firstRun = false,
   });
 
   @override
@@ -210,6 +214,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
           studyMode: studyMode,
           existingGuideData: existingGuideData,
           lesson: lesson,
+          firstRun: firstRun,
         ),
       );
 }
@@ -227,6 +232,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final StudyMode studyMode;
   final Map<String, dynamic>? existingGuideData;
   final LessonRef? lesson;
+  final bool firstRun;
 
   const _StudyGuideScreenV2Content({
     this.topicId,
@@ -241,6 +247,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     required this.studyMode,
     this.existingGuideData,
     this.lesson,
+    this.firstRun = false,
   });
 
   @override
@@ -1842,6 +1849,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         lessonTitle: _getDisplayTitle(),
         mode: widget.studyMode,
         language: widget.language ?? _currentStudyGuide?.language ?? 'en',
+        firstRun: widget.firstRun,
       ),
     );
   }

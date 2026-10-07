@@ -6,6 +6,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_level_style.dart';
 
@@ -30,6 +31,16 @@ class PathListRow extends StatelessWidget {
       '${path.estimatedDays} ${context.tr(TranslationKeys.learningPathsDays)}',
     ].join(' · ');
 
+    return GuestLockedPathTile(
+      path: path,
+      // On the corner of the icon tile.
+      badgeAlignment: Alignment.topLeft,
+      badgePadding: const EdgeInsets.only(left: 42, top: 6),
+      child: _row(context, palette, meta),
+    );
+  }
+
+  Widget _row(BuildContext context, ReaderPalette palette, String meta) {
     return InkWell(
       onTap: onTap,
       child: Padding(

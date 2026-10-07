@@ -29,6 +29,21 @@ import '../../../shared/widgets/app_snackbar.dart';
 import '../../router/app_routes.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_verse_hero.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
+
+/// The account-needed reason for a guest ([guest] true) tapping the tab of
+/// router branch [branchIndex], or null when the tab opens normally. Only
+/// Home and Topics work for a guest.
+AccountReason? guestAccountReasonForBranch(int branchIndex,
+    {required bool guest}) {
+  if (!guest) return null;
+  return switch (branchIndex) {
+    1 => AccountReason.generate,
+    3 => AccountReason.community,
+    4 => AccountReason.discipler,
+    _ => null,
+  };
+}
 
 /// Main App Shell with Bottom Navigation
 ///
@@ -151,6 +166,17 @@ class _AppShellState extends State<AppShell>
   void _onTabChange(int index) {
     // Map the visible tab index to the actual branch index
     final branchIndex = _mapTabIndexToBranchIndex(index);
+
+    // A guest tapping an account-only tab gets the account-needed sheet and
+    // stays where they are. Once they have an account, the tab opens.
+    final accountReason =
+        guestAccountReasonForBranch(branchIndex, guest: AccountGate.isActive);
+    if (accountReason != null) {
+      requireAccount(context, accountReason).then((linked) {
+        if (linked && mounted) _onTabChange(index);
+      });
+      return;
+    }
 
     // Already on this tab and not waiting for anything. Re-tapping Home
     // scrolls it back to the top, as users expect from a tab bar.

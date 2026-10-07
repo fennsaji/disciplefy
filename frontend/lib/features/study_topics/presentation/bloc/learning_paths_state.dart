@@ -201,13 +201,19 @@ class LearningPathsError extends LearningPathsState {
   /// Whether this was an initial load error (vs. refresh error)
   final bool isInitialLoadError;
 
+  /// Set when a guest needs an account first (`ACCOUNT_REQUIRED`): the
+  /// server's reason, such as `second_path` or `other_path`. The page shows
+  /// the account-needed sheet instead of an error.
+  final String? accountReason;
+
   const LearningPathsError({
     required this.message,
     this.isInitialLoadError = true,
+    this.accountReason,
   });
 
   @override
-  List<Object?> get props => [message, isInitialLoadError];
+  List<Object?> get props => [message, isInitialLoadError, accountReason];
 }
 
 /// Empty state when no paths are available.

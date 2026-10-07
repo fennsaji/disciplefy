@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lea
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_list_row.dart';
@@ -161,7 +162,10 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
 
   /// Same navigation as the Topics tab: push the detail page and refetch
   /// only when it reports that progress changed.
-  Future<void> _openPath(LearningPath path) async {
+  Future<void> _openPath(LearningPath path) =>
+      guestPathGate(context, path, () => _pushPath(path));
+
+  Future<void> _pushPath(LearningPath path) async {
     if (_isNavigating) return;
     _isNavigating = true;
     final bloc = _bloc;

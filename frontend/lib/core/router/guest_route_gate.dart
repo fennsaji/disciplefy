@@ -1,6 +1,7 @@
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
+import 'package:disciplefy_bible_study/features/auth/domain/entities/account_reason.dart';
 
 /// Why a guest was stopped: the value of the `account` query parameter on
 /// Home, which opens the "account needed" sheet.
@@ -10,9 +11,14 @@ class AccountReasons {
   static const String community = 'community';
   static const String memoryVerses = 'memory_verses';
   static const String otherPath = 'other_path';
+  static const String secondPath = 'second_path';
 
   /// Query parameter on [AppRoutes.home] that carries the reason.
   static const String queryParam = 'account';
+
+  /// The reason carried by Home's `?account=` value, or null when absent.
+  static AccountReason? fromQuery(String? value) =>
+      AccountReason.fromWire(value);
 }
 
 /// Routes a guest (Supabase anonymous user) may not open.

@@ -46,6 +46,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/for_you_learning_paths_section.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
@@ -746,7 +747,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   Future<void> _navigateToLearningPath(LearningPath path) {
     Logger.debug(
         '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
-    return _navigateToPathId(path.id);
+    return guestPathGate(context, path, () => _navigateToPathId(path.id));
   }
 
   /// Navigate to learning path detail page.

@@ -38,6 +38,9 @@ import '../../features/settings/presentation/pages/offline_guides_screen.dart';
 import '../../features/community/presentation/screens/blocked_users_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/domain/entities/lesson_ref.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_query_listener.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/guest_lesson_nudge.dart';
 import '../../features/study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
@@ -208,7 +211,13 @@ class AppRouter {
                   child: BlocProvider<MemoryVerseBloc>(
                     create: (_) =>
                         sl<MemoryVerseBloc>()..add(const LoadDueVerses()),
-                    child: const HomeScreen(),
+                    // `?account=<reason>` (a guest stopped by the route
+                    // gate) opens the account-needed sheet once.
+                    child: AccountQueryListener(
+                      reason:
+                          state.uri.queryParameters[AccountReasons.queryParam],
+                      child: const HomeScreen(),
+                    ),
                   ),
                 ),
               ),
@@ -1233,7 +1242,21 @@ class AppRouter {
             );
           }
           return slideRightTransitionPage(
-            child: MaxWidthWrapper(child: LessonCompletePage(args: args)),
+            child: MaxWidthWrapper(
+              child: LessonCompletePage(
+                args: args,
+                // Guest sign-up nudges (renders nothing for a full account).
+                extraSections: [
+                  GuestLessonNudge(
+                    pathId: args.lesson.pathId,
+                    lessonNumber: args.lesson.lessonNumber,
+                    isLastLesson: args.lesson.isLast,
+                    firstRun: args.firstRun,
+                    language: args.language,
+                  ),
+                ],
+              ),
+            ),
             state: state,
           );
         },
@@ -1279,6 +1302,9 @@ class AppRouter {
                 navigationSource: navigationSource,
                 studyMode: studyMode,
                 lesson: lesson,
+                firstRun:
+                    state.uri.queryParameters[FirstRunCubit.firstRunParam] ==
+                        '1',
               ),
             ),
             state: state,

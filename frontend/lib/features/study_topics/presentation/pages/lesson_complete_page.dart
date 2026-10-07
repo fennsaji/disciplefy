@@ -22,11 +22,15 @@ class LessonCompleteArgs {
   final StudyMode mode;
   final String language;
 
+  /// Lesson 1 opened from the first run (`first_run=1`).
+  final bool firstRun;
+
   const LessonCompleteArgs({
     required this.lesson,
     required this.lessonTitle,
     required this.mode,
     required this.language,
+    this.firstRun = false,
   });
 }
 

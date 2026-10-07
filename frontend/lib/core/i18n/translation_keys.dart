@@ -3647,4 +3647,32 @@ class TranslationKeys {
   static const goalHopeHardTimes = 'goal.hope_hard_times';
   static const goalReadGospel = 'goal.read_gospel';
   static const goalUnderstandGospel = 'goal.understand_gospel';
+
+  // Guest "account needed" sheet and sign-up nudges.
+  static const accountSaveProgressTitle = 'account.save_progress_title';
+  static const accountPathFinishedTitle = 'account.path_finished_title';
+  static const accountContinueGoogle = 'account.continue_google';
+  static const accountContinueApple = 'account.continue_apple';
+  static const accountContinueEmail = 'account.continue_email';
+  static const accountNotNow = 'account.not_now';
+  static const accountContinueGuest = 'account.continue_guest';
+  static const accountGroupsTitle = 'account.groups_title';
+  static const accountDisciplerTitle = 'account.discipler_title';
+  static const accountSecondPathTitle = 'account.second_path_title';
+  static const accountGenerateTitle = 'account.generate_title';
+  static const accountMemoryVersesTitle = 'account.memory_verses_title';
+  static const accountGenericTitle = 'account.generic_title';
+  static const accountBody = 'account.body';
+  static const accountBenefitMoves = 'account.benefit_moves';
+  static const accountBenefitPaths = 'account.benefit_paths';
+  static const accountBenefitGroups = 'account.benefit_groups';
+  static const accountCheckEmail = 'account.check_email';
+  static const accountKeepDaysSafe = 'account.keep_days_safe';
+  static const accountKeepCta = 'account.keep_cta';
+  static const accountNextPaths = 'account.next_paths';
+  static const accountSignUpToStart = 'account.sign_up_to_start';
+  static const accountLessonsCount = 'account.lessons_count';
+  static const accountMergePending = 'account.merge_pending';
+  static const accountLinkFailed = 'account.link_failed';
+  static const accountDismiss = 'account.dismiss';
 }

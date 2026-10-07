@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/extensions/translation_extension.dar
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_level_style.dart';
 
@@ -169,7 +170,11 @@ class LearningPathCard extends StatelessWidget {
           child: InkWell(
             borderRadius: radius,
             onTap: onTap,
-            child: tile,
+            child: GuestLockedPathTile(
+              path: path,
+              badgePadding: const EdgeInsets.all(10),
+              child: tile,
+            ),
           ),
         ),
       ),

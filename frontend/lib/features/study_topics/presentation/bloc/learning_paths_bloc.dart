@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
+import 'package:disciplefy_bible_study/core/error/account_required.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
@@ -195,6 +196,10 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       (failure) => emit(LearningPathsError(
         message: ErrorMessageSanitizer.sanitize(failure),
         isInitialLoadError: false,
+        accountReason: isAccountRequired(failure)
+            ? (failure is AccountRequiredFailure ? failure.reason : null) ??
+                'other_path'
+            : null,
       )),
       (enrollment) => emit(LearningPathEnrolled(enrollment: enrollment)),
     );
