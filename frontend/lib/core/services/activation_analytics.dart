@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -51,6 +54,21 @@ class ActivationAnalytics {
 
   /// One id per app launch, shared by every event of that launch.
   static final String appSessionId = const Uuid().v4();
+
+  /// Fire-and-forget [track] on the registered service, for hook points in
+  /// the UI. Does nothing when no service is registered (tests, early start)
+  /// and never throws.
+  static void maybeTrack(NuxEvent e, [Map<String, Object?> data = const {}]) {
+    try {
+      final locator = GetIt.instance;
+      if (!locator.isRegistered<ActivationAnalytics>()) return;
+      unawaited(locator<ActivationAnalytics>().track(e, data).catchError(
+          (Object err) =>
+              Logger.warning('[ActivationAnalytics] track failed: $err')));
+    } catch (err) {
+      Logger.warning('[ActivationAnalytics] maybeTrack failed: $err');
+    }
+  }
 
   final SupabaseClient _client;
   final Box<dynamic> _queue;
@@ -124,12 +142,13 @@ class ActivationAnalytics {
     }
   }
 
-  /// Sends `nux.first_open` once per install.
-  Future<void> trackFirstOpenOnce() async {
+  /// Sends `nux.first_open` with [data] once per install.
+  Future<void> trackFirstOpenOnce(
+      [Map<String, Object?> data = const {}]) async {
     try {
       if (_queue.get(_firstOpenFlag) == true) return;
       await _queue.put(_firstOpenFlag, true);
-      await track(NuxEvent.firstOpen);
+      await track(NuxEvent.firstOpen, data);
     } catch (err) {
       Logger.warning('[ActivationAnalytics] first open failed: $err');
     }

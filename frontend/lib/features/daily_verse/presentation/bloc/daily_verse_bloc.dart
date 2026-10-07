@@ -13,6 +13,7 @@ import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
 import '../../../../core/utils/logger.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 
 /// BLoC for managing daily verse state and operations
 class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
@@ -39,6 +40,10 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   /// Local calendar day the streak was last marked from this bloc.
   DateTime? _streakMarkedOn;
   String? _streakMarkedFor;
+
+  /// Local day and user of the last `nux.verse_viewed`, sent once per day.
+  DateTime? _viewTrackedOn;
+  String? _viewTrackedFor;
 
   static DateTime _localDay(DateTime t) => DateTime(t.year, t.month, t.day);
 
@@ -420,6 +425,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     // only the first one each local day reaches the server. A failed call
     // leaves the day unmarked so the next read retries.
     final today = _localDay(DateTime.now());
+    if (!event.fromLesson) _trackVerseView(today, currentState.streak?.userId);
     // Keyed by user too: the bloc is app-wide and outlives a sign-out.
     if (_streakMarkedOn == today &&
         _streakMarkedFor == currentState.streak?.userId) {
@@ -443,6 +449,14 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       Logger.warning(
           '[DAILY_VERSE] Streak not updated (${e.runtimeType}); will retry');
     }
+  }
+
+  /// Reports the first verse read of [today] for [userId].
+  void _trackVerseView(DateTime today, String? userId) {
+    if (_viewTrackedOn == today && _viewTrackedFor == userId) return;
+    _viewTrackedOn = today;
+    _viewTrackedFor = userId;
+    ActivationAnalytics.maybeTrack(NuxEvent.verseViewed, {'source': 'home'});
   }
 
   /// Check if milestone reached or streak lost, and send notification

@@ -2,10 +2,15 @@ import 'dart:convert';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_you_scheduler.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_you_cubit.dart';
+
+import '../../../../helpers/mock_activation_analytics.dart';
 
 final t0 = DateTime(2026, 10, 6);
 const all = {
@@ -139,4 +144,50 @@ void main() {
     act: (c) => c.load('u1', e()),
     expect: () => [NewForYouKind.paths],
   );
+
+  group('activation analytics', () {
+    late MockActivationAnalytics analytics;
+
+    setUp(() => analytics = registerMockAnalytics());
+    tearDown(() async => sl.reset());
+
+    test('an impression is sent once per kind per day', () async {
+      final c = build();
+      await c.load('u1', e());
+      await c.load('u1', e());
+      // A new launch the same day remembers it.
+      await build().load('u1', e());
+      verify(() => analytics.track(NuxEvent.nfyImpression, {'kind': 'paths'}))
+          .called(1);
+
+      now = t0.add(const Duration(days: 1));
+      await build().load('u1', e());
+      verify(() => analytics.track(NuxEvent.nfyImpression, {'kind': 'paths'}))
+          .called(1);
+    });
+
+    test('no banner, no impression', () async {
+      await build().load('u1', e(lesson: false));
+      verifyNever(() => analytics.track(any(), any()));
+    });
+
+    test('tap and dismiss carry the kind', () async {
+      final c = build();
+      await c.load('u1', e());
+      await c.opened();
+      verify(() => analytics.track(NuxEvent.nfyTap, {'kind': 'paths'}))
+          .called(1);
+
+      final d = build();
+      await d.load('u2', e());
+      await d.dismiss();
+      verify(() => analytics.track(NuxEvent.nfyDismiss, {'kind': 'paths'}))
+          .called(1);
+    });
+
+    test('tap with no banner sends nothing', () async {
+      await build().opened();
+      verifyNever(() => analytics.track(any(), any()));
+    });
+  });
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_you_scheduler.dart';
 
@@ -26,6 +27,10 @@ class NewForYouCubit extends Cubit<NewForYouKind?> {
 
   static String keyFor(String userId) => 'new_for_you_v1_$userId';
 
+  /// Local day (yyyy-MM-dd) [kind]'s banner was last reported as seen.
+  static String impressionKeyFor(String userId, NewForYouKind kind) =>
+      'new_for_you_seen_v1_${userId}_${kind.name}';
+
   /// Reads [userId]'s schedule, picks the banner for now and, when it is
   /// shown for the first time, records when.
   Future<void> load(String userId, NewForYouEligibility e) async {
@@ -39,18 +44,37 @@ class NewForYouCubit extends Cubit<NewForYouKind?> {
       );
       await _save();
     }
+    if (kind != null) await _reportImpression(userId, kind, now);
     if (!isClosed && kind != state) emit(kind);
   }
 
   /// The person closed the banner. It never returns.
-  Future<void> dismiss() => _markDone();
+  Future<void> dismiss() => _markDone(NuxEvent.nfyDismiss);
 
   /// The person opened the banner's introduction. It never returns.
-  Future<void> opened() => _markDone();
+  Future<void> opened() => _markDone(NuxEvent.nfyTap);
 
-  Future<void> _markDone() async {
+  /// Sends `nux.nfy_impression` for [kind] once per local day.
+  Future<void> _reportImpression(
+      String userId, NewForYouKind kind, DateTime now) async {
+    final day = '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    final key = impressionKeyFor(userId, kind);
+    try {
+      if (_prefs.getString(key) == day) return;
+      await _prefs.setString(key, day);
+    } catch (e) {
+      Logger.warning('Could not save New for you impression day',
+          tag: 'NEW_FOR_YOU', context: {'error': e.runtimeType.toString()});
+    }
+    ActivationAnalytics.maybeTrack(NuxEvent.nfyImpression, {'kind': kind.name});
+  }
+
+  Future<void> _markDone(NuxEvent event) async {
     final kind = state;
     if (kind == null || _userId == null) return;
+    ActivationAnalytics.maybeTrack(event, {'kind': kind.name});
     _state = _state.copyWith(done: {..._state.done, kind});
     await _save();
     if (!isClosed) emit(null);

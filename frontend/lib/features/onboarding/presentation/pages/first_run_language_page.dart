@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
@@ -79,6 +80,8 @@ class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
 
   Future<void> _continue() async {
     setState(() => _saving = true);
+    ActivationAnalytics.maybeTrack(
+        NuxEvent.languageSelected, {'language': _selected.code});
     await _save();
     if (!mounted) return;
     setState(() => _saving = false);

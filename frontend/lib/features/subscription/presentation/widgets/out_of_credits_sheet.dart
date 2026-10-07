@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
 import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
@@ -27,13 +28,16 @@ class OutOfCreditsSheet extends StatelessWidget {
     BuildContext context, {
     required TokenStatus status,
     required int needed,
-  }) =>
-      showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (_) => OutOfCreditsSheet(status: status, needed: needed),
-      );
+  }) {
+    ActivationAnalytics.maybeTrack(NuxEvent.creditWarningShown,
+        {'needed': needed, 'have': status.totalTokens});
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => OutOfCreditsSheet(status: status, needed: needed),
+    );
+  }
 
   static const double _buttonHeight = 40;
 

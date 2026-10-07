@@ -25,6 +25,9 @@ import 'package:disciplefy_bible_study/features/study_topics/domain/repositories
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
+
+import '../../helpers/mock_activation_analytics.dart';
 import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
@@ -108,8 +111,10 @@ void main() {
   late _MockGuest guest;
   late _MockPaths paths;
   late _MockFlags flags;
+  late MockActivationAnalytics analytics;
 
   setUp(() async {
+    analytics = registerMockAnalytics();
     settings = _MemoryBox();
     translations = FakeTranslationService();
     languageService = FakeLanguagePreferenceService();
@@ -244,6 +249,9 @@ void main() {
 
       expect(languageService.saved, [AppLanguage.malayalam]);
       expect(find.byType(GrowthGoalPage), findsOneWidget);
+      verify(() =>
+              analytics.track(NuxEvent.languageSelected, {'language': 'ml'}))
+          .called(1);
     });
 
     for (final key in ['first_run_log_in_top', 'first_run_log_in_bottom']) {
@@ -355,6 +363,9 @@ void main() {
       expect(query['mode'], 'quick');
       expect(query['lesson_number'], '1');
       expect(query['first_run'], '1');
+      verify(() =>
+              analytics.track(NuxEvent.goalSelected, {'goal': 'readGospel'}))
+          .called(1);
     });
 
     testWidgets('an enrol failure shows a short message; Try again recovers',

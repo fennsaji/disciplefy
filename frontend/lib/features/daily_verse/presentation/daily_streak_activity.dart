@@ -24,7 +24,7 @@ Future<void> countLessonTowardStreak(BuildContext context) async {
   }
 
   if (bloc != null && bloc.state is DailyVerseLoaded) {
-    bloc.add(const MarkVerseAsViewed());
+    bloc.add(const MarkVerseAsViewed(fromLesson: true));
     return;
   }
 

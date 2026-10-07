@@ -18,6 +18,7 @@ import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
 import '../utils/notification_prompt_policy.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 
 /// Types of notification prompts that can be shown
 enum NotificationPromptType {
@@ -330,6 +331,11 @@ class _NotificationEnableSheet extends StatelessWidget {
       granted = await notificationService
           .requestPermissions()
           .catchError((_) => false);
+    }
+
+    if (granted) {
+      ActivationAnalytics.maybeTrack(
+          NuxEvent.reminderOptIn, {'type': type.name});
     }
 
     if (!context.mounted) return;

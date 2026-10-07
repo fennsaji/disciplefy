@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/oauth_service.dart';
@@ -11,6 +13,8 @@ import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../helpers/mock_activation_analytics.dart';
 
 class MockGoTrueClient extends Mock implements GoTrueClient {}
 
@@ -665,6 +669,76 @@ void main() {
 
       expect(await service.linkGoogle(), LinkOutcome.linked);
       expect(GuestMarker.wasGuest, isFalse);
+    });
+  });
+
+  group('activation analytics', () {
+    late MockActivationAnalytics analytics;
+
+    setUp(() {
+      analytics = registerMockAnalytics();
+      when(() => auth.currentUser).thenReturn(fakeUser(anon: true));
+      when(() => auth.currentSession)
+          .thenReturn(fakeSession(anon: true, token: 'guest.jwt'));
+    });
+
+    tearDown(() async => sl.reset());
+
+    test('a linked Google identity is a sign-up from a guest', () async {
+      when(() => oauth.obtainGoogleIdToken()).thenAnswer(
+          (_) async => (idToken: 'id', accessToken: 'at', nonce: null));
+      when(() => auth.linkIdentityWithIdToken(
+                provider: OAuthProvider.google,
+                idToken: 'id',
+                accessToken: 'at',
+              ))
+          .thenAnswer(
+              (_) async => AuthResponse(session: fakeSession(anon: false)));
+
+      expect(await service.linkGoogle(), LinkOutcome.linked);
+      verify(() => analytics.track(NuxEvent.signupCompleted,
+          {'method': 'google', 'from_guest': true})).called(1);
+    });
+
+    test('an email merged into an existing account is reported', () async {
+      when(() => auth.updateUser(any())).thenThrow(const AuthException(
+          'A user with this email address has already been registered',
+          statusCode: '422',
+          code: 'email_exists'));
+      when(() => auth.signInWithPassword(email: 'a@b.c', password: 'Secret123'))
+          .thenAnswer(
+              (_) async => AuthResponse(session: fakeSession(anon: false)));
+      when(() => functions.invoke('user-profile?action=merge_guest',
+              headers: {'x-guest-token': 'guest.jwt'}))
+          .thenAnswer((_) async => FunctionResponse(status: 200));
+
+      expect(
+          await service.linkEmail(
+              email: 'a@b.c', password: 'Secret123', fullName: 'Ann'),
+          LinkOutcome.mergedIntoExisting);
+      verify(() => analytics.track(NuxEvent.signupCompleted,
+          {'method': 'email', 'from_guest': true})).called(1);
+    });
+
+    test('a cancelled link reports nothing', () async {
+      when(() => oauth.obtainAppleIdToken()).thenThrow(
+          const SignInWithAppleAuthorizationException(
+              code: AuthorizationErrorCode.canceled, message: ''));
+
+      expect(await service.linkApple(), LinkOutcome.cancelled);
+      verifyNever(() => analytics.track(any(), any()));
+    });
+
+    test('a link resolved after a web redirect is reported', () async {
+      stash.value = PendingGuestMerge(
+          guestToken: jwtExpiringIn(const Duration(hours: 1)),
+          guestUserId: 'guest-id',
+          provider: 'apple');
+      when(() => auth.currentUser).thenReturn(fakeUser(anon: false));
+
+      expect(await service.resumePendingLink(), LinkOutcome.linked);
+      verify(() => analytics.track(NuxEvent.signupCompleted,
+          {'method': 'apple', 'from_guest': true})).called(1);
     });
   });
 }

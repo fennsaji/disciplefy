@@ -1,13 +1,17 @@
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/out_of_credits_sheet.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 
+import '../../../../helpers/mock_activation_analytics.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -80,6 +84,36 @@ void main() {
     await tester.tap(find.text('go'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('showing the sheet reports a credit warning', (tester) async {
+    final analytics = registerMockAnalytics();
+    addTearDown(() => sl.unregister<ActivationAnalytics>());
+    await open(tester, tokenStatus(total: 5));
+    verify(() => analytics.track(
+        NuxEvent.creditWarningShown, {'needed': 20, 'have': 5})).called(1);
+  });
+
+  testWidgets('the insufficient credits dialog reports a credit warning',
+      (tester) async {
+    final analytics = registerMockAnalytics();
+    addTearDown(() => sl.unregister<ActivationAnalytics>());
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.lightTheme,
+      home: Scaffold(
+        body: Builder(
+          builder: (c) => TextButton(
+            onPressed: () => InsufficientTokensDialog.show(c,
+                tokenStatus: tokenStatus(total: 3), requiredTokens: 10),
+            child: const Text('go'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('go'));
+    await tester.pump();
+    verify(() => analytics.track(
+        NuxEvent.creditWarningShown, {'needed': 10, 'have': 3})).called(1);
+  });
 
   testWidgets('header and sheet agree', (tester) async {
     await open(tester, tokenStatus(total: 5));

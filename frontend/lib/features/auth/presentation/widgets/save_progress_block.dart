@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_link_panel.dart';
@@ -72,7 +73,11 @@ class SaveProgressBlock extends StatelessWidget {
                 if (onNotNow != null)
                   TextButton(
                     key: const Key('save_progress_not_now'),
-                    onPressed: onNotNow,
+                    onPressed: () {
+                      ActivationAnalytics.maybeTrack(
+                          NuxEvent.guestContinued, {'source': 'save_progress'});
+                      onNotNow!();
+                    },
                     style: TextButton.styleFrom(
                       foregroundColor: palette.muted,
                       minimumSize: const Size.fromHeight(40),

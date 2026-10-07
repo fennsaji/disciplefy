@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
@@ -55,8 +56,17 @@ class _GrowthGoalPageState extends State<GrowthGoalPage> {
     });
   }
 
-  void _start() =>
-      context.read<FirstRunCubit>().startLessonOne(_selected, _language);
+  /// Goal last reported as picked, so Try again does not report it twice.
+  GrowthGoal? _trackedGoal;
+
+  void _start() {
+    if (_trackedGoal != _selected) {
+      _trackedGoal = _selected;
+      ActivationAnalytics.maybeTrack(
+          NuxEvent.goalSelected, {'goal': _selected.name});
+    }
+    context.read<FirstRunCubit>().startLessonOne(_selected, _language);
+  }
 
   void _skip() => context.read<FirstRunCubit>().skip(_language);
 

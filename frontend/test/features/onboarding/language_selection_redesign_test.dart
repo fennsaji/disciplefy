@@ -8,14 +8,21 @@ import 'package:disciplefy_bible_study/core/services/language_preference_service
 import 'package:disciplefy_bible_study/features/onboarding/presentation/pages/language_selection_screen.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/language_selection_card.dart';
 
+import 'package:mocktail/mocktail.dart';
+
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
+
+import '../../helpers/mock_activation_analytics.dart';
 import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
 void main() {
   late FakeTranslationService translations;
   late FakeLanguagePreferenceService languageService;
+  late MockActivationAnalytics analytics;
 
   setUp(() {
+    analytics = registerMockAnalytics();
     translations = FakeTranslationService();
     languageService = FakeLanguagePreferenceService();
     sl.registerSingleton<TranslationService>(translations);
@@ -84,6 +91,8 @@ void main() {
 
     expect(languageService.saved, [AppLanguage.malayalam]);
     expect(find.text('stub:/'), findsOneWidget);
+    verify(() => analytics.track(NuxEvent.languageSelected, {'language': 'ml'}))
+        .called(1);
   });
 
   testWidgets('Skip for now saves English and goes home', (tester) async {

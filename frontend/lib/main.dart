@@ -45,6 +45,7 @@ import 'package:disciplefy_bible_study/features/gamification/presentation/utils/
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/locale_service.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'core/services/font_scale_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/system_config_service.dart';
@@ -160,6 +161,8 @@ void main() async {
     // Initialize connectivity sync service (flushes queues on reconnect)
     sl<ConnectivitySyncService>().initialize();
 
+    _trackFirstOpen();
+
     // Everything the first frame reads. Each step touches its own Hive box or
     // SharedPreferences key (and the remote configs serve their cache without
     // waiting for the network), so they run in parallel.
@@ -234,6 +237,19 @@ void main() async {
     }
 
     runApp(const ErrorApp());
+  }
+}
+
+/// Sends `nux.first_open` once per install with the device language. Never
+/// throws and never delays startup.
+void _trackFirstOpen() {
+  try {
+    final language =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    unawaited(
+        sl<ActivationAnalytics>().trackFirstOpenOnce({'language': language}));
+  } catch (e) {
+    Logger.warning('[MAIN] first open not tracked: ${e.runtimeType}');
   }
 }
 

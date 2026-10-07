@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/popup.dart';
 import '../../../tokens/domain/entities/token_status.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 
 /// Daily credit allowance per plan, mirroring `subscription_plans.daily_tokens`
 /// in the database.
@@ -46,6 +47,10 @@ class InsufficientTokensDialog extends StatelessWidget {
     required TokenStatus tokenStatus,
     int? requiredTokens,
   }) {
+    ActivationAnalytics.maybeTrack(NuxEvent.creditWarningShown, {
+      if (requiredTokens != null) 'needed': requiredTokens,
+      'have': tokenStatus.totalTokens,
+    });
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => InsufficientTokensDialog(

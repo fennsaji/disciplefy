@@ -92,6 +92,7 @@ import '../../../../core/utils/share_links.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/services/lesson_completion_refresh.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/lesson_events.dart';
 
 /// Lightens a color for better contrast in dark mode
 Color _lightenColor(Color color, [double amount = 0.2]) {
@@ -260,6 +261,15 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
 
 class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     with RouteAware {
+  /// Start and completion analytics of a path lesson; null for other guides.
+  late final LessonEventTracker? _lessonEvents = widget.lesson == null
+      ? null
+      : LessonEventTracker(
+          lesson: widget.lesson!,
+          mode: widget.studyMode,
+          firstRun: widget.firstRun,
+        );
+
   final TextEditingController _notesController = TextEditingController();
   final FocusNode _notesFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
@@ -1238,6 +1248,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// This is called at the beginning of study guide generation when a topicId
   /// is present (e.g., from recommended topics or notifications).
   Future<void> _startTopicProgress() async {
+    _lessonEvents?.started();
     final topicId = widget.topicId;
     if (topicId == null || topicId.isEmpty) {
       return;
@@ -1968,6 +1979,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           // A finished lesson counts toward the daily streak, like reading
           // the verse of the day (once per day either way).
           if (mounted) unawaited(countLessonTowardStreak(context));
+          _lessonEvents?.completed();
 
           if (kDebugMode) {
             Logger.debug('✅ [TOPIC_PROGRESS] Topic completed successfully:');

@@ -14,6 +14,7 @@ import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/guest_session_service.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/signup_analytics.dart';
 import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/usecases/clear_user_data_usecase.dart';
@@ -263,6 +264,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           // Invalidate router cache since auth status changed
           RouterGuard.invalidateLanguageSelectionCache();
 
+          trackSignupIfNew(user, 'google');
+
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
@@ -303,6 +306,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
               await _retryOperation(() => _getProfileWithCache(user.id));
 
           RouterGuard.invalidateLanguageSelectionCache();
+
+          trackSignupIfNew(user, 'apple');
 
           emit(auth_states.AuthenticatedState(
             user: user,
@@ -373,6 +378,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
               await _retryOperation(() => _getProfileWithCache(user.id));
           Logger.debug(
               '🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
+
+          trackSignupIfNew(user, 'google');
 
           Logger.debug('🔐 [AUTH BLOC] ✅ Emitting AuthenticatedState...');
           // Invalidate router cache since auth status changed
@@ -732,6 +739,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
           // Invalidate router cache since auth status changed
           RouterGuard.invalidateLanguageSelectionCache();
+
+          trackSignupCompleted('email', fromGuest: false);
 
           emit(auth_states.AuthenticatedState(
             user: user,

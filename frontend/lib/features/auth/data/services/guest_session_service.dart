@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:disciplefy_bible_study/features/auth/data/services/signup_analytics.dart';
 import 'package:disciplefy_bible_study/core/router/router_guard.dart';
 import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
@@ -185,12 +186,23 @@ class GuestSessionService {
   }
 
   /// Links Google to the guest (native ID token on mobile, redirect on web).
-  Future<LinkOutcome> linkGoogle() =>
-      _linkProvider(OAuthProvider.google, _oauth.obtainGoogleIdToken);
+  Future<LinkOutcome> linkGoogle() async => _reported(
+      await _linkProvider(OAuthProvider.google, _oauth.obtainGoogleIdToken),
+      OAuthProvider.google.name);
 
   /// Links Apple to the guest (native ID token on iOS, redirect on web).
-  Future<LinkOutcome> linkApple() =>
-      _linkProvider(OAuthProvider.apple, _oauth.obtainAppleIdToken);
+  Future<LinkOutcome> linkApple() async => _reported(
+      await _linkProvider(OAuthProvider.apple, _oauth.obtainAppleIdToken),
+      OAuthProvider.apple.name);
+
+  /// Reports a guest that became (or joined) a full account as a sign-up.
+  LinkOutcome _reported(LinkOutcome outcome, String method) {
+    if (outcome == LinkOutcome.linked ||
+        outcome == LinkOutcome.mergedIntoExisting) {
+      trackSignupCompleted(method, fromGuest: true);
+    }
+    return outcome;
+  }
 
   Future<LinkOutcome> _linkProvider(
     OAuthProvider provider,
@@ -248,6 +260,16 @@ class GuestSessionService {
   /// When the email already belongs to an account, signs in to it with
   /// [password] and merges the guest's progress into it.
   Future<LinkOutcome> linkEmail({
+    required String email,
+    required String password,
+    required String fullName,
+  }) async =>
+      _reported(
+          await _linkEmail(
+              email: email, password: password, fullName: fullName),
+          'email');
+
+  Future<LinkOutcome> _linkEmail({
     required String email,
     required String password,
     required String fullName,
@@ -327,7 +349,12 @@ class GuestSessionService {
   Future<LinkOutcome?> resumePendingLink({Uri? callbackUri}) async {
     final pending = await _stash.read();
     if (pending == null) return null;
+    final outcome = await _resume(pending, callbackUri);
+    return outcome == null ? null : _reported(outcome, pending.provider);
+  }
 
+  Future<LinkOutcome?> _resume(
+      PendingGuestMerge pending, Uri? callbackUri) async {
     final user = _auth.currentUser;
     if (user == null) {
       Logger.debug('[GUEST] Pending link kept: no session yet');

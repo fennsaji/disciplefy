@@ -147,6 +147,13 @@ void main() {
     verify(() => table.insert(any())).called(1);
   });
 
+  test('first_open carries its data', () async {
+    when(() => auth.currentUser).thenReturn(user('u1'));
+    await a.trackFirstOpenOnce({'language': 'hi'});
+    final row = verify(() => table.insert(captureAny())).captured.single as Map;
+    expect((row['event_data'] as Map)['language'], 'hi');
+  });
+
   test('never throws when client or box throws', () async {
     when(() => client.auth).thenThrow(Exception('boom'));
     await a.track(NuxEvent.firstOpen);

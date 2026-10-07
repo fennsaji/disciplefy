@@ -4,6 +4,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
@@ -89,6 +90,8 @@ class AccountNeededSheet extends StatefulWidget {
   static Future<bool> show(BuildContext context, AccountReason reason) {
     final open = _open;
     if (open != null) return open;
+    ActivationAnalytics.maybeTrack(
+        NuxEvent.accountNeededShown, {'reason': reason.wireValue});
     late final Future<bool> future;
     future = showModalBottomSheet<bool>(
       context: context,
@@ -185,7 +188,13 @@ class _AccountNeededSheetState extends State<AccountNeededSheet> {
               const SizedBox(height: 4),
               TextButton(
                 key: const Key('account_continue_guest'),
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () {
+                  ActivationAnalytics.maybeTrack(NuxEvent.guestContinued, {
+                    'source': 'account_sheet',
+                    'reason': reason.wireValue,
+                  });
+                  Navigator.of(context).pop(false);
+                },
                 style: TextButton.styleFrom(
                   foregroundColor: palette.muted,
                   minimumSize: const Size.fromHeight(40),

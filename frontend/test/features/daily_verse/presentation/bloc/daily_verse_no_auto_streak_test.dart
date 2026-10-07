@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/usecases/usecase.dart';
 import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_entity.dart';
@@ -17,6 +19,8 @@ import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/da
 import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../../helpers/mock_activation_analytics.dart';
 
 class _MockGetDailyVerse extends Mock implements GetDailyVerse {}
 
@@ -106,7 +110,14 @@ void main() {
         .thenAnswer((_) async => _streak(3));
   });
 
-  tearDown(() => languageChanges.close());
+  late MockActivationAnalytics analytics;
+
+  setUp(() => analytics = registerMockAnalytics());
+
+  tearDown(() async {
+    await languageChanges.close();
+    await sl.reset();
+  });
 
   blocTest<DailyVerseBloc, DailyVerseState>(
     'loading today\'s verse does not touch the streak',
@@ -153,5 +164,36 @@ void main() {
     },
     wait: const Duration(milliseconds: 50),
     verify: (_) => verify(() => mockStreakRepo.markVerseAsViewed()).called(2),
+  );
+
+  blocTest<DailyVerseBloc, DailyVerseState>(
+    'a Home read tracks verse_viewed once per day',
+    build: () => buildBloc(streakRepository: mockStreakRepo, verse: todayVerse),
+    act: (b) async {
+      b.add(const LoadTodaysVerse());
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      b
+        ..add(const MarkVerseAsViewed())
+        ..add(const MarkVerseAsViewed());
+    },
+    wait: const Duration(milliseconds: 50),
+    verify: (_) =>
+        verify(() => analytics.track(NuxEvent.verseViewed, {'source': 'home'}))
+            .called(1),
+  );
+
+  blocTest<DailyVerseBloc, DailyVerseState>(
+    'a finished lesson counts the streak but is not a verse view',
+    build: () => buildBloc(streakRepository: mockStreakRepo, verse: todayVerse),
+    act: (b) async {
+      b.add(const LoadTodaysVerse());
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      b.add(const MarkVerseAsViewed(fromLesson: true));
+    },
+    wait: const Duration(milliseconds: 50),
+    verify: (_) {
+      verify(() => mockStreakRepo.markVerseAsViewed()).called(1);
+      verifyNever(() => analytics.track(NuxEvent.verseViewed, any()));
+    },
   );
 }
