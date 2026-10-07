@@ -130,14 +130,16 @@ class DisciplefyBottomNav extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: _buildTabItems(context),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            children: _buildTabItems(context, constraints.maxWidth),
+          ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildTabItems(BuildContext context) {
+  List<Widget> _buildTabItems(BuildContext context, double width) {
     final l10n = AppLocalizations.of(context)!;
     // Dock tabs covered by the home tour, in dock order. Step numbers here
     // are fallbacks; the running tour numbers them (hidden tabs excluded).
@@ -166,7 +168,7 @@ class DisciplefyBottomNav extends StatelessWidget {
     const bodySteps = 2;
     final tourTabIds = tabs.map((t) => t.id).where(tourSteps.containsKey);
     final totalSteps = bodySteps + tourTabIds.length;
-    final flexes = _itemFlexes(context, l10n);
+    final flexes = _itemFlexes(context, l10n, width);
 
     return tabs.asMap().entries.map((entry) {
       final index = entry.key;
@@ -200,26 +202,39 @@ class DisciplefyBottomNav extends StatelessWidget {
             stepNumber: bodySteps + 1 + tourTabIds.toList().indexOf(tab.id),
             totalSteps: totalSteps,
             onNext: () => ShowCaseWidget.of(context).next(),
-            child: navItem,
+            child: _gapped(navItem),
           ),
         );
       }
 
-      return Expanded(flex: flexes[index], child: navItem);
+      return Expanded(flex: flexes[index], child: _gapped(navItem));
     }).toList();
   }
+
+  /// Space kept clear on each side of a slot, so neighbouring labels never
+  /// touch (scripts whose glyphs ink slightly past their advance included).
+  static const double slotGap = 3;
+
+  /// Smallest size a label is scaled to before it is ellipsized instead.
+  static const double minLabelFontSize = 11;
 
   /// Narrowest slot an item gets: room for its icon pill and a short label.
   static const double _minItemWidth = 56;
 
-  /// Width share of each item. Equal while every label fits its slot; a
-  /// longer label ("Community", the Malayalam "Generate") takes room from
-  /// the items with short labels, so every label stays at full size instead
-  /// of being scaled below [labelFontSize].
-  List<int> _itemFlexes(BuildContext context, AppLocalizations l10n) {
+  static Widget _gapped(Widget child) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: slotGap),
+        child: child,
+      );
+
+  /// Width share of each item. Equal while every label fits an equal slot;
+  /// otherwise a longer label ("Community") takes room from the items with
+  /// short labels, so labels stay at full size where the dock allows it and
+  /// shrink evenly where it does not.
+  List<int> _itemFlexes(
+      BuildContext context, AppLocalizations l10n, double available) {
     final scaler = MediaQuery.textScalerOf(context);
     final direction = Directionality.of(context);
-    return [
+    final needs = [
       for (final tab in tabs)
         () {
           final painter = TextPainter(
@@ -234,11 +249,16 @@ class DisciplefyBottomNav extends StatelessWidget {
             textDirection: direction,
             textScaler: scaler,
           )..layout();
-          final width = painter.width + 4;
+          final width = painter.width + 2 * slotGap + 2;
           painter.dispose();
-          return (width < _minItemWidth ? _minItemWidth : width).ceil();
+          return width < _minItemWidth ? _minItemWidth : width;
         }(),
     ];
+    final equal = available / tabs.length;
+    if (needs.every((w) => w <= equal)) {
+      return List.filled(tabs.length, 1);
+    }
+    return [for (final w in needs) w.ceil()];
   }
 
   void _handleTap(BuildContext context, int index) {
@@ -334,28 +354,93 @@ class _DockItemLayout extends StatelessWidget {
           // the row sits centred in the dock.
           SizedBox(height: 44, child: Center(child: visual)),
           const SizedBox(height: 3),
-          // Flexible so a very large text size scales the label down to the
-          // dock height rather than overflowing it.
+          // Flexible so a very large text size shrinks the label to the dock
+          // height rather than overflowing it.
           Flexible(
-            child: AnimatedDefaultTextStyle(
-              duration: AppAnimations.fast,
-              curve: AppAnimations.defaultCurve,
+            child: _DockLabel(
+              label: label,
               style: AppFonts.inter(
                 fontSize: DisciplefyBottomNav.labelFontSize,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected ? palette.selected : palette.inactive,
-              ),
-              // Shrinks rather than cuts: on a very narrow phone five slots are
-              // ~56px, less than "Community" or the Malayalam labels need.
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(label, maxLines: 1, textAlign: TextAlign.center),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+/// A dock label that always stays inside its slot: full size when it fits,
+/// scaled down to no less than [DisciplefyBottomNav.minLabelFontSize] when
+/// it nearly fits, and ellipsized at that size otherwise. The full label
+/// stays in the semantics tree either way.
+class _DockLabel extends StatelessWidget {
+  final String label;
+  final TextStyle style;
+
+  const _DockLabel({required this.label, required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    return LayoutBuilder(builder: (context, constraints) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        maxLines: 1,
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+      )..layout();
+      final width = painter.width;
+      final height = painter.height;
+      painter.dispose();
+
+      final scale = [
+        1.0,
+        if (constraints.hasBoundedWidth && width > 0)
+          constraints.maxWidth / width,
+        if (constraints.hasBoundedHeight && height > 0)
+          constraints.maxHeight / height,
+      ].reduce((a, b) => a < b ? a : b);
+      final renderedSize =
+          scaler.scale(DisciplefyBottomNav.labelFontSize) * scale;
+
+      final Widget text;
+      if (scale >= 1) {
+        text = Text(label, maxLines: 1, softWrap: false);
+      } else if (renderedSize >= DisciplefyBottomNav.minLabelFontSize) {
+        text = FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label, maxLines: 1, softWrap: false),
+        );
+      } else {
+        // Too long even at the minimum size: keep the minimum and end with
+        // an ellipsis rather than shrinking into unreadable text.
+        text = FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: constraints.maxWidth,
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              textScaler: TextScaler.noScaling,
+              style: TextStyle(fontSize: DisciplefyBottomNav.minLabelFontSize),
+            ),
+          ),
+        );
+      }
+      return AnimatedDefaultTextStyle(
+        duration: AppAnimations.fast,
+        curve: AppAnimations.defaultCurve,
+        style: style,
+        textAlign: TextAlign.center,
+        child: text,
+      );
+    });
   }
 }
 
