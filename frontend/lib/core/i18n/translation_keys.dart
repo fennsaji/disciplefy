@@ -1742,6 +1742,13 @@ class TranslationKeys {
 
   static const discipleLevelFollower = 'disciple_level.follower';
 
+  // Topics tab: current path card, category "See all", "Browse all paths"
+  static const topicsTitle = 'topics.title';
+  static const topicsBrowseAll = 'topics.browse_all';
+  static const topicsContinue = 'topics.continue';
+  static const topicsStartAPath = 'topics.start_a_path';
+  static const topicsSeeAll = 'topics.see_all';
+
   // Study Topics tab (header cards, For you, Learning paths, category page)
   static const topicsHubContinueEyebrow = 'topics_hub.continue_eyebrow';
   static const topicsHubNextTopic = 'topics_hub.next_topic';

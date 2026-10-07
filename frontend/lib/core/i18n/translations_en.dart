@@ -2297,6 +2297,14 @@ const Map<String, dynamic> englishTranslations = {
     'loading_topics': 'Loading topics...',
     'percent_complete': '{percent}% complete',
   },
+  // Topics tab: current path card, category "See all", "Browse all paths"
+  'topics': {
+    'title': 'Topics',
+    'browse_all': 'Browse all paths',
+    'continue': 'Continue',
+    'start_a_path': 'Start a path',
+    'see_all': 'See all',
+  },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
     'continue_eyebrow': 'Continue · Topic {current} of {total}',

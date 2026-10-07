@@ -2393,6 +2393,14 @@ const Map<String, dynamic> malayalamTranslations = {
     'loading_topics': 'വിഷയങ്ങൾ ലോഡ് ചെയ്യുന്നു...',
     'percent_complete': '{percent}% പൂർത്തിയായി',
   },
+  // Topics tab: current path card, category "See all", "Browse all paths"
+  'topics': {
+    'title': 'വിഷയം',
+    'browse_all': 'എല്ലാ പാതകളും',
+    'continue': 'തുടരുക',
+    'start_a_path': 'പാത തുടങ്ങാം',
+    'see_all': 'എല്ലാം',
+  },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
     'continue_eyebrow': 'തുടരുക · വിഷയം {current} / {total}',

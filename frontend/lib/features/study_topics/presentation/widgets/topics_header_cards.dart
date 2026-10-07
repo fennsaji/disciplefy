@@ -261,3 +261,57 @@ class TopicsStatTile extends StatelessWidget {
     );
   }
 }
+
+/// Study streak and (when [showLeaderboard]) Leaderboard tiles side by side.
+/// Neither shows an XP number: the streak in days and the rank only.
+class TopicsStatRow extends StatelessWidget {
+  final int? streak;
+  final int? rank;
+  final bool showLeaderboard;
+  final VoidCallback? onLeaderboardTap;
+
+  const TopicsStatRow({
+    super.key,
+    this.streak,
+    this.rank,
+    this.showLeaderboard = true,
+    this.onLeaderboardTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final streak = this.streak;
+    final rank = this.rank;
+    final streakTile = TopicsStatTile(
+      key: const Key('topics_streak_tile'),
+      icon: Icons.local_fire_department_outlined,
+      value: streak == null
+          ? null
+          : context.tr(
+              streak == 1
+                  ? TranslationKeys.topicsHubStreakValueOne
+                  : TranslationKeys.topicsHubStreakValue,
+              {'count': streak},
+            ),
+      label: context.tr(TranslationKeys.topicsHubStreakLabel),
+    );
+    if (!showLeaderboard) return streakTile;
+    final leaderboardTile = TopicsStatTile(
+      key: const Key('topics_leaderboard_tile'),
+      icon: Icons.emoji_events_outlined,
+      value: rank != null && rank > 0 ? '#$rank' : null,
+      label: context.tr(TranslationKeys.topicsHubLeaderboardLabel),
+      onTap: onLeaderboardTap,
+    );
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: streakTile),
+          const SizedBox(width: 10),
+          Expanded(child: leaderboardTile),
+        ],
+      ),
+    );
+  }
+}

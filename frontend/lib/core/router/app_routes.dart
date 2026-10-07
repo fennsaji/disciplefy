@@ -86,6 +86,9 @@ class AppRoutes {
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';
 
+  /// Every path, with category chips ("Browse all paths" on Topics).
+  static const String allPaths = '/paths';
+
   /// Every path in one category ("See all" on the Study Topics tab).
   static const String learningPathCategory =
       '/learning-paths/category/:category';

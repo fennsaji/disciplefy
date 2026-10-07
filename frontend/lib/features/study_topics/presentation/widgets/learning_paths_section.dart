@@ -51,6 +51,10 @@ class LearningPathsSection extends StatefulWidget {
   /// for the first path card. Pass null to skip the walkthrough step entirely.
   final VoidCallback? onNext;
 
+  /// Whether the level / featured filter chips show under the search bar.
+  /// The Topics tab hides them (no level jargon there).
+  final bool showFilters;
+
   const LearningPathsSection({
     super.key,
     required this.onPathTap,
@@ -59,6 +63,7 @@ class LearningPathsSection extends StatefulWidget {
     this.onCategorySeeAll,
     this.language = 'en',
     this.onNext,
+    this.showFilters = true,
   });
 
   @override
@@ -434,7 +439,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           // ── Search bar ──────────────────────────────────────────────────
           _buildSearchBar(context, state),
           // ── Filter chips ────────────────────────────────────────────────
-          _buildFilterChips(context, availableLevels),
+          if (widget.showFilters) _buildFilterChips(context, availableLevels),
           const SizedBox(height: 18),
 
           // ── Content ─────────────────────────────────────────────────────
@@ -631,13 +636,11 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                     header: true,
                     child: Text(
                       AppLocalizations.of(context)!
-                          .translateLearningPathCategory(category.name)
-                          .toUpperCase(),
-                      style: AppFonts.inter(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.6,
-                        color: palette.gold,
+                          .translateLearningPathCategory(category.name),
+                      style: AppFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
                       ),
                     ),
                   ),
@@ -646,13 +649,25 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                   TextButton(
                     key: Key('learning_paths_see_all_${category.name}'),
                     onPressed: () => widget.onCategorySeeAll!(category.name),
-                    child: Text(
-                      context.tr(TranslationKeys.topicsHubSeeAll),
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: palette.accentIcon,
-                      ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.gold,
+                      minimumSize: const Size(0, 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.topicsSeeAll),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: palette.gold,
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded,
+                            size: 16, color: palette.gold),
+                      ],
                     ),
                   )
                 else
@@ -675,8 +690,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                       description: AppLocalizations.of(context)!
                           .walkthroughLearningPathsDesc,
                       screen: WalkthroughScreen.learningPaths,
-                      stepNumber: 2,
-                      totalSteps: 2,
+                      stepNumber: 1,
+                      totalSteps: 1,
                       onNext: widget.onNext!,
                       child: PathListRow(
                         path: category.paths[i],

@@ -2299,6 +2299,14 @@ const Map<String, dynamic> hindiTranslations = {
     'loading_topics': 'विषय लोड हो रहे हैं...',
     'percent_complete': '{percent}% पूर्ण',
   },
+  // Topics tab: current path card, category "See all", "Browse all paths"
+  'topics': {
+    'title': 'विषय',
+    'browse_all': 'सभी पथ देखें',
+    'continue': 'जारी रखें',
+    'start_a_path': 'पथ शुरू करें',
+    'see_all': 'सभी',
+  },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
     'continue_eyebrow': 'जारी रखें · विषय {current} / {total}',
