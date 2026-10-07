@@ -68,6 +68,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_service.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
+import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
@@ -420,6 +421,9 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+        // A second Home pushed over the first: both stay mounted, as during
+        // a route transition back to Home.
+        GoRoute(path: '/home-again', builder: (_, __) => const HomeScreen()),
         GoRoute(
           path: launchPath,
           builder: (_, s) => Scaffold(
@@ -489,6 +493,12 @@ void main() {
       // No For You list is requested.
       verifyNever(() => homeBloc.add(any(that: isA<LoadForYouTopics>())));
       verify(() => homeBloc.add(const LoadActiveLearningPath())).called(1);
+    });
+
+    testWidgets('builds no walkthrough targets', (tester) async {
+      await pumpHome(tester, summary: _summary4of8);
+      expect(
+          find.byType(WalkthroughTooltip, skipOffstage: false), findsNothing);
     });
 
     testWidgets('sections in order: hero, path, New for you, Save progress',
@@ -699,6 +709,28 @@ void main() {
       verify(() => languagePrefs.cacheLearningPathStudyModePreference('quick'))
           .called(1);
       expect(find.text('Quick read · 3 min'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('two Homes mounted at once', () {
+    Future<void> pushSecondHome(WidgetTester tester) async {
+      GoRouter.of(tester.element(find.byType(HomeScreen))).push('/home-again');
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen, skipOffstage: false), findsNWidgets(2));
+    }
+
+    testWidgets('flag on: no duplicate keys', (tester) async {
+      await pumpHome(tester, summary: _summary4of8);
+      await pushSecondHome(tester);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('flag off: no duplicate keys', (tester) async {
+      when(() => flags.homeTodayLayout).thenReturn(false);
+      await pumpHome(tester, summary: _summary4of8);
+      expect(find.byType(WalkthroughTooltip), findsNWidgets(2));
+      await pushSecondHome(tester);
       expect(tester.takeException(), isNull);
     });
   });

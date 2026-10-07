@@ -59,11 +59,9 @@ class ShowcaseKeys {
     return true;
   }
 
-  // Home screen
-  static final GlobalKey homeDailyVerse =
-      GlobalKey(debugLabel: 'homeDailyVerse');
-  static final GlobalKey homeMemoryVerses =
-      GlobalKey(debugLabel: 'homeMemoryVerses');
+  // Home screen dock tabs. The Home body's own targets (verse, Memory
+  // Verses pill) are keys of each Home instance, since two Homes can be
+  // mounted at once during a route transition.
   static final GlobalKey homeGenerateTab =
       GlobalKey(debugLabel: 'homeGenerateTab');
   static final GlobalKey homeDisciplerTab =

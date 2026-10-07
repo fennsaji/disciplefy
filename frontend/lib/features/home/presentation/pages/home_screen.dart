@@ -139,6 +139,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// a descendant of [ShowCaseWidget], so [ShowCaseWidget.of()] resolves correctly.
   VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
 
+  /// Walkthrough targets, owned by this Home: two Homes can be mounted at
+  /// once (e.g. while a page pushed over the shell goes back to Home), and
+  /// shared keys would then collide.
+  final GlobalKey _dailyVerseTarget = GlobalKey(debugLabel: 'homeDailyVerse');
+  final GlobalKey _memoryVersesTarget =
+      GlobalKey(debugLabel: 'homeMemoryVerses');
+
   /// The Today layout (rollout flag `home_today_layout`); off keeps the
   /// shipped Home.
   bool get _todayLayout {
@@ -256,8 +263,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // The dock-tab steps (Generate / Discipler / Topics / Community) run in
     // the AppShell's ShowCaseWidget, triggered via ShowcaseKeys.triggerNavTabsAndCommunity().
     return [
-      ShowcaseKeys.homeDailyVerse,
-      if (showMemoryVerses) ShowcaseKeys.homeMemoryVerses,
+      _dailyVerseTarget,
+      if (showMemoryVerses) _memoryVersesTarget,
     ];
   }
 
@@ -774,15 +781,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
         const SizedBox(width: 8),
         if (showMemoryVerses) ...[
-          WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.homeMemoryVerses,
+          _walkthroughStep(
+            showcaseKey: _memoryVersesTarget,
             title: AppLocalizations.of(context)!.walkthroughHomeMemoryTitle,
             description:
                 AppLocalizations.of(context)!.walkthroughHomeMemoryDesc,
-            screen: WalkthroughScreen.home,
             stepNumber: 2,
-            totalSteps: 6,
-            onNext: _onNext,
             // Header element — prefer below (flips automatically if needed)
             tooltipPosition: TooltipPosition.bottom,
             child: _buildMemoryVersesIconButton(
@@ -1083,6 +1087,30 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     });
   }
 
+  /// Wraps [child] as a step of the home walkthrough. The Today layout runs
+  /// no walkthrough, so there it is [child] alone.
+  Widget _walkthroughStep({
+    required GlobalKey showcaseKey,
+    required String title,
+    required String description,
+    required int stepNumber,
+    TooltipPosition tooltipPosition = TooltipPosition.top,
+    required Widget child,
+  }) {
+    if (_todayLayout) return child;
+    return WalkthroughTooltip(
+      showcaseKey: showcaseKey,
+      title: title,
+      description: description,
+      screen: WalkthroughScreen.home,
+      stepNumber: stepNumber,
+      totalSteps: 6,
+      onNext: _onNext,
+      tooltipPosition: tooltipPosition,
+      child: child,
+    );
+  }
+
   /// Verse of the day inside the hero. Hidden entirely by the
   /// bible_content_enabled kill-switch; greyed and locked like every other
   /// gated feature when the plan does not include it.
@@ -1090,14 +1118,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (!sl<SystemConfigService>().isBibleContentEnabled) {
       return const SizedBox.shrink();
     }
-    return WalkthroughTooltip(
-      showcaseKey: ShowcaseKeys.homeDailyVerse,
+    return _walkthroughStep(
+      showcaseKey: _dailyVerseTarget,
       title: AppLocalizations.of(context)!.walkthroughHomeDailyVerseTitle,
       description: AppLocalizations.of(context)!.walkthroughHomeDailyVerseDesc,
-      screen: WalkthroughScreen.home,
       stepNumber: 1,
-      totalSteps: 6,
-      onNext: _onNext,
       child: LockedFeatureWrapper(
         featureKey: 'daily_verse',
         child: HomeDailyVerse(

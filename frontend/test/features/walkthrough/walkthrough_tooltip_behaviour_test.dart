@@ -237,8 +237,8 @@ void main() {
       ),
     ));
     await tester.pump();
-    ShowcaseKeys.beginHomeTour(
-        [ShowcaseKeys.homeDailyVerse, ShowcaseKeys.homeMemoryVerses]);
+    // Two body steps (the verse and the Memory Verses pill) before the dock.
+    ShowcaseKeys.beginHomeTour([GlobalKey(), GlobalKey()]);
     addTearDown(() => ShowcaseKeys.beginHomeTour(const []));
     final navKeys = ShowcaseKeys.homeNavTabKeys;
     expect(navKeys.indexOf(ShowcaseKeys.homeDisciplerTab), 1);
