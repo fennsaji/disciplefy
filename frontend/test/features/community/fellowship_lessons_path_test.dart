@@ -226,7 +226,7 @@ void main() {
       (tester) async {
     await _pump(tester);
     expect(find.text('New Believer Essentials'), findsOneWidget);
-    expect(find.text('Foundations of Faith · Seeker'), findsOneWidget);
+    expect(find.text('Foundations of Faith · Beginner'), findsOneWidget);
     // The category is not repeated on every lesson.
     expect(find.text('Foundations of Faith'), findsNothing);
     // No generic "Lessons" / "All lessons" headings.

@@ -1676,7 +1676,7 @@ class AppLocalizations {
       'progress_xp_total': 'ആകെ XP',
       'progress_xp_to_next_level': 'അടുത്ത ലെവലിലേക്ക് XP',
       'progress_max_level': 'പരമാവധി ലെവൽ എത്തി!',
-      'progress_streaks': 'സ്ട്രീക്കുകൾ',
+      'progress_streaks': 'തുടർച്ചകൾ',
       'progress_study_streak': 'പഠനം',
       'progress_verse_streak': 'വചനം',
       'progress_days': 'ദിവസം',
@@ -1704,7 +1704,7 @@ class AppLocalizations {
 
       // Achievement Categories
       'achievement_category_study': 'പഠന ഗൈഡുകൾ',
-      'achievement_category_streak': 'പഠന സ്ട്രീക്കുകൾ',
+      'achievement_category_streak': 'പഠന തുടർച്ചകൾ',
       'achievement_category_memory': 'സ്മരണ വാക്യങ്ങൾ',
       'achievement_category_voice': 'വോയ്സ് ഡിസൈപ്ലർ',
       'achievement_category_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ',

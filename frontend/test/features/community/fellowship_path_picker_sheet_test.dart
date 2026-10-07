@@ -190,15 +190,15 @@ void main() {
     expect(find.text('1 path'), findsNWidgets(3));
 
     double y(String text) => tester.getTopLeft(find.text(text)).dy;
-    // Seeker (curated order), follower, disciple, leader.
+    // Beginner (curated order), follower, disciple, leader.
     expect(y('New Believer Essentials'), lessThan(y('Rooted in Christ')));
     expect(y('Rooted in Christ'), lessThan(y('Who Is the Holy Spirit?')));
     expect(y('Who Is the Holy Spirit?'), lessThan(y('Sermon on the Mount')));
     expect(y('Sermon on the Mount'), lessThan(y('Leading Others')));
 
     // Level headings sit left, counts right-aligned in the same row.
-    expect(find.text('SEEKER'), findsOneWidget);
-    expect(tester.getTopLeft(find.text('SEEKER')).dy,
+    expect(find.text('BEGINNER'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('BEGINNER')).dy,
         closeTo(tester.getTopLeft(find.text('2 paths')).dy, 4));
   });
 

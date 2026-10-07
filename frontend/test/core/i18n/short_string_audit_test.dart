@@ -123,5 +123,5 @@ void main() {
       reason: '\n| key | lang | value | width |\n|---|---|---|---|\n'
           '${rows.join('\n')}',
     );
-  }, skip: 'until Task 2 shortens the strings');
+  });
 }

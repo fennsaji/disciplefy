@@ -327,12 +327,9 @@ class TranslationKeys {
   static const homeExploreLearningPaths = 'home.explore_learning_paths';
   static const homeResumeLastStudy = 'home.resume_last_study';
   static const homeContinueStudying = 'home.continue_studying';
-  static const homeRecommendedTopics = 'home.recommended_topics';
   static const homeViewAll = 'home.view_all';
-  static const homeFailedToLoadTopics = 'home.failed_to_load_topics';
   static const homeSomethingWentWrong = 'home.something_went_wrong';
   static const homeTryAgain = 'home.try_again';
-  static const homeNoTopicsAvailable = 'home.no_topics_available';
   static const homeCheckConnection = 'home.check_connection';
   static const homeGenerationInProgress = 'home.generation_in_progress';
   static const homeGeneratingStudyGuide = 'home.generating_study_guide';
@@ -340,13 +337,11 @@ class TranslationKeys {
   static const homeDismiss = 'home.dismiss';
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
   static const homeForYou = 'home.for_you';
-  static const homeForYouSubtitle = 'home.for_you_subtitle';
   static const communityVerseStudyLabel = 'community.verse_study_label';
   static const communityTopicStudyLabel = 'community.topic_study_label';
   static const communityStudyGuideLabel = 'community.study_guide_label';
   static const homeReadyForNextStep = 'home.ready_for_next_step';
   static const homeAvailableOffline = 'home.available_offline';
-  static const homeExploreTopics = 'home.explore_topics';
   static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
   static const homePersonalizePromptSubtitle =
       'home.personalize_prompt_subtitle';
@@ -735,8 +730,6 @@ class TranslationKeys {
   static const settingsRetakeQuestionnaireSubtitle =
       'settings.retake_questionnaire_subtitle';
   static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
-  static const settingsTakeQuestionnaireSubtitle =
-      'settings.take_questionnaire_subtitle';
 
   // Settings - Text Size
   static const settingsTextSize = 'settings.text_size';
@@ -1016,22 +1009,15 @@ class TranslationKeys {
   static const bugReportSubmitError = 'bug_report.submit_error';
 
   // Study Topics Screen
-  static const studyTopicsTitle = 'study_topics.title';
-  static const studyTopicsSearchHint = 'study_topics.search_hint';
   static const studyTopicsGenerationError = 'study_topics.generation_error';
   static const studyTopicsGenerationInProgress =
       'study_topics.generation_in_progress';
   static const studyTopicsGenerating = 'study_topics.generating';
-  static const studyTopicsFailedToLoad = 'study_topics.failed_to_load';
   static const studyTopicsSomethingWentWrong =
       'study_topics.something_went_wrong';
   static const studyTopicsTryAgain = 'study_topics.try_again';
-  static const studyTopicsNoTopicsFound = 'study_topics.no_topics_found';
   static const studyTopicsAdjustFilters = 'study_topics.adjust_filters';
-  static const studyTopicsNoTopicsAvailable =
-      'study_topics.no_topics_available';
   static const studyTopicsClearFilters = 'study_topics.clear_filters';
-  static const studyTopicsTopicsFound = 'study_topics.topics_found';
   static const studyTopicsContentLanguage = 'study_topics.content_language';
   static const studyTopicsContentLanguageDescription =
       'study_topics.content_language_description';
@@ -1789,7 +1775,6 @@ class TranslationKeys {
 
   // Continue Learning
   static const continueLearningTitle = 'continue_learning.title';
-  static const continueLearningEmpty = 'continue_learning.empty';
   static const continueLearningEmptyMessage = 'continue_learning.empty_message';
   static const continueLearningDone = 'continue_learning.done';
   static const continueLearningInProgress = 'continue_learning.in_progress';
@@ -2902,9 +2887,6 @@ class TranslationKeys {
 
   /// Text showing best study mode for path
   static const learningPathBestStudiedIn = 'learning_path.best_studied_in';
-
-  /// Bonus XP awarded message
-  static const learningPathBonusXpAwarded = 'learning_path.bonus_xp_awarded';
 
   /// Completed in recommended mode message
   static const learningPathCompletedInRecommended =

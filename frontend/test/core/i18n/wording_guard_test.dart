@@ -32,19 +32,38 @@ const guardedNamespaces = [
   'topics',
   'all_paths',
   'memory',
+  'settings',
+  'study_topics',
+  'learning_path',
+  'memory_champions',
+  'memory_home',
+  'memory_nav',
+  'disciple_level',
+  'community_lessons',
+  'continue_learning',
 ];
 
-/// Known exceptions, each to be removed once its widget stops showing it.
-/// `learning_paths.xp` is the unit after a path's XP total on the path card
-/// and the fellowship path picker (widget change, not wording).
-const allowedXpKeys = {'learning_paths.xp'};
+/// Known exceptions.
+/// - `learning_paths.xp` is the unit after a path's XP total on the path card
+///   and the fellowship path picker, and `community_lessons.xp_earned` is a
+///   member's XP on a fellowship lesson; both go once their widgets stop
+///   showing XP (widget change, not wording).
+/// - The delete-account and reset-progress warnings must say what is lost.
+const allowedXpKeys = {
+  'learning_paths.xp',
+  'community_lessons.xp_earned',
+  'settings.delete_account_lose_progress',
+  'study_topics.reset_item_xp',
+};
 
 /// Keys that name path items; these must say "lesson", never "topic".
 const pathItemKeys = [
   'learning_paths.',
   'learning_path.',
-  'home.topics_progress',
-  'home.start_here',
+  'home.',
+  'study_topics.',
+  'continue_learning.',
+  'settings.',
 ];
 
 /// Placeholders such as `{tokens}` are not user-visible words.
@@ -68,6 +87,7 @@ void main() {
         bad.add('${e.key}: XP');
       }
       if (RegExp(r'\bAI\b').hasMatch(v)) bad.add('${e.key}: AI');
+      if (RegExp(r'\bSeekers?\b').hasMatch(v)) bad.add('${e.key}: Seeker');
     }
     for (final e in flatten(englishTranslations)
         .where((e) => pathItemKeys.any(e.key.startsWith))) {
@@ -105,6 +125,23 @@ void main() {
     final values = flatten(hindiTranslations).map((e) => e.value);
     expect(values.where((v) => oldTerms.any(v.contains)), isEmpty);
     expect(values.where((v) => v.contains('स्ट्रीक')), isEmpty);
+  });
+
+  test('path items are lessons (पाठ / പാഠം), never topics, in hi and ml', () {
+    final bad = <String>[
+      for (final e in flatten(hindiTranslations)
+          .where((e) => pathItemKeys.any(e.key.startsWith)))
+        if (_visible(e.value).contains('विषय')) e.key,
+      for (final e in flatten(malayalamTranslations)
+          .where((e) => pathItemKeys.any(e.key.startsWith)))
+        if (_visible(e.value).contains('വിഷയ')) e.key,
+    ];
+    expect(bad, isEmpty, reason: bad.join('\n'));
+  });
+
+  test('Malayalam says തുടർച്ച for a streak, not സ്ട്രീക്ക്', () {
+    final values = flatten(malayalamTranslations).map((e) => e.value);
+    expect(values.where((v) => v.contains('സ്ട്രീ')), isEmpty);
   });
 
   test('Malayalam uses one memory-verse term (സ്മരണ വാക്യം)', () {
