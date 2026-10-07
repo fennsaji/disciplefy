@@ -91,6 +91,9 @@ void main() {
       final result = await tapGo(tester, AccountReason.discipler);
       expect(find.text('Discipler needs an account'), findsOneWidget);
       expect(find.text('Ask Discipler and join groups'), findsOneWidget);
+      // A guest only ever gets one path; an account opens all of them.
+      expect(find.text('Unlock every learning path'), findsOneWidget);
+      expect(find.text('Start a second path any time'), findsNothing);
       await tester.tap(find.text('Continue as guest'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);

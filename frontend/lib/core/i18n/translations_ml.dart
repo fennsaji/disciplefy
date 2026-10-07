@@ -3292,7 +3292,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'generic_title': 'സൗജന്യ അക്കൗണ്ട് തുടങ്ങൂ',
     'body': 'ഏത് ഫോണിലും പുരോഗതി കൂടെയുണ്ടാകാൻ.',
     'benefit_moves': 'ഈ ഫോണിലെ പുരോഗതി നിലനിൽക്കും',
-    'benefit_paths': 'എപ്പോഴും രണ്ടാം പാത',
+    'benefit_paths': 'എല്ലാ പാതകളും തുറക്കാം',
     'benefit_groups': 'Discipler, ഗ്രൂപ്പുകൾ',
     'check_email': 'സ്ഥിരീകരിക്കാൻ ഇമെയിൽ നോക്കൂ: {email}',
     'keep_days_safe': 'ഈ {n} ദിവസം സൂക്ഷിക്കൂ',

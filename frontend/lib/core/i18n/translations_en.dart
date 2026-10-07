@@ -3174,7 +3174,7 @@ const Map<String, dynamic> englishTranslations = {
     'generic_title': 'Create a free account',
     'body': 'So your progress and groups stay with you on any phone.',
     'benefit_moves': 'Your progress on this phone moves over',
-    'benefit_paths': 'Start a second path any time',
+    'benefit_paths': 'Unlock every learning path',
     'benefit_groups': 'Ask Discipler and join groups',
     'check_email': 'Check your email to confirm: {email}',
     'keep_days_safe': 'Keep these {n} days safe',

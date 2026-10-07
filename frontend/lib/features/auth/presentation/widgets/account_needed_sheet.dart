@@ -203,7 +203,7 @@ class _AccountNeededSheetState extends State<AccountNeededSheet> {
   }
 }
 
-/// The three check rows: progress moves over, a second path, Discipler and
+/// The three check rows: progress moves over, every path unlocked, Discipler and
 /// groups.
 class AccountBenefits extends StatelessWidget {
   const AccountBenefits({super.key});

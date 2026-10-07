@@ -3182,7 +3182,7 @@ const Map<String, dynamic> hindiTranslations = {
     'generic_title': 'मुफ़्त खाता बनाएँ',
     'body': 'ताकि आपकी प्रगति हर फ़ोन पर साथ रहे।',
     'benefit_moves': 'इस फ़ोन की प्रगति साथ आएगी',
-    'benefit_paths': 'कभी भी दूसरा पथ',
+    'benefit_paths': 'सभी पथ खोलें',
     'benefit_groups': 'Discipler से पूछें, समूह से जुड़ें',
     'check_email': 'पुष्टि के लिए ईमेल देखें: {email}',
     'keep_days_safe': 'ये {n} दिन सुरक्षित रखें',
