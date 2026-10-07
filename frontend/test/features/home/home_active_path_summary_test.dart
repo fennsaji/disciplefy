@@ -163,9 +163,7 @@ void main() {
     expect(combined().activeLearningPath?.id, 'p1');
   });
 
-  test('offline fallback path has no summary', () async {
-    stubFresh(_rec('p1'));
-    await load();
+  test('offline fallback path (nothing shown yet) has no summary', () async {
     when(() => repository.getRecommendedPath(
             forceRefresh: any(named: 'forceRefresh')))
         .thenAnswer((_) async => const Left(NetworkFailure()));
@@ -204,15 +202,42 @@ void main() {
     expect(combined().activePathSummary, isNull);
   });
 
-  test('failure with nothing offline clears path and summary', () async {
-    stubFresh(_rec('p1'));
-    await load();
+  test('failure with nothing shown and nothing offline shows no path',
+      () async {
     when(() => repository.getRecommendedPath(
             forceRefresh: any(named: 'forceRefresh')))
         .thenAnswer((_) async => const Left(NetworkFailure()));
     await load();
     expect(combined().activeLearningPath, isNull);
     expect(combined().activePathSummary, isNull);
+    expect(combined().isLoadingActivePath, isFalse);
+  });
+
+  test('a failed refresh keeps the enrolled path and summary on screen',
+      () async {
+    stubFresh(_rec('p1'));
+    await load();
+    when(() => repository.getRecommendedPath(
+            forceRefresh: any(named: 'forceRefresh')))
+        .thenAnswer((_) async => const Left(NetworkFailure()));
+    await load();
+    expect(combined().activeLearningPath?.id, 'p1');
+    expect(combined().activePathSummary, _summary('p1'));
+    expect(
+        combined().learningPathReason, LearningPathRecommendationReason.active);
+    expect(combined().isLoadingActivePath, isFalse);
+  });
+
+  test('a failed cold start keeps the persisted path and summary', () async {
+    when(() => repository.getCachedRecommendedPath())
+        .thenAnswer((_) async => _rec('p1'));
+    when(() => repository.getRecommendedPath(
+            forceRefresh: any(named: 'forceRefresh')))
+        .thenAnswer((_) async => const Left(NetworkFailure()));
+    await load();
+    expect(combined().activeLearningPath?.id, 'p1');
+    expect(combined().activePathSummary, _summary('p1'));
+    expect(combined().isLoadingActivePath, isFalse);
   });
 
   test('summary survives the generated-guide state rebuild', () async {

@@ -362,6 +362,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           tag: 'HOME_BLOC',
         );
 
+        // A path already shown for this user and language (the one on
+        // screen, or the persisted copy) stays: a failed refresh never
+        // blanks the enrolled path. Only sign-out / a scope change clears it.
+        final shown = state;
+        if (shown is HomeCombinedState &&
+            shown.activeLearningPath != null &&
+            _activePathScope == LearningCacheScope.scopeFor(languageCode)) {
+          emit(shown.copyWith(isLoadingActivePath: false));
+          return;
+        }
+
         // Offline fallback: try to find any learning path that has downloaded
         // content from the Hive-persisted categories cache.
         final offlinePath = await _findOfflineAvailablePath(languageCode);
