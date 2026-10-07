@@ -19,8 +19,11 @@
 --                                  as the sum of the topic XP of the path's
 --                                  completed topics (rule of 20261006160000),
 --                                  topics_completed is floored at the visible
---                                  completed count, and a path whose visible
---                                  topics are all done is marked completed.
+--                                  completed count, the cursor moves to the
+--                                  first visible topic not yet completed (the
+--                                  last visible one when all are done), and a
+--                                  path whose visible topics are all done is
+--                                  marked completed.
 --     user_study_guides            union; same guide: saved/scrolled OR,
 --                                  earliest completion, larger time, the
 --                                  account's notes win.
@@ -34,7 +37,8 @@
 --                                  account already has (same reference and
 --                                  language) keeps the account's copy and the
 --                                  guest's duplicate is dropped with its
---                                  history.
+--                                  history (guest collections holding it are
+--                                  re-pointed to the account's copy).
 --     memory_verse_collections     moved (items follow their collection).
 --     memory_daily_goals, user_challenge_progress     union; same key: counters
 --                                  summed / GREATEST, flags OR.
@@ -62,11 +66,18 @@
 --
 -- Idempotent: every guest row that is merged is deleted or re-owned in the
 -- same transaction, so a second call finds nothing and returns zero counts.
+-- Merged tables are drained with DELETE ... RETURNING feeding the INSERT in a
+-- single statement, so a guest row written concurrently is never deleted
+-- without being carried over.
+-- Errors: P0001 with message 'merge_guest:not_anonymous' (guest unknown,
+-- deleted or upgraded: the edge function's GUEST_TOKEN_INVALID),
+-- 'merge_guest:invalid_pair', 'merge_guest:target_not_full'.
 -- Atomic: one function call = one transaction. Two merges for the same guest
 -- or into the same account are serialised with transaction advisory locks.
 --
 -- Security: SECURITY DEFINER (writes rows of two users, bypassing RLS),
--- search_path = '' with schema-qualified names, EXECUTE for service_role only.
+-- search_path = public, pg_temp (trigger functions it fires need public) with
+-- schema-qualified names in the body, EXECUTE for service_role only.
 -- The function itself re-checks in auth.users that p_guest is a live anonymous
 -- user and p_user a live full account, so a guest token whose user has since
 -- been upgraded to a full account cannot be merged away.
@@ -118,7 +129,10 @@ CREATE OR REPLACE FUNCTION public.merge_guest_progress(p_guest uuid, p_user uuid
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+-- Not '': row triggers fired by these writes (e.g. update_collection_verse_count)
+-- use unqualified names and inherit this setting. pg_temp is listed last so
+-- temporary objects can never shadow public ones.
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_topics integer := 0;
@@ -130,7 +144,7 @@ DECLARE
   v_path_ids uuid[];
 BEGIN
   IF p_guest IS NULL OR p_user IS NULL OR p_guest = p_user THEN
-    RAISE EXCEPTION 'merge_guest_progress: invalid guest/user pair' USING ERRCODE = '22023';
+    RAISE EXCEPTION 'merge_guest:invalid_pair' USING ERRCODE = 'P0001';
   END IF;
 
   -- Serialise merges touching either user (consistent order: no deadlock).
@@ -143,14 +157,16 @@ BEGIN
     SELECT 1 FROM auth.users u
     WHERE u.id = p_guest AND u.is_anonymous IS TRUE AND u.deleted_at IS NULL
   ) THEN
-    RAISE EXCEPTION 'merge_guest_progress: source is not a guest' USING ERRCODE = '22023';
+    -- The one error the edge function reports to the client (400
+    -- GUEST_TOKEN_INVALID): unknown, deleted or since-upgraded guest.
+    RAISE EXCEPTION 'merge_guest:not_anonymous' USING ERRCODE = 'P0001';
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM auth.users u
     WHERE u.id = p_user AND u.is_anonymous IS NOT TRUE AND u.deleted_at IS NULL
   ) THEN
-    RAISE EXCEPTION 'merge_guest_progress: target is not a full account' USING ERRCODE = '22023';
+    RAISE EXCEPTION 'merge_guest:target_not_full' USING ERRCODE = 'P0001';
   END IF;
 
   SELECT COALESCE(array_agg(t.topic_id), '{}') INTO v_topic_ids
@@ -160,11 +176,14 @@ BEGIN
 
   -- ── Topic progress (before paths: the completion trigger then credits the
   --    account's existing enrolments exactly as a normal completion would).
+  --    Each guest table is drained with DELETE ... RETURNING feeding the
+  --    INSERT in one statement, so a guest row committed meanwhile is either
+  --    carried over or left for the next run, never deleted unmerged.
+  WITH g AS (DELETE FROM public.user_topic_progress WHERE user_id = p_guest RETURNING *)
   INSERT INTO public.user_topic_progress AS a
     (user_id, topic_id, started_at, completed_at, time_spent_seconds, xp_earned)
   SELECT p_user, g.topic_id, g.started_at, g.completed_at, g.time_spent_seconds, g.xp_earned
-  FROM public.user_topic_progress g
-  WHERE g.user_id = p_guest
+  FROM g
   ON CONFLICT (user_id, topic_id) DO UPDATE SET
     started_at = LEAST(a.started_at, EXCLUDED.started_at),
     completed_at = COALESCE(a.completed_at, EXCLUDED.completed_at),
@@ -175,16 +194,15 @@ BEGIN
     time_spent_seconds = GREATEST(a.time_spent_seconds, EXCLUDED.time_spent_seconds),
     updated_at = now();
   GET DIAGNOSTICS v_topics = ROW_COUNT;
-  DELETE FROM public.user_topic_progress WHERE user_id = p_guest;
 
   -- ── Path enrolments.
+  WITH g AS (DELETE FROM public.user_learning_path_progress WHERE user_id = p_guest RETURNING *)
   INSERT INTO public.user_learning_path_progress AS a
     (user_id, learning_path_id, enrolled_at, topics_completed, current_topic_position,
      total_xp_earned, completed_at, last_activity_at)
   SELECT p_user, g.learning_path_id, g.enrolled_at, g.topics_completed, g.current_topic_position,
          g.total_xp_earned, g.completed_at, g.last_activity_at
-  FROM public.user_learning_path_progress g
-  WHERE g.user_id = p_guest
+  FROM g
   ON CONFLICT (user_id, learning_path_id) DO UPDATE SET
     enrolled_at = LEAST(a.enrolled_at, EXCLUDED.enrolled_at),
     topics_completed = GREATEST(a.topics_completed, EXCLUDED.topics_completed),
@@ -192,7 +210,6 @@ BEGIN
     completed_at = LEAST(a.completed_at, EXCLUDED.completed_at),
     last_activity_at = GREATEST(a.last_activity_at, EXCLUDED.last_activity_at);
   GET DIAGNOSTICS v_paths = ROW_COUNT;
-  DELETE FROM public.user_learning_path_progress WHERE user_id = p_guest;
 
   -- Recompute the account's affected path rows from its topic rows.
   WITH affected AS (
@@ -208,7 +225,12 @@ BEGIN
     SELECT af.id,
            COALESCE(SUM(utp.xp_earned) FILTER (WHERE utp.completed_at IS NOT NULL), 0)::integer AS xp,
            COUNT(*) FILTER (WHERE lpt.is_active AND rt.is_active AND utp.completed_at IS NOT NULL)::integer AS visible_done,
-           COUNT(*) FILTER (WHERE lpt.is_active AND rt.is_active)::integer AS visible_total
+           COUNT(*) FILTER (WHERE lpt.is_active AND rt.is_active)::integer AS visible_total,
+           -- Resume cursor: first visible topic not completed (never-started
+           -- topics come through the LEFT JOIN as incomplete); when all are
+           -- done it stays on the last visible topic, as the trigger leaves it.
+           MIN(lpt.position) FILTER (WHERE lpt.is_active AND rt.is_active AND utp.completed_at IS NULL) AS next_pos,
+           MAX(lpt.position) FILTER (WHERE lpt.is_active AND rt.is_active) AS last_pos
     FROM affected af
     JOIN public.learning_path_topics lpt ON lpt.learning_path_id = af.learning_path_id
     JOIN public.recommended_topics rt ON rt.id = lpt.topic_id
@@ -219,6 +241,7 @@ BEGIN
   UPDATE public.user_learning_path_progress ulp
   SET total_xp_earned = s.xp,
       topics_completed = GREATEST(ulp.topics_completed, s.visible_done),
+      current_topic_position = COALESCE(s.next_pos, s.last_pos, ulp.current_topic_position),
       completed_at = CASE
         WHEN s.visible_total > 0 AND s.visible_done >= s.visible_total
           THEN COALESCE(ulp.completed_at, now())
@@ -228,17 +251,18 @@ BEGIN
   WHERE s.id = ulp.id
     AND (ulp.total_xp_earned IS DISTINCT FROM s.xp
          OR ulp.topics_completed < s.visible_done
+         OR ulp.current_topic_position IS DISTINCT FROM COALESCE(s.next_pos, s.last_pos, ulp.current_topic_position)
          OR (ulp.completed_at IS NULL AND s.visible_total > 0 AND s.visible_done >= s.visible_total));
 
   -- ── Study guides.
+  WITH g AS (DELETE FROM public.user_study_guides WHERE user_id = p_guest RETURNING *)
   INSERT INTO public.user_study_guides AS a
     (user_id, study_guide_id, is_saved, completed_at, time_spent_seconds, scrolled_to_bottom,
      personal_notes, created_at, continue_reminder_count, last_continue_reminder_at)
   SELECT p_user, g.study_guide_id, g.is_saved, g.completed_at, g.time_spent_seconds,
          g.scrolled_to_bottom, g.personal_notes, g.created_at, g.continue_reminder_count,
          g.last_continue_reminder_at
-  FROM public.user_study_guides g
-  WHERE g.user_id = p_guest
+  FROM g
   ON CONFLICT (user_id, study_guide_id) DO UPDATE SET
     is_saved = a.is_saved OR EXCLUDED.is_saved,
     completed_at = LEAST(a.completed_at, EXCLUDED.completed_at),
@@ -247,7 +271,6 @@ BEGIN
     personal_notes = COALESCE(a.personal_notes, EXCLUDED.personal_notes),
     updated_at = now();
   GET DIAGNOSTICS v_guides = ROW_COUNT;
-  DELETE FROM public.user_study_guides WHERE user_id = p_guest;
 
   UPDATE public.study_reflections SET user_id = p_user WHERE user_id = p_guest;
   UPDATE public.recommended_guide_sessions SET user_id = p_user WHERE user_id = p_guest;
@@ -256,12 +279,23 @@ BEGIN
   WHERE c.user_id = p_guest
     AND NOT EXISTS (SELECT 1 FROM public.study_guide_conversations x
                     WHERE x.user_id = p_user AND x.study_guide_id = c.study_guide_id);
-  DELETE FROM public.study_guide_conversations WHERE user_id = p_guest;
+  DELETE FROM public.study_guide_conversations c
+  WHERE c.user_id = p_guest
+    AND EXISTS (SELECT 1 FROM public.study_guide_conversations x
+                WHERE x.user_id = p_user AND x.study_guide_id = c.study_guide_id);
 
   UPDATE public.study_guides SET creator_user_id = p_user WHERE creator_user_id = p_guest;
 
   -- ── Memory verses: drop the guest's duplicates, then move the rest with
-  --    their per-verse history.
+  --    their per-verse history. A guest collection that holds a duplicate is
+  --    pointed at the account's copy first, so it keeps the verse.
+  INSERT INTO public.memory_verse_collection_items (collection_id, memory_verse_id, added_at)
+  SELECT ci.collection_id, a.id, ci.added_at
+  FROM public.memory_verse_collection_items ci
+  JOIN public.memory_verses g ON g.id = ci.memory_verse_id AND g.user_id = p_guest
+  JOIN public.memory_verses a
+    ON a.user_id = p_user AND a.verse_reference = g.verse_reference AND a.language = g.language
+  ON CONFLICT DO NOTHING;
   DELETE FROM public.memory_verses g
   WHERE g.user_id = p_guest
     AND EXISTS (SELECT 1 FROM public.memory_verses a
@@ -278,124 +312,117 @@ BEGIN
   UPDATE public.daily_unlocked_modes SET user_id = p_user WHERE user_id = p_guest;
   UPDATE public.memory_verse_collections SET user_id = p_user WHERE user_id = p_guest;
 
+  WITH g AS (DELETE FROM public.memory_daily_goals WHERE user_id = p_guest RETURNING *)
   INSERT INTO public.memory_daily_goals AS a
     (user_id, goal_date, target_reviews, completed_reviews, target_new_verses,
      added_new_verses, goal_achieved, bonus_xp_awarded, created_at)
   SELECT p_user, g.goal_date, g.target_reviews, g.completed_reviews, g.target_new_verses,
          g.added_new_verses, g.goal_achieved, g.bonus_xp_awarded, g.created_at
-  FROM public.memory_daily_goals g
-  WHERE g.user_id = p_guest
+  FROM g
   ON CONFLICT (user_id, goal_date) DO UPDATE SET
     completed_reviews = a.completed_reviews + EXCLUDED.completed_reviews,
     added_new_verses = a.added_new_verses + EXCLUDED.added_new_verses,
     goal_achieved = a.goal_achieved OR EXCLUDED.goal_achieved,
     bonus_xp_awarded = GREATEST(a.bonus_xp_awarded, EXCLUDED.bonus_xp_awarded);
-  DELETE FROM public.memory_daily_goals WHERE user_id = p_guest;
 
+  WITH g AS (DELETE FROM public.user_challenge_progress WHERE user_id = p_guest RETURNING *)
   INSERT INTO public.user_challenge_progress AS a
     (user_id, challenge_id, current_progress, is_completed, completed_at, xp_claimed)
   SELECT p_user, g.challenge_id, g.current_progress, g.is_completed, g.completed_at, g.xp_claimed
-  FROM public.user_challenge_progress g
-  WHERE g.user_id = p_guest
+  FROM g
   ON CONFLICT (user_id, challenge_id) DO UPDATE SET
     current_progress = GREATEST(a.current_progress, EXCLUDED.current_progress),
     is_completed = a.is_completed OR EXCLUDED.is_completed,
     completed_at = LEAST(a.completed_at, EXCLUDED.completed_at),
     xp_claimed = a.xp_claimed OR EXCLUDED.xp_claimed;
-  DELETE FROM public.user_challenge_progress WHERE user_id = p_guest;
 
-  -- ── Streaks: move when the account has none, otherwise combine.
-  UPDATE public.daily_verse_streaks g SET user_id = p_user
-  WHERE g.user_id = p_guest
-    AND NOT EXISTS (SELECT 1 FROM public.daily_verse_streaks a WHERE a.user_id = p_user);
-  UPDATE public.daily_verse_streaks a SET
-    current_streak = g.cur,
-    longest_streak = GREATEST(a.longest_streak, g.longest_streak, g.cur),
-    total_views = a.total_views + g.total_views,
-    last_viewed_at = GREATEST(a.last_viewed_at, g.last_viewed_at),
-    last_activity_local_date = GREATEST(a.last_activity_local_date, g.last_activity_local_date),
-    updated_at = now()
-  FROM (
-    SELECT g0.*, public.merged_streak_length(
-             a0.current_streak, COALESCE(a0.last_activity_local_date, a0.last_viewed_at::date),
-             g0.current_streak, COALESCE(g0.last_activity_local_date, g0.last_viewed_at::date)) AS cur
-    FROM public.daily_verse_streaks g0
-    JOIN public.daily_verse_streaks a0 ON a0.user_id = p_user
-    WHERE g0.user_id = p_guest
-  ) g
-  WHERE a.user_id = p_user;
-  DELETE FROM public.daily_verse_streaks WHERE user_id = p_guest;
+  -- ── Streaks: moved when the account has none, otherwise combined.
+  WITH g AS (DELETE FROM public.daily_verse_streaks WHERE user_id = p_guest RETURNING *)
+  INSERT INTO public.daily_verse_streaks AS a
+    (user_id, current_streak, longest_streak, last_viewed_at, total_views, created_at,
+     last_activity_local_date)
+  SELECT p_user, g.current_streak, g.longest_streak, g.last_viewed_at, g.total_views, g.created_at,
+         g.last_activity_local_date
+  FROM g
+  ON CONFLICT (user_id) DO UPDATE SET
+    current_streak = public.merged_streak_length(
+      a.current_streak, COALESCE(a.last_activity_local_date, a.last_viewed_at::date),
+      EXCLUDED.current_streak, COALESCE(EXCLUDED.last_activity_local_date, EXCLUDED.last_viewed_at::date)),
+    longest_streak = GREATEST(a.longest_streak, EXCLUDED.longest_streak, public.merged_streak_length(
+      a.current_streak, COALESCE(a.last_activity_local_date, a.last_viewed_at::date),
+      EXCLUDED.current_streak, COALESCE(EXCLUDED.last_activity_local_date, EXCLUDED.last_viewed_at::date))),
+    total_views = a.total_views + EXCLUDED.total_views,
+    last_viewed_at = GREATEST(a.last_viewed_at, EXCLUDED.last_viewed_at),
+    last_activity_local_date = GREATEST(a.last_activity_local_date, EXCLUDED.last_activity_local_date),
+    updated_at = now();
 
-  UPDATE public.user_study_streaks g SET user_id = p_user
-  WHERE g.user_id = p_guest
-    AND NOT EXISTS (SELECT 1 FROM public.user_study_streaks a WHERE a.user_id = p_user);
-  UPDATE public.user_study_streaks a SET
-    current_streak = g.cur,
-    longest_streak = GREATEST(a.longest_streak, g.longest_streak, g.cur),
-    last_study_date = GREATEST(a.last_study_date, g.last_study_date),
-    total_study_days = GREATEST(a.total_study_days, g.total_study_days)
-  FROM (
-    SELECT g0.*, public.merged_streak_length(
-             a0.current_streak, a0.last_study_date, g0.current_streak, g0.last_study_date) AS cur
-    FROM public.user_study_streaks g0
-    JOIN public.user_study_streaks a0 ON a0.user_id = p_user
-    WHERE g0.user_id = p_guest
-  ) g
-  WHERE a.user_id = p_user;
-  DELETE FROM public.user_study_streaks WHERE user_id = p_guest;
+  WITH g AS (DELETE FROM public.user_study_streaks WHERE user_id = p_guest RETURNING *)
+  INSERT INTO public.user_study_streaks AS a
+    (user_id, current_streak, longest_streak, last_study_date, total_study_days, created_at)
+  SELECT p_user, g.current_streak, g.longest_streak, g.last_study_date, g.total_study_days, g.created_at
+  FROM g
+  ON CONFLICT (user_id) DO UPDATE SET
+    current_streak = public.merged_streak_length(
+      a.current_streak, a.last_study_date, EXCLUDED.current_streak, EXCLUDED.last_study_date),
+    longest_streak = GREATEST(a.longest_streak, EXCLUDED.longest_streak, public.merged_streak_length(
+      a.current_streak, a.last_study_date, EXCLUDED.current_streak, EXCLUDED.last_study_date)),
+    last_study_date = GREATEST(a.last_study_date, EXCLUDED.last_study_date),
+    total_study_days = GREATEST(a.total_study_days, EXCLUDED.total_study_days);
 
-  UPDATE public.memory_verse_streaks g SET user_id = p_user
-  WHERE g.user_id = p_guest
-    AND NOT EXISTS (SELECT 1 FROM public.memory_verse_streaks a WHERE a.user_id = p_user);
-  UPDATE public.memory_verse_streaks a SET
-    current_streak = g.cur,
-    longest_streak = GREATEST(a.longest_streak, g.longest_streak, g.cur),
-    last_practice_date = GREATEST(a.last_practice_date, g.last_practice_date),
-    total_practice_days = GREATEST(a.total_practice_days, g.total_practice_days),
-    milestone_10_date = LEAST(a.milestone_10_date, g.milestone_10_date),
-    milestone_30_date = LEAST(a.milestone_30_date, g.milestone_30_date),
-    milestone_100_date = LEAST(a.milestone_100_date, g.milestone_100_date),
-    milestone_365_date = LEAST(a.milestone_365_date, g.milestone_365_date),
-    updated_at = now()
-  FROM (
-    SELECT g0.*, public.merged_streak_length(
-             a0.current_streak, a0.last_practice_date, g0.current_streak, g0.last_practice_date) AS cur
-    FROM public.memory_verse_streaks g0
-    JOIN public.memory_verse_streaks a0 ON a0.user_id = p_user
-    WHERE g0.user_id = p_guest
-  ) g
-  WHERE a.user_id = p_user;
-  DELETE FROM public.memory_verse_streaks WHERE user_id = p_guest;
+  WITH g AS (DELETE FROM public.memory_verse_streaks WHERE user_id = p_guest RETURNING *)
+  INSERT INTO public.memory_verse_streaks AS a
+    (user_id, current_streak, longest_streak, last_practice_date, total_practice_days,
+     freeze_days_available, freeze_days_used, milestone_10_date, milestone_30_date,
+     milestone_100_date, milestone_365_date, created_at)
+  SELECT p_user, g.current_streak, g.longest_streak, g.last_practice_date, g.total_practice_days,
+         g.freeze_days_available, g.freeze_days_used, g.milestone_10_date, g.milestone_30_date,
+         g.milestone_100_date, g.milestone_365_date, g.created_at
+  FROM g
+  ON CONFLICT (user_id) DO UPDATE SET
+    current_streak = public.merged_streak_length(
+      a.current_streak, a.last_practice_date, EXCLUDED.current_streak, EXCLUDED.last_practice_date),
+    longest_streak = GREATEST(a.longest_streak, EXCLUDED.longest_streak, public.merged_streak_length(
+      a.current_streak, a.last_practice_date, EXCLUDED.current_streak, EXCLUDED.last_practice_date)),
+    last_practice_date = GREATEST(a.last_practice_date, EXCLUDED.last_practice_date),
+    total_practice_days = GREATEST(a.total_practice_days, EXCLUDED.total_practice_days),
+    milestone_10_date = LEAST(a.milestone_10_date, EXCLUDED.milestone_10_date),
+    milestone_30_date = LEAST(a.milestone_30_date, EXCLUDED.milestone_30_date),
+    milestone_100_date = LEAST(a.milestone_100_date, EXCLUDED.milestone_100_date),
+    milestone_365_date = LEAST(a.milestone_365_date, EXCLUDED.milestone_365_date),
+    updated_at = now();
 
   -- ── Achievements.
+  WITH g AS (DELETE FROM public.user_achievements WHERE user_id = p_guest RETURNING *)
   INSERT INTO public.user_achievements (user_id, achievement_id, unlocked_at, notified)
   SELECT p_user, g.achievement_id, g.unlocked_at, g.notified
-  FROM public.user_achievements g
-  WHERE g.user_id = p_guest
+  FROM g
   ON CONFLICT ON CONSTRAINT unique_user_achievement DO NOTHING;
   GET DIAGNOSTICS v_achievements = ROW_COUNT;
-  DELETE FROM public.user_achievements WHERE user_id = p_guest;
 
   -- ── Questionnaire and preferences.
-  UPDATE public.user_personalization a SET
-    faith_stage = g.faith_stage,
-    spiritual_goals = g.spiritual_goals,
-    time_availability = g.time_availability,
-    learning_style = g.learning_style,
-    life_stage_focus = g.life_stage_focus,
-    biggest_challenge = g.biggest_challenge,
-    questionnaire_completed = g.questionnaire_completed,
-    questionnaire_skipped = g.questionnaire_skipped,
-    scoring_results = g.scoring_results,
+  WITH g AS (DELETE FROM public.user_personalization WHERE user_id = p_guest RETURNING *)
+  INSERT INTO public.user_personalization AS a
+    (user_id, faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus,
+     biggest_challenge, questionnaire_completed, questionnaire_skipped, scoring_results, created_at)
+  SELECT p_user, g.faith_stage, g.spiritual_goals, g.time_availability, g.learning_style,
+         g.life_stage_focus, g.biggest_challenge, g.questionnaire_completed,
+         g.questionnaire_skipped, g.scoring_results, g.created_at
+  FROM g
+  ON CONFLICT (user_id) DO UPDATE SET
+    faith_stage = EXCLUDED.faith_stage,
+    spiritual_goals = EXCLUDED.spiritual_goals,
+    time_availability = EXCLUDED.time_availability,
+    learning_style = EXCLUDED.learning_style,
+    life_stage_focus = EXCLUDED.life_stage_focus,
+    biggest_challenge = EXCLUDED.biggest_challenge,
+    questionnaire_completed = EXCLUDED.questionnaire_completed,
+    questionnaire_skipped = EXCLUDED.questionnaire_skipped,
+    scoring_results = EXCLUDED.scoring_results,
     updated_at = now()
-  FROM public.user_personalization g
-  WHERE a.user_id = p_user AND g.user_id = p_guest
-    AND a.questionnaire_completed IS NOT TRUE AND g.questionnaire_completed IS TRUE;
-  UPDATE public.user_personalization g SET user_id = p_user
-  WHERE g.user_id = p_guest
-    AND NOT EXISTS (SELECT 1 FROM public.user_personalization a WHERE a.user_id = p_user);
-  DELETE FROM public.user_personalization WHERE user_id = p_guest;
+  WHERE a.questionnaire_completed IS NOT TRUE AND EXCLUDED.questionnaire_completed IS TRUE;
 
+  -- Preferences: the account's win; a guest row is moved only when the account
+  -- has none (so deleting what is left drops only rows the account overrides).
   UPDATE public.user_preferences g SET user_id = p_user
   WHERE g.user_id = p_guest
     AND NOT EXISTS (SELECT 1 FROM public.user_preferences a WHERE a.user_id = p_user);

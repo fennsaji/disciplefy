@@ -18,6 +18,7 @@ import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts'
 import { assertFullAccount } from '../_shared/auth/user-context.ts'
 import {
   GUEST_TOKEN_INVALID,
+  isGuestNotAnonymousError,
   normalizeMergeCounts,
   readGuestToken,
   validateMergeRequest,
@@ -582,7 +583,7 @@ async function handleMergeGuest(
     p_user: callerId,
   })
   if (error) {
-    if (error.code === '22023') {
+    if (isGuestNotAnonymousError(error)) {
       throw new AppError(GUEST_TOKEN_INVALID, GUEST_TOKEN_INVALID_MESSAGE, 400)
     }
     console.error('[USER_PROFILE] merge_guest failed', { code: error.code })

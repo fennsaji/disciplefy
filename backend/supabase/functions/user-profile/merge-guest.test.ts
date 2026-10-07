@@ -1,6 +1,7 @@
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import {
   GUEST_TOKEN_HEADER,
+  isGuestNotAnonymousError,
   normalizeMergeCounts,
   readGuestToken,
   validateMergeRequest,
@@ -46,4 +47,13 @@ Deno.test('normalizeMergeCounts keeps the four counts as non-negative integers',
     normalizeMergeCounts({ topics: '2', paths: -1, guides: 1.5 }),
     { topics: 0, paths: 0, guides: 0, verses: 0 },
   )
+})
+
+Deno.test('only the not_anonymous RPC error maps to an invalid guest token', () => {
+  assertEquals(isGuestNotAnonymousError({ code: 'P0001', message: 'merge_guest:not_anonymous' }), true)
+  assertEquals(isGuestNotAnonymousError({ code: 'P0001', message: 'merge_guest:target_not_full' }), false)
+  assertEquals(isGuestNotAnonymousError({ code: 'P0001', message: 'merge_guest:invalid_pair' }), false)
+  assertEquals(isGuestNotAnonymousError({ code: '22023', message: 'merge_guest:not_anonymous' }), false)
+  assertEquals(isGuestNotAnonymousError({ code: '23505', message: 'duplicate key' }), false)
+  assertEquals(isGuestNotAnonymousError(null), false)
 })

@@ -60,3 +60,11 @@ export function normalizeMergeCounts(result: unknown): MergeCounts {
     verses: count(r.verses),
   }
 }
+
+/** The RPC's only client-facing error: the guest is unknown, deleted or already upgraded. */
+export const MERGE_GUEST_NOT_ANONYMOUS = 'merge_guest:not_anonymous'
+
+/** True only for that RPC error; every other database error stays a 500. */
+export function isGuestNotAnonymousError(error: { code?: string; message?: string } | null): boolean {
+  return error?.code === 'P0001' && error.message === MERGE_GUEST_NOT_ANONYMOUS
+}
