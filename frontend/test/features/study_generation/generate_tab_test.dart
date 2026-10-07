@@ -342,12 +342,12 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('continue reading: two tinted cards, open, save, see all',
+      testWidgets('continue reading: three rows, open, toggle save, see all',
           (tester) async {
         _useNarrowPhone(tester);
         final now = DateTime(2026, 9, 29, 12);
         final opened = <String>[];
-        final saved = <String>[];
+        final toggled = <String>[];
         var seeAll = 0;
 
         await tester.pumpWidget(_app(
@@ -356,17 +356,19 @@ void main() {
             child: ContinueReadingRow(
               now: now,
               guides: [
-                _guide('a', GuideType.topic, 'Why Read the Bible?',
+                _guide('a', GuideType.topic, 'Hope',
                     at: now.subtract(const Duration(minutes: 1))),
                 _guide('b', GuideType.verse, 'John 3:16',
                     mode: 'quick',
                     saved: true,
                     at: now.subtract(const Duration(days: 1))),
-                _guide('c', GuideType.topic, 'Hidden third',
+                _guide('c', GuideType.topic, 'Why does God allow suffering?',
                     at: now.subtract(const Duration(days: 2))),
+                _guide('d', GuideType.topic, 'Hidden fourth',
+                    at: now.subtract(const Duration(days: 3))),
               ],
               onOpen: (g) => opened.add(g.id),
-              onSave: (g) => saved.add(g.id),
+              onToggleSave: (g) => toggled.add(g.id),
               onSeeAll: () => seeAll++,
             ),
           ),
@@ -374,22 +376,27 @@ void main() {
         ));
 
         expect(find.text('Continue reading'), findsOneWidget);
-        expect(find.text('Why Read the Bible?'), findsOneWidget);
+        expect(find.text('Hope'), findsOneWidget);
         expect(find.text('John 3:16'), findsOneWidget);
-        expect(find.text('Hidden third'), findsNothing);
-        // Mode · duration · when.
-        expect(find.text('Standard · 8 min · 1m ago'), findsOneWidget);
-        expect(find.text('Quick Read · 3 min · 1d ago'), findsOneWidget);
-        expect(find.text('Topic'), findsOneWidget);
-        expect(find.text('Scripture'), findsOneWidget);
+        expect(find.text('Why does God allow suffering?'), findsOneWidget);
+        expect(find.text('Hidden fourth'), findsNothing);
+        // Type · mode · duration · when.
+        expect(find.text('Topic · Standard · 8 min · 1m ago'), findsOneWidget);
+        expect(find.text('Scripture · Quick Read · 3 min · 1d ago'),
+            findsOneWidget);
+        expect(
+            find.text('Question · Standard · 8 min · 2d ago'), findsOneWidget);
+        expect(find.byIcon(Icons.help_outline_rounded), findsOneWidget);
 
         await tester.tap(find.text('John 3:16'));
-        await tester.tap(find.byIcon(Icons.bookmark_border_rounded));
+        // Saved guides show a filled bookmark that unsaves.
+        await tester.tap(find.byIcon(Icons.bookmark_rounded));
+        await tester.tap(find.byIcon(Icons.bookmark_border_rounded).first);
         await tester.tap(find.text('See all'));
         await tester.pump();
 
         expect(opened, ['b']);
-        expect(saved, ['a']);
+        expect(toggled, ['b', 'a']);
         expect(seeAll, 1);
         expect(tester.takeException(), isNull);
       });

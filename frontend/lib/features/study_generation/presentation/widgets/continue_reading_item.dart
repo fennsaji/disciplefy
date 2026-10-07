@@ -3,154 +3,110 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
-import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/domain/entities/saved_guide_entity.dart';
+import 'package:disciplefy_bible_study/features/saved_guides/presentation/widgets/guide_list_item.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 
-/// "Continue reading" card on the Generate tab: type label + icon, bookmark,
-/// title, and "mode · time ago", on a card tinted by type (gold for
-/// topics, a cool wash for scripture).
-class GuideQuickItem extends StatelessWidget {
+/// One "Continue reading" row on the Generate tab: the guide's type icon in a
+/// gold-tinted square, its title, "Type · mode · duration · when" and a
+/// bookmark that saves or unsaves it.
+class ContinueReadingItem extends StatelessWidget {
   final SavedGuideEntity guide;
   final VoidCallback onTap;
 
-  /// Saves the guide; null when it is already saved (the bookmark is then
-  /// shown filled and is not tappable).
-  final VoidCallback? onSave;
-  final bool showSaveAction;
+  /// Saves the guide when unsaved, removes it from saved when saved.
+  final VoidCallback onToggleSave;
 
   /// Injectable clock for the "time ago" label (tests).
   final DateTime? now;
 
-  const GuideQuickItem({
+  const ContinueReadingItem({
     super.key,
     required this.guide,
     required this.onTap,
-    this.onSave,
-    this.showSaveAction = false,
+    required this.onToggleSave,
     this.now,
   });
 
-  static const double height = 96;
+  /// Size of the leading type tile.
+  static const double tileSize = 36;
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final isScripture = guide.type == GuideType.verse;
-    // Library tiles: a cool wash for Scripture, gold for topics and
-    // questions, as the design's library grid.
-    final tint = isScripture ? AppColors.info : AppColors.brandGold;
-    final radius = BorderRadius.circular(18);
-
+    final kind = guide.libraryKind;
     final mode = studyModeFromString(guide.studyMode);
     final meta = [
+      context.tr(_kindLabelKey(kind)),
       if (mode != null) mode.localizedShortName(context),
       if (mode != null) mode.localizedDuration(context),
       _timeAgo(context, guide.lastAccessedAt),
     ].join(' · ');
 
-    return Semantics(
-      button: true,
-      label: guide.displayTitle,
-      child: Material(
-        color: palette.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(
-            color: tint.withValues(alpha: palette.isDark ? 0.28 : 0.22),
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Ink(
-          height: height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                tint.withValues(alpha: palette.isDark ? 0.34 : 0.12),
-                tint.withValues(alpha: palette.isDark ? 0.10 : 0.03),
-              ],
-            ),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        isScripture
-                            ? Icons.menu_book_outlined
-                            : Icons.lightbulb_outline_rounded,
-                        size: 16,
-                        color: palette.muted,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            context.tr(isScripture
-                                ? TranslationKeys.generateStudyScriptureTab
-                                : TranslationKeys.generateStudyTopicMode),
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            button: true,
+            label: '${guide.displayTitle}, $meta',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    _TypeTile(kind: kind),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            guide.displayTitle,
                             maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: AppFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: palette.muted,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: palette.text,
                             ),
                           ),
-                        ),
-                      ),
-                      _Bookmark(
-                        saved: guide.isSaved,
-                        onSave: showSaveAction ? onSave : null,
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Text(
-                      guide.displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: palette.text,
+                          const SizedBox(height: 2),
+                          Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.inter(
+                                fontSize: 12, color: palette.muted),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    // Mode · duration · when: shrinks rather than cutting.
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        meta,
-                        maxLines: 1,
-                        style:
-                            AppFonts.inter(fontSize: 12, color: palette.muted),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
+        _Bookmark(saved: guide.isSaved, onToggle: onToggleSave),
+      ],
     );
+  }
+
+  static String _kindLabelKey(LibraryGuideKind kind) {
+    switch (kind) {
+      case LibraryGuideKind.scripture:
+        return TranslationKeys.generateStudyScriptureTab;
+      case LibraryGuideKind.question:
+        return TranslationKeys.generateStudyQuestionMode;
+      case LibraryGuideKind.topic:
+        return TranslationKeys.generateStudyTopicMode;
+    }
   }
 
   String _timeAgo(BuildContext context, DateTime dateTime) {
@@ -170,27 +126,55 @@ class GuideQuickItem extends StatelessWidget {
   }
 }
 
-class _Bookmark extends StatelessWidget {
-  final bool saved;
-  final VoidCallback? onSave;
+/// Leading type icon on a gold tint, as the design's rows (the same tint
+/// for scripture, topic and question).
+class _TypeTile extends StatelessWidget {
+  final LibraryGuideKind kind;
 
-  const _Bookmark({required this.saved, this.onSave});
+  const _TypeTile({required this.kind});
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final icon = Icon(
-      saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-      size: 18,
-      color: palette.accentIcon,
+    final icon = switch (kind) {
+      LibraryGuideKind.scripture => Icons.menu_book_outlined,
+      LibraryGuideKind.topic => Icons.lightbulb_outline_rounded,
+      LibraryGuideKind.question => Icons.help_outline_rounded,
+    };
+    return Container(
+      width: ContinueReadingItem.tileSize,
+      height: ContinueReadingItem.tileSize,
+      decoration: BoxDecoration(
+        color: palette.gold.withValues(alpha: palette.isDark ? 0.14 : 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 18, color: palette.accentIcon),
     );
-    if (onSave == null) {
-      return Padding(padding: const EdgeInsets.all(6), child: icon);
-    }
-    return InkResponse(
-      onTap: onSave,
-      radius: 18,
-      child: Padding(padding: const EdgeInsets.all(6), child: icon),
+  }
+}
+
+class _Bookmark extends StatelessWidget {
+  final bool saved;
+  final VoidCallback onToggle;
+
+  const _Bookmark({required this.saved, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return IconButton(
+      onPressed: onToggle,
+      tooltip: context.tr(saved
+          ? TranslationKeys.savedGuidesRemove
+          : TranslationKeys.savedGuidesSave),
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      padding: EdgeInsets.zero,
+      icon: Icon(
+        saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+        size: 20,
+        color: saved ? palette.accentIcon : palette.dim,
+      ),
     );
   }
 }

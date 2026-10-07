@@ -11,12 +11,12 @@ import 'package:disciplefy_bible_study/features/saved_guides/domain/entities/sav
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/saved_guides_event.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/saved_guides_state.dart';
 import 'package:disciplefy_bible_study/features/saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
-import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/guide_quick_item.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/continue_reading_item.dart';
 
 /// "Continue reading" section at the bottom of the Generate tab.
 ///
-/// Loads the most recent guides and shows the latest two as tinted cards,
-/// with "See all" opening the Recent tab of the library. Also covers the
+/// Loads the person's own most recent guides and lists the latest three as
+/// rows, with "See all" opening the Recent tab of the library. Also covers the
 /// loading, empty, signed-out and error states.
 class RecentGuidesSection extends StatefulWidget {
   const RecentGuidesSection({super.key});
@@ -51,6 +51,9 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
     return BlocProvider.value(
       value: _bloc!,
       child: BlocBuilder<UnifiedSavedGuidesBloc, SavedGuidesState>(
+        // Save/unsave confirmations are transient; keep showing the list
+        // (already updated in place) rather than blanking the section.
+        buildWhen: (_, current) => current is! SavedGuidesActionSuccess,
         builder: (context, state) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,7 +85,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
     return ContinueReadingRow(
       guides: state.recentGuides,
       onOpen: _openGuide,
-      onSave: (guide) => _toggleSaveStatus(guide, true),
+      onToggleSave: (guide) => _toggleSaveStatus(guide, !guide.isSaved),
       onSeeAll: _seeAll,
     );
   }
@@ -97,25 +100,40 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
 
   Widget _buildLoadingSection() {
     final palette = ReaderPalette.of(context);
-    Widget placeholder() => Expanded(
-          child: Container(
-            height: GuideQuickItem.height,
-            decoration: BoxDecoration(
-              color: palette.raised,
-              borderRadius: BorderRadius.circular(18),
-            ),
+    Widget placeholder() => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                width: ContinueReadingItem.tileSize,
+                height: ContinueReadingItem.tileSize,
+                decoration: BoxDecoration(
+                  color: palette.raised,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: palette.raised,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
     return Column(
+      key: const Key('continue_reading_loading'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ContinueReadingHeader(onSeeAll: _seeAll),
-        const SizedBox(height: 12),
-        Row(children: [
-          placeholder(),
-          const SizedBox(width: 10),
-          placeholder()
-        ]),
+        const SizedBox(height: 4),
+        placeholder(),
+        placeholder(),
+        placeholder(),
       ],
     );
   }
@@ -201,7 +219,7 @@ class ContinueReadingHeader extends StatelessWidget {
         TextButton(
           onPressed: onSeeAll,
           style: TextButton.styleFrom(
-            foregroundColor: palette.muted,
+            foregroundColor: palette.gold,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             minimumSize: const Size(44, 36),
           ),
@@ -209,8 +227,8 @@ class ContinueReadingHeader extends StatelessWidget {
             context.tr(TranslationKeys.generateStudySeeAll),
             style: AppFonts.inter(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: palette.muted,
+              fontWeight: FontWeight.w600,
+              color: palette.gold,
             ),
           ),
         ),
@@ -219,50 +237,43 @@ class ContinueReadingHeader extends StatelessWidget {
   }
 }
 
-/// Header plus the two most recent guides side by side.
+/// Header plus the three most recent guides as rows.
 class ContinueReadingRow extends StatelessWidget {
   final List<SavedGuideEntity> guides;
   final ValueChanged<SavedGuideEntity> onOpen;
-  final ValueChanged<SavedGuideEntity> onSave;
+  final ValueChanged<SavedGuideEntity> onToggleSave;
   final VoidCallback onSeeAll;
 
-  /// Injectable clock for the cards' "time ago" labels (tests).
+  /// Injectable clock for the rows' "time ago" labels (tests).
   final DateTime? now;
+
+  /// Most rows shown; the rest are a "See all" away.
+  static const int maxRows = 3;
 
   const ContinueReadingRow({
     super.key,
     required this.guides,
     required this.onOpen,
-    required this.onSave,
+    required this.onToggleSave,
     required this.onSeeAll,
     this.now,
   });
 
   @override
   Widget build(BuildContext context) {
-    final shown = guides.take(2).toList();
-    Widget card(SavedGuideEntity guide) => GuideQuickItem(
-          guide: guide,
-          now: now,
-          onTap: () => onOpen(guide),
-          onSave: guide.isSaved ? null : () => onSave(guide),
-          showSaveAction: !guide.isSaved,
-        );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ContinueReadingHeader(onSeeAll: onSeeAll),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: card(shown[0])),
-            const SizedBox(width: 10),
-            Expanded(
-              child: shown.length > 1 ? card(shown[1]) : const SizedBox(),
-            ),
-          ],
-        ),
+        const SizedBox(height: 4),
+        for (final guide in guides.take(maxRows))
+          ContinueReadingItem(
+            key: ValueKey('continue_reading_${guide.id}'),
+            guide: guide,
+            now: now,
+            onTap: () => onOpen(guide),
+            onToggleSave: () => onToggleSave(guide),
+          ),
       ],
     );
   }
