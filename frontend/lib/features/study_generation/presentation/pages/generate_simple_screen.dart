@@ -734,8 +734,10 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
         TextButton(
           key: const Key('generate_depth_all'),
           onPressed: _openAllDepths,
+          // The design's secondary link; it sits low enough on the hero for
+          // the secondary colour to clear 4.5:1 in both themes.
           style: TextButton.styleFrom(
-            foregroundColor: palette.text,
+            foregroundColor: palette.muted,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             minimumSize: const Size(44, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -747,11 +749,11 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 context.tr(TranslationKeys.generateSimpleAllDepths),
                 style: AppFonts.inter(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: palette.text,
+                  fontWeight: FontWeight.w500,
+                  color: palette.muted,
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, size: 16, color: palette.text),
+              Icon(Icons.chevron_right_rounded, size: 16, color: palette.muted),
             ],
           ),
         ),

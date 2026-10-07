@@ -24,16 +24,16 @@ class GenerateHeroBackdrop extends StatelessWidget {
     final page = palette.page;
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
-    // Dark: a black shade over the header. Light: a heavy wash of the page
-    // colour at the top (dark ink title). Both close to the page colour
-    // below the search field: the chips, verse row and depth controls sit
-    // there, and at 94% the page colour keeps their text above 4.5:1 over
-    // even the brightest or darkest part of the photo.
+    // Dark: a light black shade, so the mountains still read behind the
+    // verse row and "Choose depth" as in the design; from 60% of the hero
+    // down (where the depth header sits) secondary text still clears 4.5:1
+    // over the blurred photo. Light: the design fades the photo into the
+    // page by the chips row, so the wash reaches 94% page colour there.
     final shade = palette.isDark
         ? [
             Colors.black.withValues(alpha: 0.55),
-            Colors.black.withValues(alpha: 0.40),
-            page.withValues(alpha: 0.94),
+            Colors.black.withValues(alpha: 0.30),
+            page.withValues(alpha: 0.62),
             page,
           ]
         : [
@@ -42,6 +42,9 @@ class GenerateHeroBackdrop extends StatelessWidget {
             page.withValues(alpha: 0.94),
             page,
           ];
+    final stops = palette.isDark
+        ? const [0.0, 0.42, 0.72, 1.0]
+        : const [0.0, 0.40, 0.56, 0.72];
 
     return ExcludeSemantics(
       child: LayoutBuilder(
@@ -66,7 +69,7 @@ class GenerateHeroBackdrop extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: shade,
-                    stops: const [0, 0.40, 0.56, 0.72],
+                    stops: stops,
                   ),
                 ),
               ),
