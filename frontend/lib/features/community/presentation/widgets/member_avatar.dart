@@ -33,7 +33,7 @@ class MemberAvatar extends StatelessWidget {
   });
 
   static const List<Color> _palette = [
-    Color(0xFF6D28D9), // violet
+    Color(0xFF986910), // deep gold
     Color(0xFF0E7490), // teal
     Color(0xFFBE123C), // crimson
     Color(0xFF0369A1), // sky

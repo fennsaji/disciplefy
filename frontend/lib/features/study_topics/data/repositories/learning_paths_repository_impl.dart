@@ -336,7 +336,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         title: download.learningPathTitle,
         description: '',
         iconName: 'school',
-        color: '#6A4FB6',
+        color: kDefaultPathColor,
         totalXp: 0,
         estimatedDays: 0,
         discipleLevel: 'believer',

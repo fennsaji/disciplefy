@@ -232,26 +232,39 @@ void main() {
   }
 
   test('no indigo creeps back into lib/', () {
-    // Retired indigo/lavender tokens and their raw values. Data fixtures that
-    // arrive from the API (a path's own colour) are not in lib/.
+    // Retired indigo/lavender/violet tokens and their raw values, as Color
+    // ints (0xFF…) or as '#RRGGBB' strings (defaults, checkout themes). Data
+    // that arrives from the API (a path's own colour) is not in lib/.
+    const retired = '4F46E5|6366F1|5B4FE9|4338CA|A9A6F5|A5B4FC|F3F0FF|'
+        '1E1B4B|3730A3|EEF0FE|EEEEFD|2E28A3|7C3AED|A78BFA|7C4DFF|D8B4FE|'
+        'F3E8FF|6D28D9|6A4FB6';
     final banned = RegExp(
-      r'brandPrimary|brandSecondary|primaryGradient|appBrandAccent|'
+      'brandPrimary|brandSecondary|primaryGradient|appBrandAccent|'
       r'appInteractive|AppTheme\.(primaryColor|primaryLightColor|'
-      r'secondaryPurple)|0x[Ff]{2}(4F46E5|6366F1|5B4FE9|4338CA|A9A6F5|'
-      r'A5B4FC|F3F0FF|1E1B4B|3730A3|EEF0FE|EEEEFD|2E28A3|7C3AED|A78BFA|'
-      r'7C4DFF|D8B4FE|F3E8FF)|Colors\.(indigo|deepPurple|blue)\b',
+      r'secondaryPurple)|(0x[Ff]{2}|#)'
+      '($retired)'
+      r'\b|Colors\.(indigo|deepPurple|blue)\b',
       caseSensitive: false,
     );
-    // Brand marks that may keep their own colours. Empty: the logo and
-    // splash are gold on ink and never used the indigo tokens.
-    const allowlist = <String>[];
+    // Lines that may keep a listed value, with why. The logo and splash are
+    // gold on ink and never used the indigo tokens.
+    const allowlist = <String, String>{
+      // learning-paths.png shows purple path tiles (Growing in Discipleship,
+      // The Local Church): the disciple-level tile gradient.
+      'lib/features/study_topics/presentation/widgets/path_level_style.dart':
+          'static const _disciple =',
+    };
 
     final offenders = <String>[];
     for (final entity in Directory('lib').listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      if (allowlist.any(entity.path.endsWith)) continue;
+      final allowed = allowlist.entries
+          .where((e) => entity.path.endsWith(e.key))
+          .map((e) => e.value)
+          .firstOrNull;
       final lines = entity.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
+        if (allowed != null && lines[i].contains(allowed)) continue;
         if (banned.hasMatch(lines[i])) {
           offenders.add('${entity.path}:${i + 1}: ${lines[i].trim()}');
         }

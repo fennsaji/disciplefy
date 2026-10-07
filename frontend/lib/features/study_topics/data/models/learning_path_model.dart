@@ -2,6 +2,10 @@ import 'package:disciplefy_bible_study/features/home/data/models/active_path_sum
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/learning_path.dart';
 
+/// Colour for a path the API sent without one: the brand gold (the design
+/// has no indigo or violet). A path's own colour from the API always wins.
+const String kDefaultPathColor = '#E3B154';
+
 /// Model for parsing learning path data from API.
 class LearningPathModel extends LearningPath {
   const LearningPathModel({
@@ -36,7 +40,7 @@ class LearningPathModel extends LearningPath {
       shortTitle: LearningPathModel.nonBlank(json['short_title']),
       description: json['description'] as String? ?? '',
       iconName: json['icon_name'] as String? ?? 'school',
-      color: json['color'] as String? ?? '#6A4FB6',
+      color: json['color'] as String? ?? kDefaultPathColor,
       totalXp: json['total_xp'] as int? ?? 0,
       estimatedDays: json['estimated_days'] as int? ?? 7,
       discipleLevel: json['disciple_level'] as String? ?? 'believer',
@@ -173,7 +177,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       shortTitle: LearningPathModel.nonBlank(json['short_title']),
       description: json['description'] as String? ?? '',
       iconName: json['icon_name'] as String? ?? 'school',
-      color: json['color'] as String? ?? '#6A4FB6',
+      color: json['color'] as String? ?? kDefaultPathColor,
       totalXp: json['total_xp'] as int? ?? 0,
       estimatedDays: json['estimated_days'] as int? ?? 7,
       discipleLevel: json['disciple_level'] as String? ?? 'believer',

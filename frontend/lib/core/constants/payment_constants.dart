@@ -11,7 +11,7 @@ class PaymentConstants {
 
   // Payment themes
   static const Map<String, dynamic> razorpayTheme = {
-    'color': '#7C3AED', // Vibrant purple
+    'color': '#E3B154', // Brand gold (design: no indigo or violet)
   };
 
   // Token pricing
