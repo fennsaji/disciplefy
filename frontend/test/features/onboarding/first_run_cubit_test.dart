@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
@@ -15,6 +17,7 @@ import 'package:disciplefy_bible_study/features/auth/data/services/guest_session
 import 'package:disciplefy_bible_study/features/onboarding/domain/growth_goals.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_cubit.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
@@ -70,6 +73,15 @@ LearningPath _listed(String slug, String title, int lessons) => LearningPath(
       discipleLevel: '',
       topicsCount: lessons,
     );
+
+/// A path detail parsed exactly as the app parses the server's answer
+/// (fixtures are real responses from the local learning-paths function).
+LearningPathDetail _serverDetail(String fixture) {
+  final body = jsonDecode(
+    File('test/fixtures/learning_paths/$fixture.json').readAsStringSync(),
+  ) as Map<String, dynamic>;
+  return LearningPathDetailModel.fromJson(body['data'] as Map<String, dynamic>);
+}
 
 void main() {
   late Directory tempDir;
@@ -326,6 +338,108 @@ void main() {
       expect: () => [isA<FirstRunStarting>(), isA<FirstRunFailed>()],
     );
 
+    group('with real server responses', () {
+      for (final fixture in const [
+        'path_detail_guest_enrolled_ml',
+        'path_detail_guest_not_enrolled_ml',
+        'path_detail_full_user_enrolled_en',
+      ]) {
+        blocTest<FirstRunCubit, FirstRunState>(
+          '$fixture: opens lesson 1',
+          build: () {
+            final detail = _serverDetail(fixture);
+            when(() => paths.getLearningPathDetails(
+                  pathId: any(named: 'pathId'),
+                  language: any(named: 'language'),
+                  forceRefresh: any(named: 'forceRefresh'),
+                )).thenAnswer((_) async => Right(detail));
+            return cubit();
+          },
+          act: (c) => c.startLessonOne(GrowthGoal.newToFaith, 'ml'),
+          expect: () => [
+            isA<FirstRunStarting>(),
+            isA<FirstRunReady>()
+                .having(
+                    (s) =>
+                        Uri.parse(s.location).queryParameters['lesson_number'],
+                    'n',
+                    '1')
+                .having(
+                    (s) => Uri.parse(s.location).queryParameters['topic_id'],
+                    'topic',
+                    _serverDetail(fixture)
+                        .topics
+                        .firstWhere((t) => t.position == 0)
+                        .topicId),
+          ],
+        );
+      }
+    });
+
+    group('an unexpected error logs the failing step and its type', () {
+      late List<String> logs;
+      late DebugPrintCallback original;
+
+      setUp(() {
+        logs = [];
+        original = debugPrint;
+        debugPrint =
+            (String? message, {int? wrapWidth}) => logs.add(message ?? '');
+      });
+
+      tearDown(() => debugPrint = original);
+
+      String failureLog() =>
+          logs.singleWhere((l) => l.contains('First run could not start'));
+
+      blocTest<FirstRunCubit, FirstRunState>(
+        'enrol ok, details throw a TypeError',
+        build: () {
+          when(() => paths.getLearningPathDetails(
+                pathId: any(named: 'pathId'),
+                language: any(named: 'language'),
+                forceRefresh: any(named: 'forceRefresh'),
+              )).thenThrow(TypeError());
+          return cubit();
+        },
+        act: (c) => c.startLessonOne(GrowthGoal.newToFaith, 'en'),
+        expect: () => [
+          isA<FirstRunStarting>(),
+          isA<FirstRunFailed>()
+              .having((s) => s.messageKey, 'key', 'first_run.error'),
+        ],
+        verify: (_) {
+          expect(failureLog(), contains('step=path_details'));
+          expect(failureLog(), contains('TypeError'));
+        },
+      );
+
+      blocTest<FirstRunCubit, FirstRunState>(
+        'enrol throws',
+        build: () {
+          when(() => paths.enrollInPathBySlug(any())).thenThrow(StateError(''));
+          return cubit();
+        },
+        act: (c) => c.startLessonOne(GrowthGoal.newToFaith, 'en'),
+        expect: () => [isA<FirstRunStarting>(), isA<FirstRunFailed>()],
+        verify: (_) {
+          expect(failureLog(), contains('step=enrol'));
+          expect(failureLog(), contains('StateError'));
+        },
+      );
+
+      blocTest<FirstRunCubit, FirstRunState>(
+        'guest start throws',
+        build: () {
+          when(() => guest.startGuest()).thenThrow(StateError(''));
+          return cubit();
+        },
+        act: (c) => c.startLessonOne(GrowthGoal.newToFaith, 'en'),
+        expect: () => [isA<FirstRunStarting>(), isA<FirstRunFailed>()],
+        verify: (_) => expect(failureLog(), contains('step=guest')),
+      );
+    });
+
     test('a second tap while starting is ignored', () async {
       final c = cubit();
       final first = c.startLessonOne(GrowthGoal.newToFaith, 'en');
@@ -430,6 +544,22 @@ void main() {
 
       expect(result.totalPaths, isNull);
       expect(result.forGoal(GrowthGoal.newToFaith), isNull);
+    });
+  });
+
+  group('appFrame', () {
+    test('reads VM and web frames, skipping package frames', () {
+      expect(
+          FirstRunCubit.appFrame(StackTrace.fromString(
+              '#0 Iterable.reduce (dart:core/iterable.dart:1:1)\n'
+              '#1 FirstRunCubit._lessonOneLocation (package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_cubit.dart:164:30)')),
+          'features/onboarding/presentation/bloc/first_run_cubit.dart:164');
+      expect(
+          FirstRunCubit.appFrame(StackTrace.fromString(
+              'dart-sdk/lib/core/iterable.dart 1:1  reduce\n'
+              'packages/disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_cubit.dart 164:30  [_lessonOneLocation]')),
+          'features/onboarding/presentation/bloc/first_run_cubit.dart:164');
+      expect(FirstRunCubit.appFrame(StackTrace.fromString('')), 'unknown');
     });
   });
 }

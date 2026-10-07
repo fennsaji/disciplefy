@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';
 
@@ -73,14 +74,39 @@ class FirstRunCubit extends Cubit<FirstRunState> {
   Future<void> startLessonOne(GrowthGoal goal, String language) async {
     if (state is FirstRunStarting) return;
     emit(const FirstRunStarting());
+    _step = _Step.language;
     try {
       await _start(goal, language);
-    } catch (e) {
+    } catch (e, stack) {
       // Never leave the screen spinning: anything unexpected is a retry.
+      // Metadata only: the step, the error type and the throwing app frame.
       Logger.error('First run could not start lesson 1',
-          tag: 'FIRST_RUN', error: e.runtimeType);
+          tag: 'FIRST_RUN',
+          context: {
+            'step': _step.label,
+            'type': e.runtimeType.toString(),
+            'at': appFrame(stack),
+          },
+          error: e.runtimeType);
       _emit(const FirstRunFailed(TranslationKeys.firstRunError));
     }
+  }
+
+  /// The step [_start] is on, logged when it throws.
+  _Step _step = _Step.language;
+
+  /// First stack frame inside this app as `file.dart:line`, for the log.
+  /// Reads both VM (`package:app/x.dart:12:3`) and web
+  /// (`packages/app/x.dart 12:3`) frames.
+  @visibleForTesting
+  static String appFrame(StackTrace stack) {
+    final frame = RegExp(
+        r'(?:package:|packages/)disciplefy_bible_study/(\S+?\.dart)[: ](\d+)');
+    for (final line in stack.toString().split('\n')) {
+      final match = frame.firstMatch(line);
+      if (match != null) return '${match.group(1)}:${match.group(2)}';
+    }
+    return 'unknown';
   }
 
   Future<void> _start(GrowthGoal goal, String language) async {
@@ -98,9 +124,11 @@ class FirstRunCubit extends Cubit<FirstRunState> {
         _emit(const FirstRunNeedsLogin());
         return;
       }
+      _step = _Step.guest;
       await _guest.startGuest();
     }
 
+    _step = _Step.enrol;
     final enrolled = await _paths.enrollInPathBySlug(goal.pathSlug);
     final pathId = enrolled.fold((failure) {
       final accountRequired = isAccountRequired(failure);
@@ -116,8 +144,10 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     }, (result) => result.learningPathId);
     if (pathId == null) return;
 
+    _step = _Step.saveGoal;
     await _settings.put(goalKey, goal.name);
 
+    _step = _Step.pathDetails;
     final details = await _paths.getLearningPathDetails(
       pathId: pathId,
       language: language,
@@ -128,7 +158,10 @@ class FirstRunCubit extends Cubit<FirstRunState> {
           tag: 'FIRST_RUN',
           context: {'slug': goal.pathSlug, 'code': failure.code});
       return null;
-    }, (path) => _lessonOneLocation(path, language));
+    }, (path) {
+      _step = _Step.lessonLocation;
+      return _lessonOneLocation(path, language);
+    });
 
     if (location == null) {
       _emit(const FirstRunFailed(TranslationKeys.firstRunError));
@@ -136,6 +169,7 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     }
     Logger.info('First run opens lesson 1',
         tag: 'FIRST_RUN', context: {'goal': goal.name});
+    _step = _Step.tours;
     await _markToursSeen();
     _emit(FirstRunReady(location));
   }
@@ -161,7 +195,12 @@ class FirstRunCubit extends Cubit<FirstRunState> {
 
   String? _lessonOneLocation(LearningPathDetail path, String language) {
     if (path.topics.isEmpty) return null;
-    final first = path.topics.reduce((a, b) => b.position < a.position ? b : a);
+    // A loop, not `topics.reduce`: the parsed list is a List of the topic
+    // model, so a closure typed on the entity fails the runtime type check.
+    var first = path.topics.first;
+    for (final topic in path.topics) {
+      if (topic.position < first.position) first = topic;
+    }
     final location = buildLessonLaunchLocation(
       path: path,
       topic: first,
@@ -223,4 +262,18 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     }
     return StarterPaths(bySlug: found, totalPaths: total);
   }
+}
+
+/// Steps of [FirstRunCubit.startLessonOne], named in the failure log.
+enum _Step {
+  language('language'),
+  guest('guest'),
+  enrol('enrol'),
+  saveGoal('save_goal'),
+  pathDetails('path_details'),
+  lessonLocation('lesson_location'),
+  tours('tours');
+
+  final String label;
+  const _Step(this.label);
 }
