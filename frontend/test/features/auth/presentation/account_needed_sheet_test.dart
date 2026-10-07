@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/features/auth/data/services/guest_session
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_link_panel.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 
+import '../../../helpers/fit_matrix.dart';
 import '../../../helpers/text_fit.dart';
 import '../../../helpers/welcome_test_harness.dart';
 
@@ -285,21 +286,24 @@ void main() {
     });
   });
 
-  group('no cut-off text at 320px', () {
+  group('no cut-off text at 360px and 320px', () {
     setUpAll(loadAppFonts);
-    for (final language in AppLanguage.values) {
-      for (final dark in [false, true]) {
-        final theme = dark ? 'dark' : 'light';
-        testWidgets('sheet ${language.code} $theme', (tester) async {
-          AccountLinkPanel.debugShowApple = true;
-          useSurface(tester, const Size(320, 900));
-          translations.language = language;
-          await tapGo(tester, AccountReason.discipler, dark: dark);
-          await tester.tap(find.byKey(const Key('account_email')));
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester);
-        });
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [false, true]) {
+          final theme = dark ? 'dark' : 'light';
+          testWidgets('sheet ${width.toInt()}px ${language.code} $theme',
+              (tester) async {
+            AccountLinkPanel.debugShowApple = true;
+            useSurface(tester, Size(width, 900));
+            translations.language = language;
+            await tapGo(tester, AccountReason.discipler, dark: dark);
+            await tester.tap(find.byKey(const Key('account_email')));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+          });
+        }
       }
     }
   });

@@ -33,7 +33,9 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import '../../helpers/fit_matrix.dart';
 import '../../helpers/welcome_test_harness.dart';
+import '../../helpers/text_fit.dart' show loadAppFonts;
 import '../settings/text_fit.dart';
 
 class _MockListBloc extends MockBloc<FellowshipListEvent, FellowshipListState>
@@ -239,23 +241,28 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('fits 320x640 without overflow or truncated labels', () {
-    for (final language in AppLanguage.values) {
-      for (final dark in [true, false]) {
-        testWidgets('${language.code} ${dark ? 'dark' : 'light'}',
-            (tester) async {
-          useSurface(tester, const Size(320, 640));
-          await pump(tester, dark: dark, language: language);
-          expectNoTruncatedText(tester);
-          expect(tester.takeException(), isNull);
+  group('fits 360 and 320 wide (640 tall) without cut labels', () {
+    setUpAll(loadAppFonts);
 
-          await openDiscover(tester);
-          // Descriptions are user content and may clamp at three lines.
-          expectNoTruncatedText(tester, allowed: {
-            for (final f in _publicFellowships) f.description!,
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [true, false]) {
+          testWidgets(
+              '${width.toInt()}px ${language.code} ${dark ? 'dark' : 'light'}',
+              (tester) async {
+            useSurface(tester, Size(width, 640));
+            await pump(tester, dark: dark, language: language);
+            expectNoTruncatedText(tester);
+            expect(tester.takeException(), isNull);
+
+            await openDiscover(tester);
+            // Descriptions are user content and may clamp at three lines.
+            expectNoTruncatedText(tester, allowed: {
+              for (final f in _publicFellowships) f.description!,
+            });
+            expect(tester.takeException(), isNull);
           });
-          expect(tester.takeException(), isNull);
-        });
+        }
       }
     }
   });

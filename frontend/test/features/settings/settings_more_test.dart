@@ -32,6 +32,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_b
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 
+import '../../helpers/fit_matrix.dart';
 import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
@@ -259,28 +260,30 @@ void main() {
         findsNothing);
   });
 
-  for (final dark in [false, true]) {
-    for (final language in AppLanguage.values) {
-      final label = '${dark ? 'dark' : 'light'} ${language.code}';
-      testWidgets('320px $label: Settings fits', (tester) async {
-        setUpWorld(guest: false);
-        translations.language = language;
-        useTall(tester, width: 320);
-        await tester.pumpWidget(app(dark: dark));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-      });
+  for (final width in fitWidths) {
+    for (final dark in [false, true]) {
+      for (final language in AppLanguage.values) {
+        final label = '${dark ? 'dark' : 'light'} ${language.code}';
+        testWidgets('${width.toInt()}px $label: Settings fits', (tester) async {
+          setUpWorld(guest: false);
+          translations.language = language;
+          useTall(tester, width: width);
+          await tester.pumpWidget(app(dark: dark));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
 
-      testWidgets('320px $label: More fits', (tester) async {
-        setUpWorld(guest: false);
-        translations.language = language;
-        useTall(tester, width: 320);
-        await tester.pumpWidget(app(dark: dark, initial: '/settings/more'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-      });
+        testWidgets('${width.toInt()}px $label: More fits', (tester) async {
+          setUpWorld(guest: false);
+          translations.language = language;
+          useTall(tester, width: width);
+          await tester.pumpWidget(app(dark: dark, initial: '/settings/more'));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
+      }
     }
   }
 }

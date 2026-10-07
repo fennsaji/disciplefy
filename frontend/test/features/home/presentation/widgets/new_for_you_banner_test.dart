@@ -12,6 +12,7 @@ import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_you_cubit.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/new_for_you_banner.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -175,27 +176,28 @@ void main() {
     });
   }
 
-  for (final language in ['hi', 'ml']) {
-    for (final dark in [false, true]) {
-      testWidgets('$language 320px every banner fits (dark: $dark)',
-          (tester) async {
-        useSurface(tester, const Size(320, 1400));
-        await tester.pumpWidget(app(
-          Column(children: [
-            for (final kind in NewForYouKind.values) ...[
-              banner(kind),
-              const SizedBox(height: 8),
-            ],
-          ]),
-          dark: dark,
-          language: language,
-        ));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-        expect(find.textContaining('nfy.'), findsNothing);
-      });
-    }
+  for (final c in fitCases()) {
+    final language = c.lang;
+    final dark = c.dark;
+    testWidgets(
+        '$language ${c.width.toInt()}px every banner fits (dark: $dark)',
+        (tester) async {
+      useSurface(tester, c.size(1400));
+      await tester.pumpWidget(app(
+        Column(children: [
+          for (final kind in NewForYouKind.values) ...[
+            banner(kind),
+            const SizedBox(height: 8),
+          ],
+        ]),
+        dark: dark,
+        language: language,
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expectNoTruncatedText(tester);
+      expect(find.textContaining('nfy.'), findsNothing);
+    });
   }
 
   group('NewForYouSection', () {

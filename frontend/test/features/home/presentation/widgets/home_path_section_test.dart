@@ -24,6 +24,7 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -475,42 +476,44 @@ void main() {
         allow: {mlSummary.displayTitle, mlSummary.next!.title});
   });
 
-  for (final language in ['hi', 'ml']) {
-    for (final dark in [false, true]) {
-      final summary = language == 'hi' ? hiSummary : mlSummary;
-      testWidgets('$language 320px fits (dark: $dark), guest', (tester) async {
-        when(() => guest.isGuest).thenReturn(true);
-        useSurface(tester, const Size(320, 900));
-        await tester
-            .pumpWidget(app(section(summary), dark: dark, language: language));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester,
-            allow: {summary.displayTitle, summary.next!.title});
-      });
+  for (final c in fitCases()) {
+    final language = c.lang;
+    final dark = c.dark;
+    final summary = language == 'hi' ? hiSummary : mlSummary;
+    testWidgets('$language ${c.width.toInt()}px fits (dark: $dark), guest',
+        (tester) async {
+      when(() => guest.isGuest).thenReturn(true);
+      useSurface(tester, c.size(900));
+      await tester
+          .pumpWidget(app(section(summary), dark: dark, language: language));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expectNoTruncatedText(tester,
+          allow: {summary.displayTitle, summary.next!.title});
+    });
 
-      testWidgets('$language 320px chooser fits (dark: $dark)', (tester) async {
-        useSurface(tester, const Size(320, 900));
-        listPaths([
-          _path('a',
-              featured: true,
-              order: 1,
-              lessons: 12,
-              days: 21,
-              title: language == 'hi'
-                  ? 'बाइबल को समझना और उसका अध्ययन'
-                  : 'ബൈബിൾ മനസ്സിലാക്കുകയും പഠിക്കുകയും'),
-          _path('b', featured: true, order: 2),
-        ]);
-        await tester
-            .pumpWidget(app(section(null), dark: dark, language: language));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester, allow: {
-          'बाइबल को समझना',
-          'ബൈബിൾ മനസ്സിലാക്കുകയും',
-        });
+    testWidgets('$language ${c.width.toInt()}px chooser fits (dark: $dark)',
+        (tester) async {
+      useSurface(tester, c.size(900));
+      listPaths([
+        _path('a',
+            featured: true,
+            order: 1,
+            lessons: 12,
+            days: 21,
+            title: language == 'hi'
+                ? 'बाइबल को समझना और उसका अध्ययन'
+                : 'ബൈബിൾ മനസ്സിലാക്കുകയും പഠിക്കുകയും'),
+        _path('b', featured: true, order: 2),
+      ]);
+      await tester
+          .pumpWidget(app(section(null), dark: dark, language: language));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expectNoTruncatedText(tester, allow: {
+        'बाइबल को समझना',
+        'ബൈബിൾ മനസ്സിലാക്കുകയും',
       });
-    }
+    });
   }
 }

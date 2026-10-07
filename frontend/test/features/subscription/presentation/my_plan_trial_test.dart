@@ -23,6 +23,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_b
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 
+import '../../../helpers/fit_matrix.dart';
 import '../../../helpers/text_fit.dart';
 import '../../../helpers/welcome_test_harness.dart';
 
@@ -285,14 +286,24 @@ void main() {
     expect(find.text('Cancel plan'), findsNothing);
   });
 
-  for (final language in AppLanguage.values) {
-    testWidgets('320px ${language.code}: trial fits', (tester) async {
-      translations.language = language;
-      useSurface(tester, const Size(320, 1400));
-      await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      expectNoTruncatedText(tester);
-    });
-  }
+  group('fits at 360px and 320px', () {
+    setUpAll(loadAppFonts);
+
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [true, false]) {
+          testWidgets(
+              '${width.toInt()}px ${language.code} ${dark ? 'dark' : 'light'}: '
+              'trial fits', (tester) async {
+            translations.language = language;
+            useSurface(tester, Size(width, 1400));
+            await tester.pumpWidget(app(dark: dark));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+          });
+        }
+      }
+    }
+  });
 }

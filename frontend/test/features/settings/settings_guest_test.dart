@@ -30,6 +30,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_b
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 
+import '../../helpers/fit_matrix.dart';
 import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
@@ -210,17 +211,20 @@ void main() {
       expect(find.text(tr(TranslationKeys.settingsBlockedUsers)), findsNothing);
     });
 
-    for (final language in AppLanguage.values) {
-      testWidgets('320x640 $theme ${language.code}: guest section fits',
-          (tester) async {
-        setUpWorld(guest: true);
-        translations.language = language;
-        useSurface(tester, const Size(320, 640));
-        await tester.pumpWidget(app(dark: dark));
-        await tester.pumpAndSettle();
-        await scrollToEnd(tester, check: () => expectNoTruncatedText(tester));
-        expect(tester.takeException(), isNull);
-      });
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        testWidgets(
+            '${width.toInt()}x640 $theme ${language.code}: guest section fits',
+            (tester) async {
+          setUpWorld(guest: true);
+          translations.language = language;
+          useSurface(tester, Size(width, 640));
+          await tester.pumpWidget(app(dark: dark));
+          await tester.pumpAndSettle();
+          await scrollToEnd(tester, check: () => expectNoTruncatedText(tester));
+          expect(tester.takeException(), isNull);
+        });
+      }
     }
   }
 

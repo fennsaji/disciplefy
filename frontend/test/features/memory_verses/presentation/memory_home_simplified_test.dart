@@ -31,6 +31,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/widge
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import '../../../helpers/fit_matrix.dart';
 import '../../../helpers/text_fit.dart';
 import '../../../helpers/welcome_test_harness.dart';
 
@@ -310,35 +311,38 @@ void main() {
     expect(visited, contains('/memory-verses/practice/v1'));
   });
 
-  for (final dark in [true, false]) {
-    for (final language in AppLanguage.values) {
-      final mode = dark ? 'dark' : 'light';
-      testWidgets('320 $mode ${language.code}: empty state fits',
-          (tester) async {
-        translations.language = language;
-        await pumpMemoryHome(tester,
-            verses: [], dark: dark, size: const Size(320, 640));
-        expect(find.text(tr(TranslationKeys.memorySaveTodaysVerse)),
-            findsOneWidget);
-        expectNoTruncatedText(tester);
-        expect(tester.takeException(), isNull);
-      });
+  for (final width in fitWidths) {
+    for (final dark in [true, false]) {
+      for (final language in AppLanguage.values) {
+        final mode = dark ? 'dark' : 'light';
+        testWidgets('${width.toInt()} $mode ${language.code}: empty state fits',
+            (tester) async {
+          translations.language = language;
+          await pumpMemoryHome(tester,
+              verses: [], dark: dark, size: Size(width, 640));
+          expect(find.text(tr(TranslationKeys.memorySaveTodaysVerse)),
+              findsOneWidget);
+          expectNoTruncatedText(tester);
+          expect(tester.takeException(), isNull);
+        });
 
-      testWidgets('320 $mode ${language.code}: header line and row fit',
-          (tester) async {
-        translations.language = language;
-        await pumpMemoryHome(tester,
-            verses: [_verse(daysOverdue: 3)],
-            streak: 12,
-            dark: dark,
-            size: const Size(320, 640));
-        expect(find.byType(MemoryHeaderLine), findsOneWidget);
-        expect(find.byType(MemoryVerseListItem), findsOneWidget);
-        expect(find.text(tr(TranslationKeys.memoryDue)), findsOneWidget);
-        expectNoTruncatedText(tester,
-            allow: {'I can do all things', 'Philippians'});
-        expect(tester.takeException(), isNull);
-      });
+        testWidgets(
+            '${width.toInt()} $mode ${language.code}: header line and row fit',
+            (tester) async {
+          translations.language = language;
+          await pumpMemoryHome(tester,
+              verses: [_verse(daysOverdue: 3)],
+              streak: 12,
+              dark: dark,
+              size: Size(width, 640));
+          expect(find.byType(MemoryHeaderLine), findsOneWidget);
+          expect(find.byType(MemoryVerseListItem), findsOneWidget);
+          expect(find.text(tr(TranslationKeys.memoryDue)), findsOneWidget);
+          expectNoTruncatedText(tester,
+              allow: {'I can do all things', 'Philippians'});
+          expect(tester.takeException(), isNull);
+        });
+      }
     }
   }
 }

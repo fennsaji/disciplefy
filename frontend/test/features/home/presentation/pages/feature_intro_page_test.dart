@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_
 import 'package:disciplefy_bible_study/features/home/presentation/pages/feature_intro_page.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -379,19 +380,20 @@ void main() {
     expect(newForYouKindNamed(null), isNull);
   });
 
-  for (final language in ['hi', 'ml']) {
-    for (final dark in [false, true]) {
-      for (final kind in NewForYouKind.values) {
-        testWidgets('$language 320px $kind intro fits (dark: $dark)',
-            (tester) async {
-          useSurface(tester, const Size(320, 700));
-          await tester.pumpWidget(app(kind, dark: dark, language: language));
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester);
-          expect(find.textContaining('intro.'), findsNothing);
-        });
-      }
+  for (final c in fitCases()) {
+    final language = c.lang;
+    final dark = c.dark;
+    for (final kind in NewForYouKind.values) {
+      testWidgets(
+          '$language ${c.width.toInt()}px $kind intro fits (dark: $dark)',
+          (tester) async {
+        useSurface(tester, c.size(700));
+        await tester.pumpWidget(app(kind, dark: dark, language: language));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester);
+        expect(find.textContaining('intro.'), findsNothing);
+      });
     }
   }
 }

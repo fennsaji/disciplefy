@@ -26,6 +26,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_header_cards.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_layout.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -316,34 +317,37 @@ void main() {
     });
   });
 
-  for (final lang in AppLanguage.values) {
-    for (final dark in [true, false]) {
-      final name = '${lang.code} ${dark ? 'dark' : 'light'}';
-      testWidgets('fits 320 wide ($name)', (tester) async {
-        await pumpTopics(
-          tester,
-          summary: summary4of8,
-          categories: [cat('Foundations', 2), cat('Gospels', 1)],
-          dark: dark,
-          lang: lang,
-          size: const Size(320, 1400),
-        );
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-      });
+  for (final width in fitWidths) {
+    for (final lang in AppLanguage.values) {
+      for (final dark in [true, false]) {
+        final name = '${lang.code} ${dark ? 'dark' : 'light'}';
+        testWidgets('fits ${width.toInt()} wide ($name)', (tester) async {
+          await pumpTopics(
+            tester,
+            summary: summary4of8,
+            categories: [cat('Foundations', 2), cat('Gospels', 1)],
+            dark: dark,
+            lang: lang,
+            size: Size(width, 1400),
+          );
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
 
-      testWidgets('Start a path fits 320 wide ($name)', (tester) async {
-        await pumpTopics(
-          tester,
-          summary: null,
-          categories: [cat('Foundations', 1)],
-          dark: dark,
-          lang: lang,
-          size: const Size(320, 900),
-        );
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-      });
+        testWidgets('Start a path fits ${width.toInt()} wide ($name)',
+            (tester) async {
+          await pumpTopics(
+            tester,
+            summary: null,
+            categories: [cat('Foundations', 1)],
+            dark: dark,
+            lang: lang,
+            size: Size(width, 900),
+          );
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
+      }
     }
   }
 }

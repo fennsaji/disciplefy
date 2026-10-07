@@ -28,6 +28,7 @@ import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_s
 import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 
 import '../../helpers/mock_activation_analytics.dart';
+import '../../helpers/fit_matrix.dart';
 import '../../helpers/text_fit.dart';
 import '../../helpers/welcome_test_harness.dart';
 
@@ -468,29 +469,35 @@ void main() {
     });
   });
 
-  group('no cut-off text at 320px', () {
+  group('no cut-off text at 360px and 320px', () {
     setUpAll(loadAppFonts);
-    for (final language in AppLanguage.values) {
-      for (final dark in [true, false]) {
-        final theme = dark ? 'dark' : 'light';
-        testWidgets('language page ${language.code} $theme', (tester) async {
-          useSurface(tester, const Size(320, 1000));
-          translations.language = language;
-          await tester.pumpWidget(app(initial: AppRoutes.welcome, dark: dark));
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester);
-        });
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [true, false]) {
+          final theme = dark ? 'dark' : 'light';
+          testWidgets(
+              '${width.toInt()}px language page ${language.code} $theme',
+              (tester) async {
+            useSurface(tester, Size(width, 1000));
+            translations.language = language;
+            await tester
+                .pumpWidget(app(initial: AppRoutes.welcome, dark: dark));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+          });
 
-        testWidgets('goal page ${language.code} $theme', (tester) async {
-          useSurface(tester, const Size(320, 1100));
-          translations.language = language;
-          await tester
-              .pumpWidget(app(initial: AppRoutes.welcomeGoal, dark: dark));
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester);
-        });
+          testWidgets('${width.toInt()}px goal page ${language.code} $theme',
+              (tester) async {
+            useSurface(tester, Size(width, 1100));
+            translations.language = language;
+            await tester
+                .pumpWidget(app(initial: AppRoutes.welcomeGoal, dark: dark));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+          });
+        }
       }
     }
 

@@ -20,6 +20,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/all_paths_page.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -193,20 +194,22 @@ void main() {
     });
   });
 
-  for (final lang in AppLanguage.values) {
-    for (final dark in [true, false]) {
-      final name = '${lang.code} ${dark ? 'dark' : 'light'}';
-      testWidgets('fits 320 wide ($name)', (tester) async {
-        await pumpAllPaths(
-          tester,
-          paths: [pathB, pathC, pathA],
-          dark: dark,
-          lang: lang,
-          size: const Size(320, 700),
-        );
-        expect(tester.takeException(), isNull);
-        expectNoTruncatedText(tester);
-      });
+  for (final width in fitWidths) {
+    for (final lang in AppLanguage.values) {
+      for (final dark in [true, false]) {
+        final name = '${lang.code} ${dark ? 'dark' : 'light'}';
+        testWidgets('fits ${width.toInt()} wide ($name)', (tester) async {
+          await pumpAllPaths(
+            tester,
+            paths: [pathB, pathC, pathA],
+            dark: dark,
+            lang: lang,
+            size: Size(width, 700),
+          );
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
+      }
     }
   }
 }

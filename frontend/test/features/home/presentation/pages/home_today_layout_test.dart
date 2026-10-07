@@ -69,6 +69,7 @@ import 'package:disciplefy_bible_study/features/user_profile/data/services/user_
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -700,32 +701,30 @@ void main() {
     });
   });
 
-  group('fits at 320px', () {
-    for (final language in ['hi', 'ml']) {
-      for (final dark in [false, true]) {
-        testWidgets('$language ${dark ? 'dark' : 'light'}, guest with banner',
-            (tester) async {
-          asGuest();
-          final summary = _localSummary(language);
-          await pumpHome(
-            tester,
-            summary: summary,
-            dark: dark,
-            language: language,
-            size: const Size(320, 1600),
-          );
-          expect(find.byType(NewForYouBanner), findsOneWidget);
-          expect(find.byType(SaveProgressRow), findsOneWidget);
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester, allow: {
-            summary.displayTitle,
-            summary.next!.title,
-            // The verse clamps by design; the greeting is the user's name.
-            'यहोवा',
-            'യഹോവ',
-          });
+  group('fits at 360px and 320px', () {
+    for (final c in fitCases()) {
+      final language = c.lang;
+      testWidgets('${c.name}, guest with banner', (tester) async {
+        asGuest();
+        final summary = _localSummary(language);
+        await pumpHome(
+          tester,
+          summary: summary,
+          dark: c.dark,
+          language: language,
+          size: c.size(1600),
+        );
+        expect(find.byType(NewForYouBanner), findsOneWidget);
+        expect(find.byType(SaveProgressRow), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        expectNoTruncatedText(tester, allow: {
+          summary.displayTitle,
+          summary.next!.title,
+          // The verse clamps by design; the greeting is the user's name.
+          'यहोवा',
+          'യഹോവ',
         });
-      }
+      });
     }
   });
 }

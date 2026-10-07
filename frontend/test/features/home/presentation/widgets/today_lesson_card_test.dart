@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/utils/lesson_launch.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
@@ -226,54 +227,56 @@ void main() {
     expect(chose, 1);
   });
 
-  for (final (lang, summary) in [('ml', mlSummary), ('hi', hiSummary)]) {
-    for (final dark in [false, true]) {
-      testWidgets('$lang 320px ${dark ? 'dark' : 'light'}: fits',
-          (tester) async {
-        useSurface(tester, const Size(320, 400));
-        await tester.pumpWidget(welcomeApp(
-            language: lang,
-            dark: dark,
-            screen: Scaffold(
-              body: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TodayLessonCard(
-                    summary: summary,
-                    mode: StudyMode.standard,
-                    onModeChanged: (_) {},
-                    onStart: () {}),
-              ),
-            )));
-        expectNoTruncatedText(tester, allow: {summary.next!.title});
-        expect(tester.takeException(), isNull);
-      });
+  for (final c in fitCases()) {
+    final lang = c.lang;
+    final dark = c.dark;
+    final summary = lang == 'ml' ? mlSummary : hiSummary;
+    testWidgets('$lang ${c.width.toInt()}px ${dark ? 'dark' : 'light'}: fits',
+        (tester) async {
+      useSurface(tester, c.size(400));
+      await tester.pumpWidget(welcomeApp(
+          language: lang,
+          dark: dark,
+          screen: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TodayLessonCard(
+                  summary: summary,
+                  mode: StudyMode.standard,
+                  onModeChanged: (_) {},
+                  onStart: () {}),
+            ),
+          )));
+      expectNoTruncatedText(tester, allow: {summary.next!.title});
+      expect(tester.takeException(), isNull);
+    });
 
-      testWidgets('$lang 320px ${dark ? 'dark' : 'light'}: finished fits',
-          (tester) async {
-        useSurface(tester, const Size(320, 400));
-        await tester.pumpWidget(welcomeApp(
-            language: lang,
-            dark: dark,
-            screen: Scaffold(
-              body: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TodayLessonCard(
-                    summary: ActivePathSummary(
-                        pathId: 'p1',
-                        title: summary.title,
-                        description: '',
-                        discipleLevel: '',
-                        lessonTotal: 8,
-                        lessonsCompleted: 8),
-                    mode: StudyMode.standard,
-                    onModeChanged: (_) {},
-                    onStart: () {},
-                    onChooseNextPath: () {}),
-              ),
-            )));
-        expectNoTruncatedText(tester);
-        expect(tester.takeException(), isNull);
-      });
-    }
+    testWidgets(
+        '$lang ${c.width.toInt()}px ${dark ? 'dark' : 'light'}: finished fits',
+        (tester) async {
+      useSurface(tester, c.size(400));
+      await tester.pumpWidget(welcomeApp(
+          language: lang,
+          dark: dark,
+          screen: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TodayLessonCard(
+                  summary: ActivePathSummary(
+                      pathId: 'p1',
+                      title: summary.title,
+                      description: '',
+                      discipleLevel: '',
+                      lessonTotal: 8,
+                      lessonsCompleted: 8),
+                  mode: StudyMode.standard,
+                  onModeChanged: (_) {},
+                  onStart: () {},
+                  onChooseNextPath: () {}),
+            ),
+          )));
+      expectNoTruncatedText(tester);
+      expect(tester.takeException(), isNull);
+    });
   }
 }

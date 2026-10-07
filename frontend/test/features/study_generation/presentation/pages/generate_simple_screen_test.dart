@@ -51,6 +51,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_s
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 
 class _MockTokenBloc extends MockBloc<TokenEvent, TokenState>
@@ -525,26 +526,29 @@ void main() {
     }
   });
 
-  group('no cut-off text at 320px', () {
+  group('no cut-off text at 360px and 320px', () {
     setUpAll(loadAppFonts);
 
-    for (final language in AppLanguage.values) {
-      for (final dark in [true, false]) {
-        testWidgets('${language.code} ${dark ? 'dark' : 'light'}',
-            (tester) async {
-          await pumpSimple(tester,
-              language: language, dark: dark, size: const Size(320, 1400));
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester, allow: {
-            _verse.translations.esv,
-            _verse.translations.hindi,
-            _verse.translations.malayalam,
-          });
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [true, false]) {
+          testWidgets(
+              '${width.toInt()}px ${language.code} ${dark ? 'dark' : 'light'}',
+              (tester) async {
+            await pumpSimple(tester,
+                language: language, dark: dark, size: Size(width, 1400));
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester, allow: {
+              _verse.translations.esv,
+              _verse.translations.hindi,
+              _verse.translations.malayalam,
+            });
 
-          await _type(tester, 'What is the purpose of prayer?');
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester);
-        });
+            await _type(tester, 'What is the purpose of prayer?');
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+          });
+        }
       }
     }
   });
