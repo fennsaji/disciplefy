@@ -9,6 +9,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
+import '../../features/auth/data/services/guest_session_service.dart';
+import '../../features/auth/data/services/oauth_service.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/domain/repositories/storage_repository.dart';
 import '../../features/auth/data/repositories/storage_repository_impl.dart';
@@ -347,6 +349,13 @@ Future<void> initializeDependencies() async {
 
   //! Auth
   sl.registerLazySingleton(() => AuthService());
+  sl.registerLazySingleton<GuestSessionService>(
+    () => GuestSessionService(
+      sl<SupabaseClient>().auth,
+      sl<SupabaseClient>().functions,
+      OAuthService(),
+    ),
+  );
   sl.registerFactory(() => AuthBloc(authService: sl()));
 
   // Phone Auth DataSource

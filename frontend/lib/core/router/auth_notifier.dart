@@ -69,6 +69,8 @@ class AuthNotifier extends ChangeNotifier {
         }
 
         // Keep local session_expires_at in sync with Supabase token refreshes.
+        // userUpdated counts too: linking an identity to a guest replaces the
+        // access token without a signedIn or tokenRefreshed event.
         // Without this, the RouterGuard's _isSessionExpired() reads a stale
         // expiry from Hive and incorrectly treats the user as logged out,
         // causing a redirect bounce (home → login → home → error page).
@@ -83,6 +85,7 @@ class AuthNotifier extends ChangeNotifier {
         if (authState.session != null &&
             (authState.event == AuthChangeEvent.tokenRefreshed ||
                 authState.event == AuthChangeEvent.signedIn ||
+                authState.event == AuthChangeEvent.userUpdated ||
                 authState.event == AuthChangeEvent.initialSession)) {
           _syncSessionExpiry(authState.session!);
         }

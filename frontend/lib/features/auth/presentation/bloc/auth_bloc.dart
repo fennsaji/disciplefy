@@ -13,6 +13,7 @@ import '../../../../core/router/router_guard.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/guest_session_service.dart';
 import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/usecases/clear_user_data_usecase.dart';
@@ -182,6 +183,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           user: supabaseUser,
           profile: profile,
         ));
+
+        // Finish a guest upgrade left pending by a web redirect, or retry a
+        // guest-progress merge that failed earlier. Never blocks start-up.
+        unawaited(_resumePendingGuestLink());
         return;
       }
 
@@ -207,6 +212,22 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       emit(const auth_states.AuthErrorState(
         message: 'Failed to initialize authentication',
       ));
+    }
+  }
+
+  Future<void> _resumePendingGuestLink() async {
+    if (!sl.isRegistered<GuestSessionService>()) return;
+    try {
+      final outcome = await sl<GuestSessionService>()
+          .resumePendingLink(callbackUri: kIsWeb ? Uri.base : null);
+      if (isClosed) return;
+      if (outcome == LinkOutcome.linked ||
+          outcome == LinkOutcome.mergedIntoExisting) {
+        add(const RefreshUserProfileRequested());
+      }
+    } catch (e) {
+      Logger.warning(
+          '[AUTH INIT] Pending guest link not resumed (${e.runtimeType})');
     }
   }
 
