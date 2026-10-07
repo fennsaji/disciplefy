@@ -21,6 +21,10 @@ void main() {
       '/fellowship': 'community',
       '/memory-verses': 'memory_verses',
       '/memory-verse-review': 'memory_verses',
+      '/intro/memory': 'memory_verses',
+      '/intro/generate': 'generate',
+      '/intro/discipler': 'discipler',
+      '/intro/fellowships': 'community',
     });
   });
 
@@ -56,6 +60,10 @@ void main() {
       '/memory-verses/practice/results': 'memory_verses',
       AppRoutes.memoryChampions: 'memory_verses',
       AppRoutes.memoryStats: 'memory_verses',
+      '/intro/memory': 'memory_verses',
+      '/intro/generate': 'generate',
+      '/intro/discipler': 'discipler',
+      '/intro/fellowships': 'community',
     };
     for (final entry in gated.entries) {
       test('${entry.key} → ${entry.value}', () {
@@ -88,6 +96,8 @@ void main() {
       AppRoutes.authCallback,
       AppRoutes.welcome,
       AppRoutes.welcomeGoal,
+      // A guest is introduced to learning paths only.
+      '/intro/paths',
       // Shares characters with a gated prefix but is a different route.
       '/communityx',
       '/memory-versesx',

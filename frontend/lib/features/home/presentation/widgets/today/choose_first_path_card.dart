@@ -161,7 +161,7 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
           else
             for (var i = 0; i < paths.length; i++) ...[
               if (i > 0) Divider(height: 1, color: palette.hairline),
-              _PathRow(path: paths[i], onTap: () => _open(paths[i])),
+              FirstPathRow(path: paths[i], onTap: () => _open(paths[i])),
             ],
           Align(
             alignment: AlignmentDirectional.centerStart,
@@ -192,11 +192,11 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
 }
 
 /// Icon tile, title and "{n} lessons · {days} days".
-class _PathRow extends StatelessWidget {
+class FirstPathRow extends StatelessWidget {
   final LearningPath path;
   final VoidCallback onTap;
 
-  const _PathRow({required this.path, required this.onTap});
+  const FirstPathRow({super.key, required this.path, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

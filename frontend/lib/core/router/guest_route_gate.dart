@@ -52,6 +52,12 @@ class GuestRouteGate {
     // Memory verses
     AppRoutes.memoryVerses: AccountReasons.memoryVerses,
     AppRoutes.verseReview: AccountReasons.memoryVerses,
+    // Introductions to the account-only features (a guest is only ever
+    // introduced to learning paths)
+    '/intro/memory': AccountReasons.memoryVerses,
+    '/intro/generate': AccountReasons.generate,
+    '/intro/discipler': AccountReasons.discipler,
+    '/intro/fellowships': AccountReasons.community,
   };
 
   /// The reason [path] is closed to a guest, or null when it is open.

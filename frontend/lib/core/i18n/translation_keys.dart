@@ -263,6 +263,37 @@ class TranslationKeys {
   static const homeTodaySeeAllPaths = 'home_today.see_all_paths';
   static const homeTodaySaveProgress = 'home_today.save_progress';
 
+  // New for you banners and feature introductions. Per-kind keys are built
+  // from the kind's name (NewForYouKind.name) by the helpers below.
+  static const nfyEyebrow = 'nfy.eyebrow';
+  static const nfyDismiss = 'nfy.dismiss';
+  static String nfyBannerTitle(String kind) => 'nfy.$kind.banner_title';
+  static String nfyBannerSub(String kind) => 'nfy.$kind.banner_sub';
+  static String nfyBannerSubAny(String kind) => 'nfy.$kind.banner_sub_any';
+  static String nfyBannerCta(String kind) => 'nfy.$kind.banner_cta';
+  static const introStartWith = 'intro.start_with';
+  static const introClose = 'intro.close';
+  static String introEyebrow(String kind) => 'intro.$kind.eyebrow';
+  static String introTitle(String kind) => 'intro.$kind.title';
+  static String introStepTitle(String kind, int step) =>
+      'intro.$kind.step${step}_title';
+  static String introStepBody(String kind, int step) =>
+      'intro.$kind.step${step}_body';
+  static String introPrimary(String kind) => 'intro.$kind.primary';
+  static String introSecondary(String kind) => 'intro.$kind.secondary';
+  static const introMemorySaved = 'intro.memory.saved';
+  static const introGenerateChip1 = 'intro.generate.chip1';
+  static const introGenerateChip2 = 'intro.generate.chip2';
+  static const introGenerateChip3 = 'intro.generate.chip3';
+  static const introDisciplerQuestion = 'intro.discipler.question';
+  static const introFellowshipsJoin = 'intro.fellowships.join';
+  static const introFellowshipsMembers = 'intro.fellowships.members';
+  static const introFellowshipsMemberOne = 'intro.fellowships.member_one';
+  static const introFellowshipsMembersOpen = 'intro.fellowships.members_open';
+  static const introFellowshipsOfficial = 'intro.fellowships.official';
+  static const introFellowshipsStudying = 'intro.fellowships.studying';
+  static const introFellowshipsJoinFailed = 'intro.fellowships.join_failed';
+
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
   static const homeGoodMorning = 'home.good_morning';

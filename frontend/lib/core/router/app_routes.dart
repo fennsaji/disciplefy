@@ -17,6 +17,13 @@ class AppRoutes {
   static const String studyGuide = '/study-guide';
   static const String studyGuideV2 = '/study-guide-v2';
   static const String lessonComplete = '/lesson-complete';
+
+  /// Feature introduction opened from a "New for you" banner; `kind` is a
+  /// NewForYouKind name.
+  static const String featureIntro = '/intro/:kind';
+
+  /// Introduction location for the kind called [kind].
+  static String featureIntroFor(String kind) => '/intro/$kind';
   static const String settings = '/settings';
   static const String bibleAttribution = '/settings/bible-attribution';
   static const String notificationSettings = '/notification-settings';

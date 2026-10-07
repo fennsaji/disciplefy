@@ -28,6 +28,8 @@ import '../../features/profile_setup/presentation/pages/profile_setup_screen.dar
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
+import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_content.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/pages/feature_intro_page.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/pages/generate_tab_page.dart';
 import '../navigation/study_navigator.dart';
 import '../di/injection_container.dart';
@@ -466,6 +468,20 @@ class AppRouter {
       ),
 
       // Standalone Routes (outside shell)
+      GoRoute(
+        path: AppRoutes.featureIntro,
+        name: 'feature_intro',
+        parentNavigatorKey: rootNavigatorKey,
+        redirect: (context, state) =>
+            newForYouKindNamed(state.pathParameters['kind']) == null
+                ? AppRoutes.home
+                : null,
+        builder: (context, state) => MaxWidthWrapper(
+          child: FeatureIntroPage(
+            kind: newForYouKindNamed(state.pathParameters['kind'])!,
+          ),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.saved,
         name: 'saved',
