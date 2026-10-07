@@ -24,7 +24,7 @@ String buildLessonLaunchLocation({
     discipleLevel: path.discipleLevel,
     ref: LessonRef(
       pathId: path.id,
-      pathTitle: path.title,
+      pathTitle: path.displayTitle,
       lessonNumber: index < 0 ? 1 : index + 1,
       lessonTotal: ordered.length,
     ),

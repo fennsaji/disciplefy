@@ -25,7 +25,7 @@ String buildLessonLaunchFromSummary(
     discipleLevel: s.discipleLevel,
     ref: LessonRef(
       pathId: s.pathId,
-      pathTitle: s.title,
+      pathTitle: s.displayTitle,
       lessonNumber: next.number,
       lessonTotal: next.total > 0 ? next.total : s.lessonTotal,
     ),

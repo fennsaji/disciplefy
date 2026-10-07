@@ -21,11 +21,13 @@ LearningPath lp({
   String color = '#2563EB',
   bool enrolled = false,
   int progress = 0,
+  String? shortTitle,
 }) =>
     LearningPath(
       id: id,
       slug: id,
-      title: 'Rooted in Christ',
+      title: 'Rooted in Christ: A Journey Through Colossians',
+      shortTitle: shortTitle,
       description: '',
       iconName: 'park',
       color: color,
@@ -65,6 +67,19 @@ void main() {
     expect(find.textContaining('XP'), findsNothing);
     expect(find.textContaining('Seeker'), findsNothing);
     expect(find.textContaining('Topics'), findsNothing);
+  });
+
+  testWidgets('row shows the short title, or the full title without one',
+      (tester) async {
+    await tester.pumpWidget(host(Column(children: [
+      PathListRow(path: lp(id: 'a', shortTitle: 'Rooted in Christ')),
+      PathListRow(path: lp(id: 'b')),
+      PathListRow(path: lp(id: 'c', shortTitle: '  ')),
+    ])));
+    await tester.pumpAndSettle();
+    expect(find.text('Rooted in Christ'), findsOneWidget);
+    expect(find.text('Rooted in Christ: A Journey Through Colossians'),
+        findsNWidgets(2));
   });
 
   testWidgets('enrolled row shows Lesson N of M in gold', (tester) async {
@@ -151,6 +166,7 @@ void main() {
           screen: Scaffold(
             body: ListView(children: [
               PathListRow(path: lp()),
+              PathListRow(path: lp(id: 's', shortTitle: 'Rooted in Christ')),
               PathListRow(path: lp(id: 'e', enrolled: true, progress: 38)),
               PathListRow(
                   path: lp(id: 'c', enrolled: true),

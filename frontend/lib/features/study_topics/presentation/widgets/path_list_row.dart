@@ -99,7 +99,7 @@ class PathListRow extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        path.title,
+                        path.displayTitle,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: AppFonts.poppins(

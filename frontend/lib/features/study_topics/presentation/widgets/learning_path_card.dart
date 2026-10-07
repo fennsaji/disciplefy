@@ -146,7 +146,7 @@ class LearningPathCard extends StatelessWidget {
                         MediaQuery.textScalerOf(context).scale(16) * 1.25 * 2,
                   ),
                   child: Text(
-                    path.title,
+                    path.displayTitle,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.poppins(

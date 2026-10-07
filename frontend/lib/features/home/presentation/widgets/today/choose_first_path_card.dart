@@ -230,7 +230,7 @@ class FirstPathRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      path.title,
+                      path.displayTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.inter(

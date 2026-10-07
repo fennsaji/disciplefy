@@ -56,7 +56,7 @@ class TopicsContinueData {
           (completed != null ? (completed * 100 / total).round() : 0);
       return TopicsContinueData(
         pathId: topic.learningPathId!,
-        title: path?.title ?? topic.learningPathName ?? topic.title,
+        title: path?.displayTitle ?? topic.learningPathName ?? topic.title,
         currentTopic:
             (topic.positionInPath ?? ((completed ?? 0) + 1)).clamp(1, total),
         totalTopics: total,
@@ -73,7 +73,7 @@ class TopicsContinueData {
     final path = inProgress.first;
     return TopicsContinueData(
       pathId: path.id,
-      title: path.title,
+      title: path.displayTitle,
       currentTopic: (path.topicsCompleted + 1).clamp(1, path.topicsCount),
       totalTopics: path.topicsCount,
       progressPercentage: path.progressPercentage.clamp(0, 100),

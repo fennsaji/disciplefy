@@ -1206,7 +1206,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 featureKey: 'learning_paths',
                 child: HomePathRow(
                   key: const Key('home_active_path_row'),
-                  title: path.title,
+                  title: path.displayTitle,
                   subtitle: homePathSubtitle(context, path),
                   progress: path.progressPercentage / 100,
                   accent: homePathAccent(context, path),
