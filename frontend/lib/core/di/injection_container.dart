@@ -270,10 +270,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => Supabase.instance.client);
   sl.registerLazySingleton<ActivationAnalytics>(
-    () => ActivationAnalytics(
-      client: sl<SupabaseClient>(),
-      queue: Hive.box<dynamic>('nux_events'),
-    ),
+    () => ActivationAnalytics(client: sl<SupabaseClient>()),
   );
   sl.registerLazySingleton(() => Connectivity());
   sl.registerLazySingleton<NetworkInfo>(

@@ -49,8 +49,7 @@ void main() {
     when(() => client.auth).thenReturn(auth);
     when(() => client.from('analytics_events')).thenAnswer((_) => table);
     when(() => table.insert(any())).thenAnswer((_) => _OkFilter());
-    a = ActivationAnalytics(
-        client: client, queue: queue, clock: () => clockTime);
+    a = ActivationAnalytics(client: client, clock: () => clockTime);
   });
 
   tearDown(() async {
@@ -165,5 +164,120 @@ void main() {
     await a.track(NuxEvent.firstOpen);
     await a.flush();
     await a.trackFirstOpenOnce();
+  });
+
+  test('logout closing every Hive box does not stop queueing (I3)', () async {
+    when(() => auth.currentUser).thenReturn(null);
+    await a.track(NuxEvent.firstOpen);
+    // Logout (LocalStoreRepositoryImpl.clearAll) closes every box.
+    await Hive.close();
+    await a.track(NuxEvent.languageSelected, {'language': 'hi'});
+    final reopened = Hive.box<dynamic>('nux_events');
+    expect(reopened.length, 2);
+    expect((reopened.getAt(1) as Map)['type'], 'nux.language_selected');
+  });
+
+  group('queued events and users', () {
+    test('a failed signed-in event keeps its user and is sent only as them',
+        () async {
+      when(() => auth.currentUser).thenReturn(user('a'));
+      when(() => table.insert(any())).thenThrow(Exception('offline'));
+      await a.track(NuxEvent.verseViewed);
+      expect((queue.getAt(0) as Map)['user_id'], 'a');
+
+      // User A signs out, user B signs in on the same device.
+      clearInteractions(table);
+      when(() => table.insert(any())).thenAnswer((_) => _OkFilter());
+      when(() => auth.currentUser).thenReturn(user('b'));
+      await a.flush();
+      verifyNever(() => table.insert(any()));
+      expect(queue.length, 0, reason: "A's event is dropped, not sent as B");
+    });
+
+    test('the same user gets their own failed event on the next flush',
+        () async {
+      when(() => auth.currentUser).thenReturn(user('a'));
+      when(() => table.insert(any())).thenThrow(Exception('offline'));
+      await a.track(NuxEvent.verseViewed);
+      clearInteractions(table);
+      when(() => table.insert(any())).thenAnswer((_) => _OkFilter());
+      await a.flush();
+      final row =
+          verify(() => table.insert(captureAny())).captured.single as Map;
+      expect(row['user_id'], 'a');
+      expect(queue.length, 0);
+    });
+
+    test('a signed-out event carries no user and goes to the next user',
+        () async {
+      when(() => auth.currentUser).thenReturn(null);
+      await a.track(NuxEvent.firstOpen);
+      expect((queue.getAt(0) as Map).containsKey('user_id'), isFalse);
+      when(() => auth.currentUser).thenReturn(user('b'));
+      await a.flush();
+      final row =
+          verify(() => table.insert(captureAny())).captured.single as Map;
+      expect(row['user_id'], 'b');
+    });
+  });
+
+  test('the queue is capped; the oldest events are dropped', () async {
+    when(() => auth.currentUser).thenReturn(null);
+    for (var i = 0; i < ActivationAnalytics.maxQueued + 5; i++) {
+      await a.track(NuxEvent.nfyImpression, {'i': i});
+    }
+    final items = queue.keys
+        .whereType<int>()
+        .map((k) => ((queue.get(k) as Map)['data'] as Map)['i'])
+        .toList();
+    expect(items.length, ActivationAnalytics.maxQueued);
+    expect(items.first, 5);
+    expect(items.last, ActivationAnalytics.maxQueued + 4);
+  });
+
+  group('a permanently rejected event', () {
+    test('is dropped during flush and does not block the rest', () async {
+      when(() => auth.currentUser).thenReturn(null);
+      await a.track(NuxEvent.firstOpen);
+      await a.track(NuxEvent.verseViewed);
+      when(() => auth.currentUser).thenReturn(user('u1'));
+      var n = 0;
+      when(() => table.insert(any())).thenAnswer((_) {
+        if (++n == 1) {
+          throw const PostgrestException(message: 'bad', code: '23514');
+        }
+        return _OkFilter();
+      });
+      await a.flush();
+      expect(queue.length, 0);
+      final types = verify(() => table.insert(captureAny()))
+          .captured
+          .map((r) => (r as Map)['event_type'])
+          .toList();
+      expect(types, ['nux.first_open', 'nux.verse_viewed']);
+    });
+
+    test('is not queued when the direct insert is rejected', () async {
+      when(() => auth.currentUser).thenReturn(user('u1'));
+      when(() => table.insert(any()))
+          .thenThrow(const PostgrestException(message: 'bad', code: '400'));
+      await a.track(NuxEvent.verseViewed);
+      expect(queue.length, 0);
+    });
+
+    test('expired token, rate limit and network errors stay retryable', () {
+      bool permanent(String code) => ActivationAnalytics.isPermanentInsertError(
+          PostgrestException(message: 'x', code: code));
+      expect(permanent('401'), isFalse);
+      expect(permanent('429'), isFalse);
+      expect(permanent('408'), isFalse);
+      expect(permanent('500'), isFalse);
+      expect(permanent('PGRST301'), isFalse);
+      expect(ActivationAnalytics.isPermanentInsertError(Exception('offline')),
+          isFalse);
+      expect(permanent('403'), isTrue);
+      expect(permanent('42501'), isTrue);
+      expect(permanent('PGRST204'), isTrue);
+    });
   });
 }

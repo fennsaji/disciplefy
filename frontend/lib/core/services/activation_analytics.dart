@@ -42,15 +42,20 @@ extension NuxEventName on NuxEvent {
 class ActivationAnalytics {
   ActivationAnalytics({
     required SupabaseClient client,
-    required Box<dynamic> queue,
+    String queueBoxName = defaultQueueBox,
     DateTime Function()? clock,
   })  : _client = client,
-        _queue = queue,
+        _queueBoxName = queueBoxName,
         _clock = clock ?? DateTime.now;
 
+  /// The Hive box that holds events waiting to be sent.
+  static const String defaultQueueBox = 'nux_events';
   static const String _table = 'analytics_events';
   static const String _firstOpenFlag = 'first_open_sent';
   static const int _maxStringLength = 64;
+
+  /// Most events kept waiting; the oldest are dropped beyond this.
+  static const int maxQueued = 200;
 
   /// One id per app launch, shared by every event of that launch.
   static final String appSessionId = const Uuid().v4();
@@ -71,9 +76,15 @@ class ActivationAnalytics {
   }
 
   final SupabaseClient _client;
-  final Box<dynamic> _queue;
+  final String _queueBoxName;
   final DateTime Function() _clock;
   bool _flushing = false;
+
+  /// The queue box, resolved per call: logout closes every Hive box
+  /// (`Hive.close()`), so a handle kept from start-up would be closed.
+  Future<Box<dynamic>> _queue() async => Hive.isBoxOpen(_queueBoxName)
+      ? Hive.box<dynamic>(_queueBoxName)
+      : await Hive.openBox<dynamic>(_queueBoxName);
 
   Future<void> track(NuxEvent e, [Map<String, Object?> data = const {}]) async {
     try {
@@ -84,6 +95,8 @@ class ActivationAnalytics {
       };
       final userId = _client.auth.currentUser?.id;
       if (userId == null) {
+        // Signed out: sent as whoever signs in next on this device (the
+        // pre-sign-in funnel, e.g. first_open).
         await _enqueue(e.type, eventData);
         return;
       }
@@ -95,27 +108,42 @@ class ActivationAnalytics {
           'session_id': appSessionId,
         });
       } catch (err) {
+        if (isPermanentInsertError(err)) {
+          Logger.warning('[ActivationAnalytics] insert rejected, dropped: '
+              '${err.runtimeType}');
+          return;
+        }
         Logger.warning('[ActivationAnalytics] insert failed, queued: $err');
-        await _enqueue(e.type, eventData);
+        await _enqueue(e.type, eventData, userId: userId);
       }
     } catch (err) {
       Logger.warning('[ActivationAnalytics] track failed: $err');
     }
   }
 
-  /// Sends queued events in order. Stops at the first failure and keeps the
-  /// rest for the next flush.
+  /// Sends queued events in order as the current user. Stops at the first
+  /// retryable failure and keeps the rest for the next flush.
+  ///
+  /// An event queued while another user was signed in is dropped, never
+  /// sent as this user. An event the server rejects for good (4xx) is
+  /// dropped so it cannot block the queue.
   Future<void> flush() async {
     if (_flushing) return;
     _flushing = true;
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) return;
-      final keys = _queue.keys.whereType<int>().toList()..sort();
+      final queue = await _queue();
+      final keys = queue.keys.whereType<int>().toList()..sort();
       for (final key in keys) {
-        final item = _queue.get(key);
+        final item = queue.get(key);
         if (item is! Map) {
-          await _queue.delete(key);
+          await queue.delete(key);
+          continue;
+        }
+        final owner = item['user_id'];
+        if (owner != null && owner != userId) {
+          await queue.delete(key);
           continue;
         }
         final eventData = Map<String, Object?>.from(
@@ -130,10 +158,16 @@ class ActivationAnalytics {
             if (clientTs is String) 'created_at': clientTs,
           });
         } catch (err) {
+          if (isPermanentInsertError(err)) {
+            Logger.warning('[ActivationAnalytics] queued event rejected, '
+                'dropped: ${err.runtimeType}');
+            await queue.delete(key);
+            continue;
+          }
           Logger.warning('[ActivationAnalytics] flush stopped: $err');
           return;
         }
-        await _queue.delete(key);
+        await queue.delete(key);
       }
     } catch (err) {
       Logger.warning('[ActivationAnalytics] flush failed: $err');
@@ -146,16 +180,47 @@ class ActivationAnalytics {
   Future<void> trackFirstOpenOnce(
       [Map<String, Object?> data = const {}]) async {
     try {
-      if (_queue.get(_firstOpenFlag) == true) return;
-      await _queue.put(_firstOpenFlag, true);
+      final queue = await _queue();
+      if (queue.get(_firstOpenFlag) == true) return;
+      await queue.put(_firstOpenFlag, true);
       await track(NuxEvent.firstOpen, data);
     } catch (err) {
       Logger.warning('[ActivationAnalytics] first open failed: $err');
     }
   }
 
-  Future<void> _enqueue(String type, Map<String, Object?> data) =>
-      _queue.add({'type': type, 'data': data});
+  /// Queues an event. [userId] is set only for an event raised while signed
+  /// in, so it is never sent as a different user.
+  Future<void> _enqueue(String type, Map<String, Object?> data,
+      {String? userId}) async {
+    final queue = await _queue();
+    await queue.add({
+      'type': type,
+      'data': data,
+      if (userId != null) 'user_id': userId,
+    });
+    final keys = queue.keys.whereType<int>().toList();
+    if (keys.length > maxQueued) {
+      keys.sort();
+      await queue.deleteAll(keys.take(keys.length - maxQueued));
+    }
+  }
+
+  /// True when retrying [err] cannot succeed: a PostgREST request or data
+  /// error (HTTP 4xx other than 401/408/429, SQLSTATE classes 22/23/42,
+  /// PGRST1xx/2xx). Network errors, expired tokens and 5xx are retryable.
+  static bool isPermanentInsertError(Object err) {
+    if (err is! PostgrestException) return false;
+    final code = err.code ?? '';
+    if (RegExp(r'^4\d\d$').hasMatch(code)) {
+      return code != '401' && code != '408' && code != '429';
+    }
+    return code.startsWith('22') ||
+        code.startsWith('23') ||
+        code.startsWith('42') ||
+        code.startsWith('PGRST1') ||
+        code.startsWith('PGRST2');
+  }
 
   /// Keeps String (up to 64 chars), num and bool only.
   Map<String, Object?> _sanitize(Map<String, Object?> data) {
