@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
@@ -191,6 +192,53 @@ void main() {
     // Standard's own features, never Free's.
     expect(find.textContaining('40 credits a day'), findsOneWidget);
     expect(find.textContaining('15'), findsNothing);
+  });
+
+  group('credits block', () {
+    testWidgets('while credits load: a placeholder, never "Unlimited"',
+        (tester) async {
+      when(() => tokenBloc.state).thenReturn(const TokenLoading());
+      useSurface(tester, const Size(390, 1400));
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      expect(find.text('Unlimited credits'), findsNothing);
+      expect(find.byIcon(Icons.all_inclusive_rounded), findsNothing);
+      expect(find.byKey(const Key('plan_credits_loading')), findsOneWidget);
+    });
+
+    testWidgets('a failed refresh keeps the last known credits',
+        (tester) async {
+      when(() => tokenBloc.state).thenReturn(TokenError(
+          failure: const NetworkFailure(), previousTokenStatus: _standard()));
+      useSurface(tester, const Size(390, 1400));
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      expect(find.text('Unlimited credits'), findsNothing);
+      expect(find.text('30 left today'), findsOneWidget);
+    });
+
+    testWidgets('a failed load with nothing known: no credits, no Unlimited',
+        (tester) async {
+      when(() => tokenBloc.state)
+          .thenReturn(const TokenError(failure: NetworkFailure()));
+      useSurface(tester, const Size(390, 1400));
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      expect(find.text('Unlimited credits'), findsNothing);
+      expect(find.textContaining('left today'), findsNothing);
+    });
+
+    testWidgets('left today counts bought credits, like the header pill',
+        (tester) async {
+      when(() => tokenBloc.state).thenReturn(TokenLoaded(
+          tokenStatus:
+              _standard().copyWith(purchasedTokens: 20, totalTokens: 50),
+          lastUpdated: DateTime(2026)));
+      useSurface(tester, const Size(390, 1400));
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      expect(find.text('50 left today'), findsOneWidget);
+    });
   });
 
   testWidgets('View plans opens the plans page', (tester) async {

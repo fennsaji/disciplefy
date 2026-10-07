@@ -140,18 +140,18 @@ class _FakeLocalData extends Fake implements StudyLocalDataSource {
 
 class _FakeNavigator extends Fake implements StudyNavigator {}
 
-TokenStatus _status(int total) => TokenStatus(
+TokenStatus _status(int total, {bool premium = false}) => TokenStatus(
       availableTokens: total,
       purchasedTokens: 0,
       totalTokens: total,
       dailyLimit: 20,
       totalConsumedToday: 0,
-      userPlan: UserPlan.free,
+      userPlan: premium ? UserPlan.premium : UserPlan.free,
       lastReset: DateTime(2026),
       nextResetTime: DateTime(2026, 1, 2),
       authenticationType: AuthenticationType.authenticated,
-      isPremium: false,
-      unlimitedUsage: false,
+      isPremium: premium,
+      unlimitedUsage: premium,
       canPurchaseTokens: false,
       planDescription: '',
     );
@@ -210,10 +210,12 @@ Widget _app({
   bool dark = true,
   int credits = 50,
   Widget? home,
+  bool premium = false,
 }) {
   final tokenBloc = _MockTokenBloc();
-  when(() => tokenBloc.state).thenReturn(
-      TokenLoaded(tokenStatus: _status(credits), lastUpdated: DateTime(2026)));
+  when(() => tokenBloc.state).thenReturn(TokenLoaded(
+      tokenStatus: _status(credits, premium: premium),
+      lastUpdated: DateTime(2026)));
   final studyBloc = _MockStudyBloc();
   when(() => studyBloc.state).thenReturn(StudyInitial());
   final connectivity = _MockConnectivityBloc();
@@ -263,12 +265,13 @@ Future<void> pumpSimple(
   bool dark = true,
   int credits = 50,
   Size size = const Size(390, 1400),
+  bool premium = false,
 }) async {
   await _register(language: language);
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(_app(dark: dark, credits: credits));
+  await tester.pumpWidget(_app(dark: dark, credits: credits, premium: premium));
   await tester.pumpAndSettle();
 }
 
@@ -299,6 +302,13 @@ void main() {
     expect(find.text('Question'), findsOneWidget);
     expect(find.text('Using 10 credits'), findsOneWidget);
     expect(find.text('Scripture'), findsNothing); // no type tabs
+  });
+
+  testWidgets('an unlimited plan never shows "Using N credits"',
+      (tester) async {
+    await pumpSimple(tester, premium: true);
+    await _type(tester, 'What is the purpose of prayer?');
+    expect(find.textContaining('Using'), findsNothing);
   });
 
   testWidgets('no type tabs, ≤3 chips, verse row, two depths + All 5',

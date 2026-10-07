@@ -211,9 +211,13 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       },
       child: BlocBuilder<TokenBloc, TokenState>(
         builder: (context, tokenState) {
+          // A failed refresh keeps the last known status; while nothing is
+          // known the credits block shows a placeholder.
           TokenStatus? tokenStatus;
           if (tokenState is TokenLoaded) {
             tokenStatus = tokenState.tokenStatus;
+          } else if (tokenState is TokenError) {
+            tokenStatus = tokenState.previousTokenStatus;
           }
 
           return BlocConsumer<SubscriptionBloc, SubscriptionState>(
@@ -476,8 +480,13 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       trialEnds: trialUntil,
       renewsOn: renewsOn,
       providerLabel: paying ? providerLabelOrNull(subscription.provider) : null,
-      left: tokenStatus?.availableTokens ?? 0,
-      dailyLimit: unlimited ? -1 : (tokenStatus?.dailyLimit ?? 0),
+      // The header pill's number: daily credits plus bought ones.
+      left: tokenStatus?.totalTokens,
+      dailyLimit: tokenStatus == null
+          ? null
+          : unlimited
+              ? -1
+              : tokenStatus.dailyLimit,
       resetsAt: tokenStatus?.nextResetTime,
       costs: _costs,
     );

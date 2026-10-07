@@ -131,9 +131,12 @@ class PlanSummaryCard extends StatelessWidget {
   /// is billed (trial, free, system grants, web without a store).
   final String? providerLabel;
 
-  /// Credits left today and the daily allowance (≤ 0 means unlimited).
-  final int left;
-  final int dailyLimit;
+  /// Credits left today (the same number as the header pill: daily plus
+  /// bought) and the daily allowance (≤ 0 means unlimited). Both null while
+  /// the credits are unknown (loading, or a failed load with nothing
+  /// cached): a placeholder shows, never "Unlimited".
+  final int? left;
+  final int? dailyLimit;
   final DateTime? resetsAt;
 
   /// Credit cost per study depth for the content language.
@@ -152,7 +155,8 @@ class PlanSummaryCard extends StatelessWidget {
     required this.costs,
   });
 
-  bool get _unlimited => dailyLimit <= 0;
+  bool get _creditsKnown => left != null && dailyLimit != null;
+  bool get _unlimited => _creditsKnown && dailyLimit! <= 0;
 
   @override
   Widget build(BuildContext context) {
@@ -217,77 +221,86 @@ class PlanSummaryCard extends StatelessWidget {
               color: palette.muted,
             ),
           const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: palette.raised,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                LedgerRing(
-                  progress: _unlimited ? 1 : left / dailyLimit,
-                  size: 72,
-                  strokeWidth: 5,
-                  child: _unlimited
-                      ? Icon(Icons.all_inclusive_rounded,
-                          size: 26, color: palette.gold)
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '$left',
-                                  style: AppFonts.poppins(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: palette.text,
-                                    height: 1.1,
-                                    fontFeatures: kLedgerTabular,
-                                  ),
-                                ),
-                                Text(
-                                  context.tr(TranslationKeys.ledgerOfTotal,
-                                      {'total': dailyLimit}),
-                                  maxLines: 1,
-                                  style: AppFonts.inter(
-                                      fontSize: 12, color: palette.muted),
-                                ),
-                              ],
+          if (!_creditsKnown)
+            _CreditsPlaceholder(palette: palette)
+          else
+            _credits(context, palette, costLine),
+        ],
+      ),
+    );
+  }
+
+  Widget _credits(
+      BuildContext context, ReaderPalette palette, String costLine) {
+    final left = this.left!;
+    final dailyLimit = this.dailyLimit!;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          LedgerRing(
+            progress: _unlimited ? 1 : (left / dailyLimit).clamp(0, 1),
+            size: 72,
+            strokeWidth: 5,
+            child: _unlimited
+                ? Icon(Icons.all_inclusive_rounded,
+                    size: 26, color: palette.gold)
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$left',
+                            style: AppFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: palette.text,
+                              height: 1.1,
+                              fontFeatures: kLedgerTabular,
                             ),
                           ),
-                        ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _unlimited
-                            ? context.tr(TranslationKeys.ledgerUnlimitedTitle)
-                            : context
-                                .tr(TranslationKeys.planLeftToday, {'n': left}),
-                        style: AppFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: palette.text,
-                          height: 1.3,
-                        ),
+                          Text(
+                            context.tr(TranslationKeys.ledgerOfTotal,
+                                {'total': dailyLimit}),
+                            maxLines: 1,
+                            style: AppFonts.inter(
+                                fontSize: 12, color: palette.muted),
+                          ),
+                        ],
                       ),
-                      if (!_unlimited && resetsAt != null)
-                        _detail(
-                          context,
-                          context.tr(TranslationKeys.planResetsAt,
-                              {'time': formatPlanTime(resetsAt!.toLocal())}),
-                        ),
-                      if (costLine.isNotEmpty) _detail(context, costLine),
-                    ],
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _unlimited
+                      ? context.tr(TranslationKeys.ledgerUnlimitedTitle)
+                      : context.tr(TranslationKeys.planLeftToday, {'n': left}),
+                  style: AppFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                    height: 1.3,
                   ),
                 ),
+                if (!_unlimited && resetsAt != null)
+                  _detail(
+                    context,
+                    context.tr(TranslationKeys.planResetsAt,
+                        {'time': formatPlanTime(resetsAt!.toLocal())}),
+                  ),
+                if (costLine.isNotEmpty) _detail(context, costLine),
               ],
             ),
           ),
@@ -317,6 +330,52 @@ class PlanSummaryCard extends StatelessWidget {
           height: 1.4,
           fontFeatures: kLedgerTabular,
         ),
+      ),
+    );
+  }
+}
+
+/// The credits block's shape while the credits are unknown.
+class _CreditsPlaceholder extends StatelessWidget {
+  final ReaderPalette palette;
+
+  const _CreditsPlaceholder({required this.palette});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget bar(double width) => Container(
+          width: width,
+          height: 12,
+          decoration: BoxDecoration(
+            color: palette.hairline,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+    return Container(
+      key: const Key('plan_credits_loading'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: palette.hairline, width: 5),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [bar(120), const SizedBox(height: 10), bar(160)],
+            ),
+          ),
+        ],
       ),
     );
   }

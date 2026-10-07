@@ -504,15 +504,27 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 ],
                 const SizedBox(height: 20),
                 _generateButton(input.isValid),
-                if (_costs[_mode] != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    context.tr(TranslationKeys.generateSimpleUsingCredits,
-                        {'n': '${_costs[_mode]}'}),
-                    textAlign: TextAlign.center,
-                    style: AppFonts.inter(fontSize: 12, color: palette.muted),
+                if (_costs[_mode] != null)
+                  // An unlimited plan spends no credits: no cost line.
+                  BlocBuilder<TokenBloc, TokenState>(
+                    builder: (context, _) {
+                      final status = _tokenStatus();
+                      if (status != null &&
+                          (status.isPremium || status.unlimitedUsage)) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          context.tr(TranslationKeys.generateSimpleUsingCredits,
+                              {'n': '${_costs[_mode]}'}),
+                          textAlign: TextAlign.center,
+                          style: AppFonts.inter(
+                              fontSize: 12, color: palette.muted),
+                        ),
+                      );
+                    },
                   ),
-                ],
                 if (!keyboardVisible) ...[
                   const SizedBox(height: 32),
                   const RecentGuidesSection(),
