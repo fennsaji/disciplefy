@@ -593,6 +593,8 @@ const Map<String, dynamic> hindiTranslations = {
     'lessons_days': '{lessons} पाठ · {days} दिन',
     'see_all_paths': 'सभी पथ',
     'save_progress': 'प्रगति खाते में सहेजें',
+    'reflect': 'इस वचन पर मनन करें',
+    'loading_path': 'पथ खुल रहा है',
   },
   'nfy': {
     'eyebrow': 'आपके लिए नया',

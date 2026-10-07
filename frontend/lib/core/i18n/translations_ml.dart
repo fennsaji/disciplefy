@@ -603,6 +603,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'lessons_days': '{lessons} പാഠം · {days} ദിവസം',
     'see_all_paths': 'എല്ലാ പാതകളും',
     'save_progress': 'പുരോഗതി സൂക്ഷിക്കൂ',
+    'reflect': 'ഈ വചനം ധ്യാനിക്കാം',
+    'loading_path': 'പാത തുറക്കുന്നു',
   },
   'nfy': {
     'eyebrow': 'നിങ്ങൾക്കായി പുതിയത്',

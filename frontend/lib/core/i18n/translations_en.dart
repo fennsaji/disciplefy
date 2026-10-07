@@ -595,6 +595,8 @@ const Map<String, dynamic> englishTranslations = {
     'lessons_days': '{lessons} lessons · {days} days',
     'see_all_paths': 'See all paths',
     'save_progress': 'Save progress to your account',
+    'reflect': 'Reflect on this verse',
+    'loading_path': 'Loading your path',
   },
   'nfy': {
     'eyebrow': 'New for you',

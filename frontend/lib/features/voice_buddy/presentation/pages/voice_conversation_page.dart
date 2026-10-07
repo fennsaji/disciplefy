@@ -47,12 +47,17 @@ class VoiceConversationPage extends StatelessWidget {
   /// full-screen page: no back arrow, and back is handled by the tab bar.
   final bool asTab;
 
+  /// A question put in the text box (never sent for the user), e.g. from the
+  /// Discipler introduction. It shows when they type.
+  final String? prefill;
+
   const VoiceConversationPage({
     super.key,
     this.studyGuideId,
     this.relatedScripture,
     this.conversationType = ConversationType.general,
     this.asTab = false,
+    this.prefill,
   });
 
   @override
@@ -64,6 +69,7 @@ class VoiceConversationPage extends StatelessWidget {
         relatedScripture: relatedScripture,
         conversationType: conversationType,
         asTab: asTab,
+        prefill: prefill,
       ),
     );
   }
@@ -74,12 +80,14 @@ class _VoiceConversationView extends StatefulWidget {
   final String? relatedScripture;
   final ConversationType conversationType;
   final bool asTab;
+  final String? prefill;
 
   const _VoiceConversationView({
     this.studyGuideId,
     this.relatedScripture,
     required this.conversationType,
     this.asTab = false,
+    this.prefill,
   });
 
   @override
@@ -121,6 +129,31 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     // Load preferences to get default language, then check quota
     context.read<VoiceConversationBloc>().add(const LoadPreferences());
     context.read<VoiceConversationBloc>().add(const CheckQuota());
+    _applyPrefill(widget.prefill);
+  }
+
+  @override
+  void didUpdateWidget(covariant _VoiceConversationView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // As a tab the page stays alive; a new `?prefill=` arrives here.
+    if (widget.prefill != oldWidget.prefill) _applyPrefill(widget.prefill);
+  }
+
+  /// Puts [text] in the text box without sending it. In a conversation the
+  /// chat view opens on it; on the start screen it waits for "Type".
+  void _applyPrefill(String? text) {
+    final question = text?.trim() ?? '';
+    if (question.isEmpty) return;
+    _textController.value = TextEditingValue(
+      text: question,
+      selection: TextSelection.collapsed(offset: question.length),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isTextInputMode) return;
+      if (context.read<VoiceConversationBloc>().state.hasActiveConversation) {
+        _switchToTyping();
+      }
+    });
   }
 
   /// As a tab, this page stays alive (offstage) while another tab is shown.

@@ -304,19 +304,33 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
                       color: iconColor,
                       size: widget.iconSize,
                     ),
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Text(
-                        '+',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                    // A guest has no deck: a small lock instead of the
+                    // "+", and the tap opens the account sheet.
+                    if (GuestRouteGate.currentUserIsGuest())
+                      Positioned(
+                        right: -4,
+                        bottom: -3,
+                        child: Icon(
+                          Icons.lock_outline,
+                          key: const Key('daily_verse_memory_lock'),
+                          size: 11,
                           color: iconColor.withValues(alpha: 0.85),
-                          height: 1,
+                        ),
+                      )
+                    else
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Text(
+                          '+',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: iconColor.withValues(alpha: 0.85),
+                            height: 1,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
           tooltip: isAlreadyInMemory

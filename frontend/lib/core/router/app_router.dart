@@ -211,8 +211,15 @@ class AppRouter {
                 name: 'home',
                 builder: (context, state) => MaxWidthWrapper(
                   child: BlocProvider<MemoryVerseBloc>(
-                    create: (_) =>
-                        sl<MemoryVerseBloc>()..add(const LoadDueVerses()),
+                    // Memory verses need an account: a guest's Home never
+                    // asks for the deck (Home loads it after sign-up).
+                    create: (_) {
+                      final bloc = sl<MemoryVerseBloc>();
+                      if (!GuestRouteGate.currentUserIsGuest()) {
+                        bloc.add(const LoadDueVerses());
+                      }
+                      return bloc;
+                    },
                     // `?account=<reason>` (a guest stopped by the route
                     // gate) opens the account-needed sheet once.
                     child: AccountQueryListener(
@@ -458,8 +465,13 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.discipler,
                 name: 'discipler_tab',
-                builder: (context, state) => const MaxWidthWrapper(
-                  child: VoiceConversationPage(asTab: true),
+                // `?prefill=` (from the Discipler introduction) puts a
+                // question in the text box; it is never sent for the user.
+                builder: (context, state) => MaxWidthWrapper(
+                  child: VoiceConversationPage(
+                    asTab: true,
+                    prefill: state.uri.queryParameters['prefill'],
+                  ),
                 ),
               ),
             ],

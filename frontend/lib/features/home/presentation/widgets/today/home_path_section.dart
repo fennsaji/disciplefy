@@ -13,13 +13,11 @@ import 'package:disciplefy_bible_study/features/home/domain/entities/active_path
 import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_from_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/choose_first_path_card.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
-import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/save_progress_row.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
 /// Home's path block: the active path's header ("See path"), its progress
-/// strip, "Lesson n of m" / "k to go", and today's lesson card; for a guest
-/// also the "Save progress to your account" row.
+/// strip, "Lesson n of m" / "k to go", and today's lesson card.
 ///
 /// Without a path (and not loading) it shows [ChooseFirstPathCard] instead,
 /// never a lesson card.
@@ -29,12 +27,17 @@ class HomePathSection extends StatelessWidget {
   final StudyMode mode;
   final ValueChanged<StudyMode> onModeChanged;
 
+  /// Called on return from a lesson, or from the path page when it reports
+  /// a change, so Home can refresh the path's progress.
+  final VoidCallback? onProgressMayHaveChanged;
+
   const HomePathSection({
     super.key,
     required this.summary,
     required this.loading,
     required this.mode,
     required this.onModeChanged,
+    this.onProgressMayHaveChanged,
   });
 
   @override
@@ -47,6 +50,7 @@ class HomePathSection extends StatelessWidget {
       summary: summary,
       mode: mode,
       onModeChanged: onModeChanged,
+      onProgressMayHaveChanged: onProgressMayHaveChanged,
     );
   }
 }
@@ -55,19 +59,25 @@ class _ActivePath extends StatelessWidget {
   final ActivePathSummary summary;
   final StudyMode mode;
   final ValueChanged<StudyMode> onModeChanged;
+  final VoidCallback? onProgressMayHaveChanged;
 
   const _ActivePath({
     required this.summary,
     required this.mode,
     required this.onModeChanged,
+    this.onProgressMayHaveChanged,
   });
 
-  void _openPath(BuildContext context) =>
-      context.push<bool>('/learning-path/${summary.pathId}?source=home');
+  Future<void> _openPath(BuildContext context) async {
+    final changed = await context
+        .push<bool>('/learning-path/${summary.pathId}?source=home');
+    if (changed == true) onProgressMayHaveChanged?.call();
+  }
 
-  void _start(BuildContext context) {
+  Future<void> _start(BuildContext context) async {
     final language = sl<TranslationService>().currentLanguage.code;
-    context.push(buildLessonLaunchFromSummary(summary, mode, language));
+    await context.push(buildLessonLaunchFromSummary(summary, mode, language));
+    onProgressMayHaveChanged?.call();
   }
 
   Future<void> _chooseNextPath(BuildContext context) async {
@@ -160,31 +170,69 @@ class _ActivePath extends StatelessWidget {
           onStart: () => _start(context),
           onChooseNextPath: () => _chooseNextPath(context),
         ),
-        if (AccountGate.isActive) ...[
-          const SizedBox(height: 10),
-          SaveProgressRow(
-            onTap: () => requireAccount(context, AccountReason.saveProgress),
-          ),
-        ],
       ],
     );
   }
 }
 
-/// Quiet block of the section's height while the path loads.
+/// Skeleton of the section (header, strip, lesson card) while the path
+/// loads: the same height as the loaded section, so nothing jumps.
 class _PathPlaceholder extends StatelessWidget {
   const _PathPlaceholder();
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    return Container(
-      key: const Key('home_path_placeholder'),
-      height: 200,
-      decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: palette.hairline),
+    final bone = palette.hairline;
+    Widget bar(double width, double height) => Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: bone,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+    BoxDecoration card() => BoxDecoration(
+          color: palette.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: palette.hairline),
+        );
+    return Semantics(
+      label: context.tr(TranslationKeys.homeTodayLoadingPath),
+      child: Column(
+        key: const Key('home_path_placeholder'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: bar(160, 14),
+          ),
+          const SizedBox(height: 6),
+          Container(height: 56, decoration: card()),
+          const SizedBox(height: 12),
+          Container(
+            height: 128,
+            padding: const EdgeInsets.all(16),
+            decoration: card(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                bar(110, 10),
+                const SizedBox(height: 14),
+                bar(200, 16),
+                const Spacer(),
+                Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: bone,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

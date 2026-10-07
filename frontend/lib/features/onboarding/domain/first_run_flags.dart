@@ -32,6 +32,22 @@ class FirstRunFlags {
     }
   }
 
+  /// True once lesson 1 is done on this device. False when unknown.
+  static bool get firstLessonCompleted =>
+      _read(firstLessonCompletedKey) == true;
+
+  /// True when the first run stored a goal on this device.
+  static bool get hasGoal => _read(_goalKey) != null;
+
+  static Object? _read(String key) {
+    try {
+      if (!Hive.isBoxOpen(_boxName)) return null;
+      return Hive.box(_boxName).get(key);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// False only while a new first-run user has not finished lesson 1.
   static bool get notificationPromptsAllowed {
     try {

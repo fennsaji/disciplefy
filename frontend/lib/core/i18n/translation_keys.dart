@@ -262,6 +262,8 @@ class TranslationKeys {
   static const homeTodayLessonsDays = 'home_today.lessons_days';
   static const homeTodaySeeAllPaths = 'home_today.see_all_paths';
   static const homeTodaySaveProgress = 'home_today.save_progress';
+  static const homeTodayReflect = 'home_today.reflect';
+  static const homeTodayLoadingPath = 'home_today.loading_path';
 
   // New for you banners and feature introductions. Per-kind keys are built
   // from the kind's name (NewForYouKind.name) by the helpers below.

@@ -230,7 +230,16 @@ class HomeDailyVerse extends StatelessWidget {
   final VoidCallback? onStudy;
   final bool isDisabled;
 
-  const HomeDailyVerse({super.key, this.onStudy, this.isDisabled = false});
+  /// Home's Today layout: the study action is the quiet "Reflect on this
+  /// verse" link and the reference is plain text.
+  final bool todayLayout;
+
+  const HomeDailyVerse({
+    super.key,
+    this.onStudy,
+    this.isDisabled = false,
+    this.todayLayout = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +248,7 @@ class HomeDailyVerse extends StatelessWidget {
         state: state,
         onStudy: onStudy,
         isDisabled: isDisabled,
+        todayLayout: todayLayout,
         onRetry: () => context.read<DailyVerseBloc>().add(const RefreshVerse()),
         onInitial: () =>
             context.read<DailyVerseBloc>().add(const LoadTodaysVerse()),
@@ -264,6 +274,9 @@ class HomeDailyVerseView extends StatelessWidget {
   final VoidCallback? onRead;
   final bool isDisabled;
 
+  /// See [HomeDailyVerse.todayLayout].
+  final bool todayLayout;
+
   const HomeDailyVerseView({
     super.key,
     required this.state,
@@ -272,6 +285,7 @@ class HomeDailyVerseView extends StatelessWidget {
     this.onInitial,
     this.onRead,
     this.isDisabled = false,
+    this.todayLayout = false,
   });
 
   @override
@@ -357,15 +371,21 @@ class HomeDailyVerseView extends StatelessWidget {
             child: _verseText(s.currentVerseText),
           ),
           const SizedBox(height: 10),
-          // Citation taps through to the translation's copyright page.
-          GestureDetector(
-            onTap: () => context.push(AppRoutes.bibleAttribution),
-            child: Text(
+          if (todayLayout)
+            Text(
               reference,
               style: AppFonts.inter(fontSize: 13, color: _onSceneMuted),
+            )
+          else
+            // Citation taps through to the translation's copyright page.
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.bibleAttribution),
+              child: Text(
+                reference,
+                style: AppFonts.inter(fontSize: 13, color: _onSceneMuted),
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
+          SizedBox(height: todayLayout ? 10 : 18),
           // Wrap, not Row: the button keeps its full label and, when the
           // line is too narrow (small phone, long Malayalam label), the
           // icons drop to a second line instead of the label being cut.
@@ -377,7 +397,10 @@ class HomeDailyVerseView extends StatelessWidget {
               spacing: 12,
               runSpacing: 10,
               children: [
-                _StudyNowButton(onPressed: study),
+                if (todayLayout)
+                  _ReflectLink(onPressed: study)
+                else
+                  _StudyNowButton(onPressed: study),
                 DailyVerseActions(
                   state: s,
                   iconColor: _onScene,
@@ -525,6 +548,38 @@ class _StudyNowButton extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           const Icon(Icons.arrow_forward, size: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Reflect on this verse →": the hero's quiet study action in the Today
+/// layout. Gold on the always-dark scene.
+class _ReflectLink extends StatelessWidget {
+  final VoidCallback? onPressed;
+
+  const _ReflectLink({this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      key: const Key('home_verse_reflect'),
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.brandGold,
+        disabledForegroundColor: AppColors.brandGold.withValues(alpha: 0.5),
+        minimumSize: const Size(0, 40),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: AppFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: Text(context.tr(TranslationKeys.homeTodayReflect))),
+          const SizedBox(width: 6),
+          const Icon(Icons.arrow_forward_rounded, size: 16),
         ],
       ),
     );

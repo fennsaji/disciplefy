@@ -408,15 +408,41 @@ void main() {
     expect(find.text('stub:lesson:quick'), findsOneWidget);
   });
 
-  testWidgets('guest: Save progress row opens the account sheet',
+  testWidgets('guest: the section leaves the Save progress row to Home',
       (tester) async {
+    // Home's Today layout puts the row after the New for you banner.
     when(() => guest.isGuest).thenReturn(true);
     await tester.pumpWidget(app(section(summary4of8)));
     await tester.pumpAndSettle();
-    expect(find.text('Save progress to your account'), findsOneWidget);
-    await tester.tap(find.text('Save progress to your account'));
+    expect(find.byType(SaveProgressRow), findsNothing);
+  });
+
+  testWidgets('back from a lesson asks Home to refresh the path',
+      (tester) async {
+    var refreshed = 0;
+    await tester.pumpWidget(app(HomePathSection(
+      summary: summary4of8,
+      loading: false,
+      mode: StudyMode.quick,
+      onModeChanged: (_) {},
+      onProgressMayHaveChanged: () => refreshed++,
+    )));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('account_continue_guest')), findsOneWidget);
+    await tester.tap(find.text('Start lesson 4'));
+    await tester.pumpAndSettle();
+    expect(refreshed, 0);
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator).last);
+    navigator.pop();
+    await tester.pumpAndSettle();
+    expect(refreshed, 1);
+  });
+
+  testWidgets('loading skeleton has the section shape and a label',
+      (tester) async {
+    await tester.pumpWidget(app(section(null, loading: true)));
+    await tester.pump();
+    expect(find.byKey(const Key('home_path_placeholder')), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading your path'), findsOneWidget);
   });
 
   testWidgets('guest finished path: Choose your next path opens account sheet',
