@@ -126,4 +126,38 @@ void main() {
           reason: 'first launch has no fallback, so the fetch must complete');
     });
   });
+
+  group('SystemConfigService on sign-out', () {
+    test('keeps the in-memory flags until the refetch replaces them', () async {
+      SharedPreferences.setMockInitialValues({
+        cacheKey: cachedConfigJson,
+        cacheTimestampKey: DateTime.now().millisecondsSinceEpoch,
+        cacheUserKey: 'user-a',
+      });
+      final gate = Completer<void>();
+      final calls = <int>[];
+      final service = SystemConfigService(client: clientGatedOn(gate, calls));
+      await service.initialize().timeout(const Duration(seconds: 2));
+      expect(
+          service.config!.featureFlags.containsKey('learning_paths'), isTrue);
+
+      final done = service.onSignedOut();
+      await settleBackgroundCall(calls);
+
+      // The redirect after a lost session reads the flags right now.
+      expect(service.config, isNotNull);
+      expect(
+          service.config!.featureFlags.containsKey('learning_paths'), isTrue);
+      // The previous user's persisted cache is gone straight away.
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(cacheKey), isNull);
+      expect(prefs.getString(cacheUserKey), isNull);
+
+      gate.complete();
+      await done;
+      expect(service.config!.featureFlags.containsKey('fresh_flag'), isTrue);
+      expect(
+          service.config!.featureFlags.containsKey('learning_paths'), isFalse);
+    });
+  });
 }
