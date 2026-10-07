@@ -1749,6 +1749,13 @@ class TranslationKeys {
   static const topicsStartAPath = 'topics.start_a_path';
   static const topicsSeeAll = 'topics.see_all';
 
+  // All paths screen (category chips, current path pinned)
+  static const allPathsTitle = 'all_paths.title';
+  static const allPathsCount = 'all_paths.count';
+  static const allPathsAll = 'all_paths.all';
+  static const allPathsCurrent = 'all_paths.current';
+  static const allPathsLessonOf = 'all_paths.lesson_of';
+
   // Study Topics tab (header cards, For you, Learning paths, category page)
   static const topicsHubContinueEyebrow = 'topics_hub.continue_eyebrow';
   static const topicsHubNextTopic = 'topics_hub.next_topic';

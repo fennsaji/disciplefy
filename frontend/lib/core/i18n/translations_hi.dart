@@ -2307,6 +2307,14 @@ const Map<String, dynamic> hindiTranslations = {
     'start_a_path': 'पथ शुरू करें',
     'see_all': 'सभी',
   },
+  // All paths screen (category chips, current path pinned)
+  'all_paths': {
+    'title': 'सभी पथ',
+    'count': '{n} पथ',
+    'all': 'सभी',
+    'current': 'वर्तमान',
+    'lesson_of': 'पाठ {n}/{total}',
+  },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
     'continue_eyebrow': 'जारी रखें · विषय {current} / {total}',

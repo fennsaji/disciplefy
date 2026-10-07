@@ -14,9 +14,22 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
 /// level · topics · XP · days, and progress once enrolled.
 class PathListRow extends StatelessWidget {
   final LearningPath path;
-  final VoidCallback onTap;
 
-  const PathListRow({super.key, required this.path, required this.onTap});
+  /// The lesson the user is on; shows "Lesson N of M" in gold in place of
+  /// the meta line.
+  final int? currentLesson;
+
+  /// Marks the user's current path with a gold "Current" tag.
+  final bool isCurrent;
+  final VoidCallback? onTap;
+
+  const PathListRow({
+    super.key,
+    required this.path,
+    this.currentLesson,
+    this.isCurrent = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +94,31 @@ class PathListRow extends StatelessWidget {
                           height: 1.3,
                         ),
                       ),
-                      _RowStatus(path: path),
+                      if (isCurrent)
+                        const _CurrentTag()
+                      else
+                        _RowStatus(path: path),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    meta,
-                    style: AppFonts.inter(fontSize: 13, color: palette.muted),
-                  ),
+                  if (currentLesson != null)
+                    Text(
+                      context.tr(TranslationKeys.allPathsLessonOf, {
+                        'n': currentLesson,
+                        'total': path.topicsCount,
+                      }),
+                      key: Key('path_row_lesson_${path.id}'),
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: palette.gold,
+                      ),
+                    )
+                  else
+                    Text(
+                      meta,
+                      style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                    ),
                   if (path.isEnrolled) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -156,6 +186,32 @@ class _RowStatus extends StatelessWidget {
       ),
       child: Text(
         label,
+        style: AppFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: palette.gold,
+        ),
+      ),
+    );
+  }
+}
+
+/// Gold "Current" tag on the user's current path.
+class _CurrentTag extends StatelessWidget {
+  const _CurrentTag();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      key: const Key('path_row_current_tag'),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: palette.gold.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        context.tr(TranslationKeys.allPathsCurrent),
         style: AppFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,

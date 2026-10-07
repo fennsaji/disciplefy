@@ -90,6 +90,7 @@ import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.da
 import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_category_page.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/all_paths_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../widgets/locked_feature_wrapper.dart';
@@ -258,6 +259,25 @@ class AppRouter {
                   return MaxWidthWrapper(
                       child: StudyTopicsScreen(topicId: topicId));
                 },
+              ),
+              // Every path with category chips ("Browse all paths"). In the
+              // Topics branch so the dock stays; open to guests (locked rows
+              // open the account sheet).
+              GoRoute(
+                path: AppRoutes.allPaths,
+                name: 'all_paths',
+                builder: (context, state) => MaxWidthWrapper(
+                  child: LockedFeatureWrapper(
+                    featureKey: 'learning_paths',
+                    child: BlocProvider(
+                      create: (context) => sl<LearningPathsBloc>(),
+                      child: AllPathsPage(
+                        initialCategory: state.uri.queryParameters['category'],
+                        language: state.uri.queryParameters['language'],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

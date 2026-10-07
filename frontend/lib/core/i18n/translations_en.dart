@@ -2305,6 +2305,14 @@ const Map<String, dynamic> englishTranslations = {
     'start_a_path': 'Start a path',
     'see_all': 'See all',
   },
+  // All paths screen (category chips, current path pinned)
+  'all_paths': {
+    'title': 'All paths',
+    'count': '{n} paths',
+    'all': 'All',
+    'current': 'Current',
+    'lesson_of': 'Lesson {n} of {total}',
+  },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
     'continue_eyebrow': 'Continue · Topic {current} of {total}',

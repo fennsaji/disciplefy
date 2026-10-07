@@ -2401,6 +2401,14 @@ const Map<String, dynamic> malayalamTranslations = {
     'start_a_path': 'പാത തുടങ്ങാം',
     'see_all': 'എല്ലാം',
   },
+  // All paths screen (category chips, current path pinned)
+  'all_paths': {
+    'title': 'എല്ലാ പാതകളും',
+    'count': '{n} പാതകൾ',
+    'all': 'എല്ലാം',
+    'current': 'ഇപ്പോൾ',
+    'lesson_of': 'പാഠം {n}/{total}',
+  },
   // Study Topics tab (header cards, For you, Learning paths, category page)
   'topics_hub': {
     'continue_eyebrow': 'തുടരുക · വിഷയം {current} / {total}',
