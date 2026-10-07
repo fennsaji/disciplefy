@@ -3247,6 +3247,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'welcome_eyebrow': 'സ്വാഗതം',
     'welcome_title': 'ദിവസവും ദൈവവചനത്തിൽ വളരുക',
     'welcome_subtitle': 'നിങ്ങളുടെ ഭാഷയിൽ ദിവസവും ഒരു വചനവും ചെറിയ പാഠവും.',
+    'english_bible': 'Berean Standard Bible',
     'continue': 'തുടരുക',
     'log_in': 'ലോഗിൻ',
     'have_account': 'അക്കൗണ്ട് ഉണ്ടോ?',

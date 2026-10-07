@@ -3139,6 +3139,7 @@ const Map<String, dynamic> hindiTranslations = {
     'welcome_eyebrow': 'स्वागत है',
     'welcome_title': 'हर दिन परमेश्वर के वचन में बढ़ें',
     'welcome_subtitle': 'आपकी भाषा में रोज़ एक वचन और छोटा पाठ।',
+    'english_bible': 'Berean Standard Bible',
     'continue': 'आगे',
     'log_in': 'लॉग इन',
     'have_account': 'पहले से खाता है?',

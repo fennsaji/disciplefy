@@ -209,7 +209,11 @@ void main() {
         expect(find.text('A daily verse and a short lesson, in your language.'),
             findsOneWidget);
         expect(find.text('English'), findsOneWidget);
+        expect(find.text('Berean Standard Bible'), findsOneWidget);
+        expect(row(tester, 'first_run_language_en').subtitle,
+            'Berean Standard Bible');
         expect(find.text('Hindi'), findsOneWidget);
+        expect(find.text('Malayalam'), findsOneWidget);
         expect(find.text('हिन्दी'), findsOneWidget);
         expect(find.text('മലയാളം'), findsOneWidget);
         expect(find.byKey(const Key('first_run_log_in_top')), findsOneWidget);

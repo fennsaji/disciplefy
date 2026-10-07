@@ -3615,6 +3615,9 @@ class TranslationKeys {
   static const firstRunWelcomeEyebrow = 'first_run.welcome_eyebrow';
   static const firstRunWelcomeTitle = 'first_run.welcome_title';
   static const firstRunWelcomeSubtitle = 'first_run.welcome_subtitle';
+
+  /// Under English on the language screen: the English Bible version.
+  static const firstRunEnglishBible = 'first_run.english_bible';
   static const firstRunContinue = 'first_run.continue';
   static const firstRunLogIn = 'first_run.log_in';
   static const firstRunHaveAccount = 'first_run.have_account';

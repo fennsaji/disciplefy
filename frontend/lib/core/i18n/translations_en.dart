@@ -3128,6 +3128,7 @@ const Map<String, dynamic> englishTranslations = {
     'welcome_eyebrow': 'Welcome',
     'welcome_title': "Grow in God's Word every day",
     'welcome_subtitle': 'A daily verse and a short lesson, in your language.',
+    'english_bible': 'Berean Standard Bible',
     'continue': 'Continue',
     'log_in': 'Log in',
     'have_account': 'Already have an account?',

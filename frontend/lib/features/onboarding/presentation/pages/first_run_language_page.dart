@@ -42,10 +42,11 @@ class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
         AppLanguage.malayalam => 'മ',
       };
 
-  /// English name under the native one, readable before a language is set.
-  /// None under English itself.
-  static String? englishName(AppLanguage language) => switch (language) {
-        AppLanguage.english => null,
+  /// Line under the native name: the English name for Hindi and Malayalam
+  /// (readable before a language is set), the Bible version for English.
+  static String subLabel(BuildContext context, AppLanguage language) =>
+      switch (language) {
+        AppLanguage.english => context.tr(TranslationKeys.firstRunEnglishBible),
         AppLanguage.hindi => 'Hindi',
         AppLanguage.malayalam => 'Malayalam',
       };
@@ -168,7 +169,7 @@ class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
                                   ),
                                 ),
                                 title: language.displayName,
-                                subtitle: englishName(language),
+                                subtitle: subLabel(context, language),
                                 isSelected: _selected == language,
                                 onTap: _saving
                                     ? null
