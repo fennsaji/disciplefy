@@ -54,6 +54,9 @@ class DisciplefyBottomNav extends StatelessWidget {
     required this.tabs,
   });
 
+  /// Dock label size: the readable minimum for secondary text.
+  static const double labelFontSize = 12;
+
   /// Discipler as a tab. Kept out of [defaultTabs]: its label is the brand
   /// name, the same in every language, and the shell adds it only when the
   /// Talk to Discipler feature is available.
@@ -163,6 +166,7 @@ class DisciplefyBottomNav extends StatelessWidget {
     const bodySteps = 2;
     final tourTabIds = tabs.map((t) => t.id).where(tourSteps.containsKey);
     final totalSteps = bodySteps + tourTabIds.length;
+    final flexes = _itemFlexes(context, l10n);
 
     return tabs.asMap().entries.map((entry) {
       final index = entry.key;
@@ -187,6 +191,7 @@ class DisciplefyBottomNav extends StatelessWidget {
       if (step != null) {
         final (key, title, description) = step;
         return Expanded(
+          flex: flexes[index],
           child: WalkthroughTooltip(
             showcaseKey: key,
             title: title,
@@ -200,8 +205,40 @@ class DisciplefyBottomNav extends StatelessWidget {
         );
       }
 
-      return Expanded(child: navItem);
+      return Expanded(flex: flexes[index], child: navItem);
     }).toList();
+  }
+
+  /// Narrowest slot an item gets: room for its icon pill and a short label.
+  static const double _minItemWidth = 56;
+
+  /// Width share of each item. Equal while every label fits its slot; a
+  /// longer label ("Community", the Malayalam "Generate") takes room from
+  /// the items with short labels, so every label stays at full size instead
+  /// of being scaled below [labelFontSize].
+  List<int> _itemFlexes(BuildContext context, AppLocalizations l10n) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    return [
+      for (final tab in tabs)
+        () {
+          final painter = TextPainter(
+            text: TextSpan(
+              text: tab.id == disciplerTab.id
+                  ? l10n.navDiscipler
+                  : l10n.navLabel(tab.id),
+              style: AppFonts.inter(
+                  fontSize: labelFontSize, fontWeight: FontWeight.w600),
+            ),
+            maxLines: 1,
+            textDirection: direction,
+            textScaler: scaler,
+          )..layout();
+          final width = painter.width + 4;
+          painter.dispose();
+          return (width < _minItemWidth ? _minItemWidth : width).ceil();
+        }(),
+    ];
   }
 
   void _handleTap(BuildContext context, int index) {
@@ -255,7 +292,8 @@ class _DockPalette {
             dock: Colors.white,
             border: Color(0xFFE4E0D6),
             shadow: Color(0x1F1A1917),
-            inactive: Color(0xFF8A857A),
+            // The design's warm grey, darkened to 4.5:1 on the white dock.
+            inactive: Color(0xFF7B766D),
             selected: AppColors.brandGoldDeep,
             tint: Color(0x33E3B154),
             tintBorder: Color(0x66C9973A),
@@ -303,7 +341,7 @@ class _DockItemLayout extends StatelessWidget {
               duration: AppAnimations.fast,
               curve: AppAnimations.defaultCurve,
               style: AppFonts.inter(
-                fontSize: 10.5,
+                fontSize: DisciplefyBottomNav.labelFontSize,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected ? palette.selected : palette.inactive,
               ),

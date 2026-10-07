@@ -9,7 +9,8 @@ import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import '../../helpers/text_fit.dart';
 
 /// The dock's labels in Hindi and Malayalam have taller lines than Inter;
-/// every item must still lay out without overflow and without cutting text.
+/// every item must still lay out without overflow, without cutting text and
+/// without shrinking a label below 12pt.
 void main() {
   setUpAll(loadAppFonts);
 
@@ -55,6 +56,17 @@ void main() {
                 ? l10n.navDiscipler
                 : l10n.navLabel(tab.id);
             expect(find.text(label), findsOneWidget, reason: label);
+            // Shown at full size: the label's FittedBox must not shrink it
+            // below the readable minimum.
+            final text = find.text(label);
+            final laidOut = tester.getSize(text).width;
+            final painted =
+                tester.getBottomRight(text).dx - tester.getTopLeft(text).dx;
+            final effective =
+                DisciplefyBottomNav.labelFontSize * painted / laidOut;
+            expect(effective, greaterThanOrEqualTo(12 - 0.01),
+                reason:
+                    '$label is scaled to ${effective.toStringAsFixed(1)}pt');
           }
           expectNoTruncatedText(tester);
         });
