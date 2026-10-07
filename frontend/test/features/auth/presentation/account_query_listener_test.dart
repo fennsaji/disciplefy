@@ -118,6 +118,25 @@ void main() {
     expect(location(), '/');
   });
 
+  testWidgets('a blank value (?account=%20) does nothing and does not throw',
+      (tester) async {
+    await tester.pumpWidget(app('/?account=%20'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(AccountNeededSheet), findsNothing);
+    expect(find.text('home'), findsOneWidget);
+  });
+
+  testWidgets('an unknown value opens the generic sheet', (tester) async {
+    await tester.pumpWidget(app('/?account=no_such_reason'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(AccountNeededSheet), findsOneWidget);
+    await tester.tap(find.text('Continue as guest'));
+    await tester.pumpAndSettle();
+    expect(location(), '/');
+  });
+
   testWidgets('no query: nothing happens', (tester) async {
     await tester.pumpWidget(app('/'));
     await tester.pumpAndSettle();

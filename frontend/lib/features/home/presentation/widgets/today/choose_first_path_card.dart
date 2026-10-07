@@ -30,7 +30,18 @@ class ChooseFirstPathCard extends StatefulWidget {
   /// `app_settings` when null.
   final String? firstRunGoal;
 
-  const ChooseFirstPathCard({super.key, this.firstRunGoal});
+  /// Called when a path page reports a change (enrolled, lesson done), so
+  /// Home can load the new active path.
+  final VoidCallback? onPathChanged;
+
+  const ChooseFirstPathCard({super.key, this.firstRunGoal, this.onPathChanged});
+
+  /// Lists already loaded this session, by language, guest and goal: Home
+  /// remounts the card often and the list barely changes.
+  static final Map<String, List<LearningPath>> _sessionCache = {};
+
+  @visibleForTesting
+  static void clearSessionCache() => _sessionCache.clear();
 
   @override
   State<ChooseFirstPathCard> createState() => _ChooseFirstPathCardState();
@@ -43,9 +54,20 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
 
   List<LearningPath>? _paths;
 
+  /// The list could not be loaded: a Retry is shown.
+  bool _failed = false;
+
   @override
   void initState() {
     super.initState();
+    _load();
+  }
+
+  void _retry() {
+    setState(() {
+      _paths = null;
+      _failed = false;
+    });
     _load();
   }
 
@@ -67,9 +89,16 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
     final guest = AccountGate.isActive;
     final goalSlug = _goalSlug();
     final language = sl<TranslationService>().currentLanguage.code;
+    final cacheKey = '$language|$guest|${goalSlug ?? ''}';
+    final cached = ChooseFirstPathCard._sessionCache[cacheKey];
+    if (cached != null) {
+      setState(() => _paths = cached);
+      return;
+    }
     final repository = sl<LearningPathsRepository>();
     final listed = <LearningPath>[];
     var offset = 0;
+    var failed = false;
     try {
       for (var page = 0; page < _maxPages; page++) {
         final result = await repository.getLearningPaths(
@@ -82,7 +111,10 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
               tag: 'HOME', context: {'code': failure.code});
           return null;
         }, (r) => r);
-        if (data == null) break;
+        if (data == null) {
+          failed = listed.isEmpty;
+          break;
+        }
         listed.addAll(data.paths);
         offset += data.paths.length;
         if (!data.hasMore ||
@@ -94,10 +126,14 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
     } catch (e) {
       Logger.warning('Home first-path list threw',
           tag: 'HOME', context: {'type': e.runtimeType.toString()});
+      failed = listed.isEmpty;
     }
+    final chosen = selectFirstPaths(listed, guest: guest, goalSlug: goalSlug);
+    if (!failed) ChooseFirstPathCard._sessionCache[cacheKey] = chosen;
     if (!mounted) return;
     setState(() {
-      _paths = selectFirstPaths(listed, guest: guest, goalSlug: goalSlug);
+      _failed = failed;
+      _paths = chosen;
     });
   }
 
@@ -112,7 +148,9 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
   void _open(LearningPath path) {
     guestPathGate(context, path, () async {
       if (!mounted) return;
-      await context.push<bool>('/learning-path/${path.id}?source=home');
+      final changed =
+          await context.push<bool>('/learning-path/${path.id}?source=home');
+      if (changed == true) widget.onPathChanged?.call();
     });
   }
 
@@ -157,6 +195,30 @@ class _ChooseFirstPathCardState extends State<ChooseFirstPathCard> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               ),
+            )
+          else if (_failed)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.tr(TranslationKeys.homeTodayPathsUnavailable),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _retry,
+                  style: TextButton.styleFrom(
+                    foregroundColor: palette.gold,
+                    minimumSize: const Size(0, 40),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: AppFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  child: Text(context.tr(TranslationKeys.commonRetry)),
+                ),
+              ],
             )
           else
             for (var i = 0; i < paths.length; i++) ...[

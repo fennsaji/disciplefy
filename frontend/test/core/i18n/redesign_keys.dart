@@ -132,6 +132,7 @@ final redesignKeys = <AuditKey>[
       maxWidth: 260, weight: FontWeight.w600),
   const AuditKey.link('home_today.reflect', maxWidth: 230),
   const AuditKey.body('home_today.loading_path', lines: 1),
+  const AuditKey.body('home_today.paths_unavailable', lines: 1),
 
   // New for you
   const AuditKey.label('nfy.eyebrow',
@@ -246,6 +247,7 @@ final redesignKeys = <AuditKey>[
   const AuditKey.label('account.lessons_count', maxWidth: 120),
   const AuditKey.body('account.merge_pending'),
   const AuditKey.body('account.link_failed'),
+  const AuditKey.body('account.email_exists'),
 
   // Generate
   const AuditKey.label('generate_simple.eyebrow',

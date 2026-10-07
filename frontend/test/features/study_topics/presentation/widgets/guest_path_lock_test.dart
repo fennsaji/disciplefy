@@ -66,11 +66,12 @@ void main() {
       expect(isGuestLockedPath(_path('x'), guest: false), isFalse);
     });
 
-    test('follows guest mode and the session by default', () {
+    test('follows the session by default, not the guest_mode flag', () {
       expect(isGuestLockedPath(_path('x')), isTrue);
+      // Switching guest mode off stops new guests only; an existing guest
+      // is still limited to their path.
       when(() => flags.guestMode).thenReturn(false);
-      expect(isGuestLockedPath(_path('x')), isFalse);
-      when(() => flags.guestMode).thenReturn(true);
+      expect(isGuestLockedPath(_path('x')), isTrue);
       when(() => guest.isGuest).thenReturn(false);
       expect(isGuestLockedPath(_path('x')), isFalse);
     });

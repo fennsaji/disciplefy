@@ -163,24 +163,8 @@ class NewForYouBanner extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Semantics(
-                        button: true,
-                        label: context.tr(TranslationKeys.nfyDismiss),
-                        excludeSemantics: true,
-                        child: InkResponse(
-                          onTap: onDismiss,
-                          radius: 20,
-                          child: SizedBox(
-                            width: 40,
-                            height: 32,
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 16,
-                              color: onPhoto.text.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Room for the × laid over the card below.
+                      const SizedBox(width: 40, height: 32),
                     ],
                   ),
                   Padding(
@@ -206,6 +190,31 @@ class NewForYouBanner extends StatelessWidget {
                 ],
               );
             }),
+          ),
+          // The ×: a 40px square to tap, its icon where the 32px row
+          // centres it.
+          Positioned(
+            top: 2,
+            right: 4,
+            child: Semantics(
+              button: true,
+              label: context.tr(TranslationKeys.nfyDismiss),
+              excludeSemantics: true,
+              child: InkResponse(
+                key: const Key('nfy_dismiss'),
+                onTap: onDismiss,
+                radius: 20,
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: onPhoto.text.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

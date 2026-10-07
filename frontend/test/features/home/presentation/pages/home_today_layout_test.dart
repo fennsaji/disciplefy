@@ -403,13 +403,14 @@ void main() {
     bool dark = false,
     String language = 'en',
     Size size = const Size(390, 1400),
+    Stream<HomeState>? states,
   }) async {
     useSurface(tester, size);
     translations.language = AppLanguage.fromCode(language);
     final settled = state ?? _home(summary: summary);
     whenListen(
       homeBloc,
-      Stream<HomeState>.value(settled),
+      states ?? Stream<HomeState>.value(settled),
       initialState: settled.copyWith(isLoadingActivePath: true),
     );
     if (memory != null || !guest.isGuest) {
@@ -505,6 +506,28 @@ void main() {
       expect(topOf(tester, banner), lessThan(topOf(tester, save)));
       // A guest is offered paths only.
       expect(find.text('Explore more learning paths'), findsOneWidget);
+    });
+
+    testWidgets(
+        'New for you is worked out again once the user id is known '
+        '(not given up after a load with no user)', (tester) async {
+      asGuest();
+      String? uid;
+      when(() => auth.userId).thenAnswer((_) => uid);
+      final states = StreamController<HomeState>();
+      addTearDown(states.close);
+      final settled = _home(summary: _summary4of8);
+      await pumpHome(tester, summary: _summary4of8, states: states.stream);
+      states.add(settled);
+      await tester.pumpAndSettle();
+      expect(find.byType(NewForYouBanner), findsNothing);
+
+      uid = 'u1';
+      states
+        ..add(settled.copyWith(isLoadingActivePath: true))
+        ..add(settled);
+      await tester.pumpAndSettle();
+      expect(find.byType(NewForYouBanner), findsOneWidget);
     });
 
     testWidgets('the hero reference is plain text', (tester) async {
@@ -689,7 +712,8 @@ void main() {
       expect(find.text('Study now'), findsOneWidget);
       expect(find.text('Reflect on this verse'), findsNothing);
       expect(find.byType(HomePathSection), findsNothing);
-      verify(() => homeBloc.add(const LoadForYouTopics())).called(1);
+      // Nothing on the old Home shows "For You" topics: none are fetched.
+      verifyNever(() => homeBloc.add(any(that: isA<LoadForYouTopics>())));
     });
 
     testWidgets('due count keeps the shipped badge', (tester) async {

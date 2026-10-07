@@ -171,13 +171,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     _loadUsageStats();
     // Language changes (app and study content) are handled by HomeBloc.
     final homeBloc = sl<HomeBloc>();
-    // HomeBloc is a DI singleton that outlives a sign-out, so both loads run
-    // on every mount: "For You" is served from its per-user cache (network
-    // only on a miss), and the active path shows the cached copy for this
+    // HomeBloc is a DI singleton that outlives a sign-out, so the path load
+    // runs on every mount: the active path shows the cached copy for this
     // user and language at once while a fresh one (progress) is fetched.
-    // Use LoadForYouTopics for authenticated users (bloc handles fallback).
-    // The Today layout has no "For You" list.
-    if (!todayLayout) homeBloc.add(const LoadForYouTopics());
+    // Neither layout shows a "For You" topic list, so none is fetched.
     homeBloc.add(const LoadActiveLearningPath());
   }
 

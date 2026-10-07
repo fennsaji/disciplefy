@@ -198,11 +198,12 @@ void main() {
       expect(find.byKey(const Key('save_progress_block')), findsNothing);
     });
 
-    testWidgets('guest mode off: nothing', (tester) async {
+    testWidgets('guest mode switched off: an existing guest still sees it',
+        (tester) async {
       when(() => flags.guestMode).thenReturn(false);
       await tester.pumpWidget(nudge(lesson: 1, firstRun: true));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('save_progress_block')), findsNothing);
+      expect(find.byKey(const Key('save_progress_block')), findsOneWidget);
     });
 
     testWidgets('linking goes Home', (tester) async {

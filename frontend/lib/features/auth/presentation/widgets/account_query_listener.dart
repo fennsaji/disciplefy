@@ -46,13 +46,14 @@ class _AccountQueryListenerState extends State<AccountQueryListener> {
 
   void _check() {
     final value = widget.reason;
-    if (value == null || value.isEmpty) {
+    // A blank value (`?account=%20`) has no reason: treat it as no query.
+    final reason = AccountReason.fromWire(value);
+    if (value == null || reason == null) {
       _handled = null;
       return;
     }
     if (value == _handled) return;
     _handled = value;
-    final reason = AccountReason.fromWire(value)!;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await requireAccount(context, reason);

@@ -264,6 +264,8 @@ class TranslationKeys {
   static const homeTodaySaveProgress = 'home_today.save_progress';
   static const homeTodayReflect = 'home_today.reflect';
   static const homeTodayLoadingPath = 'home_today.loading_path';
+  static const homeTodayStripSemantics = 'home_today.strip_semantics';
+  static const homeTodayPathsUnavailable = 'home_today.paths_unavailable';
 
   // New for you banners and feature introductions. Per-kind keys are built
   // from the kind's name (NewForYouKind.name) by the helpers below.
@@ -3742,5 +3744,6 @@ class TranslationKeys {
   static const accountLessonsCount = 'account.lessons_count';
   static const accountMergePending = 'account.merge_pending';
   static const accountLinkFailed = 'account.link_failed';
+  static const accountEmailExists = 'account.email_exists';
   static const accountDismiss = 'account.dismiss';
 }

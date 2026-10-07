@@ -606,6 +606,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'save_progress': 'പുരോഗതി സൂക്ഷിക്കൂ',
     'reflect': 'ഈ വചനം ധ്യാനിക്കാം',
     'loading_path': 'പാത തുറക്കുന്നു',
+    'strip_semantics': '{total}-ൽ {done} പാഠം കഴിഞ്ഞു',
+    'paths_unavailable': 'പാതകൾ തുറന്നില്ല',
   },
   'nfy': {
     'eyebrow': 'പുതിയത്',
@@ -622,7 +624,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'banner_cta': 'പരിശീലനം · 1 മി',
     },
     'generate': {
-      'banner_title': 'ഏത് വചനവും വിഷയവും പഠിക്കാം',
+      'banner_title': 'ഏത് വചനവും ചോദ്യവും പഠിക്കാം',
       'banner_sub': 'മനസ്സിലുള്ളതിനെല്ലാം ഒരു ഗൈഡ്.',
       'banner_cta': 'പഠനം തുടങ്ങൂ',
     },
@@ -3445,6 +3447,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'lessons_count': '{n} പാഠങ്ങൾ',
     'merge_pending': 'സൈൻ ഇൻ ആയി. പുരോഗതി ഉടൻ എത്തും.',
     'link_failed': 'സൈൻ അപ്പ് ആയില്ല. വീണ്ടും ശ്രമിക്കൂ.',
+    'email_exists':
+        'ഈ ഇമെയിലിന് അക്കൗണ്ടുണ്ട്. പാസ്‌വേഡ് നൽകൂ, അല്ലെങ്കിൽ റീസെറ്റ് ചെയ്യൂ.',
     'dismiss': 'മാറ്റുക',
   },
 };

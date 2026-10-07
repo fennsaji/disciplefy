@@ -154,6 +154,7 @@ void main() {
   });
 
   tearDown(() async {
+    ChooseFirstPathCard.clearSessionCache();
     GuestPathEnrollment.reset();
     await sl.reset();
   });
@@ -436,6 +437,106 @@ void main() {
     navigator.pop();
     await tester.pumpAndSettle();
     expect(refreshed, 1);
+  });
+
+  testWidgets('chooser: a path page that reports a change refreshes Home',
+      (tester) async {
+    listPaths([_path('rooted-in-christ', featured: true, order: 1)]);
+    var refreshed = 0;
+    await tester.pumpWidget(app(HomePathSection(
+      summary: null,
+      loading: false,
+      mode: StudyMode.quick,
+      onModeChanged: (_) {},
+      onProgressMayHaveChanged: () => refreshed++,
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Path rooted-in-christ'));
+    await tester.pumpAndSettle();
+    tester.state<NavigatorState>(find.byType(Navigator).last).pop(true);
+    await tester.pumpAndSettle();
+    expect(refreshed, 1);
+  });
+
+  testWidgets('chooser: the path list is loaded once per session',
+      (tester) async {
+    listPaths([_path('rooted-in-christ', featured: true, order: 1)]);
+    await tester.pumpWidget(app(section(null)));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(app(section(null)));
+    await tester.pumpAndSettle();
+    expect(find.text('Path rooted-in-christ'), findsOneWidget);
+    verify(() => paths.getLearningPaths(
+          language: any(named: 'language'),
+          includeEnrolled: any(named: 'includeEnrolled'),
+          forceRefresh: any(named: 'forceRefresh'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          search: any(named: 'search'),
+          fellowshipId: any(named: 'fellowshipId'),
+        )).called(1);
+  });
+
+  testWidgets('chooser: a failed list offers Retry, which loads it again',
+      (tester) async {
+    when(() => paths.getLearningPaths(
+          language: any(named: 'language'),
+          includeEnrolled: any(named: 'includeEnrolled'),
+          forceRefresh: any(named: 'forceRefresh'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          search: any(named: 'search'),
+          fellowshipId: any(named: 'fellowshipId'),
+        )).thenAnswer((_) async => const Left(NetworkFailure()));
+    await tester.pumpWidget(app(section(null)));
+    await tester.pumpAndSettle();
+    expect(find.text("Couldn't load paths"), findsOneWidget);
+    listPaths([_path('rooted-in-christ', featured: true, order: 1)]);
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text("Couldn't load paths"), findsNothing);
+    expect(find.text('Path rooted-in-christ'), findsOneWidget);
+  });
+
+  testWidgets('Start lesson ignores a quick second tap', (tester) async {
+    await tester.pumpWidget(app(section(summary4of8)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start lesson 4'));
+    await tester.pump();
+    await tester.tap(find.text('Start lesson 4'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Start lesson 4'), findsOneWidget);
+    expect(find.textContaining('stub:lesson'), findsNothing);
+  });
+
+  testWidgets('See path has a 40px tap target', (tester) async {
+    await tester.pumpWidget(app(section(summary4of8)));
+    await tester.pumpAndSettle();
+    final button = find.ancestor(
+        of: find.text('See path'), matching: find.byType(TextButton));
+    expect(tester.getSize(button).height, greaterThanOrEqualTo(40));
+  });
+
+  testWidgets('unfinished path without a next lesson: See path in the card',
+      (tester) async {
+    const missingNext = ActivePathSummary(
+      pathId: 'p1',
+      title: 'New Believer Essentials',
+      description: '',
+      discipleLevel: 'seeker',
+      lessonTotal: 8,
+      lessonsCompleted: 3,
+    );
+    await tester.pumpWidget(app(section(missingNext)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('You finished'), findsNothing);
+    await tester.tap(find.descendant(
+        of: find.byType(TodayLessonCard), matching: find.text('See path')));
+    await tester.pumpAndSettle();
+    expect(find.text('detail:p1:home'), findsOneWidget);
   });
 
   testWidgets('loading skeleton has the section shape and a label',

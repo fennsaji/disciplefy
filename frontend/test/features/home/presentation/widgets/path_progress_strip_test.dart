@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/theme/contrast.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 
 import '../../../../helpers/text_fit.dart';
@@ -91,6 +92,44 @@ void main() {
       }
     }
   }
+
+  for (final dark in [false, true]) {
+    testWidgets('check and current number are readable on gold, dark=$dark',
+        (tester) async {
+      await tester.pumpWidget(welcomeApp(
+          dark: dark,
+          screen: const PathProgressStrip(total: 8, completed: 3, current: 4)));
+      Color fillOf(int n) =>
+          ((tester.widget<Container>(find.byKey(Key('strip_dot_$n'))).decoration
+                  as BoxDecoration)
+              .color!);
+      final check = tester.widget<Icon>(find.descendant(
+          of: find.byKey(const Key('strip_dot_1')),
+          matching: find.byIcon(Icons.check_rounded)));
+      expect(contrastRatio(check.color!, fillOf(1)),
+          greaterThanOrEqualTo(kMinContrastNormalText));
+      final number = tester.widget<Text>(find.descendant(
+          of: find.byKey(const Key('strip_dot_4')), matching: find.text('4')));
+      expect(contrastRatio(number.style!.color!, fillOf(4)),
+          greaterThanOrEqualTo(kMinContrastNormalText));
+    });
+  }
+
+  testWidgets('semantics label is a localized sentence', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(welcomeApp(
+        screen: PathProgressStrip(
+            total: 8, completed: 3, current: 4, onTap: () {})));
+    expect(find.bySemanticsLabel('3 of 8 lessons done'), findsOneWidget);
+    handle.dispose();
+  });
+
+  testWidgets('a finished path shows no Today label', (tester) async {
+    await tester.pumpWidget(welcomeApp(
+        screen: const PathProgressStrip(total: 8, completed: 8, current: 8)));
+    expect(find.byKey(const Key('strip_today')), findsNothing);
+    expect(find.text('Today'), findsNothing);
+  });
 
   group('edge cases', () {
     final cases = <String, PathProgressStrip>{

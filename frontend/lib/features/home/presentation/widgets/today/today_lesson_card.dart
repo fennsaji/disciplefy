@@ -9,8 +9,10 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 /// Today's lesson in the active path: eyebrow, a Quick/Full mode chip, the
 /// lesson title and one "Start lesson N" button.
 ///
-/// When the path has no next lesson it shows "You finished {path}" and a
-/// "Choose your next path" button instead.
+/// When the path is finished it shows "You finished {path}" and a
+/// "Choose your next path" button instead. When the next lesson is missing
+/// but the path is not finished (partial data), it shows the path title and
+/// a "See path" button.
 ///
 /// The card owns no state: [mode] is chosen (and persisted) by the caller,
 /// which [onModeChanged] notifies when the user picks another mode.
@@ -21,6 +23,9 @@ class TodayLessonCard extends StatelessWidget {
   final VoidCallback onStart;
   final VoidCallback? onChooseNextPath;
 
+  /// Opens the path page (the fallback when no next lesson is known).
+  final VoidCallback? onSeePath;
+
   const TodayLessonCard({
     super.key,
     required this.summary,
@@ -28,6 +33,7 @@ class TodayLessonCard extends StatelessWidget {
     required this.onModeChanged,
     required this.onStart,
     this.onChooseNextPath,
+    this.onSeePath,
   });
 
   @override
@@ -42,9 +48,11 @@ class TodayLessonCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: palette.hairline),
       ),
-      child: next == null
-          ? _finished(context, palette)
-          : _lesson(context, palette, next),
+      child: next != null
+          ? _lesson(context, palette, next)
+          : summary.isFinished
+              ? _finished(context, palette)
+              : _seePath(context, palette),
     );
   }
 
@@ -114,23 +122,44 @@ class TodayLessonCard extends StatelessWidget {
     );
   }
 
-  Widget _finished(BuildContext context, ReaderPalette palette) {
+  Widget _finished(BuildContext context, ReaderPalette palette) =>
+      _titleAndButton(
+        context,
+        palette,
+        title: context.tr(TranslationKeys.homeTodayPathFinished,
+            {'path': summary.displayTitle}),
+        label: context.tr(TranslationKeys.homeTodayChooseNextPath),
+        onPressed: onChooseNextPath,
+      );
+
+  Widget _seePath(BuildContext context, ReaderPalette palette) =>
+      _titleAndButton(
+        context,
+        palette,
+        title: summary.displayTitle,
+        label: context.tr(TranslationKeys.homeTodaySeePath),
+        onPressed: onSeePath,
+      );
+
+  Widget _titleAndButton(
+    BuildContext context,
+    ReaderPalette palette, {
+    required String title,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          context.tr(TranslationKeys.homeTodayPathFinished,
-              {'path': summary.displayTitle}),
-          style: _titleStyle(context, palette),
-        ),
+        Text(title, style: _titleStyle(context, palette)),
         const SizedBox(height: 14),
         SizedBox(
           width: double.infinity,
           height: 40,
           child: OutlinedButton(
-            onPressed: onChooseNextPath,
+            onPressed: onPressed,
             style: OutlinedButton.styleFrom(
               foregroundColor: palette.text,
               side: BorderSide(color: palette.outline),
@@ -141,7 +170,7 @@ class TodayLessonCard extends StatelessWidget {
               textStyle: theme.textTheme.labelLarge
                   ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
             ),
-            child: Text(context.tr(TranslationKeys.homeTodayChooseNextPath)),
+            child: Text(label),
           ),
         ),
       ],

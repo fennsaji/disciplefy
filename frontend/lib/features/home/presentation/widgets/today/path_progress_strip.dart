@@ -39,6 +39,7 @@ class PathProgressStrip extends StatelessWidget {
   int get _total => total < 0 ? 0 : total;
   int get _completed => completed.clamp(0, _total);
   int get _current => _total == 0 ? 0 : current.clamp(1, _total);
+  bool get _finished => _total > 0 && _completed >= _total;
   List<int> get _milestones => {
         for (final m in milestones)
           if (m >= 1 && m <= _total) m
@@ -62,7 +63,8 @@ class PathProgressStrip extends StatelessWidget {
 
     return Semantics(
       button: onTap != null,
-      label: '$_completed/$_total',
+      label: context.tr(TranslationKeys.homeTodayStripSemantics,
+          {'done': _completed, 'total': _total}),
       excludeSemantics: true,
       child: Material(
         color: palette.card,
@@ -76,19 +78,22 @@ class PathProgressStrip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 strip,
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment(slot * 2 - 1, 0),
-                  child: Text(
-                    context.tr(TranslationKeys.homeTodayLabel),
-                    key: const Key('strip_today'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: palette.gold,
+                // Nothing is "today" on a finished path.
+                if (!_finished) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment(slot * 2 - 1, 0),
+                    child: Text(
+                      context.tr(TranslationKeys.homeTodayLabel),
+                      key: const Key('strip_today'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: palette.gold,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -125,15 +130,16 @@ class PathProgressStrip extends StatelessWidget {
               ? null
               : Border.all(color: palette.hairline, width: 1.5),
         ),
+        // Ink on the bright dark-theme gold, white on the deep light one.
         child: done
-            ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+            ? Icon(Icons.check_rounded, size: 14, color: palette.onGold)
             : isCurrent
                 ? Text(
                     '$n',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: palette.onGold,
                       height: 1,
                     ),
                   )

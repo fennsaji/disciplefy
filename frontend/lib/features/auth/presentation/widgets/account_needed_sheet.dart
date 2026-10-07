@@ -5,7 +5,6 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
-import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/auth/domain/entities/account_reason.dart';
@@ -17,16 +16,16 @@ export 'package:disciplefy_bible_study/features/auth/domain/entities/account_rea
 class AccountGate {
   AccountGate._();
 
-  /// True when guest mode is on and the signed-in user is a guest. False
-  /// when either service is not registered (tests, early startup) or the
-  /// flag cannot be read.
+  /// True when the signed-in user is a guest. False when the service is not
+  /// registered (tests, early startup) or cannot be read.
+  ///
+  /// Deliberately independent of the `guest_mode` flag: the flag only stops
+  /// new guests. The router keeps blocking existing guests from account-only
+  /// routes whatever the flag says, so the sheet must keep explaining why.
   static bool get isActive {
     try {
-      if (!sl.isRegistered<RolloutFlags>() ||
-          !sl.isRegistered<GuestSessionService>()) {
-        return false;
-      }
-      return sl<RolloutFlags>().guestMode && sl<GuestSessionService>().isGuest;
+      if (!sl.isRegistered<GuestSessionService>()) return false;
+      return sl<GuestSessionService>().isGuest;
     } catch (_) {
       return false;
     }
@@ -35,8 +34,7 @@ class AccountGate {
 
 /// Asks a guest to create an account before an account-only action.
 ///
-/// Returns true straight away for a full account, or when guest mode is
-/// off. For a guest it opens [AccountNeededSheet] and returns true only when
+/// Returns true straight away for a full account. For a guest it opens [AccountNeededSheet] and returns true only when
 /// the guest has just become a full account; "Continue as guest" (or closing
 /// the sheet) returns false and the caller does nothing.
 Future<bool> requireAccount(BuildContext context, AccountReason reason) async {

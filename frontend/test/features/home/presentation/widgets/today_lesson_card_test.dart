@@ -227,6 +227,35 @@ void main() {
     expect(chose, 1);
   });
 
+  testWidgets(
+      'no next lesson on an unfinished path: See path, never "You finished"',
+      (tester) async {
+    const missingNext = ActivePathSummary(
+      pathId: 'p1',
+      title: 'New Believer Essentials',
+      description: 'First steps',
+      discipleLevel: 'seeker',
+      lessonTotal: 8,
+      lessonsCompleted: 3,
+    );
+    var seen = 0;
+    await tester.pumpWidget(welcomeApp(
+        screen: Scaffold(
+      body: TodayLessonCard(
+          summary: missingNext,
+          mode: StudyMode.standard,
+          onModeChanged: (_) {},
+          onStart: () {},
+          onChooseNextPath: () {},
+          onSeePath: () => seen++),
+    )));
+    expect(find.textContaining('You finished'), findsNothing);
+    expect(find.text('Choose your next path'), findsNothing);
+    expect(find.text('New Believer Essentials'), findsOneWidget);
+    await tester.tap(find.text('See path'));
+    expect(seen, 1);
+  });
+
   for (final c in fitCases()) {
     final lang = c.lang;
     final dark = c.dark;

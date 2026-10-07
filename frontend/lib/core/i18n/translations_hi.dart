@@ -596,6 +596,8 @@ const Map<String, dynamic> hindiTranslations = {
     'save_progress': 'प्रगति खाते में सहेजें',
     'reflect': 'इस वचन पर मनन करें',
     'loading_path': 'पथ खुल रहा है',
+    'strip_semantics': '{total} में से {done} पाठ पूरे',
+    'paths_unavailable': 'पथ नहीं खुले',
   },
   'nfy': {
     'eyebrow': 'आपके लिए नया',
@@ -612,7 +614,7 @@ const Map<String, dynamic> hindiTranslations = {
       'banner_cta': 'अभ्यास · 1 मि',
     },
     'generate': {
-      'banner_title': 'कोई भी वचन या विषय पढ़ें',
+      'banner_title': 'कोई भी वचन या सवाल पढ़ें',
       'banner_sub': 'मन की हर बात के लिए गाइड।',
       'banner_cta': 'अध्ययन शुरू करें',
     },
@@ -3331,6 +3333,7 @@ const Map<String, dynamic> hindiTranslations = {
     'lessons_count': '{n} पाठ',
     'merge_pending': 'साइन इन हो गया। प्रगति जल्द आएगी।',
     'link_failed': 'साइन अप नहीं हुआ। फिर कोशिश करें।',
+    'email_exists': 'इस ईमेल का खाता है। उसका पासवर्ड डालें या रीसेट करें।',
     'dismiss': 'हटाएँ',
   },
 };

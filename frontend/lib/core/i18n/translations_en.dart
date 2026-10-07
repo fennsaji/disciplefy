@@ -598,6 +598,8 @@ const Map<String, dynamic> englishTranslations = {
     'save_progress': 'Save progress to your account',
     'reflect': 'Reflect on this verse',
     'loading_path': 'Loading your path',
+    'strip_semantics': '{done} of {total} lessons done',
+    'paths_unavailable': "Couldn't load paths",
   },
   'nfy': {
     'eyebrow': 'New for you',
@@ -614,7 +616,7 @@ const Map<String, dynamic> englishTranslations = {
       'banner_cta': 'Practise · 1 min',
     },
     'generate': {
-      'banner_title': 'Study any verse or topic',
+      'banner_title': 'Study any verse or question',
       'banner_sub': 'A guide for whatever is on your mind.',
       'banner_cta': 'Start a study',
     },
@@ -3326,6 +3328,8 @@ const Map<String, dynamic> englishTranslations = {
     'lessons_count': '{n} lessons',
     'merge_pending': 'Signed in. Your progress moves over soon.',
     'link_failed': "Couldn't sign up. Please try again.",
+    'email_exists':
+        'This email already has an account. Enter its password, or reset it.',
     'dismiss': 'Dismiss',
   },
 };

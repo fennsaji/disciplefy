@@ -8,6 +8,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_from_summary.dart';
@@ -44,7 +45,9 @@ class HomePathSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final summary = this.summary;
     if (summary == null) {
-      return loading ? const _PathPlaceholder() : const ChooseFirstPathCard();
+      return loading
+          ? const _PathPlaceholder()
+          : ChooseFirstPathCard(onPathChanged: onProgressMayHaveChanged);
     }
     return _ActivePath(
       summary: summary,
@@ -55,7 +58,7 @@ class HomePathSection extends StatelessWidget {
   }
 }
 
-class _ActivePath extends StatelessWidget {
+class _ActivePath extends StatefulWidget {
   final ActivePathSummary summary;
   final StudyMode mode;
   final ValueChanged<StudyMode> onModeChanged;
@@ -68,16 +71,34 @@ class _ActivePath extends StatelessWidget {
     this.onProgressMayHaveChanged,
   });
 
+  @override
+  State<_ActivePath> createState() => _ActivePathState();
+}
+
+class _ActivePathState extends State<_ActivePath> {
+  /// Ignores a quick second tap (a double tap would push twice). Never held
+  /// across the awaited push, which go_router may never complete.
+  final TapGuard _tapGuard = TapGuard();
+
+  @override
+  void dispose() {
+    _tapGuard.dispose();
+    super.dispose();
+  }
+
   Future<void> _openPath(BuildContext context) async {
+    if (!_tapGuard.tryAcquire()) return;
     final changed = await context
-        .push<bool>('/learning-path/${summary.pathId}?source=home');
-    if (changed == true) onProgressMayHaveChanged?.call();
+        .push<bool>('/learning-path/${widget.summary.pathId}?source=home');
+    if (changed == true) widget.onProgressMayHaveChanged?.call();
   }
 
   Future<void> _start(BuildContext context) async {
+    if (!_tapGuard.tryAcquire()) return;
     final language = sl<TranslationService>().currentLanguage.code;
-    await context.push(buildLessonLaunchFromSummary(summary, mode, language));
-    onProgressMayHaveChanged?.call();
+    await context.push(
+        buildLessonLaunchFromSummary(widget.summary, widget.mode, language));
+    widget.onProgressMayHaveChanged?.call();
   }
 
   Future<void> _chooseNextPath(BuildContext context) async {
@@ -88,6 +109,7 @@ class _ActivePath extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final summary = widget.summary;
     final palette = ReaderPalette.of(context);
     final next = summary.next;
     final total = summary.lessonTotal;
@@ -116,7 +138,9 @@ class _ActivePath extends StatelessWidget {
               onPressed: () => _openPath(context),
               style: TextButton.styleFrom(
                 foregroundColor: palette.gold,
-                minimumSize: const Size(0, 32),
+                // 40px tall to tap; the gap under the header is dropped so
+                // the strip moves by 2px only.
+                minimumSize: const Size(0, 40),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 textStyle:
@@ -132,11 +156,11 @@ class _ActivePath extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
         PathProgressStrip(
           total: total,
           completed: summary.lessonsCompleted,
-          current: next?.number ?? total,
+          current: next?.number ??
+              (summary.isFinished ? total : summary.lessonsCompleted + 1),
           milestones: summary.milestoneNumbers,
           onTap: () => _openPath(context),
         ),
@@ -165,10 +189,11 @@ class _ActivePath extends StatelessWidget {
         const SizedBox(height: 12),
         TodayLessonCard(
           summary: summary,
-          mode: mode,
-          onModeChanged: onModeChanged,
+          mode: widget.mode,
+          onModeChanged: widget.onModeChanged,
           onStart: () => _start(context),
           onChooseNextPath: () => _chooseNextPath(context),
+          onSeePath: () => _openPath(context),
         ),
       ],
     );

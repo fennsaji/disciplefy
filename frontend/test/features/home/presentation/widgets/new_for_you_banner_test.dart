@@ -28,7 +28,7 @@ const _bannerText = {
     'Practise · 1 min',
   ),
   NewForYouKind.generate: (
-    'Study any verse or topic',
+    'Study any verse or question',
     'A guide for whatever is on your mind.',
     'Start a study',
   ),
@@ -123,6 +123,18 @@ void main() {
     for (final t in tester.widgetList<Text>(find.byType(Text))) {
       expect((t.style?.fontSize ?? 14) >= 12, isTrue, reason: t.data);
     }
+  });
+
+  testWidgets('× has a 40px square tap target, its icon where it was',
+      (tester) async {
+    await tester.pumpWidget(app(banner(NewForYouKind.paths)));
+    await tester.pumpAndSettle();
+    final target = tester.getSize(find.byKey(const Key('nfy_dismiss')));
+    expect(target.width, greaterThanOrEqualTo(40));
+    expect(target.height, greaterThanOrEqualTo(40));
+    final card = tester.getTopLeft(find.byType(NewForYouBanner));
+    final icon = tester.getCenter(find.byIcon(Icons.close_rounded));
+    expect(icon.dy - card.dy, 22);
   });
 
   testWidgets('CTA is a 32px pill', (tester) async {

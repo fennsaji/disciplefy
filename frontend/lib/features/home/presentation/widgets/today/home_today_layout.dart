@@ -172,9 +172,10 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
 
   Future<void> _loadNewForYou(ActivePathSummary? summary) async {
     if (_newForYouRequested) return;
-    _newForYouRequested = true;
     final userId = sl<AuthStateProvider>().userId;
+    // No user yet (session still starting): try again on the next path load.
     if (userId == null) return;
+    _newForYouRequested = true;
     try {
       final guest = GuestRouteGate.currentUserIsGuest();
       final plan = currentPlanCode(sl<TokenBloc>().state);
