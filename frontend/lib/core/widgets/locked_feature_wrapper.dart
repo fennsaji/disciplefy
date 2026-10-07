@@ -11,6 +11,7 @@ import '../../features/tokens/presentation/bloc/token_state.dart';
 import '../services/system_config_service.dart';
 import '../di/injection_container.dart';
 import 'upgrade_dialog.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 
 /// Wrapper widget that handles locked feature display and upgrade prompts
 ///
@@ -119,7 +120,7 @@ class LockedFeatureWrapper extends StatelessWidget {
                     );
                     return;
                   }
-                  _showUpgradeDialog(
+                  _onLockedTap(
                     context,
                     currentPlan,
                     requiredPlans,
@@ -141,6 +142,22 @@ class LockedFeatureWrapper extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// A guest cannot buy a plan (plans and pricing need an account), so they
+  /// are asked to create an account first; the plan choice follows only once
+  /// they have one. Everyone else goes straight to the plan choice.
+  Future<void> _onLockedTap(
+    BuildContext context,
+    String currentPlan,
+    List<String> requiredPlans,
+    String? upgradePlan,
+  ) async {
+    if (AccountGate.isActive) {
+      final linked = await requireAccount(context, AccountReason.other);
+      if (!linked || !context.mounted) return;
+    }
+    _showUpgradeDialog(context, currentPlan, requiredPlans, upgradePlan);
   }
 
   void _showUpgradeDialog(

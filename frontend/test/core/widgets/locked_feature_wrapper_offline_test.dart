@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:mocktail/mocktail.dart' as mt;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:disciplefy_bible_study/core/connectivity/connectivity_bloc.dart';
@@ -11,6 +12,8 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
@@ -64,6 +67,10 @@ TokenStatus _status(UserPlan plan) => TokenStatus(
       canPurchaseTokens: true,
       planDescription: plan.name,
     );
+
+class _MockGuest extends mt.Mock implements GuestSessionService {}
+
+class _MockFlags extends mt.Mock implements RolloutFlags {}
 
 const _offlineFailure = NetworkFailure(message: 'offline', code: 'NO_INTERNET');
 
@@ -149,5 +156,27 @@ void main() {
         ).knownPlanName,
         'premium');
     expect(const TokenInitial().knownPlanName, isNull);
+  });
+
+  // A guest cannot buy a plan (pricing needs an account): tapping a
+  // plan-locked feature asks for an account first, not the plan choice.
+  testWidgets('a guest tapping a locked feature gets the account sheet',
+      (tester) async {
+    final guest = _MockGuest();
+    final flags = _MockFlags();
+    mt.when(() => guest.isGuest).thenReturn(true);
+    mt.when(() => flags.guestMode).thenReturn(true);
+    GetIt.instance
+      ..registerSingleton<GuestSessionService>(guest)
+      ..registerSingleton<RolloutFlags>(flags);
+    await pump(
+      tester,
+      TokenLoaded(
+          tokenStatus: _status(UserPlan.free), lastUpdated: DateTime(2026)),
+      offline: false,
+    );
+    await tester.tap(find.text(tr(TranslationKeys.appChromeLockTapToUpgrade)));
+    await tester.pumpAndSettle();
+    expect(find.text(tr(TranslationKeys.accountGenericTitle)), findsOneWidget);
   });
 }
