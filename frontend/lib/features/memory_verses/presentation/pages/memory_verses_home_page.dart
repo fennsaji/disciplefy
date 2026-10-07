@@ -538,7 +538,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           onTap: _memoryStreak == null ? null : _onStreakTap,
         ),
         if (_dailyGoal != null) ...[
-          const SizedBox(height: 20),
+          // The 40px streak line already carries ~8px below its text.
+          const SizedBox(height: 12),
           _buildGoalProgress(
             context.tr(TranslationKeys.memoryHomeDailyReviews),
             _dailyGoal!.completedReviews,

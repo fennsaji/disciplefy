@@ -29,8 +29,9 @@ class MemoryHeaderLine extends StatelessWidget {
           : TranslationKeys.memoryHeaderLine,
       {'streak': '$streak', 'count': '$verseCount'},
     );
-    final line = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    // 40px tall so the line is easy to tap; the text stays centred in it.
+    final line = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 40),
       child: Row(
         children: [
           Icon(Icons.local_fire_department_outlined,
