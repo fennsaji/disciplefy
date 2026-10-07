@@ -31,8 +31,8 @@ import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-servic
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
 import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
-import { resolveTopicLanguage } from '../_shared/utils/content-language.ts'
-import { isFreeCatalogueLesson } from '../_shared/utils/lesson-pricing.ts'
+import { parseStudyLanguage, resolveTopicLanguage } from '../_shared/utils/content-language.ts'
+import { resolveCatalogueRequest } from '../_shared/utils/lesson-pricing.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -130,7 +130,10 @@ function parseRequestParams(req: Request): {
   const path_title = url.searchParams.get('path_title') || undefined
   const path_description = url.searchParams.get('path_description') || undefined
   const disciple_level = url.searchParams.get('disciple_level') || undefined
-  const requestedLanguage = url.searchParams.get('language') || 'en'
+  const requestedLanguage = parseStudyLanguage(url.searchParams.get('language'))
+  if (requestedLanguage === null) {
+    throw new AppError('VALIDATION_ERROR', 'language must be one of en, hi, ml', 400)
+  }
   const mode = url.searchParams.get('mode') as StudyMode | null
   // TODO: Remove or update this when learning path token pricing is finalized.
   const topic_id = url.searchParams.get('topic_id') || undefined
@@ -200,25 +203,74 @@ function validateStudyGuideCompleteness(content: Record<string, unknown>): strin
   return missing
 }
 
+/** What the catalogue holds for a topic: the facts a lesson request is checked against. */
+interface CatalogueTopic {
+  /** Every title of the topic: base, each translation, each path's override. */
+  readonly titles: string[]
+  /** The topic's description in the study language, falling back to the base one. */
+  readonly description: string
+  /** The path holding the topic, if any, localized to the study language. */
+  readonly path: {
+    readonly title: string
+    readonly description: string
+    readonly discipleLevel: string | null
+    readonly recommendedMode: string | null
+  } | null
+}
+
 /**
- * Look up the recommended study mode for a learning path topic.
+ * Loads a catalogue topic from the database, or null if [topicId] is not one.
  *
- * TODO: Remove or update this when learning path token pricing is finalized.
- * Returns the recommended_mode string (e.g. 'standard') if the topic belongs
- * to a learning path, or null if the topic_id is not found.
+ * The request's `topic_id` comes from the client, so nothing the client says
+ * about the topic is trusted: its titles, description and path come from here.
  */
-async function getLearningPathRecommendedMode(
+async function loadCatalogueTopic(
+  // deno-lint-ignore no-explicit-any -- service client, untyped like the rest of this file
   supabase: any,
-  topicId: string
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('learning_path_topics')
-    .select('learning_paths!inner(recommended_mode)')
-    .eq('topic_id', topicId)
-    .limit(1)
-    .single()
-  if (error || !data) return null
-  return (data as any).learning_paths?.recommended_mode ?? null
+  topicId: string,
+  language: string
+): Promise<CatalogueTopic | null> {
+  const [topicRes, translationsRes, overridesRes, pathRes] = await Promise.all([
+    supabase.from('recommended_topics').select('title, description').eq('id', topicId).maybeSingle(),
+    supabase.from('recommended_topics_translations').select('language_code, title, description').eq('topic_id', topicId),
+    supabase.from('learning_path_topic_titles').select('title').eq('topic_id', topicId),
+    supabase
+      .from('learning_path_topics')
+      .select('learning_path_id, learning_paths!inner(title, description, disciple_level, recommended_mode)')
+      .eq('topic_id', topicId)
+      .limit(1)
+      .maybeSingle()
+  ])
+  if (topicRes.error || !topicRes.data) return null
+
+  const translations = (translationsRes.data ?? []) as Array<{ language_code: string; title: string; description: string }>
+  const overrides = (overridesRes.data ?? []) as Array<{ title: string }>
+  const localized = translations.find((t) => t.language_code === language)
+
+  // deno-lint-ignore no-explicit-any -- embedded join row
+  const pathRow = pathRes.error ? null : (pathRes.data as any)
+  let path: CatalogueTopic['path'] = null
+  if (pathRow?.learning_paths) {
+    const lp = pathRow.learning_paths
+    const { data: lpt } = await supabase
+      .from('learning_path_translations')
+      .select('title, description')
+      .eq('learning_path_id', pathRow.learning_path_id)
+      .eq('lang_code', language)
+      .maybeSingle()
+    path = {
+      title: lpt?.title || lp.title,
+      description: lpt?.description || lp.description,
+      discipleLevel: lp.disciple_level ?? null,
+      recommendedMode: lp.recommended_mode ?? null
+    }
+  }
+
+  return {
+    titles: [topicRes.data.title, ...translations.map((t) => t.title), ...overrides.map((o) => o.title)],
+    description: localized?.description || topicRes.data.description,
+    path
+  }
 }
 
 /**
@@ -601,7 +653,10 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode, topic_id } = params
+  const { input_type, input_value, language, study_mode, topic_id } = params
+  // Prompt context. Client-supplied for a typed study; replaced from the
+  // catalogue below when the request is a verified catalogue lesson.
+  let { topic_description, path_title, path_description, disciple_level } = params
 
   console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
@@ -625,10 +680,36 @@ async function handleStudyGenerateV2(
   // serve again, and the catalogue is the part of the product that should stay
   // open to everyone; the plan's mode rule and the credit charge are about the
   // studies a user types in for themselves. Validated server-side via DB lookup.
-  const lpMode = topic_id
-    ? await getLearningPathRecommendedMode(services.supabaseServiceClient, topic_id)
+  //
+  // The client's topic_id is trusted only when input_value is one of that
+  // topic's catalogue titles. A mismatch is a normal paid study keyed by its
+  // input hash: it is never free and can never be written into (or read from)
+  // the shared cache row every reader of that lesson is served from.
+  const catalogueTopic = topic_id
+    ? await loadCatalogueTopic(services.supabaseServiceClient, topic_id, language)
     : null
-  const isCataloguePath = isFreeCatalogueLesson(lpMode, study_mode)
+  const lpMode = catalogueTopic?.path?.recommendedMode ?? null
+  const catalogue = resolveCatalogueRequest({
+    topicId: topic_id,
+    inputValue: input_value,
+    titles: catalogueTopic?.titles ?? [],
+    recommendedMode: lpMode,
+    studyMode: study_mode
+  })
+  const isCataloguePath = catalogue.isFree
+
+  if (topic_id && !catalogue.cacheTopicId) {
+    console.warn(`⚠️ [STUDY-V2] topic_id ${topic_id} does not match the input; treating as a typed study`)
+  }
+
+  // A verified lesson is cached under its topic for every reader, so the prompt
+  // context comes from the catalogue, not from the client.
+  if (catalogue.cacheTopicId && catalogueTopic) {
+    topic_description = catalogueTopic.description
+    path_title = catalogueTopic.path?.title
+    path_description = catalogueTopic.path?.description
+    disciple_level = catalogueTopic.path?.discipleLevel ?? undefined
+  }
 
   const hasFeatureAccess = isCataloguePath || await isFeatureEnabledForPlan(requiredFeature, userPlan)
 
@@ -677,10 +758,10 @@ async function handleStudyGenerateV2(
     value: input_value,
     language: language,
     study_mode: study_mode,
-    // Catalogue lesson, when the client sent one. The cache prefers it over the
-    // title hash so a lesson opened under a Hindi title still finds the guide
-    // the blog generator wrote for it.
-    topic_id: topic_id
+    // Catalogue lesson, only once verified against the catalogue. The cache
+    // prefers it over the title hash so a lesson opened under a Hindi title
+    // still finds the guide the blog generator wrote for it.
+    topic_id: catalogue.cacheTopicId
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)

@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
-import { detectScriptLanguage, resolveTopicLanguage } from './content-language.ts'
+import { detectScriptLanguage, parseStudyLanguage, resolveTopicLanguage } from './content-language.ts'
 
 Deno.test('detects Hindi and Malayalam scripts', () => {
   assertEquals(detectScriptLanguage('आत्मिक युद्ध'), 'hi')
@@ -23,4 +23,24 @@ Deno.test('matching or Latin titles keep the requested language', () => {
 
 Deno.test('non-topic (Generate tab) requests are never overridden', () => {
   assertEquals(resolveTopicLanguage('en', 'आत्मिक युद्ध'), 'en')
+})
+
+Deno.test('parseStudyLanguage accepts the three supported languages', () => {
+  assertEquals(parseStudyLanguage('en'), 'en')
+  assertEquals(parseStudyLanguage('hi'), 'hi')
+  assertEquals(parseStudyLanguage('ml'), 'ml')
+})
+
+Deno.test('parseStudyLanguage defaults a missing language to en', () => {
+  assertEquals(parseStudyLanguage(null), 'en')
+})
+
+Deno.test('parseStudyLanguage rejects anything else', () => {
+  assertEquals(parseStudyLanguage('en1'), null)
+  assertEquals(parseStudyLanguage(''), null)
+  assertEquals(parseStudyLanguage('EN'), null)
+  assertEquals(parseStudyLanguage('en-US'), null)
+  assertEquals(parseStudyLanguage(' en'), null)
+  assertEquals(parseStudyLanguage('fr'), null)
+  assertEquals(parseStudyLanguage('e'.repeat(5000)), null)
 })
