@@ -40,4 +40,19 @@ void main() {
           '${detail.topics.length}');
     });
   }
+
+  group('flat list total', () {
+    Map<String, dynamic> list(Object? total) => {
+          'success': true,
+          'data': {'paths': [], 'total': total, 'has_more': true, 'offset': 0},
+        };
+
+    test('the count of all paths is read', () {
+      expect(LearningPathsResponseModel.fromJson(list(50)).total, 50);
+    });
+
+    test('an unknown (null) total reads as 0', () {
+      expect(LearningPathsResponseModel.fromJson(list(null)).total, 0);
+    });
+  });
 }

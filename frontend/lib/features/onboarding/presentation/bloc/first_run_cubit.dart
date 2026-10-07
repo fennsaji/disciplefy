@@ -244,7 +244,7 @@ class FirstRunCubit extends Cubit<FirstRunState> {
       final LearningPathsResult? listed =
           result.fold((failure) => null, (r) => r);
       if (listed == null) break;
-      total = listed.total;
+      total = _listTotal(listed, offset) ?? total;
       for (final path in listed.paths) {
         if (wanted.contains(path.slug)) {
           found[path.slug] = StarterPathInfo(
@@ -261,6 +261,17 @@ class FirstRunCubit extends Cubit<FirstRunState> {
       }
     }
     return StarterPaths(bySlug: found, totalPaths: total);
+  }
+
+  /// [listed]'s count of all paths, or null when it cannot be the whole
+  /// list: unknown (0), or no more than the paths already seen while more
+  /// pages exist (an old cached page counted only itself).
+  static int? _listTotal(LearningPathsResult listed, int offset) {
+    final seen = offset + listed.paths.length;
+    final total = listed.total;
+    if (total <= 0 || total < seen) return null;
+    if (listed.hasMore && total <= seen) return null;
+    return total;
   }
 }
 

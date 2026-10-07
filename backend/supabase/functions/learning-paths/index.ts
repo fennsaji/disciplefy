@@ -17,6 +17,7 @@ import { checkFeatureAccess } from '../_shared/middleware/feature-access-middlew
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
 import { buildRecommendedExtras, type NextLessonJson } from './next-lesson.ts';
+import { flatListTotal, loadActivePathCount } from './list-total.ts';
 import {
   assertGuestMayEnroll,
   loadGuestAccessiblePathIds,
@@ -552,6 +553,22 @@ async function handleLearningPaths(
  */
 const guestAccessibleCache = new TtlCache<Set<string>>(CATALOG_CACHE_TTL_MS, 1);
 
+/** Number of active paths, cached like the rest of the catalogue. */
+const activePathCountCache = new TtlCache<number>(CATALOG_CACHE_TTL_MS, 1);
+
+// deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
+async function activePathCount(client: any): Promise<number | null> {
+  const cached = activePathCountCache.get('count');
+  if (cached !== undefined) return cached;
+  const count = await loadActivePathCount(client);
+  if (count === null) {
+    console.warn('[LearningPaths] active path count failed; list total unknown');
+    return null;
+  }
+  activePathCountCache.set('count', count);
+  return count;
+}
+
 // deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
 async function guestAccessiblePathIds(client: any): Promise<Set<string>> {
   const cached = guestAccessibleCache.get('ids');
@@ -755,9 +772,11 @@ async function handleListPathsFlat(
   };
   if (search) rpcParams['p_search'] = search;
 
-  const [{ data, error }, guestIds] = await Promise.all([
+  const unfiltered = !search && includeEnrolled;
+  const [{ data, error }, guestIds, activeCount] = await Promise.all([
     supabaseServiceClient.rpc('get_available_learning_paths', rpcParams),
     guestAccessiblePathIds(supabaseServiceClient),
+    unfiltered ? activePathCount(supabaseServiceClient) : Promise.resolve(null),
   ]);
 
   if (error) {
@@ -789,7 +808,16 @@ async function handleListPathsFlat(
   }));
 
   return new Response(
-    JSON.stringify({ success: true, data: { paths, total: paths.length, has_more: hasMore, offset } }),
+    JSON.stringify({
+      success: true,
+      data: {
+        paths,
+        // Matching paths in the whole list (null when unknown), not the page size.
+        total: flatListTotal({ offset, pageLength: paths.length, hasMore, activeCount, unfiltered }),
+        has_more: hasMore,
+        offset,
+      },
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }

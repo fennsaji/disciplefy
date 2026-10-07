@@ -532,6 +532,66 @@ void main() {
           ));
     });
 
+    test('a page-sized total (an old cached page) is not shown', () async {
+      // Before the server sent the real count, `total` was the page length.
+      when(() => paths.getLearningPaths(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => Right(LearningPathsResult(
+            paths: [
+              for (var i = 0; i < 10; i++) _listed('other-$i', 'Other', 3),
+            ],
+            total: 10,
+            hasMore: true,
+          )));
+      when(() => paths.getLearningPaths(
+            offset: 10,
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => Right(LearningPathsResult(
+            paths: [
+              for (var i = 10; i < 30; i++) _listed('other-$i', 'Other', 3),
+            ],
+            total: 20,
+            hasMore: true,
+          )));
+      when(() => paths.getLearningPaths(
+                offset: 30,
+                limit: any(named: 'limit'),
+              ))
+          .thenAnswer((_) async =>
+              const Right(LearningPathsResult(paths: [], total: 0)));
+
+      final result = await cubit().loadStarterPaths('en');
+
+      expect(result.totalPaths, isNull);
+    });
+
+    test('the real total from a later page wins over a stale first page',
+        () async {
+      when(() => paths.getLearningPaths(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => Right(LearningPathsResult(
+            paths: [
+              for (var i = 0; i < 10; i++) _listed('other-$i', 'Other', 3),
+            ],
+            total: 10,
+            hasMore: true,
+          )));
+      when(() => paths.getLearningPaths(
+            offset: 10,
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => Right(LearningPathsResult(
+            paths: [
+              for (final g in GrowthGoal.values) _listed(g.pathSlug, 'P', 3),
+            ],
+            total: 50,
+            hasMore: true,
+          )));
+
+      final result = await cubit().loadStarterPaths('en');
+
+      expect(result.totalPaths, 50);
+    });
+
     test('a failure keeps what was found and never throws', () async {
       when(() => paths.getLearningPaths(
                 language: any(named: 'language'),
