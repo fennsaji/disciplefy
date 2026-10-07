@@ -177,62 +177,7 @@ class RouterGuard {
       GuestMarker.syncWithUser(isAnonymous: user.isAnonymous);
       // SECURITY FIX: Validate session expiration for all auth types
       final isExpired = _isSessionExpired();
-      if (isExpired) {
-        // The stored expiry tracks the ACCESS token (1h), not the session.
-        // With default Supabase settings sessions never expire, so an
-        // expired access token after long idle is normal — refresh it
-        // instead of forcing the user back to login.
-        final refresh = await _tryRefreshExpiredSession();
-        if (refresh == SessionRefreshResult.refreshed) {
-          Logger.info(
-            'Access token expired but session refreshed successfully',
-            tag: 'AUTH_SECURITY',
-            context: {'user_id': user.id, 'user_type': 'supabase'},
-          );
-          return AuthenticationState(
-            isAuthenticated: true,
-            userType: 'supabase',
-            userId: user.id,
-            userEmail: user.email,
-            isGuest: user.isAnonymous,
-          );
-        }
-
-        // A refresh that timed out or died on the network says nothing about
-        // whether the session is still valid — only that we could not reach
-        // Supabase right now (typical when the app wakes from background and
-        // the radio has not reconnected). Keep the user signed in: the stored
-        // expiry tracks the 1h access token, not the session, and the backend
-        // re-verifies every request anyway. Logging out here would strand a
-        // perfectly valid user on the login screen for a transient blip.
-        if (refresh == SessionRefreshResult.inconclusive) {
-          Logger.warning(
-            'Session refresh inconclusive (network/timeout) — keeping user signed in',
-            tag: 'AUTH_SECURITY',
-            context: {'user_id': user.id, 'user_type': 'supabase'},
-          );
-          return AuthenticationState(
-            isAuthenticated: true,
-            userType: 'supabase',
-            userId: user.id,
-            userEmail: user.email,
-            isGuest: user.isAnonymous,
-          );
-        }
-
-        Logger.info(
-          'User session expired and refresh failed',
-          tag: 'AUTH_SECURITY',
-          context: {
-            'user_id': user.id,
-            'user_type': 'supabase',
-            'session_expired': true,
-          },
-        );
-        // Clear expired session data
-        _clearExpiredSession();
-        return const AuthenticationState(isAuthenticated: false);
-      }
+      if (isExpired) return _authStateForExpiredSession(user);
 
       Logger.info(
         'User authenticated via Supabase',
@@ -950,6 +895,8 @@ class RouterGuard {
     // to log in with: start a new first run instead of the login screen.
     // Public routes (login itself) were let through before this point.
     if (_newFirstRunEnabled() && GuestMarker.wasGuest) {
+      // Keep a shared link (fellowship invite etc.) for after the first run.
+      _stashPendingDeepLink(routeAnalysis.currentPath);
       Logger.info('Lost guest session: starting a new first run',
           tag: 'ROUTER',
           context: {'attempted_route': routeAnalysis.currentPath});
@@ -1550,6 +1497,102 @@ class RouterGuard {
         tag: 'ROUTER_CACHE',
         error: e,
       );
+    }
+  }
+
+  /// Test hook replacing [_tryRefreshExpiredSession].
+  @visibleForTesting
+  static Future<SessionRefreshResult> Function()? refreshForTesting;
+
+  /// Test hook replacing the local Supabase sign-out.
+  @visibleForTesting
+  static Future<void> Function()? localSignOutForTesting;
+
+  /// Test-only entry point for a signed-in [user] whose stored access-token
+  /// expiry has passed.
+  @visibleForTesting
+  static Future<AuthenticationState> debugExpiredSessionState(User user) =>
+      _authStateForExpiredSession(user);
+
+  /// The stored access-token expiry has passed for [user]: refresh, and only
+  /// when Supabase rejects the refresh treat the session as gone.
+  static Future<AuthenticationState> _authStateForExpiredSession(
+      User user) async {
+    // The stored expiry tracks the ACCESS token (1h), not the session.
+    // With default Supabase settings sessions never expire, so an
+    // expired access token after long idle is normal — refresh it
+    // instead of forcing the user back to login.
+    final refresh = await (refreshForTesting ?? _tryRefreshExpiredSession)();
+    if (refresh == SessionRefreshResult.refreshed) {
+      Logger.info(
+        'Access token expired but session refreshed successfully',
+        tag: 'AUTH_SECURITY',
+        context: {'user_id': user.id, 'user_type': 'supabase'},
+      );
+      return AuthenticationState(
+        isAuthenticated: true,
+        userType: 'supabase',
+        userId: user.id,
+        userEmail: user.email,
+        isGuest: user.isAnonymous,
+      );
+    }
+
+    // A refresh that timed out or died on the network says nothing about
+    // whether the session is still valid — only that we could not reach
+    // Supabase right now (typical when the app wakes from background and
+    // the radio has not reconnected). Keep the user signed in: the stored
+    // expiry tracks the 1h access token, not the session, and the backend
+    // re-verifies every request anyway. Logging out here would strand a
+    // perfectly valid user on the login screen for a transient blip.
+    if (refresh == SessionRefreshResult.inconclusive) {
+      Logger.warning(
+        'Session refresh inconclusive (network/timeout) — keeping user signed in',
+        tag: 'AUTH_SECURITY',
+        context: {'user_id': user.id, 'user_type': 'supabase'},
+      );
+      return AuthenticationState(
+        isAuthenticated: true,
+        userType: 'supabase',
+        userId: user.id,
+        userEmail: user.email,
+        isGuest: user.isAnonymous,
+      );
+    }
+
+    Logger.info(
+      'User session expired and refresh failed',
+      tag: 'AUTH_SECURITY',
+      context: {
+        'user_id': user.id,
+        'user_type': 'supabase',
+        'session_expired': true,
+      },
+    );
+    // Clear expired session data, and end the Supabase session too: without
+    // it currentUser stays set, the next evaluation (no stored expiry any
+    // more) reads the user as signed in again, and the guard flips between
+    // the two states.
+    _clearExpiredSession();
+    _signOutLocally();
+    return const AuthenticationState(isAuthenticated: false);
+  }
+
+  /// Ends the Supabase session on this device only. Not awaited: the local
+  /// session is dropped synchronously, and the server call that follows must
+  /// not hold up the redirect.
+  static void _signOutLocally() {
+    try {
+      // signOut() defaults to SignOutScope.local: this device only.
+      final signOut =
+          localSignOutForTesting ?? Supabase.instance.client.auth.signOut;
+      unawaited(signOut().catchError((Object e) {
+        Logger.warning('Local sign-out after a rejected refresh failed',
+            tag: 'AUTH_SECURITY', context: {'error': e.runtimeType.toString()});
+      }));
+    } catch (e) {
+      Logger.warning('Local sign-out after a rejected refresh failed',
+          tag: 'AUTH_SECURITY', context: {'error': e.runtimeType.toString()});
     }
   }
 

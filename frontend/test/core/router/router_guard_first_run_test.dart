@@ -124,6 +124,18 @@ void main() {
         );
       });
 
+      test('a shared link is stashed before starting the new first run', () {
+        when(() => flags.newFirstRun).thenReturn(true);
+        const link = '/fellowship/abc/join';
+        expect(
+          RouterGuard.debugUnauthenticatedRedirect(link,
+              onboardingCompleted: true),
+          AppRoutes.welcome,
+        );
+        expect(Hive.box('app_settings').get('pending_deep_link_redirect'),
+            Uri.encodeComponent(link));
+      });
+
       test('the login screen stays reachable', () {
         when(() => flags.newFirstRun).thenReturn(true);
         Hive.box('app_settings').put('terms_accepted', true);

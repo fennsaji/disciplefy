@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:disciplefy_bible_study/core/router/router_guard.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Regression: tapping a push after a long background could leave the app on
@@ -16,7 +17,64 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// refresh we could not complete must never be a logout.
 ///
 /// These tests pin that distinction.
+class _FakeUser extends Fake implements User {
+  @override
+  String get id => 'u1';
+  @override
+  String? get email => null;
+  @override
+  bool get isAnonymous => true;
+}
+
 void main() {
+  group('an expired access token', () {
+    late Directory dir;
+    var signOuts = 0;
+
+    setUp(() async {
+      dir = await Directory.systemTemp.createTemp('guard_refresh_test');
+      Hive.init(dir.path);
+      final box = await Hive.openBox('app_settings');
+      await box.put('session_expires_at', DateTime.utc(2020).toIso8601String());
+      signOuts = 0;
+      RouterGuard.localSignOutForTesting = () async => signOuts++;
+    });
+
+    tearDown(() async {
+      RouterGuard.refreshForTesting = null;
+      RouterGuard.localSignOutForTesting = null;
+      await Hive.close();
+      await dir.delete(recursive: true);
+    });
+
+    test('a rejected refresh signs out of Supabase locally', () async {
+      RouterGuard.refreshForTesting = () async => SessionRefreshResult.failed;
+      final state = await RouterGuard.debugExpiredSessionState(_FakeUser());
+      expect(state.isAuthenticated, isFalse);
+      expect(signOuts, 1,
+          reason: 'without it currentUser stays set and the next guard run '
+              'reads the user as signed in again');
+      expect(Hive.box('app_settings').get('session_expires_at'), isNull);
+    });
+
+    test('an inconclusive refresh keeps the session', () async {
+      RouterGuard.refreshForTesting =
+          () async => SessionRefreshResult.inconclusive;
+      final state = await RouterGuard.debugExpiredSessionState(_FakeUser());
+      expect(state.isAuthenticated, isTrue);
+      expect(state.isGuest, isTrue);
+      expect(signOuts, 0);
+    });
+
+    test('a successful refresh keeps the session', () async {
+      RouterGuard.refreshForTesting =
+          () async => SessionRefreshResult.refreshed;
+      final state = await RouterGuard.debugExpiredSessionState(_FakeUser());
+      expect(state.isAuthenticated, isTrue);
+      expect(signOuts, 0);
+    });
+  });
+
   group('classifyRefreshError', () {
     test('an AuthException is a real sign-out', () {
       // Supabase answered and rejected the refresh token.
