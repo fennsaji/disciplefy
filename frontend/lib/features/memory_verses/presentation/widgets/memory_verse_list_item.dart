@@ -10,8 +10,9 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/me
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
 
 /// One verse in the memory deck list: bold reference with a status tag,
-/// two muted lines of verse text, difficulty / review count / interval,
-/// then a thin mastery bar, the due label and the language code. Rows sit on the page, split by a hairline.
+/// two muted lines of verse text, review count / interval, then a thin
+/// mastery bar, a calm due label ("Due", never a red overdue count) and the
+/// language code. Rows sit on the page, split by a hairline.
 ///
 /// Long-press opens a delete sheet when [onDelete] is set.
 class MemoryVerseListItem extends StatelessWidget {
@@ -140,47 +141,22 @@ class MemoryVerseListItem extends StatelessWidget {
     );
   }
 
-  /// Difficulty (from the ease factor), review count and current interval.
+  /// Review count and current interval.
   Widget _buildMeta(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final style = AppFonts.inter(fontSize: 12.5, color: palette.muted);
-    final (String difficulty, MemoryTone tone, IconData icon) =
-        switch (verse.difficultyLevel) {
-      'hard' => (
-          context.tr(TranslationKeys.memoryHard),
-          MemoryTone.error,
-          Icons.trending_up_rounded,
-        ),
-      'medium' => (
-          context.tr(TranslationKeys.memoryGood),
-          MemoryTone.gold,
-          Icons.trending_flat_rounded,
-        ),
-      _ => (
-          context.tr(TranslationKeys.memoryEasy),
-          MemoryTone.success,
-          Icons.trending_down_rounded,
-        ),
-    };
-    final toneColor = MemoryToneColors.of(context, tone).foreground;
-    Widget item(IconData icon, String text, Color color, {TextStyle? s}) => Row(
+    Widget item(IconData icon, String text, Color color) => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 4),
-            Flexible(child: Text(text, style: s ?? style)),
+            Flexible(child: Text(text, style: style)),
           ],
         );
     return Wrap(
       spacing: 14,
       runSpacing: 4,
       children: [
-        item(
-          icon,
-          difficulty,
-          toneColor,
-          s: style.copyWith(color: toneColor, fontWeight: FontWeight.w600),
-        ),
         item(
           Icons.repeat_rounded,
           verse.repetitions == 1
@@ -209,19 +185,12 @@ class MemoryVerseListItem extends StatelessWidget {
     return value < 0.03 ? 0.03 : value;
   }
 
+  /// "Due" in the secondary text colour for any verse whose review date has
+  /// come, however long ago; never red and never a count of days overdue.
   (String, Color) _dueLabel(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    if (verse.daysOverdue > 0) {
-      return (
-        verse.daysOverdue == 1
-            ? context.tr(TranslationKeys.memoryScreensOverdueOneDay)
-            : context.tr(TranslationKeys.memoryScreensOverdueDays,
-                {'count': verse.daysOverdue.toString()}),
-        context.appError,
-      );
-    }
-    if (verse.isDue) {
-      return (context.tr(TranslationKeys.memoryScreensDueToday), palette.gold);
+    if (verse.isDue || verse.daysOverdue > 0) {
+      return (context.tr(TranslationKeys.memoryDue), context.appTextSecondary);
     }
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -248,12 +217,8 @@ class MemoryVerseListItem extends StatelessWidget {
         tone: MemoryTone.gold,
       );
     }
-    if (verse.isDue) {
-      return MemoryTag(
-        label: context.tr(TranslationKeys.memoryReview),
-        tone: MemoryTone.accent,
-      );
-    }
+    // A due verse already reads "Due" below; no second review tag.
+    if (verse.isDue) return null;
     if (level == MasteryLevel.expert) {
       return MemoryTag(
         label: context.tr(TranslationKeys.memoryReviewMilestone),

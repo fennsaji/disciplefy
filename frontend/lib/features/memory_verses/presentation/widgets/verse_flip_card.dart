@@ -257,10 +257,6 @@ class _BackContent extends StatelessWidget {
                       .tr(TranslationKeys.flipCardReviews)
                       .replaceAll('{count}', '${verse.repetitions}'),
             ),
-            MemoryTag(
-              label: context.tr(TranslationKeys.memoryScreensEaseFactor,
-                  {'value': verse.easeFactor.toStringAsFixed(1)}),
-            ),
             MemoryTag(label: _languageLabel(verse.language)),
           ],
         ),

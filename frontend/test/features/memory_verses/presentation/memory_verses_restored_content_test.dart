@@ -264,7 +264,8 @@ void main() {
     );
 
     for (final language in AppLanguage.values) {
-      testWidgets('320x640 ${language.code}: Champions and Statistics whole',
+      testWidgets(
+          '320x640 ${language.code}: Champions and Statistics whole in the menu',
           (tester) async {
         translations.language = language;
         whenListen<MemoryVerseState>(
@@ -275,15 +276,19 @@ void main() {
         useSurface(tester, const Size(320, 640));
         await tester.pumpWidget(app(const MemoryVersesHomePage()));
         await tester.pumpAndSettle();
+        expect(
+            find.text(tr(TranslationKeys.memoryMenuChampions)), findsNothing);
 
-        expectWhole(tester, tr(TranslationKeys.memoryHomeChampions));
-        expectWhole(tester, tr(TranslationKeys.memoryHomeStatistics));
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
+        expectWhole(tester, tr(TranslationKeys.memoryMenuChampions));
+        expectWhole(tester, tr(TranslationKeys.memoryMenuStatistics));
         expect(tester.takeException(), isNull);
       });
     }
 
     for (final language in AppLanguage.values) {
-      testWidgets('320x640 ${language.code}: stat tiles fit, labels whole',
+      testWidgets('320x640 ${language.code}: header line fits, whole',
           (tester) async {
         translations.language = language;
         whenListen<MemoryVerseState>(
@@ -302,15 +307,13 @@ void main() {
         await tester.pumpWidget(app(const MemoryVersesHomePage()));
         await tester.pumpAndSettle();
 
-        expect(find.text('12'), findsOneWidget);
         expect(
             find.byIcon(Icons.local_fire_department_outlined), findsOneWidget);
-        expect(find.byIcon(Icons.psychology_outlined), findsOneWidget);
-        expect(find.byIcon(Icons.emoji_events_outlined), findsWidgets);
-        expectWhole(tester, tr(TranslationKeys.memoryScreensStatDayStreak));
-        // One verse in the deck: singular label.
-        expectWhole(tester, tr(TranslationKeys.memoryScreensStatVerse));
-        expectWhole(tester, tr(TranslationKeys.memoryScreensStatMastered));
+        // One verse in the deck: singular line.
+        expectWhole(
+            tester,
+            tr(TranslationKeys.memoryHeaderLineOne,
+                {'streak': '12', 'count': '1'}));
         expect(tester.takeException(), isNull);
       });
     }
@@ -325,6 +328,8 @@ void main() {
       await tester.pumpWidget(app(const MemoryVersesHomePage()));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Champions'));
       await tester.pumpAndSettle();
       expect(visited.last, '/memory-verses/champions');
@@ -478,7 +483,8 @@ void main() {
   });
 
   group('Verse row and flip card details', () {
-    testWidgets('difficulty, reviews, interval and milestone', (tester) async {
+    testWidgets('reviews, interval and milestone; no difficulty',
+        (tester) async {
       await tester.pumpWidget(host(Column(
         children: [
           MemoryVerseListItem(
@@ -492,8 +498,8 @@ void main() {
           ),
         ],
       )));
-      expect(find.text('Easy'), findsOneWidget);
-      expect(find.text('Hard'), findsOneWidget);
+      expect(find.text('Easy'), findsNothing);
+      expect(find.text('Hard'), findsNothing);
       expect(find.text('2 reviews'), findsNWidgets(2));
       expect(find.text('3 days'), findsNWidgets(2));
       expect(find.text('Review Milestone'), findsOneWidget);
@@ -511,12 +517,13 @@ void main() {
           onTap: () {},
         )));
         expectWhole(tester, tr(TranslationKeys.memoryReviewMilestone));
-        expectWhole(tester, tr(TranslationKeys.memoryEasy));
+        expectWhole(
+            tester, tr(TranslationKeys.flipCardReviews, {'count': '2'}));
         expect(tester.takeException(), isNull);
       });
     }
 
-    testWidgets('flip card shows the ease factor', (tester) async {
+    testWidgets('flip card no longer shows the ease factor', (tester) async {
       await tester.pumpWidget(host(SizedBox(
         height: 560,
         child: VerseFlipCard(
@@ -526,7 +533,8 @@ void main() {
         ),
       )));
       await tester.pumpAndSettle();
-      expect(find.text('Ease 2.5'), findsOneWidget);
+      expect(find.text('Ease 2.5'), findsNothing);
+      expect(find.text('2 reviews'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

@@ -1516,6 +1516,14 @@ class TranslationKeys {
       'notifications.settings.mentor_promoted_description';
 
   // Memory Verses
+  static const memorySaveTodaysVerse = 'memory.save_todays_verse';
+  static const memoryAddVerse = 'memory.add_verse';
+  static const memoryHeaderLine = 'memory.header_line';
+  static const memoryHeaderLineOne = 'memory.header_line_one';
+  static const memoryFootnote = 'memory.footnote';
+  static const memoryMenuStatistics = 'memory.statistics';
+  static const memoryMenuChampions = 'memory.champions';
+  static const memoryDue = 'memory.due';
   static const memoryFilterByLanguage = 'memory.filterByLanguage';
   static const memoryAll = 'memory.all';
   static const memoryTitle = 'memory.title';

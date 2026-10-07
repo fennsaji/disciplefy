@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 /// Bottom sheet for memory verse options menu.
 ///
 /// Provides options for:
+/// - Adding a verse
 /// - Champions leaderboard
 /// - Statistics
 /// - Syncing with server
@@ -17,6 +18,9 @@ class OptionsMenuSheet extends StatelessWidget {
   final VoidCallback onSync;
   final VoidCallback onViewStatistics;
   final VoidCallback? onViewChampions;
+
+  /// Opens the add-verse sheet; the row is hidden when null.
+  final VoidCallback? onAddVerse;
 
   /// Invoked after the sheet closes when the destructive "reset" option is
   /// selected.
@@ -28,6 +32,7 @@ class OptionsMenuSheet extends StatelessWidget {
     required this.onViewStatistics,
     required this.onReset,
     this.onViewChampions,
+    this.onAddVerse,
   });
 
   /// Shows the options menu bottom sheet.
@@ -37,6 +42,7 @@ class OptionsMenuSheet extends StatelessWidget {
     required VoidCallback onViewStatistics,
     required VoidCallback onReset,
     VoidCallback? onViewChampions,
+    VoidCallback? onAddVerse,
   }) {
     showModalBottomSheet(
       context: context,
@@ -63,6 +69,12 @@ class OptionsMenuSheet extends StatelessWidget {
                 onViewChampions();
               }
             : null,
+        onAddVerse: onAddVerse != null
+            ? () {
+                Navigator.pop(bottomSheetContext);
+                onAddVerse();
+              }
+            : null,
       ),
     );
   }
@@ -74,11 +86,18 @@ class OptionsMenuSheet extends StatelessWidget {
       children: [
         SettingsSheetGroup(
           children: [
+            if (onAddVerse != null)
+              SettingsRow(
+                key: const Key('memory_options_add_verse'),
+                icon: Icons.add_rounded,
+                title: context.tr(TranslationKeys.memoryAddVerse),
+                onTap: onAddVerse,
+              ),
             if (onViewChampions != null)
               SettingsRow(
                 key: const Key('memory_options_champions'),
                 icon: Icons.emoji_events_outlined,
-                title: context.tr(TranslationKeys.optionsMenuChampionsTitle),
+                title: context.tr(TranslationKeys.memoryMenuChampions),
                 subtitle:
                     context.tr(TranslationKeys.optionsMenuChampionsSubtitle),
                 onTap: onViewChampions,
@@ -86,7 +105,7 @@ class OptionsMenuSheet extends StatelessWidget {
             SettingsRow(
               key: const Key('memory_options_statistics'),
               icon: Icons.bar_chart_rounded,
-              title: context.tr(TranslationKeys.optionsMenuStatsTitle),
+              title: context.tr(TranslationKeys.memoryMenuStatistics),
               subtitle: context.tr(TranslationKeys.optionsMenuStatsSubtitle),
               onTap: onViewStatistics,
             ),

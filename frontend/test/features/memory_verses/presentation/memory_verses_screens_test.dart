@@ -210,19 +210,15 @@ void main() {
 
         expect(find.text('Memory Verses'), findsWidgets);
         expect(find.text('1 due today'), findsOneWidget);
-        // Stat tiles: day streak, verses, mastered.
-        expect(find.text('4'), findsOneWidget);
-        expect(find.text('day streak'), findsOneWidget);
-        expect(find.text('3'), findsOneWidget);
-        expect(find.text('verses'), findsOneWidget);
-        expect(find.text('mastered'), findsOneWidget);
+        // Streak and verse count on one line.
+        expect(find.text('4-day streak · 3 verses'), findsOneWidget);
         expect(find.text('2 of 5'), findsOneWidget);
         expect(find.textContaining('(1)'), findsOneWidget);
         expect(find.text('COMING UP'), findsOneWidget);
         await tester.scrollUntilVisible(find.text('Philippians 4:13'), 200,
             scrollable: find.byType(Scrollable).first);
         expect(find.text('Philippians 4:13'), findsOneWidget);
-        expect(find.text('Due today'), findsOneWidget);
+        expect(find.text('Due'), findsOneWidget);
         await tester.scrollUntilVisible(find.text('Tomorrow'), 200,
             scrollable: find.byType(Scrollable).first);
         expect(find.text('In 3 days'), findsOneWidget);
