@@ -86,7 +86,15 @@ export async function loadEnrolledPathIds(
   return new Set(((data ?? []) as Array<{ learning_path_id: string }>).map((r) => r.learning_path_id));
 }
 
-export type PathTranslation = { title: string | null; description: string | null } | null;
+export type PathTranslationRow = {
+  title: string | null;
+  description: string | null;
+  /** Optional localized display name (<= 28 chars); null means none. */
+  short_title?: string | null;
+};
+export type PathTranslation = PathTranslationRow | null;
+
+type TranslationQueryRow = PathTranslationRow & { learning_path_id: string };
 
 /**
  * Translations for many paths in one query. Paths with exactly one row map to
@@ -102,20 +110,17 @@ export async function loadPathTranslations(
   if (ids.length === 0) return new Map();
   const { data, error } = await client
     .from('learning_path_translations')
-    .select('learning_path_id, title, description')
+    .select('learning_path_id, title, description, short_title')
     .in('learning_path_id', ids)
     .eq('lang_code', language);
   if (error) return null;
-  return groupPathTranslations(
-    ids,
-    (data ?? []) as Array<{ learning_path_id: string; title: string | null; description: string | null }>,
-  );
+  return groupPathTranslations(ids, (data ?? []) as TranslationQueryRow[]);
 }
 
 /** Pure grouping step of loadPathTranslations, exported for tests. */
 export function groupPathTranslations(
   pathIds: string[],
-  rows: Array<{ learning_path_id: string; title: string | null; description: string | null }>,
+  rows: TranslationQueryRow[],
 ): Map<string, PathTranslation> {
   const seen = new Map<string, number>();
   for (const row of rows) seen.set(row.learning_path_id, (seen.get(row.learning_path_id) ?? 0) + 1);
@@ -123,10 +128,35 @@ export function groupPathTranslations(
   for (const id of pathIds) result.set(id, null);
   for (const row of rows) {
     if (seen.get(row.learning_path_id) === 1) {
-      result.set(row.learning_path_id, { title: row.title, description: row.description });
+      result.set(row.learning_path_id, {
+        title: row.title,
+        description: row.description,
+        short_title: row.short_title ?? null,
+      });
     }
   }
   return result;
+}
+
+/**
+ * The short display title for a path in [language].
+ *
+ * English reads the path's own short_title. Elsewhere a translation's short
+ * title wins; a translated title without one has none (the English short title
+ * must not sit under a translated header). Only when there is no translated
+ * title, and the response falls back to the English title, does the English
+ * short title come along with it. Blank values read as none.
+ *
+ * [translation] is undefined when it was not looked up (English).
+ */
+export function resolveShortTitle(
+  language: string,
+  baseShortTitle: string | null | undefined,
+  translation: PathTranslation | undefined,
+): string | null {
+  const clean = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
+  if (language === 'en' || !translation || !clean(translation.title)) return clean(baseShortTitle);
+  return clean(translation.short_title);
 }
 
 /**

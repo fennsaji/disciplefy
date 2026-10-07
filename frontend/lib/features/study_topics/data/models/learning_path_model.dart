@@ -8,6 +8,7 @@ class LearningPathModel extends LearningPath {
     required super.id,
     required super.slug,
     required super.title,
+    super.shortTitle,
     required super.description,
     required super.iconName,
     required super.color,
@@ -32,6 +33,7 @@ class LearningPathModel extends LearningPath {
       id: json['id'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
       title: json['title'] as String? ?? '',
+      shortTitle: LearningPathModel.nonBlank(json['short_title']),
       description: json['description'] as String? ?? '',
       iconName: json['icon_name'] as String? ?? 'school',
       color: json['color'] as String? ?? '#6A4FB6',
@@ -53,6 +55,9 @@ class LearningPathModel extends LearningPath {
     );
   }
 
+  /// Trimmed [value] when it is a non-blank string, otherwise `null`.
+  static String? nonBlank(Object? value) => _nonBlank(value);
+
   static String? _nonBlank(Object? value) {
     if (value is! String) return null;
     final trimmed = value.trim();
@@ -64,6 +69,7 @@ class LearningPathModel extends LearningPath {
       'id': id,
       'slug': slug,
       'title': title,
+      if (shortTitle != null) 'short_title': shortTitle,
       'description': description,
       'icon_name': iconName,
       'color': color,
@@ -134,6 +140,7 @@ class LearningPathDetailModel extends LearningPathDetail {
     required super.id,
     required super.slug,
     required super.title,
+    super.shortTitle,
     required super.description,
     required super.iconName,
     required super.color,
@@ -163,6 +170,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       id: json['id'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
       title: json['title'] as String? ?? '',
+      shortTitle: LearningPathModel.nonBlank(json['short_title']),
       description: json['description'] as String? ?? '',
       iconName: json['icon_name'] as String? ?? 'school',
       color: json['color'] as String? ?? '#6A4FB6',
@@ -195,6 +203,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       'id': id,
       'slug': slug,
       'title': title,
+      if (shortTitle != null) 'short_title': shortTitle,
       'description': description,
       'icon_name': iconName,
       'color': color,

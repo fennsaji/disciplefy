@@ -8,6 +8,11 @@ class LearningPath extends Equatable {
   final String id;
   final String slug;
   final String title;
+
+  /// Short display name (at most 28 characters) for headers and list rows,
+  /// in the content language; `null` when the path has none. Detail screens
+  /// keep [title]; everything else should read [displayTitle].
+  final String? shortTitle;
   final String description;
   final String iconName;
   final String color;
@@ -39,6 +44,7 @@ class LearningPath extends Equatable {
     required this.id,
     required this.slug,
     required this.title,
+    this.shortTitle,
     required this.description,
     required this.iconName,
     required this.color,
@@ -63,6 +69,7 @@ class LearningPath extends Equatable {
         id,
         slug,
         title,
+        shortTitle,
         description,
         iconName,
         color,
@@ -82,6 +89,10 @@ class LearningPath extends Equatable {
         nextTopicTitle,
       ];
 
+  /// [shortTitle] when it has text, otherwise [title].
+  String get displayTitle =>
+      (shortTitle?.trim().isNotEmpty ?? false) ? shortTitle! : title;
+
   /// Number of topics completed, derived from progress percentage.
   int get topicsCompleted =>
       topicsCount > 0 ? (progressPercentage / 100 * topicsCount).round() : 0;
@@ -95,6 +106,7 @@ class LearningPath extends Equatable {
       id: id,
       slug: slug,
       title: title,
+      shortTitle: shortTitle,
       description: description,
       iconName: iconName,
       color: color,
@@ -175,6 +187,7 @@ class LearningPathDetail extends LearningPath {
     required super.id,
     required super.slug,
     required super.title,
+    super.shortTitle,
     required super.description,
     required super.iconName,
     required super.color,

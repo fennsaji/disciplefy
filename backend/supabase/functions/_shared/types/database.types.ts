@@ -381,6 +381,7 @@ export type Database = {
           id: string
           lang_code: string
           learning_path_id: string
+          short_title: string | null
           title: string
           updated_at: string | null
         }
@@ -390,6 +391,7 @@ export type Database = {
           id?: string
           lang_code: string
           learning_path_id: string
+          short_title?: string | null
           title: string
           updated_at?: string | null
         }
@@ -399,6 +401,7 @@ export type Database = {
           id?: string
           lang_code?: string
           learning_path_id?: string
+          short_title?: string | null
           title?: string
           updated_at?: string | null
         }
@@ -426,6 +429,7 @@ export type Database = {
           is_active: boolean | null
           is_featured: boolean | null
           recommended_mode: string | null
+          short_title: string | null
           slug: string
           title: string
           total_xp: number | null
@@ -444,6 +448,7 @@ export type Database = {
           is_active?: boolean | null
           is_featured?: boolean | null
           recommended_mode?: string | null
+          short_title?: string | null
           slug: string
           title: string
           total_xp?: number | null
@@ -462,6 +467,7 @@ export type Database = {
           is_active?: boolean | null
           is_featured?: boolean | null
           recommended_mode?: string | null
+          short_title?: string | null
           slug?: string
           title?: string
           total_xp?: number | null
