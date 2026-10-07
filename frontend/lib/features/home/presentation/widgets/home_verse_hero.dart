@@ -11,6 +11,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
@@ -497,7 +498,9 @@ class _StudyNowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Color(0xFF2E28A3);
+    // The pill sits on the photo in both themes, so it is always white with
+    // the design's ink label.
+    const ink = ReaderPalette.ink;
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
