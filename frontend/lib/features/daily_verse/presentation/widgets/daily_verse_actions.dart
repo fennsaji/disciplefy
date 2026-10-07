@@ -8,6 +8,8 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/error/account_required.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/share_links.dart';
@@ -145,6 +147,12 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
   bool _isLoading = false;
 
   void _onTap() {
+    // Memory verses need an account; Home opens the account-needed sheet.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      _askForAccount();
+      return;
+    }
+
     final tokenState = sl<TokenBloc>().state;
     final userPlan = tokenState is TokenLoaded
         ? tokenState.tokenStatus.userPlan.name
@@ -192,7 +200,9 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
         memoryVerseBloc.add(const LoadDueVerses());
         if (mounted) {
           setState(() => _isLoading = false);
-          if (state.code == 'VERSE_ALREADY_EXISTS') {
+          if (state.code == accountRequiredCode) {
+            _askForAccount();
+          } else if (state.code == 'VERSE_ALREADY_EXISTS') {
             _showAlreadyExistsSnackBar();
           } else {
             _showErrorSnackBar();
@@ -212,6 +222,9 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
       if (mounted && _isLoading) setState(() => _isLoading = false);
     });
   }
+
+  void _askForAccount() => GoRouter.of(context)
+      .go(GuestRouteGate.homeWithReason(AccountReasons.memoryVerses));
 
   void _showAddedSnackBar() {
     showAppSnackBar(

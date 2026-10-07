@@ -1,3 +1,4 @@
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -307,6 +308,12 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
   }
 
   Future<void> _load() async {
+    // Fellowships need an account (the server answers a guest with 403
+    // ACCOUNT_REQUIRED): render nothing rather than ask.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      if (mounted) setState(() => _loaded = true);
+      return;
+    }
     try {
       final repo = sl<CommunityRepository>();
       // This does not filter the list — membership decides which fellowships

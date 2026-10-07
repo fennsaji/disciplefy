@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:disciplefy_bible_study/core/router/router_guard.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/oauth_service.dart';
 import 'package:disciplefy_bible_study/features/auth/domain/exceptions/auth_exceptions.dart'
@@ -174,6 +175,9 @@ class GuestSessionService {
       Logger.error('[GUEST] Anonymous sign-in returned no session');
       throw const AuthException('Guest session could not be started');
     }
+    // A guest is created on the first-run goal screen, after the language
+    // was chosen there: never bounce them to /language-selection.
+    RouterGuard.markLanguageSelectionCompleted();
     Logger.info('[GUEST] Guest session started');
   }
 

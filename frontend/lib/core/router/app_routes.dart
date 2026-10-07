@@ -7,6 +7,10 @@ class AppRoutes {
   static const String maintenance = '/maintenance';
 
   static const String onboarding = '/onboarding';
+
+  /// New first run (behind the `new_first_run` flag): language, then goal.
+  static const String welcome = '/welcome';
+  static const String welcomeGoal = '/welcome/goal';
   static const String languageSelection = '/language-selection';
   static const String home = '/';
   static const String generateStudy = '/generate-study';

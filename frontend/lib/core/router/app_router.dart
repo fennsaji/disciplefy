@@ -154,6 +154,22 @@ class AppRouter {
           state: state,
         ),
       ),
+      // New first run (new_first_run flag): language, then goal. The guard
+      // keeps these public and out of the terms gate. Until the first-run
+      // pages land they forward to the slides, so the flag is safe to flip.
+      GoRoute(
+        path: AppRoutes.welcome,
+        name: 'welcome',
+        redirect: (context, state) =>
+            state.uri.path == AppRoutes.welcome ? AppRoutes.onboarding : null,
+        routes: [
+          GoRoute(
+            path: 'goal',
+            name: 'welcome_goal',
+            redirect: (context, state) => AppRoutes.onboarding,
+          ),
+        ],
+      ),
       GoRoute(
         path: AppRoutes.languageSelection,
         name: 'language_selection',

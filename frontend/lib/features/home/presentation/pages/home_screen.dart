@@ -20,6 +20,7 @@ import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
@@ -701,8 +702,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
       buildWhen: (_, current) => current is DueVersesLoaded,
       builder: (context, memState) {
-        final dueCount =
-            memState is DueVersesLoaded ? memState.verses.length : 0;
+        final isGuest = GuestRouteGate.currentUserIsGuest();
+        // A guest has no deck (memory verses need an account): neutral pill
+        // with a lock, never a badge.
+        final dueCount = !isGuest && memState is DueVersesLoaded
+            ? memState.verses.length
+            : 0;
         // White on the (always dark-shaded) photo; dark once the header is
         // on the light page colour.
         final pillColor = onPhoto ? Colors.white : AppColors.lightTextSecondary;
@@ -741,6 +746,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                         maxLines: 1,
                       ),
                     ),
+                    if (isGuest) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.lock_outline,
+                          key: Key('home_memory_pill_lock'), size: 14),
+                    ],
                   ],
                 ),
               ),
@@ -794,6 +804,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   /// Handles tap on Memory Verses button - checks feature flag and shows upgrade dialog if disabled
   void _handleMemoryVersesTap() {
+    // Memory verses need an account; Home opens the account-needed sheet.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      context.go(GuestRouteGate.homeWithReason(AccountReasons.memoryVerses));
+      return;
+    }
+
     // Check if user has access to Memory Verses feature
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;

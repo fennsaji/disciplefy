@@ -154,6 +154,7 @@ import '../services/notification_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
 import '../router/app_router.dart';
+import '../router/guest_route_gate.dart';
 import '../../features/tokens/data/datasources/token_remote_data_source.dart';
 import '../../features/tokens/data/repositories/token_repository_impl.dart';
 import '../../features/tokens/data/repositories/payment_method_repository_impl.dart';
@@ -643,6 +644,7 @@ Future<void> initializeDependencies() async {
         notificationService: sl(),
         suggestedVersesCacheService: sl(),
         connectivityBloc: sl(),
+        isGuest: GuestRouteGate.currentUserIsGuest,
       ));
 
   //! Saved Guides
