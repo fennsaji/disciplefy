@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -111,22 +113,29 @@ class NewForYouBanner extends StatelessWidget {
         children: [
           Positioned.fill(
             child: ExcludeSemantics(
-              child: Image.asset(
-                newForYouPhotos[kind]!,
-                fit: BoxFit.cover,
-                cacheWidth: 720,
-                errorBuilder: (_, __, ___) => ColoredBox(color: onPhoto.card),
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 1.6, sigmaY: 1.6),
+                child: Image.asset(
+                  newForYouPhotos[kind]!,
+                  fit: BoxFit.cover,
+                  cacheWidth: 720,
+                  errorBuilder: (_, __, ___) => ColoredBox(color: onPhoto.card),
+                ),
               ),
             ),
           ),
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
+                // Dark on the text side so the copy keeps AA contrast, fading
+                // out toward the action so the photo reads as in the design.
                 gradient: LinearGradient(
                   colors: [
-                    Colors.black.withValues(alpha: 0.88),
-                    Colors.black.withValues(alpha: 0.72),
+                    Colors.black.withValues(alpha: 0.80),
+                    Colors.black.withValues(alpha: 0.62),
+                    Colors.black.withValues(alpha: 0.28),
                   ],
+                  stops: const [0.0, 0.6, 1.0],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: onPhoto.hairline),
