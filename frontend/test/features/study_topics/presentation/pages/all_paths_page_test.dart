@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
@@ -158,6 +159,54 @@ void main() {
         find.byKey(const Key('all_paths_search_field')), 'mark');
     await tester.pump(const Duration(milliseconds: 500));
     verify(() => bloc.add(const SearchLearningPaths(query: 'mark'))).called(1);
+  });
+
+  testWidgets(
+      'a path row still opens after a pushed path page was dropped by go '
+      '(its push future never completes)', (tester) async {
+    useSurface(tester, const Size(390, 900));
+    whenListen(bloc, const Stream<LearningPathsState>.empty(),
+        initialState: LearningPathsLoaded(
+          categories: const [],
+          searchResults: [pathB],
+          searchQuery: '',
+        ));
+    final router = GoRouter(routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => BlocProvider<LearningPathsBloc>.value(
+          value: bloc,
+          child: const AllPathsPage(language: 'en'),
+        ),
+      ),
+      GoRoute(
+        path: '/learning-path/:id',
+        builder: (_, __) => const Scaffold(body: Text('path page')),
+      ),
+    ]);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(
+      theme: AppTheme.darkTheme,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      routerConfig: router,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(pathB.title));
+    await tester.pumpAndSettle();
+    expect(find.text('path page'), findsOneWidget);
+
+    // Lesson complete → Back home: `go` drops the pushed page and its
+    // push future is never completed.
+    router.go('/');
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('path page'), findsNothing);
+
+    await tester.tap(find.text(pathB.title));
+    await tester.pumpAndSettle();
+    expect(find.text('path page'), findsOneWidget);
   });
 
   test('the route is /paths and stays open for guests', () {

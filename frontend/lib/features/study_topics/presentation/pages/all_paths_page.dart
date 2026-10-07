@@ -13,6 +13,7 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -76,7 +77,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
   String? _language;
   String? _category;
   bool _searchOpen = false;
-  bool _isNavigating = false;
+
+  /// Ignores a double tap; never held across the awaited push.
+  final TapGuard _navGuard = TapGuard();
 
   /// The full flat list, kept while a search replaces the bloc's results.
   List<LearningPath> _all = const [];
@@ -94,6 +97,7 @@ class _AllPathsPageState extends State<AllPathsPage> {
 
   @override
   void dispose() {
+    _navGuard.dispose();
     _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
@@ -143,11 +147,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
       guestPathGate(context, path, () => _pushPath(path));
 
   Future<void> _pushPath(LearningPath path) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
     final changed = await context
         .push<bool>('/learning-path/${path.id}?source=studyTopics');
-    _isNavigating = false;
     if (!mounted || changed != true) return;
     _load();
   }

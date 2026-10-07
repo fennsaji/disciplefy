@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -224,14 +226,17 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
 
       if (!mounted) return;
 
-      await context.push(fellowshipStudyGuideLocation(
+      // Not awaited: go_router never completes a push whose route was
+      // replaced (switching the lesson mode), which would leave this button
+      // spinning for good.
+      unawaited(context.push(fellowshipStudyGuideLocation(
         topic: topic,
         language: language,
         studyMode: studyMode,
         pathTitle: widget.pathTitle,
         pathDescription: widget.pathDescription,
         pathDiscipleLevel: widget.pathDiscipleLevel,
-      ));
+      )));
     } finally {
       if (mounted) setState(() => _isOpeningStudyGuide = false);
     }

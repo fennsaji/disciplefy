@@ -15,11 +15,14 @@ import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
 import {
-  calculatePathScores,
-  getScoringResultsSummary,
-  type QuestionnaireResponses,
-  type LearningPath as ScoringLearningPath,
-} from '../_shared/personalization/scoring-algorithm.ts';
+  ensureLearningPathStarted,
+  findRecentFellowshipAdvance,
+  loadStoredCompletion,
+  recordTopicCompletion,
+  reportedCompletion,
+  runCompletionHooks,
+  type TopicCompletionRecord,
+} from '../_shared/services/topic-completion.ts';
 
 // ============================================================================
 // Types
@@ -144,36 +147,47 @@ async function handleCompleteProgress(
   services: ServiceContainer,
   userId: string,
   topicId: string,
-  timeSpentSeconds: number = 0
+  timeSpentSeconds: number | undefined,
+  isGuest: boolean
 ): Promise<CompleteProgressResponse> {
-  const { data, error } = await services.supabaseServiceClient.rpc('complete_topic_progress', {
-    p_user_id: userId,
-    p_topic_id: topicId,
-    p_time_spent_seconds: timeSpentSeconds,
-  });
-
-  if (error) {
-    console.error('[topic-progress] Error completing progress:', error);
-    throw new AppError(
-      'DATABASE_ERROR',
-      `Failed to complete topic progress: ${error.message}`,
-      500
-    );
+  const db = services.supabaseServiceClient;
+  let record: TopicCompletionRecord;
+  try {
+    record = await recordTopicCompletion(db, {
+      userId,
+      topicId,
+      timeSpentSeconds: timeSpentSeconds ?? 0,
+      isGuest,
+    });
+  } catch (err) {
+    console.error('[topic-progress] Error completing progress:', err instanceof Error ? err.message : err);
+    throw new AppError('DATABASE_ERROR', 'Failed to complete topic progress', 500);
   }
 
-  // RPC returns an array, get first row
-  const result = Array.isArray(data) ? data[0] : data;
+  // Score recalculation runs only when this call recorded the first
+  // completion; fellowship auto-advance runs every time (idempotent).
+  let fellowshipAdvance = await runCompletionHooks(db, userId, topicId, record.is_first_completion);
+  let reported: TopicCompletionRecord = record;
 
-  if (!result) {
-    throw new AppError('NOT_FOUND', 'Topic not found or progress record not found', 404);
+  if (!record.is_first_completion) {
+    // mark-study-guide-complete may have recorded this same completion (and
+    // advanced the fellowship) moments ago: report what it recorded.
+    const now = new Date();
+    const stored = await loadStoredCompletion(db, userId, topicId);
+    reported = reportedCompletion(record, stored, now);
+    if (!fellowshipAdvance && reported.is_first_completion) {
+      fellowshipAdvance = await findRecentFellowshipAdvance(db, userId, topicId, now);
+    }
   }
 
-  return {
-    progress_id: result.progress_id,
-    xp_earned: result.xp_earned,
-    is_first_completion: result.is_first_completion,
-    topic_title: result.topic_title,
-  };
+  const response: CompleteProgressResponse = { ...reported };
+  if (fellowshipAdvance) {
+    response.fellowship_advanced = true;
+    response.fellowship_id = fellowshipAdvance.fellowship_id;
+    response.new_guide_index = fellowshipAdvance.new_guide_index;
+    response.study_completed = fellowshipAdvance.study_completed;
+  }
+  return response;
 }
 
 async function handleUpdateTime(
@@ -207,289 +221,6 @@ async function handleUpdateTime(
     time_spent_seconds: result.time_spent_seconds,
     updated_at: result.updated_at,
   };
-}
-
-// ============================================================================
-// Score Recalculation (GAP-03)
-// ============================================================================
-
-/**
- * Recalculates personalization scores after a topic is completed.
- *
- * Triggered when:
- *   1. A learning path was just completed (completed_at set in the last 10 seconds)
- *   2. The user's total completed topic count reaches a multiple of 10
- *
- * Non-fatal: errors are logged and swallowed so topic completion always succeeds.
- */
-async function maybeTriggerScoreRecalculation(
-  services: ServiceContainer,
-  userId: string,
-  isFirstCompletion: boolean
-): Promise<void> {
-  // Only recalculate on genuine first completions; repeat completions earn no XP
-  // and don't change path progress, so they can't trigger path completion either.
-  if (!isFirstCompletion) return;
-
-  try {
-    // Check 1: Was a learning path just completed (within the last 10 s)?
-    // The DB trigger fires synchronously inside the complete_topic_progress RPC transaction,
-    // so completed_at is already set by the time we reach this point.
-    const { data: justCompletedPaths } = await services.supabaseServiceClient
-      .from('user_learning_path_progress')
-      .select('learning_path_id')
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null)
-      .gte('completed_at', new Date(Date.now() - 10_000).toISOString());
-
-    const pathJustCompleted = (justCompletedPaths || []).length > 0;
-
-    // Check 2: Total completed topics is a multiple of 10 (milestone recalculation)
-    const { count: completedCount } = await services.supabaseServiceClient
-      .from('user_topic_progress')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null);
-
-    const isMilestone =
-      typeof completedCount === 'number' && completedCount > 0 && completedCount % 10 === 0;
-
-    if (!pathJustCompleted && !isMilestone) return;
-
-    const triggerReason = pathJustCompleted ? 'path_completion' : 'topic_milestone';
-    console.log(
-      `[topic-progress] Score recalculation triggered (${triggerReason}) for user ${userId}`
-    );
-
-    // Fetch questionnaire answers
-    const { data: personalization } = await services.supabaseServiceClient
-      .from('user_personalization')
-      .select(
-        'faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed'
-      )
-      .eq('user_id', userId)
-      .single();
-
-    if (!personalization?.questionnaire_completed || !personalization.faith_stage) {
-      console.log('[topic-progress] No questionnaire data — skipping recalculation');
-      return;
-    }
-
-    // Fetch all active learning paths
-    const { data: allPaths } = await services.supabaseServiceClient
-      .from('learning_paths')
-      .select('id, slug, title, disciple_level, recommended_mode, is_featured, display_order')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
-
-    if (!allPaths || allPaths.length === 0) return;
-
-    // Fetch all completed path IDs (the trigger has already set completed_at on any newly finished path)
-    const { data: completedPaths } = await services.supabaseServiceClient
-      .from('user_learning_path_progress')
-      .select('learning_path_id')
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null);
-
-    const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
-
-    const responses: QuestionnaireResponses = {
-      faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
-      spiritual_goals: personalization.spiritual_goals || [],
-      time_availability:
-        personalization.time_availability as QuestionnaireResponses['time_availability'],
-      learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
-      life_stage_focus:
-        personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
-      biggest_challenge:
-        personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
-    };
-
-    const scoredPaths = calculatePathScores(
-      responses,
-      allPaths as ScoringLearningPath[],
-      completedPathIds
-    );
-
-    if (!scoredPaths || scoredPaths.length === 0) return;
-
-    const topPath = scoredPaths[0];
-    const scoringSummary = getScoringResultsSummary(topPath, scoredPaths);
-
-    const { error: updateError } = await services.supabaseServiceClient
-      .from('user_personalization')
-      .update({ scoring_results: scoringSummary, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
-
-    if (updateError) {
-      console.warn('[topic-progress] Failed to update scoring_results:', updateError);
-    } else {
-      console.log(
-        `[topic-progress] Score recalculation complete (${triggerReason}): top = ${topPath.pathTitle} (score: ${topPath.score})`
-      );
-    }
-  } catch (err) {
-    // Non-fatal — topic completion must always succeed
-    console.warn('[topic-progress] Score recalculation error (non-fatal):', err);
-  }
-}
-
-// ============================================================================
-// Learning Path Auto-Start
-// ============================================================================
-
-/**
- * Best-effort: ensure the learning path containing this topic is marked
- * "started" for the user (user_learning_path_progress row exists). Prefers
- * a path an active fellowship of this user is currently studying, since a
- * fellowship member never individually enrolls. Never fails the request.
- */
-async function ensureLearningPathStarted(
-  services: ServiceContainer,
-  userId: string,
-  topicId: string
-): Promise<void> {
-  try {
-    const { data: pathId, error } = await services.supabaseServiceClient.rpc(
-      'ensure_learning_path_started',
-      { p_user_id: userId, p_topic_id: topicId }
-    );
-
-    if (error) {
-      console.warn('[topic-progress] ensure_learning_path_started failed:', error.message);
-      return;
-    }
-    if (pathId) {
-      console.log(`[topic-progress] Learning path ${pathId} ensured started for user`);
-    }
-  } catch (err) {
-    console.warn(
-      '[topic-progress] ensure_learning_path_started skipped:',
-      err instanceof Error ? err.message : 'unknown error'
-    );
-  }
-}
-
-// ============================================================================
-// Fellowship Auto-Advance
-// ============================================================================
-
-interface FellowshipAdvanceResult {
-  fellowship_id: string
-  new_guide_index: number
-  study_completed: boolean
-}
-
-async function maybeTriggerFellowshipAutoAdvance(
-  services: ServiceContainer,
-  userId: string,
-  topicId: string,
-  isFirstCompletion: boolean,
-): Promise<FellowshipAdvanceResult | null> {
-  if (!isFirstCompletion) return null
-
-  try {
-    const db = services.supabaseServiceClient
-
-    const { data: memberships } = await db
-      .from('fellowship_members')
-      .select('fellowship_id')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-
-    if (!memberships || memberships.length === 0) return null
-
-    const fellowshipIds = memberships.map((m: { fellowship_id: string }) => m.fellowship_id)
-
-    const { data: studies } = await db
-      .from('fellowship_study')
-      .select('id, fellowship_id, learning_path_id, current_guide_index')
-      .in('fellowship_id', fellowshipIds)
-      .is('completed_at', null)
-
-    if (!studies || studies.length === 0) return null
-
-    for (const study of studies) {
-      const { data: topicRow } = await db
-        .from('learning_path_topics')
-        .select('id')
-        .eq('learning_path_id', study.learning_path_id)
-        .eq('position', study.current_guide_index)
-        .eq('is_active', true)
-        .maybeSingle()
-
-      if (!topicRow || topicRow.id !== topicId) continue
-
-      // Muted members are intentionally included — muting restricts posting only,
-      // not study participation. All active members must complete to trigger advance.
-      const { data: members } = await db
-        .from('fellowship_members')
-        .select('user_id')
-        .eq('fellowship_id', study.fellowship_id)
-        .eq('is_active', true)
-
-      if (!members || members.length === 0) continue
-
-      const memberUserIds = members.map((m: { user_id: string }) => m.user_id)
-
-      const { count: completedCount } = await db
-        .from('user_topic_progress')
-        .select('id', { count: 'exact', head: true })
-        .eq('topic_id', topicId)
-        .in('user_id', memberUserIds)
-        .not('completed_at', 'is', null)
-
-      if (completedCount !== memberUserIds.length) continue
-
-      const { count: totalTopics } = await db
-        .from('learning_path_topics')
-        .select('id', { count: 'exact', head: true })
-        .eq('learning_path_id', study.learning_path_id)
-        .eq('is_active', true)
-
-      if (!totalTopics) continue
-
-      const nextIndex = study.current_guide_index + 1
-      const isComplete = nextIndex >= totalTopics
-
-      const updateData = isComplete
-        ? { completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }
-        : { current_guide_index: nextIndex, updated_at: new Date().toISOString() }
-
-      const { data: updatedRows, error: updateError } = await db
-        .from('fellowship_study')
-        .update(updateData)
-        .eq('id', study.id)
-        .eq('current_guide_index', study.current_guide_index)
-        .select('id')
-
-      if (updateError) {
-        console.warn('[topic-progress] Fellowship auto-advance update error (non-fatal):', updateError)
-        continue
-      }
-
-      if (!updatedRows || updatedRows.length === 0) {
-        // Optimistic lock lost — another concurrent request already advanced
-        console.log(`[topic-progress] Fellowship ${study.fellowship_id} already advanced by concurrent request, skipping`)
-        continue
-      }
-
-      console.log(
-        `[topic-progress] Fellowship ${study.fellowship_id} auto-advanced to guide ${isComplete ? 'COMPLETE' : nextIndex}`
-      )
-
-      return {
-        fellowship_id: study.fellowship_id,
-        new_guide_index: isComplete ? study.current_guide_index : nextIndex,
-        study_completed: isComplete,
-      }
-    }
-
-    return null
-  } catch (err) {
-    console.warn('[topic-progress] Fellowship auto-advance error (non-fatal):', err)
-    return null
-  }
 }
 
 // ============================================================================
@@ -529,37 +260,22 @@ async function handleTopicProgress(
   switch (request.action) {
     case 'start':
       result = await handleStartProgress(services, userId, request.topic_id);
-      await ensureLearningPathStarted(services, userId, request.topic_id);
+      // A guest is never auto-enrolled: guests enrol one guest-accessible path
+      // through learning-paths, which enforces the guest rules.
+      if (!userContext.isGuest) {
+        await ensureLearningPathStarted(services.supabaseServiceClient, userId, request.topic_id);
+      }
       break;
 
-    case 'complete': {
+    case 'complete':
       result = await handleCompleteProgress(
         services,
         userId,
         request.topic_id,
-        request.time_spent_seconds
+        request.time_spent_seconds,
+        userContext.isGuest === true
       );
-      await ensureLearningPathStarted(services, userId, request.topic_id);
-      await maybeTriggerScoreRecalculation(
-        services,
-        userId,
-        (result as CompleteProgressResponse).is_first_completion
-      );
-      const fellowshipAdvance = await maybeTriggerFellowshipAutoAdvance(
-        services,
-        userId,
-        request.topic_id,
-        (result as CompleteProgressResponse).is_first_completion
-      );
-      if (fellowshipAdvance) {
-        const typed = result as CompleteProgressResponse;
-        typed.fellowship_advanced = true;
-        typed.fellowship_id = fellowshipAdvance.fellowship_id;
-        typed.new_guide_index = fellowshipAdvance.new_guide_index;
-        typed.study_completed = fellowshipAdvance.study_completed;
-      }
       break;
-    }
 
     case 'update_time':
       if (request.time_spent_seconds === undefined) {

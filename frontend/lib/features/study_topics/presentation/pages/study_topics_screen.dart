@@ -21,6 +21,7 @@ import 'package:disciplefy_bible_study/core/services/system_config_service.dart'
 import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
 import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/utils/reset_progress_error_localizer.dart';
 import 'package:disciplefy_bible_study/core/widgets/destructive_confirm_dialog.dart';
@@ -358,7 +359,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   static const String _washImage = 'assets/images/hero/green_hills.webp';
 
   // Track if we're currently navigating to prevent multiple navigations
-  bool _isNavigating = false;
+  /// Ignores a double tap; never held across an awaited push (go_router
+  /// may never complete it, e.g. after Lesson complete → Back home).
+  final TapGuard _navGuard = TapGuard();
   final ScrollController _scrollController = ScrollController();
 
   // Builder context from ShowCaseWidget — use this for ShowCaseWidget.of() calls.
@@ -426,6 +429,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   void dispose() {
+    _navGuard.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -651,8 +655,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   /// Opens the next lesson of [summary] in the lesson mode Home would use.
   Future<void> _continuePath(ActivePathSummary summary) async {
-    if (_isNavigating || summary.next == null) return;
-    _isNavigating = true;
+    if (summary.next == null || !_navGuard.tryAcquire()) return;
     try {
       final saved = await resolveNextLessonMode();
       final mode = defaultTodayLessonMode(
@@ -666,8 +669,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     } catch (e) {
       Logger.warning('[STUDY_TOPICS] Could not open the next lesson',
           context: {'error': e.runtimeType.toString()});
-    } finally {
-      _isNavigating = false;
     }
     if (!mounted) return;
     _reloadAfterProgressChange();
@@ -676,10 +677,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// Every path, with category chips. Open to guests: locked rows there
   /// open the account sheet.
   Future<void> _openAllPaths() async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
     await context.push<void>(AppRoutes.allPaths);
-    _isNavigating = false;
     if (!mounted) return;
     _reloadAfterProgressChange();
   }
@@ -767,15 +766,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// way back. `push` keeps the shell mounted underneath (and still updates the
   /// browser URL on web).
   Future<void> _navigateToPathId(String pathId) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
 
     // Include source=studyTopics so a directly-opened deep link still has a
     // sensible back target.
     final progressChanged =
         await context.push<bool>('/learning-path/$pathId?source=studyTopics');
-
-    _isNavigating = false;
 
     // Only refetch when the detail page reports progress actually changed;
     // otherwise the preserved state stands and there is no visible reload.
@@ -801,14 +797,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// this tab's bloc so already-loaded paths show at once and pages loaded
   /// there are kept here.
   Future<void> _navigateToCategory(String category) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
     await context.push<void>(
       AppRoutes.learningPathCategoryLocation(category,
           language: widget.currentLanguage),
       extra: context.read<LearningPathsBloc>(),
     );
-    _isNavigating = false;
     if (!mounted) return;
     // The category page refetches paths itself after progress changes;
     // keep the current path card in step with it.

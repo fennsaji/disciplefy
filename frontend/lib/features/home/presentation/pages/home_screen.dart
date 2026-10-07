@@ -21,6 +21,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
@@ -118,7 +119,10 @@ class _HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<_HomeScreenContent> {
   // Track if we're currently navigating to prevent multiple navigations
-  bool _isNavigating = false;
+  /// Ignores a double tap on the verse Study and path rows. Never held
+  /// across an awaited push: go_router may never complete it (Lesson
+  /// complete → Back home), which would lock these taps for the session.
+  final TapGuard _navGuard = TapGuard();
 
   // Track if we've already triggered the notification prompts this session
   bool _hasTriggeredDailyVersePrompt = false;
@@ -375,7 +379,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// Handle daily verse card tap to generate study guide
   Future<void> _onDailyVerseCardTap() async {
     // Prevent multiple clicks during navigation
-    if (_isNavigating) {
+    if (_navGuard.isLocked) {
       return;
     }
 
@@ -475,7 +479,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     bool rememberChoice, {
     StudyMode? recommendedMode,
   }) async {
-    _isNavigating = true;
+    _navGuard.tryAcquire();
 
     // Save user's mode preference if they chose to remember
     if (rememberChoice) {
@@ -502,7 +506,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       verseReference = currentState.verse.reference;
       languageCode = _getLanguageCode(currentState.currentLanguage);
     } else {
-      _isNavigating = false;
+      _navGuard.release();
       return;
     }
 
@@ -515,7 +519,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       if (requiredCost > 0 &&
           tokenState.tokenStatus.totalTokens < requiredCost &&
           mounted) {
-        setState(() => _isNavigating = false);
+        _navGuard.release();
         await InsufficientTokensDialog.show(
           context,
           tokenStatus: tokenState.tokenStatus,
@@ -533,15 +537,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Navigate directly to study guide V2 - it will handle generation
     context.go(
         '/study-guide-v2?input=$encodedReference&type=scripture&language=$languageCode&mode=${mode.name}&source=home');
-
-    // Reset navigation flag after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isNavigating = false;
-        });
-      }
-    });
   }
 
   /// Convert VerseLanguage enum to language code string
@@ -558,6 +553,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   @override
   void dispose() {
+    _navGuard.dispose();
     sl<AuthStateProvider>().removeListener(_onAuthChanged);
     _usageStatsBloc.close();
     super.dispose();
@@ -1256,8 +1252,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// scratch on the way back. `push` keeps it mounted (URL still updates on
   /// web), and the pop result says whether a refresh is actually needed.
   Future<void> _navigateToLearningPath(String pathId) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
 
     Logger.debug('[HOME] Navigating to learning path: $pathId');
 
@@ -1265,8 +1260,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // back target.
     final progressChanged =
         await context.push<bool>('/learning-path/$pathId?source=home');
-
-    _isNavigating = false;
 
     if (!mounted || progressChanged != true) return;
     sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));

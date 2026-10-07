@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
@@ -49,7 +50,9 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
   final TextEditingController _searchController = TextEditingController();
   String? _language;
   bool _searchOpen = false;
-  bool _isNavigating = false;
+
+  /// Ignores a double tap; never held across the awaited push.
+  final TapGuard _navGuard = TapGuard();
 
   LearningPathsBloc get _bloc => context.read<LearningPathsBloc>();
 
@@ -64,6 +67,7 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
 
   @override
   void dispose() {
+    _navGuard.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -159,12 +163,10 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
       guestPathGate(context, path, () => _pushPath(path));
 
   Future<void> _pushPath(LearningPath path) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
     final bloc = _bloc;
     final progressChanged = await context
         .push<bool>('/learning-path/${path.id}?source=studyTopics');
-    _isNavigating = false;
     if (!mounted || progressChanged != true) return;
     final language = await _resolveLanguage();
     bloc
