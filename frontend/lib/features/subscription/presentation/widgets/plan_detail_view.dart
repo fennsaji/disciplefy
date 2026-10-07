@@ -394,7 +394,7 @@ class PlanInfoNotice extends StatelessWidget {
       );
 }
 
-/// Violet of the Plus tier, lifted on dark so it reads as text.
+/// Gold of the Plus tier: bright on dark, deep on light so it reads as text.
 Color plusTierColor(BuildContext context) => ReaderPalette.of(context).isDark
     ? AppColors.tierPlusOnDark
     : AppColors.tierPlus;

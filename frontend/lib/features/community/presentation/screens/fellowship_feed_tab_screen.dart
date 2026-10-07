@@ -6,7 +6,6 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
-import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/contrast.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
@@ -478,13 +477,14 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
           IconData icon,
           Color accent,
         })> postTypes = [
+      // Same colour per type as the post chips in the feed.
       (
         value: 'general',
         label: l10n.postTypeGeneral,
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescGeneral),
         icon: Icons.chat_rounded,
-        accent: AppColors.brandHighlightDark,
+        accent: postTypeAccentColor('general', isDark: palette.isDark),
       ),
       (
         value: 'prayer',
@@ -492,7 +492,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescPrayer),
         icon: Icons.volunteer_activism_rounded,
-        accent: AppColors.info,
+        accent: postTypeAccentColor('prayer', isDark: palette.isDark),
       ),
       (
         value: 'praise',
@@ -500,7 +500,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescPraise),
         icon: Icons.emoji_events_rounded,
-        accent: AppColors.warning,
+        accent: postTypeAccentColor('praise', isDark: palette.isDark),
       ),
       (
         value: 'question',
@@ -508,7 +508,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescQuestion),
         icon: Icons.help_outline_rounded,
-        accent: AppColors.success,
+        accent: postTypeAccentColor('question', isDark: palette.isDark),
       ),
     ];
 

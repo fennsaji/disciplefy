@@ -238,7 +238,8 @@ void main() {
       r'brandPrimary|brandSecondary|primaryGradient|appBrandAccent|'
       r'appInteractive|AppTheme\.(primaryColor|primaryLightColor|'
       r'secondaryPurple)|0x[Ff]{2}(4F46E5|6366F1|5B4FE9|4338CA|A9A6F5|'
-      r'A5B4FC|F3F0FF|1E1B4B|3730A3|EEF0FE|EEEEFD)',
+      r'A5B4FC|F3F0FF|1E1B4B|3730A3|EEF0FE|EEEEFD|2E28A3|7C3AED|A78BFA|'
+      r'7C4DFF|D8B4FE|F3E8FF)|Colors\.(indigo|deepPurple|blue)\b',
       caseSensitive: false,
     );
     // Brand marks that may keep their own colours. Empty: the logo and

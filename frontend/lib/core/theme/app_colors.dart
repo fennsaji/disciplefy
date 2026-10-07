@@ -36,34 +36,8 @@ class AppColors {
   /// Dark gold — for richer gradient pairs with [brandHighlight].
   static const Color brandHighlightDark = Color(0xFFB8860B);
 
-  /// Palest gold — the top of the daily-study card's wash, a shade off the
-  /// warm-white background so the card reads as lit rather than tinted.
-  static const Color brandHighlightSoft = Color(0xFFFFFBF0);
-
-  /// Deep end of that wash. Warmer and a touch more saturated than
-  /// [brandHighlight], so the gradient has somewhere to travel.
-  static const Color brandHighlightWarm = Color(0xFFFDEBBE);
-
-  /// Daily-study card wash (light). Vertical, pale gold to warm gold: flat
-  /// [brandHighlight] alone read as a dull block of cream at card size.
-  static const LinearGradient dailyHighlightGradient = LinearGradient(
-    colors: [brandHighlightSoft, brandHighlightWarm],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  /// The same wash for dark mode — lamplight on a dark ground, not brown.
-  static const LinearGradient dailyHighlightGradientDark = LinearGradient(
-    colors: [Color(0xFF302816), Color(0xFF241E11)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
   /// Coral accent — action/alert, destructive-action confirmation.
   static const Color brandAccent = Color(0xFFFF6B6B);
-
-  /// Warm white — background for content cards (e.g. voice bubbles).
-  static const Color warmWhite = Color(0xFFFAF8F5);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // LIGHT THEME PALETTE
@@ -116,8 +90,6 @@ class AppColors {
   static const Color darkScaffold = Color(0xFF121212);
   static const Color darkSurface = Color(0xFF17171C); // design card
   static const Color darkSurfaceVariant = Color(0xFF1F1F27); // design raised
-  static const Color darkSurfaceElevated = Color(0xFF1F1F27); // design raised
-  static const Color darkSurfaceHigh = Color(0xFF26262F); // design raised alt
   static const Color darkTextPrimary = Color(0xFFF2F2F4); // design text
   static const Color darkTextSecondary = Color(0xFF9CA3AF); // design secondary
   /// Design icons / nav labels — 5.2:1 on the card.
@@ -126,7 +98,6 @@ class AppColors {
   static const Color darkBorderStrong = Color(0xFF45454E);
   static const Color darkDivider = Color(0xFF26262F);
   static const Color darkInputFill = Color(0xFF1F1F27);
-  static const Color darkInputBorder = Color(0xFF34343C);
 
   /// 4.5:1 on [darkInputFill] (was #808080, 3.6:1).
   static const Color darkHintText = Color(0xFF919191);
@@ -146,14 +117,12 @@ class AppColors {
       Color(0xFF047857); // Emerald-700 — 5.0:1 on white (was #059669, 3.4:1)
 
   static const Color error = Color(0xFFEF4444); // Red-500
-  static const Color errorLight = Color(0xFFFEE2E2); // Red-100
   static const Color errorLighter =
       Color(0xFFF87171); // design error on dark surfaces
   static const Color errorDark =
       Color(0xFFB91C1C); // Red-700 — 6.6:1 on white (was #DC2626, 4.7:1)
 
   static const Color warning = Color(0xFFF59E0B); // Amber-500
-  static const Color warningLight = Color(0xFFFEF3C7); // Amber-100
   static const Color warningLighter =
       Color(0xFFFCD34D); // Amber-300 — dark mode badge text
   static const Color warningDark =
@@ -161,7 +130,6 @@ class AppColors {
 
   static const Color info =
       Color(0xFF3B82F6); // Blue-500 — 3.9:1 on white (icon/bg use)
-  static const Color infoLight = Color(0xFFDBEAFE); // Blue-100
   static const Color infoLighter =
       Color(0xFF93C5FD); // Blue-300 — dark mode badge text
   static const Color infoDark =
@@ -179,25 +147,18 @@ class AppColors {
   /// grounds and drop to 3.10:1 on the gradient's light end, so the gradient
   /// gets its own value. Icons only — see [onGradient] for text.
   static const Color onGradientWarning = Color(0xFFFFE082);
-  static const Color onGradientMuted = Color(0xCCFFFFFF); // white 80%
-  static const Color onGradientSubtle = Color(0x99FFFFFF); // white 60%
-  static const Color onGradientFaint = Color(0x66FFFFFF); // white 40%
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SUBSCRIPTION TIER COLORS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static const Color tierFree = Color(0xFF6B7280); // Gray-500
   static const Color tierStandard = brandGoldDeep; // design: plans are gold
-  static const Color tierPlus = Color(0xFF7C3AED); // Violet-600
-  /// [tierPlus] lifted for use as text and accents on dark surfaces.
-  static const Color tierPlusOnDark = Color(0xFFA78BFA); // Violet-400
-  static const Color tierPremium = Color(0xFF7C4DFF); // Violet-500
-  static const Color tierGold = Color(0xFFF59E0B); // Amber = warning
+  /// The recommended Plus plan is outlined in gold in the design, like the
+  /// rest of the plan cards (deep gold on light surfaces).
+  static const Color tierPlus = brandGoldDeep;
 
-  // Light tint backgrounds for tier badges (use with BorderRadius cards)
-  static const Color tierStandardTint = Color(0xFFF3E8FF);
-  static const Color tierStandardBorder = Color(0xFFD8B4FE);
+  /// [tierPlus] on dark surfaces: the bright gold.
+  static const Color tierPlusOnDark = brandGold;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DIFFICULTY COLORS
@@ -211,20 +172,7 @@ class AppColors {
   // MASTERY LEVEL COLORS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static const Color masteryBeginner = Color(0xFF10B981); // green
-  static const Color masteryIntermediate = Color(0xFF3B82F6); // blue
-  static const Color masteryAdvanced = Color(0xFF8B5CF6); // purple
   static const Color masteryExpert = Color(0xFFFF5722); // deepOrange
-  /// Master tier — the top of the mastery ramp.
-  ///
-  /// This was #F59E0B, byte-identical to [warning]. "Master" and "needs more
-  /// practice" were therefore the same colour, side by side on the practice
-  /// results and streak screens. It is now brand gold and distinct.
-  ///
-  /// Presentation code should prefer `context.appStreakAccent`, which is
-  /// theme-aware; this const is kept for the domain-layer mastery ramp, which
-  /// has no BuildContext.
-  static const Color masteryMaster = brandGold;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY COLORS
@@ -240,14 +188,6 @@ class AppColors {
   static const Color categorySpiritualDisciplines = Color(0xFF00695C);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // MEDAL / ACHIEVEMENT COLORS
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  static const Color medalGold = Color(0xFFFFD700);
-  static const Color medalSilver = Color(0xFFC0C0C0);
-  static const Color medalBronze = Color(0xFFCD7F32);
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // FEATURE-SPECIFIC COLORS
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -258,63 +198,13 @@ class AppColors {
   // spoke in four different accents and none of them matched the brand gold in
   // the logo. They now share one hue so streaks, XP and milestones read as a
   // single system and the gold mark in the header belongs to it.
-  static const Color streakFlame = brandGold;
   static const Color streakGlow = Color(0xFFC8922F); // deeper gold, for glows
-  static const Color xpGold = brandGold;
-
-  // Voice & audio
-  static const Color voiceBlue = Color(0xFF2196F3);
-  static const Color voiceBluePastel = Color(0xFF64B5F6);
-  static const Color voiceBlueLight = Color(0xFF90CAF9);
-  static const Color voiceBlueSurface = Color(0xFFE3F2FD);
-
-  // Memory verse heat map (GitHub-style intensity)
-  static const Color heatMapLow = Color(0xFF9BE9A8);
-  static const Color heatMapMid = Color(0xFF40C463);
-  static const Color heatMapHigh = Color(0xFF30A14E);
-
-  // PDF / print preview
-  static const Color pdfBackground = Color(0xFFFAFAFA);
-  static const Color pdfTextPrimary = Color(0xFF333333);
-  static const Color pdfTextSecondary = Color(0xFF888888);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // OVERLAY / SHADOW / SCRIM
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static const Color shadowLight = Color(0x0F000000); // 6%
-  static const Color shadowMedium = Color(0x1A000000); // 10%
-  static const Color overlayLight = Color(0x1A000000); // 10%
-  static const Color overlayDark = Color(0xBF000000); // 75%
   static const Color scrim = Color(0x8A000000); // 54%
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LEGACY ALIASES (keep until all call-sites are migrated)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// @deprecated Use [brandHighlight]
-  static Color get secondary => brandHighlight;
-
-  /// @deprecated Use [brandHighlight]
-  static Color get highlightGold => brandHighlight;
-
-  /// @deprecated Use [lightTextPrimary]
-  static Color get textPrimary => lightTextPrimary;
-
-  /// @deprecated Use [lightTextSecondary]
-  static Color get textSecondary => lightTextSecondary;
-
-  /// @deprecated Use [lightBorder]
-  static Color get divider => lightBorder;
-
-  /// @deprecated Use [lightTextTertiary]
-  static Color get disabled => lightTextTertiary;
-
-  /// @deprecated Use [success]
-  static Color get successGreen => success;
-
-  /// @deprecated Use [error]
-  static Color get errorRed => error;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ADMIN-WEB READINESS
@@ -336,7 +226,6 @@ class AppColors {
       'info': _hex(info),
       'tierStandard': _hex(tierStandard),
       'tierPlus': _hex(tierPlus),
-      'tierPremium': _hex(tierPremium),
     };
   }
 

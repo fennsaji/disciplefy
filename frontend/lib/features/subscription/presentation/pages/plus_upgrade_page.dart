@@ -59,8 +59,6 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   List<String> _features = [];
   List<PlanComparisonRow> _comparisonRows = [];
 
-  static const Color _plusColor = AppColors.tierPlus;
-
   @override
   void initState() {
     super.initState();
