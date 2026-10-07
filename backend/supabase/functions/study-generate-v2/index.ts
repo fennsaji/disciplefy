@@ -32,6 +32,7 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
 import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
 import { resolveTopicLanguage } from '../_shared/utils/content-language.ts'
+import { isFreeCatalogueLesson } from '../_shared/utils/lesson-pricing.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -619,18 +620,20 @@ async function handleStudyGenerateV2(
 
   const requiredFeature = modeFeatureMap[study_mode]
 
-  // A learning-path topic opens in the mode its path recommends, on every plan.
-  // Those guides are cached and cost nothing to serve again, and the catalogue
-  // is the part of the product that should stay open to everyone; the plan's
-  // mode rule is about the studies a user types in for themselves.
-  const isCataloguePath = topic_id
-    ? (await getLearningPathRecommendedMode(services.supabaseServiceClient, topic_id)) === study_mode
-    : false
+  // A learning-path lesson opens, free and on every plan, in Quick Read and in
+  // the mode its path recommends. Those guides are cached and cost nothing to
+  // serve again, and the catalogue is the part of the product that should stay
+  // open to everyone; the plan's mode rule and the credit charge are about the
+  // studies a user types in for themselves. Validated server-side via DB lookup.
+  const lpMode = topic_id
+    ? await getLearningPathRecommendedMode(services.supabaseServiceClient, topic_id)
+    : null
+  const isCataloguePath = isFreeCatalogueLesson(lpMode, study_mode)
 
   const hasFeatureAccess = isCataloguePath || await isFeatureEnabledForPlan(requiredFeature, userPlan)
 
   if (isCataloguePath) {
-    console.log(`📚 [STUDY-V2] Learning-path topic in its recommended mode: ${study_mode} allowed on ${userPlan}`)
+    console.log(`📚 [STUDY-V2] Learning-path lesson (recommended mode: ${lpMode}): ${study_mode} allowed free on ${userPlan}`)
   }
 
   if (!hasFeatureAccess) {
@@ -687,24 +690,17 @@ async function handleStudyGenerateV2(
   const tokenCost = tokenService.calculateTokenCost(targetLanguage, study_mode)
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
 
-  // TODO: Remove or update this when learning path token pricing is finalized.
-  // Study guide generation is free for all users when using a learning path topic
-  // in its recommended study mode. Validated server-side via DB lookup.
-  let isFreeGeneration = false
-  if (topic_id) {
-    const lpRecommendedMode = await getLearningPathRecommendedMode(
-      studyGuideRepository.getSupabaseClient(),
-      topic_id
-    )
-    if (lpRecommendedMode && lpRecommendedMode === study_mode) {
-      isFreeGeneration = true
-      console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (recommended mode: ${study_mode})`)
-    }
+  // A path lesson in Quick Read or its recommended mode costs no credits (see
+  // isCataloguePath above).
+  const isFreeGeneration = isCataloguePath
+  if (isFreeGeneration) {
+    console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (mode: ${study_mode})`)
   }
 
-  // The day's budget across every user. Learning-path studies are exempt: they
-  // come from the cache, so they cost nothing and there is no reason to take
-  // them away while the ceiling is in force.
+  // The day's budget across every user. Free learning-path lessons are exempt:
+  // the catalogue is finite and each lesson is generated once per language and
+  // mode, then served from the shared cache, so there is no reason to take them
+  // away while the ceiling is in force. Their model spend is still logged.
   if (!isFreeGeneration) {
     const budget = await checkCostCeiling(studyGuideRepository.getSupabaseClient())
     if (!budget.withinBudget) {
@@ -718,9 +714,9 @@ async function handleStudyGenerateV2(
     }
   }
 
-  // Ceilings on studies that actually call the model. A learning-path study in
-  // its recommended mode is served from the catalogue cache and costs nothing
-  // to repeat, so it is never counted and never blocked.
+  // Ceilings on studies that actually call the model. A free learning-path
+  // lesson (Quick Read or its recommended mode) is served from the catalogue
+  // cache and costs nothing to repeat, so it is never blocked.
   if (!isFreeGeneration && userContext.type === 'authenticated' && userContext.userId) {
     const limits = await checkFreshStudyLimits(
       studyGuideRepository.getSupabaseClient(),
