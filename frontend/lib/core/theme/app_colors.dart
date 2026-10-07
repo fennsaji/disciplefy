@@ -34,7 +34,7 @@ class AppColors {
   static const Color brandHighlight = Color(0xFFFFEEC0);
 
   /// Dark gold — for richer gradient pairs with [brandHighlight].
-  static const Color brandHighlightDark = Color(0xFFB8860B);
+  static const Color brandHighlightDark = Color(0xFFD4A23A);
 
   /// Coral accent — action/alert, destructive-action confirmation.
   static const Color brandAccent = Color(0xFFFF6B6B);
@@ -80,6 +80,11 @@ class AppColors {
   /// this one still does. Never use it for text.
   static const Color brandGoldMark = Color(0xFFBC851F);
 
+  /// Gold for labels on a gold-tinted pill on light surfaces. [brandGoldDeep]
+  /// measures about 4:1 on its own 12–16% tint; this deeper gold keeps the
+  /// hue and reads 5.9:1 on a 16% tint over the page (7.2:1 on the page).
+  static const Color brandGoldInk = Color(0xFF704D0F);
+
   static const Color splashBackgroundLight = Color(0xFF0B0B0B);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -113,20 +118,23 @@ class AppColors {
   static const Color successLight = Color(0xFFD1FAE5); // Emerald-100
   static const Color successLighter =
       Color(0xFF34D399); // design success on dark surfaces
-  static const Color successDark =
-      Color(0xFF047857); // Emerald-700 — 5.0:1 on white (was #059669, 3.4:1)
+  /// Emerald-800 — light-theme success text and fills: 7.7:1 on white and
+  /// 5.9:1 or more on its own 10–14% tint (Emerald-700 was 4.7–5.0:1 there).
+  static const Color successDark = Color(0xFF065F46);
 
   static const Color error = Color(0xFFEF4444); // Red-500
   static const Color errorLighter =
       Color(0xFFF87171); // design error on dark surfaces
-  static const Color errorDark =
-      Color(0xFFB91C1C); // Red-700 — 6.6:1 on white (was #DC2626, 4.7:1)
+  /// Red-800 — light-theme error text and fills: 8.3:1 on white, 6.6:1 on a
+  /// 14% error tint over the page (Red-700 was 5.2:1 there).
+  static const Color errorDark = Color(0xFF991B1B);
 
   static const Color warning = Color(0xFFF59E0B); // Amber-500
   static const Color warningLighter =
       Color(0xFFFCD34D); // Amber-300 — dark mode badge text
-  static const Color warningDark =
-      Color(0xFFB45309); // Amber-700 — 4.8:1 on white (was #D97706, 3.1:1)
+  /// Amber-800 — light-theme warning text: 7.1:1 on white, 6.0:1 on a 14%
+  /// warning tint over the page (Amber-700 was 4.3:1 there).
+  static const Color warningDark = Color(0xFF92400E);
 
   static const Color info =
       Color(0xFF3B82F6); // Blue-500 — 3.9:1 on white (icon/bg use)

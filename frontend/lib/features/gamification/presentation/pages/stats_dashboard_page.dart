@@ -672,7 +672,7 @@ class _ProfileHeader extends StatelessWidget {
                           style: AppFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: settingsPrimaryInk(context),
                           ),
                         ),
                       ),

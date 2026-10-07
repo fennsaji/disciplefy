@@ -154,7 +154,8 @@ class ScriptureReferenceChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.menu_book_outlined, size: 15, color: palette.gold),
+              Icon(Icons.menu_book_outlined,
+                  size: 15, color: palette.goldOnTint),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -162,7 +163,7 @@ class ScriptureReferenceChip extends StatelessWidget {
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: palette.gold,
+                    color: palette.goldOnTint,
                   ),
                 ),
               ),

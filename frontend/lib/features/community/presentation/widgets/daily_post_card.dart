@@ -246,7 +246,8 @@ class DailyPostCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (eyebrow != null) ...[
-                    CommunitySectionLabel(eyebrow, color: gold, fontSize: 11.5),
+                    CommunitySectionLabel(eyebrow,
+                        color: palette.goldOnTint, fontSize: 11.5),
                     const SizedBox(height: 8),
                   ],
                   // ── Body ─────────────────────────────────────────────
@@ -287,6 +288,7 @@ class DailyStudyChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final gold = palette.gold;
+    final ink = palette.goldOnTint;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -296,7 +298,7 @@ class DailyStudyChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.menu_book_outlined, size: 14, color: gold),
+          Icon(Icons.menu_book_outlined, size: 14, color: ink),
           const SizedBox(width: 5),
           // Flexible + wrapping: in a narrow header the chip wraps its
           // label rather than overflowing or cutting it.
@@ -306,7 +308,7 @@ class DailyStudyChip extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: gold,
+                color: ink,
               ),
             ),
           ),

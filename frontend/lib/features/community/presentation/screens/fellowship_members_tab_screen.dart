@@ -774,7 +774,7 @@ class _RoleBadge extends StatelessWidget {
         style: AppFonts.inter(
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
-          color: palette.gold,
+          color: palette.goldOnTint,
           height: 1.4,
         ),
       ),

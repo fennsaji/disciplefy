@@ -125,21 +125,22 @@ class PathProgressStrip extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: (done || isCurrent) ? palette.gold : null,
+          color: (done || isCurrent) ? palette.selectedFill : null,
           border: (done || isCurrent)
               ? null
               : Border.all(color: palette.hairline, width: 1.5),
         ),
-        // Ink on the bright dark-theme gold, white on the deep light one.
+        // Ink on the selected gold fill: 7.6:1 light, 8.9:1 dark (white on
+        // the deep light gold was 4.8:1).
         child: done
-            ? Icon(Icons.check_rounded, size: 14, color: palette.onGold)
+            ? Icon(Icons.check_rounded, size: 14, color: palette.onSelected)
             : isCurrent
                 ? Text(
                     '$n',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: palette.onGold,
+                      color: palette.onSelected,
                       height: 1,
                     ),
                   )

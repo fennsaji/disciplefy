@@ -124,7 +124,7 @@ class MemoryActionPill extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
-                              color: palette.gold,
+                              color: palette.selectedFill,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -133,7 +133,7 @@ class MemoryActionPill extends StatelessWidget {
                               style: AppFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: palette.page,
+                                color: palette.onSelected,
                                 fontFeatures: kMemoryTabular,
                               ),
                             ),

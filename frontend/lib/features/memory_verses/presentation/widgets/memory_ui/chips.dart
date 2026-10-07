@@ -23,7 +23,8 @@ class MemoryChoiceChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final fill = selected ? palette.ctaFill : palette.raised;
-    final ink = selected ? palette.ctaInk : palette.muted;
+    // Muted on the raised fill is only 4.5:1 on light; the label keeps ink.
+    final ink = selected ? palette.ctaInk : palette.text;
     return Semantics(
       button: true,
       selected: selected,
@@ -242,12 +243,14 @@ class MemoryTokenChip extends StatelessWidget {
       case MemoryTokenState.correct:
         fill = AppColors.success.withValues(alpha: alpha);
         border = context.appSuccess;
-        ink = context.appSuccess;
+        ink = palette.onTint(context.appSuccess,
+            tint: AppColors.success, alpha: alpha);
         borderWidth = 1.5;
       case MemoryTokenState.wrong:
         fill = AppColors.error.withValues(alpha: alpha);
         border = context.appError;
-        ink = context.appError;
+        ink = palette.onTint(context.appError,
+            tint: AppColors.error, alpha: alpha);
         borderWidth = 1.5;
       case MemoryTokenState.blank:
         fill = Colors.transparent;
@@ -432,8 +435,9 @@ class MemoryStepIndicator extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    // White on Emerald-800 is 7.7:1 (on Emerald-500, 2.5:1).
                     color: i < currentIndex
-                        ? AppColors.success
+                        ? AppColors.successDark
                         : i == currentIndex
                             ? palette.selectedFill
                             : palette.raised,

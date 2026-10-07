@@ -212,7 +212,7 @@ class _YourRankCard extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.4,
-                    color: ink.withValues(alpha: 0.8),
+                    color: palette.onSelectedMuted,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -255,7 +255,8 @@ class _RankStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = ReaderPalette.of(context).onSelected;
+    final palette = ReaderPalette.of(context);
+    final ink = palette.onSelected;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 90),
       child: Column(
@@ -275,7 +276,7 @@ class _RankStat extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppFonts.inter(
               fontSize: 12,
-              color: ink.withValues(alpha: 0.8),
+              color: palette.onSelectedMuted,
             ),
           ),
         ],

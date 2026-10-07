@@ -619,7 +619,9 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
     case 'shared_guide':
       return isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E);
     case 'daily':
-      return AppColors.brandHighlightDark;
+      // Was the light selected-chip gold in both themes: 2.3:1 as text on
+      // the light card.
+      return isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
     default:
       return isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
   }
@@ -746,17 +748,21 @@ class PostTypeChip extends StatelessWidget {
     };
     if (cfg == null) return const SizedBox.shrink();
     final color = postTypeAccentColor(postType, isDark: palette.isDark);
+    final tintAlpha = palette.isDark ? 0.14 : 0.10;
+    // The accents are tuned for the page; on their own tint some drop below
+    // 5.5:1 (deep gold is 4.2:1), so the label is deepened just enough.
+    final ink = palette.onTint(color, alpha: tintAlpha);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: palette.isDark ? 0.14 : 0.10),
+        color: color.withValues(alpha: tintAlpha),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(cfg.icon, size: 14, color: color),
+          Icon(cfg.icon, size: 14, color: ink),
           const SizedBox(width: 5),
           // Flexible + wrapping: in a narrow header the chip wraps its
           // label rather than overflowing or cutting it.
@@ -766,7 +772,7 @@ class PostTypeChip extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: ink,
               ),
             ),
           ),

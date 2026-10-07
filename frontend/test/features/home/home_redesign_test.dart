@@ -34,6 +34,8 @@ import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_c
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
@@ -1106,8 +1108,14 @@ void main() {
           expect(chip, findsOneWidget, reason: type);
           final labelText = tester.widget<Text>(
               find.descendant(of: chip, matching: find.text(text)));
+          // The accent, deepened/lifted only as far as its own tint needs
+          // for a 5.5:1 chip label.
+          final palette = ReaderPalette.resolve(
+              isDark: isDark, page: theme.scaffoldBackgroundColor);
           expect(
-              labelText.style?.color, postTypeAccentColor(type, isDark: isDark),
+              labelText.style?.color,
+              palette.onTint(postTypeAccentColor(type, isDark: isDark),
+                  alpha: isDark ? 0.14 : 0.10),
               reason: type);
         }
       });

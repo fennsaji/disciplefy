@@ -1601,7 +1601,7 @@ class _LessonStatusMarker extends StatelessWidget {
       case _LessonStatus.now:
         fill = palette.gold.withValues(alpha: palette.isDark ? 0.20 : 0.10);
         border = Border.all(color: palette.accentIcon, width: 1.5);
-        child = numberText(palette.accentIcon);
+        child = numberText(palette.goldOnTint);
         semanticsLabel = context.tr(TranslationKeys.communityFellowshipNow);
       case _LessonStatus.open:
         fill = palette.raised;
@@ -1680,7 +1680,7 @@ class _LessonTag extends StatelessWidget {
       label: label,
       icon: Icons.location_on_rounded,
       fill: palette.accentIcon.withValues(alpha: palette.isDark ? 0.20 : 0.12),
-      ink: palette.accentIcon,
+      ink: palette.goldOnTint,
       fontWeight: FontWeight.w700,
     );
   }
@@ -1692,7 +1692,7 @@ class _LessonTag extends StatelessWidget {
       label: label,
       icon: Icons.flag_rounded,
       fill: palette.gold.withValues(alpha: palette.isDark ? 0.16 : 0.12),
-      ink: palette.gold,
+      ink: palette.goldOnTint,
     );
   }
 

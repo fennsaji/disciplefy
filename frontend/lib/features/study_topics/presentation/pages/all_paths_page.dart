@@ -437,7 +437,8 @@ class CategoryChip extends StatelessWidget {
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: selected ? palette.onSelected : palette.muted,
+                    // Muted on the raised fill is only 4.5:1 on light.
+                    color: selected ? palette.onSelected : palette.text,
                   ),
                 ),
               ),

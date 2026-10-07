@@ -1254,7 +1254,9 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               color: _validationError != null
                   ? errorColor
                   : _inputFocusNode.hasFocus
-                      ? palette.selectedFill
+                      // Deep gold on light: the selected fill is 2.3:1 on
+                      // the white field, under the 3:1 focus minimum.
+                      ? palette.gold
                       : Colors.transparent,
               width: 1.5,
             ),

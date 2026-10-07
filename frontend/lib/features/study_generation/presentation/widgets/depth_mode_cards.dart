@@ -184,9 +184,8 @@ class DepthModeCard extends StatelessWidget {
     final onFill = palette.onSelected;
     final iconColor = isSelected ? onFill : palette.accentIcon;
     final nameColor = isSelected ? onFill : palette.text;
-    final secondary =
-        isSelected ? onFill.withValues(alpha: 0.8) : palette.muted;
-    final costColor = isSelected ? onFill.withValues(alpha: 0.8) : palette.gold;
+    final secondary = isSelected ? palette.onSelectedMuted : palette.muted;
+    final costColor = isSelected ? palette.onSelectedMuted : palette.gold;
     final radius = BorderRadius.circular(18);
 
     return Semantics(

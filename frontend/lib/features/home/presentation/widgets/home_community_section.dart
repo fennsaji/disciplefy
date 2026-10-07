@@ -1059,8 +1059,8 @@ class _SuggestionRow extends StatelessWidget {
 class _OfficialPill extends StatelessWidget {
   const _OfficialPill();
 
-  /// The dark gold deepened to 4.5:1 on the cream pill (it measured 2.8:1).
-  static const Color _ink = Color(0xFF8D6608);
+  /// Tint-label gold on the cream pill: 6.6:1 (#8D6608 was 4.5:1).
+  static const Color _ink = AppColors.brandGoldInk;
 
   @override
   Widget build(BuildContext context) {
@@ -1071,7 +1071,7 @@ class _OfficialPill extends StatelessWidget {
         color: AppColors.brandHighlight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.brandHighlightDark.withValues(alpha: 0.4),
+          color: AppColors.brandGoldMark.withValues(alpha: 0.4),
         ),
       ),
       child: Text(

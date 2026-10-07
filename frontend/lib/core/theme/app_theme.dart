@@ -154,8 +154,8 @@ class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(_inputRadius),
-            borderSide:
-                BorderSide(color: AppColors.brandHighlightDark, width: 1.5),
+            // Gold mark: 3.2:1 on the white field, the focus-ring minimum.
+            borderSide: BorderSide(color: AppColors.brandGoldMark, width: 1.5),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -390,16 +390,22 @@ class AppTheme {
         shape: const StadiumBorder(),
       );
 
-  /// Gold track with a white thumb when on, as the design's toggles.
+  /// Gold track when on, as the design's toggles. The track is the accent
+  /// gold (deep on light: 4.5:1 on the page) so the on state reads at 3:1,
+  /// and the thumb keeps 3:1 on it: white on the deep gold (4.8:1), ink on
+  /// the bright dark-theme gold (8.9:1; white there was 1.9:1).
   static SwitchThemeData _switchTheme(ReaderPalette p) => SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) return p.disabledInk;
+          if (states.contains(WidgetState.selected) && p.isDark) {
+            return p.onSelected;
+          }
           return Colors.white;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) return p.disabledFill;
           return states.contains(WidgetState.selected)
-              ? p.selectedFill
+              ? p.accentIcon
               : p.raised;
         }),
         trackOutlineColor: WidgetStateProperty.resolveWith((states) =>
@@ -420,23 +426,26 @@ class AppTheme {
                 : BorderSide(color: p.dim, width: 1.5)),
       );
 
+  /// Radio dots, slider tracks and progress bars are graphics that carry
+  /// state, so they take the accent gold (3:1 or more on the page in both
+  /// themes) rather than the light selected fill (2.2:1 on the light page).
   static RadioThemeData _radioTheme(ReaderPalette p) => RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? p.selectedFill : p.dim),
+            states.contains(WidgetState.selected) ? p.accentIcon : p.dim),
       );
 
   static SliderThemeData _sliderTheme(ReaderPalette p) => SliderThemeData(
-        activeTrackColor: p.selectedFill,
+        activeTrackColor: p.accentIcon,
         inactiveTrackColor: p.raised,
-        thumbColor: p.selectedFill,
-        overlayColor: p.selectedFill.withValues(alpha: 0.14),
+        thumbColor: p.accentIcon,
+        overlayColor: p.accentIcon.withValues(alpha: 0.14),
         valueIndicatorColor: p.selectedFill,
         valueIndicatorTextStyle: TextStyle(color: p.onSelected),
       );
 
   static ProgressIndicatorThemeData _progressTheme(ReaderPalette p) =>
       ProgressIndicatorThemeData(
-        color: p.selectedFill,
+        color: p.accentIcon,
         linearTrackColor: p.raised,
         circularTrackColor: Colors.transparent,
       );

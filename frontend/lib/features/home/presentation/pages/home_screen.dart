@@ -1588,7 +1588,8 @@ class _DueBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       decoration: BoxDecoration(
-        color: AppColors.error,
+        // White on Red-500 is 3.8:1; on Red-800 it is 8.3:1.
+        color: AppColors.errorDark,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Theme.of(context).scaffoldBackgroundColor,

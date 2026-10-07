@@ -200,7 +200,7 @@ class _GoldTag extends StatelessWidget {
         style: AppFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: palette.gold,
+          color: palette.goldOnTint,
         ),
       ),
     );

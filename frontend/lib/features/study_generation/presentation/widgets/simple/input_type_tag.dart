@@ -43,7 +43,10 @@ class InputTypeTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gold = ReaderPalette.of(context).gold;
+    final palette = ReaderPalette.of(context);
+    final gold = palette.gold;
+    // Deep gold is about 4:1 on its own tint; the tint label gold is 5.9:1.
+    final ink = palette.goldOnTint;
     return Semantics(
       button: true,
       child: Material(
@@ -60,14 +63,14 @@ class InputTypeTag extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(_icon(type), size: 14, color: gold),
+                  Icon(_icon(type), size: 14, color: ink),
                   const SizedBox(width: 6),
                   Text(
                     label(context, type),
                     style: AppFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: gold,
+                      color: ink,
                     ),
                   ),
                 ],

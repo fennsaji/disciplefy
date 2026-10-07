@@ -34,7 +34,7 @@ abstract final class _Design {
   static const lightRaised = Color(0xFFEEEBE3);
   static const lightInk = Color(0xFF1A1917);
   static const lightSecondary = Color(0xFF6F6B61);
-  static const lightGoldFill = Color(0xFFB8860B);
+  static const lightGoldFill = Color(0xFFD4A23A);
 }
 
 /// Places the app is stricter than the design, and why. Reviewers: this is
@@ -59,6 +59,21 @@ const Map<String, String> _deviations = {
       'placeholder text on the dark input fill needs 4.5:1.',
   'Generate field placeholder (#B5B0A4 → #7B766D)':
       'design placeholder is 2.1:1 on the white field.',
+  'light selected-chip gold (#B8860B → #D4A23A)':
+      'ink on the design fill measured 5.4:1 and read as muddy; #D4A23A is '
+          '7.6:1. Secondary text on it is ink at 85% (5.8:1), not 80%.',
+  'light switch track, radio, slider and progress (gold fill → #986910)':
+      'the lighter selected fill is 2.2:1 on the page, under the 3:1 '
+          'graphics minimum; the deep gold is 4.5:1 and white on it 4.8:1. '
+          'Dark keeps the gold track with an ink thumb (white was 1.9:1).',
+  'light input focus ring (gold fill → #BC851F)':
+      'the selected fill is 2.3:1 on the white field; the gold mark is 3.2:1.',
+  'gold label on a gold tint (light #986910 → #704D0F)':
+      'deep gold is about 4:1 on its own 12–16% tint; #704D0F is 5.9:1 on a '
+          '16% tint over the page.',
+  'light status text (Emerald/Amber/Red-700 → -800)':
+      'the -700 values fell to 4.3–5.2:1 on their own tinted chips; -800 '
+          'clears 5.5:1 there and keeps white fills above 7:1.',
   'light hairline at 8% ink (design 14%)':
       'separators use 8% and outlines 14%: subtler than the design, never '
           'heavier.',
@@ -213,19 +228,23 @@ void main() {
 
       test('switch, checkbox, radio, slider and progress are gold', () {
         final gold = isDark ? _Design.darkGold : _Design.lightGoldFill;
-        expect(theme.switchTheme.trackColor!.resolve(selected), gold);
-        expect(theme.switchTheme.thumbColor!.resolve(selected), Colors.white);
+        // Graphics that carry state use the accent gold (deep on light) so
+        // they clear 3:1 on the page; see _deviations.
+        final mark = isDark ? _Design.darkGold : const Color(0xFF986910);
+        expect(theme.switchTheme.trackColor!.resolve(selected), mark);
+        expect(theme.switchTheme.thumbColor!.resolve(selected),
+            isDark ? _Design.lightInk : Colors.white);
         expect(theme.checkboxTheme.fillColor!.resolve(selected), gold);
-        expect(theme.radioTheme.fillColor!.resolve(selected), gold);
-        expect(theme.sliderTheme.activeTrackColor, gold);
-        expect(theme.progressIndicatorTheme.color, gold);
+        expect(theme.radioTheme.fillColor!.resolve(selected), mark);
+        expect(theme.sliderTheme.activeTrackColor, mark);
+        expect(theme.progressIndicatorTheme.color, mark);
         expect(theme.chipTheme.selectedColor, gold);
       });
 
       test('input focus and text selection are gold', () {
         final focused = theme.inputDecorationTheme.focusedBorder!;
         expect(focused.borderSide.color,
-            isDark ? _Design.darkGold : _Design.lightGoldFill);
+            isDark ? _Design.darkGold : AppColors.brandGoldMark);
         expect(theme.textSelectionTheme.cursorColor, palette.gold);
       });
     });

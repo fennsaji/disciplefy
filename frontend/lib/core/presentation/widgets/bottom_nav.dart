@@ -8,6 +8,7 @@ import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Navigation tab data model for bottom navigation
 class NavTab {
@@ -511,7 +512,7 @@ class _DisciplerNavItem extends StatelessWidget {
                   cacheWidth: 128,
                   errorBuilder: (_, __, ___) => const ColoredBox(
                     color: AppColors.brandGold,
-                    child: Icon(Icons.graphic_eq, color: Colors.white),
+                    child: Icon(Icons.graphic_eq, color: ReaderPalette.ink),
                   ),
                 ),
               ),

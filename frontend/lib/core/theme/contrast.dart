@@ -36,6 +36,10 @@ const double kMinContrastNormalText = 4.5;
 /// WCAG AA minimum for large text (>=18pt, or >=14pt bold) and for graphics.
 const double kMinContrastLargeText = 3.0;
 
+/// Floor for a button, chip, pill or badge label. AA asks 4.5:1; labels on
+/// coloured fills sit at 5.5:1 or more so they read clearly, not merely pass.
+const double kMinContrastChipLabel = 5.5;
+
 /// Returns [foreground] adjusted so it meets [minRatio] against [background].
 ///
 /// The colour is blended toward white on dark backgrounds and toward black on

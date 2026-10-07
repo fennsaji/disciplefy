@@ -478,7 +478,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isCurrentSection && isPlaying
-                            ? palette.gold
+                            ? palette.selectedFill
                             : (isCurrentSection
                                 ? palette.gold.withValues(alpha: 0.25)
                                 : Colors.transparent),
@@ -492,7 +492,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                           ? Icon(
                               Icons.play_arrow,
                               size: 14,
-                              color: palette.onGold,
+                              color: palette.onSelected,
                             )
                           : null,
                     ),

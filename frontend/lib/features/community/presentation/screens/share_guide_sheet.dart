@@ -476,8 +476,8 @@ class _FellowshipRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: isSelected
-                      ? const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 16)
+                      ? Icon(Icons.check_rounded,
+                          color: palette.onSelected, size: 16)
                       : null,
                 ),
               ],
