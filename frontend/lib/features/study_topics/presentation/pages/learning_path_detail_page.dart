@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -411,6 +412,21 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     }
   }
 
+  /// Set once the guest lock was checked, so the sheet shows only once.
+  bool _guestLockChecked = false;
+
+  /// A path closed to the guest (a deep link, a shared URL) does not show
+  /// its detail: the account-needed sheet opens, and the page closes unless
+  /// the guest signs up.
+  Future<void> _guardGuestLockedPath(LearningPath path) async {
+    if (_guestLockChecked) return;
+    _guestLockChecked = true;
+    final reason = guestPathLockReason(path);
+    if (reason == null) return;
+    final linked = await AccountNeededSheet.show(context, reason);
+    if (!linked && mounted) _handleBackNavigation();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -427,6 +443,9 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             bottom: false,
             child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
               listener: (context, state) {
+                if (state is LearningPathDetailLoaded) {
+                  _guardGuestLockedPath(state.pathDetail);
+                }
                 if (state is LearningPathEnrolled) {
                   final path = _lastLoadedDetail;
                   if (_startAfterEnroll && path != null) {

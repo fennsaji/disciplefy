@@ -4,8 +4,10 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/services/guest_path_enrollment.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
+import 'package:disciplefy_bible_study/features/auth/domain/entities/account_reason.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
@@ -84,9 +86,13 @@ void main() {
     when(() => flags.guestMode).thenReturn(true);
     sl.registerSingleton<GuestSessionService>(guest);
     sl.registerSingleton<RolloutFlags>(flags);
+    GuestPathEnrollment.currentUserId = () => 'guest-1';
   });
 
-  tearDown(() async => sl.reset());
+  tearDown(() async {
+    GuestPathEnrollment.reset();
+    await sl.reset();
+  });
 
   Widget host(
           LearningPath path,
@@ -165,5 +171,87 @@ void main() {
     expect(lock.left - card.left, lessThan(LearningPathCard.compactWidth / 3));
     expect(lock.top - card.top, lessThan(40));
     expect(find.text('Featured'), findsOneWidget);
+  });
+
+  group('one path per guest', () {
+    // The six guest-accessible paths, as in the catalogue.
+    final accessible = [
+      for (final id in ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'])
+        _path(id, guestAccessible: true),
+    ];
+    final closed = _path('rooted');
+
+    test('no enrolment yet: the six accessible paths are open, others not', () {
+      for (final p in accessible) {
+        expect(guestPathLockReason(p, guest: true), isNull, reason: p.id);
+      }
+      expect(guestPathLockReason(closed, guest: true), AccountReason.otherPath);
+    });
+
+    test(
+        'enrolled guest: own path open, other accessible paths second_path, '
+        'non-accessible paths other_path', () {
+      GuestPathEnrollment.record('a1');
+      expect(guestPathLockReason(accessible[0], guest: true), isNull);
+      for (final p in accessible.skip(1)) {
+        expect(guestPathLockReason(p, guest: true), AccountReason.secondPath,
+            reason: p.id);
+      }
+      expect(guestPathLockReason(closed, guest: true), AccountReason.otherPath);
+    });
+
+    test('the path the data marks enrolled is open even before it is recorded',
+        () {
+      expect(
+          guestPathLockReason(
+              _path('a1', guestAccessible: true, enrolled: true),
+              guest: true,
+              enrolledPathId: 'a2'),
+          isNull);
+    });
+
+    test('a full account has no locks', () {
+      GuestPathEnrollment.record('a1');
+      for (final p in [...accessible, closed]) {
+        expect(guestPathLockReason(p, guest: false), isNull, reason: p.id);
+      }
+    });
+
+    test("another user's record does not apply (a new guest after sign-out)",
+        () {
+      GuestPathEnrollment.record('a1');
+      GuestPathEnrollment.currentUserId = () => 'guest-2';
+      expect(guestPathLockReason(accessible[1], guest: true), isNull);
+    });
+
+    for (final entry in _tiles.entries) {
+      testWidgets(
+          '${entry.key}: an enrolled guest sees another accessible path locked',
+          (tester) async {
+        GuestPathEnrollment.record('mine');
+        final opened = <String>[];
+        final other = _path('other', guestAccessible: true);
+        await tester.pumpWidget(host(other, entry.value, opened));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('guest_path_lock_other')), findsOneWidget);
+        await tester.tap(find.text('Path other'));
+        await tester.pumpAndSettle();
+        expect(find.text('Your next path needs an account'), findsOneWidget);
+        expect(opened, isEmpty);
+      });
+
+      testWidgets('${entry.key}: the lock appears once the enrolment is known',
+          (tester) async {
+        final other = _path('other', guestAccessible: true);
+        await tester.pumpWidget(host(other, entry.value, []));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('guest_path_lock_other')), findsNothing);
+
+        GuestPathEnrollment.record('mine');
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('guest_path_lock_other')), findsOneWidget);
+      });
+    }
   });
 }

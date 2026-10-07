@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/guest_path_enrollment.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
@@ -109,16 +110,19 @@ class LearningPathCard extends StatelessWidget {
                       // A path closed to the guest shows its lock first, on
                       // the left, so it is visible even when the tile is only
                       // partly scrolled into a row.
-                      child: isGuestLockedPath(path)
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GuestPathLockBadge(path: path),
-                                const SizedBox(width: 6),
-                                Flexible(child: _StatusBadge(path: path)),
-                              ],
-                            )
-                          : _StatusBadge(path: path),
+                      child: ValueListenableBuilder<String?>(
+                        valueListenable: GuestPathEnrollment.changes,
+                        builder: (context, _, __) => isGuestLockedPath(path)
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GuestPathLockBadge(path: path),
+                                  const SizedBox(width: 6),
+                                  Flexible(child: _StatusBadge(path: path)),
+                                ],
+                              )
+                            : _StatusBadge(path: path),
+                      ),
                     ),
                   ),
                 ),

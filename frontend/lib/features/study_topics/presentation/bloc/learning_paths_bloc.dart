@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/error/account_required.dart';
+import 'package:disciplefy_bible_study/core/services/guest_path_enrollment.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
@@ -15,6 +16,24 @@ import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 /// Handles loading, enrolling, and viewing learning paths
 /// which are curated collections of topics for structured learning.
 class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
+  /// Notes the enrolled path seen in a listing or detail, so a guest's
+  /// other paths lock ([GuestPathEnrollment]). A listing without one says
+  /// nothing: it may simply not include that path's category yet.
+  @override
+  void onChange(Change<LearningPathsState> change) {
+    super.onChange(change);
+    final next = change.nextState;
+    if (next is LearningPathsLoaded && next.enrolledPaths.isNotEmpty) {
+      final inProgress =
+          next.enrolledPaths.where((p) => !p.isCompleted).firstOrNull;
+      GuestPathEnrollment.record((inProgress ?? next.enrolledPaths.first).id);
+    } else if (next is LearningPathDetailLoaded &&
+        next.pathDetail.isEnrolled &&
+        GuestPathEnrollment.pathId == null) {
+      GuestPathEnrollment.record(next.pathDetail.id);
+    }
+  }
+
   final LearningPathsRepository _repository;
   final ResetLearningProgress _resetLearningProgress;
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:disciplefy_bible_study/core/services/guest_path_enrollment.dart';
+
 import 'home_event.dart';
 import 'home_state.dart';
 import 'recommended_topics_bloc.dart';
@@ -413,6 +415,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             }
           });
         }
+
+        // Home's active path is the user's enrolled path, if any: a guest
+        // keeps that one and every other path locks. Never cleared here: a
+        // guest cannot leave a path, and the record is per user.
+        if (path.isEnrolled) GuestPathEnrollment.record(path.id);
 
         Logger.info(
           'Loaded recommended learning path: ${path.title} (reason: ${reason.name}, progress: ${path.progressPercentage}%)',
