@@ -1,3 +1,4 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,10 @@ import 'package:disciplefy_bible_study/core/services/language_preference_service
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
@@ -21,6 +26,9 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/
 import '../../../../helpers/welcome_test_harness.dart';
 
 class _MockRepo extends Mock implements LearningPathsRepository {}
+
+class _MockHomeBloc extends MockBloc<HomeEvent, HomeState>
+    implements HomeBloc {}
 
 class _MockGuest extends Mock implements GuestSessionService {}
 
@@ -120,6 +128,23 @@ void main() {
 
   Map<String, String> opened() =>
       router.routeInformationProvider.value.uri.queryParameters;
+
+  testWidgets(
+      'opening refreshes Home and Topics: the push that led here never '
+      'returns after Mark complete', (tester) async {
+    final home = _MockHomeBloc();
+    sl.registerSingleton<HomeBloc>(home);
+    var topicsRefreshes = 0;
+    void onRefresh() => topicsRefreshes++;
+    StudyTopicsRefreshRequests.instance.addListener(onRefresh);
+    addTearDown(
+        () => StudyTopicsRefreshRequests.instance.removeListener(onRefresh));
+
+    await pumpPage(tester, 1);
+    verify(() => home.add(const LoadActiveLearningPath(forceRefresh: true)))
+        .called(1);
+    expect(topicsRefreshes, 1);
+  });
 
   testWidgets('shows next lesson, Continue opens it immediately (no day gate)',
       (tester) async {

@@ -13,12 +13,15 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
 import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lesson_ref.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/utils/lesson_launch.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
 
 /// What the Lesson complete page needs to know about the finished lesson.
 class LessonCompleteArgs {
@@ -65,6 +68,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
   void initState() {
     super.initState();
     unawaited(FirstRunFlags.markFirstLessonCompleted());
+    _refreshProgressViews();
     sl<LearningPathsRepository>()
         .getLearningPathDetails(
           pathId: widget.args.lesson.pathId,
@@ -78,6 +82,16 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                 if (mounted) setState(() => _path = p);
               },
             ));
+  }
+
+  /// The lesson's progress is saved before this page opens. Home and Topics
+  /// would only refresh when their push returns, which never happens here:
+  /// the lesson was replaced by this page, and Back home uses `go`.
+  void _refreshProgressViews() {
+    if (sl.isRegistered<HomeBloc>()) {
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    }
+    StudyTopicsRefreshRequests.instance.request();
   }
 
   @override
