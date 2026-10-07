@@ -3605,4 +3605,44 @@ class TranslationKeys {
   /// "Using {n} credits" under the Generate button.
   static const generateSimpleUsingCredits = 'generate_simple.using_credits';
   static const generateSimpleVerseOfDay = 'generate_simple.verse_of_day';
+
+  // New first run: language and goal screens.
+  static const firstRunWelcomeEyebrow = 'first_run.welcome_eyebrow';
+  static const firstRunWelcomeTitle = 'first_run.welcome_title';
+  static const firstRunWelcomeSubtitle = 'first_run.welcome_subtitle';
+  static const firstRunContinue = 'first_run.continue';
+  static const firstRunLogIn = 'first_run.log_in';
+  static const firstRunHaveAccount = 'first_run.have_account';
+  static const firstRunGoalTitle = 'first_run.goal_title';
+  static const firstRunSkip = 'first_run.skip';
+  static const firstRunStartLessonOne = 'first_run.start_lesson_one';
+  static const firstRunTerms = 'first_run.terms';
+
+  /// "{title} · {n} lessons" under a goal.
+  static const firstRunPathMeta = 'first_run.path_meta';
+
+  /// Helper under the goal title for a signed-in person.
+  static const firstRunPickOne = 'first_run.pick_one';
+
+  /// Helper for a guest: "…unlock all {n} paths".
+  static const firstRunPickOneGuest = 'first_run.pick_one_guest';
+
+  /// Guest helper without a number, when the path count is unknown.
+  static const firstRunPickOneGuestPlain = 'first_run.pick_one_guest_plain';
+  static const firstRunError = 'first_run.error';
+  static const firstRunErrorHasPath = 'first_run.error_has_path';
+  static const firstRunRetry = 'first_run.retry';
+  static const firstRunGoHome = 'first_run.go_home';
+  static const firstRunBack = 'first_run.back';
+
+  /// "Step {n} of {total}" for the progress dashes.
+  static const firstRunStep = 'first_run.step';
+
+  // Growth goals on the first-run goal screen.
+  static const goalNewToFaith = 'goal.new_to_faith';
+  static const goalFreshStart = 'goal.fresh_start';
+  static const goalWalkWithGod = 'goal.walk_with_god';
+  static const goalHopeHardTimes = 'goal.hope_hard_times';
+  static const goalReadGospel = 'goal.read_gospel';
+  static const goalUnderstandGospel = 'goal.understand_gospel';
 }

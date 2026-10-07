@@ -10,6 +10,7 @@ import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/system_config_service.dart';
 import '../services/rollout_flags.dart';
+import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import '../di/injection_container.dart';
 import 'app_routes.dart';
 import 'guest_route_gate.dart';
@@ -171,6 +172,9 @@ class RouterGuard {
     // Check Supabase auth first
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      // A full account is signed in: this device no longer needs a new first
+      // run when a guest session is lost.
+      GuestMarker.syncWithUser(isAnonymous: user.isAnonymous);
       // SECURITY FIX: Validate session expiration for all auth types
       final isExpired = _isSessionExpired();
       if (isExpired) {
@@ -941,6 +945,16 @@ class RouterGuard {
     OnboardingState? onboardingOverride,
   }) {
     final onboardingState = onboardingOverride ?? _getOnboardingState();
+
+    // A guest whose session was lost (refresh token gone) has no credentials
+    // to log in with: start a new first run instead of the login screen.
+    // Public routes (login itself) were let through before this point.
+    if (_newFirstRunEnabled() && GuestMarker.wasGuest) {
+      Logger.info('Lost guest session: starting a new first run',
+          tag: 'ROUTER',
+          context: {'attempted_route': routeAnalysis.currentPath});
+      return AppRoutes.welcome;
+    }
 
     // Helper: login URL with return path encoded as query param
     String loginWithRedirect() {

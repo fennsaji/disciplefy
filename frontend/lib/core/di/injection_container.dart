@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -93,6 +94,7 @@ import '../../features/onboarding/domain/usecases/get_onboarding_state.dart';
 import '../../features/onboarding/domain/usecases/save_language_preference.dart';
 import '../../features/onboarding/domain/usecases/complete_onboarding.dart';
 import '../../features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import '../../features/onboarding/presentation/bloc/first_run_cubit.dart';
 import '../../features/user_profile/data/repositories/user_profile_repository_impl.dart';
 import '../../features/user_profile/data/services/user_profile_service.dart';
 import '../../features/user_profile/domain/repositories/user_profile_repository.dart';
@@ -833,6 +835,15 @@ Future<void> initializeDependencies() async {
         getOnboardingState: sl(),
         saveLanguagePreference: sl(),
         completeOnboarding: sl(),
+      ));
+
+  // New first run: goal screen → guest → path → lesson 1.
+  sl.registerFactory(() => FirstRunCubit(
+        guest: sl(),
+        paths: sl(),
+        flags: sl(),
+        language: sl(),
+        settings: Hive.box('app_settings'),
       ));
 
   //! User Profile

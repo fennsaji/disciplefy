@@ -10,6 +10,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/router/router_guard.dart';
+import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 
 class _MockRolloutFlags extends Mock implements RolloutFlags {}
@@ -100,6 +101,56 @@ void main() {
             onboardingCompleted: false),
         AppRoutes.onboarding,
       );
+    });
+
+    group('a lost guest session (was_guest)', () {
+      setUp(() => Hive.box('app_settings').put(GuestMarker.key, true));
+
+      test('/ starts a new first run, not the login screen', () {
+        when(() => flags.newFirstRun).thenReturn(true);
+        expect(
+          RouterGuard.debugUnauthenticatedRedirect('/',
+              onboardingCompleted: true),
+          AppRoutes.welcome,
+        );
+      });
+
+      test('a protected route also starts a new first run', () {
+        when(() => flags.newFirstRun).thenReturn(true);
+        expect(
+          RouterGuard.debugUnauthenticatedRedirect(AppRoutes.settings,
+              onboardingCompleted: true),
+          AppRoutes.welcome,
+        );
+      });
+
+      test('the login screen stays reachable', () {
+        when(() => flags.newFirstRun).thenReturn(true);
+        Hive.box('app_settings').put('terms_accepted', true);
+        expect(
+          RouterGuard.debugUnauthenticatedRedirect(AppRoutes.login,
+              onboardingCompleted: true),
+          isNull,
+        );
+      });
+
+      test('flag off: the shipped behaviour (login)', () {
+        expect(
+          RouterGuard.debugUnauthenticatedRedirect('/',
+              onboardingCompleted: true),
+          AppRoutes.login,
+        );
+      });
+
+      test('a full account signing in clears the marker; a guest keeps it',
+          () async {
+        GuestMarker.syncWithUser(isAnonymous: true);
+        expect(GuestMarker.wasGuest, isTrue);
+        GuestMarker.syncWithUser(isAnonymous: false);
+        await Future<void>.delayed(Duration.zero);
+        expect(GuestMarker.wasGuest, isFalse);
+        expect(Hive.box('app_settings').containsKey(GuestMarker.key), isFalse);
+      });
     });
 
     test('missing RolloutFlags registration reads as off', () {

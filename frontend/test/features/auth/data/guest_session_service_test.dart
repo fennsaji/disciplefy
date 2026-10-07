@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/oauth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -616,6 +619,52 @@ void main() {
           GuestSessionService.uriHasIdentityConflict(
               Uri.parse('https://a.b/?code=abc')),
           isFalse);
+    });
+  });
+
+  group('was_guest marker', () {
+    late Directory dir;
+
+    setUpAll(() async {
+      dir = await Directory.systemTemp.createTemp('guest_marker_test');
+      Hive.init(dir.path);
+      await Hive.openBox('app_settings');
+    });
+
+    tearDownAll(() async {
+      await Hive.close();
+      await dir.delete(recursive: true);
+    });
+
+    setUp(() => Hive.box('app_settings').clear());
+
+    test('starting a guest marks the device', () async {
+      when(() => auth.currentUser).thenReturn(null);
+      when(() => auth.signInAnonymously()).thenAnswer(
+          (_) async => AuthResponse(session: fakeSession(anon: true)));
+
+      await service.startGuest();
+
+      expect(GuestMarker.wasGuest, isTrue);
+    });
+
+    test('linking an identity clears the mark', () async {
+      await GuestMarker.markGuest();
+      when(() => auth.currentUser).thenReturn(fakeUser(anon: true));
+      when(() => auth.currentSession)
+          .thenReturn(fakeSession(anon: true, token: 'guest.jwt'));
+      when(() => oauth.obtainGoogleIdToken()).thenAnswer(
+          (_) async => (idToken: 'id', accessToken: 'at', nonce: null));
+      when(() => auth.linkIdentityWithIdToken(
+                provider: OAuthProvider.google,
+                idToken: 'id',
+                accessToken: 'at',
+              ))
+          .thenAnswer(
+              (_) async => AuthResponse(session: fakeSession(anon: false)));
+
+      expect(await service.linkGoogle(), LinkOutcome.linked);
+      expect(GuestMarker.wasGuest, isFalse);
     });
   });
 }

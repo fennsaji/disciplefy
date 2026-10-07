@@ -12,6 +12,9 @@ import '../screens/maintenance_screen.dart';
 import '../services/system_config_service.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
+import '../../features/onboarding/presentation/bloc/first_run_cubit.dart';
+import '../../features/onboarding/presentation/pages/first_run_language_page.dart';
+import '../../features/onboarding/presentation/pages/growth_goal_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/presentation/screens/study_guide_open_screen.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
@@ -155,18 +158,25 @@ class AppRouter {
         ),
       ),
       // New first run (new_first_run flag): language, then goal. The guard
-      // keeps these public and out of the terms gate. Until the first-run
-      // pages land they forward to the slides, so the flag is safe to flip.
+      // keeps these public and out of the terms gate (terms are accepted on
+      // the goal screen).
       GoRoute(
         path: AppRoutes.welcome,
         name: 'welcome',
-        redirect: (context, state) =>
-            state.uri.path == AppRoutes.welcome ? AppRoutes.onboarding : null,
+        pageBuilder: (context, state) => fadeTransitionPage(
+          child: const MaxWidthWrapper(child: FirstRunLanguagePage()),
+          state: state,
+        ),
         routes: [
           GoRoute(
             path: 'goal',
             name: 'welcome_goal',
-            redirect: (context, state) => AppRoutes.onboarding,
+            builder: (context, state) => MaxWidthWrapper(
+              child: BlocProvider<FirstRunCubit>(
+                create: (_) => sl<FirstRunCubit>(),
+                child: const GrowthGoalPage(),
+              ),
+            ),
           ),
         ],
       ),

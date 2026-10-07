@@ -194,12 +194,16 @@ class WelcomePrimaryButton extends StatelessWidget {
   /// When false the pill hugs its label (onboarding's Continue).
   final bool expand;
 
+  /// Pill height. The first-run screens use the compact 40.
+  final double height;
+
   const WelcomePrimaryButton({
     super.key,
     required this.label,
     required this.onPressed,
     this.isLoading = false,
     this.expand = true,
+    this.height = 54,
   });
 
   @override
@@ -212,10 +216,16 @@ class WelcomePrimaryButton extends StatelessWidget {
         foregroundColor: palette.ctaInk,
         disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.5),
         disabledForegroundColor: palette.ctaInk.withValues(alpha: 0.7),
-        minimumSize: Size(expand ? double.infinity : 136, 54),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+        minimumSize: Size(expand ? double.infinity : 136, height),
+        padding: EdgeInsets.symmetric(
+            horizontal: 28, vertical: height < 48 ? 8 : 12),
         shape: const StadiumBorder(),
         elevation: 0,
+        // A compact pill keeps its height; the default 48 tap padding
+        // would make it look 48 tall in layout.
+        tapTargetSize: height < 48
+            ? MaterialTapTargetSize.shrinkWrap
+            : MaterialTapTargetSize.padded,
       ),
       child: isLoading
           ? SizedBox(

@@ -8,6 +8,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:disciplefy_bible_study/core/router/router_guard.dart';
+import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/oauth_service.dart';
 import 'package:disciplefy_bible_study/features/auth/domain/exceptions/auth_exceptions.dart'
@@ -178,6 +179,8 @@ class GuestSessionService {
     // A guest is created on the first-run goal screen, after the language
     // was chosen there: never bounce them to /language-selection.
     RouterGuard.markLanguageSelectionCompleted();
+    // If this session is ever lost, the router starts a new first run.
+    await GuestMarker.markGuest();
     Logger.info('[GUEST] Guest session started');
   }
 
@@ -217,6 +220,7 @@ class GuestSessionService {
         nonce: credentials.nonce,
       );
       Logger.info('[GUEST] ${provider.name} linked to guest');
+      await GuestMarker.clear();
       return LinkOutcome.linked;
     } on AuthException catch (e) {
       if (!isIdentityConflict(e)) {
@@ -418,6 +422,7 @@ class GuestSessionService {
         headers: {_guestTokenHeader: pending.guestToken},
       );
       await _stash.clear();
+      await GuestMarker.clear();
       Logger.info('[GUEST] Guest progress merged (status ${response.status})');
       return LinkOutcome.mergedIntoExisting;
     } on FunctionException catch (e) {
