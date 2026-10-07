@@ -5,15 +5,29 @@ import 'package:disciplefy_bible_study/core/extensions/translation_extension.dar
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
-/// The Topics tab body, top to bottom: the current path card, the streak
-/// and Leaderboard tiles, the path categories (each with "See all") and a
-/// "Browse all paths" button that opens every path.
+/// The Topics tab body, top to bottom: the current path (strip and lesson
+/// card), the streak and Leaderboard tiles, the path categories (each with
+/// "See all") and a "Browse all paths" button that opens every path.
+///
+/// One vertical [ListView]: nothing inside it scrolls vertically or has an
+/// unbounded height, so a drag anywhere below the header scrolls the tab,
+/// and the bottom padding includes the floating dock so the last button
+/// scrolls clear of it.
 class TopicsLayout extends StatelessWidget {
   final Widget currentPath;
   final Widget statTiles;
   final Widget paths;
   final VoidCallback onBrowseAll;
   final ScrollController? controller;
+
+  /// Called when the list is within [nearEndExtent] of its end: after a
+  /// scroll, and also when the content changes size, so a first page that
+  /// does not fill the screen still asks for more (it could never be
+  /// scrolled to the end otherwise).
+  final VoidCallback? onNearEnd;
+
+  /// How close to the end [onNearEnd] fires.
+  static const double nearEndExtent = 300;
 
   const TopicsLayout({
     super.key,
@@ -22,10 +36,41 @@ class TopicsLayout extends StatelessWidget {
     required this.paths,
     required this.onBrowseAll,
     this.controller,
+    this.onNearEnd,
   });
+
+  /// Only the tab's own vertical list counts, not a nested horizontal row.
+  bool _onNotification(Notification notification) {
+    final onNearEnd = this.onNearEnd;
+    if (onNearEnd == null) return false;
+    final ScrollMetrics metrics;
+    final int depth;
+    if (notification is ScrollUpdateNotification) {
+      metrics = notification.metrics;
+      depth = notification.depth;
+    } else if (notification is ScrollMetricsNotification) {
+      metrics = notification.metrics;
+      depth = notification.depth;
+    } else {
+      return false;
+    }
+    if (depth == 0 &&
+        metrics.axis == Axis.vertical &&
+        metrics.extentAfter < nearEndExtent) {
+      onNearEnd();
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
+    return NotificationListener<Notification>(
+      onNotification: _onNotification,
+      child: _list(context),
+    );
+  }
+
+  Widget _list(BuildContext context) {
     return ListView(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
@@ -42,7 +87,7 @@ class TopicsLayout extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: statTiles,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         paths,
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

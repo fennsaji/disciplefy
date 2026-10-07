@@ -148,8 +148,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
 
   Future<void> _pushPath(LearningPath path) async {
     if (!_navGuard.tryAcquire()) return;
-    final changed = await context
-        .push<bool>('/learning-path/${path.id}?source=studyTopics');
+    final changed = await context.push<bool>(
+        '/learning-path/${path.id}?source=studyTopics',
+        extra: path);
     if (!mounted || changed != true) return;
     _load();
   }
@@ -383,8 +384,8 @@ class _AllPathsPageState extends State<AllPathsPage> {
         padding: EdgeInsets.fromLTRB(
             16, 4, 16, 16 + MediaQuery.paddingOf(context).bottom),
         itemCount: rows.length,
-        separatorBuilder: (_, __) =>
-            Divider(height: 1, thickness: 1, color: palette.hairline),
+        // Rows are spaced, not ruled, as in the design.
+        separatorBuilder: (_, __) => const SizedBox(height: 4),
         itemBuilder: (context, index) {
           final path = rows[index];
           final isCurrent = pinned && index == 0;
@@ -422,7 +423,10 @@ class CategoryChip extends StatelessWidget {
       selected: selected,
       child: Material(
         color: selected ? palette.selectedFill : palette.raised,
-        shape: const StadiumBorder(),
+        shape: StadiumBorder(
+          side:
+              selected ? BorderSide.none : BorderSide(color: palette.hairline),
+        ),
         child: InkWell(
           customBorder: const StadiumBorder(),
           onTap: onTap,

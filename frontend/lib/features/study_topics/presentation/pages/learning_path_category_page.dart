@@ -165,8 +165,9 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
   Future<void> _pushPath(LearningPath path) async {
     if (!_navGuard.tryAcquire()) return;
     final bloc = _bloc;
-    final progressChanged = await context
-        .push<bool>('/learning-path/${path.id}?source=studyTopics');
+    final progressChanged = await context.push<bool>(
+        '/learning-path/${path.id}?source=studyTopics',
+        extra: path);
     if (!mounted || progressChanged != true) return;
     final language = await _resolveLanguage();
     bloc
@@ -374,8 +375,8 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 4, 16, bottom),
         itemCount: paths.isEmpty ? 1 : paths.length + (isLoadingMore ? 1 : 0),
-        separatorBuilder: (_, __) =>
-            Divider(height: 1, thickness: 1, color: palette.hairline),
+        // Rows are spaced, not ruled, as in the design.
+        separatorBuilder: (_, __) => const SizedBox(height: 4),
         itemBuilder: (context, index) {
           if (paths.isEmpty) {
             return Padding(

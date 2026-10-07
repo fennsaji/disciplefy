@@ -40,6 +40,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/pages/sett
 import '../../features/settings/presentation/pages/offline_guides_screen.dart';
 import '../../features/community/presentation/screens/blocked_users_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
+import '../../features/study_topics/domain/entities/learning_path.dart';
 import '../../features/study_topics/domain/entities/lesson_ref.dart';
 import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_query_listener.dart';
@@ -970,7 +971,14 @@ class AppRouter {
               featureKey: 'learning_paths',
               child: BlocProvider(
                 create: (context) => sl<LearningPathsBloc>(),
-                child: LearningPathDetailPage(pathId: pathId, source: source),
+                child: LearningPathDetailPage(
+                  pathId: pathId,
+                  source: source,
+                  // The row that was tapped, when a list opened the page.
+                  initialPath: state.extra is LearningPath
+                      ? state.extra as LearningPath
+                      : null,
+                ),
               ),
             ),
           );

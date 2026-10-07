@@ -15,6 +15,8 @@ import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
@@ -94,6 +96,16 @@ LearningPathCategory cat(String name, int count) => LearningPathCategory(
       nextPathOffset: count,
     );
 
+const finishedSummary = ActivePathSummary(
+  pathId: 'nbe',
+  title: 'New Believer Essentials',
+  description: '',
+  discipleLevel: 'seeker',
+  lessonTotal: 8,
+  lessonsCompleted: 8,
+  milestoneNumbers: [4, 7],
+);
+
 void main() {
   late FakeTranslationService translations;
   late _MockLearningPathsBloc bloc;
@@ -125,6 +137,10 @@ void main() {
     Size size = const Size(390, 1400),
     void Function(String)? onTap,
     void Function(LearningPath)? onPathTap,
+    VoidCallback? onNearEnd,
+    ValueChanged<StudyMode>? onModeChanged,
+    double textScale = 1,
+    double dockInset = 0,
   }) async {
     translations.language = lang;
     useSurface(tester, size);
@@ -134,6 +150,14 @@ void main() {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(textScale),
+          // The floating dock's height, as the shell's extendBody adds it.
+          padding: EdgeInsets.only(bottom: dockInset),
+        ),
+        child: child!,
+      ),
       locale: Locale(lang.code),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -145,11 +169,14 @@ void main() {
         child: Scaffold(
           body: Builder(
             builder: (context) => TopicsLayout(
+              onNearEnd: onNearEnd,
               currentPath: TopicsCurrentPathCard(
                 summary: summary,
+                onModeChanged: onModeChanged ?? (_) {},
                 onContinue: () => onTap?.call('continue'),
                 onSeePath: () => onTap?.call('see_path'),
                 onBrowse: () => onTap?.call('browse'),
+                onChooseNextPath: () => onTap?.call('choose_next'),
               ),
               statTiles: TopicsStatRow(
                 streak: 13,
@@ -157,7 +184,7 @@ void main() {
                 onLeaderboardTap: () => onTap?.call('leaderboard'),
               ),
               paths: LearningPathsSection(
-                showFilters: false,
+                compact: true,
                 onPathTap: onPathTap ?? (_) {},
                 onCategorySeeAll: (c) => onTap?.call('see_all:$c'),
               ),
@@ -171,14 +198,18 @@ void main() {
   }
 
   testWidgets(
-      'Topics: current path, Continue, streak + Leaderboard tiles, categories '
-      'with See all, Browse all paths; no For you, no level chips',
+      'Topics: current path, lesson card, streak + Leaderboard tiles, '
+      'categories with See all, Browse all paths; no For you, no level chips',
       (tester) async {
     await pumpTopics(tester,
         summary: summary4of8,
         categories: [cat('Foundations', 2), cat('Gospels', 1)]);
     expect(find.text('New Believer Essentials'), findsWidgets);
-    expect(find.text('Continue'), findsOneWidget);
+    // Home's lesson card: eyebrow, mode chip, lesson title, Start lesson N.
+    expect(find.byType(TodayLessonCard), findsOneWidget);
+    expect(find.text('Confidence in Your Salvation'), findsOneWidget);
+    expect(find.text('Start lesson 4'), findsOneWidget);
+    expect(find.text('Continue'), findsNothing);
     expect(find.text('See all'), findsNWidgets(2));
     expect(find.text('Browse all paths'), findsOneWidget);
     expect(find.byKey(const Key('topics_streak_tile')), findsOneWidget);
@@ -208,7 +239,7 @@ void main() {
         summary: summary4of8,
         categories: [cat('Foundations', 2)],
         onTap: taps.add);
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.text('Start lesson 4'));
     await tester.tap(find.text('See path'));
     await tester.tap(find.text('See all'));
     await tester.ensureVisible(find.text('Browse all paths'));
@@ -227,6 +258,122 @@ void main() {
     expect(find.text('Foundations path 0'), findsOneWidget);
     await tester.tap(find.text('Start a path'));
     expect(taps, ['browse']);
+  });
+
+  testWidgets(
+      'categories: no heading or search on Topics (search is on All paths), '
+      'at most two rows each, See all for the rest', (tester) async {
+    await pumpTopics(tester,
+        summary: summary4of8,
+        categories: [cat('Foundations', 5), cat('Gospels', 1)]);
+    expect(find.byKey(const Key('learning_paths_search_field')), findsNothing);
+    expect(find.text('Learning Paths'), findsNothing);
+    expect(find.text('Foundations path 0'), findsOneWidget);
+    expect(find.text('Foundations path 1'), findsOneWidget);
+    expect(find.text('Foundations path 2'), findsNothing);
+    expect(find.text('Gospels path 0'), findsOneWidget);
+    expect(find.byKey(const Key('learning_paths_see_all_Foundations')),
+        findsOneWidget);
+  });
+
+  testWidgets('lesson card mode chip reports the picked mode', (tester) async {
+    final modes = <StudyMode>[];
+    await pumpTopics(tester,
+        summary: summary4of8,
+        categories: [cat('Foundations', 1)],
+        onModeChanged: modes.add);
+    await tester.tap(find.byType(OutlinedButton).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Quick').last);
+    await tester.pumpAndSettle();
+    expect(modes, [StudyMode.quick]);
+  });
+
+  testWidgets('a finished path offers Choose your next path', (tester) async {
+    final taps = <String>[];
+    await pumpTopics(tester,
+        summary: finishedSummary,
+        categories: [cat('Foundations', 1)],
+        onTap: taps.add);
+    expect(find.text('Start lesson 4'), findsNothing);
+    await tester.tap(find.text('Choose your next path'));
+    expect(taps, ['choose_next']);
+  });
+
+  group('scrolling', () {
+    List<LearningPathCategory> many() =>
+        [for (var i = 0; i < 8; i++) cat('Category$i', 2)];
+
+    ScrollPosition position(WidgetTester tester) => tester
+        .state<ScrollableState>(find
+            .descendant(
+                of: find.byType(TopicsLayout),
+                matching: find.byType(Scrollable))
+            .first)
+        .position;
+
+    testWidgets('a drag and a fling scroll the tab at 390x844', (tester) async {
+      await pumpTopics(tester,
+          summary: summary4of8, categories: many(), size: const Size(390, 844));
+      final pos = position(tester);
+      expect(pos.maxScrollExtent, greaterThan(400));
+      expect(pos.pixels, 0);
+
+      // A drag that starts on a path row (an InkWell) still scrolls.
+      await tester.drag(find.text('Category0 path 1'), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(pos.pixels, greaterThan(250));
+
+      final before = pos.pixels;
+      await tester.fling(
+          find.byType(TopicsLayout), const Offset(0, -400), 2000);
+      await tester.pumpAndSettle();
+      expect(pos.pixels, greaterThan(before));
+    });
+
+    testWidgets('the last button scrolls clear of the floating dock',
+        (tester) async {
+      const dock = 96.0;
+      await pumpTopics(tester,
+          summary: summary4of8,
+          categories: many(),
+          size: const Size(390, 844),
+          dockInset: dock);
+      final pos = position(tester);
+      pos.jumpTo(pos.maxScrollExtent);
+      await tester.pumpAndSettle();
+      final browse = tester.getRect(find.byType(BrowseAllPathsButton));
+      expect(browse.bottom, lessThanOrEqualTo(844 - dock));
+    });
+
+    testWidgets('near the end asks for more categories, not before',
+        (tester) async {
+      var calls = 0;
+      await pumpTopics(tester,
+          summary: summary4of8,
+          categories: many(),
+          size: const Size(390, 844),
+          onNearEnd: () => calls++);
+      expect(calls, 0);
+      await tester.drag(find.byType(TopicsLayout), const Offset(0, -200));
+      await tester.pumpAndSettle();
+      expect(calls, 0);
+      final pos = position(tester);
+      await tester.drag(find.byType(TopicsLayout),
+          Offset(0, -(pos.maxScrollExtent - pos.pixels)));
+      await tester.pumpAndSettle();
+      expect(calls, greaterThan(0));
+    });
+
+    testWidgets('a first page shorter than the screen still asks for more',
+        (tester) async {
+      var calls = 0;
+      await pumpTopics(tester,
+          summary: null,
+          categories: [cat('Foundations', 1)],
+          onNearEnd: () => calls++);
+      expect(calls, greaterThan(0));
+    });
   });
 
   group('topicsPathSummary', () {
@@ -292,10 +439,16 @@ void main() {
         tester,
         summary: summary4of8,
         categories: [
+          // Topics shows two rows per category.
           LearningPathCategory(
             name: 'Foundations',
-            paths: [mine, second, closed],
-            totalInCategory: 3,
+            paths: [mine, second],
+            totalInCategory: 2,
+          ),
+          LearningPathCategory(
+            name: 'Gospels',
+            paths: [closed],
+            totalInCategory: 1,
           ),
         ],
         onPathTap: (p) => guestPathGate(ctx, p, () async => opened.add(p.id)),
@@ -331,6 +484,22 @@ void main() {
             size: Size(width, 1400),
           );
           expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+        });
+
+        testWidgets('fits ${width.toInt()} wide at 1.3x text ($name)',
+            (tester) async {
+          await pumpTopics(
+            tester,
+            summary: summary4of8,
+            categories: [cat('Foundations', 2), cat('Gospels', 1)],
+            dark: dark,
+            lang: lang,
+            size: Size(width, 1800),
+            textScale: 1.3,
+          );
+          expect(tester.takeException(), isNull);
+          // The lesson title may wrap to its two lines; nothing else is cut.
           expectNoTruncatedText(tester);
         });
 

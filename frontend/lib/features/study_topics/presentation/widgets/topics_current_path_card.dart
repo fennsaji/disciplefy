@@ -7,6 +7,8 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 
 /// The path the Topics tab leads with: Home's enrolled path when Home has
@@ -36,17 +38,28 @@ LearningPath? topicsCurrentPath(
   return null;
 }
 
-/// The top of the Topics tab: the path the user is on, its progress strip
-/// and one "Continue" button that opens the next lesson.
+/// The top of the Topics tab: the path the user is on ("See path"), its
+/// progress strip and the same lesson card Home shows (eyebrow, Quick/Full
+/// mode chip, lesson title and "Start lesson N").
 ///
 /// Without a path ([summary] is null) it shows a "Start a path" button that
-/// calls [onBrowse] instead of an empty strip. A finished path (no next
-/// lesson) shows its strip and the same "Start a path" button.
+/// calls [onBrowse] instead of an empty strip. A finished path shows its
+/// strip and the lesson card's "You finished" state, whose button calls
+/// [onChooseNextPath].
 class TopicsCurrentPathCard extends StatelessWidget {
   final ActivePathSummary? summary;
+
+  /// Lesson mode on the card's chip, chosen (and saved) by the caller.
+  final StudyMode mode;
+  final ValueChanged<StudyMode> onModeChanged;
+
+  /// Opens the next lesson in [mode].
   final VoidCallback onContinue;
   final VoidCallback onSeePath;
   final VoidCallback onBrowse;
+
+  /// "Choose your next path" on a finished path. Defaults to [onBrowse].
+  final VoidCallback? onChooseNextPath;
 
   const TopicsCurrentPathCard({
     super.key,
@@ -54,7 +67,12 @@ class TopicsCurrentPathCard extends StatelessWidget {
     required this.onContinue,
     required this.onSeePath,
     required this.onBrowse,
+    this.mode = StudyMode.standard,
+    this.onModeChanged = _ignoreMode,
+    this.onChooseNextPath,
   });
+
+  static void _ignoreMode(StudyMode _) {}
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +80,7 @@ class TopicsCurrentPathCard extends StatelessWidget {
     if (summary == null) return _StartAPath(onBrowse: onBrowse);
     final palette = ReaderPalette.of(context);
     final next = summary.next;
+    final total = summary.lessonTotal;
     return Column(
       key: const Key('topics_current_path_card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -87,7 +106,7 @@ class TopicsCurrentPathCard extends StatelessWidget {
               onPressed: onSeePath,
               style: TextButton.styleFrom(
                 foregroundColor: palette.gold,
-                minimumSize: const Size(0, 32),
+                minimumSize: const Size(0, 40),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 textStyle:
@@ -103,21 +122,23 @@ class TopicsCurrentPathCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
         PathProgressStrip(
-          total: summary.lessonTotal,
+          total: total,
           completed: summary.lessonsCompleted,
-          current: next?.number ?? summary.lessonTotal,
+          current: next?.number ??
+              (summary.isFinished ? total : summary.lessonsCompleted + 1),
           milestones: summary.milestoneNumbers,
           onTap: onSeePath,
         ),
-        const SizedBox(height: 10),
-        TopicsPrimaryButton(
-          key: const Key('topics_current_path_continue'),
-          label: context.tr(next == null
-              ? TranslationKeys.topicsStartAPath
-              : TranslationKeys.topicsContinue),
-          onPressed: next == null ? onBrowse : onContinue,
+        const SizedBox(height: 12),
+        TodayLessonCard(
+          key: const Key('topics_current_path_lesson'),
+          summary: summary,
+          mode: mode,
+          onModeChanged: onModeChanged,
+          onStart: onContinue,
+          onChooseNextPath: onChooseNextPath ?? onBrowse,
+          onSeePath: onSeePath,
         ),
       ],
     );

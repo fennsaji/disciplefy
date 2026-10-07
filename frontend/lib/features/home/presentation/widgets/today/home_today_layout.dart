@@ -52,6 +52,48 @@ StudyMode defaultTodayLessonMode({
   return saved;
 }
 
+/// Saves the learning-path lesson mode [value] (a [StudyMode] name) on the
+/// profile and on this device, as the lesson card's mode chip does on Home
+/// and Topics. A guest without a profile row keeps it on the device only;
+/// nothing is shown when either write fails.
+Future<void> persistLessonModePreference(String value) async {
+  try {
+    await sl<LanguagePreferenceService>()
+        .cacheLearningPathStudyModePreference(value);
+  } catch (e) {
+    Logger.warning('Today: could not cache lesson mode',
+        tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
+  }
+  final auth = sl<AuthStateProvider>();
+  try {
+    final result = await sl<UserProfileService>()
+        .updateLearningPathStudyModePreference(value);
+    result.fold(
+      (_) => _keepModeOnCachedProfile(auth, value),
+      (profile) {
+        final userId = auth.userId;
+        if (userId != null) {
+          auth.cacheProfile(
+              userId, UserProfileModel.fromEntity(profile).toJson());
+        }
+      },
+    );
+  } catch (e) {
+    Logger.warning('Today: could not save lesson mode',
+        tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
+    _keepModeOnCachedProfile(auth, value);
+  }
+}
+
+/// The cached profile's mode is read before the device copy, so it must
+/// carry the new mode too when the server write did not happen.
+void _keepModeOnCachedProfile(AuthStateProvider auth, String value) {
+  final userId = auth.userId;
+  final profile = auth.userProfile;
+  if (userId == null || profile == null) return;
+  auth.cacheProfile(userId, {...profile, 'learning_path_study_mode': value});
+}
+
 /// Home's Today layout, in this order and nothing else: the verse hero, the
 /// path section (header, progress strip, today's lesson, or the first-path
 /// chooser), the "New for you" banner when there is one, and for a guest the
@@ -117,48 +159,7 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
 
   void _onModeChanged(StudyMode mode) {
     setState(() => _chosenMode = mode);
-    unawaited(_persistMode(mode.name));
-  }
-
-  /// Saves the learning-path mode on the profile and on this device. A guest
-  /// without a profile row keeps it on the device only; nothing is shown
-  /// when either write fails.
-  Future<void> _persistMode(String value) async {
-    try {
-      await sl<LanguagePreferenceService>()
-          .cacheLearningPathStudyModePreference(value);
-    } catch (e) {
-      Logger.warning('Today: could not cache lesson mode',
-          tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
-    }
-    final auth = sl<AuthStateProvider>();
-    try {
-      final result = await sl<UserProfileService>()
-          .updateLearningPathStudyModePreference(value);
-      result.fold(
-        (_) => _keepModeOnCachedProfile(auth, value),
-        (profile) {
-          final userId = auth.userId;
-          if (userId != null) {
-            auth.cacheProfile(
-                userId, UserProfileModel.fromEntity(profile).toJson());
-          }
-        },
-      );
-    } catch (e) {
-      Logger.warning('Today: could not save lesson mode',
-          tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
-      _keepModeOnCachedProfile(auth, value);
-    }
-  }
-
-  /// The cached profile's mode is read before the device copy, so it must
-  /// carry the new mode too when the server write did not happen.
-  void _keepModeOnCachedProfile(AuthStateProvider auth, String value) {
-    final userId = auth.userId;
-    final profile = auth.userProfile;
-    if (userId == null || profile == null) return;
-    auth.cacheProfile(userId, {...profile, 'learning_path_study_mode': value});
+    unawaited(persistLessonModePreference(mode.name));
   }
 
   void _refreshPath() =>

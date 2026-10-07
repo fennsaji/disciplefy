@@ -55,6 +55,14 @@ class LearningPathsSection extends StatefulWidget {
   /// The Topics tab hides them (no level jargon there).
   final bool showFilters;
 
+  /// The Topics tab's form: no "Learning paths" heading, search or filters
+  /// (search lives on All paths), at most [compactRowsPerCategory] rows per
+  /// category and no dividers between rows.
+  final bool compact;
+
+  /// Rows each category shows in [compact] form; "See all" has the rest.
+  static const int compactRowsPerCategory = 2;
+
   const LearningPathsSection({
     super.key,
     required this.onPathTap,
@@ -64,6 +72,7 @@ class LearningPathsSection extends StatefulWidget {
     this.language = 'en',
     this.onNext,
     this.showFilters = true,
+    this.compact = false,
   });
 
   @override
@@ -209,6 +218,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   // -------------------------------------------------------------------------
 
   Widget _buildSection(BuildContext context, {required Widget child}) {
+    if (widget.compact) return child;
     final palette = ReaderPalette.of(context);
 
     final headerRow = Padding(
@@ -437,10 +447,12 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Search bar ──────────────────────────────────────────────────
-          _buildSearchBar(context, state),
-          // ── Filter chips ────────────────────────────────────────────────
-          if (widget.showFilters) _buildFilterChips(context, availableLevels),
-          const SizedBox(height: 18),
+          if (!widget.compact) ...[
+            _buildSearchBar(context, state),
+            // ── Filter chips ──────────────────────────────────────────────
+            if (widget.showFilters) _buildFilterChips(context, availableLevels),
+            const SizedBox(height: 18),
+          ],
 
           // ── Content ─────────────────────────────────────────────────────
           if (state.isSearching)
@@ -608,10 +620,19 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     bool showSeeAll = true,
   }) {
     final palette = ReaderPalette.of(context);
-    final hasActive = category.paths.any((p) => p.isInProgress || p.isEnrolled);
+    final compact = widget.compact;
+    // Topics marks the user's path on its row ("Lesson N of M"), so the
+    // compact form drops the dot by the category name.
+    final hasActive =
+        !compact && category.paths.any((p) => p.isInProgress || p.isEnrolled);
+    final paths = compact
+        ? category.paths
+            .take(LearningPathsSection.compactRowsPerCategory)
+            .toList()
+        : category.paths;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: EdgeInsets.only(bottom: compact ? 16 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -679,8 +700,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
-                for (int i = 0; i < category.paths.length; i++) ...[
-                  if (i > 0)
+                for (int i = 0; i < paths.length; i++) ...[
+                  if (i > 0 && !compact)
                     Divider(height: 1, thickness: 1, color: palette.hairline),
                   if (isFirstCategory && i == 0 && widget.onNext != null)
                     WalkthroughTooltip(
@@ -694,14 +715,14 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                       totalSteps: 1,
                       onNext: widget.onNext!,
                       child: PathListRow(
-                        path: category.paths[i],
-                        onTap: () => widget.onPathTap(category.paths[i]),
+                        path: paths[i],
+                        onTap: () => widget.onPathTap(paths[i]),
                       ),
                     )
                   else
                     PathListRow(
-                      path: category.paths[i],
-                      onTap: () => widget.onPathTap(category.paths[i]),
+                      path: paths[i],
+                      onTap: () => widget.onPathTap(paths[i]),
                     ),
                 ],
               ],

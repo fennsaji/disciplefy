@@ -188,6 +188,9 @@ class TopicsStatTile extends StatelessWidget {
 
   /// Big value (e.g. "4 days", "#5"); omitted when unknown.
   final String? value;
+
+  /// Small line under [value]. Without a value it is shown in the value's
+  /// bold style instead, so a tile never reads as a lone grey caption.
   final String label;
   final VoidCallback? onTap;
 
@@ -233,7 +236,7 @@ class TopicsStatTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (value != null)
+                    if (value != null) ...[
                       Text(
                         value!,
                         style: AppFonts.poppins(
@@ -243,14 +246,31 @@ class TopicsStatTile extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
-                    Text(
-                      label,
-                      style: AppFonts.inter(
-                        fontSize: 12.5,
-                        color: palette.muted,
-                        height: 1.25,
+                      Text(
+                        label,
+                        style: AppFonts.inter(
+                          fontSize: 12.5,
+                          color: palette.muted,
+                          height: 1.25,
+                        ),
                       ),
-                    ),
+                    ] else
+                      // One word in every language: shrink rather than
+                      // break it across lines on a narrow tile.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          style: AppFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
