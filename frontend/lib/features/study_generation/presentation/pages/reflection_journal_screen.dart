@@ -663,7 +663,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               Text(
                 time,
                 style: AppFonts.inter(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: palette.gold,
                 ),
@@ -764,7 +764,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
         Text(
           response.sectionTitle.toUpperCase(),
           style: AppFonts.inter(
-            fontSize: 10.5,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
             color: palette.muted,

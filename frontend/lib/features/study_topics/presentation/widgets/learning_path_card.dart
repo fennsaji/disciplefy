@@ -114,7 +114,7 @@ class LearningPathCard extends StatelessWidget {
                   eyebrow,
                   maxLines: 2,
                   style: AppFonts.inter(
-                    fontSize: 10.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                     color: PathLevelStyle.eyebrowGold,
@@ -254,7 +254,7 @@ class _TileProgress extends StatelessWidget {
         Text(
           '${path.progressPercentage}%',
           style: AppFonts.inter(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             color: PathLevelStyle.eyebrowGold,
           ),
@@ -301,7 +301,7 @@ class _StatusBadge extends StatelessWidget {
             child: Text(
               label,
               style: AppFonts.inter(
-                fontSize: 10.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),

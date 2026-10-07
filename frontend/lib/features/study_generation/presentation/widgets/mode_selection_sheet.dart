@@ -372,7 +372,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.inter(
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.5,
                                 color: palette.gold,

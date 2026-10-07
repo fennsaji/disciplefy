@@ -1019,7 +1019,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               child: Text(
                 context.tr(TranslationKeys.generateStudyEyebrow).toUpperCase(),
                 style: AppFonts.inter(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.6,
                   color: palette.gold,
@@ -1210,7 +1210,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                             context.tr(TranslationKeys
                                 .generateStudyAiDisciplerBadgeNew),
                             style: AppFonts.inter(
-                              fontSize: 9,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),

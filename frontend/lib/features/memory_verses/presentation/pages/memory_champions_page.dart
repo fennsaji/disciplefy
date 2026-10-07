@@ -208,7 +208,7 @@ class _YourRankCard extends StatelessWidget {
                       .tr(TranslationKeys.memoryScreensYourRank)
                       .toUpperCase(),
                   style: AppFonts.inter(
-                    fontSize: 10.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.4,
                     color: ink.withValues(alpha: 0.8),

@@ -300,7 +300,7 @@ class HomeDailyVerseView extends StatelessWidget {
     String caps(String text) => latin ? text.toUpperCase() : text;
     final label = context.tr(TranslationKeys.dailyVerseOfTheDay);
     final style = AppFonts.inter(
-      fontSize: 10.5,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.6,
       color: AppColors.brandGold,

@@ -159,7 +159,7 @@ class MemorySectionLabel extends StatelessWidget {
               child: Text(
                 text.toUpperCase(),
                 style: AppFonts.inter(
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
                   color: color ?? palette.gold,

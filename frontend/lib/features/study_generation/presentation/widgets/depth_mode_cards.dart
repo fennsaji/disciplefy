@@ -252,7 +252,7 @@ class DepthModeCard extends StatelessWidget {
                               mode.localizedDuration(context),
                               maxLines: 1,
                               style: AppFonts.inter(
-                                  fontSize: 11.5, color: secondary),
+                                  fontSize: 12, color: secondary),
                             ),
                           ],
                         ),

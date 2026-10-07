@@ -541,7 +541,7 @@ class _LevelCard extends StatelessWidget {
           Text(
             level.title.toUpperCase(),
             style: AppFonts.inter(
-              fontSize: 11.5,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.6,
               color: palette.accentIcon,
@@ -904,7 +904,7 @@ class _AchievementRow extends StatelessWidget {
                         Text(
                           '${current.clamp(0, threshold)}/$threshold',
                           style: AppFonts.inter(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: palette.muted,
                           ),
@@ -917,7 +917,7 @@ class _AchievementRow extends StatelessWidget {
                     Text(
                       '${l10n.progressUnlocked} ${_relativeDate(context, achievement.unlockedAt!)}',
                       style: AppFonts.inter(
-                        fontSize: 11.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: palette.gold,
                       ),

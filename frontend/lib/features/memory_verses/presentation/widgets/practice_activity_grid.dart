@@ -228,7 +228,7 @@ class PracticeActivityLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final style = AppFonts.inter(fontSize: 11.5, color: palette.dim);
+    final style = AppFonts.inter(fontSize: 12, color: palette.dim);
     Widget swatch(int count) => Container(
           width: 11,
           height: 11,

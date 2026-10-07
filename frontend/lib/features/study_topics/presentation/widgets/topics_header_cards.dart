@@ -121,7 +121,7 @@ class TopicsContinueCard extends StatelessWidget {
               Text(
                 eyebrow,
                 style: AppFonts.inter(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
                   color: palette.gold,

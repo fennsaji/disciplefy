@@ -1341,13 +1341,14 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.error,
+                                // White on the brighter red is 3.8:1.
+                                color: AppColors.errorDark,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 context.tr(TranslationKeys.homeMeetingLive),
                                 style: AppFonts.inter(
-                                  fontSize: 9.5,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.6,
                                   color: Colors.white,
@@ -1360,7 +1361,7 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                             child: Text(
                               timeLabel,
                               style: AppFonts.inter(
-                                fontSize: 11.5,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: accent,
                               ),
@@ -1384,7 +1385,7 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                         data.fellowshipName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(fontSize: 11.5, color: textMuted),
+                        style: AppFonts.inter(fontSize: 12, color: textMuted),
                       ),
                     ],
                   ),
@@ -1422,7 +1423,7 @@ class _DueBadge extends StatelessWidget {
         label,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: FontWeight.w700,
           height: 1.4,
         ),

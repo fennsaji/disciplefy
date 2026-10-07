@@ -730,7 +730,7 @@ class StudyGuideTopicTitle extends StatelessWidget {
             lesson: lesson,
           ),
           style: AppFonts.inter(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             color: palette.gold,
             letterSpacing: 1.5,

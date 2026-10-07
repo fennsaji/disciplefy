@@ -233,7 +233,7 @@ class ThemePreviewOption extends StatelessWidget {
                 description!,
                 textAlign: TextAlign.center,
                 style: AppFonts.inter(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   color: palette.muted,
                   height: 1.3,
                 ),

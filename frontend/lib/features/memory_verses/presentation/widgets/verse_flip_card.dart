@@ -310,7 +310,7 @@ class _FaceLabel extends StatelessWidget {
           text.toUpperCase(),
           textAlign: TextAlign.center,
           style: AppFonts.inter(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.6,
             color: ReaderPalette.of(context).gold,

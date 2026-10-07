@@ -1010,7 +1010,7 @@ class _SuggestionRow extends StatelessWidget {
                       Text(
                         l10n.homeMembersCount(fellowship.memberCount),
                         style: AppFonts.inter(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           color: context.appTextTertiary,
                         ),
                       ),
@@ -1023,7 +1023,7 @@ class _SuggestionRow extends StatelessWidget {
                           child: Text(
                             fellowship.mentorName!,
                             style: AppFonts.inter(
-                              fontSize: 11.5,
+                              fontSize: 12,
                               color: context.appTextTertiary,
                             ),
                             maxLines: 1,
@@ -1052,6 +1052,9 @@ class _SuggestionRow extends StatelessWidget {
 class _OfficialPill extends StatelessWidget {
   const _OfficialPill();
 
+  /// The dark gold deepened to 4.5:1 on the cream pill (it measured 2.8:1).
+  static const Color _ink = Color(0xFF8D6608);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1069,7 +1072,7 @@ class _OfficialPill extends StatelessWidget {
         style: AppFonts.inter(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: AppColors.brandHighlightDark,
+          color: _ink,
           letterSpacing: 0.3,
         ),
       ),
@@ -1182,7 +1185,7 @@ class _EmptyRow extends StatelessWidget {
                   Text(
                     subtitle,
                     style: AppFonts.inter(
-                      fontSize: 11.5,
+                      fontSize: 12,
                       color: context.appTextSecondary,
                     ),
                   ),

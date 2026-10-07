@@ -81,7 +81,7 @@ class MilestoneBadge extends StatelessWidget {
           Text(
             context.tr(TranslationKeys.learningPathsMilestone),
             style: AppFonts.inter(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: goldText,
             ),

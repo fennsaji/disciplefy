@@ -693,7 +693,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     Text(
                       context.tr(TranslationKeys.studyGuideTextSizeEyebrow),
                       style: AppFonts.inter(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.4,
                         color: palette.gold,
@@ -3976,7 +3976,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
               currentLength > 400
                   ? Text(
                       '$currentLength/$maxLength',
-                      style: AppFonts.inter(fontSize: 11, color: palette.dim),
+                      style: AppFonts.inter(fontSize: 12, color: palette.dim),
                     )
                   : null,
           decoration: InputDecoration(

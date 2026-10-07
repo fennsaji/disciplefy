@@ -883,7 +883,7 @@ class _PackCard extends StatelessWidget {
                   Text(
                     unitPrice!,
                     style: AppFonts.inter(
-                      fontSize: 11.5,
+                      fontSize: 12,
                       color: palette.muted,
                       fontFeatures: kLedgerTabular,
                     ),
@@ -915,7 +915,7 @@ class _PopularPill extends StatelessWidget {
         label.toUpperCase(),
         maxLines: 1,
         style: AppFonts.inter(
-          fontSize: 9.5,
+          fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.4,
           color: Colors.white,

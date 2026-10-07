@@ -517,8 +517,8 @@ class _BalanceHero extends StatelessWidget {
                         context.tr(
                             TranslationKeys.ledgerOfTotal, {'total': limit}),
                         maxLines: 1,
-                        style: AppFonts.inter(
-                            fontSize: 11.5, color: palette.muted),
+                        style:
+                            AppFonts.inter(fontSize: 12, color: palette.muted),
                       ),
                     ),
                   ],

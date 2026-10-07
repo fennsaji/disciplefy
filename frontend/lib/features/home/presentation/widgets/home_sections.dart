@@ -101,7 +101,7 @@ class HomeSectionHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: AppFonts.inter(fontSize: 11.5, color: c.textMuted),
+                  style: AppFonts.inter(fontSize: 12, color: c.textMuted),
                 ),
               ],
             ],
@@ -217,7 +217,7 @@ class HomeStatTile extends StatelessWidget {
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppFonts.inter(
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   color: c.textMuted,
                                   height: 1.3,
                                 ),
@@ -475,7 +475,7 @@ class HomePathRow extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.inter(
-                                  fontSize: 11, color: c.textMuted),
+                                  fontSize: 12, color: c.textMuted),
                             ),
                           ],
                         ),
@@ -602,7 +602,7 @@ class HomeLockedPathsCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       context.tr(TranslationKeys.learningPathsSubtitle),
-                      style: AppFonts.inter(fontSize: 11, color: palette.muted),
+                      style: AppFonts.inter(fontSize: 12, color: palette.muted),
                     ),
                   ],
                 ),
