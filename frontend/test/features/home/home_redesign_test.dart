@@ -691,7 +691,7 @@ void main() {
         tester,
         HomePathRow(
           title: 'The Attributes of God',
-          subtitle: '3 of 8 topics',
+          subtitle: '3 of 8 lessons',
           progress: 0.375,
           accent: Colors.amber,
           onTap: () => taps++,
@@ -699,7 +699,7 @@ void main() {
         theme: AppTheme.lightTheme,
       );
       expect(find.text('The Attributes of God'), findsOneWidget);
-      expect(find.text('3 of 8 topics'), findsOneWidget);
+      expect(find.text('3 of 8 lessons'), findsOneWidget);
       expect(find.byType(HomeProgressRing), findsOneWidget);
       await tester.tap(find.text('The Attributes of God'));
       expect(taps, 1);
@@ -736,11 +736,12 @@ void main() {
 
     testWidgets('subtitle falls back without a next topic or when done',
         (tester) async {
-      expect(await subtitleFor(tester, path(next: null)), '7 of 14 topics');
-      expect(await subtitleFor(tester, path(next: '  ')), '7 of 14 topics');
-      expect(await subtitleFor(tester, path(progress: 100)), '14 of 14 topics');
+      expect(await subtitleFor(tester, path(next: null)), '7 of 14 lessons');
+      expect(await subtitleFor(tester, path(next: '  ')), '7 of 14 lessons');
+      expect(
+          await subtitleFor(tester, path(progress: 100)), '14 of 14 lessons');
       expect(await subtitleFor(tester, path(progress: 0, enrolled: false)),
-          'Start here · 14 topics');
+          'Start here · 14 lessons');
     });
 
     test('next topic survives the cache round trip, not a progress change', () {

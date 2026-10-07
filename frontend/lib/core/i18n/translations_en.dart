@@ -717,9 +717,9 @@ const Map<String, dynamic> englishTranslations = {
     'all_paths': 'All paths',
     'browse_paths': 'Browse learning paths',
     'browse_paths_hint': 'Pick a path to start your journey',
-    'topics_progress': '{done} of {total} topics',
+    'topics_progress': '{done} of {total} lessons',
     'topics_progress_next': '{done} of {total} · Next: {title}',
-    'start_here': 'Start here · {count} topics',
+    'start_here': 'Start here · {count} lessons',
     'day_streak': '{count}-day streak',
     'keep_it_alive': 'Keep it alive',
     'no_streak_yet': 'No streak yet',
@@ -781,7 +781,7 @@ const Map<String, dynamic> englishTranslations = {
   'generate_study': {
     'title': 'Generate Study Guide',
     'sermon_outline_notice':
-        'Sermon Outline uses 4 AI passes and takes longer than other modes — usually 60–90 seconds. Please wait.',
+        'Sermon Outline is built in 4 passes, so it takes longer than other modes — usually 60–90 seconds. Please wait.',
     'scripture_mode': 'Scripture Reference',
     'topic_mode': 'Topic',
     'question_mode': 'Question',
@@ -3200,7 +3200,7 @@ const Map<String, dynamic> englishTranslations = {
     'recommended_mode_badge': 'RECOMMENDED FOR THIS PATH',
     'always_use_recommended': 'Always use recommended mode for learning paths',
     'always_use_recommended_subtitle':
-        'Skip this selection for all learning path topics',
+        'Skip this selection for all path lessons',
     'best_studied_in': 'Best studied in {mode} mode',
     'bonus_xp_awarded': '+{xp} Bonus XP!',
     'completed_in_recommended': '✨ Completed in recommended mode',
@@ -3332,7 +3332,7 @@ const Map<String, dynamic> englishTranslations = {
     'body': 'So your progress and groups stay with you on any phone.',
     'benefit_moves': 'Your progress on this phone moves over',
     'benefit_paths': 'Unlock every learning path',
-    'benefit_groups': 'Ask Discipler and join groups',
+    'benefit_groups': 'Join groups and keep your progress',
     'check_email': 'Check your email to confirm: {email}',
     'keep_days_safe': 'Keep these {n} days safe',
     'keep_cta': 'Sign up to keep them',

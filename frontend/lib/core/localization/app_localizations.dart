@@ -883,7 +883,7 @@ class AppLocalizations {
       'progress_xp_total': 'कुल XP',
       'progress_xp_to_next_level': 'अगले स्तर तक XP',
       'progress_max_level': 'अधिकतम स्तर प्राप्त!',
-      'progress_streaks': 'स्ट्रीक्स',
+      'progress_streaks': 'लगातार दिन',
       'progress_study_streak': 'अध्ययन',
       'progress_verse_streak': 'वचन',
       'progress_days': 'दिन',
@@ -891,7 +891,7 @@ class AppLocalizations {
       'progress_statistics': 'आंकड़े',
       'progress_studies': 'अध्ययन',
       'progress_time_spent': 'समय बिताया',
-      'progress_memory_verses': 'याद के पद',
+      'progress_memory_verses': 'याद वचन',
       'progress_voice_sessions': 'वॉयस सत्र',
       'progress_saved_guides': 'सहेजी गई गाइड',
       'progress_study_days': 'अध्ययन दिवस',
@@ -911,8 +911,8 @@ class AppLocalizations {
 
       // Achievement Categories
       'achievement_category_study': 'अध्ययन गाइड',
-      'achievement_category_streak': 'अध्ययन स्ट्रीक्स',
-      'achievement_category_memory': 'स्मृति वचन',
+      'achievement_category_streak': 'लगातार अध्ययन',
+      'achievement_category_memory': 'याद वचन',
       'achievement_category_voice': 'वॉयस डिसाइप्लर',
       'achievement_category_saved': 'सहेजे गए गाइड',
 
@@ -1283,7 +1283,7 @@ class AppLocalizations {
       'walkthroughHomeTopicsTitle': 'सीखने के मार्ग',
       'walkthroughHomeTopicsDesc':
           'बाइबल सीखने के लिए तैयार अध्ययन योजनाएं हैं — और देखने के लिए Topics दबाएं',
-      'walkthroughHomeMemoryTitle': 'स्मृति वचन',
+      'walkthroughHomeMemoryTitle': 'याद वचन',
       'walkthroughHomeMemoryDesc':
           'जो वचन आप याद करना चाहते हैं — आज अभ्यास के लिए दबाएं',
       'walkthroughGenerateModeTitle': 'इनपुट प्रकार चुनें',
@@ -1313,7 +1313,7 @@ class AppLocalizations {
           'आपके लिए चुने गए अध्ययन — जहाँ छोड़ा वहाँ से जारी रखें या कुछ नया शुरू करें',
       'walkthroughMemoryAddTitle': 'एक वचन जोड़ें',
       'walkthroughMemoryAddDesc': 'याद करने के लिए बाइबल का एक वचन जोड़ें',
-      'walkthroughMemoryVerseTitle': 'आपका स्मृति वचन',
+      'walkthroughMemoryVerseTitle': 'आपका याद वचन',
       'walkthroughMemoryVerseDesc':
           'अभ्यास सत्र शुरू करने के लिए इस वचन को दबाएं',
       'walkthroughPracticeModesTitle': 'अभ्यास मोड',
@@ -1684,7 +1684,7 @@ class AppLocalizations {
       'progress_statistics': 'സ്ഥിതിവിവരക്കണക്കുകൾ',
       'progress_studies': 'പഠനങ്ങൾ',
       'progress_time_spent': 'ചെലവഴിച്ച സമയം',
-      'progress_memory_verses': 'ഓർമ്മ വാക്യങ്ങൾ',
+      'progress_memory_verses': 'സ്മരണ വാക്യങ്ങൾ',
       'progress_voice_sessions': 'വോയ്സ് സെഷനുകൾ',
       'progress_saved_guides': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
       'progress_study_days': 'പഠന ദിനങ്ങൾ',
@@ -1705,7 +1705,7 @@ class AppLocalizations {
       // Achievement Categories
       'achievement_category_study': 'പഠന ഗൈഡുകൾ',
       'achievement_category_streak': 'പഠന സ്ട്രീക്കുകൾ',
-      'achievement_category_memory': 'ഓർമ്മ വാക്യങ്ങൾ',
+      'achievement_category_memory': 'സ്മരണ വാക്യങ്ങൾ',
       'achievement_category_voice': 'വോയ്സ് ഡിസൈപ്ലർ',
       'achievement_category_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
 
@@ -2082,7 +2082,7 @@ class AppLocalizations {
       'walkthroughHomeTopicsTitle': 'പഠന പാതകൾ',
       'walkthroughHomeTopicsDesc':
           'ബൈബിൾ പഠിക്കാൻ തയ്യാറാക്കിയ പദ്ധതികൾ ഇവിടെ ഉണ്ട് — കൂടുതൽ കാണാൻ Topics ടാപ്പ് ചെയ്യുക',
-      'walkthroughHomeMemoryTitle': 'ഓർമ്മ വചനങ്ങൾ',
+      'walkthroughHomeMemoryTitle': 'സ്മരണ വാക്യങ്ങൾ',
       'walkthroughHomeMemoryDesc':
           'നിങ്ങൾ ഓർക്കാൻ ആഗ്രഹിക്കുന്ന വചനങ്ങൾ — ഇന്ന് പ്രാക്ടീസ് ചെയ്യാൻ ടാപ്പ് ചെയ്യുക',
       'walkthroughGenerateModeTitle': 'ഇൻപുട്ട് തരം തിരഞ്ഞെടുക്കുക',
@@ -2112,7 +2112,7 @@ class AppLocalizations {
           'നിങ്ങൾക്കായി തിരഞ്ഞെടുത്ത പഠന പദ്ധതികൾ — നിർത്തിയ ഇടത്ത് നിന്ന് തുടരുക',
       'walkthroughMemoryAddTitle': 'ഒരു വചനം ചേർക്കുക',
       'walkthroughMemoryAddDesc': 'ഓർക്കാൻ തുടങ്ങാൻ ഒരു ബൈബിൾ വചനം ചേർക്കുക',
-      'walkthroughMemoryVerseTitle': 'നിങ്ങളുടെ ഓർമ്മ വചനം',
+      'walkthroughMemoryVerseTitle': 'നിങ്ങളുടെ സ്മരണ വാക്യം',
       'walkthroughMemoryVerseDesc':
           'ഒരു പ്രാക്ടീസ് സെഷൻ ആരംഭിക്കാൻ ഈ വചനം ടാപ്പ് ചെയ്യുക',
       'walkthroughPracticeModesTitle': 'പ്രാക്ടീസ് മോഡുകൾ',

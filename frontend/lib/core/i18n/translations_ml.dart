@@ -654,7 +654,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'secondary': 'പിന്നീട്',
     },
     'memory': {
-      'eyebrow': 'മനഃപാഠ വചനങ്ങൾ',
+      'eyebrow': 'സ്മരണ വാക്യങ്ങൾ',
       'title': 'ദിവസം ഒരു മിനിറ്റ്, വചനം ഹൃദയത്തിൽ',
       'step1_title': 'ഒരു വചനം സേവ് ചെയ്യൂ',
       'step1_body': 'സ്വയം എടുക്കാം, അല്ലെങ്കിൽ താഴെയുള്ളത്.',
@@ -664,7 +664,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'step3_body': 'ഉറയ്ക്കുമ്പോൾ ഇടവേള കൂടും.',
       'primary': 'ഈ വചനം പരിശീലിക്കൂ · 1 മി',
       'secondary': 'സ്വന്തം വചനം',
-      'saved': 'മനഃപാഠ വചനങ്ങളിൽ സേവ് ചെയ്തു',
+      'saved': 'സ്മരണ വാക്യങ്ങളിൽ സേവ് ചെയ്തു',
     },
     'generate': {
       'eyebrow': 'എന്തും പഠിക്കാം',
@@ -725,9 +725,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'all_paths': 'എല്ലാ പാതകളും',
     'browse_paths': 'പഠന പാതകൾ കാണൂ',
     'browse_paths_hint': 'യാത്ര തുടങ്ങാൻ ഒരു പാത തിരഞ്ഞെടുക്കൂ',
-    'topics_progress': '{total}-ൽ {done} വിഷയങ്ങൾ',
+    'topics_progress': '{total}-ൽ {done} പാഠങ്ങൾ',
     'topics_progress_next': '{total}-ൽ {done} · അടുത്തത്: {title}',
-    'start_here': 'ഇവിടെ തുടങ്ങൂ · {count} വിഷയങ്ങൾ',
+    'start_here': 'ഇവിടെ തുടങ്ങൂ · {count} പാഠങ്ങൾ',
     'day_streak': '{count} ദിവസ സ്ട്രീക്ക്',
     'keep_it_alive': 'തുടർന്നും നിലനിർത്തൂ',
     'no_streak_yet': 'ഇതുവരെ സ്ട്രീക്ക് ഇല്ല',
@@ -782,12 +782,12 @@ const Map<String, dynamic> malayalamTranslations = {
     'copy': 'പകർത്തുക',
     'share': 'പങ്കിടുക',
     'copied': 'വചനം ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി',
-    'add_to_memory': 'മെമ്മറി വെർസസിലേക്ക് ചേർക്കുക',
-    'already_in_memory': 'ഇതിനകം മെമ്മറി വെർസസിലുണ്ട്',
+    'add_to_memory': 'സ്മരണ വാക്യങ്ങളിലേക്ക് ചേർക്കുക',
+    'already_in_memory': 'ഇതിനകം സ്മരണ വാക്യങ്ങളിലുണ്ട്',
   },
-  'sermon_outline_notice':
-      'പ്രഭാഷണ രൂപരേഖ 4 AI ഘട്ടങ്ങൾ ഉപയോഗിക്കുന്നു, മറ്റ് മോഡുകളേക്കാൾ കൂടുതൽ സമയമെടുക്കും — സാധാരണയായി 60–90 സെക്കൻഡ്. ദയവായി കാത്തിരിക്കുക.',
   'generate_study': {
+    'sermon_outline_notice':
+        'പ്രഭാഷണ രൂപരേഖ 4 ഘട്ടങ്ങളായി തയ്യാറാക്കുന്നതിനാൽ കൂടുതൽ സമയമെടുക്കും — സാധാരണയായി 60–90 സെക്കൻഡ്. ദയവായി കാത്തിരിക്കുക.',
     'title': 'പഠന ഗൈഡ് സൃഷ്ടിക്കുക',
     'scripture_mode': 'തിരുവെഴുത്ത് റഫറൻസ്',
     'topic_mode': 'വിഷയം',
@@ -871,7 +871,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'chip_study_guides': 'പഠന സഹായികൾ',
     'chip_daily_verse': 'ദിനവചനം',
     'chip_discipler': 'ഡിസൈപ്ലറോട് സംസാരിക്കൂ',
-    'chip_memory_verses': 'മനഃപാഠ വാക്യങ്ങൾ',
+    'chip_memory_verses': 'സ്മരണ വാക്യങ്ങൾ',
     'languages_line': 'ഇംഗ്ലീഷ് · ഹിന്ദി · മലയാളം',
     'welcome': 'Disciplefy-ലേക്ക് സ്വാഗതം',
     'subtitle': 'ബൈബിൾ അധ്യയനം ചെയ്ത് വിശ്വാസം വളര്‍ത്തുക',
@@ -892,7 +892,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'feature_voice_discipler': 'വോയ്‌സ് ഡിസൈപ്ലർ',
     'feature_voice_discipler_subtitle':
         'നിങ്ങളുടെ ബൈബിൾ സഹായിയുമായി സംസാരിക്കുക',
-    'feature_memory_verse': 'മെമ്മറി വേഴ്‌സ്',
+    'feature_memory_verse': 'സ്മരണ വാക്യങ്ങൾ',
     'feature_memory_verse_subtitle':
         'സ്‌പേസ്ഡ് റിപ്പീറ്റേഷൻ ഉപയോഗിച്ച് വചനങ്ങൾ മനഃപാഠമാക്കുക',
     'privacy_policy':
@@ -1091,7 +1091,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'slide3_description':
         'തിരുവെഴുത്തിനെക്കുറിച്ച് സ്വാഭാവികമായി ശബ്ദത്തിൽ സംസാരിക്കൂ. ചോദ്യങ്ങൾ ചോദിക്കൂ, ഉത്തരങ്ങൾ നേടൂ, മാർഗനിർദേശമുള്ള സംഭാഷണത്തിലൂടെ ഗ്രാഹ്യം ആഴപ്പെടുത്തൂ.',
     'slide3_verse': 'എന്നോടു വിളിച്ചപേക്ഷിക്ക; ഞാൻ നിനക്കു ഉത്തരം അരുളും...',
-    'slide4_eyebrow': 'മനഃപാഠ വാക്യങ്ങൾ',
+    'slide4_eyebrow': 'സ്മരണ വാക്യങ്ങൾ',
     'slide4_title': 'ദൈവവചനം ഹൃദയത്തിൽ സംഗ്രഹിക്കൂ',
     'slide4_description':
         'ശാസ്ത്രീയമായി തെളിയിക്കപ്പെട്ട സ്പേസ്ഡ് റിപ്പീറ്റേഷനിലൂടെ വചനം മനഃപാഠമാക്കൂ. ശരിയായ ഇടവേളകളിൽ ആവർത്തിച്ച് ദീർഘകാലം ഓർമ്മയിൽ സൂക്ഷിക്കൂ.',
@@ -1271,7 +1271,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'language_default': 'ഡിഫോൾട്ട്',
     'delete_account_lose_title': 'നിങ്ങൾക്ക് സ്ഥിരമായി നഷ്ടപ്പെടും',
     'delete_account_lose_guides': 'നിങ്ങളുടെ പഠന ഗൈഡുകളും കുറിപ്പുകളും',
-    'delete_account_lose_verses': 'നിങ്ങളുടെ മനഃപാഠ വാക്യങ്ങളും സ്ട്രീക്കുകളും',
+    'delete_account_lose_verses': 'നിങ്ങളുടെ സ്മരണ വാക്യങ്ങളും സ്ട്രീക്കുകളും',
     'delete_account_lose_progress': 'നിങ്ങളുടെ XP, ലെവൽ, നേട്ടങ്ങൾ',
     'delete_account_lose_plan':
         'സജീവമായ ഏതു പ്ലാനും (ആദ്യം സബ്സ്ക്രിപ്ഷൻ റദ്ദാക്കുക)',
@@ -1280,11 +1280,11 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'memory_add_feedback': {
     'added':
-        'മെമ്മറി വചനങ്ങളിൽ ചേർത്തു! ഈ വചനം മനഃപാഠമാക്കാൻ ആവർത്തിക്കാൻ തുടങ്ങുക.',
+        'സ്മരണ വാക്യങ്ങളിൽ ചേർത്തു! ഈ വചനം മനഃപാഠമാക്കാൻ ആവർത്തിക്കാൻ തുടങ്ങുക.',
     'review_now': 'ഇപ്പോൾ ആവർത്തിക്കുക',
-    'already_exists': 'ഈ വചനം ഇതിനകം നിങ്ങളുടെ മെമ്മറി ശേഖരത്തിലുണ്ട്',
+    'already_exists': 'ഈ വചനം ഇതിനകം സ്മരണ വാക്യങ്ങളിലുണ്ട്',
     'limit_reached':
-        'നിങ്ങളുടെ മെമ്മറി വചന പരിധി എത്തി. കൂടുതൽ ചേർക്കാൻ പ്ലാൻ അപ്ഗ്രേഡ് ചെയ്യുക.',
+        'നിങ്ങളുടെ സ്മരണ വാക്യ പരിധി എത്തി. കൂടുതൽ ചേർക്കാൻ പ്ലാൻ അപ്ഗ്രേഡ് ചെയ്യുക.',
     'queued': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്. ഓൺലൈനിൽ വരുമ്പോൾ വചനം ചേർക്കും.',
     'review': 'ആവർത്തിക്കുക',
   },
@@ -1447,7 +1447,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'feature_request': 'ഫീച്ചർ അഭ്യർത്ഥന',
       'content_feedback': 'ഉള്ളടക്ക ഫീഡ്ബാക്ക്',
       'study_guide': 'പഠന ഗൈഡ്',
-      'memory_verse': 'മെമ്മറി വാക്യം',
+      'memory_verse': 'സ്മരണ വാക്യം',
     },
     'hint_text': 'നിങ്ങൾ എന്താണ് ചിന്തിക്കുന്നത് എന്ന് ഞങ്ങളോട് പറയുക...',
     'button_send': 'ഫീഡ്ബാക്ക് അയയ്ക്കുക',
@@ -1492,7 +1492,7 @@ const Map<String, dynamic> malayalamTranslations = {
     },
     'filterByLanguage': 'ഭാഷ അനുസരിച്ച് ഫിൽട്ടർ',
     'all': 'എല്ലാം',
-    'title': 'ഓർമ്മ വാക്യങ്ങൾ',
+    'title': 'സ്മരണ വാക്യങ്ങൾ',
     'yourProgress': 'നിങ്ങളുടെ പുരോഗതി',
     'dueForReview': 'അവലോകനത്തിന്',
     'review': 'അവലോകനം',
@@ -1510,10 +1510,10 @@ const Map<String, dynamic> malayalamTranslations = {
     'delete': {
       'title': 'വാക്യം ഇല്ലാതാക്കുക',
       'confirmation':
-          'നിങ്ങളുടെ മെമ്മറി ഡെക്കിൽ നിന്ന് ഈ വാക്യം നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുണ്ടോ? ഈ പ്രവർത്തനം പഴയപടിയാക്കാൻ കഴിയില്ല.',
+          'നിങ്ങളുടെ സ്മരണ വാക്യങ്ങളിൽ നിന്ന് ഈ വാക്യം നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുണ്ടോ? ഈ പ്രവർത്തനം പഴയപടിയാക്കാൻ കഴിയില്ല.',
       'cancel': 'റദ്ദാക്കുക',
       'confirm': 'ഇല്ലാതാക്കുക',
-      'success': 'വാക്യം മെമ്മറി ഡെക്കിൽ നിന്ന് നീക്കം ചെയ്തു',
+      'success': 'വാക്യം സ്മരണ വാക്യങ്ങളിൽ നിന്ന് നീക്കം ചെയ്തു',
     },
     'reviewAll': 'എല്ലാം അവലോകനം ചെയ്യുക',
     'noVersesToReview': 'ഇപ്പോൾ അവലോകനം ചെയ്യാൻ വാക്യങ്ങളില്ല',
@@ -1565,13 +1565,13 @@ const Map<String, dynamic> malayalamTranslations = {
       'resetSubtitle': 'എല്ലാ വചനങ്ങളും പ്രോഗ്രസും ഇല്ലാതാക്കുക',
     },
     'reset': {
-      'title': 'എല്ലാ മെമ്മറി വചനങ്ങളും ഇല്ലാതാക്കണോ?',
+      'title': 'എല്ലാ സ്മരണ വാക്യങ്ങളും ഇല്ലാതാക്കണോ?',
       'itemVerses': 'നിങ്ങളുടെ ഡെക്കിലെ എല്ലാ വചനങ്ങളും ഇല്ലാതാക്കും',
       'itemProgress': 'എല്ലാ പ്രാക്ടീസ് ചരിത്രവും മാസ്റ്ററിയും ഇല്ലാതാക്കും',
       'itemStreak': 'നിങ്ങളുടെ മെമ്മറി സ്ട്രീക്ക് പൂജ്യമാകും',
       'itemBadges': 'മെമ്മറി ബാഡ്ജുകളും ചലഞ്ച് പ്രോഗ്രസും നീക്കംചെയ്യും',
       'confirm': 'എല്ലാം ഇല്ലാതാക്കുക',
-      'success': 'എല്ലാ മെമ്മറി വചനങ്ങളും ഇല്ലാതാക്കി',
+      'success': 'എല്ലാ സ്മരണ വാക്യങ്ങളും ഇല്ലാതാക്കി',
     },
     'heatMap': {
       'title': 'പരിശീലന പ്രവർത്തനം',
@@ -1626,10 +1626,9 @@ const Map<String, dynamic> malayalamTranslations = {
       },
     },
     'addOptions': {
-      'title': 'ഓർമ്മ വാക്യം ചേർക്കുക',
+      'title': 'സ്മരണ വാക്യം ചേർക്കുക',
       'fromDaily': 'ദൈനംദിന വാക്യത്തിൽ നിന്ന് ചേർക്കുക',
-      'fromDailyDesc':
-          'ഇന്നത്തെ വാക്യം നിങ്ങളുടെ മെമ്മറി ഡെക്കിലേക്ക് ചേർക്കുക',
+      'fromDailyDesc': 'ഇന്നത്തെ വാക്യം സ്മരണ വാക്യങ്ങളിലേക്ക് ചേർക്കുക',
       'suggested': 'നിർദ്ദേശിച്ച വാക്യം ചേർക്കുക',
       'suggestedDesc': 'പ്രസിദ്ധമായ ബൈബിൾ വാക്യങ്ങളിൽ നിന്ന് തിരഞ്ഞെടുക്കുക',
       'custom': 'കസ്റ്റം വാക്യം ചേർക്കുക',
@@ -1998,7 +1997,9 @@ const Map<String, dynamic> malayalamTranslations = {
       'title': 'ക്രെഡിറ്റ് മാനേജ് ചെയ്യൂ',
       'view_history': 'ഹിസ്റ്ററി കാണൂ',
       'view_usage_history': 'ഉപയോഗ ചരിത്രം കാണൂ',
+      'refresh': 'ക്രെഡിറ്റ് പുതുക്കൂ',
       'refresh_status': 'അപ്‌ഡേറ്റ് ചെയ്യൂ',
+      'failed_to_load': 'ക്രെഡിറ്റ് വിവരം ലോഡ് ആയില്ല',
       'load_error': 'ക്രെഡിറ്റ് ലോഡ് ആയില്ല',
       'loading': 'ക്രെഡിറ്റ് ലോഡ് ആവുന്നു...',
       'actions': 'ആക്‌ഷൻ',
@@ -2742,7 +2743,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'standard_plan': 'സ്റ്റാൻഡേർഡ് പ്ലാൻ',
     'price': 'വെറും {price}',
     'benefit_voice': 'Discipler വോയ്‌സ് സെഷനുകൾ',
-    'benefit_memory': 'മെമ്മറി വചനം മനഃപാഠമാക്കൽ',
+    'benefit_memory': 'വചനം മനഃപാഠമാക്കൽ',
     'benefit_tokens': 'ദിവസം 40 ക്രെഡിറ്റ് + കൂടുതൽ വാങ്ങാം',
     'upgrade_button': 'സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക',
     'maybe_later': 'പിന്നീട്',
@@ -2759,7 +2760,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'statistics': 'സ്ഥിതിവിവരക്കണക്കുകൾ',
     'studies': 'പഠനങ്ങൾ',
     'time_spent': 'ചെലവഴിച്ച സമയം',
-    'memory_verses': 'മെമ്മറി വചനങ്ങൾ',
+    'memory_verses': 'സ്മരണ വാക്യങ്ങൾ',
     'voice_sessions': 'വോയ്‌സ് സെഷനുകൾ',
     'saved_guides': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
     'study_days': 'പഠന ദിവസങ്ങൾ',
@@ -2893,7 +2894,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'could_not_load': 'വചനം ലോഡ് ചെയ്യാനായില്ല',
     'could_not_parse': 'റഫറൻസ് മനസ്സിലായില്ല',
     'content_unavailable': 'ബൈബിൾ ഉള്ളടക്കം താൽക്കാലികമായി ലഭ്യമല്ല.',
-    'added_to_memory': 'മെമ്മറി വചനങ്ങളിൽ ചേർത്തു',
+    'added_to_memory': 'സ്മരണ വാക്യങ്ങളിൽ ചേർത്തു',
     'failed_to_add': 'വചനം ചേർക്കാനായില്ല',
   },
   'practice_selection': {
@@ -3054,7 +3055,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'nothing_due': 'ഇപ്പോൾ ഒന്നും ബാക്കിയില്ല',
     'offline_title': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്',
     'offline_body':
-        'മനഃപാഠ വാക്യങ്ങൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്. കണക്റ്റ് ചെയ്ത് തിരികെ വരൂ.',
+        'സ്മരണ വാക്യങ്ങൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്. കണക്റ്റ് ചെയ്ത് തിരികെ വരൂ.',
     'tile_daily': 'ദിനവാക്യം',
     'tile_daily_hint': 'ഇന്നത്തെ വാക്യം',
     'tile_suggested': 'നിർദ്ദേശിച്ചവ',
@@ -3090,16 +3091,16 @@ const Map<String, dynamic> malayalamTranslations = {
     'streak_line': 'നിലവിലെ തുടർച്ച {current} · ഏറ്റവും നീണ്ടത് {longest}',
     'practice_modes': 'പരിശീലന മോഡുകൾ',
     'practices_count': '{count} പരിശീലനങ്ങൾ',
-    'champions_subtitle': 'മനഃപാഠ വാക്യ ലീഡർബോർഡ്',
+    'champions_subtitle': 'സ്മരണ വാക്യ ലീഡർബോർഡ്',
     'your_rank': 'നിങ്ങളുടെ റാങ്ക്',
     'stat_mastered': 'മനഃപാഠം',
     'stat_day_streak': 'ദിവസ തുടർച്ച',
   },
   'memory_home': {
-    'title': 'മെമ്മറി വചനങ്ങൾ',
+    'title': 'സ്മരണ വാക്യങ്ങൾ',
     'feature_description':
         'തെളിയിക്കപ്പെട്ട ഇടവേള ആവർത്തന സാങ്കേതിക വിദ്യകൾ ഉപയോഗിച്ച് ബൈബിൾ വചനങ്ങൾ മനഃപാഠമാക്കുക. നിങ്ങളുടെ പുരോഗതി ട്രാക്ക് ചെയ്യുകയും തിരുവെഴുത്ത് ഓർമ്മയിലൂടെ നിങ്ങളുടെ വിശ്വാസം ശക്തിപ്പെടുത്തുകയും ചെയ്യുക.',
-    'empty_state_title': 'മെമ്മറി വചനങ്ങളൊന്നുമില്ല',
+    'empty_state_title': 'സ്മരണ വാക്യങ്ങളൊന്നുമില്ല',
     'empty_state_message':
         'വചനങ്ങൾ ചേർക്കാൻ ഏതെങ്കിലും വചനത്തിൽ "മെമ്മറി" ടാപ്പ് ചെയ്യുക',
     'practice_due': '@count പരിശീലനം ബാക്കി',
@@ -3118,7 +3119,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'statistics': 'സ്ഥിതിവിവരക്കണക്കുകൾ',
     'no_verses_title': 'ഇതുവരെ വചനങ്ങളൊന്നുമില്ല',
     'no_verses_subtitle':
-        'നിങ്ങളുടെ മെമ്മറി വചന ശേഖരം നിർമ്മിക്കാൻ ആരംഭിക്കുക.\nഇടവേള ആവർത്തനത്തോടെ അവലോകനം ചെയ്യാൻ വചനങ്ങൾ ചേർക്കുക.',
+        'നിങ്ങളുടെ സ്മരണ വാക്യ ശേഖരം നിർമ്മിക്കാൻ ആരംഭിക്കുക.\nഇടവേള ആവർത്തനത്തോടെ അവലോകനം ചെയ്യാൻ വചനങ്ങൾ ചേർക്കുക.',
     'add_first_verse': 'നിങ്ങളുടെ ആദ്യ വചനം ചേർക്കുക',
     'streak_day': 'ദിവസം',
     'streak_days': 'ദിവസങ്ങൾ',
@@ -3316,7 +3317,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'always_use_recommended':
         'പാതയ്ക്ക് എപ്പോഴും ശിഫാർസ്സ് ചെയ്ത മോഡ് ഉപയോഗിക്കുക',
     'always_use_recommended_subtitle':
-        'എല്ലാ പാത വിഷയങ്ങൾക്കും ഈ തിരഞ്ഞെടുപ്പ് ഒഴിവാക്കുക',
+        'പാതയിലെ എല്ലാ പാഠങ്ങൾക്കും ഈ തിരഞ്ഞെടുപ്പ് ഒഴിവാക്കുക',
     'best_studied_in': '{mode} മോഡിൽ നന്നായി അധ്യയനം ചെയ്യുന്നു',
     'bonus_xp_awarded': '+{xp} ബോണസ് XP!',
     'completed_in_recommended': '✨ ശിഫാർസ്സ് ചെയ്ത മോഡിൽ പൂർത്തിയായി',
@@ -3445,12 +3446,12 @@ const Map<String, dynamic> malayalamTranslations = {
     'discipler_title': 'Discipler-ന് അക്കൗണ്ട് വേണം',
     'second_path_title': 'അടുത്ത പാതയ്ക്ക് അക്കൗണ്ട് വേണം',
     'generate_title': 'പഠനം ഉണ്ടാക്കാൻ അക്കൗണ്ട് വേണം',
-    'memory_verses_title': 'മനഃപാഠ വാക്യങ്ങൾക്ക് അക്കൗണ്ട് വേണം',
+    'memory_verses_title': 'സ്മരണ വാക്യങ്ങൾക്ക് അക്കൗണ്ട് വേണം',
     'generic_title': 'സൗജന്യ അക്കൗണ്ട് തുടങ്ങൂ',
     'body': 'ഏത് ഫോണിലും പുരോഗതി കൂടെയുണ്ടാകാൻ.',
     'benefit_moves': 'ഈ ഫോണിലെ പുരോഗതി നിലനിൽക്കും',
     'benefit_paths': 'എല്ലാ പാതകളും തുറക്കാം',
-    'benefit_groups': 'Discipler, ഗ്രൂപ്പുകൾ',
+    'benefit_groups': 'ഗ്രൂപ്പിൽ ചേരാം, പുരോഗതി സൂക്ഷിക്കാം',
     'check_email': 'സ്ഥിരീകരിക്കാൻ ഇമെയിൽ നോക്കൂ: {email}',
     'keep_days_safe': 'ഈ {n} ദിവസം സൂക്ഷിക്കൂ',
     'keep_cta': 'സൂക്ഷിക്കാൻ സൈൻ അപ്പ്',
