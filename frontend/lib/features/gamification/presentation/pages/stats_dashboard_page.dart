@@ -105,8 +105,9 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
         builder: (context, state) {
           if (state.status == GamificationStatus.loading &&
               state.stats == null) {
-            return const Center(
-              child: CircularProgressIndicator(color: settingsPrimaryFill),
+            return Center(
+              child: CircularProgressIndicator(
+                  color: settingsPrimaryFill(context)),
             );
           }
 
@@ -244,7 +245,6 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
           Expanded(
             child: SettingsStatTile(
               icon: Icons.local_fire_department_outlined,
-              tone: SettingsTone.gold,
               value: '${_dailyStreak(context, stats)}',
               label: context.tr(TranslationKeys.gamificationDayStreakLabel),
             ),
@@ -285,7 +285,6 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
         children: [
           SettingsRow(
             icon: Icons.emoji_events_outlined,
-            tone: SettingsTone.gold,
             title: l10n.progressPersonalBest,
             value: '$best ${l10n.progressDays}',
           ),
@@ -451,8 +450,8 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                   value: achievement.getProgress(current),
                   minHeight: 6,
                   backgroundColor: palette.raised,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      settingsPrimaryFill(context)),
                 ),
               ),
               const SizedBox(height: 6),
@@ -528,7 +527,8 @@ class _LevelCard extends StatelessWidget {
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
           colors: [
-            settingsPrimaryFill.withValues(alpha: palette.isDark ? 0.22 : 0.12),
+            settingsPrimaryFill(context)
+                .withValues(alpha: palette.isDark ? 0.22 : 0.12),
             palette.card,
           ],
         ),
@@ -582,7 +582,7 @@ class _LevelCard extends StatelessWidget {
                 minHeight: 7,
                 backgroundColor: palette.raised,
                 valueColor:
-                    const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                    AlwaysStoppedAnimation<Color>(settingsPrimaryFill(context)),
               ),
             ),
           ),
@@ -660,8 +660,8 @@ class _ProfileHeader extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: SettingsToneColors.of(context, SettingsTone.indigo)
-                        .fill,
+                    color:
+                        SettingsToneColors.of(context, SettingsTone.gold).fill,
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: photoUrl == null
@@ -687,7 +687,7 @@ class _ProfileHeader extends StatelessWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: settingsPrimaryFill,
+                          color: settingsPrimaryFill(context),
                           border: Border.all(color: palette.card, width: 2),
                         ),
                         child: Text(
@@ -788,7 +788,8 @@ class _AchievementsProgressBar extends StatelessWidget {
           value: total > 0 ? unlocked / total : 0,
           minHeight: 6,
           backgroundColor: palette.raised,
-          valueColor: const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+          valueColor:
+              AlwaysStoppedAnimation<Color>(settingsPrimaryFill(context)),
         ),
       ),
     );
@@ -895,8 +896,8 @@ class _AchievementRow extends StatelessWidget {
                               value: achievement.getProgress(current),
                               minHeight: 5,
                               backgroundColor: palette.raised,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                  settingsPrimaryFill),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  settingsPrimaryFill(context)),
                             ),
                           ),
                         ),

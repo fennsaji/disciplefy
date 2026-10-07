@@ -159,7 +159,7 @@ class _EndConversationSheetState extends State<EndConversationSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: ReaderPalette.selectedFill),
+              borderSide: BorderSide(color: palette.selectedFill),
             ),
           ),
         ),
@@ -216,13 +216,13 @@ class _ChoiceCard extends StatelessWidget {
       inMutuallyExclusiveGroup: true,
       child: Material(
         color: selected
-            ? ReaderPalette.selectedFill
+            ? palette.selectedFill
                 .withValues(alpha: palette.isDark ? 0.16 : 0.07)
             : palette.raised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
           side: selected
-              ? const BorderSide(color: ReaderPalette.selectedFill, width: 1.5)
+              ? BorderSide(color: palette.selectedFill, width: 1.5)
               : BorderSide.none,
         ),
         child: InkWell(

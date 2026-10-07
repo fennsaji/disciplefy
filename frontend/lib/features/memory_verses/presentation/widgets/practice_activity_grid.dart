@@ -8,7 +8,7 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Practice activity heat grid: one column per week (oldest on the left),
-/// one row per weekday (Monday on top), each cell tinted indigo by how many
+/// one row per weekday (Monday on top), each cell tinted gold by how many
 /// practices happened that day.
 ///
 /// Month names run above the columns where a month starts and Mon / Wed /
@@ -47,7 +47,7 @@ class PracticeActivityGrid extends StatelessWidget {
                 ? 0.48
                 : 0.28;
     return Color.alphaBlend(
-      AppColors.brandPrimary.withValues(alpha: alpha),
+      palette.gold.withValues(alpha: alpha),
       palette.raised,
     );
   }

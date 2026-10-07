@@ -15,7 +15,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/d
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
 
 /// Card surface of a fellowship (My fellowships, Discover): card fill,
-/// 22 radius, 1px hairline and a faint indigo glow in the top-left corner.
+/// 22 radius, 1px hairline and a faint gold glow in the top-left corner.
 class FellowshipCardShell extends StatelessWidget {
   final Widget child;
 
@@ -49,9 +49,8 @@ class FellowshipCardShell extends StatelessWidget {
               center: Alignment.topLeft,
               radius: 1.3,
               colors: [
-                AppColors.brandPrimary
-                    .withValues(alpha: palette.isDark ? 0.18 : 0.07),
-                AppColors.brandPrimary.withValues(alpha: 0),
+                palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.07),
+                palette.gold.withValues(alpha: 0),
               ],
             ),
           ),

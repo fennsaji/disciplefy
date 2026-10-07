@@ -308,7 +308,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   /// optional note and up to two pills (primary on top, quieter one below).
   Widget _buildStatusCard({
     required IconData icon,
-    PopupTone tone = PopupTone.indigo,
+    PopupTone tone = PopupTone.accent,
     required String title,
     String? message,
     String? note,
@@ -572,13 +572,13 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             child: Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1A1A21) : Colors.white,
+                color: isDark ? const Color(0xFF17171C) : Colors.white,
                 borderRadius: const BorderRadius.only(
                     topLeft: tail, topRight: r, bottomLeft: r, bottomRight: r),
                 border: Border.all(
                   color: isDark
                       ? Colors.white.withOpacity(0.06)
-                      : const Color(0xFF16161D).withOpacity(0.08),
+                      : ReaderPalette.ink.withValues(alpha: 0.08),
                 ),
               ),
               child: Text(
@@ -586,9 +586,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                 style: AppFonts.inter(
                   fontSize: 15,
                   height: 1.5,
-                  color: isDark
-                      ? const Color(0xFFF2F2F4)
-                      : const Color(0xFF16161D),
+                  color: isDark ? const Color(0xFFF2F2F4) : ReaderPalette.ink,
                 ),
               ),
             ),

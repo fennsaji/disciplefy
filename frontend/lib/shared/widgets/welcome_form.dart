@@ -271,10 +271,10 @@ class WelcomeChoiceChip extends StatelessWidget {
       button: true,
       selected: selected,
       child: Material(
-        color: selected ? ReaderPalette.selectedFill : palette.card,
+        color: selected ? palette.selectedFill : palette.card,
         shape: StadiumBorder(
           side: BorderSide(
-            color: selected ? ReaderPalette.selectedFill : palette.outline,
+            color: selected ? palette.selectedFill : palette.outline,
           ),
         ),
         child: InkWell(

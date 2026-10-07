@@ -253,12 +253,12 @@ class GenerateStudyButton extends StatelessWidget {
     final active = enabled && !loading;
     final fill = active ? palette.ctaFill : palette.disabledFill;
     final ink = active ? palette.ctaInk : palette.disabledInk;
-    // Cost chip: a soft indigo wash on the white dark-theme pill, a white
-    // wash on the indigo light-theme pill.
+    // Cost chip: a soft gold wash on the white dark-theme pill, a white
+    // wash on the ink light-theme pill.
     final chipFill = !active
         ? Colors.transparent
         : palette.isDark
-            ? AppColors.brandPrimary.withValues(alpha: 0.12)
+            ? palette.gold.withValues(alpha: 0.12)
             : Colors.white.withValues(alpha: 0.2);
 
     return SizedBox(

@@ -11,6 +11,7 @@ import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import 'package:disciplefy_bible_study/features/follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import 'package:disciplefy_bible_study/features/follow_up_chat/presentation/bloc/follow_up_chat_state.dart';
@@ -146,7 +147,7 @@ void main() {
           .map((c) => c.decoration)
           .whereType<BoxDecoration>()
           .first;
-      expect(userBubble.color, dark ? Colors.white : AppColors.brandPrimary);
+      expect(userBubble.color, dark ? Colors.white : ReaderPalette.ink);
     });
   }
 

@@ -549,13 +549,13 @@ class _SourceTile extends StatelessWidget {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(18),
       side: BorderSide(
-        color: selected ? ReaderPalette.selectedFill : palette.hairline,
+        color: selected ? palette.selectedFill : palette.hairline,
         width: selected ? 1.5 : 1,
       ),
     );
     final fill = selected
         ? Color.alphaBlend(
-            ReaderPalette.selectedFill
+            palette.selectedFill
                 .withValues(alpha: palette.isDark ? 0.18 : 0.07),
             palette.card,
           )

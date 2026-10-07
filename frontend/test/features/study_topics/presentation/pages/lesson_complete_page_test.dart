@@ -156,6 +156,6 @@ void main() {
     await pumpPage(tester, 1);
     expect(fill(), Colors.white);
     await pumpPage(tester, 1, theme: AppTheme.lightTheme);
-    expect(fill(), AppColors.brandGoldDeep);
+    expect(fill(), AppColors.brandHighlightDark);
   });
 }

@@ -320,8 +320,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     final palette = ReaderPalette.of(context);
 
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: settingsPrimaryFill),
+      return Center(
+        child: CircularProgressIndicator(color: settingsPrimaryFill(context)),
       );
     }
 
@@ -387,11 +387,12 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
 
           // Loading more indicator
           if (_isLoadingMore)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(
-                  child: CircularProgressIndicator(color: settingsPrimaryFill),
+                  child: CircularProgressIndicator(
+                      color: settingsPrimaryFill(context)),
                 ),
               ),
             ),
@@ -798,8 +799,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                   value: response.value as double,
                   minHeight: 6,
                   backgroundColor: palette.raised,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      settingsPrimaryFill(context)),
                 ),
               ),
             ),
@@ -905,9 +906,9 @@ class _ActiveFilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final indigo = SettingsToneColors.of(context, SettingsTone.indigo);
+    final accent = SettingsToneColors.of(context, SettingsTone.gold);
     return Material(
-      color: indigo.fill,
+      color: accent.fill,
       shape: const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

@@ -10,8 +10,8 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 
 /// "Continue reading" card on the Generate tab: type label + icon, bookmark,
-/// title, and "mode · time ago", on a card tinted by type (indigo for
-/// topics, gold for scripture).
+/// title, and "mode · time ago", on a card tinted by type (gold for
+/// topics, a cool wash for scripture).
 class GuideQuickItem extends StatelessWidget {
   final SavedGuideEntity guide;
   final VoidCallback onTap;
@@ -39,7 +39,9 @@ class GuideQuickItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final isScripture = guide.type == GuideType.verse;
-    final tint = isScripture ? AppColors.brandGold : AppColors.brandPrimary;
+    // Library tiles: a cool wash for Scripture, gold for topics and
+    // questions, as the design's library grid.
+    final tint = isScripture ? AppColors.info : AppColors.brandGold;
     final radius = BorderRadius.circular(18);
 
     final mode = studyModeFromString(guide.studyMode);

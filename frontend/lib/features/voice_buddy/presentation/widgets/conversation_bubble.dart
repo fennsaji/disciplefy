@@ -6,14 +6,14 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/shared/widgets/clickable_scripture_text.dart';
 
-/// Fill of the user's own bubbles: indigo-tinted in both themes.
+/// Fill of the user's own bubbles: gold-tinted in both themes.
 Color userBubbleFill(ReaderPalette palette) => palette.isDark
-    ? AppColors.brandPrimary.withValues(alpha: 0.28)
-    : AppColors.brandPrimary.withValues(alpha: 0.1);
+    ? palette.gold.withValues(alpha: 0.28)
+    : palette.gold.withValues(alpha: 0.1);
 
 /// A chat bubble for one message of a Discipler conversation.
 ///
-/// The user's messages sit on the right on an indigo tint. Discipler's sit on
+/// The user's messages sit on the right on a gold tint. Discipler's sit on
 /// the left as a hairline card with its avatar beside them; scripture
 /// references inside the text are tappable, and the references the reply
 /// cites are listed below it as gold chips.

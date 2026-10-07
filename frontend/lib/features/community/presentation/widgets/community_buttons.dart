@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
-/// Primary pill button of the community screens: white with indigo ink on
-/// dark, indigo with white ink on light ([ReaderPalette.ctaFill]/`ctaInk`).
+/// Primary pill button of the community screens: white with ink text on
+/// dark, ink with white text on light ([ReaderPalette.ctaFill]/`ctaInk`).
 ///
 /// Used for "Join", "Start study", "Join a fellowship". At least 44px tall;
 /// the label wraps instead of truncating.

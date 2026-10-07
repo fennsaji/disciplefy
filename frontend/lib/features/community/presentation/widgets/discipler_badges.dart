@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
 
 /// Small "AI" chip appended next to the Discipler display name to signal
 /// AI-generated content.
@@ -10,13 +11,12 @@ class DisciplerAiChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dark mode resolves the primary to the light indigo (#A5B4FC), which is a
-    // background colour — white on it fell to ~1.6:1 and the chip read as a
-    // pale smudge. On a light fill the label has to be dark.
+    // The primary is the theme's gold: bright on dark, where the label has to
+    // be ink, and deep on light, where white clears AA.
     final fill = context.appPrimary;
     final onFill = ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
         ? Colors.white
-        : AppColors.brandPrimaryInk;
+        : ReaderPalette.ink;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -48,8 +48,8 @@ class DisciplerAiChip extends StatelessWidget {
 class DisciplerGlyph extends StatelessWidget {
   final double size;
 
-  /// Which flat colourway to draw. White for indigo/dark fills, indigo for
-  /// white fills (e.g. the dark-theme "Ask Discipler" pill).
+  /// Which flat colourway to draw. White for ink/dark fills, ink for white
+  /// fills (e.g. the dark-theme "Ask Discipler" pill).
   final DisciplerGlyphVariant variant;
 
   const DisciplerGlyph({
@@ -58,32 +58,34 @@ class DisciplerGlyph extends StatelessWidget {
     super.key,
   });
 
-  /// The glyph that reads on the reader's primary call-to-action: indigo on
-  /// the white dark-theme pill, white on the indigo light-theme pill.
+  /// The glyph that reads on the reader's primary call-to-action: ink on the
+  /// white dark-theme pill, white on the ink light-theme pill.
   const DisciplerGlyph.onCta({
     this.size = 22,
     required bool isDark,
     super.key,
   }) : variant =
-            isDark ? DisciplerGlyphVariant.indigo : DisciplerGlyphVariant.white;
+            isDark ? DisciplerGlyphVariant.ink : DisciplerGlyphVariant.white;
 
   @override
   Widget build(BuildContext context) {
+    // One flat white asset, tinted to ink where the fill is white.
     return Image.asset(
-      switch (variant) {
-        DisciplerGlyphVariant.white => 'assets/brand/discipler-glyph-white.png',
-        DisciplerGlyphVariant.indigo =>
-          'assets/brand/discipler-glyph-indigo.png',
-      },
+      'assets/brand/discipler-glyph-white.png',
       width: size,
       height: size,
       fit: BoxFit.contain,
+      color: switch (variant) {
+        DisciplerGlyphVariant.white => null,
+        DisciplerGlyphVariant.ink => ReaderPalette.ink,
+      },
+      colorBlendMode: BlendMode.srcIn,
     );
   }
 }
 
 /// Colourways of [DisciplerGlyph].
-enum DisciplerGlyphVariant { white, indigo }
+enum DisciplerGlyphVariant { white, ink }
 
 class DisciplerAvatar extends StatelessWidget {
   final double radius;

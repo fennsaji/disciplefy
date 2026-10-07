@@ -23,13 +23,13 @@ extension LibraryGuideKindOf on SavedGuideEntity {
   }
 }
 
-/// Library card tints, cycled by grid position (indigo, gold, teal, violet)
-/// as in the library design.
+/// Library card tints, cycled by grid position (gold, violet, teal, deep
+/// gold) as in the library design.
 const List<Color> kLibraryCardTints = [
-  AppColors.brandPrimary,
   AppColors.brandGold,
-  Color(0xFF14B8A6),
   Color(0xFF9B5DE5),
+  Color(0xFF14B8A6),
+  AppColors.brandHighlightDark,
 ];
 
 /// "Mode · date" line of a library card: "Quick Read · Yesterday", or

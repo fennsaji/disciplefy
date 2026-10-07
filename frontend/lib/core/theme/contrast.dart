@@ -5,9 +5,9 @@ import 'dart:ui';
 ///
 /// Brand and semantic accents are picked to look right as *fills* — buttons,
 /// chips, borders. Reused directly as a text colour they can fall well below a
-/// readable ratio: the create-post sheet painted a selected type's label in
-/// `brandPrimary` (#4F46E5) on a #1F1E2F card, which measures 2.6:1 against a
-/// WCAG AA minimum of 4.5:1.
+/// readable ratio: the create-post sheet once painted a selected type's label
+/// in a fill-tuned accent on a dark card, which measured 2.6:1 against a WCAG
+/// AA minimum of 4.5:1.
 ///
 /// [ensureContrast] keeps the hue but moves the colour toward white or black
 /// until it clears the required ratio, so an accent stays recognisable while

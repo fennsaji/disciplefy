@@ -54,14 +54,14 @@ class DepthSwitch extends StatelessWidget {
     final isLocked = locked.contains(mode);
     // The duration on the selected segment uses the same on-gold colour as
     // the name: a faded tint of it dropped below a readable ratio.
-    final ink = isSelected ? palette.onGold : palette.text;
-    final subInk = isSelected ? palette.onGold : palette.muted;
+    final ink = isSelected ? palette.onSelected : palette.text;
+    final subInk = isSelected ? palette.onSelected : palette.muted;
 
     return Semantics(
       button: true,
       selected: isSelected,
       child: Material(
-        color: isSelected ? palette.gold : Colors.transparent,
+        color: isSelected ? palette.selectedFill : Colors.transparent,
         shape: const StadiumBorder(),
         child: InkWell(
           key: ValueKey('depth_switch_${mode.name}'),
@@ -88,7 +88,7 @@ class DepthSwitch extends StatelessWidget {
                               ? Icons.lock_outline_rounded
                               : mode.outlineIcon,
                           size: 15,
-                          color: isSelected ? palette.onGold : palette.gold,
+                          color: isSelected ? palette.onSelected : palette.gold,
                         ),
                         const SizedBox(width: 5),
                         Flexible(

@@ -1152,7 +1152,7 @@ class _EmptyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = context.appBrandAccent;
+    final accent = context.appAccent;
     return InkWell(
       onTap: onTap,
       child: Padding(

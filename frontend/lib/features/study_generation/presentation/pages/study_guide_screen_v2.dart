@@ -2058,13 +2058,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           if (hasDiscipler)
             GuideCompleteAction(
               icon: Icons.psychology_rounded,
-              // The Discipler glyph on the soft indigo circle: white on
-              // dark, indigo on light — no gold disc.
+              // The Discipler glyph on the soft gold circle: white on
+              // dark, ink on light — no gold disc.
               leading: DisciplerGlyph(
                 size: 20,
                 variant: isDark
                     ? DisciplerGlyphVariant.white
-                    : DisciplerGlyphVariant.indigo,
+                    : DisciplerGlyphVariant.ink,
               ),
               label: context.tr(TranslationKeys.popupAskDiscipler),
               onTap: () {
@@ -2777,7 +2777,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               children: [
                 PopupIconCircle(
                   icon: noTokens ? Icons.token_outlined : Icons.error_outline,
-                  tone: noTokens ? PopupTone.gold : PopupTone.indigo,
+                  tone: noTokens ? PopupTone.gold : PopupTone.accent,
                   size: 64,
                 ),
                 const SizedBox(height: 20),
@@ -3358,8 +3358,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Flat glyph, no disc: indigo on the white
-                                // dark-theme pill, white on the indigo one.
+                                // Flat glyph, no disc: ink on the white
+                                // dark-theme pill, white on the ink one.
                                 DisciplerGlyph.onCta(
                                   size: 24,
                                   isDark: palette.isDark,

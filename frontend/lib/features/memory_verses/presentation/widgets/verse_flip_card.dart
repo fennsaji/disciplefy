@@ -104,7 +104,7 @@ class _VerseFlipCardState extends State<VerseFlipCard>
   }
 }
 
-/// Indigo-tinted card face filling the space the page gives the card.
+/// Gold-tinted card face filling the space the page gives the card.
 class _CardFace extends StatelessWidget {
   final Widget child;
 
@@ -118,13 +118,12 @@ class _CardFace extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
         decoration: BoxDecoration(
           color: Color.alphaBlend(
-            AppColors.brandPrimary
-                .withValues(alpha: palette.isDark ? 0.16 : 0.06),
+            palette.gold.withValues(alpha: palette.isDark ? 0.16 : 0.06),
             palette.card,
           ),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: AppColors.brandPrimary.withValues(alpha: 0.35),
+            color: palette.gold.withValues(alpha: 0.35),
           ),
         ),
         child: child,

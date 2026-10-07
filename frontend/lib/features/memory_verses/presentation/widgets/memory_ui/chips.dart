@@ -5,8 +5,8 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/style.dart';
 
-/// Stadium filter chip: raised fill; selected = CTA fill/ink (white + indigo
-/// ink on dark, indigo + white on light).
+/// Stadium filter chip: raised fill; selected = CTA fill/ink (white + ink
+/// on dark, ink + white on light).
 class MemoryChoiceChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -173,7 +173,7 @@ enum MemoryTokenState {
   /// Card fill + hairline, normal text (word bank / available phrase).
   idle,
 
-  /// Indigo fill, white text (placed / selected word).
+  /// Gold fill, ink text (placed / selected word).
   selected,
 
   /// Green tint + border (checked correct).
@@ -236,9 +236,9 @@ class MemoryTokenChip extends StatelessWidget {
         border = palette.hairline;
         ink = palette.text;
       case MemoryTokenState.selected:
-        fill = ReaderPalette.selectedFill;
-        border = ReaderPalette.selectedFill;
-        ink = Colors.white;
+        fill = palette.selectedFill;
+        border = palette.selectedFill;
+        ink = palette.onSelected;
       case MemoryTokenState.correct:
         fill = AppColors.success.withValues(alpha: alpha);
         border = context.appSuccess;
@@ -435,7 +435,7 @@ class MemoryStepIndicator extends StatelessWidget {
                     color: i < currentIndex
                         ? AppColors.success
                         : i == currentIndex
-                            ? ReaderPalette.selectedFill
+                            ? palette.selectedFill
                             : palette.raised,
                   ),
                   child: i < currentIndex
@@ -447,7 +447,7 @@ class MemoryStepIndicator extends StatelessWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: i == currentIndex
-                                ? Colors.white
+                                ? palette.onSelected
                                 : palette.muted,
                           ),
                         ),

@@ -58,8 +58,8 @@ void main() {
       });
 
       test('selected-fill label is readable', () {
-        _expectRatio(Colors.white, ReaderPalette.selectedFill,
-            kMinContrastNormalText, 'white on selectedFill');
+        _expectRatio(palette.onSelected, palette.selectedFill,
+            kMinContrastNormalText, 'onSelected on selectedFill');
       });
 
       test('disabled action label keeps 3:1 on its fill', () {

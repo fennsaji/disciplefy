@@ -93,7 +93,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final primaryFill = palette.isDark ? palette.ctaFill : palette.gold;
+    final primaryFill = palette.isDark ? palette.ctaFill : palette.selectedFill;
     final lesson = widget.args.lesson;
     final upNext = lesson.isLast ? const <LearningPathTopic>[] : _upNext;
     final title = lesson.isLast
@@ -130,7 +130,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.check_rounded,
-                              size: 28, color: AppColors.brandPrimaryInk),
+                              size: 28, color: ReaderPalette.ink),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -168,7 +168,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                   onPressed: () => _open(upNext.first),
                   style: _buttonStyle(
                     primaryFill,
-                    AppColors.brandPrimaryInk,
+                    ReaderPalette.ink,
                   ),
                   child: Text(
                     context.tr(TranslationKeys.lessonContinueTo,
@@ -187,7 +187,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
               ] else
                 FilledButton(
                   onPressed: () => context.go(AppRoutes.home),
-                  style: _buttonStyle(primaryFill, AppColors.brandPrimaryInk),
+                  style: _buttonStyle(primaryFill, ReaderPalette.ink),
                   child: Text(context.tr(TranslationKeys.lessonBackHome),
                       maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),

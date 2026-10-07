@@ -49,7 +49,7 @@ class _PreviewTokens {
       palette.raised,
       [
         BoxShadow(
-          color: AppColors.brandPrimary.withValues(alpha: 0.08),
+          color: palette.gold.withValues(alpha: 0.08),
           blurRadius: 24,
           offset: const Offset(0, 8),
         ),
@@ -397,9 +397,9 @@ class DisciplerChatPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = _PreviewTokens.of(context);
     final palette = tokens.palette;
-    // User bubble: white on dark, indigo on light.
-    final userFill = palette.isDark ? Colors.white : AppColors.brandPrimary;
-    final userInk = palette.isDark ? AppColors.brandPrimaryInk : Colors.white;
+    // User bubble: the primary pill — white on dark, ink on light.
+    final userFill = palette.ctaFill;
+    final userInk = palette.ctaInk;
 
     return Container(
       width: 320,
@@ -472,11 +472,11 @@ class DisciplerChatPreview extends StatelessWidget {
             child: Container(
               width: 54,
               height: 54,
-              decoration: const BoxDecoration(
-                color: AppColors.brandPrimary,
+              decoration: BoxDecoration(
+                color: palette.selectedFill,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.mic_none_rounded, color: Colors.white),
+              child: Icon(Icons.mic_none_rounded, color: palette.onSelected),
             ),
           ),
         ],
@@ -502,7 +502,7 @@ class MemoryReviewPreview extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
-              color: primary ? AppColors.brandPrimary : tokens.chipFill,
+              color: primary ? palette.ctaFill : tokens.chipFill,
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -512,7 +512,7 @@ class MemoryReviewPreview extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: primary ? Colors.white : palette.text,
+                color: primary ? palette.ctaInk : palette.text,
               ),
             ),
           ),

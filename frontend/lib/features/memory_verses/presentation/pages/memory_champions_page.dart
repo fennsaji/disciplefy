@@ -181,7 +181,7 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage> {
   }
 }
 
-/// Indigo card with the user's rank, mastered verses and longest streak.
+/// Gold card with the user's rank, mastered verses and longest streak.
 class _YourRankCard extends StatelessWidget {
   final UserMemoryStats userStats;
 
@@ -189,11 +189,12 @@ class _YourRankCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Colors.white;
+    final palette = ReaderPalette.of(context);
+    final ink = palette.onSelected;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
-        color: ReaderPalette.selectedFill,
+        color: palette.selectedFill,
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
@@ -254,6 +255,7 @@ class _RankStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ink = ReaderPalette.of(context).onSelected;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 90),
       child: Column(
@@ -264,7 +266,7 @@ class _RankStat extends StatelessWidget {
             style: AppFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: ink,
               fontFeatures: kMemoryTabular,
             ),
           ),
@@ -273,7 +275,7 @@ class _RankStat extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppFonts.inter(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: ink.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -306,7 +308,7 @@ class _ChampionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
         color: entry.isCurrentUser
-            ? ReaderPalette.selectedFill
+            ? palette.selectedFill
                 .withValues(alpha: palette.isDark ? 0.14 : 0.06)
             : null,
         border: Border(bottom: BorderSide(color: palette.hairline)),

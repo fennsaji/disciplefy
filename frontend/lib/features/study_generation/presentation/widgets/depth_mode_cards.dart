@@ -180,13 +180,13 @@ class DepthModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final fill = isSelected ? ReaderPalette.selectedFill : palette.card;
-    final iconColor = isSelected ? Colors.white : palette.accentIcon;
-    final nameColor = isSelected ? Colors.white : palette.text;
+    final fill = isSelected ? palette.selectedFill : palette.card;
+    final onFill = palette.onSelected;
+    final iconColor = isSelected ? onFill : palette.accentIcon;
+    final nameColor = isSelected ? onFill : palette.text;
     final secondary =
-        isSelected ? Colors.white.withValues(alpha: 0.8) : palette.muted;
-    final costColor =
-        isSelected ? Colors.white.withValues(alpha: 0.8) : palette.gold;
+        isSelected ? onFill.withValues(alpha: 0.8) : palette.muted;
+    final costColor = isSelected ? onFill.withValues(alpha: 0.8) : palette.gold;
     final radius = BorderRadius.circular(18);
 
     return Semantics(
@@ -201,9 +201,7 @@ class DepthModeCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: BorderSide(
-              color: isSelected
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : palette.hairline,
+              color: isSelected ? palette.selectedFill : palette.hairline,
             ),
           ),
           child: InkWell(

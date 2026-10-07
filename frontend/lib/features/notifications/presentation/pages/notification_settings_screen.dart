@@ -112,8 +112,9 @@ class _NotificationSettingsView extends StatelessWidget {
           },
           builder: (context, state) {
             if (state is NotificationLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: settingsPrimaryFill),
+              return Center(
+                child: CircularProgressIndicator(
+                    color: settingsPrimaryFill(context)),
               );
             }
             if (state is NotificationPreferencesLoaded) {
@@ -195,7 +196,7 @@ class _NotificationSettingsView extends StatelessWidget {
           ),
           toggle(
             icon: Icons.auto_awesome_outlined,
-            tone: SettingsTone.indigo,
+            tone: SettingsTone.gold,
             titleKey:
                 TranslationKeys.notificationsSettingsRecommendedTopicsTitle,
             descriptionKey: TranslationKeys
@@ -289,7 +290,7 @@ class _NotificationSettingsView extends StatelessWidget {
         SettingsGroup(children: [
           toggle(
             icon: Icons.play_lesson_outlined,
-            tone: SettingsTone.indigo,
+            tone: SettingsTone.gold,
             titleKey:
                 TranslationKeys.notificationsSettingsContinueLearningTitle,
             descriptionKey: TranslationKeys
@@ -364,7 +365,7 @@ class _NotificationSettingsView extends StatelessWidget {
         SettingsGroup(children: [
           toggle(
             icon: Icons.chat_bubble_outline_rounded,
-            tone: SettingsTone.indigo,
+            tone: SettingsTone.gold,
             titleKey: TranslationKeys.notificationsSettingsDisciplerReplyTitle,
             descriptionKey:
                 TranslationKeys.notificationsSettingsDisciplerReplyDescription,
@@ -374,7 +375,7 @@ class _NotificationSettingsView extends StatelessWidget {
           ),
           toggle(
             icon: Icons.insights_outlined,
-            tone: SettingsTone.indigo,
+            tone: SettingsTone.gold,
             titleKey:
                 TranslationKeys.notificationsSettingsDisciplerActivityTitle,
             descriptionKey: TranslationKeys
@@ -440,7 +441,7 @@ class _NotificationSettingsView extends StatelessWidget {
           ),
           toggle(
             icon: Icons.alarm_outlined,
-            tone: SettingsTone.indigo,
+            tone: SettingsTone.gold,
             titleKey: TranslationKeys.notificationsSettingsMeetingReminderTitle,
             descriptionKey:
                 TranslationKeys.notificationsSettingsMeetingReminderDescription,

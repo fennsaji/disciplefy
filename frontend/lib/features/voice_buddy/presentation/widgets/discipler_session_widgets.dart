@@ -255,7 +255,7 @@ class WaveformBars extends StatelessWidget {
   }
 }
 
-/// Big indigo disc at the centre of the voice session.
+/// Big gold disc at the centre of the voice session.
 class VoiceOrb extends StatelessWidget {
   final Widget child;
   final double size;
@@ -272,7 +272,7 @@ class VoiceOrb extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [AppColors.brandSecondary, AppColors.brandPrimaryDeep],
+          colors: [AppColors.brandGold, AppColors.streakGlow],
         ),
       ),
       alignment: Alignment.center,

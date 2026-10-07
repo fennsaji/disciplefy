@@ -7,7 +7,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/widge
 /// Height shared by action pills and the primary pill.
 const double kMemoryPillHeight = 52;
 
-/// Primary stadium call-to-action: white fill + indigo ink on dark, indigo
+/// Primary stadium call-to-action: white fill + ink text on dark, ink
 /// fill + white ink on light ("Check", "Submit", "Reveal next", "Done").
 class MemoryPrimaryPill extends StatelessWidget {
   final String label;

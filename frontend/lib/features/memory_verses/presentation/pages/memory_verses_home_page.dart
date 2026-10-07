@@ -573,7 +573,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   /// Three equal tiles: day streak (gold flame, taps into streak
-  /// protection like the old pill), verses (lavender) and mastered (gold).
+  /// protection like the old pill), verses (gold accent) and mastered (gold).
   Widget _buildStatTiles(DueVersesLoaded state) {
     final palette = ReaderPalette.of(context);
     final streak = _memoryStreak;

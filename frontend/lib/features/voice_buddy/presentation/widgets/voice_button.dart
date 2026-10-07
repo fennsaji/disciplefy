@@ -4,8 +4,8 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// The round microphone control of a voice session.
 ///
-/// A solid pill-coloured disc (white with indigo ink on dark, indigo with
-/// white ink on light). The big orb above it already says "listening", so the
+/// A solid pill-coloured disc (white with ink on dark, ink with
+/// white on light). The big orb above it already says "listening", so the
 /// button itself stays still: only the existing speaking bars move, and only
 /// while a reply is being spoken.
 ///

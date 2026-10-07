@@ -10,10 +10,10 @@ enum MemoryCardState {
   /// Card fill + hairline border.
   normal,
 
-  /// Lavender/indigo 1.5px border (focused text field, active drop target).
+  /// Gold 1.5px border (focused text field, active drop target).
   focused,
 
-  /// Indigo-tinted fill + border (flip card front/back).
+  /// Gold-tinted fill + border (flip card front/back).
   accent,
 
   /// Green border (checked correct).
@@ -66,11 +66,10 @@ class MemoryAnswerCard extends StatelessWidget {
         borderWidth = 1.5;
       case MemoryCardState.accent:
         fill = Color.alphaBlend(
-          AppColors.brandPrimary
-              .withValues(alpha: palette.isDark ? 0.16 : 0.06),
+          palette.gold.withValues(alpha: palette.isDark ? 0.16 : 0.06),
           palette.card,
         );
-        border = AppColors.brandPrimary.withValues(alpha: 0.35);
+        border = palette.gold.withValues(alpha: 0.35);
       case MemoryCardState.correct:
         border = context.appSuccess;
         borderWidth = 1.5;

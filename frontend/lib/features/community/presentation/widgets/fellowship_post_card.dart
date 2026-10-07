@@ -234,7 +234,7 @@ class FellowshipPostCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: palette.card,
-        // Discipler's own (non-daily) posts keep a faint indigo wash so they
+        // Discipler's own (non-daily) posts keep a faint gold wash so they
         // still read as the helper's voice rather than a member's.
         gradient: isSystem
             ? LinearGradient(
@@ -242,7 +242,7 @@ class FellowshipPostCard extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Color.alphaBlend(
-                    AppColors.brandPrimary
+                    palette.gold
                         .withValues(alpha: palette.isDark ? 0.14 : 0.06),
                     palette.card,
                   ),
@@ -604,8 +604,8 @@ class _PostMenuButton extends StatelessWidget {
 /// the viewer has reacted.
 ///
 /// Prayer pink, praise gold, question sky blue, study note green, shared
-/// study guide lavender (the brand accent). Light theme uses darker shades so
-/// the text on a pale tint stays readable.
+/// study guide teal; anything else takes the gold accent. Light theme uses
+/// darker shades so the text on a pale tint stays readable.
 Color postTypeAccentColor(String postType, {bool isDark = false}) {
   switch (postType) {
     case 'prayer':
@@ -617,11 +617,11 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
     case 'study_note':
       return isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D);
     case 'shared_guide':
-      return isDark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary;
+      return isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E);
     case 'daily':
       return AppColors.brandHighlightDark;
     default:
-      return isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+      return isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
   }
 }
 
@@ -1074,9 +1074,8 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    // Lavender brand accent: the same colour as the "Study guide" chip and
-    // the Discipler daily post's guide link, so both read as "open a study
-    // guide".
+    // Gold accent: the same colour as the Discipler daily post's guide link,
+    // so both read as "open a study guide".
     final accent = palette.accentIcon;
     final post = widget.post;
 

@@ -207,7 +207,9 @@ class ThemePreviewOption extends StatelessWidget {
                 foregroundDecoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: selected ? settingsPrimaryFill : palette.outline,
+                    color: selected
+                        ? settingsPrimaryFill(context)
+                        : palette.outline,
                     width: selected ? 2 : 1,
                   ),
                 ),
@@ -261,7 +263,7 @@ class _HalfClipper extends CustomClipper<Rect> {
       oldClipper.left != left;
 }
 
-/// Page, title line, indigo button and a neutral card.
+/// Page, title line, gold button and a neutral card.
 class _MiniScreen extends StatelessWidget {
   final bool dark;
 
@@ -269,9 +271,9 @@ class _MiniScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = dark ? const Color(0xFF0B0B0B) : const Color(0xFFF4F4F6);
-    final line = dark ? const Color(0xFF3A3A3A) : const Color(0xFFC9C9CF);
-    final card = dark ? const Color(0xFF262626) : const Color(0xFFE4E4E7);
+    final bg = dark ? const Color(0xFF0B0B0B) : AppColors.lightBackground;
+    final line = dark ? const Color(0xFF3A3A3A) : AppColors.lightBorderStrong;
+    final card = dark ? const Color(0xFF262626) : AppColors.lightSurfaceVariant;
     return ColoredBox(
       color: bg,
       child: LayoutBuilder(
@@ -295,7 +297,8 @@ class _MiniScreen extends StatelessWidget {
                 Container(
                   height: w * 0.27,
                   decoration: BoxDecoration(
-                    color: settingsPrimaryFill,
+                    // The design's thumbnails show the bright gold in both.
+                    color: AppColors.brandGold,
                     borderRadius: BorderRadius.circular(w * 0.08),
                   ),
                 ),
@@ -607,7 +610,6 @@ class _StudyModeSheetBody extends StatelessWidget {
           children: [
             SettingsRadioRow(
               icon: Icons.stars_outlined,
-              tone: SettingsTone.gold,
               title: recommended,
               subtitle:
                   context.tr(TranslationKeys.settingsUseRecommendedSubtitle),

@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// The theme-resolved accents must be legible as icons (3:1) and as text
 /// (4.5:1) on the surfaces of their own theme. The base tokens are not:
-/// warning is 2.2:1 on white, brandPrimary 2.6:1 on the dark surface.
+/// warning is 2.2:1 on white, brandGold 1.9:1 on the light page.
 void main() {
   const darkSurfaces = [
     AppColors.darkBackground,
@@ -24,14 +24,14 @@ void main() {
     'warning': AppColors.warningLighter,
     'error': AppColors.errorLighter,
     'info': AppColors.infoLighter,
-    'brand': AppColors.brandPrimaryLight,
+    'brand': AppColors.brandGold,
   };
   const lightAccents = {
     'success': AppColors.successDark,
     'warning': AppColors.warningDark,
     'error': AppColors.errorDark,
     'info': AppColors.infoDark,
-    'brand': AppColors.brandPrimary,
+    'brand': AppColors.brandGoldDeep,
   };
 
   void check(Map<String, Color> accents, List<Color> surfaces, String theme) {

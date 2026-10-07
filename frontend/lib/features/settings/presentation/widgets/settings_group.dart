@@ -10,13 +10,16 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 /// Every colour comes from [ReaderPalette] or [SettingsTone], so call sites
 /// never branch on brightness. No shadows, gradients or blur.
 
-/// Primary action fill in settings: indigo with white ink in both themes (unlike
+/// Primary action fill in settings: the gold selected fill with ink, as the
+/// design's Send feedback pill, toggles and radios (unlike
 /// [ReaderPalette.ctaFill], which is white on dark).
-const Color settingsPrimaryFill = ReaderPalette.selectedFill;
-const Color settingsPrimaryInk = Colors.white;
+Color settingsPrimaryFill(BuildContext context) =>
+    ReaderPalette.of(context).selectedFill;
+Color settingsPrimaryInk(BuildContext context) =>
+    ReaderPalette.of(context).onSelected;
 
 /// Colour family of a row's icon tile.
-enum SettingsTone { indigo, gold, green, sky, pink, red, amber }
+enum SettingsTone { gold, green, sky, pink, red, amber }
 
 /// Resolved icon colour and tile fill for a [SettingsTone].
 @immutable
@@ -31,11 +34,6 @@ class SettingsToneColors {
     final dark = palette.isDark;
     Color darkTint(Color c) => c.withValues(alpha: 0.15);
     switch (tone) {
-      case SettingsTone.indigo:
-        return SettingsToneColors(
-          palette.accentIcon,
-          dark ? darkTint(AppColors.brandSecondary) : const Color(0xFFEEEEFD),
-        );
       case SettingsTone.gold:
         return SettingsToneColors(
           palette.gold,
@@ -259,7 +257,7 @@ class SettingsIconTile extends StatelessWidget {
   const SettingsIconTile({
     super.key,
     required this.icon,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
     this.size = 34,
   });
 
@@ -300,7 +298,7 @@ class SettingsRow extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
     this.subtitle,
     this.value,
     this.trailing,
@@ -386,7 +384,7 @@ class SettingsRow extends StatelessWidget {
   }
 }
 
-/// Indigo-track switch used by settings rows.
+/// Gold-track switch used by settings rows.
 class SettingsSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
@@ -400,17 +398,17 @@ class SettingsSwitch extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       activeThumbColor: Colors.white,
-      activeTrackColor: settingsPrimaryFill,
+      activeTrackColor: settingsPrimaryFill(context),
       inactiveThumbColor: Colors.white,
       inactiveTrackColor:
-          palette.isDark ? const Color(0xFF3A3A42) : const Color(0xFFE2E2E8),
+          palette.isDark ? const Color(0xFF3A3A42) : AppColors.lightBorder,
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
 
-/// Indigo-ring radio indicator.
+/// Gold-ring radio indicator.
 class SettingsRadioMark extends StatelessWidget {
   final bool selected;
 
@@ -425,7 +423,7 @@ class SettingsRadioMark extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? settingsPrimaryFill : palette.dim,
+          color: selected ? settingsPrimaryFill(context) : palette.dim,
           width: selected ? 7 : 1.5,
         ),
       ),
@@ -450,7 +448,7 @@ class SettingsRadioRow extends StatelessWidget {
     required this.onTap,
     this.subtitle,
     this.icon,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
   });
 
   @override
@@ -515,7 +513,7 @@ class SettingsRadioRow extends StatelessWidget {
 /// Visual kind of a [SettingsButton].
 enum SettingsButtonKind { primary, destructive, neutral }
 
-/// Pill button: indigo primary, red-tinted destructive or raised neutral.
+/// Pill button: gold primary, red-tinted destructive or raised neutral.
 ///
 /// The label is never cut off: it wraps to a second line (and the pill grows)
 /// when the width is tight. Put two of them side by side with
@@ -569,7 +567,10 @@ class SettingsButton extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     final red = SettingsToneColors.of(context, SettingsTone.red);
     final (Color fill, Color ink) = switch (kind) {
-      SettingsButtonKind.primary => (settingsPrimaryFill, settingsPrimaryInk),
+      SettingsButtonKind.primary => (
+          settingsPrimaryFill(context),
+          settingsPrimaryInk(context)
+        ),
       SettingsButtonKind.destructive => (red.fill, red.foreground),
       SettingsButtonKind.neutral => (palette.raised, palette.text),
     };
@@ -675,7 +676,7 @@ class SettingsStatTile extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
   });
 
   @override

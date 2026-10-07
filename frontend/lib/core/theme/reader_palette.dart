@@ -33,7 +33,7 @@ class ReaderPalette {
   /// the card and the raised fill.
   final Color dim;
 
-  /// Accent for icons (lavender on dark, indigo on light).
+  /// Accent for icons: the theme's gold (bright on dark, deep on light).
   final Color accentIcon;
 
   /// Gold for eyebrows, section numbers and progress.
@@ -48,9 +48,15 @@ class ReaderPalette {
   final Color disabledFill;
   final Color disabledInk;
 
-  /// Primary call-to-action fill and the ink placed on it.
+  /// Primary call-to-action fill and the ink placed on it: a white pill
+  /// with ink text on dark, an ink pill with white text on light.
   final Color ctaFill;
   final Color ctaInk;
+
+  /// Selected-state fill (chosen chip, segment, option) and the ink on it.
+  /// Gold in both themes with dark ink, as the design's depth chips.
+  final Color selectedFill;
+  final Color onSelected;
 
   const ReaderPalette._({
     required this.isDark,
@@ -69,6 +75,8 @@ class ReaderPalette {
     required this.disabledInk,
     required this.ctaFill,
     required this.ctaInk,
+    required this.selectedFill,
+    required this.onSelected,
   });
 
   static const Color _darkCard = Color(0xFF17171C);
@@ -76,16 +84,23 @@ class ReaderPalette {
   static const Color _darkText = Color(0xFFF2F2F4);
   static const Color _darkMuted = Color(0xFF9CA3AF);
   static const Color _darkDim = Color(0xFF86868E);
-  static const Color _darkAccent = Color(0xFFA9A6F5);
-  static const Color _darkOnGold = Color(0xFF1B1608);
 
-  static const Color _lightInk = Color(0xFF16161D);
-  static const Color _lightRaised = Color(0xFFEEEEF4);
-  static const Color _lightMuted = Color(0xFF5B6070);
-  static const Color _lightDim = Color(0xFF716C64);
+  /// Ink of the design: light-theme text and primary pill, and the label on
+  /// the white dark-theme pill and on gold fills.
+  static const Color ink = Color(0xFF1A1917);
 
-  /// Selected-state fill (both themes); everything on it is white.
-  static const Color selectedFill = AppColors.brandPrimary;
+  static const Color _lightRaised = Color(0xFFEEEBE3);
+
+  /// Design secondary is #6F6B61; it measures 4.46:1 on the warm raised fill,
+  /// so it is nudged one step darker to clear 4.5:1 there.
+  static const Color _lightMuted = Color(0xFF6E6A5F);
+
+  /// Design dim is #8A857A (3.5:1 on the page). Hints must stay readable on
+  /// the raised fill too, so dim shares the nudged secondary value.
+  static const Color _lightDim = Color(0xFF6E6A5F);
+
+  /// Design gold fill on light surfaces.
+  static const Color _lightGoldFill = AppColors.brandHighlightDark;
 
   factory ReaderPalette.of(BuildContext context) {
     final theme = Theme.of(context);
@@ -109,13 +124,15 @@ class ReaderPalette {
         text: _darkText,
         muted: _darkMuted,
         dim: _darkDim,
-        accentIcon: _darkAccent,
+        accentIcon: AppColors.brandGold,
         gold: AppColors.brandGold,
-        onGold: _darkOnGold,
+        onGold: ink,
         disabledFill: Colors.white.withValues(alpha: 0.10),
         disabledInk: _darkDim,
         ctaFill: Colors.white,
-        ctaInk: AppColors.brandPrimaryInk,
+        ctaInk: ink,
+        selectedFill: AppColors.brandGold,
+        onSelected: ink,
       );
     }
     return ReaderPalette._(
@@ -123,18 +140,20 @@ class ReaderPalette {
       page: page,
       card: Colors.white,
       raised: _lightRaised,
-      hairline: _lightInk.withValues(alpha: 0.08),
-      outline: _lightInk.withValues(alpha: 0.14),
-      text: _lightInk,
+      hairline: ink.withValues(alpha: 0.08),
+      outline: ink.withValues(alpha: 0.14),
+      text: ink,
       muted: _lightMuted,
       dim: _lightDim,
-      accentIcon: AppColors.brandPrimary,
+      accentIcon: AppColors.brandGoldDeep,
       gold: AppColors.brandGoldDeep,
       onGold: Colors.white,
-      disabledFill: _lightInk.withValues(alpha: 0.08),
+      disabledFill: ink.withValues(alpha: 0.08),
       disabledInk: _lightDim,
-      ctaFill: AppColors.brandPrimary,
+      ctaFill: ink,
       ctaInk: Colors.white,
+      selectedFill: _lightGoldFill,
+      onSelected: ink,
     );
   }
 }

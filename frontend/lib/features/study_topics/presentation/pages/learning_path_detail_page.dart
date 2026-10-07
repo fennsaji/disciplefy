@@ -533,7 +533,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         PathDetailStatusView(
           leading: PopupIconCircle(
             icon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
-            tone: isOffline ? PopupTone.indigo : PopupTone.gold,
+            tone: isOffline ? PopupTone.accent : PopupTone.gold,
             size: 64,
           ),
           title: isOffline
@@ -1074,11 +1074,11 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
     final green = SettingsToneColors.of(context, SettingsTone.green);
     final done = _model.completedCount;
     final total = widget.path.topics.length;
-    // Indigo while downloading, green once settled.
+    // Gold while downloading, green once settled.
     final Color progressInk =
         _isDownloading ? palette.accentIcon : green.foreground;
     final Color progressFill = _isDownloading
-        ? AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1)
+        ? palette.gold.withValues(alpha: palette.isDark ? 0.24 : 0.1)
         : green.fill;
 
     return DraggableScrollableSheet(
@@ -1340,8 +1340,7 @@ class _DownloadTopicCard extends StatelessWidget {
       indicatorChild =
           Icon(Icons.check_rounded, color: green.foreground, size: 18);
     } else if (isActivelyDownloading) {
-      indicatorBg =
-          AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1);
+      indicatorBg = palette.gold.withValues(alpha: palette.isDark ? 0.24 : 0.1);
       indicatorChild = SizedBox(
         width: 18,
         height: 18,
@@ -1665,11 +1664,11 @@ class _TopicSelectionSheetState extends State<TopicSelectionSheet> {
                     ),
                     fillColor: WidgetStateProperty.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return ReaderPalette.selectedFill;
+                        return palette.selectedFill;
                       }
                       return Colors.transparent;
                     }),
-                    checkColor: Colors.white,
+                    checkColor: palette.onSelected,
                   );
                 },
               ),

@@ -667,8 +667,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                  color: ReaderPalette.selectedFill, width: 1.5),
+              borderSide: BorderSide(color: palette.selectedFill, width: 1.5),
             ),
           ),
           onChanged: _onCustomAmountChanged,
@@ -772,7 +771,7 @@ class _SegmentedTabs extends StatelessWidget {
   }
 }
 
-/// One credit pack: coins + amount, price and discount; indigo ring when
+/// One credit pack: coins + amount, price and discount; gold ring when
 /// selected.
 class _PackCard extends StatelessWidget {
   final TokenPackage package;
@@ -794,7 +793,7 @@ class _PackCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    const ring = ReaderPalette.selectedFill;
+    final ring = palette.selectedFill;
     return Semantics(
       button: true,
       selected: selected,
@@ -897,7 +896,7 @@ class _PackCard extends StatelessWidget {
   }
 }
 
-/// Indigo "POPULAR" tag on the recommended pack.
+/// Gold "POPULAR" tag on the recommended pack.
 class _PopularPill extends StatelessWidget {
   final String label;
 
@@ -905,10 +904,11 @@ class _PopularPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: ReaderPalette.selectedFill,
+        color: palette.selectedFill,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -918,7 +918,7 @@ class _PopularPill extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.4,
-          color: Colors.white,
+          color: palette.onSelected,
         ),
       ),
     );

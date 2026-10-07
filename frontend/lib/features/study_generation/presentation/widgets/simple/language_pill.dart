@@ -9,8 +9,8 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/pa
 /// The Generate search field is white in both themes (design), so its
 /// contents use fixed light-surface colours rather than the theme's.
 abstract final class SearchFieldColors {
-  static const Color ink = Color(0xFF16161D);
-  static const Color muted = Color(0xFF5B6070);
+  static const Color ink = Color(0xFF1A1917);
+  static const Color muted = Color(0xFF6F6B61);
 
   /// Placeholder: the design's warm grey, darkened to 4.5:1 on the white
   /// field (was #8A8F9C, 3.2:1).

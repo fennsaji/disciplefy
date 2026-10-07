@@ -78,7 +78,6 @@ class OptionsMenuSheet extends StatelessWidget {
               SettingsRow(
                 key: const Key('memory_options_champions'),
                 icon: Icons.emoji_events_outlined,
-                tone: SettingsTone.gold,
                 title: context.tr(TranslationKeys.optionsMenuChampionsTitle),
                 subtitle:
                     context.tr(TranslationKeys.optionsMenuChampionsSubtitle),

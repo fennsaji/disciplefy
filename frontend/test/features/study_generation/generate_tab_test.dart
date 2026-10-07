@@ -170,7 +170,7 @@ void main() {
     group('$theme theme', () {
       setUp(() => _registerServices());
 
-      testWidgets('depth cards: tap selects, selected is indigo, costs shown',
+      testWidgets('depth cards: tap selects, selected is gold, costs shown',
           (tester) async {
         _useNarrowPhone(tester);
         var selected = StudyMode.standard;
@@ -194,7 +194,9 @@ void main() {
         await tester.pumpAndSettle();
 
         final standard = find.byKey(const ValueKey('depth_card_standard'));
-        expect(_materialColorOf(tester, standard), ReaderPalette.selectedFill);
+        final selectedFill =
+            ReaderPalette.of(tester.element(standard)).selectedFill;
+        expect(_materialColorOf(tester, standard), selectedFill);
         expect(find.text('Standard'), findsOneWidget);
         expect(find.text('8 min'), findsOneWidget);
         expect(find.text('20'), findsWidgets);
@@ -205,10 +207,9 @@ void main() {
         expect(
           _materialColorOf(
               tester, find.byKey(const ValueKey('depth_card_quick'))),
-          ReaderPalette.selectedFill,
+          selectedFill,
         );
-        expect(_materialColorOf(tester, standard),
-            isNot(ReaderPalette.selectedFill));
+        expect(_materialColorOf(tester, standard), isNot(selectedFill));
 
         // Locked mode: scrolled into reach, tapping asks to upgrade instead
         // of selecting.
@@ -301,13 +302,18 @@ void main() {
             greaterThan(700));
 
         final quick = find.byKey(const ValueKey('mode_option_quick'));
+        final sheetPalette = ReaderPalette.of(tester.element(quick));
+        // Selected depth: the card fill with a gold wash and a gold ring.
         expect(
           tester
               .widget<Material>(find
                   .ancestor(of: quick, matching: find.byType(Material))
                   .first)
               .color,
-          ReaderPalette.selectedFill,
+          Color.alphaBlend(
+              sheetPalette.selectedFill
+                  .withValues(alpha: sheetPalette.isDark ? 0.10 : 0.08),
+              sheetPalette.card),
         );
 
         // The last rows sit below the fold on a short phone.

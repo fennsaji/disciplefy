@@ -484,7 +484,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescGeneral),
         icon: Icons.chat_rounded,
-        accent: AppColors.brandPrimary,
+        accent: AppColors.brandHighlightDark,
       ),
       (
         value: 'prayer',
@@ -522,7 +522,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         }) t) {
       final isSelected = _selectedType == t.value;
       // The raw accent is tuned as a fill, not as text: on the dark card
-      // #4F46E5 measures 2.6:1, well under the 4.5:1 minimum. Lift it
+      // some accents fall well under the 4.5:1 minimum. Lift it
       // against the surface it is actually drawn on; fills and borders keep
       // the original.
       final accent = t.accent;
@@ -720,7 +720,6 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                         onChanged: (v) =>
                             setState(() => _letDisciplerAnswer = v),
                         contentPadding: EdgeInsets.zero,
-                        activeTrackColor: AppColors.brandPrimary,
                         title: Text(
                           context
                               .tr(TranslationKeys.fellowshipLetDisciplerAnswer),

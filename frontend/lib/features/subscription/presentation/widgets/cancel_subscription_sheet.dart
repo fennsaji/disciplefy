@@ -133,7 +133,7 @@ class _CancelSubscriptionSheetState extends State<CancelSubscriptionSheet> {
   }
 }
 
-/// Radio option: indigo ring and wash when selected, raised fill otherwise.
+/// Radio option: gold ring and wash when selected, raised fill otherwise.
 class _ChoiceTile extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -151,7 +151,7 @@ class _ChoiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    const ring = ReaderPalette.selectedFill;
+    final ring = palette.selectedFill;
     return Semantics(
       selected: selected,
       inMutuallyExclusiveGroup: true,

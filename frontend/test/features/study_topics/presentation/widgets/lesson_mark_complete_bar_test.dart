@@ -89,6 +89,6 @@ void main() {
     expect(fillOf(), Colors.white);
     await pumpWith(AppTheme.lightTheme);
     await tester.pumpAndSettle();
-    expect(fillOf(), AppColors.brandGoldDeep);
+    expect(fillOf(), AppColors.brandHighlightDark);
   });
 }

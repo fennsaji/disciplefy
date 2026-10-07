@@ -763,10 +763,11 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Tooltip(
       message: context.tr(TranslationKeys.communityPagesSend),
       child: Material(
-        color: ReaderPalette.selectedFill,
+        color: palette.selectedFill,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -775,7 +776,7 @@ class _SendButton extends StatelessWidget {
             width: size,
             height: size,
             child: Icon(Icons.send_rounded,
-                size: size * 0.42, color: Colors.white),
+                size: size * 0.42, color: palette.onSelected),
           ),
         ),
       ),

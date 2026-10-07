@@ -1100,7 +1100,6 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 SettingsRadioRow(
                   icon: Icons.stars_outlined,
-                  tone: SettingsTone.gold,
                   title: recommended,
                   subtitle: sheetContext
                       .tr(TranslationKeys.settingsUseRecommendedSubtitle),

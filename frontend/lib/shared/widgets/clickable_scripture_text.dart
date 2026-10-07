@@ -82,7 +82,7 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
     final theme = Theme.of(context);
     final baseStyle = widget.style ?? theme.textTheme.bodyMedium;
 
-    // Lavender on dark, brand indigo on light: readable on both pages.
+    // Gold accent (bright on dark, deep on light): readable on both pages.
     final scriptureColor = ReaderPalette.of(context).accentIcon;
 
     // Split text into lines to handle block-level markdown

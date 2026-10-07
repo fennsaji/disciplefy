@@ -14,10 +14,10 @@ Color planAccent(BuildContext context, UserPlan plan) {
   switch (plan) {
     case UserPlan.free:
       return context.appTextSecondary;
+    // The design paints every paid plan in the theme's gold.
     case UserPlan.standard:
-      return context.appBrandAccent;
     case UserPlan.plus:
-      return AppColors.masteryAdvanced;
+      return context.appAccent;
     case UserPlan.premium:
       // Top of the ramp — brand gold, theme-aware so it clears AA on both
       // grounds.

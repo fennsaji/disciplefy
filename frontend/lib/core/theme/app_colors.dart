@@ -25,25 +25,10 @@ class AppColors {
   // Change these values for a full app rebrand.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Main brand indigo — used for primary buttons, active tabs, highlights.
-  /// Indigo-600: 5.7:1 on white (WCAG AA), more vibrant than previous purple.
-  static const Color brandPrimary = Color(0xFF4F46E5);
-
-  /// Lighter brand indigo — for dark-mode primary & hover/focus states.
-  /// Indigo-300: 8.1:1 on dark surfaces (WCAG AAA).
-  static const Color brandPrimaryLight = Color(0xFFA5B4FC);
-
-  /// Gradient end indigo — used with [brandPrimary] in gradient pairs.
-  /// Indigo-500: slightly lighter, creates a vibrant blue-indigo gradient.
-  static const Color brandSecondary = Color(0xFF6366F1);
-
-  /// Deep indigo — for high-contrast / pressed states.
-  static const Color brandPrimaryDeep = Color(0xFF4338CA);
-
-  /// Indigo ink — the darkest brand indigo, for label text sitting ON a light
-  /// indigo fill. [brandPrimaryDeep] only reaches 3.96:1 against
-  /// [brandPrimaryLight]; this is 8:1 and clears WCAG AA for small text.
-  static const Color brandPrimaryInk = Color(0xFF1E1B4B);
+  /// The design has no indigo or lavender. Primary actions are an ink pill on
+  /// light and a white pill on dark ([ReaderPalette.ctaFill]); selected
+  /// states, progress, links and accent icons are gold ([brandGold] on dark,
+  /// [brandGoldDeep] / [brandHighlightDark] on light).
 
   /// Gold highlight — secondary brand color, highlights, verse containers.
   static const Color brandHighlight = Color(0xFFFFEEC0);
@@ -80,13 +65,6 @@ class AppColors {
   /// Warm white — background for content cards (e.g. voice bubbles).
   static const Color warmWhite = Color(0xFFFAF8F5);
 
-  /// Primary gradient (top-left → bottom-right).
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [brandPrimary, brandSecondary],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
   // ═══════════════════════════════════════════════════════════════════════════
   // LIGHT THEME PALETTE
   // ═══════════════════════════════════════════════════════════════════════════
@@ -94,15 +72,17 @@ class AppColors {
   static const Color lightBackground = Color(0xFFFAF8F5);
   static const Color lightScaffold = Color(0xFFFAF8F5);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurfaceVariant = Color(0xFFF3F0FF); // lavender tint
-  static const Color lightTextPrimary = Color(0xFF1E1E1E);
-  static const Color lightTextSecondary =
-      Color(0xFF4B5563); // Gray-600 — 7.4:1 on white (was #6B7280, 4.6:1)
-  static const Color lightTextTertiary =
-      Color(0xFF6B7280); // Gray-500 — 4.6:1 on white (was #9CA3AF, 2.3:1)
-  static const Color lightBorder = Color(0xFFE5E7EB); // Gray-200
-  static const Color lightBorderStrong = Color(0xFFD1D5DB); // Gray-300
-  static const Color lightDivider = Color(0xFFE5E7EB);
+  static const Color lightSurfaceVariant = Color(0xFFEEEBE3); // warm raised
+  static const Color lightTextPrimary = Color(0xFF1A1917); // design ink
+  /// Design secondary text — 5.0:1 on the page, 5.3:1 on white.
+  static const Color lightTextSecondary = Color(0xFF6F6B61);
+
+  /// Warm tertiary text. The design dim (#8A857A) is 3.5:1 on the page, so
+  /// text keeps this darker warm value (4.9:1); #8A857A is icons only.
+  static const Color lightTextTertiary = Color(0xFF716C64);
+  static const Color lightBorder = Color(0xFFE6E3DD); // warm hairline
+  static const Color lightBorderStrong = Color(0xFFD6D2CA); // warm outline
+  static const Color lightDivider = Color(0xFFE6E3DD);
   static const Color lightInputFill = Color(0xFFFFFFFF);
 
   // Splash / loading screen background (light mode)
@@ -134,19 +114,19 @@ class AppColors {
 
   static const Color darkBackground = Color(0xFF121212);
   static const Color darkScaffold = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1A1A1A);
-  static const Color darkSurfaceVariant = Color(0xFF1E1E2E); // dark purple tint
-  static const Color darkSurfaceElevated = Color(0xFF1F2937); // Gray-800 equiv
-  static const Color darkSurfaceHigh = Color(0xFF2A2A2A);
-  static const Color darkTextPrimary = Color(0xFFE0E0E0);
-  static const Color darkTextSecondary = Color(0xFFB0B0B0);
-  static const Color darkTextTertiary = Color(
-      0xFF9CA3AF); // Gray-400 — 6.4:1 on dark surface (was #808080, 4.2:1)
-  static const Color darkBorder = Color(0xFF404040);
-  static const Color darkBorderStrong = Color(0xFF555555);
-  static const Color darkDivider = Color(0xFF2A2A2A);
-  static const Color darkInputFill = Color(0xFF2A2A2A);
-  static const Color darkInputBorder = Color(0xFF404040);
+  static const Color darkSurface = Color(0xFF17171C); // design card
+  static const Color darkSurfaceVariant = Color(0xFF1F1F27); // design raised
+  static const Color darkSurfaceElevated = Color(0xFF1F1F27); // design raised
+  static const Color darkSurfaceHigh = Color(0xFF26262F); // design raised alt
+  static const Color darkTextPrimary = Color(0xFFF2F2F4); // design text
+  static const Color darkTextSecondary = Color(0xFF9CA3AF); // design secondary
+  /// Design icons / nav labels — 5.2:1 on the card.
+  static const Color darkTextTertiary = Color(0xFF8A8A95);
+  static const Color darkBorder = Color(0xFF34343C); // white 14% on the page
+  static const Color darkBorderStrong = Color(0xFF45454E);
+  static const Color darkDivider = Color(0xFF26262F);
+  static const Color darkInputFill = Color(0xFF1F1F27);
+  static const Color darkInputBorder = Color(0xFF34343C);
 
   /// 4.5:1 on [darkInputFill] (was #808080, 3.6:1).
   static const Color darkHintText = Color(0xFF919191);
@@ -161,14 +141,14 @@ class AppColors {
   static const Color success = Color(0xFF10B981); // Emerald-500
   static const Color successLight = Color(0xFFD1FAE5); // Emerald-100
   static const Color successLighter =
-      Color(0xFF6EE7B7); // Emerald-300 — dark mode badge text
+      Color(0xFF34D399); // design success on dark surfaces
   static const Color successDark =
       Color(0xFF047857); // Emerald-700 — 5.0:1 on white (was #059669, 3.4:1)
 
   static const Color error = Color(0xFFEF4444); // Red-500
   static const Color errorLight = Color(0xFFFEE2E2); // Red-100
   static const Color errorLighter =
-      Color(0xFFFCA5A5); // Red-300 — dark mode badge text
+      Color(0xFFF87171); // design error on dark surfaces
   static const Color errorDark =
       Color(0xFFB91C1C); // Red-700 — 6.6:1 on white (was #DC2626, 4.7:1)
 
@@ -194,7 +174,7 @@ class AppColors {
 
   static const Color onGradient = Colors.white;
 
-  /// Amber for warning marks sitting on the indigo brand gradient.
+  /// Amber for warning marks sitting on a coloured gradient.
   /// Amber-200: the darker warning tokens are tuned for light/dark page
   /// grounds and drop to 3.10:1 on the gradient's light end, so the gradient
   /// gets its own value. Icons only — see [onGradient] for text.
@@ -208,7 +188,7 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static const Color tierFree = Color(0xFF6B7280); // Gray-500
-  static const Color tierStandard = brandPrimary; // matches brand indigo
+  static const Color tierStandard = brandGoldDeep; // design: plans are gold
   static const Color tierPlus = Color(0xFF7C3AED); // Violet-600
   /// [tierPlus] lifted for use as text and accents on dark surfaces.
   static const Color tierPlusOnDark = Color(0xFFA78BFA); // Violet-400
@@ -312,14 +292,8 @@ class AppColors {
   // LEGACY ALIASES (keep until all call-sites are migrated)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// @deprecated Use [brandPrimary]
-  static Color get primary => brandPrimary;
-
   /// @deprecated Use [brandHighlight]
   static Color get secondary => brandHighlight;
-
-  /// @deprecated Use [brandPrimary]
-  static Color get primaryPurple => brandPrimary;
 
   /// @deprecated Use [brandHighlight]
   static Color get highlightGold => brandHighlight;
@@ -351,9 +325,8 @@ class AppColors {
   /// Useful for exporting the current theme to the admin dashboard.
   static Map<String, String> toJson() {
     return {
-      'brandPrimary': _hex(brandPrimary),
-      'brandPrimaryLight': _hex(brandPrimaryLight),
-      'brandSecondary': _hex(brandSecondary),
+      'brandGold': _hex(brandGold),
+      'brandGoldDeep': _hex(brandGoldDeep),
       'brandHighlight': _hex(brandHighlight),
       'brandHighlightDark': _hex(brandHighlightDark),
       'brandAccent': _hex(brandAccent),
@@ -403,8 +376,6 @@ extension AppColorsTheme on BuildContext {
   /// — progress and achievement — makes the logo belong, and replaces the
   /// Material `Colors.amber` that was standing in for it.
   ///
-  /// On the indigo verse card gold measures 3.05:1, clearing the 3:1 graphics
-  /// threshold; the streak badge it replaces was purple-on-purple at 1.63:1.
   Color get appStreakAccent =>
       _isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
 
@@ -416,27 +387,27 @@ extension AppColorsTheme on BuildContext {
 
   /// Semantic accents resolved for the current theme.
   ///
-  /// The base tokens (success #10B981, warning #F59E0B, brandPrimary #4F46E5)
-  /// are fill colours. Used as text or icons they fail WCAG on one theme:
-  /// warning is 2.2:1 on white, success 2.5:1 on white, brandPrimary 2.6:1 on
-  /// the dark surface. The palette already carries the right variants for each
-  /// theme — these pick them so call sites do not have to.
+  /// The base tokens (success #10B981, warning #F59E0B) are fill colours.
+  /// Used as text or icons they fail WCAG on one theme: warning is 2.2:1 on
+  /// white and success 2.5:1 on white. The palette already carries the right
+  /// variants for each theme — these pick them so call sites do not have to.
   Color get appSuccess =>
       _isDark ? AppColors.successLighter : AppColors.successDark;
   Color get appWarning =>
       _isDark ? AppColors.warningLighter : AppColors.warningDark;
   Color get appError => _isDark ? AppColors.errorLighter : AppColors.errorDark;
   Color get appInfo => _isDark ? AppColors.infoLighter : AppColors.infoDark;
-  Color get appBrandAccent =>
-      _isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+
+  /// The design's accent for links, selected text and accent icons: gold.
+  Color get appAccent =>
+      _isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
 
   /// Adjusts [accent] so it is readable as text on the current theme's
   /// surface.
   ///
   /// The brand and semantic accents are chosen as fills. Used directly as a
   /// text colour many of them fail WCAG AA on one theme or the other —
-  /// brandPrimary is 2.6:1 on the dark surface variant, success is 2.5:1 on
-  /// white, warning 2.2:1. This keeps the hue and lifts it only as far as
+  /// success is 2.5:1 on white, warning 2.2:1. This keeps the hue and lifts it only as far as
   /// needed.
   ///
   /// Pass [minRatio] `kMinContrastLargeText` for icons and large headings.
@@ -454,10 +425,4 @@ extension AppColorsTheme on BuildContext {
   /// Theme-aware primary brand color with opacity.
   Color appPrimaryWith(double opacity) =>
       Theme.of(this).colorScheme.primary.withValues(alpha: opacity);
-
-  /// Theme-aware interactive/button color.
-  /// Dark mode uses [AppColors.brandSecondary] (darker indigo) instead of the
-  /// light-lavender [colorScheme.primary] so buttons have proper visual weight.
-  Color get appInteractive =>
-      _isDark ? AppColors.brandSecondary : AppColors.brandPrimary;
 }

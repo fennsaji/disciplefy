@@ -45,10 +45,8 @@ class LedgerToneColors {
         return LedgerToneColors(
             context.appError, AppColors.error.withValues(alpha: alpha));
       case LedgerTone.accent:
-        return LedgerToneColors(
-            palette.accentIcon,
-            AppColors.brandPrimary
-                .withValues(alpha: palette.isDark ? 0.2 : 0.08));
+        return LedgerToneColors(palette.accentIcon,
+            palette.gold.withValues(alpha: palette.isDark ? 0.2 : 0.08));
       case LedgerTone.gold:
         return LedgerToneColors(
             palette.gold, palette.gold.withValues(alpha: alpha));
@@ -383,7 +381,7 @@ class LedgerStatRow extends StatelessWidget {
       );
 }
 
-/// Full-width stadium pill: white with indigo ink on dark, indigo with white
+/// Full-width stadium pill: white with ink text on dark, ink with white
 /// ink on light.
 class LedgerPrimaryButton extends StatelessWidget {
   final String label;

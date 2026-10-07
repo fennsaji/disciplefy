@@ -10,14 +10,15 @@ void main() {
         closeTo(21, 0.01));
     expect(contrastRatio(const Color(0xFF000000), const Color(0xFF000000)),
         closeTo(1, 0.01));
-    // The measured failure that prompted this: brand indigo on the dark card.
-    expect(contrastRatio(AppColors.brandPrimary, const Color(0xFF1F1E2F)),
+    // The measured failure that prompted this: the retired indigo accent
+    // (#4F46E5) on the dark card.
+    expect(contrastRatio(const Color(0xFF4F46E5), const Color(0xFF1F1E2F)),
         closeTo(2.6, 0.15));
   });
 
   test('ensureContrast lifts a failing accent to AA', () {
     const card = Color(0xFF1F1E2F);
-    final fixed = ensureContrast(AppColors.brandPrimary, card);
+    final fixed = ensureContrast(const Color(0xFF4F46E5), card);
     expect(contrastRatio(fixed, card),
         greaterThanOrEqualTo(kMinContrastNormalText));
   });
@@ -43,7 +44,8 @@ void main() {
       'light': AppColors.lightSurface,
     };
     const accents = {
-      'brandPrimary': AppColors.brandPrimary,
+      'brandGoldDeep': AppColors.brandGoldDeep,
+      'brandGold': AppColors.brandGold,
       'info': AppColors.info,
       'success': AppColors.success,
       'warning': AppColors.warning,

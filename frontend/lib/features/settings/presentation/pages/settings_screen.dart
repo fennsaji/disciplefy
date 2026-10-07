@@ -158,10 +158,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 },
                 builder: (context, state) {
                   if (state is SettingsLoading) {
-                    return const Center(
+                    return Center(
                       child: CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            settingsPrimaryFill(context)),
                         strokeWidth: 3,
                       ),
                     );
@@ -261,7 +261,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               featureKey: 'leaderboard',
               child: SettingsRow(
                 icon: Icons.emoji_events_outlined,
-                tone: SettingsTone.gold,
                 title: context.tr(TranslationKeys.gamificationTitle),
                 subtitle: context.tr(TranslationKeys.gamificationSubtitle),
                 onTap: () => context.push(AppRoutes.statsDashboard),
@@ -282,7 +281,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           // My Plan — unified plan and subscription management.
           SettingsRow(
             icon: Icons.workspace_premium_outlined,
-            tone: SettingsTone.gold,
             title: context.tr(TranslationKeys.settingsMyPlan),
             subtitle: context.tr(TranslationKeys.settingsMyPlanSubtitle),
             onTap: () => context.push(AppRoutes.myPlan),
@@ -442,7 +440,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             SettingsRow(
               icon: Icons.receipt_long_outlined,
-              tone: SettingsTone.gold,
               title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
               subtitle: context
                   .tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
@@ -484,7 +481,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             SettingsRow(
               icon: Icons.book_outlined,
-              tone: SettingsTone.gold,
               title: context.tr(TranslationKeys.settingsBibleAttribution),
               subtitle:
                   context.tr(TranslationKeys.settingsBibleAttributionSubtitle),

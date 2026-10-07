@@ -1203,7 +1203,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: ReaderPalette.selectedFill,
+                            color: palette.selectedFill,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -1212,7 +1212,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                             style: AppFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: palette.onSelected,
                             ),
                           ),
                         ),
@@ -1236,6 +1236,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 
   Widget _buildInputSection() {
+    final palette = ReaderPalette.of(context);
     final isQuestion = _selectedMode == StudyInputMode.question;
     final radius = BorderRadius.circular(isQuestion ? 22 : 30);
     final errorColor = Theme.of(context).colorScheme.error;
@@ -1253,7 +1254,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               color: _validationError != null
                   ? errorColor
                   : _inputFocusNode.hasFocus
-                      ? ReaderPalette.selectedFill
+                      ? palette.selectedFill
                       : Colors.transparent,
               width: 1.5,
             ),
@@ -1288,7 +1289,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   textInputAction: isQuestion
                       ? TextInputAction.newline
                       : TextInputAction.done,
-                  cursorColor: ReaderPalette.selectedFill,
+                  cursorColor: ReaderPalette.ink,
                   style: AppFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w500,
@@ -1358,6 +1359,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 
   Widget _buildSuggestions() {
+    final palette = ReaderPalette.of(context);
     if (_selectedMode == StudyInputMode.question) {
       return _buildQuestionDropdown();
     }
@@ -1380,16 +1382,16 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: ReaderPalette.selectedFill.withValues(alpha: 0.9),
+                    color: palette.selectedFill.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.touch_app_rounded,
                         size: 14,
-                        color: Colors.white,
+                        color: palette.onSelected,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
@@ -1398,7 +1400,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                           style: AppFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                            color: palette.onSelected,
                           ),
                         ),
                       ),
@@ -1912,7 +1914,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                 icon: isRateLimited
                     ? Icons.hourglass_bottom_rounded
                     : Icons.error_outline_rounded,
-                tone: isRateLimited ? PopupTone.gold : PopupTone.indigo,
+                tone: isRateLimited ? PopupTone.gold : PopupTone.accent,
               ),
               title: dialogContext
                   .tr(TranslationKeys.generateStudyGenerationFailed),
@@ -2027,7 +2029,7 @@ class _SuggestionChip extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
-                    color: ReaderPalette.selectedFill,
+                    color: palette.selectedFill,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -2035,7 +2037,7 @@ class _SuggestionChip extends StatelessWidget {
                     style: AppFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: palette.onSelected,
                     ),
                   ),
                 ),

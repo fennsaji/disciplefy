@@ -234,7 +234,7 @@ class VoiceSessionView extends StatelessWidget {
         return _OrbView(
           orb: _orb(
             buttonState,
-            WaveformBars(color: Colors.white, height: 56, count: 9),
+            WaveformBars(color: ReaderPalette.ink, height: 56, count: 9),
           ),
           hint: hint,
           emphasiseHint: true,
@@ -288,7 +288,8 @@ class VoiceSessionView extends StatelessWidget {
         return _OrbView(
           orb: _orb(
             buttonState,
-            const Icon(Icons.mic_none_rounded, size: 56, color: Colors.white),
+            const Icon(Icons.mic_none_rounded,
+                size: 56, color: ReaderPalette.ink),
           ),
           hint: hint,
           footnote: state.messages.isEmpty

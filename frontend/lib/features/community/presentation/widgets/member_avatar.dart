@@ -36,7 +36,7 @@ class MemberAvatar extends StatelessWidget {
     Color(0xFF6D28D9), // violet
     Color(0xFF0E7490), // teal
     Color(0xFFBE123C), // crimson
-    Color(0xFF4F46E5), // indigo
+    Color(0xFF0369A1), // sky
     Color(0xFF047857), // green
     Color(0xFFB45309), // amber
     Color(0xFF1D4ED8), // blue

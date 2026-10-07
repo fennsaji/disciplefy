@@ -1599,8 +1599,7 @@ class _LessonStatusMarker extends StatelessWidget {
         child = Icon(Icons.check_rounded, color: palette.muted, size: 18);
         semanticsLabel = AppLocalizations.of(context)!.lessonsGroupMovedOn;
       case _LessonStatus.now:
-        fill = AppColors.brandPrimary
-            .withValues(alpha: palette.isDark ? 0.20 : 0.10);
+        fill = palette.gold.withValues(alpha: palette.isDark ? 0.20 : 0.10);
         border = Border.all(color: palette.accentIcon, width: 1.5);
         child = numberText(palette.accentIcon);
         semanticsLabel = context.tr(TranslationKeys.communityFellowshipNow);
@@ -1664,12 +1663,12 @@ class _LessonTag extends StatelessWidget {
     this.fontWeight = FontWeight.w600,
   });
 
-  /// Solid indigo "▶ Now" tag marking the current lesson.
+  /// Solid gold "▶ Now" tag marking the current lesson.
   factory _LessonTag.now(BuildContext context, String label) => _LessonTag(
         label: label,
         icon: Icons.play_arrow_outlined,
-        fill: AppColors.brandPrimary,
-        ink: Colors.white,
+        fill: ReaderPalette.of(context).selectedFill,
+        ink: ReaderPalette.of(context).onSelected,
         fontSize: 11,
         fontWeight: FontWeight.w700,
       );

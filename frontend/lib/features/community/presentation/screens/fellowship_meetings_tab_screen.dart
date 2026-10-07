@@ -541,8 +541,7 @@ class _SyncCalendarBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
       decoration: BoxDecoration(
-        color: AppColors.brandSecondary
-            .withValues(alpha: palette.isDark ? 0.10 : 0.07),
+        color: palette.gold.withValues(alpha: palette.isDark ? 0.10 : 0.07),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: palette.accentIcon.withValues(alpha: 0.35),

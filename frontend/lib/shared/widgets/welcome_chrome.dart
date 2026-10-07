@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Shared chrome for the pre-auth screens (onboarding, login, email auth,
@@ -183,7 +184,7 @@ class WelcomePhotoBackdrop extends StatelessWidget {
   }
 }
 
-/// Full-width primary pill: white with indigo ink on dark, indigo with white
+/// Full-width primary pill: white with ink text on dark, ink with white
 /// ink on light. Shows a spinner instead of the label while [isLoading].
 class WelcomePrimaryButton extends StatelessWidget {
   final String label;
@@ -239,7 +240,7 @@ class WelcomePrimaryButton extends StatelessWidget {
   }
 }
 
-/// Soft indigo glow behind the onboarding previews (a static gradient, no
+/// Soft gold glow behind the onboarding previews (a static gradient, no
 /// blur).
 class WelcomeGlow extends StatelessWidget {
   final Alignment center;
@@ -250,8 +251,8 @@ class WelcomeGlow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final glow = palette.isDark
-        ? const Color(0xFF3730A3).withValues(alpha: 0.38)
-        : const Color(0xFF6366F1).withValues(alpha: 0.10);
+        ? AppColors.brandGold.withValues(alpha: 0.14)
+        : AppColors.brandHighlightDark.withValues(alpha: 0.10);
     return IgnorePointer(
       child: DecoratedBox(
         decoration: BoxDecoration(

@@ -1506,8 +1506,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.brandPrimary
-                      .withValues(alpha: palette.isDark ? 0.18 : 0.08)
+                  ? palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.08)
                   : palette.raised,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
@@ -1522,7 +1521,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                   height: 42,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.brandPrimary
+                        ? palette.gold
                             .withValues(alpha: palette.isDark ? 0.28 : 0.12)
                         : palette.card,
                     borderRadius: BorderRadius.circular(12),
@@ -1794,7 +1793,7 @@ class _MeetingsSectionTile extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.brandPrimary
+                  color: palette.gold
                       .withValues(alpha: palette.isDark ? 0.24 : 0.10),
                   borderRadius: BorderRadius.circular(14),
                 ),

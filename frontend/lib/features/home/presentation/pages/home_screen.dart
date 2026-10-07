@@ -862,8 +862,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withOpacity(0.8),
+            AppColors.brandGold,
+            AppColors.streakGlow,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -872,7 +872,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       ),
       child: const Icon(
         Icons.menu_book_rounded,
-        color: Colors.white,
+        color: ReaderPalette.ink,
         size: 24,
       ),
     );
@@ -1038,8 +1038,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            context.appBrandAccent),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(context.appAccent),
                       ),
                     )
                   : null,
