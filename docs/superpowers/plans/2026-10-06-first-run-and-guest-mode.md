@@ -20,7 +20,7 @@ Product decisions agreed with the owner (2026-10-06). Every task implicitly incl
 
 - **First focus:** the daily verse plus one learning path. Everything else is secondary and disclosed progressively; no feature is ever gated by the disclosure system (every feature stays reachable from its tab).
 - **First run:** Language (with "Log in" top-right and "Already have an account? Log in") → "What would you like to grow in?" (6 choices mapped to real paths, see table) → Lesson 1 in Quick Read (the shipped study guide screen + a small Quick/Full switch + one "Want the full study? Read the full guide →" line) → "Lesson 1 complete" with sign-up (Google / Apple / Email) or "Not now".
-- **Goal → path map (slugs):** "I'm new to faith" → `new-believer-essentials`; "Understanding the Bible" → `understanding-the-bible`; "Knowing who I am in Christ" → `rooted-in-christ`; "Walking with God daily" → `growing-in-discipleship`; "Hope in hard times" → `theology-of-suffering`; "Reading a Gospel" → `gospel-of-mark`.
+- **Goal → path map (slugs):** "I'm new to faith" → `new-believer-essentials`; "Forgiveness and a fresh start" → `sin-repentance-and-grace`; "Walking with God daily" → `growing-in-discipleship`; "Hope in hard times" → `theology-of-suffering`; "Reading a Gospel" → `gospel-of-mark`; "Understanding the gospel" → `romans-gospel-unfolded`. These six are also the guest-accessible paths (owner decision 2026-10-07; replaces Understanding the Bible and Rooted in Christ).
 - **Guest mode (owner decision 2026-10-07):** "Not now" = Supabase anonymous auth; all progress is server-side under the anonymous user id; sign-up links the identity (same user id, nothing restarts). A guest gets ONLY one path, chosen at first run from a few `guest_accessible` paths (the goal → path map), and can finish all of it; even after a reinstall a guest can only ever pick from those few. Only the **Home** and **Topics** tabs work for a guest; in Topics the guest's path is open and every other path is shown locked. **Generate, Discipler, Community, Memory verses and any other path** open the "account needed" sheet (Google / Apple / Email and "Continue as guest"), with reasons `generate`, `discipler`, `community`, `memory_verses`, `other_path`. Settings stays available (language, sign up, sign out). A guest never needs credits: guests may generate ONLY verified catalogue lessons of their own enrolled path (free in Quick Read / recommended mode); typed studies are refused for guests with ACCOUNT_REQUIRED (reason `generate`). Guest daily credits are therefore zero in practice. Backend enforcement is Task 4b; client gating is Tasks 7 and 10.
 - **Skip / Log in** on the first-run screens → the current login screen → Home. Home shows "Choose your first path" only when no goal was picked and no path is enrolled.
 - **Welcome copy:** en "Grow in God's Word every day" / "A daily verse and a short lesson, in your language."; hi "हर दिन परमेश्वर के वचन में बढ़ें" / "आपकी भाषा में रोज़ एक वचन और छोटा पाठ।"; ml "ദിവസവും ദൈവവചനത്തിൽ വളരുക" / "നിങ്ങളുടെ ഭാഷയിൽ ദിവസവും ഒരു വചനവും ചെറിയ പാഠവും."
@@ -676,14 +676,17 @@ i18n keys (en / hi / ml):
 - `first_run.skip` = "Skip" / "छोड़ें" / "ഒഴിവാക്കുക"
 - `first_run.start_lesson_one` = "Start lesson 1" / "पाठ 1 शुरू करें" / "പാഠം 1 തുടങ്ങാം"
 - `first_run.terms` = "By continuing you agree to our Terms and Privacy Policy." / "आगे बढ़कर आप हमारी शर्तें और गोपनीयता नीति मानते हैं।" / "തുടരുമ്പോൾ നിബന്ധനകളും സ്വകാര്യതാ നയവും അംഗീകരിക്കുന്നു."
-- `first_run.path_prefix` = "Path: {title}" / "पथ: {title}" / "പാത: {title}"
+- `first_run.path_meta` = "{title} · {n} lessons" / "{title} · {n} पाठ" / "{title} · {n} പാഠം" (replaces the technical "Path: {title}" sub-label; one noun "lesson")
+- `first_run.pick_one` = "Pick one. It sets your first learning path; switch any time." (signed-in users)
+- `first_run.pick_one_guest` = "Pick one to start. Create a free account later to unlock all {n} paths." / "एक चुनें। बाद में मुफ़्त खाता बनाकर सभी {n} पथ खोलें।" / "ഒന്ന് തിരഞ്ഞെടുക്കുക. പിന്നീട് സൗജന്യ അക്കൗണ്ട് ഉണ്ടാക്കി എല്ലാ {n} പാതകളും തുറക്കാം." (guests: they cannot switch)
 - Goals:
   - `goal.new_to_faith` = "I'm new to faith" / "मैं विश्वास में नया हूँ" / "വിശ്വാസത്തിൽ പുതിയതാണ്"
-  - `goal.understand_bible` = "Understanding the Bible" / "बाइबल समझना" / "ബൈബിൾ മനസ്സിലാക്കാൻ"
-  - `goal.identity_in_christ` = "Knowing who I am in Christ" / "मसीह में मेरी पहचान" / "ക്രിസ്തുവിൽ ഞാൻ ആര്"
+  - `goal.fresh_start` = "Forgiveness and a fresh start" / "क्षमा और नई शुरुआत" / "ക്ഷമയും പുതിയ തുടക്കവും"
   - `goal.walk_with_god` = "Walking with God daily" / "रोज़ परमेश्वर के साथ" / "ദിവസവും ദൈവത്തോടൊപ്പം"
   - `goal.hope_hard_times` = "Hope in hard times" / "कठिन समय में आशा" / "പ്രയാസത്തിൽ പ്രത്യാശ"
   - `goal.read_gospel` = "Reading a Gospel" / "एक सुसमाचार पढ़ना" / "ഒരു സുവിശേഷം വായിക്കാൻ"
+  - `goal.understand_gospel` = \"Understanding the gospel\" / \"सुसमाचार को समझना\" / \"സുവിശേഷം മനസ്സിലാക്കാൻ\"
+  - Order on the screen: new_to_faith, fresh_start, walk_with_god, hope_hard_times, read_gospel, understand_gospel.
 
 The language page shows the three language options in their own script ("English", "हिन्दी", "മലയാളം"). Those labels are not translated keys.
 
