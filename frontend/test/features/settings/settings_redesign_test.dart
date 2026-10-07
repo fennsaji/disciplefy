@@ -29,6 +29,7 @@ import 'package:disciplefy_bible_study/features/settings/domain/entities/theme_m
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_event.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_more_page.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_screen.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
@@ -162,6 +163,9 @@ void main() {
       initialLocation: '/settings',
       routes: [
         GoRoute(path: '/settings', builder: (_, __) => screen),
+        GoRoute(
+            path: '/settings/more',
+            builder: (_, __) => const SettingsMorePage()),
         GoRoute(path: '/', builder: (_, __) => const Text('stub:/')),
       ],
     );
@@ -195,6 +199,15 @@ void main() {
 
   String tr(String key) => translations.getTranslation(key);
 
+  /// Opens the More page from the main list.
+  Future<void> openMore(WidgetTester tester) async {
+    await tester.scrollUntilVisible(find.byKey(const Key('settings_more')), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('settings_more')));
+    await tester.pumpAndSettle();
+  }
+
   group('SettingsScreen', () {
     for (final dark in [true, false]) {
       final theme = dark ? 'dark' : 'light';
@@ -221,6 +234,12 @@ void main() {
         expect(find.text('ACCOUNT'), findsOneWidget);
         expect(find.text('Sign Out'), findsOneWidget);
         expect(find.text('Delete Account'), findsOneWidget);
+
+        await scrollToEnd(tester);
+        await tester.drag(find.byType(ListView).first, const Offset(0, 400));
+        await tester.pumpAndSettle();
+        await openMore(tester);
+        await scrollToEnd(tester);
         expect(find.text('2.4.0'), findsOneWidget);
       });
 
@@ -276,7 +295,10 @@ void main() {
       }
 
       await scrollToEnd(tester, check: collect);
+      await openMore(tester);
+      await scrollToEnd(tester, check: collect);
       for (final key in [
+        TranslationKeys.settingsMoreSubtitle,
         TranslationKeys.gamificationSubtitle,
         TranslationKeys.settingsReflectionJournalSubtitle,
         TranslationKeys.settingsMyPlanSubtitle,
@@ -331,6 +353,7 @@ void main() {
         useSurface(tester, const Size(320, 640));
         await tester.pumpWidget(app(const SettingsScreen(), dark: false));
         await tester.pumpAndSettle();
+        await openMore(tester);
         await tester.scrollUntilVisible(
             find.byIcon(Icons.favorite_outline), 300,
             scrollable: find.byType(Scrollable).first);

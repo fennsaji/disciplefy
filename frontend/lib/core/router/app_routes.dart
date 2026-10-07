@@ -26,6 +26,7 @@ class AppRoutes {
   static String featureIntroFor(String kind) => '/intro/$kind';
   static const String settings = '/settings';
   static const String bibleAttribution = '/settings/bible-attribution';
+  static const String settingsMore = '/settings/more';
   static const String notificationSettings = '/notification-settings';
   static const String blockedUsers = '/blocked-users';
   static const String saved = '/saved';
