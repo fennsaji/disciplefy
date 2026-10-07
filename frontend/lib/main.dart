@@ -247,6 +247,7 @@ Future<void> _initializeLocalStorage() async {
 
   await Hive.openBox('app_settings');
 }
+  await Hive.openBox<dynamic>('nux_events');
 
 /// Initializes Firebase for push notifications and crash reporting.
 ///

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import '../utils/logger.dart';
 
 /// Auth state notifier for GoRouter refresh
@@ -90,6 +92,13 @@ class AuthNotifier extends ChangeNotifier {
           _syncSessionExpiry(authState.session!);
         }
 
+        // Send activation events that waited for a user (guest or signed in).
+        if (authState.session != null &&
+            (authState.event == AuthChangeEvent.signedIn ||
+                authState.event == AuthChangeEvent.tokenRefreshed)) {
+          _flushActivationEvents();
+        }
+
         // Notify if auth state changed, if this is the first initialization,
         // or if this is a signedOut event — even when the Supabase session was
         // already null (e.g. expired) we must notify so the router re-evaluates
@@ -135,6 +144,16 @@ class AuthNotifier extends ChangeNotifier {
     });
 
     Logger.debug('⏳ [AUTH NOTIFIER] 5-second timeout timer started');
+  }
+
+  void _flushActivationEvents() {
+    try {
+      if (sl.isRegistered<ActivationAnalytics>()) {
+        unawaited(sl<ActivationAnalytics>().flush());
+      }
+    } catch (e) {
+      Logger.warning('[AUTH NOTIFIER] activation flush skipped: $e');
+    }
   }
 
   bool get isAuthenticated => _isAuthenticated;

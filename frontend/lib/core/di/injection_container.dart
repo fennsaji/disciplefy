@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -268,6 +269,12 @@ Future<void> initializeDependencies() async {
   //! Core
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => Supabase.instance.client);
+  sl.registerLazySingleton<ActivationAnalytics>(
+    () => ActivationAnalytics(
+      client: sl<SupabaseClient>(),
+      queue: Hive.box<dynamic>('nux_events'),
+    ),
+  );
   sl.registerLazySingleton(() => Connectivity());
   sl.registerLazySingleton<NetworkInfo>(
     () => NetworkInfoImpl(sl()),
