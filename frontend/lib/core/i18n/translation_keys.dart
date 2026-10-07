@@ -254,6 +254,14 @@ class TranslationKeys {
   static const homeTodayModeStandard = 'home_today.mode_standard';
   static const homeTodayPathFinished = 'home_today.path_finished';
   static const homeTodayChooseNextPath = 'home_today.choose_next_path';
+  static const homeTodaySeePath = 'home_today.see_path';
+  static const homeTodayLessonOf = 'home_today.lesson_of';
+  static const homeTodayToGo = 'home_today.to_go';
+  static const homeTodayChooseFirstPath = 'home_today.choose_first_path';
+  static const homeTodayChooseFirstPathSub = 'home_today.choose_first_path_sub';
+  static const homeTodayLessonsDays = 'home_today.lessons_days';
+  static const homeTodaySeeAllPaths = 'home_today.see_all_paths';
+  static const homeTodaySaveProgress = 'home_today.save_progress';
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
