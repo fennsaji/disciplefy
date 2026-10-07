@@ -17,6 +17,7 @@ import { checkFeatureAccess } from '../_shared/middleware/feature-access-middlew
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
 import { buildRecommendedExtras, type NextLessonJson } from './next-lesson.ts';
+import { assertGuestMayEnroll, loadUserEnrolledPathIds, parseEnrollTarget, resolvePathIdBySlug } from './guest-rules.ts';
 import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations, pathProgressPercentage } from './batch-loaders.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
@@ -63,10 +64,6 @@ interface LearningPathCategoryResult {
 interface LearningPathDetailRequest {
   pathId: string;
   language?: string;
-}
-
-interface EnrollRequest {
-  pathId: string;
 }
 
 interface LearningPath {
@@ -934,19 +931,22 @@ async function handleEnroll(
 
   const { supabaseServiceClient } = services;
 
-  // Parse request
-  let pathId: string | null = null;
-
+  // Parse request: { pathId } or { slug }; a pathId query param still works.
+  let body: unknown = null;
   try {
-    const body: EnrollRequest = await req.json();
-    pathId = body.pathId;
+    body = await req.json();
   } catch {
-    const url = new URL(req.url);
-    pathId = url.searchParams.get('pathId');
+    // No JSON body: fall back to the query parameter below.
   }
+  const target = parseEnrollTarget(body, new URL(req.url).searchParams.get('pathId'));
+  const pathId = 'pathId' in target
+    ? target.pathId
+    : await resolvePathIdBySlug(supabaseServiceClient, target.slug);
 
-  if (!pathId) {
-    throw new AppError('VALIDATION_ERROR', 'pathId is required', 400);
+  // A guest holds one path: the first one, which they may re-enrol.
+  if (userContext.isGuest) {
+    const enrolledPathIds = await loadUserEnrolledPathIds(supabaseServiceClient, userContext.userId);
+    assertGuestMayEnroll(enrolledPathIds, pathId);
   }
 
   // Call the database function (returns progress_id UUID)

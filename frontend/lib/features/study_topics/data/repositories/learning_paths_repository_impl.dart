@@ -360,18 +360,31 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   @override
   Future<Either<Failure, EnrollmentResult>> enrollInPath({
     required String pathId,
-  }) async {
+  }) =>
+      _enroll(() => _remoteDataSource.enrollInPath(pathId: pathId));
+
+  @override
+  Future<Either<Failure, EnrollmentResult>> enrollInPathBySlug(String slug) =>
+      _enroll(() => _remoteDataSource.enrollInPath(slug: slug));
+
+  Future<Either<Failure, EnrollmentResult>> _enroll(
+    Future<EnrollmentResult> Function() request,
+  ) async {
     try {
-      final result = await _remoteDataSource.enrollInPath(pathId: pathId);
+      final result = await request();
 
       // Invalidate caches after enrollment
       clearCache();
 
       return Right(result);
+    } on AccountRequiredException catch (e) {
+      return Left(AccountRequiredFailure(message: e.message, reason: e.reason));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(message: e.message, code: e.code));
     } catch (e) {
       Logger.error('[LearningPathsRepo] Failed to enroll in learning path',
           error: e);

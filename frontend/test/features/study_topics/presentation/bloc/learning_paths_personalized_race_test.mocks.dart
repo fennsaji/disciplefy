@@ -226,6 +226,25 @@ class MockLearningPathsRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, _i6.EnrollmentResult>>);
 
   @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.EnrollmentResult>> enrollInPathBySlug(
+          String? slug) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #enrollInPathBySlug,
+          [slug],
+        ),
+        returnValue:
+            _i4.Future<_i2.Either<_i5.Failure, _i6.EnrollmentResult>>.value(
+                _FakeEither_0<_i5.Failure, _i6.EnrollmentResult>(
+          this,
+          Invocation.method(
+            #enrollInPathBySlug,
+            [slug],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i6.EnrollmentResult>>);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, _i7.ResetProgressResult>>
       resetLearningProgress() => (super.noSuchMethod(
             Invocation.method(

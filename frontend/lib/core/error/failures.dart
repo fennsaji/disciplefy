@@ -72,6 +72,23 @@ class AuthorizationFailure extends Failure {
   });
 }
 
+/// A guest tried something that needs an account (server code
+/// `ACCOUNT_REQUIRED`). The UI answers by offering account creation.
+class AccountRequiredFailure extends Failure {
+  /// Why an account is needed, for example `second_path`.
+  final String? reason;
+
+  const AccountRequiredFailure({
+    super.message = 'Create an account to continue.',
+    super.code = 'ACCOUNT_REQUIRED',
+    this.reason,
+    super.context,
+  });
+
+  @override
+  List<Object?> get props => [...super.props, reason];
+}
+
 /// Failure related to local storage operations.
 class StorageFailure extends Failure {
   const StorageFailure({

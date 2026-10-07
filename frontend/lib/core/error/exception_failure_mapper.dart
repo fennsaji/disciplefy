@@ -12,6 +12,13 @@ Failure mapExceptionToFailure(
   required String fallbackMessage,
   String fallbackCode = 'UNEXPECTED_ERROR',
 }) {
+  if (error is AccountRequiredException) {
+    return AccountRequiredFailure(
+      message: error.message,
+      code: error.code,
+      reason: error.reason,
+    );
+  }
   if (error is AuthenticationException) {
     return AuthenticationFailure(message: error.message, code: error.code);
   }

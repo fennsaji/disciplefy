@@ -67,6 +67,21 @@ class AuthorizationException extends AppException {
   });
 }
 
+/// Exception thrown when a guest tries something that needs an account
+/// (server code `ACCOUNT_REQUIRED`, HTTP 403).
+class AccountRequiredException extends AppException {
+  /// Why an account is needed, from `error.details.reason`
+  /// (for example `second_path`).
+  final String? reason;
+
+  const AccountRequiredException({
+    super.message = 'Create an account to continue.',
+    super.code = 'ACCOUNT_REQUIRED',
+    this.reason,
+    super.context,
+  });
+}
+
 /// Exception thrown when local storage operations fail.
 class StorageException extends AppException {
   const StorageException({

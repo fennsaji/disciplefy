@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
@@ -60,9 +61,13 @@ abstract class LearningPathsRemoteDataSource {
     String language = 'en',
   });
 
-  /// Enroll in a learning path.
+  /// Enroll in a learning path, named by [pathId] or by [slug].
+  ///
+  /// Throws [AccountRequiredException] when a guest needs an account first
+  /// (for example to start a second path).
   Future<EnrollmentResultModel> enrollInPath({
-    required String pathId,
+    String? pathId,
+    String? slug,
   });
 
   /// Reset all of the user's learning path progress.
@@ -358,15 +363,25 @@ class LearningPathsRemoteDataSourceImpl
 
   @override
   Future<EnrollmentResultModel> enrollInPath({
-    required String pathId,
+    String? pathId,
+    String? slug,
   }) async {
+    if ((pathId == null || pathId.isEmpty) && (slug == null || slug.isEmpty)) {
+      throw const ValidationException(
+        message: 'pathId or slug is required to enroll',
+        code: 'ENROLLMENT_TARGET_MISSING',
+      );
+    }
+
     try {
-      _logDebug('Enrolling in learning path: $pathId');
+      _logDebug('Enrolling in learning path: ${pathId ?? 'slug $slug'}');
 
       final headers = await _httpService.createHeaders();
-      final body = jsonEncode({
-        'pathId': pathId,
-      });
+      final body = jsonEncode(
+        pathId != null && pathId.isNotEmpty
+            ? {'pathId': pathId}
+            : {'slug': slug},
+      );
 
       final response = await _httpService.post(
         '$_baseUrl$_endpoint?action=enroll',
@@ -380,16 +395,21 @@ class LearningPathsRemoteDataSourceImpl
         // Invalidate persistent cache so enrollment state is reflected on next load
         await _cache.clearCache();
         return _parseEnrollmentResponse(response.body);
-      } else {
-        _logDebug('API error: ${response.statusCode} - ${response.body}');
-        throw ServerException(
-          message: 'Failed to enroll in learning path: ${response.statusCode}',
-          code: 'ENROLLMENT_API_ERROR',
-        );
       }
+
+      final accountRequired = _parseAccountRequired(response);
+      if (accountRequired != null) throw accountRequired;
+
+      _logDebug('API error: ${response.statusCode} - ${response.body}');
+      throw ServerException(
+        message: 'Failed to enroll in learning path: ${response.statusCode}',
+        code: 'ENROLLMENT_API_ERROR',
+      );
     } on ServerException {
       rethrow;
     } on ClientException {
+      rethrow;
+    } on AccountRequiredException {
       rethrow;
     } catch (e) {
       _logDebug('Exception in enrollInPath: $e');
@@ -398,6 +418,30 @@ class LearningPathsRemoteDataSourceImpl
         message: 'Failed to enroll in learning path',
         code: 'ENROLLMENT_NETWORK_ERROR',
       );
+    }
+  }
+
+  /// An [AccountRequiredException] when [response] is a 403 whose error
+  /// code is `ACCOUNT_REQUIRED`; null for anything else.
+  AccountRequiredException? _parseAccountRequired(http.Response response) {
+    if (response.statusCode != 403) return null;
+    try {
+      final json = jsonDecode(response.body);
+      if (json is! Map<String, dynamic>) return null;
+      final error = json['error'];
+      if (error is! Map<String, dynamic>) return null;
+      if (error['code'] != 'ACCOUNT_REQUIRED') return null;
+      final details = error['details'];
+      final reason = details is Map<String, dynamic> ? details['reason'] : null;
+      final message = error['message'];
+      return AccountRequiredException(
+        message: message is String && message.isNotEmpty
+            ? message
+            : 'Create an account to continue.',
+        reason: reason is String ? reason : null,
+      );
+    } on FormatException {
+      return null;
     }
   }
 
