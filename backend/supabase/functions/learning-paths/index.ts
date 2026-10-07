@@ -17,7 +17,14 @@ import { checkFeatureAccess } from '../_shared/middleware/feature-access-middlew
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
 import { buildRecommendedExtras, type NextLessonJson } from './next-lesson.ts';
-import { assertGuestMayEnroll, loadUserEnrolledPathIds, parseEnrollTarget, resolvePathIdBySlug } from './guest-rules.ts';
+import {
+  assertGuestMayEnroll,
+  loadGuestAccessiblePathIds,
+  loadPathGuestAccessible,
+  loadUserEnrolledPathIds,
+  parseEnrollTarget,
+  resolvePathIdBySlug,
+} from './guest-rules.ts';
 import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations, pathProgressPercentage } from './batch-loaders.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
@@ -78,6 +85,8 @@ interface LearningPath {
   disciple_level: string;
   recommended_mode?: string;
   is_featured: boolean;
+  /** True when a guest may enrol in and study this path. */
+  guest_accessible: boolean;
   topics_count: number;
   is_enrolled: boolean;
   progress_percentage: number;
@@ -142,6 +151,7 @@ interface LearningPathRow {
   disciple_level: string;
   is_featured: boolean;
   is_active: boolean;
+  guest_accessible?: boolean;
   recommended_mode?: string;
   display_order?: number;
 }
@@ -390,6 +400,7 @@ function buildLearningPathResponse(
     estimated_days: pathData.estimated_days,
     disciple_level: pathData.disciple_level,
     is_featured: pathData.is_featured,
+    guest_accessible: pathData.guest_accessible === true,
     topics_count: topicsCount,
     is_enrolled: isEnrolled,
     progress_percentage: progressPercentage,
@@ -534,7 +545,27 @@ async function handleLearningPaths(
 // Shared helper
 // ============================================================================
 
-function mapPathRow(row: Record<string, unknown>): LearningPath {
+/**
+ * Ids of the guest-accessible paths, shared across requests in this worker for
+ * labelling responses only (catalogue data, same for every caller). Enrolment
+ * reads the flag fresh. A failed lookup is not cached and labels nothing.
+ */
+const guestAccessibleCache = new TtlCache<Set<string>>(CATALOG_CACHE_TTL_MS, 1);
+
+// deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
+async function guestAccessiblePathIds(client: any): Promise<Set<string>> {
+  const cached = guestAccessibleCache.get('ids');
+  if (cached) return cached;
+  const ids = await loadGuestAccessiblePathIds(client);
+  if (!ids) {
+    console.warn('[LearningPaths] guest_accessible lookup failed; labelling no path');
+    return new Set();
+  }
+  guestAccessibleCache.set('ids', ids);
+  return ids;
+}
+
+function mapPathRow(row: Record<string, unknown>, guestAccessibleIds: Set<string>): LearningPath {
   return {
     id: row.path_id as string,
     slug: row.slug as string,
@@ -546,6 +577,7 @@ function mapPathRow(row: Record<string, unknown>): LearningPath {
     estimated_days: row.estimated_days as number,
     disciple_level: row.disciple_level as string,
     is_featured: row.is_featured as boolean,
+    guest_accessible: guestAccessibleIds.has(row.path_id as string),
     topics_count: row.total_topics as number,
     is_enrolled: row.is_enrolled as boolean,
     progress_percentage: row.progress_percentage as number,
@@ -630,8 +662,9 @@ async function handleListPaths(
   }
 
   // Step 2: fetch paths for every category in parallel
-  const pathResults = await Promise.all(
-    pageCategories.map((cat: Record<string, unknown>) =>
+  const [guestIds, ...pathResults] = await Promise.all([
+    guestAccessiblePathIds(supabaseServiceClient),
+    ...pageCategories.map((cat: Record<string, unknown>) =>
       supabaseServiceClient.rpc('get_available_learning_paths', {
         p_user_id: userId,
         p_language: language,
@@ -640,19 +673,23 @@ async function handleListPaths(
         p_offset: 0,
         p_category: cat.category as string,
       })
-    )
-  );
+    ),
+  ]);
 
   // Step 3: build response
   const categories: LearningPathCategoryResult[] = pageCategories.map(
     (cat: Record<string, unknown>, i: number) => {
-      const { data: pathRows, error: pathErr } = pathResults[i];
+      const { data: pathRows, error: pathErr } = pathResults[i] as {
+        data: Record<string, unknown>[] | null;
+        error: unknown;
+      };
       if (pathErr) {
         console.error(`Error fetching paths for category ${cat.category}:`, pathErr);
       }
       const rows: Record<string, unknown>[] = pathRows || [];
       const hasMoreInCategory = rows.length > PATHS_PER_CATEGORY;
-      const paths = (hasMoreInCategory ? rows.slice(0, PATHS_PER_CATEGORY) : rows).map(mapPathRow);
+      const paths = (hasMoreInCategory ? rows.slice(0, PATHS_PER_CATEGORY) : rows)
+        .map((row) => mapPathRow(row, guestIds));
 
       return {
         name: cat.category as string,
@@ -718,7 +755,10 @@ async function handleListPathsFlat(
   };
   if (search) rpcParams['p_search'] = search;
 
-  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', rpcParams);
+  const [{ data, error }, guestIds] = await Promise.all([
+    supabaseServiceClient.rpc('get_available_learning_paths', rpcParams),
+    guestAccessiblePathIds(supabaseServiceClient),
+  ]);
 
   if (error) {
     console.error('Error fetching learning paths (flat):', error);
@@ -744,7 +784,7 @@ async function handleListPathsFlat(
   const rows = data || [];
   const hasMore = rows.length > limit;
   const paths = (hasMore ? rows.slice(0, limit) : rows).map((row: Record<string, unknown>) => ({
-    ...mapPathRow(row),
+    ...mapPathRow(row, guestIds),
     fellowship_completed: completedPathIds.has(row.path_id as string),
   }));
 
@@ -791,14 +831,17 @@ async function handleListPathsByCategory(
 
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
 
-  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', {
-    p_user_id: userId,
-    p_language: language,
-    p_include_enrolled: true,
-    p_limit: limit + 1,
-    p_offset: offset,
-    p_category: category,
-  });
+  const [{ data, error }, guestIds] = await Promise.all([
+    supabaseServiceClient.rpc('get_available_learning_paths', {
+      p_user_id: userId,
+      p_language: language,
+      p_include_enrolled: true,
+      p_limit: limit + 1,
+      p_offset: offset,
+      p_category: category,
+    }),
+    guestAccessiblePathIds(supabaseServiceClient),
+  ]);
 
   if (error) {
     console.error(`Error fetching paths for category ${category}:`, error);
@@ -807,7 +850,8 @@ async function handleListPathsByCategory(
 
   const rows = data || [];
   const hasMore = rows.length > limit;
-  const paths = (hasMore ? rows.slice(0, limit) : rows).map(mapPathRow);
+  const paths = (hasMore ? rows.slice(0, limit) : rows)
+    .map((row: Record<string, unknown>) => mapPathRow(row, guestIds));
 
   return new Response(
     JSON.stringify({ success: true, data: { paths, has_more: hasMore, category, offset } }),
@@ -845,11 +889,14 @@ async function handleGetPathDetails(
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
 
   // Call the database function
-  const { data, error } = await supabaseServiceClient.rpc('get_learning_path_details', {
-    p_path_id: resolvedPathId,
-    p_user_id: userId,
-    p_language: language,
-  });
+  const [{ data, error }, guestIds] = await Promise.all([
+    supabaseServiceClient.rpc('get_learning_path_details', {
+      p_path_id: resolvedPathId,
+      p_user_id: userId,
+      p_language: language,
+    }),
+    guestAccessiblePathIds(supabaseServiceClient),
+  ]);
 
   if (error) {
     console.error('Error fetching learning path details:', error);
@@ -875,6 +922,7 @@ async function handleGetPathDetails(
     allow_non_sequential_access: row.allow_non_sequential_access,
     category: (row.category as string) || '',
     is_featured: false,
+    guest_accessible: guestIds.has(row.path_id),
     topics_count: row.topics?.length || 0,
     is_enrolled: row.is_enrolled,
     progress_percentage: row.progress_percentage,
@@ -943,10 +991,14 @@ async function handleEnroll(
     ? target.pathId
     : await resolvePathIdBySlug(supabaseServiceClient, target.slug);
 
-  // A guest holds one path: the first one, which they may re-enrol.
+  // A guest holds one guest-accessible path: the first one, which they may
+  // re-enrol. Any other path needs an account.
   if (userContext.isGuest) {
-    const enrolledPathIds = await loadUserEnrolledPathIds(supabaseServiceClient, userContext.userId);
-    assertGuestMayEnroll(enrolledPathIds, pathId);
+    const [guestAccessible, enrolledPathIds] = await Promise.all([
+      loadPathGuestAccessible(supabaseServiceClient, pathId),
+      loadUserEnrolledPathIds(supabaseServiceClient, userContext.userId),
+    ]);
+    assertGuestMayEnroll(enrolledPathIds, pathId, guestAccessible);
   }
 
   // Call the database function (returns progress_id UUID)
@@ -1095,7 +1147,7 @@ async function handleGetRecommendedPaths(
     if (personalization?.questionnaire_completed && personalization?.faith_stage) {
       const { data: allPaths } = await supabaseServiceClient
         .from('learning_paths')
-        .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, display_order')
+        .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, guest_accessible, display_order')
         .eq('is_active', true);
 
       if (allPaths && allPaths.length > 0) {
@@ -1321,7 +1373,8 @@ async function handleGetRecommendedPath(
             estimated_days,
             disciple_level,
             is_featured,
-            is_active
+            is_active,
+            guest_accessible
           )
         `)
         .eq('user_id', userId)
@@ -1415,7 +1468,7 @@ async function handleGetRecommendedPath(
         ] = await Promise.all([
           supabaseServiceClient
             .from('learning_paths')
-            .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, display_order')
+            .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, guest_accessible, display_order')
             .eq('is_active', true),
           supabaseServiceClient
             .from('user_learning_path_progress')

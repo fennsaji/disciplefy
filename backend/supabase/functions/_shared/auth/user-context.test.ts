@@ -6,6 +6,8 @@ import {
   enforceFullAccount,
   isAnonymousAuthUser,
   ACCOUNT_ONLY_FUNCTIONS,
+  MEMORY_VERSE_FUNCTIONS,
+  MEMORY_VERSE_JOBS,
 } from './user-context.ts'
 import { AppError } from '../utils/error-handler.ts'
 
@@ -46,6 +48,18 @@ Deno.test('enforceFullAccount: guest gets 403 ACCOUNT_REQUIRED on an account-onl
   )
   assertEquals((err as AppError).code, 'ACCOUNT_REQUIRED')
   assertEquals((err as AppError).statusCode, 403)
+})
+
+Deno.test('enforceFullAccount: a configured reason is sent as error.details.reason', () => {
+  const err = assertThrows(() =>
+    enforceFullAccount(true, { type: 'authenticated', userId: 'u1', isGuest: true }, 'memory_verses')
+  )
+  assertEquals((err as AppError).code, 'ACCOUNT_REQUIRED')
+  assertEquals((err as AppError).details, { reason: 'memory_verses' })
+  const plain = assertThrows(() =>
+    enforceFullAccount(true, { type: 'authenticated', userId: 'u1', isGuest: true })
+  )
+  assertEquals((plain as AppError).details, undefined)
 })
 
 Deno.test('enforceFullAccount: guest passes on a function that does not require a full account', () => {
@@ -89,7 +103,7 @@ Deno.test('every account-only function declares the full-account requirement', a
 const GUEST_ALLOWED = [
   'study-generate', 'study-generate-v2', 'study-guides', 'learning-paths', 'daily-verse',
   'user-profile', 'topic-progress', 'mark-study-guide-complete', 'token-status', 'system-config',
-  'continue-learning', 'get-active-challenges', 'add-memory-verse-from-daily', 'get-due-memory-verses',
+  'continue-learning', 'get-active-challenges',
 ]
 
 Deno.test('guest-allowed functions do not require a full account', async () => {
@@ -97,5 +111,35 @@ Deno.test('guest-allowed functions do not require a full account', async () => {
     const source = await Deno.readTextFile(new URL(`${name}/index.ts`, FUNCTIONS_DIR))
     assert(!source.includes('requireFullAccount'), `${name} must stay open to guests`)
     assert(!RAW_GUARD.test(source), `${name} must stay open to guests`)
+  }
+})
+
+// Memory verses need an account (owner decision 2026-10-07). Every memory
+// function a client calls is gated with reason `memory_verses`; only the
+// service-role / cron jobs are left out. Discovered from the directory, so a
+// new memory function cannot ship open to guests by accident.
+const MEMORY_GATE = /create(?:Simple|Authenticated)?Function\(\s*\w+\s*,\s*\{(?=[^}]*requireFullAccount:\s*true)(?=[^}]*accountRequiredReason:\s*'memory_verses')[^}]*\}/s
+
+Deno.test('every client-facing memory verse function requires a full account with reason memory_verses', async () => {
+  const found: string[] = []
+  for await (const entry of Deno.readDir(FUNCTIONS_DIR)) {
+    if (entry.isDirectory && /memory/i.test(entry.name)) found.push(entry.name)
+  }
+  assertEquals(
+    [...found].sort(),
+    [...MEMORY_VERSE_FUNCTIONS, ...MEMORY_VERSE_JOBS].sort(),
+    'every memory function is listed as gated or as a job',
+  )
+  for (const name of MEMORY_VERSE_FUNCTIONS) {
+    const source = await Deno.readTextFile(new URL(`${name}/index.ts`, FUNCTIONS_DIR))
+    assert(MEMORY_GATE.test(source), `${name} must set requireFullAccount: true and accountRequiredReason: 'memory_verses'`)
+    assert(ACCOUNT_ONLY_FUNCTIONS.includes(name), `${name} must be in ACCOUNT_ONLY_FUNCTIONS`)
+  }
+  for (const name of MEMORY_VERSE_JOBS) {
+    const source = await Deno.readTextFile(new URL(`${name}/index.ts`, FUNCTIONS_DIR))
+    assert(
+      /createServiceRoleFunction\(/.test(source) || /verifyCronSecret\(\s*req\s*\)/.test(source),
+      `${name} is a job: it must authenticate as service role or with the cron secret`,
+    )
   }
 })

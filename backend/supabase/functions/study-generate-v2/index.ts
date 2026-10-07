@@ -34,6 +34,7 @@ import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost
 import { parseStudyLanguage, resolveTopicLanguage } from '../_shared/utils/content-language.ts'
 import { resolveCatalogueRequest } from '../_shared/utils/lesson-pricing.ts'
 import { catalogueTopicOrThrow, lessonContext, loadCatalogueTopic } from '../_shared/utils/catalogue-topic.ts'
+import { assertGuestMayGenerate } from './guest-generation.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -631,6 +632,17 @@ async function handleStudyGenerateV2(
   if (topic_id && !catalogue.cacheTopicId) {
     console.warn(`⚠️ [STUDY-V2] topic_id ${topic_id} does not match the input; treating as a typed study`)
   }
+
+  // A guest may only open a verified, free catalogue lesson of a path they are
+  // enrolled in that is guest-accessible: never a typed study, never a paid
+  // mode. Checked before any cache, token or model work (403 ACCOUNT_REQUIRED,
+  // reason `generate`).
+  await assertGuestMayGenerate(services.supabaseServiceClient, {
+    isGuest: userContext.isGuest === true,
+    userId: userContext.userId,
+    verifiedCatalogue: catalogue.cacheTopicId !== undefined && catalogue.isFree,
+    topicPathIds: catalogue.cacheTopicId ? catalogueTopic?.pathIds ?? [] : [],
+  })
 
   // Prompt context and input type. A verified lesson is cached under its topic
   // for every reader, so they come from the catalogue; any other request keeps

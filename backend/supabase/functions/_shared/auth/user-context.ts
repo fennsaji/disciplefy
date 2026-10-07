@@ -17,16 +17,16 @@
  *   create-subscription, create-standard-subscription, create-plus-subscription,
  *   cancel-subscription, resume-subscription, start-premium-trial,
  *   upload-profile-image, report-purchase-issue (plus the rest of ACCOUNT_ONLY_FUNCTIONS below, which
- *   authenticate through getUserFromToken / the factory context).
+ *   authenticate through getUserFromToken / the factory context). Memory verse
+ *   functions are account-only too (reason `memory_verses`, 2026-10-07).
  * - Guest-allowed, now pass for guests because guests are `authenticated`:
- *   daily-verse, learning-paths, topic-progress, continue-learning,
- *   study-generate(-v2), study-guides, mark-study-guide-complete, token-status,
- *   system-config, user-profile, profile-setup, save-personalization,
+ *   daily-verse, learning-paths (one guest_accessible path), topic-progress,
+ *   continue-learning, study-generate-v2 (verified free lessons of that path
+ *   only; study-generate refuses guests, reason `generate`), study-guides,
+ *   mark-study-guide-complete, token-status, system-config, user-profile, profile-setup, save-personalization,
  *   personal-notes, study-reflections, topics-for-you, register-fcm-token,
  *   reset-progress, delete-account, use-streak-freeze, get-daily-goal,
- *   get-active-challenges, memory verse functions (add-memory-verse-*,
- *   delete-memory-verse, get-due-memory-verses, get-memory-*, submit-memory-*),
- *   generate-invoice-pdf (a guest has no invoices), send-streak-notification.
+ *   get-active-challenges, generate-invoice-pdf (a guest has no invoices), send-streak-notification.
  * - Shared: study-guide-repository (creator_session_id only for legacy sessions),
  *   reflections-service, personal-notes-service, auth-service (guests resolve
  *   to the free plan without a lookup).
@@ -36,7 +36,7 @@ import type { UserContext } from '../types/index.ts'
 import type { VerifiedIdentity } from './jwt-verifier.ts'
 import { ErrorHandler } from '../utils/error-handler.ts'
 
-/** Functions a guest may not use: fellowships, Discipler, payments, purchase issues, profile image. */
+/** Functions a guest may not use: fellowships, Discipler, payments, purchase issues, profile image, memory verses. */
 export const ACCOUNT_ONLY_FUNCTIONS: readonly string[] = [
   'fellowship',
   'fellowship-blocks',
@@ -61,6 +61,37 @@ export const ACCOUNT_ONLY_FUNCTIONS: readonly string[] = [
   'validate-promo-code',
   'upload-profile-image',
   'report-purchase-issue',
+  // Memory verses (reason `memory_verses`), see MEMORY_VERSE_FUNCTIONS.
+  'add-memory-verse-from-daily',
+  'add-memory-verse-manual',
+  'delete-memory-verse',
+  'get-due-memory-verses',
+  'get-memory-champions-leaderboard',
+  'get-memory-practice-stats',
+  'get-memory-statistics',
+  'get-memory-streak',
+  'submit-memory-practice',
+  'submit-memory-verse-review',
+]
+
+/** Memory verse functions a client calls: account-only, reason `memory_verses`. */
+export const MEMORY_VERSE_FUNCTIONS: readonly string[] = [
+  'add-memory-verse-from-daily',
+  'add-memory-verse-manual',
+  'delete-memory-verse',
+  'get-due-memory-verses',
+  'get-memory-champions-leaderboard',
+  'get-memory-practice-stats',
+  'get-memory-statistics',
+  'get-memory-streak',
+  'submit-memory-practice',
+  'submit-memory-verse-review',
+]
+
+/** Memory verse jobs (service role / cron secret), not called by users: left ungated. */
+export const MEMORY_VERSE_JOBS: readonly string[] = [
+  'refresh-stale-memory-verses',
+  'send-memory-verse-notification',
 ]
 
 export const ACCOUNT_REQUIRED_CODE = 'ACCOUNT_REQUIRED'
@@ -76,10 +107,17 @@ export function toUserContext(identity: Pick<VerifiedIdentity, 'id' | 'email' | 
   }
 }
 
-/** Throws ACCOUNT_REQUIRED (403) unless the caller is a signed-in, non-guest user. */
-export function assertFullAccount(ctx?: UserContext): void {
+/**
+ * Throws ACCOUNT_REQUIRED (403) unless the caller is a signed-in, non-guest user.
+ * [reason], when given, is sent as `error.details.reason` for the client's
+ * account-needed sheet (e.g. `memory_verses`).
+ */
+export function assertFullAccount(ctx?: UserContext, reason?: string | null): void {
   if (!ctx || ctx.type !== 'authenticated' || ctx.isGuest) {
-    throw ErrorHandler.createAccountRequiredError(ACCOUNT_REQUIRED_MESSAGE)
+    throw ErrorHandler.createAccountRequiredError(
+      ACCOUNT_REQUIRED_MESSAGE,
+      reason ? { reason } : undefined,
+    )
   }
 }
 
@@ -92,8 +130,8 @@ export function assertFullAccount(ctx?: UserContext): void {
  * factory (401) before this runs, so a guest cannot slip through to a handler
  * that re-reads the identity itself.
  */
-export function enforceFullAccount(required: boolean, ctx?: UserContext): void {
-  if (required && ctx?.type === 'authenticated') assertFullAccount(ctx)
+export function enforceFullAccount(required: boolean, ctx?: UserContext, reason?: string | null): void {
+  if (required && ctx?.type === 'authenticated') assertFullAccount(ctx, reason)
 }
 
 /** For functions on raw `serve` that call `auth.getUser` themselves. */

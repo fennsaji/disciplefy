@@ -1054,6 +1054,9 @@ async function handleSubmitMemoryPractice(
 // Create the authenticated function
 createAuthenticatedFunction(handleSubmitMemoryPractice, {
   allowedMethods: ['POST'],
+  // Memory verses need an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'memory_verses',
   enableAnalytics: true,
   timeout: 15000 // 15 seconds (longer due to multiple database operations)
 })

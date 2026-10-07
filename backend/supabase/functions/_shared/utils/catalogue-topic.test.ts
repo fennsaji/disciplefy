@@ -86,6 +86,16 @@ Deno.test('a found topic carries every title, the localized description, its inp
   assertEquals(lookup.topic.path, { title: 'पथ', description: 'पथ विवरण', discipleLevel: 'seeker', recommendedMode: 'deep' })
 })
 
+Deno.test('a found topic lists every path holding it, sorted and unique', async () => {
+  const db = healthy()
+  db.learning_path_topics = ok([path('b', 2), path('a', 1), path('b', 2)])
+  const lookup = await loadCatalogueTopic(fakeDb(db), TOPIC, 'en')
+  assertEquals(lookup.status === 'found' && lookup.topic.pathIds, ['a', 'b'])
+  db.learning_path_topics = ok([])
+  const none = await loadCatalogueTopic(fakeDb(db), TOPIC, 'en')
+  assertEquals(none.status === 'found' && none.topic.pathIds, [])
+})
+
 Deno.test('a question topic is generated as a question, whatever the client sent', async () => {
   const db = healthy()
   db.recommended_topics = ok({ title: 'Why pray?', description: 'd', input_type: 'question' })
@@ -136,6 +146,7 @@ const topic: CatalogueTopic = {
   titles: ['Psalm 23'],
   description: 'The Lord is my shepherd',
   inputType: 'scripture',
+  pathIds: ['p1'],
   path: { title: 'Comfort', description: 'Psalms of comfort', discipleLevel: 'growing', recommendedMode: 'standard' },
 }
 

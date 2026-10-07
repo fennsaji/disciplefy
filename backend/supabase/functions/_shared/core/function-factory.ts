@@ -93,6 +93,11 @@ interface FunctionConfig {
    * Callers without a user JWT still reach the handler's own authentication.
    */
   readonly requireFullAccount?: boolean
+  /**
+   * With `requireFullAccount`: the reason sent as `error.details.reason` on a
+   * guest's 403, for the client's account-needed sheet (e.g. `memory_verses`).
+   */
+  readonly accountRequiredReason?: string | null
 }
 
 /**
@@ -107,7 +112,8 @@ const DEFAULT_CONFIG: Required<FunctionConfig> = {
   corsHeaders: {},
   allowGuestOnJwtFailure: false, // Default: do not silently fall back to guest on JWT errors
   verifyWithAuthServer: false,
-  requireFullAccount: false
+  requireFullAccount: false,
+  accountRequiredReason: null
 }
 
 /**
@@ -213,7 +219,7 @@ export function createFunction(
       }
 
       // Account-only functions: a guest gets 403 ACCOUNT_REQUIRED.
-      enforceFullAccount(finalConfig.requireFullAccount, userContext)
+      enforceFullAccount(finalConfig.requireFullAccount, userContext, finalConfig.accountRequiredReason)
 
       // Set up timeout. The timer is cleared once the race settles, so a fast
       // request does not leave a pending timer holding the worker open.

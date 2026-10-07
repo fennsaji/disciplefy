@@ -17,6 +17,10 @@ class LearningPath extends Equatable {
   final String? recommendedMode;
   final bool allowNonSequentialAccess;
   final bool isFeatured;
+
+  /// Whether a guest (no account yet) may enrol in and study this path.
+  /// Every other path is shown locked to a guest.
+  final bool guestAccessible;
   final int topicsCount;
   final bool isEnrolled;
   final int progressPercentage;
@@ -44,6 +48,7 @@ class LearningPath extends Equatable {
     this.recommendedMode,
     this.allowNonSequentialAccess = false,
     this.isFeatured = false,
+    this.guestAccessible = false,
     this.topicsCount = 0,
     this.isEnrolled = false,
     this.progressPercentage = 0,
@@ -67,6 +72,7 @@ class LearningPath extends Equatable {
         recommendedMode,
         allowNonSequentialAccess,
         isFeatured,
+        guestAccessible,
         topicsCount,
         isEnrolled,
         progressPercentage,
@@ -98,6 +104,7 @@ class LearningPath extends Equatable {
       recommendedMode: recommendedMode,
       allowNonSequentialAccess: allowNonSequentialAccess,
       isFeatured: isFeatured,
+      guestAccessible: guestAccessible,
       topicsCount: topicsCount,
       isEnrolled: isEnrolled ?? this.isEnrolled,
       progressPercentage: progressPercentage ?? this.progressPercentage,
@@ -177,6 +184,7 @@ class LearningPathDetail extends LearningPath {
     super.recommendedMode,
     super.allowNonSequentialAccess,
     super.isFeatured,
+    super.guestAccessible,
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,

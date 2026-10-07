@@ -29,6 +29,8 @@ export interface CatalogueTopic {
   readonly description: string
   /** The study input type the topic is generated as. */
   readonly inputType: StudyInputType
+  /** Ids of every learning path holding the topic (sorted, unique; empty if none). */
+  readonly pathIds: readonly string[]
   /** The path holding the topic, if any. */
   readonly path: CataloguePath | null
 }
@@ -124,7 +126,9 @@ export async function loadCatalogueTopic(
   const overrides = (overridesRes.data ?? []) as Array<{ title: string }>
   const localized = translations.find((t) => t.language_code === language)
 
-  const pathRow = pickPath((pathRes.data ?? []) as PathRow[])
+  const pathRows = (pathRes.data ?? []) as PathRow[]
+  const pathIds = [...new Set(pathRows.map((r) => r.learning_path_id))].sort()
+  const pathRow = pickPath(pathRows)
   let path: CataloguePath | null = null
   if (pathRow?.learning_paths) {
     const lp = pathRow.learning_paths
@@ -149,6 +153,7 @@ export async function loadCatalogueTopic(
       titles: [topicRes.data.title, ...translations.map((t) => t.title), ...overrides.map((o) => o.title)],
       description: localized?.description || topicRes.data.description,
       inputType: studyInputTypeFor(topicRes.data.input_type),
+      pathIds,
       path,
     },
   }

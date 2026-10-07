@@ -294,6 +294,9 @@ async function handleAddMemoryVerseFromDaily(
 // Create the authenticated function
 createAuthenticatedFunction(handleAddMemoryVerseFromDaily, {
   allowedMethods: ['POST'],
+  // Memory verses need an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'memory_verses',
   enableAnalytics: true,
   timeout: 10000 // 10 seconds
 })
