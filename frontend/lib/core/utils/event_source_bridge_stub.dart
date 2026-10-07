@@ -100,8 +100,15 @@ class _MobileEventSource {
       final response = await _client!.send(request);
 
       if (response.statusCode != 200) {
-        _controller.addError(
-            Exception('HTTP ${response.statusCode}: Failed to connect to SSE'));
+        // The body says why (e.g. 403 ACCOUNT_REQUIRED with its reason).
+        var body = '';
+        try {
+          body = await response.stream.bytesToString();
+        } catch (_) {
+          // No body to read.
+        }
+        _controller.addError(Exception(
+            'HTTP ${response.statusCode}: Failed to connect to SSE: $body'));
         await close();
         return;
       }

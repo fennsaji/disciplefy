@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:disciplefy_bible_study/core/error/account_required.dart';
 import '../../../../../core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../tokens/domain/token_balance_changes.dart';
@@ -98,6 +99,7 @@ class StudyStreamingHandler {
             code: streamEvent.code,
             message: streamEvent.message,
             retryable: streamEvent.retryable,
+            reason: streamEvent.reason,
           ));
           break;
         }
@@ -219,6 +221,19 @@ class StudyStreamingHandler {
       inputType = currentState.inputType;
       inputValue = currentState.inputValue;
       language = currentState.language;
+    }
+
+    // A guest needs an account: the UI offers one, never an error message.
+    if (event.code == accountRequiredCode) {
+      emit(StudyGenerationStreamingFailed(
+        partialContent: partialContent,
+        failure: AccountRequiredFailure(reason: event.reason),
+        canRetry: false,
+        inputType: inputType,
+        inputValue: inputValue,
+        language: language,
+      ));
+      return;
     }
 
     // Create failure from error event - preserve the failure type for proper UI handling

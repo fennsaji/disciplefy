@@ -340,14 +340,18 @@ class StudyStreamErrorOccurred extends StudyEvent {
   /// Whether the error is retryable.
   final bool retryable;
 
+  /// `details.reason` of an `ACCOUNT_REQUIRED` error.
+  final String? reason;
+
   const StudyStreamErrorOccurred({
     required this.code,
     required this.message,
     required this.retryable,
+    this.reason,
   });
 
   @override
-  List<Object?> get props => [code, message, retryable];
+  List<Object?> get props => [code, message, retryable, reason];
 }
 
 /// Event to cancel an ongoing streaming generation.

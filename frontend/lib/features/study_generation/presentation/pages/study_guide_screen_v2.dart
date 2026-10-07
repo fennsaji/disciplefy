@@ -22,6 +22,8 @@ import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../../../shared/widgets/scripture_verse_sheet.dart';
 import '../../../../shared/widgets/markdown_with_scripture.dart';
 import '../../../../core/error/failures.dart';
+import 'package:disciplefy_bible_study/core/error/account_required.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../data/datasources/study_local_data_source.dart';
@@ -1370,6 +1372,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Handle streaming failure with partial content
   void _handleStreamingFailure(StudyGenerationStreamingFailed state) {
     if (!mounted) return;
+    if (isAccountRequired(state.failure)) {
+      _offerAccount(state.failure);
+      return;
+    }
     setState(() {
       _isLoading = false;
       _hasError = true;
@@ -1380,6 +1386,25 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           state.failure.code == 'INSUFFICIENT_TOKENS' ||
           state.failure.code == 'TOKEN_LIMIT_EXCEEDED';
     });
+  }
+
+  /// A guest asked for a typed study or a paid mode (403 ACCOUNT_REQUIRED):
+  /// offer an account, never "generation failed". With one, generate again;
+  /// otherwise leave the page.
+  Future<void> _offerAccount(Failure failure) async {
+    final reason = (failure is AccountRequiredFailure
+            ? AccountReason.fromWire(failure.reason)
+            : null) ??
+        AccountReason.generate;
+    final linked = await AccountNeededSheet.show(context, reason);
+    if (!mounted) return;
+    if (linked) {
+      await _retryGeneration();
+    } else if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   /// Retry study guide generation

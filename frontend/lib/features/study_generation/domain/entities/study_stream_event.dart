@@ -166,17 +166,38 @@ class StudyStreamErrorEvent extends StudyStreamEvent {
   final String message;
   final bool retryable;
 
+  /// `details.reason` of an `ACCOUNT_REQUIRED` error (`generate`,
+  /// `other_path`, ...); null otherwise.
+  final String? reason;
+
   const StudyStreamErrorEvent({
     required this.code,
     required this.message,
     required this.retryable,
+    this.reason,
   });
 
+  /// Reads the SSE error event `{code, message, retryable, details}`, the
+  /// standard envelope `{success: false, error: {code, message, details}}`
+  /// and the flat `{error: 'CODE', message}` shape.
   factory StudyStreamErrorEvent.fromJson(Map<String, dynamic> json) {
+    final nested = json['error'];
+    final body = nested is Map<String, dynamic> ? nested : json;
+    final code = body['code'] as String? ??
+        (nested is String ? nested : null) ??
+        'UNKNOWN';
+    final details = body['details'];
+    final reason = details is Map ? details['reason'] : json['reason'];
     return StudyStreamErrorEvent(
-      code: json['code'] as String? ?? 'UNKNOWN',
-      message: json['message'] as String? ?? 'An unknown error occurred',
-      retryable: json['retryable'] as bool? ?? true,
+      code: code,
+      message: body['message'] as String? ??
+          json['message'] as String? ??
+          'An unknown error occurred',
+      // An account is needed first: retrying as a guest cannot succeed.
+      retryable: code == 'ACCOUNT_REQUIRED'
+          ? false
+          : body['retryable'] as bool? ?? true,
+      reason: reason is String && reason.trim().isNotEmpty ? reason : null,
     );
   }
 }
