@@ -33,6 +33,7 @@ import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-s
 import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
 import { parseStudyLanguage, resolveTopicLanguage } from '../_shared/utils/content-language.ts'
 import { resolveCatalogueRequest } from '../_shared/utils/lesson-pricing.ts'
+import { catalogueTopicOrThrow, lessonContext, loadCatalogueTopic } from '../_shared/utils/catalogue-topic.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -201,76 +202,6 @@ function validateStudyGuideCompleteness(content: Record<string, unknown>): strin
   }
 
   return missing
-}
-
-/** What the catalogue holds for a topic: the facts a lesson request is checked against. */
-interface CatalogueTopic {
-  /** Every title of the topic: base, each translation, each path's override. */
-  readonly titles: string[]
-  /** The topic's description in the study language, falling back to the base one. */
-  readonly description: string
-  /** The path holding the topic, if any, localized to the study language. */
-  readonly path: {
-    readonly title: string
-    readonly description: string
-    readonly discipleLevel: string | null
-    readonly recommendedMode: string | null
-  } | null
-}
-
-/**
- * Loads a catalogue topic from the database, or null if [topicId] is not one.
- *
- * The request's `topic_id` comes from the client, so nothing the client says
- * about the topic is trusted: its titles, description and path come from here.
- */
-async function loadCatalogueTopic(
-  // deno-lint-ignore no-explicit-any -- service client, untyped like the rest of this file
-  supabase: any,
-  topicId: string,
-  language: string
-): Promise<CatalogueTopic | null> {
-  const [topicRes, translationsRes, overridesRes, pathRes] = await Promise.all([
-    supabase.from('recommended_topics').select('title, description').eq('id', topicId).maybeSingle(),
-    supabase.from('recommended_topics_translations').select('language_code, title, description').eq('topic_id', topicId),
-    supabase.from('learning_path_topic_titles').select('title').eq('topic_id', topicId),
-    supabase
-      .from('learning_path_topics')
-      .select('learning_path_id, learning_paths!inner(title, description, disciple_level, recommended_mode)')
-      .eq('topic_id', topicId)
-      .limit(1)
-      .maybeSingle()
-  ])
-  if (topicRes.error || !topicRes.data) return null
-
-  const translations = (translationsRes.data ?? []) as Array<{ language_code: string; title: string; description: string }>
-  const overrides = (overridesRes.data ?? []) as Array<{ title: string }>
-  const localized = translations.find((t) => t.language_code === language)
-
-  // deno-lint-ignore no-explicit-any -- embedded join row
-  const pathRow = pathRes.error ? null : (pathRes.data as any)
-  let path: CatalogueTopic['path'] = null
-  if (pathRow?.learning_paths) {
-    const lp = pathRow.learning_paths
-    const { data: lpt } = await supabase
-      .from('learning_path_translations')
-      .select('title, description')
-      .eq('learning_path_id', pathRow.learning_path_id)
-      .eq('lang_code', language)
-      .maybeSingle()
-    path = {
-      title: lpt?.title || lp.title,
-      description: lpt?.description || lp.description,
-      discipleLevel: lp.disciple_level ?? null,
-      recommendedMode: lp.recommended_mode ?? null
-    }
-  }
-
-  return {
-    titles: [topicRes.data.title, ...translations.map((t) => t.title), ...overrides.map((o) => o.title)],
-    description: localized?.description || topicRes.data.description,
-    path
-  }
 }
 
 /**
@@ -653,10 +584,7 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, language, study_mode, topic_id } = params
-  // Prompt context. Client-supplied for a typed study; replaced from the
-  // catalogue below when the request is a verified catalogue lesson.
-  let { topic_description, path_title, path_description, disciple_level } = params
+  const { input_value, language, study_mode, topic_id } = params
 
   console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
@@ -685,9 +613,11 @@ async function handleStudyGenerateV2(
   // topic's catalogue titles. A mismatch is a normal paid study keyed by its
   // input hash: it is never free and can never be written into (or read from)
   // the shared cache row every reader of that lesson is served from.
-  const catalogueTopic = topic_id
-    ? await loadCatalogueTopic(services.supabaseServiceClient, topic_id, language)
-    : null
+  // A failed read is a retryable 503: a real lesson must never turn paid
+  // because the database blinked. A non-UUID or unknown id is just not a lesson.
+  const catalogueTopic = catalogueTopicOrThrow(
+    topic_id ? await loadCatalogueTopic(services.supabaseServiceClient, topic_id, language) : null
+  )
   const lpMode = catalogueTopic?.path?.recommendedMode ?? null
   const catalogue = resolveCatalogueRequest({
     topicId: topic_id,
@@ -702,14 +632,25 @@ async function handleStudyGenerateV2(
     console.warn(`⚠️ [STUDY-V2] topic_id ${topic_id} does not match the input; treating as a typed study`)
   }
 
-  // A verified lesson is cached under its topic for every reader, so the prompt
-  // context comes from the catalogue, not from the client.
-  if (catalogue.cacheTopicId && catalogueTopic) {
-    topic_description = catalogueTopic.description
-    path_title = catalogueTopic.path?.title
-    path_description = catalogueTopic.path?.description
-    disciple_level = catalogueTopic.path?.discipleLevel ?? undefined
-  }
+  // Prompt context and input type. A verified lesson is cached under its topic
+  // for every reader, so they come from the catalogue; any other request keeps
+  // its own input type and drops the catalogue fields, which only lesson
+  // launches send and which would otherwise reach a shared, hash-keyed guide.
+  const context = lessonContext(
+    {
+      inputType: params.input_type,
+      topicDescription: params.topic_description,
+      pathTitle: params.path_title,
+      pathDescription: params.path_description,
+      discipleLevel: params.disciple_level
+    },
+    catalogue.cacheTopicId ? catalogueTopic : null
+  )
+  const input_type = context.inputType
+  const topic_description = context.topicDescription
+  const path_title = context.pathTitle
+  const path_description = context.pathDescription
+  const disciple_level = context.discipleLevel
 
   const hasFeatureAccess = isCataloguePath || await isFeatureEnabledForPlan(requiredFeature, userPlan)
 
