@@ -266,7 +266,7 @@ void main() {
     await pump(tester);
 
     expect(find.text('Community'), findsOneWidget);
-    expect(find.text('Mentor: Discipler · 3 members'), findsOneWidget);
+    expect(find.text('Guided by Discipler · 3 members'), findsOneWidget);
     expect(find.text('Mentor: Fenn (you) · 1 member'), findsOneWidget);
     expect(find.text('New Believer Essentials · Lesson 1'), findsOneWidget);
     expect(find.text('0 of 8 done'), findsOneWidget);
@@ -276,32 +276,24 @@ void main() {
     expect(find.byType(DisciplerAvatar), findsOneWidget);
     // The role pill ("Member"/"Mentor") is gone in the redesign.
     expect(find.text('Member'), findsNothing);
-    expect(find.text('Join a Fellowship'), findsOneWidget);
+    // Joining by code is the key icon only; the floating pill is gone.
+    expect(find.text('Join a Fellowship'), findsNothing);
   });
 
   testWidgets('tapping a fellowship opens its page', (tester) async {
     useSurface(tester, const Size(390, 1200));
     await pump(tester);
 
-    await tester.tap(find.text('Mentor: Discipler · 3 members'));
+    await tester.tap(find.text('Guided by Discipler · 3 members'));
     await tester.pumpAndSettle();
     expect(visited, ['/community/f-official']);
   });
 
-  testWidgets('the key action and the floating pill open Join', (tester) async {
+  testWidgets('the key action opens Join', (tester) async {
     useSurface(tester, const Size(390, 900));
     await pump(tester);
 
     await tester.tap(find.byTooltip('Join with invite code'));
-    await tester.pumpAndSettle();
-    expect(visited, ['/community/join']);
-  });
-
-  testWidgets('floating Join a fellowship opens Join', (tester) async {
-    useSurface(tester, const Size(390, 900));
-    await pump(tester);
-
-    await tester.tap(find.text('Join a Fellowship'));
     await tester.pumpAndSettle();
     expect(visited, ['/community/join']);
   });
@@ -368,7 +360,7 @@ void main() {
     await openDiscover(tester);
 
     expect(find.text('HI'), findsOneWidget);
-    expect(find.text('Mentor: Discipler · 1 member'), findsOneWidget);
+    expect(find.text('Guided by Discipler · 1 member'), findsOneWidget);
     expect(find.text('Mentor: Anna George · 20 members'), findsOneWidget);
     expect(find.text('Full'), findsOneWidget);
     expect(find.text('Romans'), findsOneWidget);
@@ -402,7 +394,7 @@ void main() {
       ),
       profile: const {'is_admin': true},
     ));
-    // Tall enough that the floating Join pill does not cover the buttons.
+    // Tall enough to show both buttons without scrolling.
     useSurface(tester, const Size(320, 1000));
     await pump(tester);
 

@@ -331,6 +331,8 @@ const Map<String, dynamic> englishTranslations = {
     'let_discipler_answer': 'Let Discipler answer',
     'let_discipler_answer_hint':
         'Turn off to leave this question to the group. Tagging @Discipler still gets a reply.',
+    'joined': 'You joined {name}',
+    'guided_by_discipler': 'Guided by Discipler',
   },
   'study_guide': {
     'menu': {
@@ -1229,6 +1231,8 @@ const Map<String, dynamic> englishTranslations = {
     'section_you': 'You',
     'section_preferences': 'Preferences',
     'section_study': 'Study',
+    'more': 'More',
+    'more_subtitle': 'Study, help and legal',
     'offline_guides': 'Offline guides',
     'offline_guides_subtitle': 'Read without internet',
     'offline_guides_count': '{count} guides',

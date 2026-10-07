@@ -751,6 +751,8 @@ class TranslationKeys {
   static const settingsSectionYou = 'settings.section_you';
   static const settingsSectionPreferences = 'settings.section_preferences';
   static const settingsSectionStudy = 'settings.section_study';
+  static const settingsMore = 'settings.more';
+  static const settingsMoreSubtitle = 'settings.more_subtitle';
   static const settingsOfflineGuides = 'settings.offline_guides';
   static const settingsOfflineGuidesSubtitle =
       'settings.offline_guides_subtitle';
@@ -2962,6 +2964,10 @@ class TranslationKeys {
   static const fellowshipLetDisciplerAnswer = 'community.let_discipler_answer';
   static const fellowshipLetDisciplerAnswerHint =
       'community.let_discipler_answer_hint';
+
+  // Community — Discover join confirmation and the Discipler guide label
+  static const communityJoined = 'community.joined';
+  static const communityGuidedByDiscipler = 'community.guided_by_discipler';
 
   // Fellowship share section (study guide screen)
   static const studyGuideFellowshipShareTitle =

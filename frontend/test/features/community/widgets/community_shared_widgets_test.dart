@@ -292,7 +292,7 @@ void main() {
 
       expect(find.text('Mentor: Fenn (you) · 1 member'), findsOneWidget);
       expect(find.text('Mentor: Fenn · 1 member'), findsOneWidget);
-      expect(find.text('Mentor: Discipler · 3 members'), findsOneWidget);
+      expect(find.text('Guided by Discipler · 3 members'), findsOneWidget);
       expect(find.text('5 members'), findsOneWidget);
     });
 

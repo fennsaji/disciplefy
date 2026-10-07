@@ -28,6 +28,10 @@ class DiscoverState extends Equatable {
   /// show a snackbar, then cleared via [DiscoverJoinAcknowledged].
   final String? justJoinedName;
 
+  /// Id of the fellowship just joined, set together with [justJoinedName]
+  /// so the UI can open it; cleared by [DiscoverJoinAcknowledged].
+  final String? justJoinedId;
+
   /// Non-null when [status] is [DiscoverStatus.failure] or when a join fails.
   final String? errorMessage;
 
@@ -47,6 +51,7 @@ class DiscoverState extends Equatable {
     this.search,
     this.joiningIds = const {},
     this.justJoinedName,
+    this.justJoinedId,
     this.errorMessage,
     this.hasMore = false,
     this.nextCursor,
@@ -64,6 +69,7 @@ class DiscoverState extends Equatable {
         search,
         joiningIds,
         justJoinedName,
+        justJoinedId,
         errorMessage,
         hasMore,
         nextCursor,
@@ -83,6 +89,7 @@ class DiscoverState extends Equatable {
     String? Function()? search,
     Set<String>? joiningIds,
     String? Function()? justJoinedName,
+    String? Function()? justJoinedId,
     String? Function()? errorMessage,
     bool? hasMore,
     String? Function()? nextCursor,
@@ -96,6 +103,7 @@ class DiscoverState extends Equatable {
       joiningIds: joiningIds ?? this.joiningIds,
       justJoinedName:
           justJoinedName != null ? justJoinedName() : this.justJoinedName,
+      justJoinedId: justJoinedId != null ? justJoinedId() : this.justJoinedId,
       errorMessage: errorMessage != null ? errorMessage() : this.errorMessage,
       hasMore: hasMore ?? this.hasMore,
       nextCursor: nextCursor != null ? nextCursor() : this.nextCursor,

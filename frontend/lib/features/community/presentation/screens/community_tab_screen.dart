@@ -10,6 +10,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
@@ -104,7 +105,7 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
       final repo = sl<WalkthroughRepository>();
       if (await repo.hasSeen(WalkthroughScreen.community)) return;
 
-      // Always show both steps: tabs (step 1) + FAB/join (step 2).
+      // Always show both steps: tabs (step 1) + join with a code (step 2).
       final keys = <GlobalKey>[
         ShowcaseKeys.communityTabs,
         ShowcaseKeys.communityFab,
@@ -207,32 +208,10 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
           ),
         ),
       ),
-      floatingActionButton: _selectedTab == 0
-          ? WalkthroughTooltip(
-              showcaseKey: ShowcaseKeys.communityFab,
-              title: l10n.walkthroughCommunityFabTitle,
-              description: l10n.walkthroughCommunityFabDesc,
-              screen: WalkthroughScreen.community,
-              stepNumber: 2,
-              totalSteps: 2,
-              onNext: _onNext,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.sizeOf(context).width - 32,
-                ),
-                child: CommunityCtaPill(
-                  label: l10n.communityJoinFellowship,
-                  icon: Icons.vpn_key_outlined,
-                  large: true,
-                  onPressed: _onJoinPressed,
-                ),
-              ),
-            )
-          : null,
     );
   }
 
-  /// Join (key) and Create (+) actions. Create is hidden by the feature flag,
+  /// Join (key) — the one way in by code — and Create (+) actions. Create is hidden by the feature flag,
   /// or shown with a lock badge and an upsell when the plan lacks it.
   Widget _buildTopActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -246,11 +225,20 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CommunityIconAction(
-                icon: Icons.vpn_key_outlined,
-                tooltip:
-                    context.tr(TranslationKeys.communitySharedJoinWithCode),
-                onPressed: _onJoinPressed,
+              WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.communityFab,
+                title: l10n.walkthroughCommunityFabTitle,
+                description: l10n.walkthroughCommunityFabDesc,
+                screen: WalkthroughScreen.community,
+                stepNumber: 2,
+                totalSteps: 2,
+                onNext: _onNext,
+                child: CommunityIconAction(
+                  icon: Icons.vpn_key_outlined,
+                  tooltip:
+                      context.tr(TranslationKeys.communitySharedJoinWithCode),
+                  onPressed: _onJoinPressed,
+                ),
               ),
               if (!_hideCreateFellowship(context))
                 CommunityIconAction(
@@ -394,8 +382,8 @@ class _FellowshipList extends StatelessWidget {
           .add(const FellowshipListLoadRequested()),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        // 100 clears the floating join button; the bottom inset adds the
-        // floating dock the page runs under.
+        // 110 clears the floating dock the page runs under, plus the
+        // bottom inset.
         padding: EdgeInsets.fromLTRB(
             16, 0, 16, 110 + MediaQuery.paddingOf(context).bottom),
         itemCount: fellowships.length,
@@ -485,9 +473,9 @@ class _DiscoverTabState extends State<_DiscoverTab> {
       if (!mounted) return;
       final bloc = context.read<DiscoverBloc>();
       if (bloc.state.status != DiscoverStatus.initial) return;
-      // Default to "All" languages so Discover always shows the full set of
-      // publicly discoverable fellowships on first open.
-      bloc.add(const DiscoverLoadRequested());
+      // Open on the app language so the first groups shown are ones the
+      // user can read; the "All" chip still shows every language.
+      bloc.add(DiscoverLoadRequested(language: _appLanguageCode()));
     });
   }
 
@@ -519,17 +507,20 @@ class _DiscoverTabState extends State<_DiscoverTab> {
               prev.justJoinedName != curr.justJoinedName) ||
           (curr.errorMessage != null && prev.errorMessage != curr.errorMessage),
       listener: (context, state) {
-        final l10n = AppLocalizations.of(context)!;
         if (state.justJoinedName != null) {
           showAppSnackBar(
             context,
-            l10n.discoverJoinedSnackbar(state.justJoinedName!),
+            context.tr(TranslationKeys.communityJoined,
+                {'name': state.justJoinedName!}),
             tone: AppSnackTone.success,
           );
+          final joinedId = state.justJoinedId;
           context.read<DiscoverBloc>().add(const DiscoverJoinAcknowledged());
           context
               .read<FellowshipListBloc>()
               .add(const FellowshipListLoadRequested());
+          // Take the new member straight into the group they joined.
+          if (joinedId != null) context.push('/community/$joinedId');
         } else if (state.errorMessage != null) {
           showAppSnackBar(context, state.errorMessage!,
               tone: AppSnackTone.error);
@@ -661,8 +652,8 @@ class _EmptyState extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              // Joining by code is the floating button below, so it is not
-              // repeated here.
+              // Joining by code is the key icon in the title bar, so it is
+              // not repeated here.
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
@@ -1170,6 +1161,13 @@ void _showCreateFellowshipUpsell(BuildContext context) {
       requiredPlans: const ['plus', 'premium'],
     ),
   );
+}
+
+/// The app language code ('en', 'hi', 'ml'), or null (all languages) when
+/// the translation service is not available.
+String? _appLanguageCode() {
+  if (!sl.isRegistered<TranslationService>()) return null;
+  return sl<TranslationService>().currentLanguage.code;
 }
 
 bool _canCreateFellowship(BuildContext context, FellowshipListState listState) {

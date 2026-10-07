@@ -4,8 +4,8 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/reader_palette.dart';
 
-/// Small "AI" chip appended next to the Discipler display name to signal
-/// AI-generated content.
+/// Small "Helper" chip appended next to the Discipler display name so its
+/// replies are never mistaken for a person's.
 class DisciplerAiChip extends StatelessWidget {
   const DisciplerAiChip({super.key});
 
@@ -28,10 +28,10 @@ class DisciplerAiChip extends StatelessWidget {
         AppLocalizations.of(context)!.disciplerAiChip,
         style: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           color: onFill,
-          letterSpacing: 0.5,
+          height: 1.2,
         ),
       ),
     );

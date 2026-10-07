@@ -186,7 +186,8 @@ String? realMentorName(String? name) {
   return trimmed;
 }
 
-/// One mentor avatar + "Mentor: {name} · {N} members".
+/// One mentor avatar + "Mentor: {name} · {N} members" (or "Guided by
+/// Discipler · {N} members").
 ///
 /// [leading] goes before the avatar (Discover's language chip). The text
 /// wraps rather than truncating.
@@ -243,8 +244,9 @@ class FellowshipMentorRow extends StatelessWidget {
   }
 }
 
-/// "Mentor: {name} · {N} members" (or just the member count when the mentor
-/// is unknown). Shared by [FellowshipMentorRow] and the fellowship home meta.
+/// "Mentor: {name} · {N} members", "Guided by Discipler · {N} members" for
+/// Discipler-led groups, or just the member count when the mentor is unknown.
+/// Shared by [FellowshipMentorRow] and the fellowship home meta.
 String fellowshipMentorLine(
   BuildContext context,
   FellowshipMentorInfo mentor,
@@ -252,7 +254,10 @@ String fellowshipMentorLine(
 ) {
   final l10n = AppLocalizations.of(context)!;
   final members = '$memberCount ${l10n.communityMembersCount(memberCount)}';
-  var name = mentor.isDiscipler ? l10n.disciplerName : mentor.name;
+  if (mentor.isDiscipler) {
+    return '${context.tr(TranslationKeys.communityGuidedByDiscipler)} · $members';
+  }
+  var name = mentor.name;
   if (name == null || name.trim().isEmpty) return members;
   if (mentor.isCurrentUser) {
     name = context.tr(TranslationKeys.communitySharedMentorYou, {'name': name});

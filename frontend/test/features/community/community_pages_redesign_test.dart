@@ -1116,7 +1116,7 @@ void main() {
         if (language == AppLanguage.english) {
           expect(find.text('Share to 1 fellowship'), findsOneWidget);
           expect(find.text('1 member'), findsOneWidget);
-          expect(find.text('Mentor: Discipler · 3 members'), findsOneWidget);
+          expect(find.text('Guided by Discipler · 3 members'), findsOneWidget);
         }
         expectNoTruncatedText(tester, allowed: title);
       });

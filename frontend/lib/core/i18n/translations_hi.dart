@@ -333,6 +333,8 @@ const Map<String, dynamic> hindiTranslations = {
     'let_discipler_answer': 'Discipler को उत्तर देने दें',
     'let_discipler_answer_hint':
         'इसे बंद करें ताकि यह सवाल समूह के लिए रहे। @Discipler टैग करने पर उत्तर फिर भी मिलेगा।',
+    'joined': 'आप {name} से जुड़े',
+    'guided_by_discipler': 'Discipler द्वारा',
   },
   'study_guide': {
     'menu': {
@@ -1220,6 +1222,8 @@ const Map<String, dynamic> hindiTranslations = {
     'section_you': 'आप',
     'section_preferences': 'प्राथमिकताएँ',
     'section_study': 'अध्ययन',
+    'more': 'और',
+    'more_subtitle': 'अध्ययन, मदद, नीतियाँ',
     'offline_guides': 'ऑफ़लाइन गाइड',
     'offline_guides_subtitle': 'बिना इंटरनेट के पढ़ें',
     'offline_guides_count': '{count} गाइड',

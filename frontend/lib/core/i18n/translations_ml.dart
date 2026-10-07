@@ -340,6 +340,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'let_discipler_answer': 'Discipler ഉത്തരം നൽകട്ടെ',
     'let_discipler_answer_hint':
         'ഈ ചോദ്യം ഗ്രൂപ്പിനു വിടാൻ ഇത് ഓഫ് ചെയ്യുക. @Discipler എന്ന് ടാഗ് ചെയ്താൽ മറുപടി ലഭിക്കും.',
+    'joined': '{name}-ൽ ചേർന്നു',
+    'guided_by_discipler': 'Discipler നയിക്കുന്നു',
   },
   'study_guide': {
     'menu': {
@@ -1246,6 +1248,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'section_you': 'നിങ്ങൾ',
     'section_preferences': 'മുൻഗണനകൾ',
     'section_study': 'പഠനം',
+    'more': 'കൂടുതൽ',
+    'more_subtitle': 'പഠനം, സഹായം, നയങ്ങൾ',
     'offline_guides': 'ഓഫ്‌ലൈൻ ഗൈഡുകൾ',
     'offline_guides_subtitle': 'ഇന്റർനെറ്റ് ഇല്ലാതെ വായിക്കുക',
     'offline_guides_count': '{count} ഗൈഡുകൾ',

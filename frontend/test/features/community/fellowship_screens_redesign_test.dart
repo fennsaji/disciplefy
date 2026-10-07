@@ -681,8 +681,10 @@ void main() {
         (tester) async {
       await _pump(tester, home,
           size: const Size(390, 2400), provideBlocs: false);
-      expect(find.text('OFFICIAL · 3 MEMBERS · MENTOR: FENN SAJI'),
+      // An official group is guided by the Discipler, as on its card.
+      expect(find.text('OFFICIAL · 3 MEMBERS · GUIDED BY DISCIPLER'),
           findsOneWidget);
+      expect(find.textContaining('MENTOR:'), findsNothing);
       expect(find.text('Disciplefy'), findsOneWidget);
       expect(find.text('Message mentor'), findsOneWidget);
       expect(find.text('STUDYING TOGETHER'), findsOneWidget);
@@ -691,6 +693,73 @@ void main() {
       expect(find.text('Next: Sunday Bible Study'), findsOneWidget);
       expect(find.text('Recent Activity'), findsOneWidget);
       expect(find.text('Start study'), findsOneWidget);
+    });
+
+    testWidgets('a group led by a person names its mentor', (tester) async {
+      const personal = FellowshipHomeScreen(
+        fellowshipId: 'f1',
+        fellowshipName: 'Disciplefy',
+        fellowship: FellowshipEntity(
+          id: 'f1',
+          name: 'Disciplefy',
+          memberCount: 3,
+          userRole: 'mentor',
+          joinedAt: '2025-03-01T00:00:00Z',
+          createdAt: '2025-03-01T00:00:00Z',
+          mentors: [
+            FellowshipMentorEntity(userId: 'u-fenn', displayName: 'Fenn Saji'),
+          ],
+        ),
+      );
+      await _pump(tester, personal,
+          size: const Size(390, 2400), provideBlocs: false);
+      expect(find.text('3 MEMBERS · MENTOR: FENN SAJI'), findsOneWidget);
+    });
+
+    testWidgets('no meetings: hidden for a member, a prompt for the mentor',
+        (tester) async {
+      when(() => _meetings.state).thenReturn(const FellowshipMeetingsState(
+        status: FellowshipMeetingsStatus.success,
+      ));
+      await _pump(tester, home,
+          size: const Size(390, 2400), provideBlocs: false);
+      expect(find.text('Meetings'), findsOneWidget);
+      expect(find.text('Tap + to schedule a meeting'), findsOneWidget);
+
+      when(() => _feed.state).thenReturn(const FellowshipFeedState(
+        status: FellowshipFeedStatus.success,
+        posts: [_daily, _prayer],
+        hasMore: false,
+        postingContextResolved: true,
+      ));
+      when(() => _membersBloc.state).thenReturn(const FellowshipMembersState(
+        status: FellowshipMembersStatus.success,
+        members: _members,
+      ));
+      await _pump(
+          tester,
+          const FellowshipHomeScreen(
+            key: ValueKey('member'),
+            fellowshipId: 'f1',
+            fellowshipName: 'Disciplefy',
+          ),
+          size: const Size(390, 2400),
+          provideBlocs: false);
+      expect(find.text('Meetings'), findsNothing);
+      expect(find.text('No upcoming meetings'), findsNothing);
+    });
+
+    testWidgets('an empty feed has one post button (New Post)', (tester) async {
+      when(() => _feed.state).thenReturn(const FellowshipFeedState(
+        status: FellowshipFeedStatus.success,
+        hasMore: false,
+        postingContextResolved: true,
+        isMentor: true,
+      ));
+      await _pump(tester, home,
+          size: const Size(390, 2400), provideBlocs: false);
+      expect(find.text('New Post'), findsOneWidget);
+      expect(find.text('Post something'), findsNothing);
     });
 
     testWidgets('overflow menu keeps every mentor item', (tester) async {

@@ -25,18 +25,20 @@ Future<Color> _labelColour(WidgetTester tester, ThemeData theme) async {
     home: const Scaffold(body: Center(child: DisciplerAiChip())),
   ));
   await tester.pumpAndSettle();
-  return tester.widget<Text>(find.text('AI')).style!.color!;
+  return tester.widget<Text>(find.text('Helper')).style!.color!;
 }
 
 void main() {
-  testWidgets('the AI label stays readable on the light theme', (tester) async {
+  testWidgets('the helper label stays readable on the light theme',
+      (tester) async {
     final theme = AppTheme.lightTheme;
     final label = await _labelColour(tester, theme);
 
     expect(_contrast(label, theme.colorScheme.primary), greaterThan(4.5));
   });
 
-  testWidgets('the AI label stays readable on the dark theme', (tester) async {
+  testWidgets('the helper label stays readable on the dark theme',
+      (tester) async {
     final theme = AppTheme.darkTheme;
     final label = await _labelColour(tester, theme);
 
