@@ -937,6 +937,7 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => FollowUpChatBloc(
         httpService: sl(),
         conversationService: sl(),
+        isGuest: GuestRouteGate.currentUserIsGuest,
       ));
 
   //! Notifications
@@ -1072,7 +1073,10 @@ Future<void> initializeDependencies() async {
 
   // Repository (depends on datasource)
   sl.registerLazySingleton<CommunityRepository>(
-    () => CommunityRepositoryImpl(datasource: sl()),
+    () => CommunityRepositoryImpl(
+      datasource: sl(),
+      isGuest: GuestRouteGate.currentUserIsGuest,
+    ),
   );
 
   // BLoCs (depend on repository)

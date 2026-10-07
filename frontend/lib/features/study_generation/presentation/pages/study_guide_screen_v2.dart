@@ -52,6 +52,8 @@ import '../widgets/guide_complete_sheet.dart';
 import '../../../../shared/widgets/sign_in_required_dialog.dart';
 import '../widgets/study_reading_tracker.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_discipler_gate.dart';
 import '../../../study_topics/domain/entities/lesson_ref.dart';
 import '../../../study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../../study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
@@ -1751,6 +1753,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     return systemConfigService.isFeatureEnabled('study_chat', userPlan);
   }
 
+  /// Whether the Discipler follow-up panel is in the page. Never for a
+  /// guest: it needs an account, so no conversation-history call is made.
+  bool _showFollowUpChat() => lessonShowsFollowUpChat(
+        planShowsChat: _shouldShowStudyChat(),
+        isGuest: GuestRouteGate.currentUserIsGuest(),
+      );
+
   /// Checks if Study Chat feature should be visible (not hidden)
   bool _shouldShowStudyChat() {
     final tokenBloc = sl<TokenBloc>();
@@ -2117,7 +2126,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   /// Scrolls to the Talk to Discipler / follow-up chat section and opens it.
-  void _openDisciplerChat() {
+  /// A guest gets the account-needed sheet instead.
+  Future<void> _openDisciplerChat() async {
+    if (!await _disciplerAllowed()) return;
     if (!mounted) return;
     setState(() => _isChatExpanded = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2915,7 +2926,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         1;
     final showShare = _userFellowships?.isNotEmpty == true;
     final shareNumber = showShare ? nextNumber++ : null;
-    final chatNumber = _shouldShowStudyChat() ? nextNumber++ : null;
+    final chatNumber = _showFollowUpChat() ? nextNumber++ : null;
     final notesNumber = nextNumber;
 
     const blockTop = SizedBox(height: 26);
@@ -3015,56 +3026,58 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             ),
 
           // Follow-up Chat Section, with lock support for study_chat feature.
-          LockedFeatureWrapper(
-            featureKey: 'study_chat',
-            child: Padding(
-              padding: sidePadding,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  blockTop,
-                  WalkthroughTooltip(
-                    showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
-                    title: context
-                        .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
-                    description: context
-                        .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
-                    screen: WalkthroughScreen.studyGuideCompletion,
-                    stepNumber: 2,
-                    totalSteps: 3,
-                    onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                    child: Container(
-                      key: _followUpChatKey,
-                      child: BlocProvider(
-                        create: (context) {
-                          final bloc = sl<FollowUpChatBloc>();
-                          bloc.add(StartConversationEvent(
+          // Not built for a guest (no panel, no history call).
+          if (chatNumber != null)
+            LockedFeatureWrapper(
+              featureKey: 'study_chat',
+              child: Padding(
+                padding: sidePadding,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    blockTop,
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
+                      title: context
+                          .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
+                      description: context
+                          .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
+                      screen: WalkthroughScreen.studyGuideCompletion,
+                      stepNumber: 2,
+                      totalSteps: 3,
+                      onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                      child: Container(
+                        key: _followUpChatKey,
+                        child: BlocProvider(
+                          create: (context) {
+                            final bloc = sl<FollowUpChatBloc>();
+                            bloc.add(StartConversationEvent(
+                              studyGuideId: guide.id,
+                              studyGuideTitle: _getDisplayTitle(),
+                            ));
+                            return bloc;
+                          },
+                          child: FollowUpChatWidget(
                             studyGuideId: guide.id,
                             studyGuideTitle: _getDisplayTitle(),
-                          ));
-                          return bloc;
-                        },
-                        child: FollowUpChatWidget(
-                          studyGuideId: guide.id,
-                          studyGuideTitle: _getDisplayTitle(),
-                          sectionNumber: chatNumber,
-                          isExpanded: _isChatExpanded,
-                          onToggleExpanded: () {
-                            setState(() {
-                              _isChatExpanded = !_isChatExpanded;
-                            });
-                          },
+                            sectionNumber: chatNumber,
+                            isExpanded: _isChatExpanded,
+                            onToggleExpanded: () {
+                              setState(() {
+                                _isChatExpanded = !_isChatExpanded;
+                              });
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ), // WalkthroughTooltip
-                  blockBottom,
-                  const ReaderHairline(),
-                ],
+                    ), // WalkthroughTooltip
+                    blockBottom,
+                    const ReaderHairline(),
+                  ],
+                ),
               ),
             ),
-          ),
 
           // Personal notes
           Padding(
@@ -3455,8 +3468,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
+  /// True when the Discipler may open: a full account, or a guest who has
+  /// just signed up from the account-needed sheet (reason `discipler`).
+  Future<bool> _disciplerAllowed() async {
+    final allowed = await lessonDisciplerGate(context);
+    // A guest who signed up now gets the follow-up panel.
+    if (allowed && mounted) setState(() {});
+    return allowed && mounted;
+  }
+
   /// Opens the follow-up chat (if collapsed) and scrolls it into view.
-  void _askDiscipler() {
+  /// A guest gets the account-needed sheet instead.
+  Future<void> _askDiscipler() async {
+    if (!await _disciplerAllowed()) return;
     if (!_isChatExpanded) {
       setState(() {
         _isChatExpanded = true;

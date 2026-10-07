@@ -31,11 +31,20 @@ class CommunityRepositoryImpl implements CommunityRepository {
 
   final UserScopedCache? _cacheOverride;
 
+  /// True when the signed-in user is a guest (anonymous). Fellowships need
+  /// an account, so a guest's list is empty without asking the server (it
+  /// would answer 403 ACCOUNT_REQUIRED).
+  final bool Function() _isGuest;
+
   CommunityRepositoryImpl({
     required CommunityRemoteDatasource datasource,
     UserScopedCache? cache,
+    bool Function()? isGuest,
   })  : _datasource = datasource,
-        _cacheOverride = cache;
+        _cacheOverride = cache,
+        _isGuest = isGuest ?? _never;
+
+  static bool _never() => false;
 
   UserScopedCache get _cache => _cacheOverride ?? UserScopedCache.instance;
 
@@ -99,6 +108,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
   @override
   Future<Either<Failure, List<FellowshipEntity>>> getFellowships(
       String language) {
+    // A guest belongs to no fellowship; the server would refuse the call.
+    if (_isGuest()) return Future.value(const Right([]));
     final existing = _fellowshipsInFlight[language];
     if (existing != null) return existing;
     final request = _fetchFellowships(language);
