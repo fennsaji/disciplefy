@@ -106,7 +106,19 @@ class LearningPathCard extends StatelessWidget {
                     constraints: const BoxConstraints(minHeight: 26),
                     child: Align(
                       alignment: Alignment.topLeft,
-                      child: _StatusBadge(path: path),
+                      // A path closed to the guest shows its lock first, on
+                      // the left, so it is visible even when the tile is only
+                      // partly scrolled into a row.
+                      child: isGuestLockedPath(path)
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GuestPathLockBadge(path: path),
+                                const SizedBox(width: 6),
+                                Flexible(child: _StatusBadge(path: path)),
+                              ],
+                            )
+                          : _StatusBadge(path: path),
                     ),
                   ),
                 ),
@@ -170,11 +182,7 @@ class LearningPathCard extends StatelessWidget {
           child: InkWell(
             borderRadius: radius,
             onTap: onTap,
-            child: GuestLockedPathTile(
-              path: path,
-              badgePadding: const EdgeInsets.all(10),
-              child: tile,
-            ),
+            child: tile,
           ),
         ),
       ),

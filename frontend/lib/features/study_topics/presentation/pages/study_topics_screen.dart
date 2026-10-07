@@ -633,14 +633,22 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
               paths: paths,
             );
             if (data == null) return const SizedBox.shrink();
+            // The same guest lock and gate as every other path tile, when
+            // the path is known.
+            final path = paths.where((p) => p.id == data.pathId).firstOrNull;
+            final card = TopicsContinueCard(
+              data: data,
+              onTap: () => path != null
+                  ? _navigateToLearningPath(path)
+                  : _navigateToPathId(data.pathId),
+            );
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: LockedFeatureWrapper(
                 featureKey: 'learning_paths',
-                child: TopicsContinueCard(
-                  data: data,
-                  onTap: () => _navigateToPathId(data.pathId),
-                ),
+                child: path == null
+                    ? card
+                    : GuestLockedPathTile(path: path, child: card),
               ),
             );
           },

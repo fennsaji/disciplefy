@@ -50,7 +50,6 @@ class GuestLockedPathTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isGuestLockedPath(path, guest: guest)) return child;
-    final palette = ReaderPalette.of(context);
     return Stack(
       children: [
         child,
@@ -60,23 +59,36 @@ class GuestLockedPathTile extends StatelessWidget {
               alignment: badgeAlignment,
               child: Padding(
                 padding: badgePadding,
-                child: Container(
-                  key: Key('guest_path_lock_${path.id}'),
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: palette.card,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: palette.outline),
-                  ),
-                  child:
-                      Icon(Icons.lock_rounded, size: 12, color: palette.muted),
-                ),
+                child: GuestPathLockBadge(path: path),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The round lock badge shown on a path tile that is locked for the guest.
+/// Keyed `guest_path_lock_<path id>`.
+class GuestPathLockBadge extends StatelessWidget {
+  final LearningPath path;
+
+  const GuestPathLockBadge({super.key, required this.path});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      key: Key('guest_path_lock_${path.id}'),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: palette.card,
+        shape: BoxShape.circle,
+        border: Border.all(color: palette.outline),
+      ),
+      child: Icon(Icons.lock_rounded, size: 12, color: palette.muted),
     );
   }
 }
