@@ -87,6 +87,7 @@ import '../../features/home/data/services/recommended_guides_service.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/home/presentation/bloc/recommended_topics_bloc.dart';
 import '../../features/home/presentation/bloc/home_study_generation_bloc.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_you_cubit.dart';
 import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
 import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
 import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
@@ -751,6 +752,11 @@ Future<void> initializeDependencies() async {
       downloadService: sl(),
     ),
     dispose: (bloc) => bloc.close(),
+  );
+
+  // "New for you" banner schedule (one per Home mount).
+  sl.registerFactory(
+    () => NewForYouCubit(prefs: sl<SharedPreferences>()),
   );
 
   //! Study Topics
