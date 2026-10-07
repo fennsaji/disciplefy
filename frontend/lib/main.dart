@@ -65,6 +65,7 @@ import 'core/services/android_hybrid_storage.dart';
 import 'core/services/iap_service.dart';
 import 'core/services/apple_consumable_purchase_service.dart';
 import 'core/utils/isolate_error_reporter.dart';
+import 'package:disciplefy_bible_study/core/utils/app_scroll_behavior.dart';
 import 'core/utils/logger.dart';
 import 'core/connectivity/connectivity_bloc.dart';
 import 'core/services/connectivity_sync_service.dart';
@@ -663,6 +664,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
             builder: (context, child) => MaterialApp.router(
               title: 'Disciplefy | Bible Study App',
               debugShowCheckedModeBanner: false,
+              scrollBehavior: const AppScrollBehavior(),
 
               // Dynamic theming based on ThemeService
               themeMode: themeService.flutterThemeMode,
