@@ -331,22 +331,22 @@ class VoiceSessionView extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: palette.ctaFill,
               foregroundColor: palette.ctaInk,
-              minimumSize: const Size(0, 56),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              minimumSize: const Size(0, 40),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               shape: const StadiumBorder(),
               elevation: 0,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.pan_tool_outlined, size: 20, color: palette.ctaInk),
+                Icon(Icons.pan_tool_outlined, size: 17, color: palette.ctaInk),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     context.tr('voice_buddy.voice_controls.tap_to_interrupt'),
                     textAlign: TextAlign.center,
                     style: AppFonts.inter(
-                      fontSize: 15,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                       color: palette.ctaInk,
                       height: 1.25,

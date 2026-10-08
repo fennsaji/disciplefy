@@ -68,14 +68,14 @@ class DisciplerStartView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildTopRow(context, palette),
-                const SizedBox(height: 72),
+                const SizedBox(height: 76),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       WelcomeEyebrow(context.tr('voice_buddy.title')),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Semantics(
                         header: true,
                         child: WelcomeTitle(
@@ -83,13 +83,16 @@ class DisciplerStartView extends StatelessWidget {
                           fontSize: 28,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 4),
                       Text(
                         context.tr('voice_buddy.description'),
                         style: AppFonts.inter(
-                          fontSize: 15,
-                          height: 1.45,
-                          color: palette.muted,
+                          fontSize: 13,
+                          height: 1.3,
+                          // Over the photo on dark, as the design's #DADAE0.
+                          color: palette.isDark
+                              ? const Color(0xFFDADAE0)
+                              : palette.muted,
                         ),
                       ),
                     ],
@@ -97,22 +100,24 @@ class DisciplerStartView extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 _LanguageChip(languageName: languageName, onTap: onLanguageTap),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 _buildActions(context, palette),
-                const SizedBox(height: 28),
+                const SizedBox(height: 14),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: SessionLabel(
                     context.tr(TranslationKeys.voiceSessionTryAsking),
                   ),
                 ),
-                const SizedBox(height: 12),
-                for (final key in disciplerSuggestionKeys) ...[
+                const SizedBox(height: 14),
+                for (var i = 0; i < disciplerSuggestionKeys.length; i++) ...[
                   _SuggestionCard(
-                    text: context.tr(key),
-                    onTap: () => onSuggestion(context.tr(key)),
+                    text: context.tr(disciplerSuggestionKeys[i]),
+                    highlighted: i == 0,
+                    onTap: () =>
+                        onSuggestion(context.tr(disciplerSuggestionKeys[i])),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                 ],
               ],
             ),
@@ -163,8 +168,9 @@ class DisciplerStartView extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: palette.ctaFill,
         foregroundColor: palette.ctaInk,
-        minimumSize: const Size(0, 54),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: const StadiumBorder(),
         elevation: 0,
       ),
@@ -179,8 +185,9 @@ class DisciplerStartView extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: palette.raised,
         foregroundColor: palette.text,
-        minimumSize: const Size(0, 54),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: const StadiumBorder(),
         elevation: 0,
       ),
@@ -200,13 +207,13 @@ class DisciplerStartView extends StatelessWidget {
         final painter = TextPainter(
           text: TextSpan(
             text: typeLabel,
-            style: AppFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+            style: AppFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
           ),
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
           maxLines: 1,
         )..layout();
-        final typeWidth = painter.width + 20 + 8 + 32 + 2;
+        final typeWidth = painter.width + 17 + 8 + 36 + 2;
         painter.dispose();
         if (typeWidth <= box.maxWidth * 0.4) {
           return IntrinsicHeight(
@@ -247,14 +254,14 @@ class _IconLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 20, color: color),
+        Icon(icon, size: 17, color: color),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: AppFonts.inter(
-              fontSize: 16,
+              fontSize: 14.5,
               fontWeight: FontWeight.w600,
               color: color,
               height: 1.25,
@@ -283,13 +290,14 @@ class _LanguageChip extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           customBorder: const StadiumBorder(),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 34),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.language, size: 20, color: palette.accentIcon),
-                const SizedBox(width: 10),
+                Icon(Icons.language, size: 14, color: palette.accentIcon),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     context.tr(
@@ -297,16 +305,16 @@ class _LanguageChip extends StatelessWidget {
                       {'language': languageName},
                     ),
                     style: AppFonts.inter(
-                      fontSize: 15,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: palette.text,
-                      height: 1.3,
+                      height: 1.2,
                     ),
                   ),
                 ),
                 const SizedBox(width: 6),
                 Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 20, color: palette.muted),
+                    size: 14, color: palette.muted),
               ],
             ),
           ),
@@ -320,44 +328,67 @@ class _SuggestionCard extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
 
-  const _SuggestionCard({required this.text, required this.onTap});
+  /// The first suggestion carries a soft gold glow on dark.
+  final bool highlighted;
+
+  const _SuggestionCard({
+    required this.text,
+    required this.onTap,
+    this.highlighted = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    return Material(
-      color: palette.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: palette.hairline),
+    final glow = highlighted && palette.isDark;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: BorderSide(
+        color: glow ? palette.gold.withValues(alpha: 0.5) : palette.hairline,
       ),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: Row(
-              children: [
-                Icon(Icons.subdirectory_arrow_right_rounded,
-                    size: 20, color: palette.accentIcon),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: AppFonts.inter(
-                      fontSize: 15,
-                      color: palette.text,
-                      height: 1.35,
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: glow
+            ? [
+                BoxShadow(
+                  color: palette.gold.withValues(alpha: 0.8),
+                  blurRadius: 16,
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: palette.card,
+        shape: shape,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 41),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.subdirectory_arrow_right_rounded,
+                      size: 16, color: palette.accentIcon),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: palette.text,
+                        height: 1.25,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.north_east_rounded, size: 16, color: palette.dim),
-              ],
+                  const SizedBox(width: 10),
+                  Icon(Icons.north_east_rounded, size: 15, color: palette.dim),
+                ],
+              ),
             ),
           ),
         ),

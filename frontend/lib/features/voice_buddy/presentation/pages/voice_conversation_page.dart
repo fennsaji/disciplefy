@@ -551,11 +551,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
       VoiceButtonState.processing || VoiceButtonState.speaking => palette.gold,
     };
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.page,
-        border: Border(bottom: BorderSide(color: palette.hairline)),
-      ),
+    return ColoredBox(
+      color: palette.page,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -569,7 +566,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   color: palette.text,
                   tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 ),
-              const DisciplerAvatar(radius: 18),
+              const DisciplerAvatar(radius: 17),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -579,7 +576,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                     Text(
                       context.tr('voice_buddy.title'),
                       style: AppFonts.poppins(
-                        fontSize: 17,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: palette.text,
                         height: 1.25,
@@ -589,20 +586,20 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                     Row(
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 7,
+                          height: 7,
                           decoration: BoxDecoration(
                             color: dotColor,
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Flexible(
                           child: Text(
                             '${sessionStatusLabel(context, buttonState)} · '
                             '${_languageName(state)}',
                             style: AppFonts.inter(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: palette.muted,
                               height: 1.3,
                             ),
@@ -728,11 +725,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     final isProcessing = state.status == VoiceConversationStatus.processing ||
         state.status == VoiceConversationStatus.streaming;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.page,
-        border: Border(top: BorderSide(color: palette.hairline)),
-      ),
+    return ColoredBox(
+      color: palette.page,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -748,30 +742,32 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   minLines: 1,
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
-                  style: AppFonts.inter(fontSize: 15, color: palette.text),
+                  style: AppFonts.inter(fontSize: 14, color: palette.text),
                   decoration: InputDecoration(
                     hintText: context.tr('voice_buddy.conversation.type_hint'),
-                    hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+                    hintStyle:
+                        AppFonts.inter(fontSize: 14, color: palette.muted),
                     filled: true,
                     fillColor: palette.raised,
+                    isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
+                      horizontal: 16,
+                      vertical: 11,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide(color: palette.outline),
                     ),
                   ),

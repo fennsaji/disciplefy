@@ -8,7 +8,7 @@ import 'package:disciplefy_bible_study/shared/widgets/clickable_scripture_text.d
 
 /// Fill of the user's own bubbles: gold-tinted in both themes.
 Color userBubbleFill(ReaderPalette palette) => palette.isDark
-    ? palette.gold.withValues(alpha: 0.28)
+    ? palette.gold.withValues(alpha: 0.25)
     : palette.gold.withValues(alpha: 0.1);
 
 /// A chat bubble for one message of a Discipler conversation.
@@ -46,21 +46,21 @@ class ConversationBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final textStyle = AppFonts.inter(
-      fontSize: 15.5,
-      height: 1.55,
+      fontSize: 14,
+      height: 1.5,
       color: palette.text,
     );
     final references = scriptureReferences ?? const <String>[];
 
     final bubble = Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         color: isUser ? userBubbleFill(palette) : palette.card,
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(20),
-          topRight: const Radius.circular(20),
-          bottomLeft: Radius.circular(isUser ? 20 : 6),
-          bottomRight: Radius.circular(isUser ? 6 : 20),
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: Radius.circular(isUser ? 18 : 6),
+          bottomRight: Radius.circular(isUser ? 6 : 18),
         ),
         border: isUser ? null : Border.all(color: palette.hairline),
       ),
@@ -77,7 +77,7 @@ class ConversationBubble extends StatelessWidget {
               selectable: false,
             ),
           if (!isUser && references.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -115,7 +115,7 @@ class ConversationBubble extends StatelessWidget {
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isUser) ...[
-            const DisciplerAvatar(radius: 14),
+            const DisciplerAvatar(radius: 13),
             const SizedBox(width: 8),
           ],
           Flexible(child: bubble),
@@ -150,19 +150,19 @@ class ScriptureReferenceChip extends StatelessWidget {
         onTap: onTap,
         customBorder: const StadiumBorder(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.menu_book_outlined,
-                  size: 15, color: palette.goldOnTint),
+                  size: 12, color: palette.goldOnTint),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   reference,
                   style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     color: palette.goldOnTint,
                   ),
                 ),
@@ -188,13 +188,13 @@ class ThinkingBubble extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const DisciplerAvatar(radius: 14),
+          const DisciplerAvatar(radius: 13),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: palette.card,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(color: palette.hairline),
             ),
             child: const _ThinkingDots(),

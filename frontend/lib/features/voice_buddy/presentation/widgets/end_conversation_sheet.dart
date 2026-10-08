@@ -280,8 +280,8 @@ class _SheetButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: fill,
         foregroundColor: ink,
-        minimumSize: const Size(0, 52),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: const StadiumBorder(),
         elevation: 0,
       ),
@@ -289,8 +289,8 @@ class _SheetButton extends StatelessWidget {
         label,
         textAlign: TextAlign.center,
         style: AppFonts.inter(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
+          fontSize: 14.5,
+          fontWeight: FontWeight.w600,
           color: ink,
           height: 1.25,
         ),

@@ -125,7 +125,7 @@ void main() {
           tester, const VoicePreferencesPage(initialPreferences: _prefs));
 
       for (final text in [
-        'Voice Settings',
+        'Voice settings',
         'LANGUAGE',
         'Preferred language',
         'Default',
@@ -133,7 +133,7 @@ void main() {
         'VOICE OUTPUT',
         'Female',
         'Male',
-        'Speaking Rate',
+        'Speaking rate',
         'Pitch',
         'INTERACTION',
         'Auto-play responses',
@@ -214,7 +214,7 @@ void main() {
 
       final sliders = find.byType(Slider);
       expect(sliders, findsNWidgets(2));
-      final rows = {'Speaking Rate': 'Slow', 'Pitch': 'Normal'};
+      final rows = {'Speaking rate': 'Slow', 'Pitch': 'Normal'};
       var i = 0;
       for (final MapEntry(key: title, value: label) in rows.entries) {
         final slider = sliders.at(i++);
@@ -369,7 +369,7 @@ void main() {
       await open(tester, VoicePreferencesPageWrapper(bloc: bloc),
           settle: false);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Voice Settings'), findsOneWidget);
+      expect(find.text('Voice settings'), findsOneWidget);
     });
 
     testWidgets('error retries loading', (tester) async {

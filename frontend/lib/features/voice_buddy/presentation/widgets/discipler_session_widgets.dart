@@ -185,14 +185,14 @@ class SessionEndPill extends StatelessWidget {
               maxWidth: 104,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Center(
                 widthFactor: 1,
                 child: Text(
                   context.tr('voice_buddy.conversation.end_button'),
                   textAlign: TextAlign.center,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: endInk(palette),
                   ),
