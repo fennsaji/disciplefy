@@ -3316,6 +3316,7 @@ const Map<String, dynamic> englishTranslations = {
     'generate_title': 'Create an account to generate studies',
     'memory_verses_title': 'Memory verses need an account',
     'generic_title': 'Create a free account',
+    'listen_title': 'Listening needs an account',
     'body': 'So your progress and groups stay with you on any phone.',
     'benefit_moves': 'Your progress on this phone moves over',
     'benefit_paths': 'Unlock every learning path',

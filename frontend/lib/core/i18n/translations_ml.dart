@@ -3435,6 +3435,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'generate_title': 'പഠനം ഉണ്ടാക്കാൻ അക്കൗണ്ട് വേണം',
     'memory_verses_title': 'സ്മരണ വാക്യങ്ങൾക്ക് അക്കൗണ്ട് വേണം',
     'generic_title': 'സൗജന്യ അക്കൗണ്ട് തുടങ്ങൂ',
+    'listen_title': 'കേൾക്കാൻ അക്കൗണ്ട് വേണം',
     'body': 'ഏത് ഫോണിലും പുരോഗതി കൂടെയുണ്ടാകാൻ.',
     'benefit_moves': 'ഈ ഫോണിലെ പുരോഗതി നിലനിൽക്കും',
     'benefit_paths': 'എല്ലാ പാതകളും തുറക്കാം',

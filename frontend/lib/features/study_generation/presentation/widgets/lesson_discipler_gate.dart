@@ -25,3 +25,15 @@ Future<bool> lessonDisciplerGate(BuildContext context, {bool? isGuest}) {
   if (!guest) return Future.value(true);
   return AccountNeededSheet.show(context, AccountReason.discipler);
 }
+
+/// Runs before a lesson's "Listen" for a guest.
+///
+/// Listening needs an account, not a plan, so a guest gets the
+/// account-needed sheet (reason `listen`) rather than an upgrade prompt.
+/// True when the user is a full account (or just became one). [isGuest]
+/// overrides the session check (tests).
+Future<bool> lessonListenGate(BuildContext context, {bool? isGuest}) {
+  final guest = isGuest ?? GuestRouteGate.currentUserIsGuest();
+  if (!guest) return Future.value(true);
+  return AccountNeededSheet.show(context, AccountReason.listen);
+}

@@ -8,6 +8,9 @@ enum AccountReason {
   discipler('discipler'),
   community('community'),
   memoryVerses('memory_verses'),
+
+  /// "Listen" (read aloud) in a lesson.
+  listen('listen'),
   otherPath('other_path'),
   secondPath('second_path'),
 

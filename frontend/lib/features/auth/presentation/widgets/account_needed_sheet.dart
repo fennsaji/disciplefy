@@ -52,6 +52,7 @@ String accountReasonTitleKey(AccountReason reason) => switch (reason) {
         TranslationKeys.accountSecondPathTitle,
       AccountReason.generate => TranslationKeys.accountGenerateTitle,
       AccountReason.memoryVerses => TranslationKeys.accountMemoryVersesTitle,
+      AccountReason.listen => TranslationKeys.accountListenTitle,
       AccountReason.saveProgress => TranslationKeys.accountSaveProgressTitle,
       AccountReason.other => TranslationKeys.accountGenericTitle,
     };
@@ -64,6 +65,7 @@ IconData _iconFor(AccountReason reason) => switch (reason) {
         Icons.route_outlined,
       AccountReason.generate => Icons.edit_note_rounded,
       AccountReason.memoryVerses => Icons.bookmark_border_rounded,
+      AccountReason.listen => Icons.headphones_rounded,
       AccountReason.saveProgress ||
       AccountReason.other =>
         Icons.cloud_upload_outlined,

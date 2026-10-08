@@ -3732,6 +3732,7 @@ class TranslationKeys {
   static const accountGenerateTitle = 'account.generate_title';
   static const accountMemoryVersesTitle = 'account.memory_verses_title';
   static const accountGenericTitle = 'account.generic_title';
+  static const accountListenTitle = 'account.listen_title';
   static const accountBody = 'account.body';
   static const accountBenefitMoves = 'account.benefit_moves';
   static const accountBenefitPaths = 'account.benefit_paths';

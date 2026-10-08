@@ -3321,6 +3321,7 @@ const Map<String, dynamic> hindiTranslations = {
     'generate_title': 'स्टडी बनाने के लिए खाता बनाएँ',
     'memory_verses_title': 'याद वचनों के लिए खाता चाहिए',
     'generic_title': 'मुफ़्त खाता बनाएँ',
+    'listen_title': 'सुनने के लिए खाता चाहिए',
     'body': 'ताकि आपकी प्रगति हर फ़ोन पर साथ रहे।',
     'benefit_moves': 'इस फ़ोन की प्रगति साथ आएगी',
     'benefit_paths': 'सभी पथ खोलें',

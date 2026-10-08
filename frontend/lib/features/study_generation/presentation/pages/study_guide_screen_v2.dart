@@ -393,7 +393,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   static const double _fontSizeMin = 14.0;
   static const double _fontSizeMax = 26.0;
   static const double _fontSizeStep = 2.0;
-  double _contentFontSize = 18.0;
+  static const double _fontSizeDefault = 16.0;
+  double _contentFontSize = _fontSizeDefault;
 
   // Fellowship data for optional "post to fellowship feed" toggle
   List<FellowshipEntity>? _userFellowships;
@@ -622,9 +623,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (saved != null) {
       if (mounted) setState(() => _contentFontSize = saved);
     } else {
-      // Default: base 18px scaled by the app-wide font scale setting
+      // Default: base 16px scaled by the app-wide font scale setting
       final scale = sl<FontScaleService>().scaleFactor;
-      final defaultSize = (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+      final defaultSize =
+          (_fontSizeDefault * scale).clamp(_fontSizeMin, _fontSizeMax);
       if (mounted) setState(() => _contentFontSize = defaultSize);
     }
   }
@@ -804,8 +806,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove(_fontSizePrefsKey);
                         final scale = sl<FontScaleService>().scaleFactor;
-                        final defaultSize =
-                            (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+                        final defaultSize = (_fontSizeDefault * scale)
+                            .clamp(_fontSizeMin, _fontSizeMax);
                         await step(defaultSize - _contentFontSize);
                       },
                       child: Text(
@@ -1915,45 +1917,57 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           foregroundColor: palette.text,
           side: BorderSide(color: palette.outline),
           minimumSize: const Size(0, 32),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // Web and desktop default to a compact density (32 -> 24).
+          visualDensity: VisualDensity.standard,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          textStyle: AppFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
         );
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        if (canShare)
-          OutlinedButton.icon(
-            style: style(),
-            icon: const Icon(Icons.people_outline_rounded, size: 14),
-            label: Text(context.tr(TranslationKeys.popupShareFellowship)),
-            onPressed: () => showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => ShareGuideSheet(
-                studyGuideId: guide.id,
-                guideTitle: _getDisplayTitle(),
-                guideInputType: guide.inputType,
-                guideLanguage: guide.language,
-                guideStudyMode: guide.studyMode ?? widget.studyMode.name,
-                guideSummary: guide.summary,
-                fellowships: _userFellowships!,
-              ),
+    // Shrinks rather than cutting a long hi/ml label.
+    // The button already wraps the label in a Flexible.
+    Widget label(String key) => FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(context.tr(key), maxLines: 1),
+        );
+    final buttons = <Widget>[
+      if (canShare)
+        OutlinedButton.icon(
+          style: style(),
+          icon: const Icon(Icons.share_outlined, size: 14),
+          label: label(TranslationKeys.popupShareFellowship),
+          onPressed: () => showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => ShareGuideSheet(
+              studyGuideId: guide.id,
+              guideTitle: _getDisplayTitle(),
+              guideInputType: guide.inputType,
+              guideLanguage: guide.language,
+              guideStudyMode: guide.studyMode ?? widget.studyMode.name,
+              guideSummary: guide.summary,
+              fellowships: _userFellowships!,
             ),
           ),
-        if (canChat)
-          OutlinedButton.icon(
-            style: style(),
-            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-            label: Text(context.tr(TranslationKeys.popupAskDiscipler)),
-            onPressed: _openDisciplerChat,
-          ),
+        ),
+      if (canChat)
+        OutlinedButton.icon(
+          style: style(),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+          label: label(TranslationKeys.popupAskDiscipler),
+          onPressed: _openDisciplerChat,
+        ),
+    ];
+    // Two buttons share the row equally; a single one keeps its own width.
+    if (buttons.length == 1) return Center(child: buttons.single);
+    return Row(
+      children: [
+        Expanded(child: buttons[0]),
+        const SizedBox(width: 8),
+        Expanded(child: buttons[1]),
       ],
     );
   }
@@ -3247,18 +3261,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final palette = ReaderPalette.of(context);
     final foreground = palette.text;
     final ttsService = sl<StudyGuideTTSService>();
-    const pillHeight = 52.0;
-    final pillBorder = BorderSide(color: palette.outline, width: 1.2);
+    const pillHeight = 40.0;
+    final pillBorder = BorderSide(color: palette.outline);
+    // A guest sees both actions as they are; each asks for an account
+    // (not a plan) when tapped.
+    final isGuest = GuestRouteGate.currentUserIsGuest();
 
     return Container(
-      decoration: BoxDecoration(
-        color: palette.page,
-        border: Border(top: BorderSide(color: palette.hairline)),
-      ),
+      color: palette.page,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: Row(
             children: [
               // Listen (left) - with lock support for voice_buddy feature
@@ -3274,7 +3288,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   totalSteps: 2,
                   highlightBorderRadius: pillHeight / 2,
                   onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                  child: LockedFeatureWrapper(
+                  child: _guestOrLocked(
+                    isGuest: isGuest,
                     featureKey: 'voice_buddy',
                     child: SizedBox(
                       height: pillHeight,
@@ -3315,7 +3330,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                                   ? Icons.pause_rounded
                                                   : Icons.play_arrow_rounded,
                                               color: foreground,
-                                              size: 22,
+                                              size: 20,
                                             ),
                                             const SizedBox(width: 8),
                                             Flexible(
@@ -3327,7 +3342,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                                       : 'Resume',
                                                   maxLines: 1,
                                                   style: AppFonts.inter(
-                                                    fontSize: 16,
+                                                    fontSize: 14,
                                                     fontWeight: FontWeight.w600,
                                                     color: foreground,
                                                   ),
@@ -3357,7 +3372,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                           child: Icon(
                                             Icons.tune,
                                             color: foreground,
-                                            size: 22,
+                                            size: 20,
                                           ),
                                         ),
                                       ),
@@ -3370,7 +3385,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
                           // At rest: outlined Listen pill.
                           return OutlinedButton.icon(
-                            onPressed: () {
+                            onPressed: () async {
+                              if (!await lessonListenGate(context,
+                                      isGuest: isGuest) ||
+                                  !mounted) {
+                                return;
+                              }
+                              if (isGuest) {
+                                // Just signed up: show Listen for their plan.
+                                setState(() {});
+                                return;
+                              }
                               if (_currentStudyGuide != null) {
                                 // Load and start reading the study guide if
                                 // not already playing
@@ -3395,7 +3420,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                     ),
                                   )
                                 : const Icon(Icons.headphones_rounded,
-                                    size: 22),
+                                    size: 18),
                             // Shrinks rather than cutting on narrow phones.
                             label: FittedBox(
                               fit: BoxFit.scaleDown,
@@ -3407,7 +3432,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                         .tr(TranslationKeys.studyGuideListen),
                                 maxLines: 1,
                                 style: AppFonts.inter(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -3416,6 +3441,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                               foregroundColor: foreground,
                               side: pillBorder,
                               shape: const StadiumBorder(),
+                              visualDensity: VisualDensity.standard,
+                              minimumSize: const Size(0, pillHeight),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12),
                             ),
@@ -3428,8 +3455,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               ),
               // Ask Discipler (right) - only if ai_discipler is enabled and
               // study_chat is not hidden
-              if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
-                const SizedBox(width: 12),
+              if (isGuest ||
+                  (_isAiDisciplerFeatureEnabled() &&
+                      _shouldShowStudyChat())) ...[
+                const SizedBox(width: 10),
                 Expanded(
                   child: WalkthroughTooltip(
                     showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
@@ -3444,8 +3473,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
                     child: SizedBox(
                       height: pillHeight,
+                      // White on dark; gold with ink on light, as the
+                      // design.
                       child: Material(
-                        color: palette.ctaFill,
+                        color: palette.isDark
+                            ? palette.ctaFill
+                            : palette.selectedFill,
                         shape: const StadiumBorder(),
                         child: InkWell(
                           customBorder: const StadiumBorder(),
@@ -3455,11 +3488,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Flat glyph, no disc: ink on the white
-                                // dark-theme pill, white on the ink one.
-                                DisciplerGlyph.onCta(
-                                  size: 24,
-                                  isDark: palette.isDark,
+                                // Flat ink glyph, no disc, on the white or
+                                // gold pill.
+                                const DisciplerGlyph(
+                                  size: 20,
+                                  variant: DisciplerGlyphVariant.ink,
                                 ),
                                 const SizedBox(width: 8),
                                 Flexible(
@@ -3470,9 +3503,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                           .tr(TranslationKeys.studyGuideAskAi),
                                       maxLines: 1,
                                       style: AppFonts.inter(
-                                        fontSize: 16,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: palette.ctaInk,
+                                        color: palette.isDark
+                                            ? palette.ctaInk
+                                            : palette.onSelected,
                                       ),
                                     ),
                                   ),
@@ -3492,6 +3527,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       ),
     );
   }
+
+  /// [child] as it is for a guest (its tap asks for an account), otherwise
+  /// behind the plan lock for [featureKey].
+  Widget _guestOrLocked({
+    required bool isGuest,
+    required String featureKey,
+    required Widget child,
+  }) =>
+      isGuest
+          ? child
+          : LockedFeatureWrapper(featureKey: featureKey, child: child);
 
   /// True when the Discipler may open: a full account, or a guest who has
   /// just signed up from the account-needed sheet (reason `discipler`).

@@ -78,4 +78,40 @@ void main() {
       expect(await result, isTrue);
     });
   });
+
+  group('lessonListenGate', () {
+    Future<Future<bool>> tapListen(WidgetTester tester,
+        {required bool guest}) async {
+      late Future<bool> result;
+      await tester.pumpWidget(welcomeApp(
+        screen: Scaffold(
+          body: Builder(
+            builder: (c) => TextButton(
+              onPressed: () => result = lessonListenGate(c, isGuest: guest),
+              child: const Text('Listen'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('Listen'));
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    testWidgets('a guest gets the account sheet with account wording',
+        (tester) async {
+      final result = await tapListen(tester, guest: true);
+      expect(find.text('Listening needs an account'), findsOneWidget);
+      expect(find.textContaining('pgrade'), findsNothing);
+      await tester.tap(find.text('Continue as guest'));
+      await tester.pumpAndSettle();
+      expect(await result, isFalse);
+    });
+
+    testWidgets('a full account goes straight on', (tester) async {
+      final result = await tapListen(tester, guest: false);
+      expect(find.text('Listening needs an account'), findsNothing);
+      expect(await result, isTrue);
+    });
+  });
 }
