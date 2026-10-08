@@ -290,7 +290,7 @@ class _AccountLinkPanelState extends State<AccountLinkPanel> {
 
 /// Looks of an [AccountButton].
 enum AccountButtonStyle {
-  /// White pill on dark, ink pill on light.
+  /// White pill (outlined on light).
   primary,
 
   /// The reverse of [primary] with an outline (Apple's button).
@@ -321,7 +321,11 @@ class AccountButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final (Color bg, Color fg, Color? border) = switch (style) {
-      AccountButtonStyle.primary => (palette.ctaFill, palette.ctaInk, null),
+      // White in both themes, as in the design; on the light page it gets
+      // a warm hairline so it still reads as a button.
+      AccountButtonStyle.primary => palette.isDark
+          ? (Colors.white, ReaderPalette.ink, null)
+          : (Colors.white, ReaderPalette.ink, const Color(0xFFE9E5DB)),
       AccountButtonStyle.inverse => palette.isDark
           ? (Colors.black, Colors.white, palette.outline)
           : (Colors.white, ReaderPalette.ink, ReaderPalette.ink),
@@ -350,7 +354,7 @@ class AccountButton extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: fg,
                   ),
