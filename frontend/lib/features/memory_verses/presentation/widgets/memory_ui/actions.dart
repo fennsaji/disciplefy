@@ -5,7 +5,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/style.dart';
 
 /// Height shared by action pills and the primary pill.
-const double kMemoryPillHeight = 52;
+const double kMemoryPillHeight = 40;
 
 /// Primary stadium call-to-action: white fill + ink text on dark, ink
 /// fill + white ink on light ("Check", "Submit", "Reveal next", "Done").
@@ -36,7 +36,7 @@ class MemoryPrimaryPill extends StatelessWidget {
       onPressed: onPressed,
       fill: palette.ctaFill,
       ink: palette.ctaInk,
-      horizontalPadding: 18,
+      horizontalPadding: 16,
     );
   }
 }
@@ -102,20 +102,18 @@ class MemoryActionPill extends StatelessWidget {
             child: TextButton(
               onPressed: onPressed,
               style: TextButton.styleFrom(
-                backgroundColor: palette.raised,
                 foregroundColor: ink,
-                disabledBackgroundColor: palette.raised.withValues(alpha: 0.55),
                 disabledForegroundColor: palette.dim,
-                shape: const CircleBorder(),
+                shape: CircleBorder(side: BorderSide(color: palette.outline)),
                 padding: EdgeInsets.zero,
                 minimumSize: Size(height, height),
               ),
               child: badge == null
-                  ? Icon(icon, size: 20)
+                  ? Icon(icon, size: 18)
                   : Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        Icon(icon, size: 20),
+                        Icon(icon, size: 18),
                         PositionedDirectional(
                           top: -8,
                           end: -12,
@@ -152,9 +150,13 @@ class MemoryActionPill extends StatelessWidget {
       loading: false,
       height: height,
       onPressed: onPressed,
-      fill: palette.raised,
+      fill: Colors.transparent,
       ink: ink,
-      horizontalPadding: 16,
+      border: palette.outline,
+      horizontalPadding: 14,
+      fontSize: 13.5,
+      iconSize: 14,
+      iconGap: 6,
     );
   }
 }
@@ -169,6 +171,12 @@ class _MemoryPill extends StatelessWidget {
   final Color ink;
   final double horizontalPadding;
 
+  /// Outline of a secondary pill; none for the filled primary.
+  final Color? border;
+  final double fontSize;
+  final double iconSize;
+  final double iconGap;
+
   const _MemoryPill({
     required this.label,
     required this.icon,
@@ -178,6 +186,10 @@ class _MemoryPill extends StatelessWidget {
     required this.fill,
     required this.ink,
     required this.horizontalPadding,
+    this.border,
+    this.fontSize = 14.5,
+    this.iconSize = 16,
+    this.iconGap = 8,
   });
 
   @override
@@ -190,7 +202,11 @@ class _MemoryPill extends StatelessWidget {
         disabledBackgroundColor: fill.withValues(alpha: 0.5),
         disabledForegroundColor: ink.withValues(alpha: 0.55),
         minimumSize: Size(0, height),
-        shape: const StadiumBorder(),
+        // 40px is the tap target too; no extra 48px padding around it.
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: StadiumBorder(
+          side: border == null ? BorderSide.none : BorderSide(color: border!),
+        ),
         padding:
             EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
       ),
@@ -207,8 +223,8 @@ class _MemoryPill extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 18),
-                  const SizedBox(width: 8),
+                  Icon(icon, size: iconSize),
+                  SizedBox(width: iconGap),
                 ],
                 // Wraps onto more lines instead of cutting the label off
                 // with an ellipsis (long Hindi/Malayalam labels at 320pt).
@@ -218,7 +234,7 @@ class _MemoryPill extends StatelessWidget {
                     textAlign: TextAlign.center,
                     softWrap: true,
                     style: AppFonts.inter(
-                      fontSize: 15,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w600,
                       height: 1.25,
                     ),
@@ -286,7 +302,7 @@ class MemoryActionBar extends StatelessWidget {
                   return Row(
                     children: [
                       for (var i = 0; i < secondary.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 10),
+                        if (i > 0) const SizedBox(width: 8),
                         if (compact && secondary[i].icon != null)
                           secondary[i].withIconOnly(true)
                         else if (primary == null)
@@ -297,7 +313,7 @@ class MemoryActionBar extends StatelessWidget {
                           secondary[i],
                       ],
                       if (primary != null) ...[
-                        if (secondary.isNotEmpty) const SizedBox(width: 10),
+                        if (secondary.isNotEmpty) const SizedBox(width: 8),
                         Expanded(child: primary!),
                       ],
                     ],
@@ -323,31 +339,35 @@ class MemoryActionBar extends StatelessWidget {
     final scaler = MediaQuery.textScalerOf(context);
     // Button labels merge with the theme's labelLarge (letter spacing).
     final base = Theme.of(context).textTheme.labelLarge ?? const TextStyle();
-    final style = base.merge(
-      AppFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, height: 1.25),
-    );
-    double pillWidth(String label, IconData? icon, double padding) {
+    TextStyle style(double size) => base.merge(
+          AppFonts.inter(
+              fontSize: size, fontWeight: FontWeight.w600, height: 1.25),
+        );
+    double pillWidth(String label, IconData? icon, double padding,
+        {double size = 13.5, double iconRoom = 20}) {
       final painter = TextPainter(
         text: TextSpan(
           text: label,
-          style: style,
+          style: style(size),
         ),
         maxLines: 1,
         textScaler: scaler,
         textDirection: Directionality.of(context),
       )..layout();
-      return painter.width + padding * 2 + (icon != null ? 26 : 0) + 2;
+      return painter.width + padding * 2 + (icon != null ? iconRoom : 0) + 2;
     }
 
-    var needed = 10.0 * (secondary.length - 1);
+    var needed = 8.0 * (secondary.length - 1);
     for (final pill in secondary) {
-      needed += pillWidth(pill.label, pill.icon, 16);
+      needed += pillWidth(pill.label, pill.icon, 14);
     }
     final primaryPill = primary;
     if (primaryPill is MemoryPrimaryPill) {
-      needed += 10 + pillWidth(primaryPill.label, primaryPill.icon, 18);
+      needed += 8 +
+          pillWidth(primaryPill.label, primaryPill.icon, 16,
+              size: 14.5, iconRoom: 24);
     } else if (primaryPill != null) {
-      needed += 10 + 96;
+      needed += 8 + 96;
     }
     return needed <= maxWidth;
   }

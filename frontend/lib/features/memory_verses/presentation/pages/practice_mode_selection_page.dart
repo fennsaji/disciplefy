@@ -523,22 +523,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                             SliverToBoxAdapter(
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(
-                                    kMemoryGutter, 0, kMemoryGutter, 12),
-                                child: Text(
-                                  context.tr(TranslationKeys
-                                      .practiceSelectionSubtitle),
-                                  style: AppFonts.inter(
-                                    fontSize: 14,
-                                    color: palette.muted,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    kMemoryGutter, 0, kMemoryGutter, 0),
+                                    kMemoryGutter, 4, kMemoryGutter, 0),
                                 child: _buildUnlockedModesIndicator(),
                               ),
                             ),
@@ -626,7 +611,6 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   /// line for plans with every mode unlocked.
   Widget _buildUnlockedModesIndicator() {
     final palette = ReaderPalette.of(context);
-    final gold = MemoryToneColors.of(context, MemoryTone.gold);
     final unlockLimit = _getUnlockLimit();
     final unlockedCount = _unlockedModesToday.length;
     final isUnlimited = _userTier == 'premium' || unlockLimit == -1;
@@ -657,19 +641,21 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: EdgeInsets.fromLTRB(
+          12, isUnlimited ? 12 : 8, 6, isUnlimited ? 12 : 8),
       decoration: BoxDecoration(
-        color: gold.fill,
+        color: palette.gold.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           Icon(
-            isUnlimited ? Icons.lock_open_rounded : Icons.key_outlined,
-            size: 20,
-            color: gold.foreground,
+            isUnlimited ? Icons.auto_awesome_outlined : Icons.key_outlined,
+            size: 16,
+            color: palette.goldOnTint,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -677,7 +663,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                 Text(
                   title,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: palette.text,
                     height: 1.35,

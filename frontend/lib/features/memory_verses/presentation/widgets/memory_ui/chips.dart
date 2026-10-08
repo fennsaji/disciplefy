@@ -22,33 +22,43 @@ class MemoryChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final fill = selected ? palette.ctaFill : palette.raised;
-    // Muted on the raised fill is only 4.5:1 on light; the label keeps ink.
-    final ink = selected ? palette.ctaInk : palette.text;
+    // Selected: the gold fill with dark ink. Unselected: the card fill with a
+    // hairline; muted labels keep 5.5:1 on dark, light keeps ink.
+    final fill = selected ? palette.selectedFill : palette.card;
+    final ink = selected
+        ? palette.onSelected
+        : (palette.isDark ? palette.muted : palette.text);
+    const shape = StadiumBorder();
+    // A 32px chip drawn inside a 40px tap row.
     return Semantics(
       button: true,
       selected: selected,
-      child: Material(
-        color: fill,
-        shape: StadiumBorder(
-          side: BorderSide(
-            color: selected ? Colors.transparent : palette.hairline,
-          ),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const StadiumBorder(),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 40),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: shape,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 40),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
+              decoration: ShapeDecoration(
+                color: fill,
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    color: selected ? Colors.transparent : palette.hairline,
+                  ),
+                ),
+              ),
               child: Center(
                 widthFactor: 1,
+                heightFactor: 1,
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: ink,
                   ),
@@ -114,12 +124,14 @@ class MemorySegmentedControl<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final selectedFill = palette.isDark ? palette.page : palette.card;
+    // The chosen segment is the gold fill with dark ink; the others are
+    // muted labels on the raised track. Light keeps ink labels (5.5:1).
+    final idleInk = palette.isDark ? palette.muted : palette.text;
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: palette.raised,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(19),
       ),
       child: Row(
         children: [
@@ -130,30 +142,30 @@ class MemorySegmentedControl<T> extends StatelessWidget {
                 selected: segment.value == selected,
                 child: Material(
                   color: segment.value == selected
-                      ? selectedFill
+                      ? palette.selectedFill
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     onTap: onChanged == null
                         ? null
                         : () => onChanged!(segment.value),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 40),
+                      constraints: const BoxConstraints(minHeight: 34),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 8),
+                            horizontal: 6, vertical: 6),
                         child: Center(
                           // Wraps to a second line rather than truncating.
                           child: Text(
                             segment.label,
                             textAlign: TextAlign.center,
                             style: AppFonts.inter(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: segment.value == selected
-                                  ? palette.text
-                                  : palette.muted,
+                                  ? palette.onSelected
+                                  : idleInk,
                             ),
                           ),
                         ),

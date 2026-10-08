@@ -156,7 +156,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
               if (_showSourceTiles)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      kMemoryGutter, 4, kMemoryGutter, 12),
+                      kMemoryGutter, 4, kMemoryGutter, 4),
                   child: _buildSourceTiles(context),
                 ),
               _buildCategoryFilters(context),
@@ -255,10 +255,10 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                   header: true,
                   child: Text(
                     context.tr(_showSourceTiles
-                        ? TranslationKeys.addMemoryVerseTitle
+                        ? TranslationKeys.memoryAddVerse
                         : TranslationKeys.suggestedVersesTitle),
                     style: AppFonts.poppins(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: palette.text,
                       height: 1.2,
@@ -336,7 +336,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
       if (widget.onAddFromDaily != null)
         _SourceTile(
           icon: Icons.wb_sunny_outlined,
-          iconColor: palette.gold,
+          iconColor: palette.accentIcon,
           title: context.tr(TranslationKeys.memoryScreensTileDaily),
           hint: context.tr(TranslationKeys.memoryScreensTileDailyHint),
           onTap: widget.onAddFromDaily,
@@ -351,7 +351,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
       if (widget.onAddManually != null)
         _SourceTile(
           icon: Icons.edit_outlined,
-          iconColor: palette.gold,
+          iconColor: palette.accentIcon,
           title: context.tr(TranslationKeys.memoryScreensTileCustom),
           hint: context.tr(TranslationKeys.memoryScreensTileCustomHint),
           onTap: widget.onAddManually,
@@ -360,7 +360,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final tileWidth =
-            (constraints.maxWidth - 10 * (tiles.length - 1)) / tiles.length;
+            (constraints.maxWidth - 8 * (tiles.length - 1)) / tiles.length;
         final side = tiles.every((tile) => tile.fitsIn(context, tileWidth));
         if (!side) {
           return Column(
@@ -377,7 +377,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (var i = 0; i < tiles.length; i++) ...[
-                if (i > 0) const SizedBox(width: 10),
+                if (i > 0) const SizedBox(width: 8),
                 Expanded(child: tiles[i]),
               ],
             ],
@@ -489,14 +489,14 @@ class _SourceTile extends StatelessWidget {
   static const double _padding = 12;
 
   static TextStyle _titleStyle(ReaderPalette palette) => AppFonts.inter(
-        fontSize: 14.5,
-        fontWeight: FontWeight.w600,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
         color: palette.text,
         height: 1.25,
       );
 
   static TextStyle _hintStyle(ReaderPalette palette) => AppFonts.inter(
-        fontSize: 12.5,
+        fontSize: 12,
         color: palette.muted,
         height: 1.3,
       );
@@ -547,16 +547,15 @@ class _SourceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       side: BorderSide(
         color: selected ? palette.selectedFill : palette.hairline,
-        width: selected ? 1.5 : 1,
       ),
     );
     final fill = selected
         ? Color.alphaBlend(
             palette.selectedFill
-                .withValues(alpha: palette.isDark ? 0.18 : 0.07),
+                .withValues(alpha: palette.isDark ? 0.12 : 0.07),
             palette.card,
           )
         : palette.card;
@@ -577,11 +576,11 @@ class _SourceTile extends StatelessWidget {
           child: Padding(
             padding: row
                 ? const EdgeInsets.symmetric(horizontal: _padding, vertical: 12)
-                : const EdgeInsets.fromLTRB(_padding, 14, _padding, 12),
+                : const EdgeInsets.all(_padding),
             child: row
                 ? Row(
                     children: [
-                      Icon(icon, size: 22, color: iconColor),
+                      Icon(icon, size: 18, color: iconColor),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -594,8 +593,8 @@ class _SourceTile extends StatelessWidget {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(icon, size: 22, color: iconColor),
-                      const SizedBox(height: 16),
+                      Icon(icon, size: 18, color: iconColor),
+                      const SizedBox(height: 4),
                       ...texts,
                     ],
                   ),
@@ -623,12 +622,9 @@ class _SuggestedVerseRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: palette.hairline),
+        border: Border(bottom: BorderSide(color: palette.hairline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -639,16 +635,18 @@ class _SuggestedVerseRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   verse.localizedReference,
-                  style: AppFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  style: AppFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: palette.text,
-                    height: 1.3,
+                    height: 1.25,
                   ),
                 ),
               ),
               const SizedBox(width: 10),
-              Flexible(
+              // Pinned to the right edge; a long label wraps inside.
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 140),
                 child: MemoryTag(
                   label: categoryLabel,
                   tone: MemoryTone.accent,
@@ -662,22 +660,22 @@ class _SuggestedVerseRow extends StatelessWidget {
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.inter(
-              fontSize: 14.5,
-              color: palette.muted,
+              fontSize: 13.5,
+              color: palette.isDark ? const Color(0xFFC9C9D2) : palette.muted,
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           if (verse.isAlreadyAdded)
             Row(
               children: [
-                Icon(Icons.check_rounded, size: 17, color: context.appSuccess),
-                const SizedBox(width: 6),
+                Icon(Icons.check_rounded, size: 13, color: context.appSuccess),
+                const SizedBox(width: 5),
                 Flexible(
                   child: Text(
                     context.tr(TranslationKeys.alreadyAdded),
                     style: AppFonts.inter(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: context.appSuccess,
                     ),
@@ -688,11 +686,17 @@ class _SuggestedVerseRow extends StatelessWidget {
           else
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: MemoryPrimaryPill(
-                label: context.tr(TranslationKeys.addToMemoryDeck),
-                icon: Icons.add,
-                height: 44,
-                onPressed: onAdd,
+              child: SizedBox(
+                height: 40,
+                child: Center(
+                  widthFactor: 1,
+                  child: MemoryPrimaryPill(
+                    label: context.tr(TranslationKeys.addToMemoryDeck),
+                    icon: Icons.add,
+                    height: 32,
+                    onPressed: onAdd,
+                  ),
+                ),
               ),
             ),
         ],

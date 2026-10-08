@@ -2924,6 +2924,12 @@ class TranslationKeys {
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
 
+  /// Short tile labels for the four-across stats row.
+  static const memoryStatsShortVerses = 'memory_stats_page.short_verses';
+  static const memoryStatsShortReviews = 'memory_stats_page.short_reviews';
+  static const memoryStatsShortPerfect = 'memory_stats_page.short_perfect';
+  static const memoryStatsShortDays = 'memory_stats_page.short_days';
+
   /// Shared-link outcomes for someone who is not in the fellowship.
   static const fellowshipLinkUnavailable = 'community.link_unavailable';
   static const fellowshipLinkNotAMember = 'community.link_not_a_member';

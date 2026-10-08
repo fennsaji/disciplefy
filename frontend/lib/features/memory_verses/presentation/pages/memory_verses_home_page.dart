@@ -56,6 +56,10 @@ import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 /// language filter (only when the deck holds two languages), then the verses
 /// due for review and the ones coming up. Statistics and Champions live in
 /// the ⋮ menu. An empty deck offers today's verse as the first one to save.
+/// The deck list and empty state sit 20px in from the edges, a little wider
+/// than the practice pages.
+const double _kHomeGutter = 20;
+
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
 
@@ -213,6 +217,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             backgroundColor: ReaderPalette.of(context).page,
             appBar: MemoryTopBar(
               title: context.tr(TranslationKeys.memoryTitle),
+              titleFontSize: 24,
               subtitle: _dueSubtitle(),
               onBack: _handleBackNavigation,
               actions: [
@@ -415,7 +420,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           SliverToBoxAdapter(
             child: Padding(
               padding:
-                  const EdgeInsets.fromLTRB(kMemoryGutter, 4, kMemoryGutter, 0),
+                  const EdgeInsets.fromLTRB(_kHomeGutter, 4, _kHomeGutter, 0),
               child: _buildSummary(state),
             ),
           ),
@@ -431,7 +436,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           else ...[
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+                padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
                 child: MemorySectionLabel(
                   '${context.tr(TranslationKeys.memoryDueForReview)} (${dueVerses.length})',
                   padding: const EdgeInsets.only(top: 20),
@@ -442,7 +447,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      kMemoryGutter, 12, kMemoryGutter, 4),
+                      _kHomeGutter, 12, _kHomeGutter, 4),
                   child: Text(
                     context.tr(TranslationKeys.memoryScreensNothingDue),
                     style: AppFonts.inter(fontSize: 14, color: palette.muted),
@@ -454,8 +459,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             if (upcomingVerses.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+                  padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
                   child: MemorySectionLabel(
                     context.tr(TranslationKeys.memoryScreensComingUp),
                     padding: const EdgeInsets.only(top: 24),
@@ -485,7 +489,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     String? firstVerseId,
   ) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+      padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -495,6 +499,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               onTap: () => _navigateToReviewPage(context, verse.id),
               onDelete: () => _showDeleteConfirmation(context, verse),
               masteryLevel: verse.masteryLevel,
+              highlighted: verse.id == firstVerseId && verse.isDue,
             );
             if (verse.id == firstVerseId) {
               return WalkthroughTooltip(
@@ -622,40 +627,54 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   /// verse, and a footnote on how saved verses come back.
   Widget _buildEmptyState() {
     final palette = ReaderPalette.of(context);
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: SingleChildScrollView(
-        padding:
-            const EdgeInsets.fromLTRB(kMemoryGutter, 24, kMemoryGutter, 32),
+        padding: const EdgeInsets.fromLTRB(_kHomeGutter, 38, _kHomeGutter, 32),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_stories_outlined,
-                  size: 40, color: palette.accentIcon),
-              const SizedBox(height: 14),
+              Container(
+                key: const Key('memory_empty_icon_tile'),
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: palette.isDark
+                      ? palette.gold.withValues(alpha: 0.10)
+                      : AppColors.brandHighlight,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  Icons.psychology_outlined,
+                  size: 26,
+                  color: palette.isDark ? palette.gold : AppColors.brandGoldInk,
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
                 context.tr(TranslationKeys.memoryHomeNoVersesTitle),
                 textAlign: TextAlign.center,
                 style: AppFonts.poppins(
                   fontSize: 20,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: palette.text,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 context.tr(TranslationKeys.memoryHomeNoVersesSubtitle),
                 textAlign: TextAlign.center,
                 style: AppFonts.inter(
-                  fontSize: 14,
+                  fontSize: 13.5,
                   color: palette.muted,
-                  height: 1.5,
+                  height: 1.4,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               _buildTodaysVerseCard(),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               SizedBox(
                 height: 32,
                 child: OutlinedButton.icon(
@@ -666,7 +685,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     foregroundColor: palette.text,
                     side: BorderSide(color: palette.outline),
                     shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     minimumSize: const Size(0, 32),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     textStyle: AppFonts.inter(
@@ -674,13 +693,13 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 context.tr(TranslationKeys.memoryFootnote),
                 textAlign: TextAlign.center,
                 style: AppFonts.inter(
                   fontSize: 12,
-                  color: palette.dim,
+                  color: palette.muted,
                   height: 1.45,
                 ),
               ),
@@ -716,59 +735,77 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           Text(
             '\u201C${data.currentVerseText}\u201D',
             style: AppFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w500,
               color: palette.text,
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             data.verse.getReferenceText(data.currentLanguage),
-            style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
+            style: AppFonts.inter(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: palette.muted,
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
         ],
       );
     }
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: palette.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: palette.hairline),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.gold.withValues(alpha: 0.33)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           MemorySectionLabel(
             context.tr(TranslationKeys.dailyVerseOfTheDay),
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            padding: const EdgeInsets.only(top: 16, bottom: 8),
           ),
           if (bloc != null)
             BlocBuilder<DailyVerseBloc, DailyVerseState>(
               bloc: bloc,
               builder: (_, state) => verseBody(state),
             ),
-          SizedBox(
-            height: 40,
-            child: FilledButton.icon(
-              onPressed: () => _showAddFromDailyDialog(context),
-              icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-              label: Text(
-                context.tr(TranslationKeys.memorySaveTodaysVerse),
-                textAlign: TextAlign.center,
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: palette.ctaFill,
-                foregroundColor: palette.ctaInk,
-                shape: const StadiumBorder(),
-                minimumSize: const Size(0, 40),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                textStyle:
-                    AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          DecoratedBox(
+            key: const Key('memory_save_today_glow'),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: palette.isDark
+                  ? [
+                      BoxShadow(
+                        color: palette.gold.withValues(alpha: 0.8),
+                        blurRadius: 16,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: SizedBox(
+              height: 40,
+              child: FilledButton.icon(
+                onPressed: () => _showAddFromDailyDialog(context),
+                icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                label: Text(
+                  context.tr(TranslationKeys.memorySaveTodaysVerse),
+                  textAlign: TextAlign.center,
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: palette.ctaFill,
+                  foregroundColor: palette.ctaInk,
+                  shape: const StadiumBorder(),
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  textStyle:
+                      AppFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ),

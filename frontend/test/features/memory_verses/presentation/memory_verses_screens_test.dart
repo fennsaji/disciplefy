@@ -541,7 +541,7 @@ void main() {
           .pumpWidget(app(PracticeResultsPage(params: params()), dark: true));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Practice Again'));
+      await tester.tap(find.text('Practice again'));
       await tester.pumpAndSettle();
       expect(visited.last, '/memory-verses/practice/word-bank/v1');
     });

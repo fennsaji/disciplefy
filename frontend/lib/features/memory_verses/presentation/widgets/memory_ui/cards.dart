@@ -208,10 +208,10 @@ class MemoryStatTile extends StatelessWidget {
       label: '$value $label',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         decoration: BoxDecoration(
           color: palette.card,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: palette.hairline),
         ),
         child: Column(
@@ -222,9 +222,9 @@ class MemoryStatTile extends StatelessWidget {
               child: Text(
                 value,
                 maxLines: 1,
-                style: AppFonts.poppins(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
+                style: AppFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                   color: valueColor ?? palette.text,
                   fontFeatures: kMemoryTabular,
                 ),

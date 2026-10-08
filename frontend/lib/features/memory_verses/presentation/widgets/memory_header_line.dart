@@ -35,13 +35,13 @@ class MemoryHeaderLine extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.local_fire_department_outlined,
-              size: 16, color: palette.gold),
+              size: 14, color: palette.gold),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               text,
               style: AppFonts.inter(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w500,
                 color: palette.muted,
               ),

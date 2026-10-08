@@ -113,12 +113,8 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          MemorySectionLabel(
-            context.tr(TranslationKeys.overallStats),
-            padding: const EdgeInsets.only(top: 4, bottom: 10),
-          ),
           _buildOverallStats(statistics),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           _ActivityPanel(
             activityData: activityData,
             currentStreak: currentStreak,
@@ -155,38 +151,69 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
     return result;
   }
 
-  /// Two rows of two tiles so the full labels ("Total Reviews",
-  /// "Practice Days") fit at 320pt in every language.
+  /// Four short tiles across (verses, reviews, perfect, practice days) on a
+  /// phone; on a narrow screen (320pt) or when a short label would not fit
+  /// whole, two rows of two with the full labels.
   Widget _buildOverallStats(Map<String, dynamic> statistics) {
-    return Column(
-      children: [
-        MemoryStatRow(
-          tiles: [
-            MemoryStatTile(
-              value: '${statistics['total_verses'] ?? 0}',
-              label: context.tr(TranslationKeys.memoryStatsTotalVerses),
-            ),
-            MemoryStatTile(
-              value: '${statistics['total_reviews'] ?? 0}',
-              label: context.tr(TranslationKeys.memoryStatsTotalReviews),
-            ),
+    final values = [
+      '${statistics['total_verses'] ?? 0}',
+      '${statistics['total_reviews'] ?? 0}',
+      '${statistics['perfect_recalls'] ?? 0}',
+      '${statistics['total_practice_days'] ?? 0}',
+    ];
+    final shortLabels = [
+      context.tr(TranslationKeys.memoryStatsShortVerses),
+      context.tr(TranslationKeys.memoryStatsShortReviews),
+      context.tr(TranslationKeys.memoryStatsShortPerfect),
+      context.tr(TranslationKeys.memoryStatsShortDays),
+    ];
+    final fullLabels = [
+      context.tr(TranslationKeys.memoryStatsTotalVerses),
+      context.tr(TranslationKeys.memoryStatsTotalReviews),
+      context.tr(TranslationKeys.memoryStatsPerfectRecalls),
+      context.tr(TranslationKeys.memoryStatsPracticeDays),
+    ];
+    List<Widget> tiles(List<String> labels) => [
+          for (var i = 0; i < 4; i++)
+            MemoryStatTile(value: values[i], label: labels[i]),
+        ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 8.0;
+        final tileText = (constraints.maxWidth - spacing * 3) / 4 - 10;
+        final fits = constraints.maxWidth >= 340 &&
+            shortLabels.every((label) => _wordsFit(label, tileText));
+        if (fits) {
+          return MemoryStatRow(tiles: tiles(shortLabels), spacing: spacing);
+        }
+        final full = tiles(fullLabels);
+        return Column(
+          children: [
+            MemoryStatRow(tiles: full.sublist(0, 2), spacing: spacing),
+            const SizedBox(height: spacing),
+            MemoryStatRow(tiles: full.sublist(2), spacing: spacing),
           ],
-        ),
-        const SizedBox(height: 10),
-        MemoryStatRow(
-          tiles: [
-            MemoryStatTile(
-              value: '${statistics['perfect_recalls'] ?? 0}',
-              label: context.tr(TranslationKeys.memoryStatsPerfectRecalls),
-            ),
-            MemoryStatTile(
-              value: '${statistics['total_practice_days'] ?? 0}',
-              label: context.tr(TranslationKeys.memoryStatsPracticeDays),
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  /// Whether every word of [label] fits on a line of [width] at the tile's
+  /// label style (no word broken or cut).
+  bool _wordsFit(String label, double width) {
+    if (width <= 0) return false;
+    final style =
+        DefaultTextStyle.of(context).style.merge(AppFonts.inter(fontSize: 12));
+    for (final word in label.split(RegExp(r'\s+'))) {
+      final painter = TextPainter(
+        text: TextSpan(text: word, style: style),
+        maxLines: 1,
+        textScaler: MediaQuery.textScalerOf(context),
+        textDirection: Directionality.of(context),
+      )..layout();
+      if (painter.width > width) return false;
+    }
+    return true;
   }
 
   Widget _buildMasteryDistribution(Map<String, dynamic> masteryDistribution) {

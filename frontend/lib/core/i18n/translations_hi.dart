@@ -1602,7 +1602,7 @@ const Map<String, dynamic> hindiTranslations = {
     },
     'suggested': {
       'title': 'सुझाई गई आयतें',
-      'alreadyAdded': 'पहले से जोड़ा गया',
+      'alreadyAdded': 'आपके संग्रह में है',
       'addToMemoryDeck': 'जोड़ें',
       'noVersesFound': 'कोई आयत नहीं मिली',
       'retry': 'पुनः प्रयास करें',
@@ -2366,7 +2366,7 @@ const Map<String, dynamic> hindiTranslations = {
     'of_done': '{total} में से {completed} पूर्ण',
   },
   'leaderboard': {
-    'title': 'लीडरबोर्ड',
+    'title': 'चैंपियन',
     'tooltip': 'लीडरबोर्ड देखें',
     'your_rank': 'आपकी रैंक',
     'xp_points': '{xp} XP',
@@ -2380,8 +2380,7 @@ const Map<String, dynamic> hindiTranslations = {
   },
   'voice_buddy': {
     'title': 'शिक्षागुरु',
-    'description':
-        'आपका निजी बाइबल अध्ययन साथी। सवाल पूछें, पवित्रशास्त्र को समझें, और अपनी समझ को गहरा करें।',
+    'description': 'आपका बाइबल साथी — आवाज़ या लिखकर',
     'language_label': 'भाषा',
     'start_conversation': 'बातचीत शुरू करें',
     'conversations_remaining': 'शेष बातचीत',
@@ -2458,8 +2457,7 @@ const Map<String, dynamic> hindiTranslations = {
       'language_section': 'भाषा',
       'preferred_language': 'पसंदीदा भाषा',
       'auto_detect': 'ऑटो-डिटेक्ट भाषा',
-      'auto_detect_subtitle':
-          'आप जो भाषा बोलते हैं उसे स्वचालित रूप से पहचानें',
+      'auto_detect_subtitle': 'आपकी बोली भाषा पहचानें',
       'voice_output': 'वॉयस आउटपुट',
       'voice_gender': 'आवाज का लिंग',
       'female': 'महिला',
@@ -2723,22 +2721,21 @@ const Map<String, dynamic> hindiTranslations = {
   },
   'practice_mode': {
     'flip_card': 'फ्लिप कार्ड',
-    'flip_card_desc': 'पारंपरिक फ्लिप कार्ड - संदर्भ देखें, वचन याद करें',
+    'flip_card_desc': 'वचन देखने के लिए टैप करें',
     'first_letter': 'पहला अक्षर संकेत',
-    'first_letter_desc':
-        'प्रत्येक शब्द का पहला अक्षर संकेत के रूप में दिखाया जाता है',
+    'first_letter_desc': 'पहले अक्षरों से याद करें',
     'progressive': 'क्रमिक प्रकटीकरण',
-    'progressive_desc': 'वचन को शब्द दर शब्द धीरे-धीरे प्रकट करें',
+    'progressive_desc': 'शब्द दर शब्द खोलें',
     'cloze': 'रिक्त स्थान भरें',
-    'cloze_desc': 'वचन में छूटे हुए शब्द भरें',
+    'cloze_desc': 'छूटे शब्द भरें',
     'word_scramble': 'वाक्यांश पहेली',
-    'word_scramble_desc': 'वाक्यांशों को सही क्रम में व्यवस्थित करें',
+    'word_scramble_desc': 'वाक्यांश क्रम से लगाएँ',
     'word_bank': 'शब्द भंडार',
-    'word_bank_desc': 'वचन बनाने के लिए शब्दों को सही क्रम में टैप करें',
-    'audio': 'ऑडियो अभ्यास',
-    'audio_desc': 'वचन पढ़ें, फिर उसे ज़ोर से बोलें',
+    'word_bank_desc': 'शब्द-सूची से वचन बनाएँ',
+    'audio': 'ऑडियो',
+    'audio_desc': 'याद से ज़ोर से बोलें',
     'type_it_out': 'टाइप करें',
-    'type_it_out_desc': 'याद से पूरा वचन टाइप करें',
+    'type_it_out_desc': 'पूरा वचन टाइप करें',
   },
   'self_assessment': {
     'title': 'आपको कितना अच्छा याद रहा?',
@@ -2755,7 +2752,7 @@ const Map<String, dynamic> hindiTranslations = {
     'knew_perfectly_desc': 'बिना किसी कठिनाई के याद किया',
   },
   'memory_stats': {
-    'title': 'स्मृति आंकड़े',
+    'title': 'आंकड़े',
     'practice_activity': 'अभ्यास गतिविधि',
     'mastery_distribution': 'निपुणता वितरण',
     'practice_mode_stats': 'अभ्यास मोड आंकड़े',
@@ -2786,7 +2783,7 @@ const Map<String, dynamic> hindiTranslations = {
     'failed_to_add': 'आयत जोड़ने में विफल',
   },
   'practice_selection': {
-    'title': 'अभ्यास मोड चुनें',
+    'title': 'अभ्यास चुनें',
     'loading': 'लोड हो रहा है...',
     'subtitle': 'अभ्यास की विधि चुनें',
     'filter': 'फ़िल्टर:',
@@ -2882,7 +2879,7 @@ const Map<String, dynamic> hindiTranslations = {
     'try_reciting': 'संकेतों का उपयोग करके दोहराएं',
   },
   'audio_practice': {
-    'title': 'ऑडियो अभ्यास',
+    'title': 'ऑडियो',
     'instruction': 'सुनें और दोहराएं',
     'play': 'वचन चलाएं',
     'pause': 'रोकें',
@@ -3003,8 +3000,7 @@ const Map<String, dynamic> hindiTranslations = {
     'champions': 'चैंपियन',
     'statistics': 'आंकड़े',
     'no_verses_title': 'अभी तक कोई वचन नहीं',
-    'no_verses_subtitle':
-        'अपना याद वचन संग्रह बनाना शुरू करें।\nअंतराल पुनरावृत्ति के साथ समीक्षा के लिए वचन जोड़ें।',
+    'no_verses_subtitle': 'अपना याद वचन संग्रह बनाना शुरू करें।',
     'add_first_verse': 'अपना पहला वचन जोड़ें',
     'streak_day': 'दिन',
     'streak_days': 'दिन',
@@ -3231,6 +3227,10 @@ const Map<String, dynamic> hindiTranslations = {
     'perfect_recalls': 'परफेक्ट स्मरण',
     'practice_days': 'अभ्यास के दिन',
     'verse_count': '{count} पद',
+    'short_verses': 'वचन',
+    'short_reviews': 'समीक्षाएँ',
+    'short_perfect': 'सटीक',
+    'short_days': 'अभ्यास दिन',
   },
   'daily_review_limit': {
     'title': 'आज की सीमा पूरी',

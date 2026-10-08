@@ -251,9 +251,9 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
     ).withAuthProtection();
   }
 
+  /// Gold ring for a good or fair recall (as the design), red below half.
   MemoryTone get _accuracyTone {
     final accuracy = widget.params.accuracyPercentage;
-    if (accuracy >= 80) return MemoryTone.success;
     if (accuracy >= 50) return MemoryTone.gold;
     return MemoryTone.error;
   }

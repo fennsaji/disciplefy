@@ -1631,7 +1631,7 @@ const Map<String, dynamic> malayalamTranslations = {
     },
     'suggested': {
       'title': 'നിർദ്ദേശിച്ച വാക്യങ്ങൾ',
-      'alreadyAdded': 'ഇതിനകം ചേർത്തിട്ടുണ്ട്',
+      'alreadyAdded': 'ഇതിനകം ശേഖരത്തിലുണ്ട്',
       'addToMemoryDeck': 'ചേർക്കുക',
       'noVersesFound': 'വാക്യങ്ങൾ കണ്ടെത്തിയില്ല',
       'retry': 'വീണ്ടും ശ്രമിക്കുക',
@@ -2461,7 +2461,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'of_done': '{total}-ൽ {completed} പൂർത്തിയായി',
   },
   'leaderboard': {
-    'title': 'ലീഡർബോർഡ്',
+    'title': 'ചാമ്പ്യന്മാർ',
     'tooltip': 'ലീഡർബോർഡ് കാണുക',
     'your_rank': 'നിങ്ങളുടെ റാങ്ക്',
     'xp_points': '{xp} XP',
@@ -2475,8 +2475,7 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'voice_buddy': {
     'title': 'Discipler',
-    'description':
-        'നിങ്ങളുടെ സ്വന്തം ബൈബിൾ പഠന സഹായി. ചോദ്യങ്ങൾ ചോദിക്കൂ, തിരുവെഴുത്തുകൾ പരിശോധിക്കൂ, നിങ്ങളുടെ ധാരണ ആഴമുള്ളതാക്കൂ.',
+    'description': 'നിങ്ങളുടെ ബൈബിൾ സഹായി — ശബ്ദത്തിലോ എഴുത്തിലോ',
     'language_label': 'ഭാഷ',
     'start_conversation': 'സംഭാഷണം ആരംഭിക്കുക',
     'conversations_remaining': 'ശേഷിക്കുന്ന സംഭാഷണങ്ങൾ',
@@ -2554,7 +2553,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'language_section': 'ഭാഷ',
       'preferred_language': 'ഇഷ്ടപ്പെട്ട ഭാഷ',
       'auto_detect': 'ഓട്ടോ-ഡിറ്റക്ട് ഭാഷ',
-      'auto_detect_subtitle': 'നിങ്ങൾ സംസാരിക്കുന്ന ഭാഷ സ്വയമേവ തിരിച്ചറിയുക',
+      'auto_detect_subtitle': 'നിങ്ങൾ സംസാരിക്കുന്ന ഭാഷ തിരിച്ചറിയുക',
       'voice_output': 'വോയ്സ് ഔട്ട്പുട്ട്',
       'voice_gender': 'ശബ്ദ ലിംഗം',
       'female': 'സ്ത്രീ',
@@ -2822,23 +2821,21 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'practice_mode': {
     'flip_card': 'ഫ്ലിപ്പ് കാർഡ്',
-    'flip_card_desc':
-        'പരമ്പരാഗത ഫ്ലിപ്പ് കാർഡ് - റഫറൻസ് കാണുക, വചനം ഓർമ്മിക്കുക',
+    'flip_card_desc': 'വചനം കാണാൻ ടാപ്പ് ചെയ്യുക',
     'first_letter': 'ആദ്യ അക്ഷര സൂചനകൾ',
-    'first_letter_desc': 'ഓരോ വാക്കിന്റെയും ആദ്യ അക്ഷരം സൂചനയായി കാണിക്കുന്നു',
+    'first_letter_desc': 'ആദ്യ അക്ഷരങ്ങളിൽ നിന്ന് ഓർക്കുക',
     'progressive': 'ക്രമേണ വെളിപ്പെടുത്തൽ',
-    'progressive_desc': 'വചനം വാക്ക് വാക്കായി ക്രമേണ വെളിപ്പെടുത്തുക',
+    'progressive_desc': 'വാക്ക് വാക്കായി തുറക്കുക',
     'cloze': 'ശൂന്യ സ്ഥാനങ്ങൾ നിറയ്ക്കുക',
-    'cloze_desc': 'വചനത്തിൽ നഷ്ടപ്പെട്ട വാക്കുകൾ നിറയ്ക്കുക',
+    'cloze_desc': 'വിട്ട വാക്കുകൾ പൂരിപ്പിക്കുക',
     'word_scramble': 'വാക്യാംശ പസിൽ',
-    'word_scramble_desc': 'വാക്യാംശങ്ങൾ ശരിയായ ക്രമത്തിൽ ക്രമീകരിക്കുക',
+    'word_scramble_desc': 'വാക്യാംശങ്ങൾ ക്രമത്തിലാക്കുക',
     'word_bank': 'വാക്ക് ബാങ്ക്',
-    'word_bank_desc':
-        'വചനം നിർമ്മിക്കാൻ വാക്കുകൾ ശരിയായ ക്രമത്തിൽ ടാപ്പ് ചെയ്യുക',
-    'audio': 'ഓഡിയോ പരിശീലനം',
-    'audio_desc': 'വാക്യം വായിക്കുക, പിന്നെ ഉറക്കെ പറയുക',
+    'word_bank_desc': 'വാക്കുകളിൽ നിന്ന് വചനം ഉണ്ടാക്കുക',
+    'audio': 'ഓഡിയോ',
+    'audio_desc': 'ഓർമ്മയിൽ നിന്ന് ഉറക്കെ പറയുക',
     'type_it_out': 'ടൈപ്പ് ചെയ്യുക',
-    'type_it_out_desc': 'ഓർമ്മയിൽ നിന്ന് മുഴുവൻ വചനവും ടൈപ്പ് ചെയ്യുക',
+    'type_it_out_desc': 'മുഴുവൻ വചനവും ടൈപ്പ് ചെയ്യുക',
   },
   'self_assessment': {
     'title': 'നിങ്ങൾക്ക് എത്ര നന്നായി ഓർമ്മിക്കാൻ കഴിഞ്ഞു?',
@@ -2855,7 +2852,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'knew_perfectly_desc': 'യാതൊരു ബുദ്ധിമുട്ടും കൂടാതെ ഓർമ്മിച്ചു',
   },
   'memory_stats': {
-    'title': 'മെമ്മറി സ്ഥിതിവിവരക്കണക്കുകൾ',
+    'title': 'സ്ഥിതിവിവരം',
     'practice_activity': 'പരിശീലന പ്രവർത്തനം',
     'mastery_distribution': 'പ്രാവീണ്യ വിതരണം',
     'practice_mode_stats': 'പരിശീലന മോഡ് സ്ഥിതിവിവരക്കണക്കുകൾ',
@@ -2886,7 +2883,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'failed_to_add': 'വചനം ചേർക്കാനായില്ല',
   },
   'practice_selection': {
-    'title': 'പരിശീലന മോഡ് തിരഞ്ഞെടുക്കുക',
+    'title': 'ഒരു പരിശീലനം തിരഞ്ഞെടുക്കുക',
     'loading': 'ലോഡ് ചെയ്യുന്നു...',
     'subtitle': 'ഒരു പരിശീലന രീതി തിരഞ്ഞെടുക്കുക',
     'filter': 'ഫിൽട്ടർ:',
@@ -2983,7 +2980,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'try_reciting': 'സൂചനകൾ ഉപയോഗിച്ച് ചൊല്ലുക',
   },
   'audio_practice': {
-    'title': 'ഓഡിയോ പരിശീലനം',
+    'title': 'ഓഡിയോ',
     'instruction': 'കേൾക്കുകയും ആവർത്തിക്കുകയും ചെയ്യുക',
     'play': 'വചനം പ്ലേ ചെയ്യുക',
     'pause': 'താൽക്കാലികമായി നിർത്തുക',
@@ -3107,7 +3104,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'statistics': 'സ്ഥിതിവിവരക്കണക്കുകൾ',
     'no_verses_title': 'ഇതുവരെ വചനങ്ങളൊന്നുമില്ല',
     'no_verses_subtitle':
-        'നിങ്ങളുടെ സ്മരണ വാക്യ ശേഖരം നിർമ്മിക്കാൻ ആരംഭിക്കുക.\nഇടവേള ആവർത്തനത്തോടെ അവലോകനം ചെയ്യാൻ വചനങ്ങൾ ചേർക്കുക.',
+        'നിങ്ങളുടെ സ്മരണ വാക്യ ശേഖരം നിർമ്മിക്കാൻ ആരംഭിക്കുക.',
     'add_first_verse': 'നിങ്ങളുടെ ആദ്യ വചനം ചേർക്കുക',
     'streak_day': 'ദിവസം',
     'streak_days': 'ദിവസങ്ങൾ',
@@ -3341,6 +3338,10 @@ const Map<String, dynamic> malayalamTranslations = {
     'perfect_recalls': 'പരിപൂർണ്ണ ഓർമ്മകൾ',
     'practice_days': 'പ്രാക്ടീസ് ദിവസങ്ങൾ',
     'verse_count': '{count} വാക്യങ്ങൾ',
+    'short_verses': 'വചനങ്ങൾ',
+    'short_reviews': 'അവലോകനം',
+    'short_perfect': 'പൂർണ്ണം',
+    'short_days': 'പരിശീലന ദിനം',
   },
   'daily_review_limit': {
     'title': 'ഇന്നത്തെ പരിധി കഴിഞ്ഞു',

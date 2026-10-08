@@ -44,6 +44,9 @@ class PracticeModeRow extends StatelessWidget {
     final locked = _isLocked;
     final name = _modeName(context);
     final meta = _metaLine(context);
+    // The recommended mode is the highlighted row: a gold wash with a soft
+    // gold glow on dark.
+    final highlight = isRecommended && !locked;
     final lockReason = isTierLocked
         ? context.tr(TranslationKeys.memoryScreensModeLockedUpgrade)
         : context.tr(TranslationKeys.memoryScreensDailyLimitReached);
@@ -54,26 +57,54 @@ class PracticeModeRow extends StatelessWidget {
       child: InkWell(
         onTap: locked ? onLockedTap : onTap,
         onLongPress: onInfoTap,
+        borderRadius: highlight ? BorderRadius.circular(12) : null,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: palette.hairline)),
-          ),
+          constraints: const BoxConstraints(minHeight: 58),
+          padding: EdgeInsets.symmetric(
+              vertical: 10, horizontal: highlight ? 12 : 0),
+          margin: highlight
+              ? const EdgeInsets.symmetric(vertical: 4)
+              : EdgeInsets.zero,
+          decoration: highlight
+              ? BoxDecoration(
+                  color: Color.alphaBlend(
+                    palette.gold
+                        .withValues(alpha: palette.isDark ? 0.08 : 0.07),
+                    palette.page,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: palette.isDark
+                      ? null
+                      : Border.all(color: palette.gold.withValues(alpha: 0.35)),
+                  boxShadow: palette.isDark
+                      ? [
+                          BoxShadow(
+                            color: palette.gold.withValues(alpha: 0.8),
+                            blurRadius: 16,
+                          ),
+                        ]
+                      : null,
+                )
+              : BoxDecoration(
+                  border: Border(bottom: BorderSide(color: palette.hairline)),
+                ),
           child: Opacity(
             opacity: locked ? 0.55 : 1,
             child: Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
-                    color: palette.raised,
-                    borderRadius: BorderRadius.circular(10),
+                    color: palette.isDark
+                        ? palette.gold.withValues(alpha: 0.15)
+                        : AppColors.brandHighlight,
+                    borderRadius: BorderRadius.circular(11),
                   ),
                   alignment: Alignment.center,
-                  child: Icon(mode.icon, size: 19, color: palette.accentIcon),
+                  child: Icon(mode.icon, size: 16, color: palette.goldOnTint),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,19 +112,19 @@ class PracticeModeRow extends StatelessWidget {
                       Text(
                         name,
                         style: AppFonts.inter(
-                          fontSize: 15.5,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: palette.text,
-                          height: 1.3,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         _modeDescription(context),
                         style: AppFonts.inter(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: palette.muted,
-                          height: 1.35,
+                          height: 1.3,
                         ),
                       ),
                       if (meta != null) ...[
@@ -136,8 +167,8 @@ class PracticeModeRow extends StatelessWidget {
                           ? Icons.lock_outline_rounded
                           : Icons.lock_clock_outlined)
                       : Icons.chevron_right_rounded,
-                  size: locked ? 20 : 22,
-                  color: palette.muted,
+                  size: locked ? 18 : 18,
+                  color: palette.dim,
                 ),
               ],
             ),

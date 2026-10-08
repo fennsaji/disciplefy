@@ -594,7 +594,7 @@ void main() {
           TranslationKeys.memoryScreensTileDailyHint,
           TranslationKeys.memoryScreensTileSuggestedHint,
           TranslationKeys.memoryScreensTileCustomHint,
-          TranslationKeys.addMemoryVerseTitle,
+          TranslationKeys.memoryAddVerse,
         ]) {
           expectWhole(tester, tr(key));
         }
