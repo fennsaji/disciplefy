@@ -62,7 +62,7 @@ class OutOfCreditsSheet extends StatelessWidget {
       children: [
         PopupHeader(
           icon: const PopupIconCircle(
-            icon: Icons.bolt_rounded,
+            icon: Icons.toll_outlined,
             tone: PopupTone.gold,
           ),
           eyebrow: context.tr(TranslationKeys.creditsOutEyebrow),
@@ -77,7 +77,7 @@ class OutOfCreditsSheet extends StatelessWidget {
           }),
           textAlign: TextAlign.center,
           style: AppFonts.inter(
-            fontSize: 14,
+            fontSize: 12.5,
             fontWeight: FontWeight.w600,
             color: palette.gold,
             height: 1.4,
@@ -104,13 +104,14 @@ class OutOfCreditsSheet extends StatelessWidget {
             child: Text(
               context.tr(TranslationKeys.creditsGet),
               textAlign: TextAlign.center,
-              style: labelStyle.copyWith(color: palette.ctaInk),
+              style: labelStyle.copyWith(fontSize: 15, color: palette.ctaInk),
             ),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
+        // The small secondary pill (32), as the design.
         SizedBox(
-          height: _buttonHeight,
+          height: 32,
           child: OutlinedButton(
             onPressed: () => _go(
               context,
@@ -119,7 +120,8 @@ class OutOfCreditsSheet extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: palette.text,
               side: BorderSide(color: palette.outline),
-              minimumSize: const Size.fromHeight(_buttonHeight),
+              minimumSize: const Size.fromHeight(32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               shape: const StadiumBorder(),
             ),

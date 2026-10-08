@@ -160,16 +160,16 @@ void main() {
   ]) {
     for (final dark in [false, true]) {
       testWidgets(
-          '${lang.name} ${dark ? 'dark' : 'light'} fits 320px, 40px buttons',
+          '${lang.name} ${dark ? 'dark' : 'light'} fits 320px, 40px primary, 32px secondary',
           (tester) async {
         translations.language = lang;
         await open(tester, tokenStatus(total: 5),
             dark: dark, size: const Size(320, 640));
         expect(tester.takeException(), isNull);
         expectNoTruncatedText(tester);
-        for (final type in [FilledButton, OutlinedButton]) {
-          expect(tester.getSize(find.byType(type)).height, 40);
-        }
+        expect(tester.getSize(find.byType(FilledButton)).height, 40);
+        // "View saved guides" is the design's small secondary pill.
+        expect(tester.getSize(find.byType(OutlinedButton)).height, 32);
       });
     }
   }
