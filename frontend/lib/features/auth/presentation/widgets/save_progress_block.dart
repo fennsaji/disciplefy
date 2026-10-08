@@ -35,6 +35,9 @@ class SaveProgressBlock extends StatelessWidget {
     this.nextPaths = const [],
   });
 
+  /// Boxed unless it is lesson 1's block (the one with "Not now").
+  bool get boxed => onNotNow == null;
+
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
@@ -46,20 +49,27 @@ class SaveProgressBlock extends StatelessWidget {
         children: [
           Container(
             key: const Key('save_progress_block'),
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-            decoration: BoxDecoration(
-              color: palette.card,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: palette.hairline),
-            ),
+            // Lesson 1: the sign-up block stands on the page, centred. At the
+            // end of a path it is a card above the next paths.
+            padding: boxed
+                ? const EdgeInsets.fromLTRB(14, 14, 14, 10)
+                : EdgeInsets.zero,
+            decoration: boxed
+                ? BoxDecoration(
+                    color: palette.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: palette.hairline),
+                  )
+                : null,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   context.tr(titleKey),
-                  style: TextStyle(
-                    fontSize: 14,
+                  textAlign: boxed ? TextAlign.start : TextAlign.center,
+                  style: AppFonts.inter(
+                    fontSize: boxed ? 15 : 15.5,
                     fontWeight: FontWeight.w600,
                     color: palette.text,
                     height: 1.35,
@@ -83,7 +93,7 @@ class SaveProgressBlock extends StatelessWidget {
                       minimumSize: const Size.fromHeight(40),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       textStyle: AppFonts.inter(
-                          fontSize: 13, fontWeight: FontWeight.w600),
+                          fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                     child: Text(context.tr(TranslationKeys.accountNotNow)),
                   )
@@ -169,16 +179,17 @@ class _NextPathRow extends StatelessWidget {
               onPressed: () =>
                   AccountNeededSheet.show(context, AccountReason.otherPath),
               icon: Icon(Icons.lock_outline_rounded,
-                  size: 14, color: palette.text),
+                  size: 14, color: palette.ctaInk),
               label: Text(
                 context.tr(TranslationKeys.accountSignUpToStart),
                 maxLines: 1,
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: palette.text,
-                backgroundColor: palette.card,
-                side: BorderSide(color: palette.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                // A solid pill, as in the design: the one action per path.
+                foregroundColor: palette.ctaInk,
+                backgroundColor: palette.ctaFill,
+                side: BorderSide.none,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 minimumSize: const Size(0, 32),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: const StadiumBorder(),

@@ -186,6 +186,16 @@ void main() {
           findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Continue with email'), findsOneWidget);
+      // Lesson 1's block stands on the page, centred: no card around it.
+      final block = tester
+          .widget<Container>(find.byKey(const Key('save_progress_block')));
+      expect(block.decoration, isNull);
+      expect(
+          tester
+              .widget<Text>(
+                  find.text('Sign up to save your progress and continue'))
+              .textAlign,
+          TextAlign.center);
       await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('save_progress_block')), findsNothing);
@@ -255,6 +265,12 @@ void main() {
           find.text('Sign up to keep your progress and start your next path'),
           findsOneWidget);
       expect(find.text('Not now'), findsNothing);
+      // The path-finished block is a card.
+      expect(
+          tester
+              .widget<Container>(find.byKey(const Key('save_progress_block')))
+              .decoration,
+          isNotNull);
       expect(find.text('YOUR NEXT PATHS'), findsOneWidget);
       expect(find.text('Path a'), findsOneWidget);
       expect(find.text('Path b'), findsOneWidget);

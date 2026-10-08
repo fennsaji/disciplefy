@@ -160,6 +160,14 @@ void main() {
     expect(opened()['mode'], 'standard');
   });
 
+  testWidgets('a 64px gold check in confetti and a 23pt title', (tester) async {
+    await pumpPage(tester, 1);
+    expect(tester.getSize(find.byKey(const Key('lesson_complete_check'))),
+        const Size(64, 64));
+    final title = tester.widget<Text>(find.text('Lesson 1 complete'));
+    expect(title.style!.fontSize, 23);
+  });
+
   testWidgets('next-lesson row is tappable', (tester) async {
     await pumpPage(tester, 1);
     await tester.tap(find.text('One God, Three Persons'));

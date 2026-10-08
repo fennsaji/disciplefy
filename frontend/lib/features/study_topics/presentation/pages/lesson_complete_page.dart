@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/constants/study_mode_preferences.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
@@ -182,37 +184,30 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 64),
-                      Center(
-                        child: Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: palette.selectedFill,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.check_rounded,
-                              size: 28, color: palette.onSelected),
-                        ),
-                      ),
                       const SizedBox(height: 16),
+                      const _CheckWithConfetti(),
+                      const SizedBox(height: 10),
                       Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
+                        style: AppFonts.poppins(
+                          fontSize: 23,
                           fontWeight: FontWeight.w700,
                           color: palette.text,
+                          height: 1.3,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         subtitle,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: palette.muted),
+                        style: AppFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: palette.muted),
                       ),
                       if (upNext.isNotEmpty) ...[
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         _UpNextCard(
                           topics: upNext,
                           firstNumber: lesson.lessonNumber + 1,
@@ -267,7 +262,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
         maximumSize: const Size.fromHeight(40),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       );
 
   ButtonStyle _outlinedStyle(ReaderPalette palette) => OutlinedButton.styleFrom(
@@ -277,8 +272,89 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
         maximumSize: const Size.fromHeight(40),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       );
+}
+
+/// The gold check in a scatter of confetti, as drawn in the design.
+class _CheckWithConfetti extends StatelessWidget {
+  const _CheckWithConfetti();
+
+  /// x, y (in a 350 x 120 band), width, height, rotation in degrees, tone.
+  static const _pieces = <(double, double, double, double, double, int)>[
+    (20, 8, 8, 4, 0, 0),
+    (103, 46, 9, 10, 37, 1),
+    (186, 85, 10, 7, 74, 2),
+    (269, 8, 9, 7, 21, 0),
+    (22, 48, 10, 9, 58, 1),
+    (105, 93, 6, 9, 5, 2),
+    (188, 9, 9, 8, 42, 0),
+    (271, 50, 10, 7, 79, 1),
+    (24, 94, 8, 10, 26, 2),
+    (107, 10, 7, 9, 63, 0),
+    (273, 95, 10, 10, 47, 2),
+    (26, 12, 5, 8, 84, 0),
+    (192, 97, 10, 8, 68, 2),
+    (275, 21, 9, 6, 15, 0),
+    (28, 60, 10, 9, 52, 1),
+    (111, 100, 9, 5, 89, 2),
+  ];
+
+  static const _tones = [
+    AppColors.brandGold,
+    Color(0xFFFFEEC0),
+    Color(0xFFB8860B),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return ExcludeSemantics(
+      child: Center(
+        child: SizedBox(
+          width: 350,
+          height: 120,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (final (x, y, w, h, deg, tone) in _pieces)
+                Positioned(
+                  // The design's band starts 20px in; centre it on 350.
+                  left: x + 20,
+                  top: y,
+                  child: Transform.rotate(
+                    angle: deg * math.pi / 180,
+                    child: Container(
+                      width: w,
+                      height: h,
+                      decoration: BoxDecoration(
+                        color: _tones[tone],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 143,
+                top: 28,
+                child: Container(
+                  key: const Key('lesson_complete_check'),
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: palette.selectedFill,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.check_rounded,
+                      size: 30, color: palette.onSelected),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _UpNextCard extends StatelessWidget {
@@ -296,10 +372,10 @@ class _UpNextCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
         color: palette.card,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: palette.hairline),
       ),
       child: Column(
@@ -307,10 +383,10 @@ class _UpNextCard extends StatelessWidget {
         children: [
           Text(
             context.tr(TranslationKeys.lessonUpNext).toUpperCase(),
-            style: TextStyle(
+            style: AppFonts.inter(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.6,
               color: palette.gold,
             ),
           ),
@@ -320,43 +396,44 @@ class _UpNextCard extends StatelessWidget {
               onTap: () => onTap(topics[i]),
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 7),
                 child: Row(
                   children: [
                     Container(
-                      width: 22,
-                      height: 22,
+                      width: 26,
+                      height: 26,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: i == 0 ? palette.gold : palette.outline,
-                        ),
+                        color: i == 0 ? null : palette.raised,
+                        border: i == 0 ? Border.all(color: palette.gold) : null,
                       ),
                       child: Text(
                         '${firstNumber + i}',
-                        style: TextStyle(
+                        style: AppFonts.inter(
                           fontSize: 12,
+                          fontWeight: FontWeight.w700,
                           color: i == 0 ? palette.gold : palette.muted,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         topics[i].title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight:
-                              i == 0 ? FontWeight.w600 : FontWeight.w400,
+                              i == 0 ? FontWeight.w600 : FontWeight.w500,
                           color: i == 0 ? palette.text : palette.muted,
                         ),
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded,
-                        size: 18, color: palette.muted),
+                    if (i == 0)
+                      Icon(Icons.chevron_right_rounded,
+                          size: 18, color: palette.muted),
                   ],
                 ),
               ),
