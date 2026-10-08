@@ -134,7 +134,8 @@ void main() {
     expect(target.height, greaterThanOrEqualTo(40));
     final card = tester.getTopLeft(find.byType(NewForYouBanner));
     final icon = tester.getCenter(find.byIcon(Icons.close_rounded));
-    expect(icon.dy - card.dy, 22);
+    // The design's × sits 19-20px in from the top-right corner.
+    expect(icon.dy - card.dy, 20);
   });
 
   testWidgets('CTA is a 32px pill', (tester) async {

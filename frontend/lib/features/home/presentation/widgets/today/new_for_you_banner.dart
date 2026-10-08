@@ -18,7 +18,8 @@ import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_y
 const double _stackedBelow = 300;
 
 /// Photo banner that introduces one feature: gold "New for you" eyebrow,
-/// title, one line of detail, a 32px white pill and a dismiss ×.
+/// title, one line of detail, a 32px white pill and a dismiss ×, on a
+/// 110px photo card.
 ///
 /// The photo sits under a dark scrim in both themes, so the text uses the
 /// dark-surface tokens: at its lightest the scrim is 72% black, which keeps
@@ -73,12 +74,22 @@ class NewForYouBanner extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
+          context.tr(TranslationKeys.nfyEyebrow).toUpperCase(),
+          style: AppFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.6,
+            color: onPhoto.gold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
           title,
-          style: AppFonts.poppins(
-            fontSize: 15,
+          style: AppFonts.inter(
+            fontSize: 14.5,
             fontWeight: FontWeight.w600,
             color: onPhoto.text,
-            height: 1.3,
+            height: 1.25,
           ),
         ),
         const SizedBox(height: 2),
@@ -86,8 +97,8 @@ class NewForYouBanner extends StatelessWidget {
           subtitle,
           style: AppFonts.inter(
             fontSize: 12,
-            color: onPhoto.text.withValues(alpha: 0.86),
-            height: 1.35,
+            color: const Color(0xFFD6D6DC),
+            height: 1.25,
           ),
         ),
       ],
@@ -99,16 +110,16 @@ class NewForYouBanner extends StatelessWidget {
         backgroundColor: onPhoto.ctaFill,
         foregroundColor: onPhoto.ctaInk,
         minimumSize: const Size(0, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: const StadiumBorder(),
-        textStyle: AppFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+        textStyle: AppFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600),
       ),
       child: Text(context.tr(TranslationKeys.nfyBannerCta(name))),
     );
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(_radius),
       child: Stack(
         children: [
           Positioned.fill(
@@ -127,75 +138,73 @@ class NewForYouBanner extends StatelessWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                // Dark on the text side so the copy keeps AA contrast, fading
-                // out toward the action so the photo reads as in the design.
+                // The design's scrim: near-black on the text side, opening up
+                // toward the action so the photo shows on the right.
                 gradient: LinearGradient(
                   colors: [
-                    Colors.black.withValues(alpha: 0.80),
-                    Colors.black.withValues(alpha: 0.62),
-                    Colors.black.withValues(alpha: 0.28),
+                    const Color(0xFF0B0B0B).withValues(alpha: 0.97),
+                    const Color(0xFF0B0B0B).withValues(alpha: 0.88),
+                    const Color(0xFF0B0B0B).withValues(alpha: 0.60),
                   ],
-                  stops: const [0.0, 0.6, 1.0],
+                  stops: const [0.0, 0.55, 1.0],
                 ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: onPhoto.hairline),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 6, 4, 12),
-            child: LayoutBuilder(builder: (context, box) {
-              final stacked = box.maxWidth < _stackedBelow;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 110),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              child: LayoutBuilder(builder: (context, box) {
+                if (box.maxWidth < _stackedBelow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Room for the × at the top right.
+                      Padding(
+                        padding: const EdgeInsets.only(right: 28),
+                        child: text,
+                      ),
+                      const SizedBox(height: 10),
+                      cta,
+                    ],
+                  );
+                }
+                // Text centred on the left; the action at the bottom right,
+                // under the ×.
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
-                        child: Text(
-                          context.tr(TranslationKeys.nfyEyebrow).toUpperCase(),
-                          style: AppFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
-                            color: onPhoto.gold,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: text,
                           ),
                         ),
                       ),
-                      // Room for the × laid over the card below.
-                      const SizedBox(width: 40, height: 32),
+                      const SizedBox(width: 10),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // The ×'s row, so the action never sits under it.
+                          const SizedBox(height: 32),
+                          cta,
+                        ],
+                      ),
                     ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: stacked
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              text,
-                              const SizedBox(height: 10),
-                              cta,
-                            ],
-                          )
-                        : Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(child: text),
-                              const SizedBox(width: 12),
-                              cta,
-                            ],
-                          ),
-                  ),
-                ],
-              );
-            }),
+                );
+              }),
+            ),
           ),
-          // The ×: a 40px square to tap, its icon where the 32px row
-          // centres it.
+          // The ×: a 40px square to tap, its icon 19px in from the corner.
           Positioned(
-            top: 2,
-            right: 4,
+            top: 0,
+            right: 0,
             child: Semantics(
               button: true,
               label: context.tr(TranslationKeys.nfyDismiss),
@@ -220,6 +229,8 @@ class NewForYouBanner extends StatelessWidget {
       ),
     );
   }
+
+  static const double _radius = 18;
 }
 
 /// The banner chosen by [NewForYouCubit], or nothing.
