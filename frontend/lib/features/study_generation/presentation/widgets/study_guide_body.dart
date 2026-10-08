@@ -159,7 +159,7 @@ class StudyGuideBody extends StatelessWidget {
     required this.sections,
     required this.inputType,
     required this.title,
-    this.contentFontSize = 18.0,
+    this.contentFontSize = 16.0,
     this.readingSectionIndex,
     this.interpretationKey,
     this.tracker,
@@ -333,7 +333,7 @@ class StudyGuideBody extends StatelessWidget {
               key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
               icon: Icons.quiz,
-              content: numbered(s.reflectionQuestions)),
+              content: bulleted(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
               key: 'prayerPoints',
@@ -413,7 +413,7 @@ class StudyGuideBody extends StatelessWidget {
               key: 'reflectionQuestions',
               title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
               icon: Icons.forum_outlined,
-              content: numbered(s.reflectionQuestions)),
+              content: bulleted(s.reflectionQuestions)),
           _SectionSpec(
               index: 6,
               key: 'prayerPoints',
@@ -638,9 +638,9 @@ class StudyGuideHero extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(
             StudyGuideLayout.sidePadding.left,
-            topInset + 52,
+            topInset + 8,
             StudyGuideLayout.sidePadding.right,
-            4,
+            14,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -690,10 +690,12 @@ class StudyGuideTopicTitle extends StatelessWidget {
     StudyMode? studyMode,
     LessonRef? lesson,
   }) {
+    // The short type names, as the Generate tag ("Scripture", not
+    // "Scripture Reference").
     final type = switch (inputType) {
-      'scripture' => context.tr('generate_study.scripture_mode'),
-      'question' => context.tr('generate_study.question_mode'),
-      _ => context.tr('generate_study.topic_mode'),
+      'scripture' => context.tr(TranslationKeys.generateSimpleTypeScripture),
+      'question' => context.tr(TranslationKeys.generateSimpleTypeQuestion),
+      _ => context.tr(TranslationKeys.generateSimpleTypeTopic),
     };
     final parts = <String>[
       if (lesson != null)
@@ -725,11 +727,7 @@ class StudyGuideTopicTitle extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     // Long questions and passage ranges step down so they stay within a few
     // lines on a narrow phone.
-    final titleSize = title.length > 60
-        ? 24.0
-        : title.length > 28
-            ? 28.0
-            : 34.0;
+    final titleSize = title.length > 60 ? 24.0 : 28.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,9 +741,9 @@ class StudyGuideTopicTitle extends StatelessWidget {
           ),
           style: AppFonts.inter(
             fontSize: 12,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: palette.gold,
-            letterSpacing: 1.5,
+            letterSpacing: 1.6,
           ),
         ),
         const SizedBox(height: 8),
@@ -755,7 +753,7 @@ class StudyGuideTopicTitle extends StatelessWidget {
             title,
             style: AppFonts.poppins(
               fontSize: titleSize,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: palette.isDark ? Colors.white : palette.text,
               height: 1.2,
             ),
@@ -820,9 +818,12 @@ double _lineHeightFor(StudySectionStyle style) =>
 
 /// Vertical rhythm shared by a section and its shimmer, so a section does not
 /// change position when its content arrives.
-const double _sectionTopGap = 22;
-const double _sectionHeaderGap = 12;
-const double _sectionBottomGap = 22;
+///
+/// The header row is 44 tall (the copy button's tap target), so a 6 gap puts
+/// the title where a 14 gap over a 28 row would.
+const double _sectionTopGap = 6;
+const double _sectionHeaderGap = 2;
+const double _sectionBottomGap = 14;
 
 void _copySection(BuildContext context, String text) {
   Clipboard.setData(ClipboardData(text: text));
@@ -928,7 +929,7 @@ class StudySectionCard extends StatelessWidget {
     this.isHighlight = false,
     this.isBeingRead = false,
     this.isNew = false,
-    this.contentFontSize = 18.0,
+    this.contentFontSize = 16.0,
   });
 
   @override
@@ -1097,7 +1098,7 @@ class AltarCallCard extends StatelessWidget {
   const AltarCallCard({
     super.key,
     required this.content,
-    this.contentFontSize = 18.0,
+    this.contentFontSize = 16.0,
     this.isNew = false,
     this.number,
   });
@@ -1111,7 +1112,7 @@ class AltarCallCard extends StatelessWidget {
       animate: isNew,
       child: Padding(
         padding: const EdgeInsets.only(
-            top: _sectionTopGap, bottom: _sectionBottomGap),
+            top: _sectionBottomGap, bottom: _sectionBottomGap),
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 8, 8, 20),
           decoration: BoxDecoration(
@@ -1134,7 +1135,7 @@ class AltarCallCard extends StatelessWidget {
                       title: title, content: content, color: palette.dim),
                 ],
               ),
-              const SizedBox(height: _sectionHeaderGap),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: MarkdownWithScripture(

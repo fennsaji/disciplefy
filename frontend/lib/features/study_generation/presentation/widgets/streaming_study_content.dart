@@ -61,7 +61,7 @@ class StreamingStudyContent extends StatelessWidget {
     this.onComplete,
     this.isPartial = false,
     this.studyMode = StudyMode.standard,
-    this.contentFontSize = 18.0,
+    this.contentFontSize = 16.0,
     this.tracker,
     this.lesson,
     this.headerAccessory,

@@ -22,6 +22,7 @@ void main() {
     WidgetTester tester, {
     LessonRef? lesson,
     StudyMode mode = StudyMode.quick,
+    String inputType = 'topic',
   }) async {
     late String eyebrow;
     await tester.pumpWidget(welcomeApp(
@@ -29,7 +30,7 @@ void main() {
       screen: Builder(builder: (c) {
         eyebrow = StudyGuideTopicTitle.eyebrow(
           c,
-          inputType: 'topic',
+          inputType: inputType,
           studyMode: mode,
           lesson: lesson,
         );
@@ -51,5 +52,10 @@ void main() {
   testWidgets('without a lesson the eyebrow is unchanged', (tester) async {
     final eyebrow = await eyebrowFor(tester, mode: StudyMode.standard);
     expect(eyebrow, startsWith('TOPIC · '));
+  });
+
+  testWidgets('a verse study says SCRIPTURE, as the design', (tester) async {
+    final eyebrow = await eyebrowFor(tester, inputType: 'scripture');
+    expect(eyebrow, 'SCRIPTURE · QUICK READ · 3 MIN');
   });
 }

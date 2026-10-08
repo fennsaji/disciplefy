@@ -32,7 +32,7 @@ class NumberedSectionHeader extends StatelessWidget {
     this.leading,
     this.trailing = const [],
     this.titleColor,
-    this.titleSize = 20,
+    this.titleSize = 19,
   });
 
   @override
@@ -43,11 +43,10 @@ class NumberedSectionHeader extends StatelessWidget {
             ? null
             : Text(
                 formatSectionNumber(number!),
-                style: AppFonts.poppins(
+                style: AppFonts.inter(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: palette.gold,
-                  letterSpacing: 0.4,
                 ),
               ));
 
@@ -56,7 +55,7 @@ class NumberedSectionHeader extends StatelessWidget {
         if (lead != null) ...[
           // Numbers sit on the title's cap height rather than its box centre.
           Padding(padding: const EdgeInsets.only(top: 2), child: lead),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
         ],
         Expanded(
           child: Text(

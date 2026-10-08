@@ -48,37 +48,57 @@ class _LessonMarkCompleteBarState extends State<LessonMarkCompleteBar> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton.icon(
-          onPressed: _busy ? null : _tap,
-          style: FilledButton.styleFrom(
-            backgroundColor: fill,
-            foregroundColor: ReaderPalette.ink,
-            disabledBackgroundColor: fill.withValues(alpha: 0.6),
-            disabledForegroundColor: ReaderPalette.ink,
-            minimumSize: const Size.fromHeight(40),
-            maximumSize: const Size.fromHeight(40),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            textStyle:
-                const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        DecoratedBox(
+          // Soft gold glow under the pill, in both themes.
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brandGold.withValues(alpha: 0.8),
+                blurRadius: 16,
+              ),
+            ],
           ),
-          icon: _busy
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: ReaderPalette.ink,
-                  ),
-                )
-              : const Icon(Icons.check_rounded, size: 18),
-          label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: FilledButton.icon(
+            onPressed: _busy ? null : _tap,
+            style: FilledButton.styleFrom(
+              backgroundColor: fill,
+              foregroundColor: ReaderPalette.ink,
+              disabledBackgroundColor: fill.withValues(alpha: 0.6),
+              disabledForegroundColor: ReaderPalette.ink,
+              minimumSize: const Size.fromHeight(40),
+              maximumSize: const Size.fromHeight(40),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              // Web and desktop default to a compact density, which would
+              // shave the 40px pill to 32.
+              visualDensity: VisualDensity.standard,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              textStyle:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+            icon: _busy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: ReaderPalette.ink,
+                    ),
+                  )
+                : const Icon(Icons.check_rounded, size: 18),
+            // Shrinks rather than cutting the label on a narrow phone.
+            // The button already wraps the label in a Flexible.
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, maxLines: 1),
+            ),
+          ),
         ),
         if (widget.secondary != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           widget.secondary!,
         ],
       ],

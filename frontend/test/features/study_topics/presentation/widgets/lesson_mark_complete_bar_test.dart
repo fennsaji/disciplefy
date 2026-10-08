@@ -91,4 +91,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(fillOf(), AppColors.brandHighlightDark);
   });
+
+  testWidgets('stays 40px under a compact (web) density, 15pt, gold glow',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.darkTheme.copyWith(visualDensity: VisualDensity.compact),
+      home: Scaffold(
+          body:
+              LessonMarkCompleteBar(lesson: _lesson, onComplete: () async {})),
+    ));
+    expect(tester.getSize(find.byType(FilledButton)).height, 40);
+    final style = tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .style!
+        .textStyle!
+        .resolve({});
+    expect(style!.fontSize, 15);
+    final glow = tester.widget<DecoratedBox>(find
+        .ancestor(
+            of: find.byType(FilledButton), matching: find.byType(DecoratedBox))
+        .first);
+    final shadows = (glow.decoration as BoxDecoration).boxShadow!;
+    expect(shadows.single.blurRadius, 16);
+  });
+
+  testWidgets('a long label shrinks rather than cutting at 320pt',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: LessonMarkCompleteBar(
+        lesson: LessonRef(
+            pathId: 'p', pathTitle: 'P', lessonNumber: 12, lessonTotal: 40),
+        onComplete: _noop,
+      ),
+    )));
+    expect(tester.takeException(), isNull);
+    final text = tester.widget<Text>(find.textContaining('Mark complete'));
+    expect(text.overflow, isNot(TextOverflow.ellipsis));
+    expect(find.byType(FittedBox), findsOneWidget);
+  });
 }
+
+Future<void> _noop() async {}
