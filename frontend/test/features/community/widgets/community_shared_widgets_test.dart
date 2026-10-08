@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:disciplefy_bible_study/core/constants/discipler.dart';
@@ -306,6 +307,28 @@ void main() {
           find.byType(LinearProgressIndicator));
       expect(bar.value, closeTo(2 / 29, 1e-9));
     });
+
+    for (final language in AppLanguage.values) {
+      for (final width in [320.0, 360.0]) {
+        testWidgets(
+            'current study ${language.code} at ${width.toInt()}: the path '
+            'keeps at least half the row', (tester) async {
+          await pump(tester, const FellowshipCurrentStudyRow(study: study),
+              language: language, size: Size(width, 640));
+          final row = tester.getSize(find.byType(FellowshipCurrentStudyRow));
+          final title = find.textContaining('The Gospel of Matthew');
+          // The path's text box is at least half the row (no word a line).
+          final para = tester.renderObject<RenderParagraph>(title);
+          expect(
+              para.size.width + 1,
+              greaterThanOrEqualTo(
+                  row.width * 0.5 > para.getMaxIntrinsicWidth(100)
+                      ? para.getMaxIntrinsicWidth(100)
+                      : row.width * 0.5));
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
 
     testWidgets('a finished study names the path and fills the bar',
         (tester) async {

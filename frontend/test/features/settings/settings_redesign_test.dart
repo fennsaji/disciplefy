@@ -31,6 +31,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/bloc/setti
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_more_page.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_screen.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
@@ -404,6 +405,42 @@ void main() {
       expectNoTruncatedText(tester);
       expect(tester.takeException(), isNull);
     });
+
+    for (final language in AppLanguage.values) {
+      for (final width in [320.0, 360.0]) {
+        testWidgets(
+            '${language.code} at ${width.toInt()}: row titles keep at least '
+            'half the row and the banner fits', (tester) async {
+          translations.language = language;
+          useSurface(tester, Size(width, 900));
+          await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+          await tester.pumpAndSettle();
+          void check() {
+            for (final row in find.byType(SettingsRow).evaluate()) {
+              final rowBox = row.renderObject! as RenderBox;
+              final text = find
+                  .descendant(
+                      of: find.byWidget(row.widget),
+                      matching: find.byType(Expanded))
+                  .first;
+              expect(tester.getSize(text).width,
+                  greaterThanOrEqualTo((rowBox.size.width - 98) * 0.5),
+                  reason: (row.widget as SettingsRow).title);
+            }
+          }
+
+          final banner = find.byKey(const Key('email_verification_banner'));
+          final label = find.descendant(
+              of: banner,
+              matching:
+                  find.text(tr(TranslationKeys.emailVerificationShortTitle)));
+          expect(tester.getSize(label).width,
+              greaterThanOrEqualTo(tester.getSize(banner).width * 0.5));
+          await scrollToEnd(tester, check: check);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
 
     testWidgets('rows carry the design values: plan name and Same as app',
         (tester) async {

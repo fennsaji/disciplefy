@@ -319,33 +319,53 @@ class FellowshipCurrentStudyRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  title,
-                  style: AppFonts.inter(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: palette.text,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-              if (doneLabel != null) ...[
-                const SizedBox(width: 10),
-                // Natural width, so the path keeps the line; a long
-                // translation wraps (never clips) inside the cap.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 120),
-                  child: Text(
-                    doneLabel,
-                    textAlign: TextAlign.end,
+                child: LayoutBuilder(builder: (context, box) {
+                  final titleText = Text(
+                    title,
                     style: AppFonts.inter(
-                      fontSize: 12,
-                      color: palette.muted,
-                      height: 1.35,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      height: 1.3,
                     ),
-                  ),
-                ),
-              ],
+                  );
+                  if (doneLabel == null) return titleText;
+                  final doneStyle = AppFonts.inter(
+                    fontSize: 12,
+                    color: palette.muted,
+                    height: 1.35,
+                  );
+                  // "n of m" sits at the right as designed while it takes
+                  // under a third of the row; a longer translation moves
+                  // under the path so the path never wraps a word a line.
+                  final painter = TextPainter(
+                    text: TextSpan(text: doneLabel, style: doneStyle),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                    maxLines: 1,
+                  )..layout();
+                  final fits = painter.width + 10 <= box.maxWidth * 0.32;
+                  painter.dispose();
+                  if (fits) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: titleText),
+                        const SizedBox(width: 10),
+                        Text(doneLabel, style: doneStyle),
+                      ],
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      titleText,
+                      const SizedBox(height: 2),
+                      Text(doneLabel, style: doneStyle),
+                    ],
+                  );
+                }),
+              ),
             ],
           ),
           if (progress != null) ...[

@@ -319,67 +319,102 @@ class SettingsRow extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 58),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              SettingsIconTile(icon: icon, tone: effectiveTone),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w500,
-                        color: titleColor,
-                        height: 1.3,
-                      ),
-                    ),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+      child: LayoutBuilder(builder: (context, box) {
+        // The value takes at most 120pt, and less than a third of a narrow
+        // row (320pt Malayalam), so the title keeps its width.
+        final valueWidth = box.hasBoundedWidth
+            // The text area is the row less padding, icon tile and chevron
+            // (98pt); the value gets at most 35% of it.
+            ? ((box.maxWidth - 98) * 0.35).clamp(48.0, 120.0)
+            : 120.0;
+        final hasValue = value != null && value!.isNotEmpty;
+        // A value that would not fit on one line in its share moves under the
+        // title instead, so the title never breaks mid-word.
+        var valueBelow = false;
+        if (hasValue) {
+          final painter = TextPainter(
+            text: TextSpan(text: value, style: AppFonts.inter(fontSize: 13)),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout();
+          valueBelow = painter.width > valueWidth;
+          painter.dispose();
+        }
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 58),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                SettingsIconTile(icon: icon, tone: effectiveTone),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
+                        title,
                         style: AppFonts.inter(
-                          fontSize: 12,
-                          color: palette.muted,
-                          height: 1.35,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                          color: titleColor,
+                          height: 1.3,
                         ),
                       ),
+                      if (valueBelow) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          value!,
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.muted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                      if (subtitle != null && subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: AppFonts.inter(
+                            fontSize: 12,
+                            color: palette.muted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ),
-              if (value != null && value!.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                // Capped so a long value never squeezes the title away; it
-                // wraps rather than being cut.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 120),
-                  child: Text(
-                    value!,
-                    textAlign: TextAlign.end,
-                    style: AppFonts.inter(fontSize: 13, color: palette.muted),
                   ),
                 ),
+                if (hasValue && !valueBelow) ...[
+                  const SizedBox(width: 8),
+                  // Capped so a long value never squeezes the title away; it
+                  // wraps rather than being cut.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: valueWidth),
+                    child: Text(
+                      value!,
+                      textAlign: TextAlign.end,
+                      style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                    ),
+                  ),
+                ],
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
+                ],
+                if (chevron) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.chevron_right, size: 18, color: palette.dim),
+                ],
               ],
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ],
-              if (chevron) ...[
-                const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 18, color: palette.dim),
-              ],
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

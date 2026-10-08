@@ -72,57 +72,88 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
                 : amber.fill,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
-            children: [
-              Icon(Icons.mail_outline_rounded,
-                  size: 16, color: amber.foreground),
+          child: LayoutBuilder(builder: (context, box) {
+            final resend = _resendButton(context, amber);
+            final label = Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                context.tr(TranslationKeys.emailVerificationShortTitle),
+                style: AppFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.3,
+                ),
+              ),
+            );
+            // A long "Resend" (Malayalam) moves under the line instead of
+            // squeezing it into a narrow column.
+            final painter = TextPainter(
+              text: TextSpan(
+                text: context.tr(TranslationKeys.emailVerificationResendShort),
+                style:
+                    AppFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700),
+              ),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+              maxLines: 1,
+            )..layout();
+            final resendWide = painter.width + 16 > box.maxWidth * 0.3;
+            painter.dispose();
+            final icon = Icon(Icons.mail_outline_rounded,
+                size: 16, color: amber.foreground);
+            if (resendWide) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(children: [
+                    icon,
+                    const SizedBox(width: 10),
+                    Expanded(child: label),
+                  ]),
+                  Align(
+                      alignment: AlignmentDirectional.centerEnd, child: resend),
+                ],
+              );
+            }
+            return Row(children: [
+              icon,
               const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Text(
-                    context.tr(TranslationKeys.emailVerificationShortTitle),
-                    style: AppFonts.inter(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: palette.text,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: _isResending ? null : _onResendVerification,
-                style: TextButton.styleFrom(
-                  foregroundColor: amber.foreground,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(40, 40),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: _isResending
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(amber.foreground),
-                        ),
-                      )
-                    : Text(
-                        context
-                            .tr(TranslationKeys.emailVerificationResendShort),
-                        style: AppFonts.inter(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: amber.foreground,
-                        ),
-                      ),
-              ),
-            ],
-          ),
+              Expanded(child: label),
+              resend,
+            ]);
+          }),
         );
       },
+    );
+  }
+
+  Widget _resendButton(BuildContext context, SettingsToneColors amber) {
+    return TextButton(
+      onPressed: _isResending ? null : _onResendVerification,
+      style: TextButton.styleFrom(
+        foregroundColor: amber.foreground,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: const Size(40, 40),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: _isResending
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(amber.foreground),
+              ),
+            )
+          : Text(
+              context.tr(TranslationKeys.emailVerificationResendShort),
+              style: AppFonts.inter(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: amber.foreground,
+              ),
+            ),
     );
   }
 
