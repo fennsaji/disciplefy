@@ -222,18 +222,18 @@ void main() {
         expect(find.text('Fenn'), findsOneWidget);
         expect(find.text('gen.check@local.test'), findsOneWidget);
         expect(find.text('F'), findsOneWidget); // avatar initial
-        expect(find.text('Verify Your Email'), findsOneWidget);
-        expect(find.text(tr(TranslationKeys.emailVerificationDescription)),
+        // The design's one-line banner: short title and "Resend".
+        expect(find.text('Verify your email to secure your account'),
             findsOneWidget);
-        expect(find.text('Resend Verification Email'), findsOneWidget);
+        expect(find.text('Resend'), findsOneWidget);
         expect(find.text('YOU'), findsOneWidget);
         expect(find.text('PREFERENCES'), findsOneWidget);
         expect(find.text('System'), findsOneWidget); // theme value
 
         await scrollToEnd(tester);
         expect(find.text('ACCOUNT'), findsOneWidget);
-        expect(find.text('Sign Out'), findsOneWidget);
-        expect(find.text('Delete Account'), findsOneWidget);
+        expect(find.text('Sign out'), findsOneWidget);
+        expect(find.text('Delete account'), findsOneWidget);
 
         await scrollToEnd(tester);
         await tester.drag(find.byType(ListView).first, const Offset(0, 400));
@@ -340,7 +340,7 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.delete_outline_rounded));
         await tester.pumpAndSettle();
-        expectFullLabel(tester, tr(TranslationKeys.commonCancel));
+        expectFullLabel(tester, tr(TranslationKeys.settingsDeleteAccountKeep));
         expectFullLabel(
             tester, tr(TranslationKeys.settingsDeleteAccountConfirm));
         expectNoTruncatedText(tester);
@@ -403,6 +403,56 @@ void main() {
       expect(find.byType(ThemePreviewOption), findsNWidgets(3));
       expectNoTruncatedText(tester);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('rows carry the design values: plan name and Same as app',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+      await tester.pumpAndSettle();
+      expect(
+          find.descendant(
+              of: find.byKey(const Key('settings_my_plan')),
+              matching: find.text(tr(TranslationKeys.plansFree))),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byKey(const Key('settings_content_language')),
+              matching: find.text('Same as app')),
+          findsOneWidget);
+      // The verify banner is the design's single 40px+ line.
+      expect(
+          tester
+              .getSize(find.byKey(const Key('email_verification_banner')))
+              .height,
+          greaterThanOrEqualTo(40));
+    });
+
+    testWidgets('delete account unlocks only after typing DELETE',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+      await tester.pumpAndSettle();
+      await scrollToEnd(tester);
+      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.pumpAndSettle();
+
+      TextButton confirm() => tester.widget<TextButton>(find.descendant(
+          of: find.byKey(const Key('delete_account_confirm')),
+          matching: find.byType(TextButton)));
+      expect(find.text('Type DELETE to confirm'), findsOneWidget);
+      expect(confirm().onPressed, isNull);
+
+      await tester.enterText(
+          find.byKey(const Key('delete_account_confirm_field')), 'DELE');
+      await tester.pump();
+      expect(confirm().onPressed, isNull);
+
+      await tester.enterText(
+          find.byKey(const Key('delete_account_confirm_field')), 'DELETE');
+      await tester.pump();
+      expect(confirm().onPressed, isNotNull);
+      expect(find.text('Keep my account'), findsOneWidget);
     });
   });
 

@@ -174,7 +174,7 @@ class SettingsSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 20, 2, 8),
+      padding: const EdgeInsets.fromLTRB(2, 16, 2, 8),
       child: Row(
         children: [
           Expanded(

@@ -213,15 +213,15 @@ void main() {
       expect(find.text(tr(key)), findsOneWidget, reason: key);
     }
     // Moved to More.
-    expect(find.text('Privacy Policy'), findsNothing);
-    expect(find.text('Learning Path Study Mode'), findsNothing);
+    expect(find.text('Privacy policy'), findsNothing);
+    expect(find.text('Learning path study mode'), findsNothing);
     expect(find.text(tr(TranslationKeys.settingsFeedback)), findsNothing);
 
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Privacy Policy'), findsOneWidget);
-    expect(find.text('Learning Path Study Mode'), findsOneWidget);
+    expect(find.text('Privacy policy'), findsOneWidget);
+    expect(find.text('Learning path study mode'), findsOneWidget);
     for (final key in [
       TranslationKeys.settingsStudyModePreference,
       TranslationKeys.settingsRetakeQuestionnaire,
@@ -255,7 +255,7 @@ void main() {
 
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
-    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('Privacy policy'), findsOneWidget);
     expect(find.text(tr(TranslationKeys.settingsReportPurchaseIssue)),
         findsNothing);
   });

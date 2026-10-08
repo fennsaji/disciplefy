@@ -29,7 +29,7 @@ class SettingsProfileCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 6, 16),
       decoration: BoxDecoration(
         color: palette.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: palette.hairline),
       ),
       child: Row(

@@ -164,7 +164,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final level = UserLevel.fromXp(1720, 'en');
-        expect(find.text('My Progress'), findsOneWidget);
+        expect(find.text('My progress'), findsOneWidget);
         expect(
             find.text('${level.title} · Level ${level.level}'), findsOneWidget);
         expect(find.text('1,720 XP'), findsOneWidget);
@@ -203,7 +203,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final seen = await allTexts(tester);
-      expect(seen, contains('Personal Best'));
+      expect(seen, contains('Personal best'));
       expect(seen, contains('6 days'));
       expect(seen, isNot(contains('Study')));
       expect(seen, isNot(contains('Verse')));
@@ -390,7 +390,7 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        expect(find.text('Reflection Journal'), findsOneWidget);
+        expect(find.text('Reflection journal'), findsOneWidget);
         expect(find.text('2 reflections'), findsOneWidget);
         expect(find.text('YOUR JOURNEY'), findsOneWidget);
         // Day group headings, and the mode (with its icon) on each card.
@@ -417,7 +417,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.text('No reflections yet'), findsOneWidget);
-      expect(find.text('Start a Study'), findsOneWidget);
+      expect(find.text('Start a study'), findsOneWidget);
     });
 
     for (final language in AppLanguage.values) {

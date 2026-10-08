@@ -594,6 +594,7 @@ class TranslationKeys {
   static const emailVerificationDescription = 'email_verification.description';
   static const emailVerificationResend = 'email_verification.resend';
   static const emailVerificationResendShort = 'email_verification.resend_short';
+  static const emailVerificationShortTitle = 'email_verification.short_title';
   static const emailVerificationSent = 'email_verification.sent';
 
   // Onboarding
@@ -673,6 +674,7 @@ class TranslationKeys {
   static const settingsBlockedUsersSubtitle = 'settings.blocked_users_subtitle';
   static const settingsTheme = 'settings.theme';
   static const settingsContentLanguage = 'settings.content_language';
+  static const settingsContentLanguageSame = 'settings.content_language_same';
   static const settingsContentLanguageFollowsApp =
       'settings.content_language_follows_app';
   static const settingsAppLanguage = 'settings.app_language';
@@ -689,6 +691,9 @@ class TranslationKeys {
   static const settingsDeleteAccountTitle = 'settings.delete_account_title';
   static const settingsDeleteAccountMessage = 'settings.delete_account_message';
   static const settingsDeleteAccountConfirm = 'settings.delete_account_confirm';
+  static const settingsDeleteAccountTypeToConfirm =
+      'settings.delete_account_type_to_confirm';
+  static const settingsDeleteAccountKeep = 'settings.delete_account_keep';
 
   static const settingsSignOutOfAccount = 'settings.sign_out_of_account';
   static const settingsAbout = 'settings.about';
@@ -1100,6 +1105,7 @@ class TranslationKeys {
   static const plansFree = 'tokens.plans.free';
   static const plansStandard = 'tokens.plans.standard';
   static const plansPremium = 'tokens.plans.premium';
+  static const plansPlus = 'tokens.plans.plus';
   static const plansFreeDesc = 'tokens.plans.free_description';
   static const plansStandardDesc = 'tokens.plans.standard_description';
   static const plansPremiumDesc = 'tokens.plans.premium_description';
@@ -3402,6 +3408,8 @@ class TranslationKeys {
   static const communitySharedDiscoverTab = 'community_shared.discover_tab';
   static const communitySharedSearchHint = 'community_shared.search_hint';
   static const communitySharedJoinWithCode = 'community_shared.join_with_code';
+  static const communitySharedJoinFellowship =
+      'community_shared.join_fellowship';
   static const communitySharedCreateLocked = 'community_shared.create_locked';
   static const communitySharedOfflineTitle = 'community_shared.offline_title';
   static const communitySharedOfflineBody = 'community_shared.offline_body';

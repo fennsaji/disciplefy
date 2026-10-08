@@ -284,6 +284,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'discover_tab': 'കണ്ടെത്തുക',
     'search_hint': 'കൂട്ടായ്മകൾ തിരയുക…',
     'join_with_code': 'ക്ഷണ കോഡ് ഉപയോഗിച്ച് ചേരുക',
+    'join_fellowship': 'കൂട്ടായ്മയിൽ ചേരുക',
     'create_locked': 'കൂട്ടായ്മ സൃഷ്ടിക്കുക (അപ്ഗ്രേഡ്)',
     'offline_title': 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്',
     'offline_body': 'കമ്മ്യൂണിറ്റി സവിശേഷതകൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്.',
@@ -1019,6 +1020,7 @@ const Map<String, dynamic> malayalamTranslations = {
         'അക്കൗണ്ട് സുരക്ഷയും പാസ്‌വേഡ് റിക്കവറിയും സാധ്യമാക്കാൻ ദയവായി നിങ്ങളുടെ ഇമെയിൽ വിലാസം സ്ഥിരീകരിക്കുക.',
     'resend': 'സ്ഥിരീകരണ ഇമെയിൽ വീണ്ടും അയയ്ക്കുക',
     'resend_short': 'വീണ്ടും അയയ്ക്കുക',
+    'short_title': 'അക്കൗണ്ട് സുരക്ഷിതമാക്കാൻ ഇമെയിൽ സ്ഥിരീകരിക്കുക',
     'sent': 'സ്ഥിരീകരണ ഇമെയിൽ അയച്ചു! നിങ്ങളുടെ ഇൻബോക്സ് പരിശോധിക്കുക.',
   },
   'generate_simple': {
@@ -1155,6 +1157,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'app_language_description':
         'മെനുകൾ, ബട്ടണുകൾ, സന്ദേശങ്ങൾ. നിങ്ങൾ മറ്റൊരു ഉള്ളടക്ക ഭാഷ തിരഞ്ഞെടുക്കാത്തിടത്തോളം പഠന ഉള്ളടക്കവും ഈ ഭാഷയിലായിരിക്കും.',
     'content_language': 'ഉള്ളടക്ക ഭാഷ',
+    'content_language_same': 'ആപ്പ് പോലെ',
     'content_language_follows_app': 'ആപ്പ് ഭാഷ തന്നെ ({language})',
     'account_actions': 'അക്കൗണ്ട് പ്രവർ‍ത്തനങ്ങൾ',
     'sign_out': 'സൈൻ ഔട്ട് ചെയ്യുക',
@@ -1167,6 +1170,9 @@ const Map<String, dynamic> malayalamTranslations = {
     'delete_account_message':
         'ഇത് നിങ്ങളുടെ അക്കൗണ്ടും ബന്ധപ്പെട്ട എല്ലാ ഡേറ്റയും സ്ഥിരമായി ഇല്ലാതാക്കും. ഈ പ്രവർ‍ത്തനം പഴയപടി ആക്കാൻ കഴിയില്ല.',
     'delete_account_confirm': 'അക്കൗണ്ട് ഡിലീറ്റ് ചെയ്യുക',
+    'delete_account_type_to_confirm':
+        'സ്ഥിരീകരിക്കാൻ DELETE എന്ന് ടൈപ്പ് ചെയ്യുക',
+    'delete_account_keep': 'അക്കൗണ്ട് നിലനിർത്തുക',
     'sign_out_of_account': 'നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് സൈൻ ഔട്ട് ചെയ്യുക',
     'about': 'കുറിച്ച്',
     'app_version': 'ആപ്പ് പതിപ്പ്',
@@ -1741,9 +1747,8 @@ const Map<String, dynamic> malayalamTranslations = {
     'content_language': 'ഉള്ളടക്ക ഭാഷ',
     'content_language_description':
         'പഠന ഗൈഡുകൾ, പഠന പാതകൾ, ദിനവചനം. മെനുകളും ബട്ടണുകളും ആപ്പ് ഭാഷയിൽ തന്നെ തുടരും.',
-    'content_language_default': 'സ്ഥിരസ്ഥിതി (ആപ്പ് ഭാഷ)',
-    'content_language_default_description':
-        'നിങ്ങളുടെ ആപ്പിന്റെ അതേ ഭാഷ ഉപയോഗിക്കുക',
+    'content_language_default': 'ആപ്പിന്റെ അതേ ഭാഷ',
+    'content_language_default_description': 'ഇപ്പോൾ',
     'more_options_tooltip': 'കൂടുതൽ ഓപ്ഷനുകൾ',
     'reset_progress': 'പ്രോഗ്രസ് റീസെറ്റ് ചെയ്യുക',
     'reset_progress_title': 'പാതയിലെ പുരോഗതി റീസെറ്റ് ചെയ്യണോ?',
@@ -1768,20 +1773,15 @@ const Map<String, dynamic> malayalamTranslations = {
       'permissions_denied': '❌ അറിയിപ്പ് അനുമതി നിരസിച്ചു',
       'preferences_title': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
       'daily_verse_title': 'ദൈനിക വചനം',
-      'daily_verse_description':
-          'രാവിലെ എട്ട് മണിക്ക് പ്രേരണാദായകമായ ബൈബിള്‍ വചനങ്ങൾ സ്വീകരിക്കുക',
+      'daily_verse_description': 'എല്ലാ ദിവസവും രാവിലെ 8:00-ന്',
       'recommended_topics_title': 'ശിഫാരസ്സു ചെയ്യുന്ന വിഷയങ്ങൾ',
-      'recommended_topics_description':
-          'രാവിലെ ഒമ്പത് മണിക്ക് വ്യക്തിഗത പഠന വിഷയ സൂചനകൾ സ്വീകരിക്കുക',
+      'recommended_topics_description': 'രാവിലെ 9:00-ന് പഠന നിർദ്ദേശങ്ങൾ',
       'streak_reminder_title': 'തുടർച്ച ഓർമ്മപ്പെടുത്തൽ',
-      'streak_reminder_description':
-          'നിങ്ങളുടെ ദൈനംദിന വചന വായനയുടെ തുടർച്ച നിലനിർത്താൻ ഓർമ്മപ്പെടുത്തൽ നേടുക',
-      'streak_milestone_title': 'നാഴികക്കല്ല് നേട്ടങ്ങൾ',
-      'streak_milestone_description':
-          'തുടർച്ചയുടെ നാഴികക്കല്ലുകൾ (7, 30, 100, 365 ദിവസങ്ങൾ) എത്തുമ്പോൾ ആഘോഷിക്കുക',
-      'streak_lost_title': 'തുടർച്ച മുറിഞ്ഞാൽ പ്രോത്സാഹനം',
-      'streak_lost_description':
-          'ഇടവേളയ്ക്ക് ശേഷം പുതിയ തുടർച്ച ആരംഭിക്കാൻ പ്രോത്സാഹനം നേടുക',
+      'streak_reminder_description': 'ഇന്നത്തെ വചനം വായിച്ചില്ലെങ്കിൽ',
+      'streak_milestone_title': 'നാഴികക്കല്ലുകൾ',
+      'streak_milestone_description': '7, 30, 100, 365 ദിവസങ്ങൾ',
+      'streak_lost_title': 'പുതിയ തുടക്കം',
+      'streak_lost_description': 'ഇടവേളയ്ക്ക് ശേഷം പ്രോത്സാഹനം',
       'set_reminder_time': 'ഓർമ്മപ്പെടുത്തൽ സമയം സജ്ജമാക്കുക',
       'reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
       'subtitle': 'തുടരാൻ സഹായിക്കുന്ന ഓർമ്മപ്പെടുത്തലുകൾ',

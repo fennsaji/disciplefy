@@ -26,6 +26,9 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_stat
     as auth_states;
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_more_page.dart';
@@ -73,6 +76,13 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   void initState() {
     super.initState();
     _loadDownloadedPaths();
+    // The My progress row shows the streak; load it if nothing has yet.
+    if (sl.isRegistered<GamificationBloc>() &&
+        sl<AuthStateProvider>().isAuthenticated &&
+        !isGuestUser() &&
+        sl<GamificationBloc>().state.stats == null) {
+      sl<GamificationBloc>().add(const LoadGamificationStats());
+    }
   }
 
   Future<void> _loadDownloadedPaths() async {
@@ -268,11 +278,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           if (showProgress)
             LockedFeatureWrapper(
               featureKey: 'leaderboard',
-              child: SettingsRow(
-                icon: Icons.emoji_events_outlined,
-                title: context.tr(TranslationKeys.gamificationTitle),
-                subtitle: context.tr(TranslationKeys.gamificationSubtitle),
-                onTap: () => context.push(AppRoutes.statsDashboard),
+              child: _StreakValue(
+                builder: (streak) => SettingsRow(
+                  key: const Key('settings_my_progress'),
+                  icon: Icons.emoji_events_outlined,
+                  title: context.tr(TranslationKeys.gamificationTitle),
+                  subtitle: context.tr(TranslationKeys.gamificationSubtitle),
+                  value: streak,
+                  onTap: () => context.push(AppRoutes.statsDashboard),
+                ),
               ),
             ),
           if (showReflections)
@@ -289,9 +303,11 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
           // My Plan — unified plan and subscription management.
           SettingsRow(
+            key: const Key('settings_my_plan'),
             icon: Icons.workspace_premium_outlined,
             title: context.tr(TranslationKeys.settingsMyPlan),
             subtitle: context.tr(TranslationKeys.settingsMyPlanSubtitle),
+            value: planDisplayName(context, userPlan),
             onTap: () => context.push(AppRoutes.myPlan),
           ),
         ],
@@ -329,10 +345,11 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           // the Topics screen's menu.
           _ContentLanguageSubtitle(
             appLanguageCode: state.settings.language,
-            builder: (subtitle) => SettingsRow(
+            builder: (value) => SettingsRow(
+              key: const Key('settings_content_language'),
               icon: Icons.menu_book_outlined,
               title: context.tr(TranslationKeys.settingsContentLanguage),
-              subtitle: subtitle,
+              value: value,
               onTap: () => showContentLanguageSheet(context),
             ),
           ),
@@ -581,59 +598,135 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   }
 
   /// Delete-account confirmation; dispatches [DeleteAccountRequested].
+  ///
+  /// As in the design, the user types DELETE before the red action unlocks,
+  /// so an account is never removed by a stray tap.
   void _showDeleteAccountDialog(BuildContext context) {
     final authBloc = context.read<AuthBloc>();
     showDialog(
       context: context,
-      builder: (dialogContext) {
-        final red = SettingsToneColors.of(dialogContext, SettingsTone.red);
-        return SettingsDialog(
-          title: dialogContext.tr(TranslationKeys.settingsDeleteAccountTitle),
-          titleColor: red.foreground,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DeleteAccountWarningBox(
-                title: dialogContext
-                    .tr(TranslationKeys.settingsDeleteAccountLoseTitle),
-                items: [
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLoseGuides),
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLoseVerses),
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLoseProgress),
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLosePlan),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(dialogContext
-                  .tr(TranslationKeys.settingsDeleteAccountMessage)),
+      builder: (dialogContext) => DeleteAccountDialog(
+        onConfirm: () {
+          setState(() => _isDeletingAccount = true);
+          authBloc.add(const DeleteAccountRequested());
+        },
+      ),
+    );
+  }
+}
+
+/// The delete-account dialog: what is lost, the typed DELETE check, and
+/// "Delete my account" / "Keep my account".
+class DeleteAccountDialog extends StatefulWidget {
+  final VoidCallback onConfirm;
+
+  const DeleteAccountDialog({super.key, required this.onConfirm});
+
+  /// The word to type; kept in English in every language, like the design.
+  static const confirmWord = 'DELETE';
+
+  @override
+  State<DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _confirmed =>
+      _controller.text.trim().toUpperCase() == DeleteAccountDialog.confirmWord;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final red = SettingsToneColors.of(context, SettingsTone.red);
+    return SettingsDialog(
+      title: context.tr(TranslationKeys.settingsDeleteAccountTitle),
+      titleColor: red.foreground,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DeleteAccountWarningBox(
+            title: context.tr(TranslationKeys.settingsDeleteAccountLoseTitle),
+            items: [
+              context.tr(TranslationKeys.settingsDeleteAccountLoseGuides),
+              context.tr(TranslationKeys.settingsDeleteAccountLoseVerses),
+              context.tr(TranslationKeys.settingsDeleteAccountLoseProgress),
+              context.tr(TranslationKeys.settingsDeleteAccountLosePlan),
             ],
           ),
-          actions: [
-            SettingsButton(
-              label: dialogContext.tr(TranslationKeys.commonCancel),
-              kind: SettingsButtonKind.neutral,
-              height: 46,
-              onPressed: () => Navigator.of(dialogContext).pop(),
+          const SizedBox(height: 12),
+          Text(context.tr(TranslationKeys.settingsDeleteAccountMessage)),
+          const SizedBox(height: 14),
+          Text(
+            context.tr(TranslationKeys.settingsDeleteAccountTypeToConfirm),
+            style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            key: const Key('delete_account_confirm_field'),
+            controller: _controller,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.characters,
+            onChanged: (_) => setState(() {}),
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 2,
+              color: palette.text,
             ),
-            SettingsButton(
-              label: dialogContext
-                  .tr(TranslationKeys.settingsDeleteAccountConfirm),
-              kind: SettingsButtonKind.destructive,
-              height: 46,
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                setState(() => _isDeletingAccount = true);
-                authBloc.add(const DeleteAccountRequested());
-              },
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: DeleteAccountDialog.confirmWord,
+              hintStyle: AppFonts.inter(
+                fontSize: 14,
+                letterSpacing: 2,
+                color: palette.dim,
+              ),
+              filled: true,
+              fillColor: palette.raised,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(color: red.foreground, width: 1.2),
+              ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
+      actions: [
+        SettingsButton(
+          key: const Key('delete_account_keep'),
+          label: context.tr(TranslationKeys.settingsDeleteAccountKeep),
+          kind: SettingsButtonKind.neutral,
+          height: 40,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        SettingsButton(
+          key: const Key('delete_account_confirm'),
+          label: context.tr(TranslationKeys.settingsDeleteAccountConfirm),
+          kind: SettingsButtonKind.destructive,
+          height: 40,
+          onPressed: _confirmed
+              ? () {
+                  Navigator.of(context).pop();
+                  widget.onConfirm();
+                }
+              : null,
+        ),
+      ],
     );
   }
 }
@@ -713,9 +806,9 @@ class DeleteAccountWarningBox extends StatelessWidget {
   }
 }
 
-/// Resolves the Content Language row's subtitle: the chosen language, or
-/// "Same as app language (X)". Rebuilds when either language changes, since
-/// "Default" follows the app language.
+/// Resolves the Content language row's value: the chosen language, or
+/// "Same as app". Rebuilds when either language changes, since "Default"
+/// follows the app language.
 class _ContentLanguageSubtitle extends StatefulWidget {
   final String appLanguageCode;
   final Widget Function(String subtitle) builder;
@@ -768,12 +861,12 @@ class _ContentLanguageSubtitleState extends State<_ContentLanguageSubtitle> {
 
   @override
   Widget build(BuildContext context) {
-    final appLanguage = AppLanguage.fromCode(widget.appLanguageCode);
-    final subtitle = _isDefault || _language == null
-        ? context.tr(TranslationKeys.settingsContentLanguageFollowsApp,
-            {'language': appLanguage.displayName})
+    // "Same as app" while it follows the app language (that language is the
+    // App language row's value right above), else the chosen language.
+    final value = _isDefault || _language == null
+        ? context.tr(TranslationKeys.settingsContentLanguageSame)
         : _language!.displayName;
-    return widget.builder(subtitle);
+    return widget.builder(value);
   }
 }
 
@@ -812,3 +905,35 @@ class _GuestNote extends StatelessWidget {
     );
   }
 }
+
+/// The current study streak as "13-day streak", or null while it is unknown
+/// or zero. Rebuilds as the gamification stats load.
+class _StreakValue extends StatelessWidget {
+  final Widget Function(String? streak) builder;
+
+  const _StreakValue({required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!sl.isRegistered<GamificationBloc>()) return builder(null);
+    return BlocBuilder<GamificationBloc, GamificationState>(
+      bloc: sl<GamificationBloc>(),
+      buildWhen: (a, b) => a.stats != b.stats,
+      builder: (context, state) {
+        final days = state.stats?.verseCurrentStreak ?? 0;
+        return builder(days > 0
+            ? context.tr(TranslationKeys.homeDayStreak, {'count': days})
+            : null);
+      },
+    );
+  }
+}
+
+/// Display name of a plan code ("Standard"), as on My plan.
+String planDisplayName(BuildContext context, String planCode) =>
+    switch (planCode) {
+      'standard' => context.tr(TranslationKeys.plansStandard),
+      'plus' => context.tr(TranslationKeys.plansPlus),
+      'premium' => context.tr(TranslationKeys.plansPremium),
+      _ => context.tr(TranslationKeys.plansFree),
+    };

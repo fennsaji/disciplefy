@@ -278,6 +278,7 @@ const Map<String, dynamic> hindiTranslations = {
     'discover_tab': 'खोजें',
     'search_hint': 'संगतियाँ खोजें…',
     'join_with_code': 'आमंत्रण कोड से जुड़ें',
+    'join_fellowship': 'संगति से जुड़ें',
     'create_locked': 'संगति बनाएँ (अपग्रेड)',
     'offline_title': 'आप ऑफ़लाइन हैं',
     'offline_body': 'समुदाय सुविधाओं के लिए इंटरनेट कनेक्शन चाहिए।',
@@ -1000,6 +1001,7 @@ const Map<String, dynamic> hindiTranslations = {
         'खाता सुरक्षा और पासवर्ड रिकवरी सक्षम करने के लिए कृपया अपना ईमेल पता सत्यापित करें।',
     'resend': 'सत्यापन ईमेल फिर से भेजें',
     'resend_short': 'फिर भेजें',
+    'short_title': 'खाता सुरक्षित रखने के लिए ईमेल सत्यापित करें',
     'sent': 'सत्यापन ईमेल भेजा गया! अपना इनबॉक्स देखें।',
   },
   'generate_simple': {
@@ -1133,6 +1135,7 @@ const Map<String, dynamic> hindiTranslations = {
     'app_language_description':
         'मेनू, बटन और संदेश। जब तक आप अलग सामग्री भाषा न चुनें, अध्ययन सामग्री भी इसी भाषा में रहती है।',
     'content_language': 'सामग्री भाषा',
+    'content_language_same': 'ऐप जैसी',
     'content_language_follows_app': 'ऐप भाषा जैसी ({language})',
     'account_actions': 'खाता एक्शन',
     'sign_out': 'साइन आउट करें',
@@ -1145,6 +1148,8 @@ const Map<String, dynamic> hindiTranslations = {
     'delete_account_message':
         'यह आपके अकाउंट और सभी संबंधित डेटा को स्थायी रूप से हटा देगा। यह क्रिया पूर्ववत नहीं की जा सकती।',
     'delete_account_confirm': 'अकाउंट डिलीट करें',
+    'delete_account_type_to_confirm': 'पुष्टि के लिए DELETE लिखें',
+    'delete_account_keep': 'अकाउंट रखें',
     'sign_out_of_account': 'अपने खाते से साइन आउट करें',
     'about': 'के बारे में',
     'app_version': 'ऐप संस्करण',
@@ -1710,9 +1715,8 @@ const Map<String, dynamic> hindiTranslations = {
     'content_language': 'सामग्री भाषा',
     'content_language_description':
         'अध्ययन गाइड, पथ और दैनिक वचन। मेनू और बटन ऐप की भाषा में ही रहते हैं।',
-    'content_language_default': 'डिफ़ॉल्ट (ऐप भाषा)',
-    'content_language_default_description':
-        'अपने ऐप की समान भाषा का उपयोग करें',
+    'content_language_default': 'ऐप जैसी भाषा',
+    'content_language_default_description': 'अभी',
     'more_options_tooltip': 'अधिक विकल्प',
     'reset_progress': 'प्रगति रीसेट करें',
     'reset_progress_title': 'पथ की प्रगति रीसेट करें?',
@@ -1736,19 +1740,15 @@ const Map<String, dynamic> hindiTranslations = {
       'permissions_denied': '❌ नोटिफिकेशन अनुमति अस्वीकार की गई',
       'preferences_title': 'नोटिफिकेशन प्राथमिकताएं',
       'daily_verse_title': 'दैनिक वचन',
-      'daily_verse_description':
-          'प्रतिदिन सुबह 8 बजे प्रेरणादायक बाइबल पद प्राप्त करें',
+      'daily_verse_description': 'हर सुबह 8:00 बजे',
       'recommended_topics_title': 'अनुशंसित विषय',
-      'recommended_topics_description':
-          'सुबह 9 बजे व्यक्तिगत अध्ययन विषय सुझाव प्राप्त करें',
+      'recommended_topics_description': 'सुबह 9:00 बजे अध्ययन सुझाव',
       'streak_reminder_title': 'लगातार दिन रिमाइंडर',
-      'streak_reminder_description': 'रोज़ वचन पढ़ने की याद पाएं',
-      'streak_milestone_title': 'माइलस्टोन उपलब्धियाँ',
-      'streak_milestone_description':
-          '7, 30, 100, 365 लगातार दिन पूरे होने पर जश्न मनाएं',
-      'streak_lost_title': 'फिर से शुरू करने की प्रेरणा',
-      'streak_lost_description':
-          'ब्रेक के बाद फिर से शुरू करने का प्रोत्साहन पाएं',
+      'streak_reminder_description': 'अगर आज का वचन नहीं पढ़ा',
+      'streak_milestone_title': 'माइलस्टोन',
+      'streak_milestone_description': '7, 30, 100 और 365 दिन',
+      'streak_lost_title': 'नई शुरुआत',
+      'streak_lost_description': 'ब्रेक के बाद प्रोत्साहन',
       'set_reminder_time': 'रिमाइंडर समय सेट करें',
       'reminder_time_label': 'रिमाइंडर समय',
       'subtitle': 'रिमाइंडर जो आपको आगे बढ़ते रहने में मदद करते हैं',
