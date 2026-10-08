@@ -35,6 +35,30 @@ void main() {
     expect(find.text('Tomorrow'), findsNothing);
   });
 
+  testWidgets('dots: done 24, today 28, ahead 18', (tester) async {
+    await tester.pumpWidget(welcomeApp(
+        screen: const PathProgressStrip(total: 8, completed: 3, current: 4)));
+    expect(tester.getSize(find.byKey(const Key('strip_dot_1'))).width, 24);
+    expect(tester.getSize(find.byKey(const Key('strip_dot_4'))).width, 28);
+    expect(tester.getSize(find.byKey(const Key('strip_dot_5'))).width, 18);
+  });
+
+  testWidgets('caption only on long paths, inside the card', (tester) async {
+    await tester.pumpWidget(welcomeApp(
+        screen: const PathProgressStrip(
+            total: 8, completed: 3, current: 4, lessonLabel: 'Lesson 4 of 8')));
+    expect(find.byKey(const Key('strip_caption')), findsNothing);
+    await tester.pumpWidget(welcomeApp(
+        screen: const PathProgressStrip(
+            total: 29,
+            completed: 11,
+            current: 12,
+            lessonLabel: 'Lesson 12 of 29',
+            toGoLabel: '17 to go')));
+    expect(find.byKey(const Key('strip_caption')), findsOneWidget);
+    expect(find.text('17 to go'), findsOneWidget);
+  });
+
   testWidgets('16 lessons: 16 segments', (tester) async {
     await tester.pumpWidget(welcomeApp(
         screen: const PathProgressStrip(total: 16, completed: 3, current: 4)));

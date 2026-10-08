@@ -289,6 +289,31 @@ void main() {
     });
 
     testWidgets(
+        'Today layout: no subtitle or date, the verse quoted at 22pt at most',
+        (tester) async {
+      await pump(
+          tester,
+          HomeVerseHero(
+            imageAsset: homeHeroImages.first,
+            greeting: _english(TranslationKeys.homeGoodEvening, {'name': 'F'}),
+            verse: HomeDailyVerseView(
+              state: _loaded(_shortVerse),
+              onStudy: () {},
+              onRetry: () {},
+              todayLayout: true,
+            ),
+          ));
+      expect(find.text(_english(TranslationKeys.homeContinueJourney, null)),
+          findsNothing);
+      expect(find.text('VERSE OF THE DAY'), findsOneWidget);
+      expect(find.textContaining('SEPTEMBER'), findsNothing);
+      final verse =
+          tester.widget<Text>(find.byKey(const Key('home_verse_text')));
+      expect(verse.data, '\u201C$_shortVerse\u201D');
+      expect(verse.style!.fontSize, 22);
+    });
+
+    testWidgets(
         'the verse counts as read after five seconds on screen, or at once '
         'when copied or studied', (tester) async {
       var reads = 0;

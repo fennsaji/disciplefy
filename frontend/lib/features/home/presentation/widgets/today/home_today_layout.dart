@@ -109,7 +109,7 @@ class HomeTodayLayout extends StatefulWidget {
 }
 
 class _HomeTodayLayoutState extends State<HomeTodayLayout> {
-  static const _sectionPadding = EdgeInsets.symmetric(horizontal: 18);
+  static const _sectionPadding = EdgeInsets.symmetric(horizontal: 20);
   static const _memoryWait = Duration(seconds: 4);
 
   late final NewForYouCubit _newForYou = sl<NewForYouCubit>();

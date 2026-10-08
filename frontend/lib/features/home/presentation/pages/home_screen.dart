@@ -699,7 +699,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         homeGreetingKeyFor(DateTime.now().hour),
         {'name': userName},
       ),
-      subtitle: context.tr(TranslationKeys.homeContinueJourney),
+      // The Today layout goes straight from the greeting to the verse.
+      subtitle:
+          todayLayout ? null : context.tr(TranslationKeys.homeContinueJourney),
       verse: _buildHeroVerse(todayLayout: todayLayout),
     );
   }

@@ -378,19 +378,54 @@ void main() {
     expect(find.text('See path'), findsOneWidget);
     expect(find.byType(PathProgressStrip), findsOneWidget);
     expect(find.byType(TodayLessonCard), findsOneWidget);
-    expect(find.text('Lesson 4 of 8'), findsOneWidget);
-    expect(find.text('5 to go'), findsOneWidget);
+    // Dots show where you are: no "Lesson n of m" caption on short paths.
+    expect(find.textContaining('Lesson 4 of 8'), findsNothing);
+    expect(find.text('5 to go'), findsNothing);
     expect(find.byType(ChooseFirstPathCard), findsNothing);
     expect(find.byType(SaveProgressRow), findsNothing);
 
     final title = tester.widget<Text>(find.text('New Believer Essentials'));
     expect(title.maxLines, 1);
     expect(title.overflow, TextOverflow.ellipsis);
-    expect(title.style!.fontSize, 15);
+    expect(title.style!.fontSize, 16);
 
     await tester.tap(find.text('See path'));
     await tester.pumpAndSettle();
     expect(find.text('detail:p1:home'), findsOneWidget);
+  });
+
+  testWidgets('long paths: the caption sits inside the strip card',
+      (tester) async {
+    ActivePathSummary long(int total, int done) => ActivePathSummary(
+          pathId: 'p1',
+          title: 'Long path',
+          description: '',
+          discipleLevel: 'seeker',
+          lessonTotal: total,
+          lessonsCompleted: done,
+          next: NextLesson(
+            topicId: 't',
+            title: 'Next one',
+            description: '',
+            inputType: 'topic',
+            number: done + 1,
+            total: total,
+          ),
+        );
+    await tester.pumpWidget(app(section(long(16, 3))));
+    await tester.pumpAndSettle();
+    final caption = find.byKey(const Key('strip_caption'));
+    expect(
+        find.descendant(of: find.byType(PathProgressStrip), matching: caption),
+        findsOneWidget);
+    expect(find.textContaining('Lesson 4 of 16'), findsOneWidget);
+    // Segments: no "to go", as in the design.
+    expect(find.text('13 to go'), findsNothing);
+
+    await tester.pumpWidget(app(section(long(29, 11))));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Lesson 12 of 29'), findsOneWidget);
+    expect(find.text('18 to go'), findsOneWidget);
   });
 
   testWidgets('the strip opens the path too', (tester) async {

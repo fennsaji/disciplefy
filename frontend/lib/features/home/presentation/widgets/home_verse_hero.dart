@@ -66,14 +66,16 @@ const double _lightSceneBottomPadding = 22;
 /// the gold wordmark and header controls read on any photo.
 class HomeVerseHero extends StatelessWidget {
   final String greeting;
-  final String subtitle;
+
+  /// Line under the greeting; none on the Today layout.
+  final String? subtitle;
   final Widget verse;
   final String imageAsset;
 
   const HomeVerseHero({
     super.key,
     required this.greeting,
-    required this.subtitle,
+    this.subtitle,
     required this.verse,
     required this.imageAsset,
   });
@@ -183,15 +185,17 @@ class HomeVerseHero extends StatelessWidget {
                         height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: const Color(0xFFC9C9D2),
-                        height: 1.35,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        style: AppFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFFC9C9D2),
+                          height: 1.35,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -310,7 +314,9 @@ class HomeDailyVerseView extends StatelessWidget {
   String _appLanguage(BuildContext context) =>
       Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
 
-  Widget _eyebrow(BuildContext context, String date) {
+  /// "VERSE OF THE DAY", with the date after it unless [date] is null (the
+  /// Today layout: "of the day" already says when).
+  Widget _eyebrow(BuildContext context, String? date) {
     final latin = _appLanguage(context) == 'en';
     String caps(String text) => latin ? text.toUpperCase() : text;
     final label = context.tr(TranslationKeys.dailyVerseOfTheDay);
@@ -327,19 +333,21 @@ class HomeDailyVerseView extends StatelessWidget {
       runSpacing: 4,
       children: [
         Text(caps(label), style: style),
-        Text('· ${caps(date)}', style: style),
+        if (date != null) Text('· ${caps(date)}', style: style),
       ],
     );
   }
 
   Widget _verseText(String text) {
+    // Today layout: the verse is quoted and never larger than the greeting.
+    final size = homeVerseFontSize(text);
     return Text(
-      text,
+      todayLayout ? '\u201C${text.trim()}\u201D' : text,
       key: const Key('home_verse_text'),
       maxLines: homeVerseMaxLines,
       overflow: TextOverflow.ellipsis,
       style: AppFonts.poppins(
-        fontSize: homeVerseFontSize(text),
+        fontSize: todayLayout && size > 22 ? 22 : size,
         fontWeight: FontWeight.w600,
         color: _onScene,
         height: 1.3,
@@ -364,7 +372,8 @@ class HomeDailyVerseView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _eyebrow(context, s.formattedDateFor(_appLanguage(context))),
+          _eyebrow(context,
+              todayLayout ? null : s.formattedDateFor(_appLanguage(context))),
           const SizedBox(height: 10),
           GestureDetector(
             onTap: study,
@@ -385,7 +394,7 @@ class HomeDailyVerseView extends StatelessWidget {
                 style: AppFonts.inter(fontSize: 13, color: _onSceneMuted),
               ),
             ),
-          SizedBox(height: todayLayout ? 10 : 18),
+          const SizedBox(height: 18),
           // Wrap, not Row: the button keeps its full label and, when the
           // line is too narrow (small phone, long Malayalam label), the
           // icons drop to a second line instead of the label being cut.
@@ -572,7 +581,7 @@ class _ReflectLink extends StatelessWidget {
         minimumSize: const Size(0, 40),
         padding: EdgeInsets.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: AppFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+        textStyle: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

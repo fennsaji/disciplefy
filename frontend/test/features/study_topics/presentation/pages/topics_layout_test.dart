@@ -282,7 +282,7 @@ void main() {
         summary: summary4of8,
         categories: [cat('Foundations', 1)],
         onModeChanged: modes.add);
-    await tester.tap(find.byType(OutlinedButton).first);
+    await tester.tap(find.byKey(const Key('today_mode_chip')));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Quick').last);
     await tester.pumpAndSettle();

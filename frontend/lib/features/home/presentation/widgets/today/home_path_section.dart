@@ -18,7 +18,8 @@ import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
 /// Home's path block: the active path's header ("See path"), its progress
-/// strip, "Lesson n of m" / "k to go", and today's lesson card.
+/// strip (with "Lesson n of m" / "k to go" on long paths), and today's
+/// lesson card.
 ///
 /// Without a path (and not loading) it shows [ChooseFirstPathCard] instead,
 /// never a lesson card.
@@ -114,7 +115,6 @@ class _ActivePathState extends State<_ActivePath> {
     final next = summary.next;
     final total = summary.lessonTotal;
     final remaining = (total - summary.lessonsCompleted).clamp(0, total);
-    final captionStyle = AppFonts.inter(fontSize: 12, color: palette.muted);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -126,8 +126,8 @@ class _ActivePathState extends State<_ActivePath> {
                 summary.displayTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.poppins(
-                  fontSize: 15,
+                style: AppFonts.inter(
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: palette.text,
                 ),
@@ -163,30 +163,16 @@ class _ActivePathState extends State<_ActivePath> {
               (summary.isFinished ? total : summary.lessonsCompleted + 1),
           milestones: summary.milestoneNumbers,
           onTap: () => _openPath(context),
+          // Long paths say where you are inside the strip card; dots show it.
+          lessonLabel: next == null
+              ? null
+              : context.tr(TranslationKeys.homeTodayLessonOf,
+                  {'n': next.number, 'm': total}),
+          toGoLabel: remaining > 0
+              ? context.tr(TranslationKeys.homeTodayToGo, {'k': remaining})
+              : null,
         ),
-        if (next != null) ...[
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.tr(TranslationKeys.homeTodayLessonOf,
-                        {'n': next.number, 'm': total}),
-                    style: captionStyle,
-                  ),
-                ),
-                if (remaining > 0)
-                  Text(
-                    context.tr(TranslationKeys.homeTodayToGo, {'k': remaining}),
-                    style: captionStyle,
-                  ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         TodayLessonCard(
           summary: summary,
           mode: widget.mode,

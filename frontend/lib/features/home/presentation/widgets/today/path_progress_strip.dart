@@ -17,12 +17,18 @@ StripTier stripTierFor(int total) {
 /// Progress through the active path, inside a tappable card.
 ///
 /// [current] is the next lesson number, or [total] when the path is finished.
+///
+/// With [lessonLabel] ("Lesson 4 of 16"), the bar and segment tiers end in a
+/// caption row inside the card: the label, "· Today", [toGoLabel] (smooth bar
+/// only) and a chevron. Dots need no caption: "Today" sits under the dot.
 class PathProgressStrip extends StatelessWidget {
   final int total;
   final int completed;
   final int current;
   final List<int> milestones;
   final VoidCallback? onTap;
+  final String? lessonLabel;
+  final String? toGoLabel;
 
   const PathProgressStrip({
     super.key,
@@ -31,9 +37,13 @@ class PathProgressStrip extends StatelessWidget {
     required this.current,
     this.milestones = const [],
     this.onTap,
+    this.lessonLabel,
+    this.toGoLabel,
   });
 
-  static const double _dotSize = 22;
+  static const double _doneSize = 24;
+  static const double _currentSize = 28;
+  static const double _futureSize = 18;
 
   // Normalised inputs: callers may pass out-of-range values.
   int get _total => total < 0 ? 0 : total;
@@ -50,9 +60,11 @@ class PathProgressStrip extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     final safeTotal = _total < 1 ? 1 : _total;
     final slot = (_current.clamp(1, safeTotal) - 0.5) / safeTotal;
+    final tier = stripTierFor(_total);
+    final caption = tier != StripTier.dots && lessonLabel != null;
 
     final Widget strip;
-    switch (stripTierFor(_total)) {
+    switch (tier) {
       case StripTier.dots:
         strip = _dots(palette);
       case StripTier.segments:
@@ -61,6 +73,12 @@ class PathProgressStrip extends StatelessWidget {
         strip = _smooth(palette);
     }
 
+    final todayStyle = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: palette.gold,
+    );
+
     return Semantics(
       button: onTap != null,
       label: context.tr(TranslationKeys.homeTodayStripSemantics,
@@ -68,29 +86,36 @@ class PathProgressStrip extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: palette.card,
-        borderRadius: BorderRadius.circular(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: palette.hairline),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: tier == StripTier.dots
+                ? const EdgeInsets.all(14)
+                : const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 strip,
+                if (caption)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: _caption(palette, todayStyle,
+                        showToGo: tier == StripTier.smooth),
+                  )
                 // Nothing is "today" on a finished path.
-                if (!_finished) ...[
-                  const SizedBox(height: 4),
+                else if (!_finished) ...[
+                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment(slot * 2 - 1, 0),
                     child: Text(
                       context.tr(TranslationKeys.homeTodayLabel),
                       key: const Key('strip_today'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: palette.gold,
-                      ),
+                      style: todayStyle,
                     ),
                   ),
                 ],
@@ -98,6 +123,62 @@ class PathProgressStrip extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// "Lesson 4 of 16 · Today ... 17 to go >".
+  Widget _caption(ReaderPalette palette, TextStyle todayStyle,
+      {required bool showToGo}) {
+    final toGo = toGoLabel;
+    return Builder(
+      builder: (context) => Row(
+        key: const Key('strip_caption'),
+        children: [
+          Flexible(
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: lessonLabel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: palette.text,
+                  ),
+                ),
+                if (!_finished) ...[
+                  TextSpan(
+                    text: '  ·  ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: palette.muted,
+                    ),
+                  ),
+                  TextSpan(
+                    text: context.tr(TranslationKeys.homeTodayLabel),
+                    style: todayStyle,
+                  ),
+                ],
+              ]),
+              key: const Key('strip_today'),
+            ),
+          ),
+          const Spacer(),
+          if (showToGo && toGo != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              toGo,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: palette.muted,
+              ),
+            ),
+          ],
+          const SizedBox(width: 5),
+          Icon(Icons.chevron_right_rounded, size: 14, color: palette.muted),
+        ],
       ),
     );
   }
@@ -111,29 +192,37 @@ class PathProgressStrip extends StatelessWidget {
                   height: 2,
                   color: (toLesson <= _completed || toLesson == _current)
                       ? palette.gold
-                      : palette.hairline,
+                      : palette.outline,
                 ),
         );
 
-    Widget dot(int n) {
+    Widget dot(int n, double scale) {
       final done = n <= _completed;
-      final isCurrent = n == _current;
+      final isCurrent = n == _current && !done;
+      final size = scale *
+          (isCurrent
+              ? _currentSize
+              : done
+                  ? _doneSize
+                  : _futureSize);
       return Container(
         key: Key('strip_dot_$n'),
-        width: _dotSize,
-        height: _dotSize,
+        width: size,
+        height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: (done || isCurrent) ? palette.selectedFill : null,
-          border: (done || isCurrent)
-              ? null
-              : Border.all(color: palette.hairline, width: 1.5),
+          border: isCurrent
+              ? Border.all(color: palette.gold.withValues(alpha: 0.33))
+              : done
+                  ? null
+                  : Border.all(color: palette.outline),
         ),
         // Ink on the selected gold fill: 7.6:1 light, 8.9:1 dark (white on
         // the deep light gold was 4.8:1).
         child: done
-            ? Icon(Icons.check_rounded, size: 14, color: palette.onSelected)
+            ? Icon(Icons.check_rounded, size: 12, color: palette.onSelected)
             : isCurrent
                 ? Text(
                     '$n',
@@ -148,21 +237,30 @@ class PathProgressStrip extends StatelessWidget {
       );
     }
 
-    return Row(
-      children: [
-        for (var n = 1; n <= _total; n++)
-          Expanded(
-            child: Row(
-              children: [connector(n), dot(n), connector(n + 1)],
-            ),
-          ),
-      ],
-    );
+    // Ten lessons on a small phone leave under 28px a slot: the dots
+    // shrink together rather than overflow.
+    return LayoutBuilder(builder: (context, box) {
+      final slot = _total == 0 ? _currentSize : box.maxWidth / _total;
+      final scale = slot >= _currentSize + 2 ? 1.0 : (slot - 2) / _currentSize;
+      return SizedBox(
+        height: _currentSize,
+        child: Row(
+          children: [
+            for (var n = 1; n <= _total; n++)
+              Expanded(
+                child: Row(
+                  children: [connector(n), dot(n, scale), connector(n + 1)],
+                ),
+              ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _segments(ReaderPalette palette) {
     return SizedBox(
-      height: 9,
+      height: 14,
       child: Row(
         children: [
           for (var n = 1; n <= _total; n++)
@@ -171,7 +269,7 @@ class PathProgressStrip extends StatelessWidget {
                 padding: EdgeInsets.only(left: n == 1 ? 0 : 3),
                 child: Container(
                   key: Key('strip_segment_$n'),
-                  height: n == _current ? 9 : 6,
+                  height: n == _current ? 10 : 6,
                   decoration: BoxDecoration(
                     color: (n <= _completed || n == _current)
                         ? palette.gold
@@ -192,6 +290,9 @@ class PathProgressStrip extends StatelessWidget {
         final width = constraints.maxWidth;
         final safeTotal = _total < 1 ? 1 : _total;
         double at(num lesson) => width * (lesson - 0.5) / safeTotal;
+        // The fill reaches the current lesson's knob; a finished path is full.
+        final reached =
+            _finished ? width : at(_current.clamp(1, safeTotal)).toDouble();
         return SizedBox(
           height: 14,
           child: Stack(
@@ -207,7 +308,7 @@ class PathProgressStrip extends StatelessWidget {
               ),
               Container(
                 height: 6,
-                width: width * (_completed / safeTotal).clamp(0.0, 1.0),
+                width: reached.clamp(0.0, width),
                 decoration: BoxDecoration(
                   color: palette.gold,
                   borderRadius: BorderRadius.circular(3),
@@ -219,21 +320,26 @@ class PathProgressStrip extends StatelessWidget {
                   child: Container(
                     key: Key('strip_tick_$m'),
                     width: 2,
-                    height: 10,
-                    color: palette.outline,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      // Passed milestones turn gold with the fill.
+                      color: m <= _current ? palette.gold : palette.dim,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
                   ),
                 ),
-              Positioned(
-                left: at(_current.clamp(1, safeTotal)) - 5,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: palette.gold,
+              if (!_finished)
+                Positioned(
+                  left: at(_current.clamp(1, safeTotal)) - 7,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: palette.gold,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         );

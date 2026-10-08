@@ -151,7 +151,17 @@ void main() {
     expect(find.textContaining('Next:'), findsNothing);
     expect(find.byType(FilledButton), findsOneWidget);
     expect(tester.getSize(find.byType(FilledButton)).height, 40);
-    expect(tester.getSize(find.byType(OutlinedButton)).height, 32);
+    // The chip is drawn 26px tall in a 40px tap row.
+    expect(tester.getSize(find.byKey(const Key('today_mode_chip'))).height, 26);
+    expect(
+        tester
+            .getSize(find
+                .ancestor(
+                    of: find.byKey(const Key('today_mode_chip')),
+                    matching: find.byType(Padding))
+                .first)
+            .height,
+        greaterThanOrEqualTo(40));
 
     await tester.tap(find.byType(FilledButton));
     expect(started, 1);

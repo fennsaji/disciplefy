@@ -42,11 +42,14 @@ class TodayLessonCard extends StatelessWidget {
     final next = summary.next;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: next != null
+          ? const EdgeInsets.fromLTRB(16, 16 - _ModeChip.slack, 16, 16)
+          : const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: palette.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: palette.hairline),
+        // A soft gold edge marks today's lesson as the one thing to do.
+        border: Border.all(color: palette.gold.withValues(alpha: 0.33)),
       ),
       child: next != null
           ? _lesson(context, palette, next)
@@ -59,7 +62,7 @@ class TodayLessonCard extends StatelessWidget {
   TextStyle? _titleStyle(BuildContext context, ReaderPalette palette) =>
       Theme.of(context).textTheme.titleMedium?.copyWith(
             fontFamily: 'Poppins',
-            fontSize: 17,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             height: 1.3,
             color: palette.text,
@@ -67,6 +70,8 @@ class TodayLessonCard extends StatelessWidget {
 
   Widget _lesson(BuildContext context, ReaderPalette palette, NextLesson next) {
     final theme = Theme.of(context);
+    // The mode chip is drawn 26px tall inside a 40px tap row: the 7px above
+    // and below it come out of the card's top padding and the next gap.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -79,8 +84,8 @@ class TodayLessonCard extends StatelessWidget {
                     TranslationKeys.homeTodayLessonEyebrow, {'n': next.number}),
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.6,
                   color: palette.gold,
                 ),
               ),
@@ -89,14 +94,14 @@ class TodayLessonCard extends StatelessWidget {
             _ModeChip(mode: mode, onChanged: onModeChanged),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 10 - _ModeChip.slack),
         Text(
           next.title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: _titleStyle(context, palette),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         SizedBox(
           width: double.infinity,
           height: 40,
@@ -110,7 +115,7 @@ class TodayLessonCard extends StatelessWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               textStyle: theme.textTheme.labelLarge
-                  ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
+                  ?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
             ),
             child: Text(
               context
@@ -185,12 +190,17 @@ String _modeLabel(BuildContext context, StudyMode mode) => context.tr(
       {'min': mode.durationMinutes},
     );
 
-/// 32px outlined chip showing the current mode; opens a Quick/Full menu.
+/// A 26px outlined chip showing the current mode, in a 40px tap area; opens
+/// a Quick/Full menu.
 class _ModeChip extends StatefulWidget {
   final StudyMode mode;
   final ValueChanged<StudyMode> onChanged;
 
   const _ModeChip({required this.mode, required this.onChanged});
+
+  /// Drawn height and the transparent tap margin above and below it.
+  static const double height = 26;
+  static const double slack = 7;
 
   @override
   State<_ModeChip> createState() => _ModeChipState();
@@ -203,14 +213,21 @@ class _ModeChipState extends State<_ModeChip> {
   Widget build(BuildContext context) {
     final mode = widget.mode;
     final palette = ReaderPalette.of(context);
+    // The design's warm grey, a shade darker on light so the label clears
+    // the 5.5:1 chip floor (6.2:1 on white; the muted grey is 5.4:1).
+    final ink = palette.isDark
+        ? palette.muted
+        : ReaderPalette.ink.withValues(alpha: 0.68);
     final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: palette.text,
+          fontWeight: FontWeight.w600,
+          color: ink,
         );
     return PopupMenuButton<StudyMode>(
       key: _menuKey,
       initialValue: mode,
+      // The chip shows its own label; no "Show menu" hover tip over it.
+      tooltip: '',
       onSelected: (selected) {
         if (selected != widget.mode) widget.onChanged(selected);
       },
@@ -223,31 +240,29 @@ class _ModeChipState extends State<_ModeChip> {
             child: Text(_modeLabel(context, m),
                 style: labelStyle?.copyWith(
                   fontSize: 14,
+                  color: palette.text,
                   fontWeight: m == mode ? FontWeight.w700 : FontWeight.w500,
                 )),
           ),
       ],
-      child: SizedBox(
-        height: 32,
-        child: OutlinedButton(
-          onPressed: () => _menuKey.currentState?.showButtonMenu(),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: palette.text,
-            side: BorderSide(color: palette.outline),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            minimumSize: const Size(0, 32),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: _ModeChip.slack),
+        child: Container(
+          key: const Key('today_mode_chip'),
+          height: _ModeChip.height,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_ModeChip.height / 2),
+            border: Border.all(color: palette.outline),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.menu_book_outlined, size: 14, color: palette.gold),
+              Icon(Icons.menu_book_outlined, size: 12, color: ink),
               const SizedBox(width: 4),
               Text(_modeLabel(context, mode), style: labelStyle),
-              const SizedBox(width: 2),
-              Icon(Icons.expand_more_rounded, size: 16, color: palette.muted),
+              const SizedBox(width: 4),
+              Icon(Icons.expand_more_rounded, size: 14, color: ink),
             ],
           ),
         ),

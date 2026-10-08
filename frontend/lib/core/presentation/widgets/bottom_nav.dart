@@ -69,11 +69,11 @@ class DisciplefyBottomNav extends StatelessWidget {
         'Navigate to Discipler. Talk with your Bible companion by voice or text.',
   );
 
-  /// Default navigation tabs for Disciplefy app
+  /// Default navigation tabs for Disciplefy app. A selected tab keeps its
+  /// outline icon, in gold on the tinted pill.
   static const List<NavTab> defaultTabs = [
     NavTab(
       icon: Icons.home_outlined,
-      activeIcon: Icons.home,
       id: 'home',
       label: 'Home',
       semanticLabel:
@@ -81,7 +81,6 @@ class DisciplefyBottomNav extends StatelessWidget {
     ),
     NavTab(
       icon: Icons.auto_awesome_outlined,
-      activeIcon: Icons.auto_awesome,
       id: 'generate',
       label: 'Generate',
       semanticLabel:
@@ -89,7 +88,6 @@ class DisciplefyBottomNav extends StatelessWidget {
     ),
     NavTab(
       icon: Icons.menu_book_outlined,
-      activeIcon: Icons.menu_book,
       id: 'topics',
       label: 'Topics',
       semanticLabel:
@@ -97,7 +95,6 @@ class DisciplefyBottomNav extends StatelessWidget {
     ),
     NavTab(
       icon: Icons.people_outline,
-      activeIcon: Icons.people,
       id: 'community',
       label: 'Community',
       semanticLabel:
