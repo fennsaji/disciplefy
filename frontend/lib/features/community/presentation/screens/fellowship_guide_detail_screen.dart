@@ -413,7 +413,7 @@ class _GuideInfoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (pathTitle.isNotEmpty) ...[
-                      CommunitySectionLabel(pathTitle, fontSize: 11),
+                      CommunitySectionLabel(pathTitle),
                       const SizedBox(height: 4),
                     ],
                     Text(

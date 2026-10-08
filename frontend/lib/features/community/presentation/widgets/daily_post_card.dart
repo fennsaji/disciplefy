@@ -138,7 +138,7 @@ class DailyPostCard extends StatelessWidget {
     final accent = dailyPostAccent(context);
     final gold = palette.gold;
     final eyebrow = _eyebrow(context);
-    final radius = BorderRadius.circular(22);
+    final radius = BorderRadius.circular(18);
     final copyText = dailyPostPlainText(post.content);
     final hasMenu = interactive && (canManage || copyText.isNotEmpty);
 
@@ -183,15 +183,15 @@ class DailyPostCard extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
+        padding: const EdgeInsets.fromLTRB(14, 14, 4, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header ─────────────────────────────────────────────────
             Row(
               children: [
-                const DisciplerAvatar(radius: 22),
-                const SizedBox(width: 12),
+                const DisciplerAvatar(radius: 18),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Wrap(
                     alignment: WrapAlignment.spaceBetween,
@@ -211,8 +211,8 @@ class DailyPostCard extends StatelessWidget {
                               Text(
                                 l10n.disciplerName,
                                 style: AppFonts.inter(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
                                   color: palette.text,
                                 ),
                               ),
@@ -238,16 +238,15 @@ class DailyPostCard extends StatelessWidget {
                   const SizedBox(width: 8),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
 
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (eyebrow != null) ...[
-                    CommunitySectionLabel(eyebrow,
-                        color: palette.goldOnTint, fontSize: 11.5),
+                    CommunitySectionLabel(eyebrow, color: palette.goldOnTint),
                     const SizedBox(height: 8),
                   ],
                   // ── Body ─────────────────────────────────────────────
@@ -290,15 +289,15 @@ class DailyStudyChip extends StatelessWidget {
     final gold = palette.gold;
     final ink = palette.goldOnTint;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: gold.withValues(alpha: palette.isDark ? 0.16 : 0.14),
-        borderRadius: BorderRadius.circular(20),
+        color: gold.withValues(alpha: palette.isDark ? 0.15 : 0.14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.menu_book_outlined, size: 14, color: ink),
+          Icon(Icons.menu_book_outlined, size: 12, color: ink),
           const SizedBox(width: 5),
           // Flexible + wrapping: in a narrow header the chip wraps its
           // label rather than overflowing or cutting it.
@@ -306,8 +305,8 @@ class DailyStudyChip extends StatelessWidget {
             child: Text(
               context.tr(TranslationKeys.communitySharedDailyStudy),
               style: AppFonts.inter(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
                 color: ink,
               ),
             ),
@@ -470,8 +469,8 @@ class _DailyLine extends StatelessWidget {
         child: Text(
           line.substring('✨'.length).trim(),
           style: AppFonts.inter(
-            fontSize: 15.5,
-            height: 1.55,
+            fontSize: 13.5,
+            height: 1.5,
             color: palette.isDark
                 ? palette.text.withValues(alpha: 0.82)
                 : palette.text.withValues(alpha: 0.78),
@@ -483,7 +482,7 @@ class _DailyLine extends StatelessWidget {
       final reference =
           line.replaceFirst('✝️', '').replaceFirst('✝', '').trim();
       return Padding(
-        padding: const EdgeInsets.only(bottom: 10, top: 2),
+        padding: const EdgeInsets.only(bottom: 3),
         child: ScriptureReferenceChip(reference: reference),
       );
     }
@@ -492,9 +491,9 @@ class _DailyLine extends StatelessWidget {
       child: Text(
         line,
         style: AppFonts.inter(
-          fontSize: 15,
+          fontSize: 13.5,
           color: palette.muted,
-          height: 1.55,
+          height: 1.5,
         ),
       ),
     );
@@ -514,34 +513,48 @@ class ScriptureReferenceChip extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     final match = ClickableScriptureText.scripturePattern.firstMatch(reference);
     final tappable = match != null;
-    final radius = BorderRadius.circular(20);
+    final radius = BorderRadius.circular(13);
+    final onTap = tappable
+        ? () =>
+            ScriptureVerseSheet.show(context, reference: match.group(0)!.trim())
+        : null;
+    // A 26px chip with a 40px tap area (7px above and below also count).
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: _chip(context, palette, radius, onTap),
+      ),
+    );
+  }
+
+  Widget _chip(BuildContext context, ReaderPalette palette, BorderRadius radius,
+      VoidCallback? onTap) {
     return Material(
       color: palette.isDark
-          ? Colors.white.withValues(alpha: 0.07)
+          ? Colors.white.withValues(alpha: 0.06)
           : palette.raised,
       borderRadius: radius,
       child: InkWell(
         borderRadius: radius,
-        onTap: tappable
-            ? () => ScriptureVerseSheet.show(context,
-                reference: match.group(0)!.trim())
-            : null,
+        onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 40),
+          constraints: const BoxConstraints(minHeight: 26),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.bookmark_border_rounded,
-                    size: 17, color: palette.accentIcon),
-                const SizedBox(width: 8),
+                    size: 12, color: palette.accentIcon),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     reference,
                     style: AppFonts.inter(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: palette.accentIcon,
                       height: 1.35,
                     ),

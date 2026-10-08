@@ -303,7 +303,7 @@ class FellowshipCommentsBodyState extends State<FellowshipCommentsBody> {
                         constraints:
                             const BoxConstraints(minWidth: 44, minHeight: 44),
                         icon: Icon(Icons.alternate_email_rounded,
-                            size: 24, color: palette.muted),
+                            size: 18, color: palette.muted),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -311,10 +311,10 @@ class FellowshipCommentsBodyState extends State<FellowshipCommentsBody> {
                           decoration: BoxDecoration(
                             color:
                                 palette.isDark ? palette.card : palette.raised,
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(color: palette.hairline),
                           ),
-                          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+                          padding: const EdgeInsets.fromLTRB(0, 2, 4, 2),
                           child: Row(
                             children: [
                               Expanded(
@@ -331,17 +331,18 @@ class FellowshipCommentsBodyState extends State<FellowshipCommentsBody> {
                                           maxLength}) =>
                                       null,
                                   style: AppFonts.inter(
-                                    fontSize: 15,
+                                    fontSize: 13.5,
                                     color: palette.text,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: context.tr(TranslationKeys
                                         .communityFellowshipCommentHint),
                                     hintStyle: AppFonts.inter(
-                                      fontSize: 15,
-                                      color: palette.dim,
+                                      fontSize: 13.5,
+                                      color: palette.muted,
                                     ),
                                     isDense: true,
+                                    filled: false,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
@@ -385,16 +386,18 @@ class _SendButton extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     return Tooltip(
       message: context.tr(TranslationKeys.communityFellowshipSend),
+      // A 34px gold disc, as in the design, inside a 40px tap target.
       child: SizedBox(
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         child: ElevatedButton(
           onPressed: submitting ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: palette.ctaFill,
-            disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.6),
-            foregroundColor: palette.ctaInk,
-            disabledForegroundColor: palette.ctaInk,
+            backgroundColor: palette.selectedFill,
+            disabledBackgroundColor:
+                palette.selectedFill.withValues(alpha: 0.6),
+            foregroundColor: palette.onSelected,
+            disabledForegroundColor: palette.onSelected,
             elevation: 0,
             padding: EdgeInsets.zero,
             shape: const CircleBorder(),
@@ -404,11 +407,11 @@ class _SendButton extends StatelessWidget {
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
-                    color: palette.ctaInk,
+                    color: palette.onSelected,
                     strokeWidth: 2,
                   ),
                 )
-              : const Icon(Icons.arrow_upward_rounded, size: 22),
+              : const Icon(Icons.arrow_upward_rounded, size: 16),
         ),
       ),
     );
@@ -471,24 +474,31 @@ class _CommentTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         isSystem
-            ? const DisciplerAvatar()
+            ? const DisciplerAvatar(radius: 15)
             : MemberAvatar(
                 displayName: comment.authorDisplayName,
                 avatarUrl: comment.authorAvatarUrl,
+                radius: 15,
               ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Container(
             padding:
-                EdgeInsetsDirectional.fromSTEB(16, 12, hasMenu ? 4 : 16, 14),
+                EdgeInsetsDirectional.fromSTEB(12, 10, hasMenu ? 0 : 12, 10),
+            // Speech bubble with its tail at the avatar (top-left).
             decoration: BoxDecoration(
-              color: palette.card,
-              borderRadius: BorderRadius.circular(20),
+              color: palette.raised,
+              borderRadius: const BorderRadiusDirectional.only(
+                topStart: Radius.circular(4),
+                topEnd: Radius.circular(16),
+                bottomStart: Radius.circular(16),
+                bottomEnd: Radius.circular(16),
+              ).resolve(Directionality.of(context)),
               border: Border.all(
                 color: isSystem
                     ? palette.gold
                         .withValues(alpha: palette.isDark ? 0.30 : 0.35)
-                    : palette.hairline,
+                    : Colors.transparent,
               ),
             ),
             child: Row(
@@ -510,7 +520,7 @@ class _CommentTile extends StatelessWidget {
                                   ? l10n.disciplerName
                                   : comment.authorDisplayName,
                               style: AppFonts.inter(
-                                fontSize: 15,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
                                 color: palette.text,
                               ),
@@ -520,7 +530,7 @@ class _CommentTile extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text.rich(
                         TextSpan(
                           children: mentionSpans(
@@ -528,12 +538,12 @@ class _CommentTile extends StatelessWidget {
                                 ? stripEmphasisMarkers(comment.content)
                                 : comment.content,
                             AppFonts.inter(
-                              fontSize: 15,
+                              fontSize: 13.5,
                               color: palette.text,
                               height: 1.5,
                             ),
                             AppFonts.inter(
-                              fontSize: 15,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w600,
                               color: palette.accentIcon,
                               height: 1.5,

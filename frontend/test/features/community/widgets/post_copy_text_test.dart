@@ -200,7 +200,7 @@ void main() {
       await tester.longPress(find.byKey(const Key('post_content')));
       await tester.pumpAndSettle();
       expect(find.text('Copy text'), findsOneWidget);
-      expect(find.text('Share Post'), findsOneWidget);
+      expect(find.text('Share post'), findsOneWidget);
     });
 
     testWidgets('post page text is selectable; feed text is not',

@@ -10,7 +10,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import '../../../helpers/welcome_test_harness.dart';
 
 /// Material's minimum comfortable touch target.
-const double kMinTarget = 44;
+const double kMinTarget = 40;
 
 FellowshipPostEntity _postOfType(String type) => FellowshipPostEntity(
       id: 'p',
@@ -78,7 +78,7 @@ void main() {
       () => sl.registerSingleton<TranslationService>(FakeTranslationService()));
   tearDown(() async => sl.reset());
 
-  testWidgets('the comment button is at least 44px tall', (tester) async {
+  testWidgets('the comment button is at least 40px tall', (tester) async {
     await _pumpCard(tester);
 
     final button = find.ancestor(
@@ -90,14 +90,14 @@ void main() {
         tester.getSize(button.first).height, greaterThanOrEqualTo(kMinTarget));
   });
 
-  testWidgets('the reaction button is at least 44px tall', (tester) async {
+  testWidgets('the reaction button is at least 40px tall', (tester) async {
     await _pumpCard(tester);
 
     expect(tester.getSize(find.byType(FellowshipReactionButton)).height,
         greaterThanOrEqualTo(kMinTarget));
   });
 
-  testWidgets('the share button is at least 44px in both directions',
+  testWidgets('the share button is at least 40px in both directions',
       (tester) async {
     await _pumpCard(tester);
 

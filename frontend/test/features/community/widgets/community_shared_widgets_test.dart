@@ -420,4 +420,37 @@ void main() {
     expect(pressed, 0);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
+
+  testWidgets('card pills are 32px with a 40px tap area; large pills are 40px',
+      (tester) async {
+    var pressed = 0;
+    await pump(
+      tester,
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CommunityCtaPill(
+            key: const Key('small'), label: 'Join', onPressed: () => pressed++),
+        CommunityCtaPill(
+            key: const Key('large'),
+            large: true,
+            label: 'Join a fellowship',
+            onPressed: () {}),
+        CommunityRaisedPill(
+            key: const Key('chip'), label: 'Hindi', onPressed: () {}),
+      ]),
+    );
+    final small = find.byKey(const Key('small'));
+    expect(tester.getSize(small).height, 40);
+    expect(
+        tester
+            .getSize(
+                find.descendant(of: small, matching: find.byType(Material)))
+            .height,
+        32);
+    expect(tester.getSize(find.byKey(const Key('large'))).height, 40);
+    expect(tester.getSize(find.byKey(const Key('chip'))).height, 40);
+    // The 4px above the visible pill still presses it.
+    final top = tester.getTopLeft(small);
+    await tester.tapAt(top + const Offset(20, 1));
+    expect(pressed, 1);
+  });
 }

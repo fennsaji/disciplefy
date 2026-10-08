@@ -615,7 +615,7 @@ class _FellowshipHomeContent extends StatelessWidget {
               // Studying together
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                   child: _StudyingTogetherCard(
                     isMentor: isMentor,
                     onLessonTap: () => _openLessons(context),
@@ -671,7 +671,7 @@ class _HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 36, 20, 0),
       // isMentor as well as members: the invite button below depends on it,
       // and it is re-derived from the roster after load — so on a deep link,
       // where the navigation extra is absent and the seed is false, the
@@ -731,13 +731,13 @@ class _HeroHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CommunitySectionLabel(meta),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Semantics(
                 header: true,
                 child: Text(
                   title,
                   style: AppFonts.poppins(
-                    fontSize: 32,
+                    fontSize: 30,
                     fontWeight: FontWeight.w700,
                     color: palette.text,
                     height: 1.2,
@@ -747,12 +747,12 @@ class _HeroHeader extends StatelessWidget {
               if (showContactPrompt ||
                   mentorsWithContact.isNotEmpty ||
                   canInvite) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 // Wrap, not Row: these labels are far longer in Hindi and
                 // Malayalam, and a Row has no way to give way. Wrapping puts
                 // the next pill on its own line instead; each pill's label
                 // wraps too when it is wider than the screen.
-                Wrap(spacing: 10, runSpacing: 10, children: [
+                Wrap(spacing: 8, children: [
                   if (showContactPrompt)
                     CommunityRaisedPill(
                       icon: Icons.alternate_email_rounded,
@@ -883,7 +883,7 @@ class _StudyingTogetherCard extends StatelessWidget {
                       l10n.fellowshipViewLessons,
                       textAlign: TextAlign.end,
                       style: AppFonts.inter(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: palette.accentIcon,
                       ),
@@ -891,11 +891,11 @@ class _StudyingTogetherCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 heading,
                 style: AppFonts.poppins(
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: palette.text,
                   height: 1.35,
@@ -926,17 +926,17 @@ class _StudyingTogetherCard extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       if (progress.fraction != null) ...[
                         CommunityProgressBar(value: progress.fraction!),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                       ],
                       Text(
                         detail != null
                             ? '$groupProgress · $detail'
                             : groupProgress,
                         style: AppFonts.inter(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: palette.muted,
                         ),
                       ),
@@ -972,7 +972,7 @@ class _FeedPreviewSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1772,10 +1772,10 @@ class _MeetingsSectionTile extends StatelessWidget {
         // because it is where they schedule the first meeting.
         if (next == null && !isMentor) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
           child: FellowshipCardShell(
             onTap: onViewAll,
-            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            padding: const EdgeInsets.all(14),
             child: _meetingRow(context, next, l10n, palette, materialL10n),
           ),
         );
@@ -1807,19 +1807,19 @@ class _MeetingsSectionTile extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 48,
-          height: 48,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: palette.gold.withValues(alpha: palette.isDark ? 0.24 : 0.10),
-            borderRadius: BorderRadius.circular(14),
+            color: palette.gold.withValues(alpha: palette.isDark ? 0.20 : 0.10),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             Icons.videocam_outlined,
             color: palette.accentIcon,
-            size: 24,
+            size: 17,
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1827,7 +1827,7 @@ class _MeetingsSectionTile extends StatelessWidget {
               Text(
                 title,
                 style: AppFonts.inter(
-                  fontSize: 16,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                   color: palette.text,
                   height: 1.3,
@@ -1838,7 +1838,7 @@ class _MeetingsSectionTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12,
                     color: palette.muted,
                     height: 1.35,
                   ),
@@ -1848,7 +1848,7 @@ class _MeetingsSectionTile extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Icon(Icons.chevron_right_rounded, size: 24, color: palette.dim),
+        Icon(Icons.chevron_right_rounded, size: 18, color: palette.dim),
       ],
     );
   }
@@ -1940,6 +1940,7 @@ class _NotAMemberCardState extends State<_NotAMemberCard> {
             ],
             const SizedBox(height: 16),
             CommunityCtaPill(
+              tall: true,
               label: context.tr(TranslationKeys.fellowshipJoinAction),
               loading: _joining,
               onPressed: _join,

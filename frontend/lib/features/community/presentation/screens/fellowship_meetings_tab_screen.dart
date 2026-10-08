@@ -286,13 +286,13 @@ class _MeetingCard extends StatelessWidget {
         Text(
           meeting.title,
           style: AppFonts.inter(
-            fontSize: 16.5,
+            fontSize: 14.5,
             fontWeight: FontWeight.w600,
             color: palette.text,
             height: 1.3,
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 4),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -302,18 +302,18 @@ class _MeetingCard extends StatelessWidget {
                 meeting.isInPerson
                     ? Icons.place_outlined
                     : Icons.videocam_outlined,
-                size: 16,
+                size: 13,
                 color: palette.muted,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Flexible(
               child: Text(
                 [_timeRange(context), _place(context)]
                     .where((s) => s.isNotEmpty)
                     .join(' · '),
                 style: AppFonts.inter(
-                  fontSize: 14,
+                  fontSize: 12,
                   color: palette.muted,
                   height: 1.35,
                 ),
@@ -328,7 +328,7 @@ class _MeetingCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.inter(
-              fontSize: 13,
+              fontSize: 12,
               color: palette.dim,
               height: 1.4,
             ),
@@ -357,7 +357,7 @@ class _MeetingCard extends StatelessWidget {
     );
 
     return CommunityFormCard(
-      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      padding: const EdgeInsets.all(14),
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Beside the details when there is room; under them on narrow
@@ -448,11 +448,11 @@ class _DateTile extends StatelessWidget {
             .format(start!)
             .toUpperCase();
     return Container(
-      width: 56,
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      width: 52,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: palette.raised,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -473,7 +473,7 @@ class _DateTile extends StatelessWidget {
           Text(
             start == null ? '–' : '${start!.day}',
             style: AppFonts.poppins(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
               color: palette.text,
               height: 1.2,

@@ -203,7 +203,7 @@ void main() {
           'Prayer',
           'Praise',
           'Question',
-          'Study Note',
+          'Study note',
         ]) {
           expect(
               find.descendant(
@@ -211,7 +211,7 @@ void main() {
               findsOneWidget,
               reason: 'chip "$label"');
         }
-        expect(find.text('Shared Guide'), findsNothing);
+        expect(find.text('Shared guide'), findsNothing);
 
         expect(find.text('I prayed 4'), findsOneWidget);
         expect(find.text('Praise 9'), findsOneWidget);

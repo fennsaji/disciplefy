@@ -772,7 +772,7 @@ class _RoleBadge extends StatelessWidget {
       child: Text(
         isOwner ? l10n.ownerLabel : l10n.mentorLabel,
         style: AppFonts.inter(
-          fontSize: 11.5,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
           color: palette.goldOnTint,
           height: 1.4,

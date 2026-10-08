@@ -168,7 +168,11 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
     // Same rule as the replies button: the label always shows, with the count
     // appended, so a bare number never stands in for the action.
     final label = total > 0 ? '$name $total' : name;
-    final ink = isActive ? widget.accentColor : palette.text;
+    // Not yet reacted: muted on dark, as in the design; on light the muted
+    // tone misses the 5.5:1 label floor on the raised fill, so it stays text.
+    final ink = isActive
+        ? widget.accentColor
+        : (palette.isDark ? palette.muted : palette.text);
     final compact = widget.compact;
     final visible = compact ? (total > 0 ? '$total' : null) : label;
     return Tooltip(
@@ -181,48 +185,52 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
         child: GestureDetector(
           onTap: _onTap,
           onLongPressStart: (d) => _showPicker(d.globalPosition),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            // Matches the replies button's 44px minimum touch target. No
-            // alignment: the pill hugs its content, and the row below centres
-            // it vertically within the 44px.
-            constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
-            padding:
-                EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? widget.accentColor.withAlpha(palette.isDark ? 36 : 26)
-                  : (palette.isDark
-                      ? Colors.white.withValues(alpha: 0.07)
-                      : palette.raised),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: isActive
-                    ? widget.accentColor.withAlpha(110)
-                    : Colors.transparent,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(display.icon, size: 18, color: ink),
-                if (visible != null) ...[
-                  SizedBox(width: compact ? 4 : 6),
-                  // Wraps rather than truncating when the footer caps the pill's
-                  // width (long Hindi/Malayalam labels on narrow screens).
-                  Flexible(
-                    child: Text(
-                      visible,
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: ink,
-                      ),
-                    ),
+          behavior: HitTestBehavior.opaque,
+          // A 30px pill, as in the design, inside a 40px touch target.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 40, minWidth: 40),
+            child: Center(
+              widthFactor: 1,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                constraints: const BoxConstraints(minHeight: 30, minWidth: 40),
+                padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 8 : 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? widget.accentColor.withAlpha(palette.isDark ? 36 : 26)
+                      : palette.raised,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: isActive
+                        ? widget.accentColor.withAlpha(110)
+                        : Colors.transparent,
                   ),
-                ],
-              ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(display.icon, size: 14, color: ink),
+                    if (visible != null) ...[
+                      SizedBox(width: compact ? 4 : 5),
+                      // Wraps rather than truncating when the footer caps the
+                      // pill's width (long Hindi/Malayalam labels on narrow
+                      // screens).
+                      Flexible(
+                        child: Text(
+                          visible,
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: ink,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

@@ -935,7 +935,6 @@ class _LessonsSummaryCard extends StatelessWidget {
                 child: CommunitySectionLabel(
                   context
                       .tr(TranslationKeys.communityFellowshipStudyingTogether),
-                  fontSize: 10.5,
                 ),
               ),
               if (!allDone) ...[
@@ -1651,7 +1650,6 @@ class _LessonTag extends StatelessWidget {
   final IconData? icon;
   final Color fill;
   final Color ink;
-  final double fontSize;
   final FontWeight fontWeight;
 
   const _LessonTag({
@@ -1659,7 +1657,6 @@ class _LessonTag extends StatelessWidget {
     required this.fill,
     required this.ink,
     this.icon,
-    this.fontSize = 11.5,
     this.fontWeight = FontWeight.w600,
   });
 
@@ -1669,7 +1666,6 @@ class _LessonTag extends StatelessWidget {
         icon: Icons.play_arrow_outlined,
         fill: ReaderPalette.of(context).selectedFill,
         ink: ReaderPalette.of(context).onSelected,
-        fontSize: 11,
         fontWeight: FontWeight.w700,
       );
 
@@ -1716,7 +1712,7 @@ class _LessonTag extends StatelessWidget {
             child: Text(
               label,
               style: AppFonts.inter(
-                fontSize: fontSize,
+                fontSize: 12,
                 fontWeight: fontWeight,
                 color: ink,
               ),
@@ -1827,6 +1823,7 @@ class _AdvanceGuideButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: CommunityCtaPill(
+        tall: true,
         icon: Icons.skip_next_rounded,
         label: label,
         loading: isLoading,
@@ -1862,6 +1859,7 @@ class _AssignPathButton extends StatelessWidget {
     if (!hasStudy) {
       return Center(
         child: CommunityCtaPill(
+          tall: true,
           icon: Icons.add_circle_outline_rounded,
           label: l10n.lessonsAssignPath,
           loading: isLoading,
@@ -2028,7 +2026,6 @@ class _MemberProgressSection extends StatelessWidget {
                         flex: 3,
                         child: CommunitySectionLabel(
                           l10n.lessonsMemberProgress,
-                          fontSize: 11,
                         ),
                       ),
                       if (!isLoading && guideIndex != null) ...[
@@ -2146,7 +2143,7 @@ class _MemberProgressRow extends StatelessWidget {
                               child: Text(
                                 l10n.mentorLabel,
                                 style: AppFonts.inter(
-                                  fontSize: 11.5,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                   color: palette.gold,
                                 ),

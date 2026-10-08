@@ -540,7 +540,7 @@ void main() {
       // Joel's menu (the last member card).
       await tester.tap(find.byIcon(Icons.more_vert).last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Remove Member').last);
+      await tester.tap(find.text('Remove member').last);
       await tester.pumpAndSettle();
       expect(find.byType(Dialog), findsOneWidget);
       await tester.tap(find.text('Remove').last);
@@ -691,7 +691,7 @@ void main() {
       expect(find.text('New Believer Essentials · Lesson 1'), findsOneWidget);
       expect(find.text('Group progress · 0 of 8 done'), findsOneWidget);
       expect(find.text('Next: Sunday Bible Study'), findsOneWidget);
-      expect(find.text('Recent Activity'), findsOneWidget);
+      expect(find.text('Recent activity'), findsOneWidget);
       expect(find.text('Start study'), findsOneWidget);
     });
 
@@ -758,7 +758,7 @@ void main() {
       ));
       await _pump(tester, home,
           size: const Size(390, 2400), provideBlocs: false);
-      expect(find.text('New Post'), findsOneWidget);
+      expect(find.text('New post'), findsOneWidget);
       expect(find.text('Post something'), findsNothing);
     });
 
@@ -767,8 +767,8 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsOneWidget);
-      expect(find.text('Delete Fellowship'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsOneWidget);
+      expect(find.text('Delete fellowship'), findsOneWidget);
       expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
     });
 
@@ -777,7 +777,7 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete Fellowship'));
+      await tester.tap(find.text('Delete fellowship'));
       await tester.pumpAndSettle();
       expect(find.byType(Dialog), findsOneWidget);
       await tester.tap(find.byType(FilledButton).last);
@@ -819,8 +819,8 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsOneWidget);
-      expect(find.text('Delete Fellowship'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsOneWidget);
+      expect(find.text('Delete fellowship'), findsOneWidget);
       verify(() =>
               _study.add(const FellowshipStudyRoleResolved(isMentor: true)))
           .called(1);
@@ -862,7 +862,7 @@ void main() {
       expect(find.text('Loaded Group'), findsWidgets);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsOneWidget);
       expect(find.text('Daily post'), findsOneWidget);
       expect(find.text('Discipler activity'), findsOneWidget);
       verify(() => repo.getFellowships(any())).called(1);
@@ -874,9 +874,9 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsNothing);
-      expect(find.text('Delete Fellowship'), findsNothing);
-      expect(find.text('Leave Fellowship'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsNothing);
+      expect(find.text('Delete fellowship'), findsNothing);
+      expect(find.text('Leave fellowship'), findsOneWidget);
       verifyNever(
           () => _study.add(any(that: isA<FellowshipStudyRoleResolved>())));
     });
@@ -985,7 +985,7 @@ void main() {
         size: const Size(390, 800),
       );
       await tester.enterText(find.byType(TextFormField), 'bad');
-      await tester.tap(find.text('Submit Report'));
+      await tester.tap(find.text('Submit report'));
       await tester.pump();
       expect(find.text('Please write at least 5 characters.'), findsOneWidget);
       verifyNever(() => _feed.add(any()));

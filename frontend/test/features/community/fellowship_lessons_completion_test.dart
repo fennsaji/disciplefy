@@ -182,7 +182,7 @@ void main() {
       expect(
           find.descendant(
               of: find.byType(AlertDialog),
-              matching: find.text('Choose Next Path')),
+              matching: find.text('Choose next path')),
           findsOneWidget);
     });
 

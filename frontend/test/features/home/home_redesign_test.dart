@@ -1165,7 +1165,7 @@ void main() {
           find.descendant(
               of: find.byWidgetPredicate(
                   (w) => w is PostTypeChip && w.postType == 'study_note'),
-              matching: find.text('Study Note')),
+              matching: find.text('Study note')),
           findsOneWidget);
       expect(
           find.descendant(

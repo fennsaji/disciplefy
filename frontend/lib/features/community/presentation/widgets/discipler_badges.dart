@@ -129,7 +129,7 @@ class DisciplerFooterNote extends StatelessWidget {
               AppLocalizations.of(context)!.disciplerFooter,
               style: TextStyle(
                 fontFamily: 'Inter',
-                fontSize: 10,
+                fontSize: 12,
                 color: context.appTextTertiary,
               ),
             ),

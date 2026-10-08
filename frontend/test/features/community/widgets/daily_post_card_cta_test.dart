@@ -40,13 +40,13 @@ void main() {
     await tester.pumpWidget(_wrap(
       const StudyGuideChip(
         title: 'Who is Jesus Christ?',
-        actionLabel: 'Open Study Guide',
+        actionLabel: 'Open study guide',
         accent: gold,
       ),
     ));
 
     final title = find.text('Who is Jesus Christ?');
-    final label = find.text('Open Study Guide');
+    final label = find.text('Open study guide');
     expect(title, findsOneWidget);
     expect(label, findsOneWidget);
     expect(tester.getTopLeft(title).dy, lessThan(tester.getTopLeft(label).dy),

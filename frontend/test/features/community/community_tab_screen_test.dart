@@ -305,6 +305,16 @@ void main() {
     expect(visited, ['/community/join']);
   });
 
+  testWidgets('the floating Join a fellowship pill opens Join', (tester) async {
+    useSurface(tester, const Size(390, 900));
+    await pump(tester);
+
+    expect(find.text('Join a fellowship'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('community_join_fab')));
+    await tester.pumpAndSettle();
+    expect(visited, ['/community/join']);
+  });
+
   testWidgets('create is locked for a free member and opens no screen',
       (tester) async {
     when(() => listBloc.state).thenReturn(FellowshipListState(
@@ -355,7 +365,7 @@ void main() {
     useSurface(tester, const Size(390, 900));
     await pump(tester);
 
-    await tester.tap(find.byTooltip('Create Fellowship'));
+    await tester.tap(find.byTooltip('Create fellowship'));
     await tester.pumpAndSettle();
     expect(visited, ['/community/create']);
   });
@@ -405,12 +415,12 @@ void main() {
     useSurface(tester, const Size(320, 1000));
     await pump(tester);
 
-    expect(find.text('Explore Public Fellowships'), findsOneWidget);
-    expect(find.text('Create Fellowship'), findsOneWidget,
+    expect(find.text('Explore public fellowships'), findsOneWidget);
+    expect(find.text('Create fellowship'), findsOneWidget,
         reason: 'admins can create');
     expectNoTruncatedText(tester);
 
-    await tester.tap(find.text('Explore Public Fellowships'));
+    await tester.tap(find.text('Explore public fellowships'));
     await tester.pumpAndSettle();
     expect(find.text('HI'), findsOneWidget, reason: 'switched to Discover');
   });

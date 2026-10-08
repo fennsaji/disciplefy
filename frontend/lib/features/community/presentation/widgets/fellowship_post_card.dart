@@ -230,7 +230,7 @@ class FellowshipPostCard extends StatelessWidget {
     AppLocalizations l10n,
     GlobalKey<PopupMenuButtonState<String>> menuKey,
   ) {
-    final radius = BorderRadius.circular(22);
+    final radius = BorderRadius.circular(18);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: palette.card,
@@ -254,7 +254,7 @@ class FellowshipPostCard extends StatelessWidget {
         border: Border.all(color: palette.hairline),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 16, interactive ? 8 : 20, 12),
+        padding: EdgeInsets.fromLTRB(14, 14, interactive ? 4 : 14, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -262,13 +262,13 @@ class FellowshipPostCard extends StatelessWidget {
             Row(
               children: [
                 isSystem
-                    ? const DisciplerAvatar(radius: 18)
+                    ? const DisciplerAvatar(radius: 17)
                     : MemberAvatar(
                         displayName: post.authorDisplayName,
                         avatarUrl: post.authorAvatarUrl,
-                        radius: 18,
+                        radius: 17,
                       ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 // Wrap: the type chip sits at the right when it fits beside
                 // the name, and drops under it on narrow screens / long
                 // hi-ml labels instead of squeezing the name away.
@@ -292,7 +292,7 @@ class FellowshipPostCard extends StatelessWidget {
                                       ? l10n.disciplerName
                                       : post.authorDisplayName,
                                   style: AppFonts.inter(
-                                    fontSize: 15.5,
+                                    fontSize: 13.5,
                                     fontWeight: FontWeight.w600,
                                     color: palette.text,
                                   ),
@@ -331,12 +331,12 @@ class FellowshipPostCard extends StatelessWidget {
                   const SizedBox(width: 0),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // ── Content ────────────────────────────────────────────────────
             if (post.content.isNotEmpty)
               Padding(
-                padding: EdgeInsets.only(right: interactive ? 12 : 0),
+                padding: EdgeInsets.only(right: interactive ? 10 : 0),
                 child: FellowshipPostContent(
                   content: post.content,
                   maxLines: maxContentLines,
@@ -381,7 +381,7 @@ class FellowshipPostCard extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             // ── Footer ─────────────────────────────────────────────────────
             Padding(
@@ -435,12 +435,12 @@ class FellowshipPostContent extends StatelessWidget {
     final span = TextSpan(
       children: mentionSpans(
         content,
-        AppFonts.inter(fontSize: 15.5, color: palette.text, height: 1.55),
+        AppFonts.inter(fontSize: 14, color: palette.text, height: 1.5),
         AppFonts.inter(
-          fontSize: 15.5,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
           color: palette.accentIcon,
-          height: 1.55,
+          height: 1.5,
         ),
       ),
     );
@@ -646,7 +646,7 @@ class PostTimestamp extends StatelessWidget {
     return Text(
       formatPostTimestamp(context, createdAt, now: now),
       style: AppFonts.inter(
-        fontSize: 13,
+        fontSize: 12,
         color: ReaderPalette.of(context).muted,
       ),
     );
@@ -754,23 +754,23 @@ class PostTypeChip extends StatelessWidget {
     final ink = palette.onTint(color, alpha: tintAlpha);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: tintAlpha),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(11),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(cfg.icon, size: 14, color: ink),
-          const SizedBox(width: 5),
+          Icon(cfg.icon, size: 12, color: ink),
+          const SizedBox(width: 4),
           // Flexible + wrapping: in a narrow header the chip wraps its
           // label rather than overflowing or cutting it.
           Flexible(
             child: Text(
               cfg.label,
               style: AppFonts.inter(
-                fontSize: 12.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: ink,
               ),
@@ -1127,7 +1127,7 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
                       child: Text(
                         meta,
                         style: AppFonts.inter(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.2,
                           color: accent,
@@ -1251,8 +1251,7 @@ class FellowshipPostFooter extends StatelessWidget {
       final compactReplies = leading != null && rowWidth < compactRepliesBelow;
       final repliesLabel = postRepliesLabel(context, post.commentCount);
       final replyTextStyle = AppFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
+        fontSize: 12.5,
         color: palette.muted,
       );
       final replies = Tooltip(
@@ -1266,10 +1265,10 @@ class FellowshipPostFooter extends StatelessWidget {
             onTap: onCommentTap,
             borderRadius: BorderRadius.circular(22),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+              constraints: const BoxConstraints(minHeight: 40, minWidth: 40),
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: compactReplies ? 8 : 10,
+                  horizontal: compactReplies ? 6 : 8,
                   vertical: 8,
                 ),
                 child: Row(
@@ -1278,11 +1277,11 @@ class FellowshipPostFooter extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.chat_bubble_outline_rounded,
-                      size: 20,
+                      size: 15,
                       color: palette.muted,
                     ),
                     if (!compactReplies) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Flexible(
                           child: Text(repliesLabel, style: replyTextStyle)),
                     ] else if (post.commentCount > 0) ...[
@@ -1300,9 +1299,9 @@ class FellowshipPostFooter extends StatelessWidget {
       final share = IconButton(
         onPressed: onShareTap,
         tooltip: AppLocalizations.of(context)!.sharePost,
-        icon: Icon(Icons.share_outlined, size: 20, color: palette.muted),
+        icon: Icon(Icons.share_outlined, size: 15, color: palette.muted),
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       );
       final reaction = ConstrainedBox(
         // Capped so a long translated label wraps inside the pill instead

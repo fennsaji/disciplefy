@@ -192,7 +192,7 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
                   onChanged: (i) => setState(() => _selectedTab = i),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // ── Body ─────────────────────────────────────────────────────
               Expanded(
@@ -234,7 +234,7 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
                 totalSteps: 2,
                 onNext: _onNext,
                 child: CommunityIconAction(
-                  icon: Icons.vpn_key_outlined,
+                  icon: Icons.key_outlined,
                   tooltip:
                       context.tr(TranslationKeys.communitySharedJoinWithCode),
                   onPressed: _onJoinPressed,
@@ -359,7 +359,10 @@ class _MyFellowshipsTab extends StatelessWidget {
                   canCreate: _canCreateFellowship(context, state),
                 );
               }
-              return _FellowshipList(fellowships: state.fellowships);
+              return _FellowshipList(
+                fellowships: state.fellowships,
+                onJoinPressed: onJoinPressed,
+              );
           }
         },
       ),
@@ -369,12 +372,38 @@ class _MyFellowshipsTab extends StatelessWidget {
 
 class _FellowshipList extends StatelessWidget {
   final List<FellowshipEntity> fellowships;
+  final Future<void> Function() onJoinPressed;
 
-  const _FellowshipList({required this.fellowships});
+  const _FellowshipList({
+    required this.fellowships,
+    required this.onJoinPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     final currentUserId = _currentUserId(context);
+    // "Join a fellowship" floats above the dock, as in the design; the key
+    // icon in the header stays as the second way in.
+    return Stack(
+      children: [
+        Positioned.fill(child: _list(context, currentUserId)),
+        PositionedDirectional(
+          end: 20,
+          // The shell reports the dock as bottom padding.
+          bottom: 24 + MediaQuery.paddingOf(context).bottom,
+          child: CommunityCtaPill(
+            key: const Key('community_join_fab'),
+            large: true,
+            icon: Icons.key_outlined,
+            label: context.tr(TranslationKeys.communitySharedJoinFellowship),
+            onPressed: onJoinPressed,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _list(BuildContext context, String? currentUserId) {
     return RefreshIndicator(
       color: ReaderPalette.of(context).accentIcon,
       onRefresh: () async => context
@@ -382,15 +411,14 @@ class _FellowshipList extends StatelessWidget {
           .add(const FellowshipListLoadRequested()),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        // 110 clears the floating dock the page runs under, plus the
-        // bottom inset.
+        // Clears the dock (the bottom padding) and the join pill above it.
         padding: EdgeInsets.fromLTRB(
-            16, 0, 16, 110 + MediaQuery.paddingOf(context).bottom),
+            16, 0, 16, 80 + MediaQuery.paddingOf(context).bottom),
         itemCount: fellowships.length,
         itemBuilder: (context, index) {
           final fellowship = fellowships[index];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.only(bottom: 12),
             child: MyFellowshipCard(
               fellowship: fellowship,
               currentUserId: currentUserId,
@@ -440,7 +468,7 @@ class MyFellowshipCard extends StatelessWidget {
             memberCount: fellowship.memberCount,
           ),
           if (fellowship.currentStudy != null) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             FellowshipCurrentStudyRow(study: fellowship.currentStudy!),
           ],
         ],
@@ -532,18 +560,21 @@ class _DiscoverTabState extends State<_DiscoverTab> {
           children: [
             // Search bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
-                style: AppFonts.inter(fontSize: 16, color: palette.text),
+                style: AppFonts.inter(fontSize: 14, color: palette.text),
                 decoration: InputDecoration(
+                  isDense: true,
                   hintText:
                       context.tr(TranslationKeys.communitySharedSearchHint),
-                  hintStyle: AppFonts.inter(fontSize: 16, color: palette.muted),
+                  hintStyle: AppFonts.inter(fontSize: 14, color: palette.muted),
                   hintMaxLines: 2,
-                  prefixIcon: Icon(Icons.search_rounded,
-                      size: 22, color: palette.muted),
+                  prefixIcon:
+                      Icon(Icons.search_rounded, size: 16, color: palette.dim),
+                  prefixIconConstraints:
+                      const BoxConstraints(minWidth: 40, minHeight: 40),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
                           tooltip: MaterialLocalizations.of(context)
@@ -558,18 +589,17 @@ class _DiscoverTabState extends State<_DiscoverTab> {
                       : null,
                   filled: true,
                   fillColor: palette.card,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 11),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide(color: palette.hairline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide(color: palette.hairline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide(color: palette.accentIcon),
                   ),
                 ),
@@ -584,7 +614,7 @@ class _DiscoverTabState extends State<_DiscoverTab> {
                     ),
                   ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Expanded(child: _DiscoverBody(state: state)),
           ],
         );
@@ -881,7 +911,7 @@ class _DiscoverBodyState extends State<_DiscoverBody> {
               }
               final f = state.fellowships[index];
               return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: DiscoverFellowshipCard(
                   fellowship: f,
                   isJoining: state.joiningIds.contains(f.id),
@@ -975,12 +1005,13 @@ class DiscoverFellowshipCard extends StatelessWidget {
     final description = fellowship.description?.trim();
     final study = fellowship.currentStudyTitle?.trim();
     final muted =
-        AppFonts.inter(fontSize: 14, color: palette.muted, height: 1.4);
+        AppFonts.inter(fontSize: 12.5, color: palette.muted, height: 1.4);
 
     final mentorRow = FellowshipMentorRow(
       leading: FellowshipLanguageChip(language: fellowship.language),
       mentor: FellowshipMentorInfo.forPublicFellowship(fellowship),
       memberCount: fellowship.memberCount,
+      avatarRadius: 11,
     );
     final action = _JoinButton(
       isFull: isFull,
@@ -1003,9 +1034,9 @@ class DiscoverFellowshipCard extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(
-                fontSize: 15,
+                fontSize: 13,
                 color: palette.muted,
-                height: 1.5,
+                height: 1.45,
               ),
             ),
           ],
@@ -1038,7 +1069,7 @@ class DiscoverFellowshipCard extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, box) {
               // Narrow cards: the action drops under the mentor line so
@@ -1092,17 +1123,17 @@ class _JoinButton extends StatelessWidget {
 
     if (isFull) {
       return Container(
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: 32),
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: palette.outline),
         ),
         child: Text(
           l10n.discoverFull,
           style: AppFonts.inter(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: palette.muted,
           ),

@@ -290,7 +290,7 @@ void main() {
     await _pump(tester, size: const Size(320, 2400));
     _expectClean(tester);
     expect(find.text(l10n.lessonsCompleted), findsNothing);
-    expect(find.text('Finish Path'), findsNothing);
+    expect(find.text('Finish path'), findsNothing);
     expect(find.text('Group progress · 0 of 3 done'), findsOneWidget);
     // The card shows (and opens) the group's lesson, named once.
     expect(find.text('Lesson 1 of 3'), findsOneWidget);
@@ -336,7 +336,7 @@ void main() {
     expect(find.text('Finished all 8 lessons together'), findsOneWidget);
     expect(find.text('Group progress · 8 of 8 done'), findsOneWidget);
     expect(find.text(l10n.lessonsChooseNextPath), findsOneWidget);
-    expect(find.text('Finish Path'), findsNothing);
+    expect(find.text('Finish path'), findsNothing);
   });
 
   testWidgets('on the last lesson the path is not yet done', (tester) async {
@@ -519,7 +519,7 @@ void main() {
       expect(find.text('1 / 8'), findsOneWidget);
       expect(find.text('0 / 8'), findsOneWidget);
       // Duplicated pieces are gone.
-      expect(find.text('Fellowship Progress'), findsNothing);
+      expect(find.text('Fellowship progress'), findsNothing);
       expect(find.textContaining('Current lesson'), findsNothing);
       // Mentors still see and can open the whole lesson path.
       expect(find.text('Who is Jesus Christ?'), findsOneWidget);
@@ -577,7 +577,7 @@ void main() {
       when(() => _study.state).thenReturn(
           _studyState.copyWith(isMentor: true, currentGuideIndex: 7));
       await _pump(tester, size: const Size(320, 2400));
-      expect(find.text('Finish Path'), findsOneWidget);
+      expect(find.text('Finish path'), findsOneWidget);
       expect(find.textContaining('Moves everyone'), findsNothing);
     });
   });
