@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,7 @@ import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/s
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/pages/my_plan_page.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/pages/pricing_page.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/pages/subscription_management_page.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/pricing_card.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/promo_code_input.dart';
 import 'package:disciplefy_bible_study/features/tokens/data/datasources/token_remote_data_source.dart';
@@ -153,6 +155,21 @@ TokenStatus _status({UserPlan plan = UserPlan.standard}) => TokenStatus(
       unlimitedUsage: plan == UserPlan.premium,
       canPurchaseTokens: plan != UserPlan.premium,
       planDescription: '',
+    );
+
+Subscription _trialSubscription() => Subscription(
+      id: 's1',
+      userId: 'u1',
+      razorpaySubscriptionId: 'sub_1',
+      status: SubscriptionStatus.trial,
+      planType: 'standard_monthly',
+      amountPaise: 0,
+      currency: 'INR',
+      currentPeriodEnd: DateTime(2027, 3, 31),
+      paidCount: 0,
+      cancelAtCycleEnd: false,
+      createdAt: DateTime(2026, 8, 29),
+      updatedAt: DateTime(2026, 9, 29),
     );
 
 Subscription _subscription() => Subscription(
@@ -785,7 +802,7 @@ void main() {
         ),
       )));
       expect(find.text('PURCHASE SUMMARY'), findsOneWidget);
-      expect(find.text('Average per Credit'), findsOneWidget);
+      expect(find.text('Average per credit'), findsOneWidget);
       expect(find.text('₹0.41'), findsOneWidget);
       expect(find.text('Aug 2, 2026'), findsOneWidget);
       expect(find.text('Last Purchase'), findsOneWidget);
@@ -812,10 +829,10 @@ void main() {
       expect(find.text('75'), findsOneWidget);
       expect(find.text('Purchased · 25%'), findsOneWidget);
       expect(find.text('Feature'), findsOneWidget);
-      expect(find.text('Study Generation'), findsOneWidget);
+      expect(find.text('Lessons'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
-      expect(find.text('Study Mode'), findsOneWidget);
-      expect(find.text('Last Usage'), findsOneWidget);
+      expect(find.text('Study mode'), findsOneWidget);
+      expect(find.text('Last used'), findsOneWidget);
       expect(find.text('Sep 28, 2026'), findsOneWidget);
     });
 
@@ -921,6 +938,126 @@ void main() {
         expect(tester.takeException(), isNull);
         expectNoTruncatedText(tester);
       });
+    }
+  });
+
+  // Plan names keep their full width next to a status pill or a trailing
+  // link, and stat labels never break a word letter by letter.
+  group('plan names and stat labels fit at 320/360/390', () {
+    setUpAll(() async {
+      Hive.init(Directory.systemTemp.createTempSync().path);
+      await loadAppFonts();
+    });
+
+    // Every laid-out word under [scope] fits its paragraph's width.
+    void expectWholeWords(WidgetTester tester, Finder scope) {
+      final paragraphs = tester
+          .renderObjectList<RenderParagraph>(
+              find.descendant(of: scope, matching: find.byType(RichText)))
+          .toList();
+      expect(paragraphs, isNotEmpty);
+      for (final p in paragraphs) {
+        final text = p.text.toPlainText();
+        for (final word in text.split(RegExp(r'\s+'))) {
+          if (word.isEmpty) continue;
+          final tp = TextPainter(
+            text: TextSpan(text: word, style: p.text.style),
+            textDirection: TextDirection.ltr,
+            textScaler: p.textScaler,
+          )..layout();
+          expect(tp.width, lessThanOrEqualTo(p.size.width + 0.5),
+              reason: '"$word" in "$text" breaks mid-word');
+          tp.dispose();
+        }
+      }
+    }
+
+    for (final width in [320.0, 360.0, 390.0]) {
+      for (final language in AppLanguage.values) {
+        final tag = '${width.toInt()} ${language.code}';
+
+        testWidgets('credits $tag: plan row name and tiles whole',
+            (tester) async {
+          translations.language = language;
+          when(() => subscriptionBloc.state).thenReturn(SubscriptionLoaded(
+            activeSubscription: _trialSubscription(),
+            lastUpdated: DateTime(2026),
+          ));
+          useSurface(tester, Size(width, 2000));
+          await tester.pumpWidget(app(const TokenManagementPage(), dark: true));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester);
+          for (final tile in find.byType(LedgerStatTile).evaluate()) {
+            expectWholeWords(tester, find.byWidget(tile.widget));
+          }
+          expect(find.byKey(const Key('credits_trial_pill')), findsOneWidget);
+          final name = find.textContaining('Standard').first;
+          expect(
+              tester
+                  .renderObject<RenderParagraph>(find.descendant(
+                      of: name, matching: find.byType(RichText)))
+                  .didExceedMaxLines,
+              isFalse);
+          expectWholeWords(tester, name);
+          expectWholeWords(
+              tester, find.byKey(const Key('credits_manage_plan')));
+        });
+
+        testWidgets('usage summary $tag: tiles whole', (tester) async {
+          translations.language = language;
+          useSurface(tester, Size(width, 1600));
+          await tester.pumpWidget(MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: UsageStatisticsCard(
+                  statistics: UsageStatistics(
+                    totalTokens: 20,
+                    totalOperations: 2,
+                    dailyTokensConsumed: 20,
+                    purchasedTokensConsumed: 0,
+                    mostUsedFeature: 'study_generate',
+                    mostUsedLanguage: 'ml',
+                    mostUsedMode: 'quick',
+                    featureBreakdown: const [],
+                    languageBreakdown: const [],
+                    studyModeBreakdown: const [],
+                  ),
+                ),
+              ),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          for (final tile in find.byType(LedgerStatTile).evaluate()) {
+            expectWholeWords(tester, find.byWidget(tile.widget));
+          }
+        });
+
+        testWidgets('subscription $tag: Standard in full beside Trial',
+            (tester) async {
+          translations.language = language;
+          final trial = _trialSubscription();
+          when(() => subscriptionBloc.state).thenReturn(SubscriptionLoaded(
+            activeSubscription: trial,
+            lastUpdated: DateTime(2026),
+          ));
+          useSurface(tester, Size(width, 2000));
+          await tester
+              .pumpWidget(app(const SubscriptionManagementPage(), dark: true));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          final name = find.textContaining('Standard').first;
+          final paragraph = tester.renderObject<RenderParagraph>(
+              find.descendant(of: name, matching: find.byType(RichText)));
+          expect(paragraph.didExceedMaxLines, isFalse);
+          expectWholeWords(tester, name);
+          // English status sentence is not shown for a trial.
+          expect(find.textContaining('full access until'), findsNothing);
+        });
+      }
     }
   });
 }

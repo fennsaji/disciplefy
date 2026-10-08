@@ -597,28 +597,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.tokenPurchase,
         name: 'token_purchase',
+        // A reload or deep link has no balance to show: open Credits,
+        // which fetches it and offers Get credits.
+        redirect: (context, state) =>
+            state.extra is TokenStatus ? null : AppRoutes.tokenManagement,
         builder: (context, state) {
-          final tokenStatus = state.extra as TokenStatus?;
-          if (tokenStatus == null) {
-            return MaxWidthWrapper(
-              child: Scaffold(
-                appBar: AppBar(),
-                body: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Unable to load token purchase page.'),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Go Back'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
+          final tokenStatus = state.extra! as TokenStatus;
           return MaxWidthWrapper(
             child: TokenPurchasePage(
               tokenStatus: tokenStatus,

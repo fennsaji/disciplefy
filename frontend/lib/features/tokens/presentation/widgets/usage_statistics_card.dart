@@ -91,17 +91,17 @@ class UsageStatisticsCard extends StatelessWidget {
           if (statistics.mostUsedFeature != null)
             LedgerRow(
               label: context.tr('tokens.stats.feature'),
-              value: statistics.mostUsedFeatureDisplay,
+              value: _featureLabel(context, statistics),
             ),
           if (statistics.mostUsedLanguage != null)
             LedgerRow(
               label: context.tr('tokens.stats.language'),
-              value: statistics.mostUsedLanguageDisplay,
+              value: _languageLabel(statistics),
             ),
           if (statistics.mostUsedMode != null)
             LedgerRow(
               label: context.tr('tokens.stats.study_mode'),
-              value: statistics.mostUsedModeDisplay,
+              value: _modeLabel(context, statistics),
             ),
         ],
         if (statistics.lastUsageDate != null) ...[
@@ -136,5 +136,49 @@ class UsageStatisticsError extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// Feature, language and mode values come from the server as codes;
+// show them in the app language instead of fixed English names.
+String _featureLabel(BuildContext context, UsageStatistics stats) {
+  switch (stats.mostUsedFeature) {
+    case 'study_generate':
+    case 'continue_learning':
+      return context.tr('tokens.stats.feature_lessons');
+    case 'study_followup':
+      return context.tr('tokens.stats.feature_follow_ups');
+    default:
+      return stats.mostUsedFeatureDisplay;
+  }
+}
+
+String _languageLabel(UsageStatistics stats) {
+  switch (stats.mostUsedLanguage) {
+    case 'en':
+      return 'English';
+    case 'hi':
+      return 'हिन्दी';
+    case 'ml':
+      return 'മലയാളം';
+    default:
+      return stats.mostUsedLanguageDisplay;
+  }
+}
+
+String _modeLabel(BuildContext context, UsageStatistics stats) {
+  switch (stats.mostUsedMode) {
+    case 'quick':
+      return context.tr(TranslationKeys.studyModeQuickShortName);
+    case 'standard':
+      return context.tr(TranslationKeys.studyModeStandardShortName);
+    case 'deep':
+      return context.tr(TranslationKeys.studyModeDeepShortName);
+    case 'lectio':
+      return context.tr(TranslationKeys.studyModeLectioShortName);
+    case 'sermon':
+      return context.tr(TranslationKeys.studyModeSermonShortName);
+    default:
+      return stats.mostUsedModeDisplay;
   }
 }

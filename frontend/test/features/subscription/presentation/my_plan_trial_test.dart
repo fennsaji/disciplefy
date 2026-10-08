@@ -293,7 +293,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Trial'), findsNothing);
-    expect(find.text('Trial Active'), findsNothing);
+    expect(find.text('Trial active'), findsNothing);
     expect(find.text('Active Subscription'), findsOneWidget);
     expect(find.text('BILLING'), findsOneWidget);
     expect(find.text('Billed via Razorpay'), findsOneWidget);

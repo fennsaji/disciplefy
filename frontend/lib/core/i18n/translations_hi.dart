@@ -2105,6 +2105,8 @@ const Map<String, dynamic> hindiTranslations = {
       'purchased_tokens': 'खरीदे गए',
       'most_used': 'सबसे ज्यादा यूज किए गए',
       'feature': 'फीचर',
+      'feature_lessons': 'पाठ',
+      'feature_follow_ups': 'आगे के प्रश्न',
       'language': 'भाषा',
       'study_mode': 'स्टडी मोड',
       'last_purchase': 'अंतिम खरीद',

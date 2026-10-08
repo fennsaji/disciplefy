@@ -2136,6 +2136,8 @@ const Map<String, dynamic> malayalamTranslations = {
       'purchased_tokens': 'വാങ്ങിയത്',
       'most_used': 'ഏറ്റവും കൂടുതൽ ഉപയോഗിച്ചത്',
       'feature': 'ഫീച്ചർ',
+      'feature_lessons': 'പാഠങ്ങൾ',
+      'feature_follow_ups': 'തുടർചോദ്യങ്ങൾ',
       'language': 'ഭാഷ',
       'study_mode': 'പഠന മോഡ്',
       'last_usage': 'അവസാന ഉപയോഗം',

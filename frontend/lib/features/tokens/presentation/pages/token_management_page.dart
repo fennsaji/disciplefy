@@ -737,61 +737,89 @@ class _PlanRow extends StatelessWidget {
       detail = context.tr('tokens.plans.${plan.name}_subtitle');
     }
 
-    return Row(
-      children: [
-        const LedgerIconTile(
-          icon: Icons.workspace_premium_outlined,
-          size: 40,
-          tone: LedgerTone.gold,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    // The trailing Manage link is capped at 35% of the row so the plan
+    // name never wraps letter by letter in hi/ml at narrow widths.
+    final manageLabel = context.tr('tokens.plans.manage');
+    Widget manage() => LedgerLink(
+          key: const Key('credits_manage_plan'),
+          label: manageLabel,
+          onTap: onManage,
+        );
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Manage sits at the right while the name column keeps 200px;
+        // otherwise (hi/ml at 320px, large text) it moves under the detail.
+        final painter = TextPainter(
+          text: TextSpan(
+            text: manageLabel,
+            style: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final manageWidth = painter.width;
+        painter.dispose();
+        final trailing = box.maxWidth - 60 - manageWidth >= 200;
+        return Row(
+          children: [
+            const LedgerIconTile(
+              icon: Icons.workspace_premium_outlined,
+              size: 40,
+              tone: LedgerTone.gold,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: Text(
-                      context.tr(TranslationKeys.ledgerPlanName,
-                          {'plan': plan.displayName}),
-                      style: AppFonts.inter(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w600,
-                        color: palette.text,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          context.tr(TranslationKeys.ledgerPlanName,
+                              {'plan': plan.displayName}),
+                          style: AppFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
+                        ),
                       ),
+                      // The pill never shows without its "Free trial until" line.
+                      if (trialUntil != null) ...[
+                        const SizedBox(width: 8),
+                        LedgerStatusPill(
+                          key: const Key('credits_trial_pill'),
+                          label: context.tr(TranslationKeys.myPlanTrialPill),
+                          tone: LedgerTone.accent,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    detail,
+                    style: AppFonts.inter(
+                      fontSize: 12.5,
+                      color: palette.muted,
+                      fontFeatures: kLedgerTabular,
                     ),
                   ),
-                  // The pill never shows without its "Free trial until" line.
-                  if (trialUntil != null) ...[
-                    const SizedBox(width: 8),
-                    LedgerStatusPill(
-                      key: const Key('credits_trial_pill'),
-                      label: context.tr(TranslationKeys.myPlanTrialPill),
-                      tone: LedgerTone.accent,
-                    ),
-                  ],
+                  if (!trailing) manage(),
                 ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                detail,
-                style: AppFonts.inter(
-                  fontSize: 12.5,
-                  color: palette.muted,
-                  fontFeatures: kLedgerTabular,
-                ),
+            ),
+            if (trailing) ...[
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: box.maxWidth * 0.35),
+                child: manage(),
               ),
             ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        LedgerLink(
-          key: const Key('credits_manage_plan'),
-          label: context.tr('tokens.plans.manage'),
-          onTap: onManage,
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
