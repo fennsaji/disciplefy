@@ -63,10 +63,10 @@ void main() {
       await pumpScreen(tester, dark: dark);
 
       expect(find.text('ACCOUNT RECOVERY'), findsOneWidget);
-      expect(find.text('Reset Password'), findsOneWidget);
+      expect(find.text('Reset password'), findsOneWidget);
       expect(find.byKey(const Key('password_reset_email')), findsOneWidget);
-      expect(find.text('Send Reset Link'), findsOneWidget);
-      expect(find.text('Back to Sign In'), findsOneWidget);
+      expect(find.text('Send reset link'), findsOneWidget);
+      expect(find.text('Back to sign in'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

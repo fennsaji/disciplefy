@@ -203,6 +203,15 @@ class WelcomePhotoBackdrop extends StatelessWidget {
                 ),
               ),
             ),
+            // At a fractional height the photo's anti-aliased last row
+            // bleeds through the fade as a grey seam; cover it.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 2,
+              child: ColoredBox(color: page),
+            ),
           ],
         ),
       ),
