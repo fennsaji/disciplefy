@@ -8,6 +8,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/public_fellowship_entity.dart';
@@ -249,7 +250,7 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
                 children: [
                   _IntroHeader(kind: _kind, onClose: _close),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(22, 4, 22, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -262,7 +263,6 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
                             body: context
                                 .tr(TranslationKeys.introStepBody(_name, n)),
                           ),
-                        const SizedBox(height: 4),
                         _startWith(palette),
                       ],
                     ),
@@ -275,7 +275,7 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
             top: false,
             minimum: const EdgeInsets.only(bottom: 12),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
@@ -293,12 +293,12 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
                           horizontal: 16, vertical: 8),
                       shape: const StadiumBorder(),
                       textStyle: AppFonts.inter(
-                          fontSize: 14, fontWeight: FontWeight.w600),
+                          fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                     child: _ButtonLabel(
                         icon: _primaryIcon, label: _primaryLabel()),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   OutlinedButton(
                     key: const Key('intro_secondary'),
                     onPressed: _busy ? null : _secondary,
@@ -310,7 +310,7 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
                           horizontal: 16, vertical: 8),
                       shape: const StadiumBorder(),
                       textStyle: AppFonts.inter(
-                          fontSize: 14, fontWeight: FontWeight.w600),
+                          fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                     child: Text(
                       context.tr(TranslationKeys.introSecondary(_name)),
@@ -335,7 +335,11 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
       NewForYouKind.fellowships => _fellowshipsContent(palette),
     };
     if (content == null) return const SizedBox.shrink();
-    return _StartWithCard(child: content);
+    // The fellowship card is a card of its own: no box around it.
+    return _StartWithCard(
+      boxed: _kind != NewForYouKind.fellowships,
+      child: content,
+    );
   }
 
   Widget? _pathsContent() {
@@ -359,17 +363,18 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
       children: [
         Text(
           '“${verse.text}”',
-          style: AppFonts.inter(
-            fontSize: 15,
+          style: AppFonts.poppins(
+            fontSize: 16,
             fontWeight: FontWeight.w500,
             color: palette.text,
-            height: 1.4,
+            height: 1.45,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           verse.reference,
-          style: AppFonts.inter(fontSize: 12, color: palette.muted),
+          style: AppFonts.inter(
+              fontSize: 12, fontWeight: FontWeight.w500, color: palette.muted),
         ),
       ],
     );
@@ -403,6 +408,7 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
         label: question,
         fill: palette.selectedFill,
         ink: palette.onSelected,
+        bubble: true,
         onTap: () => _run(() => _ask(question)),
       ),
     );
@@ -420,7 +426,9 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
             fellowship: official,
             onJoin: _busy ? null : () => _run(_joinOfficial),
           ),
-        for (final other in _otherOfficials)
+        for (final other in _otherOfficials) ...[
+          if (other != _otherOfficials.first)
+            Divider(height: 1, thickness: 1, color: palette.hairline),
           _FellowshipRow(
             fellowship: other,
             onTap: () => _run(() async {
@@ -430,26 +438,33 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
               }
             }),
           ),
+        ],
       ],
     );
   }
 }
 
-/// 220px photo header with a dark scrim, × and the gold eyebrow and title.
+/// Photo header with the shade, ×, gold eyebrow and title. In dark theme
+/// the photo fades into the page; in light theme it ends in a rounded edge.
 class _IntroHeader extends StatelessWidget {
   final NewForYouKind kind;
   final VoidCallback onClose;
 
   const _IntroHeader({required this.kind, required this.onClose});
 
+  static const double _lightRadius = 28;
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isLight = theme.brightness == Brightness.light;
+    final ground = theme.scaffoldBackgroundColor;
     final onPhoto = ReaderPalette.resolve(
       isDark: true,
-      page: Theme.of(context).scaffoldBackgroundColor,
+      page: ground,
     );
     final name = kind.name;
-    return Stack(
+    final header = Stack(
       children: [
         Positioned.fill(
           child: ExcludeSemantics(
@@ -468,74 +483,98 @@ class _IntroHeader extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.35),
-                  Colors.black.withValues(alpha: 0.72),
-                  Colors.black.withValues(alpha: 0.86),
+                  const Color(0xFF0B0B0B).withValues(alpha: 0.72),
+                  const Color(0xFF0B0B0B).withValues(alpha: 0.50),
+                  const Color(0xFF0B0B0B).withValues(alpha: 0.70),
+                  const Color(0xFF0B0B0B).withValues(alpha: 0.82),
                 ],
-                stops: const [0.0, 0.5, 1.0],
+                stops: const [0.0, 0.3, 0.7, 1.0],
               ),
             ),
           ),
         ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 220),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton(
-                    onPressed: onClose,
-                    tooltip: context.tr(TranslationKeys.introClose),
-                    icon: const Icon(Icons.close_rounded, size: 22),
-                    color: onPhoto.text,
-                  ),
-                  const SizedBox(height: 40),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context
-                              .tr(TranslationKeys.introEyebrow(name))
-                              .toUpperCase(),
-                          style: AppFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
-                            color: onPhoto.gold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            context.tr(TranslationKeys.introTitle(name)),
-                            style: AppFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: onPhoto.text,
-                              height: 1.25,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+        // Dark theme: the photo fades into the page under the title.
+        if (!isLight)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 24,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [ground.withValues(alpha: 0), ground],
+                ),
               ),
+            ),
+          ),
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(11, 0, 22, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconButton(
+                  onPressed: onClose,
+                  tooltip: context.tr(TranslationKeys.introClose),
+                  icon: const Icon(Icons.close_rounded, size: 22),
+                  color: onPhoto.text,
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.only(left: 11),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context
+                            .tr(TranslationKeys.introEyebrow(name))
+                            .toUpperCase(),
+                        style: AppFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.6,
+                          color: onPhoto.gold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          context.tr(TranslationKeys.introTitle(name)),
+                          style: AppFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: onPhoto.text,
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ],
     );
+    if (!isLight) return header;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: ClipRRect(
+        borderRadius:
+            const BorderRadius.vertical(bottom: Radius.circular(_lightRadius)),
+        child: header,
+      ),
+    );
   }
 }
 
-/// Numbered step: gold 24px number, 14pt title, 13pt muted body.
+/// Numbered step: a 26px gold-tinted number, 14.5pt title, 12.5pt body.
 class _IntroStep extends StatelessWidget {
   final int number;
   final String title;
@@ -551,17 +590,20 @@ class _IntroStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    final dark = palette.isDark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 24,
-            height: 24,
+            width: 26,
+            height: 26,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: palette.selectedFill,
+              color: dark
+                  ? palette.gold.withValues(alpha: 0.10)
+                  : const Color(0xFFFFEEC0),
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -569,7 +611,8 @@ class _IntroStep extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: palette.onSelected,
+                // Light: the design's deep amber on the pale gold, 7.6:1.
+                color: dark ? palette.gold : AppColors.brandGoldInk,
               ),
             ),
           ),
@@ -581,19 +624,19 @@ class _IntroStep extends StatelessWidget {
                 Text(
                   title,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w600,
                     color: palette.text,
-                    height: 1.3,
+                    height: 1.25,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   body,
                   style: AppFonts.inter(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     color: palette.muted,
-                    height: 1.35,
+                    height: 1.25,
                   ),
                 ),
               ],
@@ -605,42 +648,45 @@ class _IntroStep extends StatelessWidget {
   }
 }
 
-/// Soft gold-tinted card with the "Start with" eyebrow.
+/// "Start with" eyebrow and its example, in a soft gold box unless [boxed]
+/// is false (the example is a card itself).
 class _StartWithCard extends StatelessWidget {
   final Widget child;
+  final bool boxed;
 
-  const _StartWithCard({required this.child});
+  const _StartWithCard({required this.child, this.boxed = true});
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          context.tr(TranslationKeys.introStartWith).toUpperCase(),
+          style: AppFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.6,
+            color: palette.gold,
+          ),
+        ),
+        SizedBox(height: boxed ? 8 : 10),
+        child,
+      ],
+    );
+    if (!boxed) {
+      return KeyedSubtree(key: const Key('intro_start_with'), child: content);
+    }
     return Container(
       key: const Key('intro_start_with'),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          palette.gold.withValues(alpha: palette.isDark ? 0.08 : 0.06),
-          palette.card,
-        ),
+        color: palette.gold.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: palette.gold.withValues(alpha: 0.30)),
+        border: Border.all(color: palette.gold.withValues(alpha: 0.15)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            context.tr(TranslationKeys.introStartWith).toUpperCase(),
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: palette.gold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          child,
-        ],
-      ),
+      child: content,
     );
   }
 }
@@ -682,18 +728,21 @@ class _ButtonLabel extends StatelessWidget {
   }
 }
 
-/// A 32px tappable pill (generate examples, the discipler question).
+/// A 32px tappable pill (generate examples), or a speech bubble with a
+/// square lower-right corner ([bubble], the discipler question).
 class _Chip extends StatelessWidget {
   final String label;
   final Color fill;
   final Color ink;
   final VoidCallback onTap;
+  final bool bubble;
 
   const _Chip({
     required this.label,
     required this.fill,
     required this.ink,
     required this.onTap,
+    this.bubble = false,
   });
 
   @override
@@ -702,19 +751,30 @@ class _Chip extends StatelessWidget {
       button: true,
       child: Material(
         color: fill,
-        shape: const StadiumBorder(),
+        shape: bubble
+            ? const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(4),
+                ),
+              )
+            : const StadiumBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 32),
+            constraints: BoxConstraints(minHeight: bubble ? 37 : 32),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              padding: bubble
+                  ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+                  : const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               child: Text(
                 label,
                 style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: bubble ? 14 : 13,
+                  fontWeight: bubble ? FontWeight.w500 : FontWeight.w600,
                   color: ink,
                 ),
               ),
@@ -726,7 +786,8 @@ class _Chip extends StatelessWidget {
   }
 }
 
-/// The person's-language official fellowship with its Join pill.
+/// The person's-language official fellowship with its Join pill, on a
+/// gold-washed card.
 class _OfficialFellowshipCard extends StatelessWidget {
   final PublicFellowshipEntity fellowship;
   final VoidCallback? onJoin;
@@ -736,38 +797,84 @@ class _OfficialFellowshipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    final dark = palette.isDark;
     final study = fellowship.currentStudyTitle?.trim() ?? '';
+    // Secondary text on the gold wash: the design's warm brown on light.
+    final sub = dark ? const Color(0xFFD6D6DC) : const Color(0xFF5B4A1F);
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.gold.withValues(alpha: 0.45)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: dark
+              ? const [Color(0xFF1F1F27), Color(0xFF2A2214), Color(0xFF5C4313)]
+              : const [Color(0xFFFFF6DD), Color(0xFFFBE3A6)],
+          stops: dark ? const [0, 0.6, 1] : null,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.brandGold.withValues(alpha: dark ? 0.25 : 0.60),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _FellowshipAvatar(fellowship: fellowship, size: 36),
-              const SizedBox(width: 10),
+              Container(
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : ReaderPalette.ink,
+                  border: Border.all(
+                    color: dark
+                        ? AppColors.brandGold.withValues(alpha: 0.40)
+                        : Colors.white.withValues(alpha: 0.60),
+                  ),
+                ),
+                child: Image.asset(
+                  'assets/images/logo_transparent.png',
+                  fit: BoxFit.contain,
+                  cacheWidth: 96,
+                  errorBuilder: (_, __, ___) =>
+                      _FellowshipAvatar(fellowship: fellowship, size: 30),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       fellowship.name,
-                      style: AppFonts.inter(
-                        fontSize: 14,
+                      style: AppFonts.poppins(
+                        fontSize: 17,
                         fontWeight: FontWeight.w600,
                         color: palette.text,
                       ),
                     ),
-                    Text(
-                      context.tr(TranslationKeys.introFellowshipsMembersOpen,
-                          {'n': fellowship.memberCount}),
-                      style: AppFonts.inter(fontSize: 12, color: palette.muted),
+                    Row(
+                      children: [
+                        Icon(Icons.people_outline, size: 12, color: sub),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            context.tr(
+                                TranslationKeys.introFellowshipsMembersOpen,
+                                {'n': fellowship.memberCount}),
+                            style: AppFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: sub),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -791,7 +898,7 @@ class _OfficialFellowshipCard extends StatelessWidget {
                           context.tr(TranslationKeys.introFellowshipsJoin),
                           textAlign: TextAlign.center,
                           style: AppFonts.inter(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: palette.ctaInk,
                           ),
@@ -803,7 +910,7 @@ class _OfficialFellowshipCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -817,24 +924,40 @@ class _OfficialFellowshipCard extends StatelessWidget {
             ],
           ),
           if (study.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: palette.raised,
-                borderRadius: BorderRadius.circular(8),
+                color: dark
+                    ? Colors.black.withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: 0.60),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(
-                    text:
-                        '${context.tr(TranslationKeys.introFellowshipsStudying)}  ',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Icon(Icons.menu_book_outlined,
+                        size: 14, color: dark ? AppColors.brandGold : sub),
                   ),
-                  TextSpan(text: study),
-                ]),
-                style: AppFonts.inter(fontSize: 12, color: palette.text),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text:
+                              '${context.tr(TranslationKeys.introFellowshipsStudying)}  ',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, color: palette.text),
+                        ),
+                        TextSpan(text: study),
+                      ]),
+                      style: AppFonts.inter(fontSize: 12.5, color: sub),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -853,17 +976,26 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    final dark = palette.isDark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      constraints: const BoxConstraints(minHeight: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: palette.outline),
+        color: dark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.70),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: dark
+              ? palette.outline
+              : AppColors.brandGold.withValues(alpha: 0.40),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12, color: palette.muted),
+            Icon(icon, size: 12, color: palette.text),
             const SizedBox(width: 4),
           ],
           Text(label,
@@ -890,18 +1022,18 @@ class _FellowshipRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: 50),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.fromLTRB(2, 8, 2, 8),
           child: Row(
             children: [
-              _FellowshipAvatar(fellowship: fellowship, size: 28),
+              _FellowshipAvatar(fellowship: fellowship, size: 32),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   fellowship.name,
                   style: AppFonts.inter(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: palette.text,
                   ),
@@ -914,9 +1046,13 @@ class _FellowshipRow extends StatelessWidget {
                         ? TranslationKeys.introFellowshipsMemberOne
                         : TranslationKeys.introFellowshipsMembers,
                     {'n': fellowship.memberCount}),
-                style: AppFonts.inter(fontSize: 12, color: palette.muted),
+                style: AppFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: palette.muted),
               ),
-              Icon(Icons.chevron_right_rounded, size: 18, color: palette.dim),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, size: 16, color: palette.dim),
             ],
           ),
         ),
@@ -925,6 +1061,7 @@ class _FellowshipRow extends StatelessWidget {
   }
 }
 
+/// A fellowship's initial (its script's first letter) on a gold disc.
 class _FellowshipAvatar extends StatelessWidget {
   final PublicFellowshipEntity fellowship;
   final double size;
@@ -933,24 +1070,39 @@ class _FellowshipAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = ReaderPalette.of(context);
-    final name = fellowship.name.trim();
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: palette.selectedFill,
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF6D88A), Color(0xFFD9982A)],
+        ),
       ),
       child: Text(
-        name.isEmpty ? 'D' : name.characters.first.toUpperCase(),
+        _initial(),
         style: AppFonts.inter(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: palette.onSelected,
+          color: ReaderPalette.ink,
         ),
       ),
     );
+  }
+
+  /// The language's own letter ("हि", "മ") for a fellowship in another
+  /// script, else the name's first letter.
+  String _initial() {
+    switch (fellowship.language) {
+      case 'hi':
+        return 'हि';
+      case 'ml':
+        return 'മ';
+    }
+    final name = fellowship.name.trim();
+    return name.isEmpty ? 'D' : name.characters.first.toUpperCase();
   }
 }
