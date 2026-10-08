@@ -30,6 +30,9 @@ class AppTheme {
 
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
+        // The phone density everywhere: web and desktop default to a
+        // compact one that shaves 8px off every 40px button and chip.
+        visualDensity: VisualDensity.standard,
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.brandHighlightDark,
@@ -180,6 +183,9 @@ class AppTheme {
 
   static ThemeData get darkTheme => ThemeData(
         useMaterial3: true,
+        // The phone density everywhere: web and desktop default to a
+        // compact one that shaves 8px off every 40px button and chip.
+        visualDensity: VisualDensity.standard,
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.brandGold,
