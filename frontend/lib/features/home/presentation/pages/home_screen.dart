@@ -695,9 +695,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   Widget _buildHero(String userName, {bool todayLayout = false}) {
     return HomeVerseHero(
       imageAsset: homeHeroImageFor(DateTime.now()),
-      greeting: context.tr(
-        homeGreetingKeyFor(DateTime.now().hour),
-        {'name': userName},
+      greeting: homeGreetingText(
+        context.tr(homeGreetingKeyFor(DateTime.now().hour), {'name': userName}),
+        userName,
       ),
       // The Today layout goes straight from the greeting to the verse.
       subtitle:

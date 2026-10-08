@@ -32,6 +32,13 @@ String homeGreetingKeyFor(int hour) {
   return TranslationKeys.homeGoodEvening;
 }
 
+/// [greeting] ("Good evening, {name}" already filled in) without the
+/// separator a blank name leaves behind: a guest sees "Good evening".
+String homeGreetingText(String greeting, String name) {
+  if (name.trim().isNotEmpty) return greeting;
+  return greeting.trim().replaceFirst(RegExp(r'[,\s]+$'), '');
+}
+
 /// Verse size steps down with length so a long passage still fits the hero
 /// without pushing the rest of home below the fold.
 double homeVerseFontSize(String verseText) {

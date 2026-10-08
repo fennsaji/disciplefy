@@ -212,6 +212,12 @@ void main() {
       expect(homeGreetingKeyFor(23), TranslationKeys.homeGoodEvening);
     });
 
+    test('a blank name leaves no trailing comma', () {
+      expect(homeGreetingText('Good evening, ', ''), 'Good evening');
+      expect(homeGreetingText('शुभ संध्या, ', ' '), 'शुभ संध्या');
+      expect(homeGreetingText('Good evening, Anu', 'Anu'), 'Good evening, Anu');
+    });
+
     test('verse size steps down with length', () {
       expect(homeVerseFontSize(_shortVerse), 27);
       expect(homeVerseFontSize('x' * 60), 27);
