@@ -15,10 +15,11 @@ class SaveProgressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Material(
-      color: palette.gold.withValues(alpha: palette.isDark ? 0.08 : 0.06),
+      // An outlined row on the page, quieter than the lesson card above.
+      color: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: palette.gold.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: palette.outline),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -26,12 +27,12 @@ class SaveProgressRow extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 40),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               children: [
                 Icon(Icons.cloud_upload_outlined,
                     size: 16, color: palette.gold),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     context.tr(TranslationKeys.homeTodaySaveProgress),
@@ -43,7 +44,7 @@ class SaveProgressRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Icon(Icons.chevron_right_rounded, size: 18, color: palette.dim),
+                Icon(Icons.chevron_right_rounded, size: 16, color: palette.dim),
               ],
             ),
           ),

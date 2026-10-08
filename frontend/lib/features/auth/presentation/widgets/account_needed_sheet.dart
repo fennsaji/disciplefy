@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/auth/domain/entities/account_reason.dart';
@@ -98,7 +99,7 @@ class AccountNeededSheet extends StatefulWidget {
       showDragHandle: false,
       backgroundColor: ReaderPalette.of(context).card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) => AccountNeededSheet(reason: reason),
     ).then((linked) => linked ?? false).whenComplete(() => _release(future));
@@ -132,14 +133,14 @@ class _AccountNeededSheetState extends State<AccountNeededSheet> {
       child: Padding(
         padding: EdgeInsets.only(bottom: bottom),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
               Center(
                 child: Container(
-                  width: 36,
+                  width: 40,
                   height: 4,
                   decoration: BoxDecoration(
                     color: palette.outline,
@@ -147,39 +148,40 @@ class _AccountNeededSheetState extends State<AccountNeededSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 22),
               Center(
                 child: Container(
-                  width: 48,
-                  height: 48,
+                  width: 54,
+                  height: 54,
                   decoration: BoxDecoration(
-                    color: palette.gold.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(14),
+                    color: palette.selectedFill,
+                    borderRadius: BorderRadius.circular(17),
                   ),
-                  child: Icon(_iconFor(reason), color: palette.gold, size: 24),
+                  child: Icon(_iconFor(reason),
+                      color: palette.onSelected, size: 24),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
               Text(
                 context.tr(accountReasonTitleKey(reason)),
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
+                style: AppFonts.poppins(
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: palette.text,
                   height: 1.3,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 9),
               Text(
                 context.tr(TranslationKeys.accountBody),
                 textAlign: TextAlign.center,
-                style:
-                    TextStyle(fontSize: 13, color: palette.muted, height: 1.4),
+                style: AppFonts.inter(
+                    fontSize: 14, color: palette.muted, height: 1.5),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 9),
               const AccountBenefits(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 9),
               AccountLinkPanel(
                 onLinked: (_) => Navigator.of(context).pop(true),
               ),
@@ -198,7 +200,7 @@ class _AccountNeededSheetState extends State<AccountNeededSheet> {
                   minimumSize: const Size.fromHeight(40),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   textStyle:
-                      AppFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                      AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 child: Text(context.tr(TranslationKeys.accountContinueGuest)),
               ),
@@ -218,20 +220,26 @@ class AccountBenefits extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    // The design's green ticks: deep on light, bright on dark.
+    final tick =
+        palette.isDark ? AppColors.successLighter : AppColors.successDark;
     Widget row(String key) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 1),
-                child: Icon(Icons.check_rounded, size: 16, color: palette.gold),
+                child: Icon(Icons.check_rounded, size: 15, color: tick),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   context.tr(key),
-                  style: TextStyle(fontSize: 13, color: palette.text),
+                  style: AppFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                      color: palette.text),
                 ),
               ),
             ],
