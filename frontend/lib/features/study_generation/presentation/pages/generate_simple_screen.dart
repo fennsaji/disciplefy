@@ -29,8 +29,8 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/utils/sc
 import 'package:disciplefy_bible_study/features/study_generation/presentation/pages/generate_study_screen.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
-import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/mode_selection_sheet.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/recent_guides_section.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/all_depths_sheet.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/depth_switch.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/input_type_tag.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/language_pill.dart';
@@ -335,16 +335,29 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   Future<void> _openAllDepths() async {
     _detectNow();
     final input = _input;
-    final result = await ModeSelectionSheet.show(
-      context: context,
-      languageCode: _language.code,
-      recommendedMode: recommendedStudyMode,
-      preselectedMode: _mode,
-      showRememberOption: false,
-      eyebrow: input.text.isEmpty ? null : input.text,
+    final status = _tokenStatus();
+    final chosen = await AllDepthsSheet.show(
+      context,
+      AllDepthsSheet(
+        modes: StudyMode.values
+            .where((m) => !_config.shouldHideFeature(m.featureKey, _plan))
+            .toList(),
+        selected: _mode,
+        recommended: recommendedStudyMode,
+        locked: StudyMode.values.where(_isLocked).toSet(),
+        inputReady: input.isValid,
+        // An unlimited plan spends no credits: no cost line.
+        showCost:
+            status == null || !(status.isPremium || status.unlimitedUsage),
+        costOf: (mode) => _costs[mode],
+        language: () => _language,
+        languageIsDefault: () => _languageIsDefault,
+        onLanguageChanged: _switchLanguage,
+        onLockedTap: _showUpgrade,
+      ),
     );
-    if (result == null || !mounted) return;
-    setState(() => _mode = result['mode'] as StudyMode);
+    if (chosen == null || !mounted) return;
+    setState(() => _mode = chosen);
     if (input.isValid) await _generate();
   }
 
@@ -452,7 +465,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _header(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 _inputField(),
                 if (_error != null)
                   Padding(
@@ -468,18 +481,18 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                     ),
                   ),
                 if (showTag) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 5),
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: InputTypeTag(type: input.type, onTap: _cycleType),
                   ),
                 ],
                 if (isEmpty) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   _suggestions(),
                   _verseOfDay(),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: 14),
                 _depthHeader(),
                 const SizedBox(height: 8),
                 DepthSwitch(
@@ -502,7 +515,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 _generateButton(input.isValid),
                 if (_costs[_mode] != null)
                   // An unlimited plan spends no credits: no cost line.
@@ -514,13 +527,15 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                         return const SizedBox.shrink();
                       }
                       return Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           context.tr(TranslationKeys.generateSimpleUsingCredits,
                               {'n': '${_costs[_mode]}'}),
                           textAlign: TextAlign.center,
                           style: AppFonts.inter(
-                              fontSize: 12, color: palette.muted),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: palette.muted),
                         ),
                       );
                     },
@@ -562,8 +577,8 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 context.tr(TranslationKeys.generateSimpleEyebrow),
                 style: AppFonts.inter(
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.6,
                   color: palette.gold,
                 ),
               ),
@@ -592,12 +607,12 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           context.tr(TranslationKeys.generateSimpleTitle),
           style: AppFonts.poppins(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
             height: 1.2,
             color: ink.text,
           ),
@@ -608,30 +623,28 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
 
   /// White search field with the clear button and the language pill.
   Widget _inputField() {
+    final palette = ReaderPalette.of(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.fromLTRB(18, 4, 8, 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(28),
+        // Flat white field: a warm hairline on the light page, none on dark.
         border: Border.all(
           color: _focus.hasFocus
-              ? ReaderPalette.of(context).gold
-              : Colors.transparent,
-          width: 1.5,
+              ? palette.gold
+              : palette.isDark
+                  ? Colors.white
+                  : palette.outline,
+          width: _focus.hasFocus ? 1.5 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Row(
         children: [
           const Icon(Icons.search_rounded,
-              size: 22, color: SearchFieldColors.muted),
-          const SizedBox(width: 8),
+              size: 20, color: SearchFieldColors.muted),
+          const SizedBox(width: 10),
           Expanded(
             child: Focus(
               onFocusChange: (_) => setState(() {}),
@@ -649,10 +662,15 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                   color: SearchFieldColors.ink,
                 ),
                 decoration: InputDecoration(
-                  hintText: context.tr(TranslationKeys.generateSimpleHint),
+                  // Only while empty: a hidden hint still takes its wrapped
+                  // height, which grew the field once the clear button
+                  // narrowed it.
+                  hintText: _controller.text.isEmpty
+                      ? context.tr(TranslationKeys.generateSimpleHint)
+                      : null,
                   hintMaxLines: 3,
                   hintStyle: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: SearchFieldColors.hint,
                   ),
                   border: InputBorder.none,
@@ -737,7 +755,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
           child: Text(
             context.tr(TranslationKeys.generateSimpleChooseDepth),
             style: AppFonts.poppins(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: palette.text,
             ),
@@ -761,11 +779,11 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 context.tr(TranslationKeys.generateSimpleAllDepths),
                 style: AppFonts.inter(
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color: palette.muted,
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, size: 16, color: palette.muted),
+              Icon(Icons.chevron_right_rounded, size: 14, color: palette.muted),
             ],
           ),
         ),
@@ -812,7 +830,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                       textAlign: TextAlign.center,
                       style: AppFonts.inter(
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: ink,
                       ),
                     ),
@@ -840,8 +858,9 @@ class _SuggestionChip extends StatelessWidget {
     final ink = GenerateHeroInk.of(context);
     return Material(
       key: const Key('suggestion_chip'),
-      color:
-          palette.isDark ? Colors.white.withValues(alpha: 0.14) : palette.card,
+      color: palette.isDark
+          ? Colors.white.withValues(alpha: 0.12)
+          : Colors.white.withValues(alpha: 0.8),
       shape: palette.isDark
           ? const StadiumBorder()
           : StadiumBorder(side: BorderSide(color: palette.outline)),
@@ -855,7 +874,7 @@ class _SuggestionChip extends StatelessWidget {
             child: Text(
               label,
               style: AppFonts.inter(
-                fontSize: 13,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w500,
                 color: palette.isDark ? ink.text : palette.text,
               ),

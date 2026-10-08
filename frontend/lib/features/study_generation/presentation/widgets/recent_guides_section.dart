@@ -210,7 +210,7 @@ class ContinueReadingHeader extends StatelessWidget {
           child: Text(
             context.tr(TranslationKeys.generateStudyContinueReading),
             style: AppFonts.poppins(
-              fontSize: 17,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: palette.text,
             ),
@@ -226,7 +226,7 @@ class ContinueReadingHeader extends StatelessWidget {
           child: Text(
             context.tr(TranslationKeys.generateStudySeeAll),
             style: AppFonts.inter(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: palette.gold,
             ),

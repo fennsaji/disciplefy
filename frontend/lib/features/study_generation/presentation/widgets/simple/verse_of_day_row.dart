@@ -27,33 +27,33 @@ class VerseOfDayRow extends StatelessWidget {
     final radius = BorderRadius.circular(16);
 
     return Material(
-      color:
-          palette.isDark ? Colors.black.withValues(alpha: 0.35) : palette.card,
+      color: palette.card,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(
             color: palette.isDark
-                ? Colors.white.withValues(alpha: 0.12)
+                ? Colors.white.withValues(alpha: 0.05)
                 : palette.outline),
       ),
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: palette.gold.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
+                  color: palette.gold
+                      .withValues(alpha: palette.isDark ? 0.15 : 0.2),
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(Icons.wb_sunny_outlined,
-                    size: 16, color: palette.gold),
+                    size: 17, color: palette.gold),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,43 +62,36 @@ class VerseOfDayRow extends StatelessWidget {
                       context.tr(TranslationKeys.generateSimpleVerseOfDay),
                       style: AppFonts.inter(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.6,
                         color: palette.gold,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: reference,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          TextSpan(text: ' · $verseText'),
-                        ],
-                      ),
+                    Text(
+                      '$reference · $verseText',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.inter(
-                        fontSize: 13,
-                        height: 1.35,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
                         color: ink.text,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Container(
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: palette.outline),
                 ),
                 child:
-                    Icon(Icons.north_east_rounded, size: 16, color: ink.muted),
+                    Icon(Icons.north_east_rounded, size: 15, color: ink.text),
               ),
             ],
           ),

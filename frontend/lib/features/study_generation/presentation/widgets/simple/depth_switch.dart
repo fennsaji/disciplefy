@@ -30,18 +30,16 @@ class DepthSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: palette.isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : palette.card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: palette.outline),
+        color: palette.isDark ? palette.raised : palette.card,
+        borderRadius: BorderRadius.circular(23),
+        border: palette.isDark ? null : Border.all(color: palette.outline),
       ),
       child: Row(
         children: [
           for (var i = 0; i < modes.length; i++) ...[
-            if (i > 0) const SizedBox(width: 4),
+            if (i > 0) const SizedBox(width: 3),
             Expanded(child: _segment(context, palette, modes[i])),
           ],
         ],
@@ -87,8 +85,9 @@ class DepthSwitch extends StatelessWidget {
                           isLocked
                               ? Icons.lock_outline_rounded
                               : mode.outlineIcon,
-                          size: 15,
-                          color: isSelected ? palette.onSelected : palette.gold,
+                          size: 14,
+                          color:
+                              isSelected ? palette.onSelected : palette.muted,
                         ),
                         const SizedBox(width: 5),
                         Flexible(
@@ -105,7 +104,11 @@ class DepthSwitch extends StatelessWidget {
                     ),
                     Text(
                       mode.localizedDuration(context),
-                      style: AppFonts.inter(fontSize: 12, color: subInk),
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: subInk,
+                      ),
                     ),
                   ],
                 ),

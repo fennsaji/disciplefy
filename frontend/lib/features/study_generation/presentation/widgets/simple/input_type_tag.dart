@@ -44,27 +44,31 @@ class InputTypeTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final gold = palette.gold;
-    // Deep gold is about 4:1 on its own tint; the tint label gold is 5.9:1.
-    final ink = palette.goldOnTint;
+    // Solid gold pill with ink, as the design; selected-chip tokens keep the
+    // label above 5.5:1 in both themes.
+    final ink = palette.onSelected;
     return Semantics(
       button: true,
-      child: Material(
-        color: gold.withValues(alpha: 0.16),
-        shape:
-            StadiumBorder(side: BorderSide(color: gold.withValues(alpha: 0.5))),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const StadiumBorder(),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 32),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        // 32 tall to tap; the pill itself is drawn 26 tall.
+        child: SizedBox(
+          height: 32,
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              height: 26,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: ShapeDecoration(
+                color: palette.selectedFill,
+                shape: const StadiumBorder(),
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(_icon(type), size: 14, color: ink),
-                  const SizedBox(width: 6),
+                  Icon(_icon(type), size: 12, color: ink),
+                  const SizedBox(width: 5),
                   Text(
                     label(context, type),
                     style: AppFonts.inter(

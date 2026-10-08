@@ -3,6 +3,8 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
@@ -413,17 +415,34 @@ void main() {
     expect(text, contains('mode=standard'));
   });
 
+  testWidgets('typed text keeps the field one line; the tag is solid gold',
+      (tester) async {
+    await pumpSimple(tester);
+    await _type(tester, 'Romans 8');
+    // The hidden hint used to keep its wrapped height and grow the field.
+    expect(
+        tester.getSize(find.byType(TextField)).height, lessThanOrEqualTo(48));
+    final pill = tester.widget<Container>(find.descendant(
+        of: find.byKey(const Key('input_type_tag')),
+        matching: find.byType(Container)));
+    expect((pill.decoration as ShapeDecoration).color, AppColors.brandGold);
+  });
+
   testWidgets('a depth from "All 5" clears the switch and is named below it',
       (tester) async {
     await pumpSimple(tester);
     await tester.tap(find.byKey(const Key('generate_depth_all')));
     await tester.pumpAndSettle();
-    final deep = find.byKey(const ValueKey('mode_option_deep'));
+    // Compact sheet over the tab: every depth, language and the button.
+    expect(find.text('Choose depth'), findsNWidgets(2));
+    expect(find.byKey(const Key('all_depths_language')), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
+    final deep = find.byKey(const ValueKey('all_depths_deep'));
     await tester.ensureVisible(deep);
     await tester.pumpAndSettle();
     await tester.tap(deep);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('mode_selection_start')));
+    await tester.tap(find.byKey(const Key('all_depths_generate')));
     await tester.pumpAndSettle();
 
     // Empty input: nothing starts, the depth is just remembered.
@@ -555,6 +574,12 @@ void main() {
             });
 
             await _type(tester, 'What is the purpose of prayer?');
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+
+            // "All 5" sheet: every depth row and the button fit too.
+            await tester.tap(find.byKey(const Key('generate_depth_all')));
+            await tester.pumpAndSettle();
             expect(tester.takeException(), isNull);
             expectNoTruncatedText(tester);
           });

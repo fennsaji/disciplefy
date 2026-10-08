@@ -56,7 +56,7 @@ class ContinueReadingItem extends StatelessWidget {
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 7),
                 child: Row(
                   children: [
                     _TypeTile(kind: kind),
@@ -145,10 +145,10 @@ class _TypeTile extends StatelessWidget {
       width: ContinueReadingItem.tileSize,
       height: ContinueReadingItem.tileSize,
       decoration: BoxDecoration(
-        color: palette.gold.withValues(alpha: palette.isDark ? 0.14 : 0.12),
-        borderRadius: BorderRadius.circular(10),
+        color: palette.gold.withValues(alpha: palette.isDark ? 0.15 : 0.2),
+        borderRadius: BorderRadius.circular(11),
       ),
-      child: Icon(icon, size: 18, color: palette.accentIcon),
+      child: Icon(icon, size: 17, color: palette.accentIcon),
     );
   }
 }
@@ -172,7 +172,7 @@ class _Bookmark extends StatelessWidget {
       padding: EdgeInsets.zero,
       icon: Icon(
         saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-        size: 20,
+        size: 18,
         color: saved ? palette.accentIcon : palette.dim,
       ),
     );
