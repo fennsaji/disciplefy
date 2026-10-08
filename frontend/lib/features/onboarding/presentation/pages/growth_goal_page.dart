@@ -117,93 +117,89 @@ class _GrowthGoalPageState extends State<GrowthGoalPage> {
         final busy = state is FirstRunStarting;
         return Scaffold(
           backgroundColor: palette.page,
-          body: PhotoWash(
-            image: WelcomePhotos.winterSunset,
-            height: 320,
-            child: SafeArea(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: Column(
-                    children: [
-                      _Header(
-                        onBack: busy ? null : _back,
-                        onSkip: busy ? null : _skip,
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Semantics(
-                                header: true,
-                                child: WelcomeTitle(
-                                  context.tr(TranslationKeys.firstRunGoalTitle),
-                                  fontSize: isNarrow ? 22 : 24,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _helper(context),
-                                key: const Key('first_run_goal_helper'),
-                                style: AppFonts.inter(
-                                  fontSize: 13,
-                                  height: 1.45,
-                                  color: palette.muted,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              for (final goal in GrowthGoal.values)
-                                FirstRunChoiceRow(
-                                  key: Key('first_run_goal_${goal.name}'),
-                                  leading: (color) => Icon(iconFor(goal),
-                                      size: 20, color: color),
-                                  title: context.tr(goal.labelKey),
-                                  subtitle: _meta(context, goal),
-                                  isSelected: _selected == goal,
-                                  onTap: busy
-                                      ? null
-                                      : () => setState(() => _selected = goal),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  children: [
+                    _Header(
+                      onBack: busy ? null : _back,
+                      onSkip: busy ? null : _skip,
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (state is FirstRunFailed)
-                              _InlineError(
-                                state: state,
-                                onRetry: _start,
-                                onHome: () => context.go(AppRoutes.home),
+                            Semantics(
+                              header: true,
+                              child: WelcomeTitle(
+                                context.tr(TranslationKeys.firstRunGoalTitle),
+                                fontSize: isNarrow ? 21 : 23,
                               ),
-                            WelcomePrimaryButton(
-                              key: const Key('first_run_start_lesson'),
-                              label: context
-                                  .tr(TranslationKeys.firstRunStartLessonOne),
-                              height: 40,
-                              isLoading: busy,
-                              onPressed: _start,
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              context.tr(TranslationKeys.firstRunTerms),
-                              textAlign: TextAlign.center,
+                              _helper(context),
+                              key: const Key('first_run_goal_helper'),
                               style: AppFonts.inter(
-                                fontSize: 12,
-                                height: 1.4,
+                                fontSize: 14,
+                                height: 1.5,
                                 color: palette.muted,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            for (final goal in GrowthGoal.values)
+                              FirstRunChoiceRow(
+                                key: Key('first_run_goal_${goal.name}'),
+                                leading: (color) =>
+                                    Icon(iconFor(goal), size: 20, color: color),
+                                title: context.tr(goal.labelKey),
+                                subtitle: _meta(context, goal),
+                                isSelected: _selected == goal,
+                                onTap: busy
+                                    ? null
+                                    : () => setState(() => _selected = goal),
+                              ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (state is FirstRunFailed)
+                            _InlineError(
+                              state: state,
+                              onRetry: _start,
+                              onHome: () => context.go(AppRoutes.home),
+                            ),
+                          WelcomePrimaryButton(
+                            key: const Key('first_run_start_lesson'),
+                            label: context
+                                .tr(TranslationKeys.firstRunStartLessonOne),
+                            height: 40,
+                            isLoading: busy,
+                            onPressed: _start,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            context.tr(TranslationKeys.firstRunTerms),
+                            textAlign: TextAlign.center,
+                            style: AppFonts.inter(
+                              fontSize: 12,
+                              height: 1.4,
+                              color: palette.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

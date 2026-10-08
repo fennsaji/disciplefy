@@ -19,6 +19,32 @@ class WelcomePhotos {
   static const String greenHills = 'assets/images/hero/green_hills.webp';
   static const String valleyMist = 'assets/images/hero/valley_mist.webp';
   static const String winterSunset = 'assets/images/hero/winter_sunset.webp';
+  static const String nightStars = 'assets/images/hero/night_stars.webp';
+}
+
+/// The dark shade laid over a header photo (the same as Home's hero), so
+/// light text reads on any photo in both themes.
+class WelcomeSceneShade extends StatelessWidget {
+  const WelcomeSceneShade({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF0B0B0B).withValues(alpha: 0.72),
+            const Color(0xFF0B0B0B).withValues(alpha: 0.50),
+            const Color(0xFF0B0B0B).withValues(alpha: 0.70),
+            const Color(0xFF0B0B0B).withValues(alpha: 0.82),
+          ],
+          stops: const [0, 0.3, 0.7, 1],
+        ),
+      ),
+    );
+  }
 }
 
 /// Decode width for a 2000px-wide 3:2 photo covering a [width] x [height]
@@ -82,10 +108,10 @@ class WelcomeEyebrow extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     return Text(
       text.toUpperCase(),
-      style: AppFonts.poppins(
+      style: AppFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        letterSpacing: 2.2,
+        letterSpacing: 1.6,
         color: color ?? palette.gold,
       ),
     );
@@ -240,13 +266,29 @@ class WelcomePrimaryButton extends StatelessWidget {
               label,
               textAlign: TextAlign.center,
               style: AppFonts.inter(
-                fontSize: 16,
+                fontSize: height < 48 ? 15 : 16,
                 fontWeight: FontWeight.w600,
                 color: palette.ctaInk,
               ),
             ),
     );
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
+    // Dark theme: the white pill sits in a soft gold glow.
+    final glowing = palette.isDark && onPressed != null && !isLoading
+        ? DecoratedBox(
+            key: const Key('welcome_primary_glow'),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(height / 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brandGold.withValues(alpha: 0.8),
+                  blurRadius: 16,
+                ),
+              ],
+            ),
+            child: button,
+          )
+        : button;
+    return expand ? SizedBox(width: double.infinity, child: glowing) : glowing;
   }
 }
 

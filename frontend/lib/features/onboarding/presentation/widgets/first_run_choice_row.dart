@@ -15,8 +15,11 @@ class FirstRunChoiceRow extends StatelessWidget {
   final bool isSelected;
   final VoidCallback? onTap;
 
-  /// Smallest height of the row (56 for the language rows).
+  /// Smallest height of the row.
   final double minHeight;
+
+  /// Space under the row (10 between languages, 8 between goals).
+  final double gap;
 
   const FirstRunChoiceRow({
     super.key,
@@ -25,29 +28,26 @@ class FirstRunChoiceRow extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.subtitle,
-    this.minHeight = 56,
+    this.minHeight = 60,
+    this.gap = 8,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final accent = palette.selectedFill;
-    final radius = BorderRadius.circular(14);
-    final fill = isSelected
-        ? Color.alphaBlend(
-            accent.withValues(alpha: palette.isDark ? 0.10 : 0.06),
-            palette.card)
-        : palette.card;
+    final radius = BorderRadius.circular(16);
+    final fill = palette.card;
     final border = isSelected
-        ? BorderSide(color: accent, width: 1.5)
+        ? BorderSide(color: accent)
         : BorderSide(color: palette.hairline);
     final tileFill = isSelected
         ? accent
-        : palette.gold.withValues(alpha: palette.isDark ? 0.14 : 0.10);
+        : palette.gold.withValues(alpha: palette.isDark ? 0.12 : 0.10);
     final tileInk = isSelected ? palette.onSelected : palette.accentIcon;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: gap),
       child: Semantics(
         button: true,
         selected: isSelected,
@@ -62,17 +62,17 @@ class FirstRunChoiceRow extends StatelessWidget {
               constraints: BoxConstraints(minHeight: minHeight),
               child: Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                 child: Row(
                   children: [
                     ExcludeSemantics(
                       child: Container(
-                        width: 36,
-                        height: 36,
+                        width: 38,
+                        height: 38,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: tileFill,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: leading(tileInk),
                       ),
@@ -136,7 +136,7 @@ class _Check extends StatelessWidget {
         color: isSelected ? palette.selectedFill : Colors.transparent,
         border: isSelected
             ? null
-            : Border.all(color: palette.dim.withValues(alpha: 0.8), width: 1.5),
+            : Border.all(color: palette.dim.withValues(alpha: 0.8)),
       ),
       child: isSelected
           ? Icon(Icons.check_rounded, size: 15, color: palette.onSelected)

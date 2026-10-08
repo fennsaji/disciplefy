@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/first_run_choice_row.dart';
@@ -27,6 +28,8 @@ class FirstRunLanguagePage extends StatefulWidget {
 }
 
 class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
+  static const double _headerRadius = 28;
+
   final LanguagePreferenceService _languageService =
       sl<LanguagePreferenceService>();
 
@@ -98,8 +101,83 @@ class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
     final palette = ReaderPalette.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
     final isNarrow = MediaQuery.sizeOf(context).width < 360;
-    final onPhoto =
-        palette.isDark ? Colors.white.withValues(alpha: 0.78) : palette.muted;
+
+    // The header is a photo under a dark shade in both themes, so its text
+    // and controls use the dark theme.
+    final header = Theme(
+      data: AppTheme.darkTheme,
+      child: Builder(
+        builder: (context) => ClipRRect(
+          key: const Key('first_run_language_header'),
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(_headerRadius),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ExcludeSemantics(
+                  child: LayoutBuilder(
+                    builder: (context, box) => Image.asset(
+                      WelcomePhotos.nightStars,
+                      fit: BoxFit.cover,
+                      cacheWidth: welcomePhotoCacheWidth(
+                          context, box.maxWidth, box.maxHeight),
+                      errorBuilder: (_, __, ___) =>
+                          const ColoredBox(color: Color(0xFF1B1B24)),
+                    ),
+                  ),
+                ),
+              ),
+              const Positioned.fill(child: WelcomeSceneShade()),
+              Padding(
+                padding: EdgeInsets.fromLTRB(22, topInset + 8, 22, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: WelcomeBrandRow(),
+                          ),
+                        ),
+                        _LogInPill(onPressed: _saving ? null : _logIn),
+                      ],
+                    ),
+                    SizedBox(height: isNarrow ? 36 : 50),
+                    WelcomeEyebrow(
+                        context.tr(TranslationKeys.firstRunWelcomeEyebrow)),
+                    const SizedBox(height: 8),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        context.tr(TranslationKeys.firstRunWelcomeTitle),
+                        style: AppFonts.poppins(
+                          fontSize: isNarrow ? 22 : 24,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                          color: ReaderPalette.of(context).text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.tr(TranslationKeys.firstRunWelcomeSubtitle),
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
 
     return Scaffold(
       backgroundColor: palette.page,
@@ -107,67 +185,27 @@ class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: topInset + 290,
-                    child: const WelcomePhotoBackdrop(
-                      asset: WelcomePhotos.winterSunset,
-                    ),
-                  ),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 520),
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, topInset + 12, 20, 8),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      header,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: WelcomeBrandRow(),
-                                  ),
-                                ),
-                                _LogInPill(onPressed: _saving ? null : _logIn),
-                              ],
-                            ),
-                            SizedBox(height: isNarrow ? 72 : 96),
-                            WelcomeEyebrow(context
-                                .tr(TranslationKeys.firstRunWelcomeEyebrow)),
-                            const SizedBox(height: 8),
-                            Semantics(
-                              header: true,
-                              child: WelcomeTitle(
-                                context
-                                    .tr(TranslationKeys.firstRunWelcomeTitle),
-                                fontSize: isNarrow ? 24 : 27,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              context
-                                  .tr(TranslationKeys.firstRunWelcomeSubtitle),
-                              style: AppFonts.inter(
-                                fontSize: 14,
-                                height: 1.45,
-                                color: onPhoto,
-                              ),
-                            ),
-                            const SizedBox(height: 28),
                             for (final language in AppLanguage.all)
                               FirstRunChoiceRow(
                                 key: Key('first_run_language_${language.code}'),
+                                gap: 10,
                                 leading: (color) => Text(
                                   glyph(language),
                                   style: AppFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
                                     color: color,
                                   ),
                                 ),
@@ -184,9 +222,9 @@ class _FirstRunLanguagePageState extends State<FirstRunLanguagePage> {
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

@@ -84,7 +84,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               key: ValueKey(_isSignUp),
               asset: _isSignUp
                   ? WelcomePhotos.greenHills
-                  : WelcomePhotos.winterSunset,
+                  : WelcomePhotos.wheatDawn,
               alignment: Alignment.bottomCenter,
             ),
           ),
@@ -116,23 +116,23 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                             onPressed: () => context.pop(),
                           ),
                         ),
-                        const SizedBox(height: 64),
+                        const SizedBox(height: 56),
 
                         // Eyebrow + title
                         _buildTitle(context),
 
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 34),
 
                         // Name field (only for sign up)
                         if (_isSignUp) ...[
                           _buildNameField(context),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
                         ],
 
                         // Email field
                         _buildEmailField(context),
 
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 16),
 
                         // Password field
                         _buildPasswordField(context),
@@ -143,7 +143,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                           _buildForgotPasswordLink(context),
                         ],
 
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 64),
 
                         // Submit button
                         _buildSubmitButton(context),
@@ -181,12 +181,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               ? TranslationKeys.emailAuthSignUpEyebrow
               : TranslationKeys.emailAuthSignInEyebrow),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         WelcomeTitle(
           context.tr(_isSignUp
               ? TranslationKeys.emailAuthSignUpTitle
               : TranslationKeys.emailAuthSignInTitle),
-          fontSize: MediaQuery.sizeOf(context).width < 360 ? 28 : 32,
+          fontSize: MediaQuery.sizeOf(context).width < 360 ? 27 : 30,
         ),
       ],
     );
@@ -196,12 +196,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
   Widget _fieldLabel(BuildContext context, String text) {
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 7),
       child: Text(
         text,
         style: AppFonts.inter(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w500,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
           color: palette.muted,
         ),
       ),
@@ -216,7 +216,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     Widget? suffix,
   }) {
     final palette = ReaderPalette.of(context);
-    final radius = BorderRadius.circular(16);
+    // A 40px pill, as in the design.
+    final radius = BorderRadius.circular(20);
+    final edge = palette.isDark ? palette.hairline : palette.outline;
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(
           borderRadius: radius,
@@ -227,14 +229,16 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       hintText: hint,
       // Long Hindi/Malayalam hints wrap instead of being cut.
       hintMaxLines: 2,
-      hintStyle: AppFonts.inter(fontSize: 15.5, color: palette.dim),
-      prefixIcon: Icon(icon, size: 21, color: palette.muted),
+      hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+      prefixIcon: Icon(icon, size: 18, color: palette.muted),
+      prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 40),
       suffixIcon: suffix,
       filled: true,
       fillColor: palette.card,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-      border: border(palette.outline),
-      enabledBorder: border(palette.outline),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      border: border(edge),
+      enabledBorder: border(edge),
       focusedBorder: border(palette.accentIcon, 1.5),
       errorBorder: border(Theme.of(context).colorScheme.error),
       focusedErrorBorder: border(Theme.of(context).colorScheme.error, 1.5),
@@ -243,7 +247,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
   }
 
   TextStyle _fieldTextStyle(BuildContext context) =>
-      AppFonts.inter(fontSize: 15.5, color: ReaderPalette.of(context).text);
+      AppFonts.inter(fontSize: 15, color: ReaderPalette.of(context).text);
 
   Widget _buildNameField(BuildContext context) {
     return Column(
@@ -369,7 +373,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         child: Text(
           context.tr(TranslationKeys.emailAuthForgotPassword),
           style: AppFonts.inter(
-            fontSize: 14.5,
+            fontSize: 13.5,
             fontWeight: FontWeight.w600,
             color: palette.accentIcon,
           ),
@@ -388,6 +392,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
           label: _isSignUp
               ? context.tr(TranslationKeys.emailAuthSignUpButton)
               : context.tr(TranslationKeys.emailAuthSignInButton),
+          height: 40,
           isLoading: isLoading,
           onPressed: () => _handleSubmit(context),
         );
@@ -406,7 +411,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
           _isSignUp
               ? context.tr(TranslationKeys.emailAuthHaveAccount)
               : context.tr(TranslationKeys.emailAuthNoAccount),
-          style: AppFonts.inter(fontSize: 14.5, color: palette.muted),
+          style: AppFonts.inter(fontSize: 13.5, color: palette.muted),
         ),
         TextButton(
           key: const Key('email_auth_toggle_mode'),
@@ -421,8 +426,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 ? context.tr(TranslationKeys.emailAuthSignInLink)
                 : context.tr(TranslationKeys.emailAuthCreateAccount),
             style: AppFonts.inter(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
               color: palette.text,
             ),
           ),
