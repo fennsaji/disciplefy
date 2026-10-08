@@ -72,6 +72,8 @@ class TodayLessonCard extends StatelessWidget {
     final theme = Theme.of(context);
     // The mode chip is drawn 26px tall inside a 40px tap row: the 7px above
     // and below it come out of the card's top padding and the next gap.
+    final eyebrow =
+        context.tr(TranslationKeys.homeTodayLessonEyebrow, {'n': next.number});
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -80,12 +82,14 @@ class TodayLessonCard extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                context.tr(
-                    TranslationKeys.homeTodayLessonEyebrow, {'n': next.number}),
+                eyebrow,
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 1.6,
+                  // Wide tracking only suits Latin caps; Devanagari and
+                  // Malayalam need the room to stay on one line.
+                  letterSpacing:
+                      RegExp(r'^[\x00-\x7F·]*$').hasMatch(eyebrow) ? 1.6 : 0.3,
                   color: palette.gold,
                 ),
               ),

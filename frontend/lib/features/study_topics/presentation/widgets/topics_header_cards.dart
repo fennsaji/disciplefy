@@ -194,12 +194,16 @@ class TopicsStatTile extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
+  /// Icon above the text instead of beside it, for narrow tiles.
+  final bool stacked;
+
   const TopicsStatTile({
     super.key,
     required this.icon,
     required this.label,
     this.value,
     this.onTap,
+    this.stacked = false,
   });
 
   @override
@@ -219,9 +223,11 @@ class TopicsStatTile extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Container(
+          // On a narrow tile (hi/ml at 320px, large text) the icon sits
+          // above the text so words keep their full width.
+          child: Builder(
+            builder: (context) {
+              final iconBox = Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
@@ -229,16 +235,18 @@ class TopicsStatTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, size: 21, color: palette.gold),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (value != null) ...[
-                      Text(
+              );
+              final text = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (value != null) ...[
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
                         value!,
+                        maxLines: 1,
                         style: AppFonts.poppins(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -246,35 +254,49 @@ class TopicsStatTile extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
-                      Text(
+                    ),
+                    Text(
+                      label,
+                      style: AppFonts.inter(
+                        fontSize: 12.5,
+                        color: palette.muted,
+                        height: 1.25,
+                      ),
+                    ),
+                  ] else
+                    // One word in every language: shrink rather than
+                    // break it across lines on a narrow tile.
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
                         label,
-                        style: AppFonts.inter(
-                          fontSize: 12.5,
-                          color: palette.muted,
+                        maxLines: 1,
+                        style: AppFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
                           height: 1.25,
                         ),
                       ),
-                    ] else
-                      // One word in every language: shrink rather than
-                      // break it across lines on a narrow tile.
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          style: AppFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: palette.text,
-                            height: 1.25,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+                    ),
+                ],
+              );
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [iconBox, const SizedBox(height: 8), text],
+                );
+              }
+              return Row(
+                children: [
+                  iconBox,
+                  const SizedBox(width: 10),
+                  Expanded(child: text),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -299,7 +321,50 @@ class TopicsStatRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+        // When a tile's text column (tile minus 12+12 padding and the
+        // 40+10 icon) cannot hold the longest word at full size (hi/ml at
+        // 320px, large text) the icon goes above the text instead.
+        builder: (context, box) {
+          if (!showLeaderboard || !box.maxWidth.isFinite) {
+            return _build(context, stacked: false);
+          }
+          final room = (box.maxWidth - 10) / 2 - 74;
+          final scaler = MediaQuery.textScalerOf(context);
+          double widest(String text, TextStyle style) {
+            var max = 0.0;
+            for (final word in text.split(RegExp(r'\s+'))) {
+              final painter = TextPainter(
+                text: TextSpan(text: word, style: style),
+                textDirection: Directionality.of(context),
+                textScaler: scaler,
+              )..layout();
+              if (painter.width > max) max = painter.width;
+              painter.dispose();
+            }
+            return max;
+          }
+
+          final bold =
+              AppFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700);
+          final small = AppFonts.inter(fontSize: 12.5);
+          final board =
+              AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600);
+          final needed = [
+            widest(
+                context.tr(TranslationKeys.topicsHubLeaderboardLabel), board),
+            widest(context.tr(TranslationKeys.topicsHubStreakLabel), small),
+            if (streak != null)
+              widest(
+                  context.tr(
+                      TranslationKeys.topicsHubStreakValue, {'count': streak}),
+                  bold),
+          ].reduce((a, b) => a > b ? a : b);
+          return _build(context, stacked: needed > room);
+        },
+      );
+
+  Widget _build(BuildContext context, {required bool stacked}) {
     final streak = this.streak;
     final rank = this.rank;
     final streakTile = TopicsStatTile(
@@ -314,6 +379,7 @@ class TopicsStatRow extends StatelessWidget {
               {'count': streak},
             ),
       label: context.tr(TranslationKeys.topicsHubStreakLabel),
+      stacked: stacked,
     );
     if (!showLeaderboard) return streakTile;
     final leaderboardTile = TopicsStatTile(
@@ -322,6 +388,7 @@ class TopicsStatRow extends StatelessWidget {
       value: rank != null && rank > 0 ? '#$rank' : null,
       label: context.tr(TranslationKeys.topicsHubLeaderboardLabel),
       onTap: onLeaderboardTap,
+      stacked: stacked,
     );
     return IntrinsicHeight(
       child: Row(
