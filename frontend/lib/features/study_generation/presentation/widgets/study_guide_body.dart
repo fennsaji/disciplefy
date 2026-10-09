@@ -591,31 +591,14 @@ class StudyGuideHero extends StatelessWidget {
         MediaQuery.paddingOf(context).top + StudyGuideLayout.topBarHeight;
     final page = palette.page;
 
-    // Dark: the photo darkens into the black page. Light: a pale wash keeps
-    // dark ink readable over the sky, then fades into the light page.
-    final fade = palette.isDark
-        ? LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withValues(alpha: 0.35),
-              Colors.black.withValues(alpha: 0.05),
-              page.withValues(alpha: 0.7),
-              page,
-            ],
-            stops: const [0, 0.35, 0.72, 1],
-          )
-        : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              page.withValues(alpha: 0.1),
-              page.withValues(alpha: 0.3),
-              page.withValues(alpha: 0.88),
-              page,
-            ],
-            stops: const [0, 0.4, 0.72, 1],
-          );
+    // A scrim keeps the eyebrow, title and back arrow readable over the
+    // lightest part of the photo, then fades into the page.
+    final fade = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: photoHeaderScrim(palette),
+      stops: photoHeaderScrimStops,
+    );
 
     return Stack(
       children: [
@@ -742,8 +725,12 @@ class StudyGuideTopicTitle extends StatelessWidget {
           style: AppFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: palette.gold,
-            letterSpacing: 1.6,
+            color: palette.isDark ? palette.gold : palette.text,
+            // Wide tracking only suits Latin script; it breaks hi/ml
+            // conjuncts apart.
+            letterSpacing: Localizations.localeOf(context).languageCode == 'en'
+                ? 1.6
+                : 0.3,
           ),
         ),
         const SizedBox(height: 8),
