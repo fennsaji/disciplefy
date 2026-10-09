@@ -199,10 +199,10 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     expect(started, 1);
 
-    await tester.tap(find.textContaining('Full guide'));
+    await tester.tap(find.textContaining('Standard'));
     await tester.pumpAndSettle();
-    expect(find.text('Quick read · 3 min'), findsOneWidget);
-    await tester.tap(find.textContaining('Quick read').last);
+    expect(find.text('Quick Read · 3 min'), findsOneWidget);
+    await tester.tap(find.textContaining('Quick Read ·').last);
     await tester.pumpAndSettle();
     expect(changed, StudyMode.quick);
   });
@@ -217,8 +217,32 @@ void main() {
               onModeChanged: (_) {},
               onStart: () {}),
         )));
-    expect(find.text('Quick read · 3 min'), findsOneWidget);
-    expect(find.textContaining('Full guide'), findsNothing);
+    expect(find.text('Quick Read · 3 min'), findsOneWidget);
+    expect(find.textContaining('Standard'), findsNothing);
+  });
+
+  testWidgets('a saved Deep Dive is named on the chip, not as Standard',
+      (tester) async {
+    StudyMode? changed;
+    await tester.pumpWidget(welcomeApp(
+        dark: true,
+        screen: Scaffold(
+          body: TodayLessonCard(
+              summary: summary4of8,
+              mode: StudyMode.deep,
+              onModeChanged: (m) => changed = m,
+              onStart: () {}),
+        )));
+    expect(find.text('Deep Dive · 12 min'), findsOneWidget);
+    expect(find.textContaining('Standard'), findsNothing);
+    await tester.tap(find.text('Deep Dive · 12 min'));
+    await tester.pumpAndSettle();
+    // The menu keeps the saved depth next to Quick Read and Standard.
+    expect(find.text('Quick Read · 3 min'), findsOneWidget);
+    expect(find.text('Standard · 8 min'), findsOneWidget);
+    await tester.tap(find.text('Standard · 8 min'));
+    await tester.pumpAndSettle();
+    expect(changed, StudyMode.standard);
   });
 
   for (final dark in [false, true]) {

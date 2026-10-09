@@ -106,7 +106,7 @@ extension StudyModeExtension on StudyMode {
       case StudyMode.quick:
         return 'Key insight + verse + 1 reflection';
       case StudyMode.standard:
-        return 'Full guide with 6 sections';
+        return 'The complete study in 6 sections';
       case StudyMode.deep:
         return '+ Word studies + Extended context';
       case StudyMode.lectio:

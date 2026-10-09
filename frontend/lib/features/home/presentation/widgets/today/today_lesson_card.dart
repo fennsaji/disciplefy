@@ -6,6 +6,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
 
 /// The active path's one card on Home and Topics: its progress strip on top
 /// (tapping it opens the path), then today's lesson: eyebrow, a Quick/Full
@@ -209,12 +210,16 @@ class TodayLessonCard extends StatelessWidget {
   }
 }
 
-String _modeLabel(BuildContext context, StudyMode mode) => context.tr(
-      mode == StudyMode.quick
-          ? TranslationKeys.homeTodayModeQuick
-          : TranslationKeys.homeTodayModeStandard,
-      {'min': mode.durationMinutes},
-    );
+/// "Quick Read · 3 min" / "Standard · 8 min"; a deeper saved depth is named
+/// as itself (e.g. "Deep Dive · 12 min"), never as Standard.
+String _modeLabel(BuildContext context, StudyMode mode) => switch (mode) {
+      StudyMode.quick => context.tr(
+          TranslationKeys.homeTodayModeQuick, {'min': mode.durationMinutes}),
+      StudyMode.standard => context.tr(
+          TranslationKeys.homeTodayModeStandard, {'min': mode.durationMinutes}),
+      _ =>
+        '${mode.localizedShortName(context)} · ${mode.localizedShortDuration(context)}',
+    };
 
 /// The "TODAY · LESSON N" eyebrow with the mode chip at the row's end.
 ///
@@ -336,7 +341,11 @@ class _ModeChipState extends State<_ModeChip> {
       },
       color: palette.raised,
       itemBuilder: (context) => [
-        for (final m in const [StudyMode.quick, StudyMode.standard])
+        for (final m in [
+          StudyMode.quick,
+          StudyMode.standard,
+          if (mode != StudyMode.quick && mode != StudyMode.standard) mode,
+        ])
           PopupMenuItem<StudyMode>(
             value: m,
             height: 40,

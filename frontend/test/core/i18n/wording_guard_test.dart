@@ -99,6 +99,31 @@ void main() {
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
+  test('one name for the Standard study mode: never "Full guide"', () {
+    // Owner rule: the depth is "Standard" everywhere (chips, switches,
+    // hints, intro copy), and Quick Read is always cased as its mode name.
+    final banned = {
+      'en': [
+        RegExp(r'\bfull guide\b', caseSensitive: false),
+        RegExp(r'\bQuick read\b'),
+      ],
+      'hi': [RegExp('पूरी गाइड'), RegExp('पूरा गाइड')],
+      'ml': [RegExp('പൂർണ ഗൈഡ'), RegExp('പൂർണ്ണ ഗൈഡ')],
+    };
+    final maps = {
+      'en': englishTranslations,
+      'hi': hindiTranslations,
+      'ml': malayalamTranslations,
+    };
+    final bad = [
+      for (final lang in maps.keys)
+        for (final e in flatten(maps[lang]!))
+          if (banned[lang]!.any((r) => r.hasMatch(_visible(e.value))))
+            '$lang ${e.key}: ${e.value}',
+    ];
+    expect(bad, isEmpty, reason: bad.join('\n'));
+  });
+
   test('no "AI" in any user copy, in any language', () {
     final bad = [
       for (final m in [

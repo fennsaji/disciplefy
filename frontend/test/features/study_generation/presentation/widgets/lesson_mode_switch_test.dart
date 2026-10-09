@@ -42,15 +42,15 @@ void main() {
         ),
       );
 
-  testWidgets('tapping Full guide reports standard; selected segment is gold',
+  testWidgets('tapping Standard reports standard; selected segment is gold',
       (tester) async {
     StudyMode? picked;
     await tester.pumpWidget(app(onChanged: (m) => picked = m));
     await tester.pumpAndSettle();
-    expect(find.text('Quick read · 3 min'), findsOneWidget);
-    expect(find.text('Full guide · 8 min'), findsOneWidget);
+    expect(find.text('Quick Read · 3 min'), findsOneWidget);
+    expect(find.text('Standard · 8 min'), findsOneWidget);
 
-    await tester.tap(find.textContaining('Full guide'));
+    await tester.tap(find.textContaining('Standard'));
     expect(picked, StudyMode.standard);
 
     final quick = tester.widget<DecoratedBox>(
@@ -70,7 +70,7 @@ void main() {
     var calls = 0;
     await tester.pumpWidget(app(onChanged: (_) => calls++));
     await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('Quick read'));
+    await tester.tap(find.textContaining('Quick Read ·'));
     expect(calls, 0);
   });
 
