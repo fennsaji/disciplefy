@@ -57,6 +57,8 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_discipler_gate.dart';
 import '../../../study_topics/domain/entities/lesson_ref.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/utils/lesson_launch.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/out_of_credits_sheet.dart';
 import '../../../study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../../study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_mode_switch.dart';
@@ -187,6 +189,10 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Lesson 1 opened from the first run (`first_run=1`).
   final bool firstRun;
 
+  /// The lesson mode the reader switched away from to open this one; it is
+  /// reopened when this mode cannot be paid for.
+  final StudyMode? previousLessonMode;
+
   const StudyGuideScreenV2({
     super.key,
     this.topicId,
@@ -202,25 +208,62 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.existingGuideData,
     this.lesson,
     this.firstRun = false,
+    this.previousLessonMode,
   });
 
+  /// Identity of the guide a reader shows. go_router reuses the page of a
+  /// location opened with `go` when it is replaced (the Quick/Full switch),
+  /// so the reader's State and bloc would outlive a change of guide and keep
+  /// showing the old one. Keying the content by this restarts it instead.
+  static Key guideKey({
+    String? input,
+    String? type,
+    String? language,
+    String? topicId,
+    required StudyMode studyMode,
+    LessonRef? lesson,
+    Object? existingGuideId,
+  }) =>
+      ValueKey<String>([
+        studyMode.name,
+        input ?? '',
+        type ?? '',
+        language ?? '',
+        topicId ?? '',
+        lesson?.pathId ?? '',
+        lesson?.lessonNumber ?? '',
+        existingGuideId ?? '',
+      ].join('|'));
+
   @override
-  Widget build(BuildContext context) => BlocProvider(
-        create: (context) => sl<StudyBloc>(),
-        child: _StudyGuideScreenV2Content(
-          topicId: topicId,
+  Widget build(BuildContext context) => KeyedSubtree(
+        key: guideKey(
           input: input,
           type: type,
-          description: description,
-          pathTitle: pathTitle,
-          pathDescription: pathDescription,
-          pathDiscipleLevel: pathDiscipleLevel,
           language: language,
-          navigationSource: navigationSource,
+          topicId: topicId,
           studyMode: studyMode,
-          existingGuideData: existingGuideData,
           lesson: lesson,
-          firstRun: firstRun,
+          existingGuideId: existingGuideData?['id'],
+        ),
+        child: BlocProvider(
+          create: (context) => sl<StudyBloc>(),
+          child: _StudyGuideScreenV2Content(
+            topicId: topicId,
+            input: input,
+            type: type,
+            description: description,
+            pathTitle: pathTitle,
+            pathDescription: pathDescription,
+            pathDiscipleLevel: pathDiscipleLevel,
+            language: language,
+            navigationSource: navigationSource,
+            studyMode: studyMode,
+            existingGuideData: existingGuideData,
+            lesson: lesson,
+            firstRun: firstRun,
+            previousLessonMode: previousLessonMode,
+          ),
         ),
       );
 }
@@ -239,6 +282,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final Map<String, dynamic>? existingGuideData;
   final LessonRef? lesson;
   final bool firstRun;
+  final StudyMode? previousLessonMode;
 
   const _StudyGuideScreenV2Content({
     this.topicId,
@@ -254,6 +298,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     this.existingGuideData,
     this.lesson,
     this.firstRun = false,
+    this.previousLessonMode,
   });
 
   @override
@@ -1363,6 +1408,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
 
     if (!mounted) return;
+    if (isTokenError) _returnToPreviousLessonMode(failure);
     setState(() {
       _isLoading = false;
       _hasError = true;
@@ -1383,12 +1429,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       _hasError = true;
       _errorMessage = context.tr(TranslationKeys.commonErrorTryAgain);
       // Check for token-related errors by type or error code
-      _isInsufficientTokensError = state.failure is InsufficientTokensFailure ||
-          state.failure is TokenFailure ||
-          state.failure.code == 'INSUFFICIENT_TOKENS' ||
-          state.failure.code == 'TOKEN_LIMIT_EXCEEDED';
+      _isInsufficientTokensError = _isTokenFailure(state.failure);
     });
+    if (_isInsufficientTokensError) {
+      _returnToPreviousLessonMode(state.failure);
+    }
   }
+
+  static bool _isTokenFailure(Failure failure) =>
+      failure is InsufficientTokensFailure ||
+      failure is TokenFailure ||
+      failure.code == 'INSUFFICIENT_TOKENS' ||
+      failure.code == 'TOKEN_LIMIT_EXCEEDED';
 
   /// A guest asked for a typed study or a paid mode (403 ACCOUNT_REQUIRED):
   /// offer an account, never "generation failed". With one, generate again;
@@ -1402,6 +1454,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (!mounted) return;
     if (linked) {
       await _retryGeneration();
+    } else if (_canReturnToPreviousLessonMode) {
+      // A guest switched a lesson to a mode that needs an account: back to
+      // the mode they were reading, not out of the lesson.
+      _switchLessonMode(widget.previousLessonMode!, returning: true);
     } else if (context.canPop()) {
       context.pop();
     } else {
@@ -2832,18 +2888,46 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   /// Reopens this lesson in [mode], keeping its other query parameters.
-  /// Cancels a stream still in flight first.
-  void _switchLessonMode(StudyMode mode) {
+  /// Cancels a stream still in flight first. The mode left is recorded so a
+  /// switch that cannot be paid for returns to it; [returning] drops it.
+  void _switchLessonMode(StudyMode mode, {bool returning = false}) {
     if (mode == widget.studyMode) return;
     final bloc = context.read<StudyBloc>();
     if (bloc.state is StudyGenerationStreaming) {
       bloc.add(const CancelStudyStreamingRequested());
     }
     final uri = Uri.parse(GoRouterState.of(context).uri.toString());
-    context.pushReplacement(uri.replace(queryParameters: {
-      ...uri.queryParameters,
-      'mode': mode.name,
-    }).toString());
+    context.pushReplacement(lessonModeLocation(uri, mode,
+        from: returning ? null : widget.studyMode));
+  }
+
+  /// Whether this lesson was opened by the Quick/Full switch from another
+  /// mode, which a failed switch can go back to.
+  bool get _canReturnToPreviousLessonMode =>
+      widget.lesson != null &&
+      widget.previousLessonMode != null &&
+      widget.previousLessonMode != widget.studyMode;
+
+  /// A lesson switched to a mode the reader has no credits for: show the
+  /// out-of-credits sheet, then reopen the mode they came from (its guide is
+  /// in the local cache, so nothing is generated again). Does nothing when
+  /// this screen was not opened by a switch.
+  void _returnToPreviousLessonMode(Failure failure) {
+    if (!_canReturnToPreviousLessonMode) return;
+    final previous = widget.previousLessonMode!;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final tokens = context.read<TokenBloc>().state;
+      if (tokens is TokenLoaded && failure is InsufficientTokensFailure) {
+        await OutOfCreditsSheet.show(
+          context,
+          status: tokens.tokenStatus,
+          needed: failure.requiredTokens,
+        );
+      }
+      if (!mounted) return;
+      _switchLessonMode(previous, returning: true);
+    });
   }
 
   Widget _buildErrorScreen() {

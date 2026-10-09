@@ -62,3 +62,18 @@ String buildLessonLocation({
   };
   return Uri(path: AppRoutes.studyGuideV2, queryParameters: query).toString();
 }
+
+/// Query key holding the mode a reader switched away from, so a switch that
+/// fails for want of credits can go back to it.
+const String lessonFromModeParam = 'from_mode';
+
+/// [current] lesson location reopened in [mode], every other query key kept.
+/// [from] is recorded under [lessonFromModeParam]; without it the key is
+/// dropped.
+String lessonModeLocation(Uri current, StudyMode mode, {StudyMode? from}) {
+  final query = Map<String, String>.of(current.queryParameters)
+    ..['mode'] = mode.name
+    ..remove(lessonFromModeParam);
+  if (from != null) query[lessonFromModeParam] = from.name;
+  return current.replace(queryParameters: query).toString();
+}

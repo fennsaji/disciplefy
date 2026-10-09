@@ -18,6 +18,7 @@ import '../../features/onboarding/presentation/pages/growth_goal_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/presentation/screens/study_guide_open_screen.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
+import '../../features/study_topics/domain/utils/lesson_launch.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
 import '../../features/auth/presentation/pages/otp_verification_screen.dart';
@@ -1354,6 +1355,8 @@ class AppRouter {
                 firstRun:
                     state.uri.queryParameters[FirstRunCubit.firstRunParam] ==
                         '1',
+                previousLessonMode: studyModeFromString(
+                    state.uri.queryParameters[lessonFromModeParam]),
               ),
             ),
             state: state,
