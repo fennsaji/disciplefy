@@ -65,6 +65,32 @@ async function findCachedGuide(services: ServiceContainer, db: SupabaseClient, r
   return data ? { id: data.id as string, title: data.input_value as string } : null
 }
 
+/** A row left 'processing' longer than this is treated as abandoned and may be reclaimed. */
+export const PROCESSING_STALE_MS = 5 * 60_000
+
+/**
+ * Atomically moves a queue row to 'processing' for this run. Succeeds only
+ * when the row is pending, or stuck in processing past the stale window — so
+ * two runs never both work the same row.
+ */
+export async function claimReplyQueueRow(
+  db: SupabaseClient,
+  q: { id: string; attempts?: number | null },
+  now: Date = new Date(),
+): Promise<boolean> {
+  const staleBefore = new Date(now.getTime() - PROCESSING_STALE_MS).toISOString()
+  const { data, error } = await db.from('discipler_reply_queue')
+    .update({ status: 'processing', attempts: (q.attempts ?? 0) + 1, updated_at: now.toISOString() })
+    .eq('id', q.id)
+    .or(`status.eq.pending,and(status.eq.processing,updated_at.lt.${staleBefore})`)
+    .select('id')
+  if (error) {
+    console.error('[discipler-reply] claim failed:', error.message)
+    return false
+  }
+  return (data ?? []).length > 0
+}
+
 export async function handleDisciplerReply(req: Request, services: ServiceContainer): Promise<Response> {
   await requireInternal(req, services)
   let body: { queue_id: string }
@@ -77,7 +103,18 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
   if (q.status !== 'pending' && q.status !== 'processing') {
     return json({ status: q.status })
   }
-  await db.from('discipler_reply_queue').update({ status: 'processing', attempts: (q.attempts ?? 0) + 1 }).eq('id', q.id)
+  // One run per row: a retried or overlapping call for a row another run is
+  // still working on would otherwise post the reply and push it twice.
+  if (!(await claimReplyQueueRow(db, q))) {
+    return json({ status: 'processing' })
+  }
+  // A run that crashed after posting (before marking the row done) must not
+  // post again when the row is reclaimed.
+  const { data: alreadyAnswered } = await db.from('discipler_replies').select('id').eq('queue_id', q.id).limit(1)
+  if (alreadyAnswered && alreadyAnswered.length > 0) {
+    await markQueue(db, q.id, 'done')
+    return json({ status: 'done' })
+  }
 
   const done = async (status: string, extra: Record<string, unknown> = {}, err?: string) => {
     await markQueue(db, q.id, status, err)
