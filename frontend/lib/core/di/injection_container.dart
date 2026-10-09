@@ -120,6 +120,7 @@ import '../../features/study_topics/data/repositories/learning_paths_repository_
 import '../../features/study_topics/data/services/learning_paths_cache_service.dart';
 import '../../features/study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../features/study_topics/domain/usecases/reset_learning_progress.dart';
+import '../../features/study_topics/presentation/bloc/all_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/continue_learning_bloc.dart';
 import '../../features/study_topics/data/datasources/leaderboard_remote_datasource.dart';
@@ -829,6 +830,8 @@ Future<void> initializeDependencies() async {
         repository: sl(),
         resetLearningProgress: sl(),
       ));
+
+  sl.registerFactory(() => AllPathsBloc(repository: sl()));
 
   //! Continue Learning (In-Progress Topics)
   sl.registerFactory(() => ContinueLearningBloc(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:disciplefy_bible_study/features/home/data/models/active_path_summary_model.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/learning_path.dart';
@@ -302,6 +304,30 @@ class LearningPathsResponseModel {
       hasMore: hasMore,
     );
   }
+}
+
+/// The `action: 'categories'` response: every category with its path count.
+/// A malformed body throws [FormatException]; malformed rows are skipped.
+List<LearningPathCategorySummary> parseCategorySummaries(String body) {
+  final json = jsonDecode(body);
+  if (json is! Map<String, dynamic> || json['success'] != true) {
+    throw const FormatException('Unsuccessful categories response');
+  }
+  final data = json['data'];
+  final rows = data is Map<String, dynamic> ? data['categories'] : null;
+  if (rows is! List) {
+    throw const FormatException('Categories response has no categories');
+  }
+  return [
+    for (final row in rows)
+      if (row is Map<String, dynamic> &&
+          row['name'] is String &&
+          (row['name'] as String).trim().isNotEmpty)
+        LearningPathCategorySummary(
+          name: row['name'] as String,
+          totalPaths: (row['total_paths'] as num?)?.toInt() ?? 0,
+        ),
+  ];
 }
 
 /// Model for parsing a single category entry from the category-grouped API.

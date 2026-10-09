@@ -40,6 +40,27 @@ class PagedPathsRepository extends Fake implements LearningPathsRepository {
   /// Offsets of the per-category requests, in order.
   final categoryOffsets = <int>[];
 
+  /// Category names of the per-category requests, in order.
+  final categoryRequests = <String>[];
+
+  /// Languages of the category-summary requests, in order.
+  final summaryRequests = <String>[];
+
+  /// Languages of the flat-list requests, in order.
+  final flatLanguages = <String>[];
+
+  /// Page sizes of the flat-list requests, in order.
+  final flatLimits = <int>[];
+
+  /// A flat-list request at this offset waits for its completer.
+  final flatGates = <int, Completer<void>>{};
+
+  /// Category-summary requests fail.
+  bool failSummaries = false;
+
+  /// A flat-list request in this language fails.
+  String? failLanguage;
+
   /// A flat-list request at this offset fails.
   int? failFlatAt;
 
@@ -64,6 +85,13 @@ class PagedPathsRepository extends Fake implements LearningPathsRepository {
   }) async {
     flatOffsets.add(offset);
     searches.add(search);
+    flatLanguages.add(language);
+    flatLimits.add(limit);
+    final gate = flatGates[offset];
+    if (gate != null) await gate.future;
+    if (failLanguage == language) {
+      return const Left(ServerFailure(message: 'boom'));
+    }
     final delay = search == null ? null : searchDelays[search];
     if (delay != null) await Future<void>.delayed(delay);
     if (failFlatAt == offset) {
@@ -83,9 +111,9 @@ class PagedPathsRepository extends Fake implements LearningPathsRepository {
     ));
   }
 
-  LearningPathCategory _category(String name, {int offset = 0}) {
+  LearningPathCategory _category(String name, {int offset = 0, int limit = 3}) {
     final all = paths.where((p) => p.category == name).toList();
-    final page = all.skip(offset).take(3).toList();
+    final page = all.skip(offset).take(limit).toList();
     return LearningPathCategory(
       name: name,
       paths: page,
@@ -121,10 +149,27 @@ class PagedPathsRepository extends Fake implements LearningPathsRepository {
     int offset = 0,
   }) async {
     categoryOffsets.add(offset);
+    categoryRequests.add(category);
     if (failCategoryPages) {
       return const Left(NetworkFailure(message: 'offline'));
     }
-    return Right(_category(category, offset: offset));
+    return Right(_category(category, offset: offset, limit: limit));
+  }
+
+  @override
+  Future<Either<Failure, List<LearningPathCategorySummary>>>
+      getLearningPathCategorySummaries({String language = 'en'}) async {
+    summaryRequests.add(language);
+    if (failSummaries) {
+      return const Left(NetworkFailure(message: 'offline'));
+    }
+    return Right([
+      for (final name in _categoryNames)
+        LearningPathCategorySummary(
+          name: name,
+          totalPaths: paths.where((p) => p.category == name).length,
+        ),
+    ]);
   }
 
   @override

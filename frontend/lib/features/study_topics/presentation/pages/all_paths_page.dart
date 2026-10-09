@@ -18,9 +18,7 @@ import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/all_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_list_row.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_current_path_card.dart';
@@ -51,9 +49,12 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
   return (path: path, lesson: path.currentLessonNumber);
 }
 
-/// Every learning path, filtered client-side by category chips ("All",
-/// then the categories in their curated order). The user's current path is
-/// pinned first with a gold "Current" tag and "Lesson N of M".
+/// Every learning path, listed by the server a page at a time: the first
+/// page shows at once and the next loads as the list nears its end. Category
+/// chips ("All", then every category in the server's order) come from their
+/// own light request; a chip lists its category from the server and a search
+/// asks the server. The user's current path is pinned first with a gold
+/// "Current" tag and "Lesson N of M".
 ///
 /// Open to guests: a locked row shows its lock and opens the account sheet.
 class AllPathsPage extends StatefulWidget {
@@ -71,46 +72,41 @@ class AllPathsPage extends StatefulWidget {
 
 class _AllPathsPageState extends State<AllPathsPage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
   String? _language;
-  String? _category;
   bool _searchOpen = false;
 
   /// Ignores a double tap; never held across the awaited push.
   final TapGuard _navGuard = TapGuard();
 
-  /// The full flat list, kept while a search replaces the bloc's results.
-  List<LearningPath> _all = const [];
-
   /// Content-language changes made elsewhere (Settings) while this page
   /// stays mounted in the Topics branch.
   StreamSubscription<AppLanguage>? _languageSub;
 
-  LearningPathsBloc get _bloc => context.read<LearningPathsBloc>();
+  /// Last page asked for by scrolling and when, so a page is not asked for
+  /// again on every scroll tick or rebuild.
+  String? _lastPageKey;
+  DateTime? _lastPageAt;
+  static const Duration _pageRetryAfter = Duration(seconds: 3);
+
+  /// Starts loading the next page this far from the end of the list.
+  static const double _loadMoreExtent = 600;
+
+  AllPathsBloc get _bloc => context.read<AllPathsBloc>();
 
   @override
   void initState() {
     super.initState();
-    _category = widget.initialCategory;
     _language = widget.language;
     _searchController.addListener(() => setState(() {}));
+    _scrollController.addListener(_maybeLoadMore);
     if (sl.isRegistered<LanguagePreferenceService>()) {
       _languageSub = sl<LanguagePreferenceService>()
           .studyContentLanguageChanges
           .listen(_onLanguageChanged);
     }
-    _load();
-  }
-
-  /// Lists the paths again in the new content language; the old list is
-  /// dropped so its titles are never shown under the new language.
-  void _onLanguageChanged(AppLanguage language) {
-    if (!mounted || language.code == _language) return;
-    setState(() {
-      _language = language.code;
-      _all = const [];
-    });
-    _load();
+    _open();
   }
 
   @override
@@ -119,7 +115,23 @@ class _AllPathsPageState extends State<AllPathsPage> {
     _navGuard.dispose();
     _debounce?.cancel();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _open() async {
+    final language = await _resolveLanguage();
+    if (!mounted) return;
+    _bloc.add(
+        AllPathsOpened(language: language, category: widget.initialCategory));
+  }
+
+  /// Lists the paths again in the new content language.
+  void _onLanguageChanged(AppLanguage language) {
+    if (!mounted || language.code == _language) return;
+    _language = language.code;
+    _lastPageKey = null;
+    _bloc.add(AllPathsLanguageChanged(language.code));
   }
 
   Future<String> _resolveLanguage() async {
@@ -137,41 +149,13 @@ class _AllPathsPageState extends State<AllPathsPage> {
     return _language!;
   }
 
-  Future<void> _load() async {
-    final language = await _resolveLanguage();
-    if (!mounted) return;
-    _bloc.add(LoadFlatLearningPaths(language: language));
-  }
-
   void _onSearchChanged(String query) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), _search);
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _bloc.add(AllPathsSearchChanged(_searchController.text.trim()));
+    });
   }
-
-  Future<void> _search() async {
-    final language = await _resolveLanguage();
-    if (!mounted) return;
-    _bloc.add(SearchLearningPaths(
-        query: _searchController.text.trim(), language: language));
-  }
-
-  /// The flat list landed (open, refresh, return from a path, language
-  /// switch): it replaced any search results in the bloc, so search again
-  /// for what is still typed.
-  void _onFlatListLoaded() {
-    if (_searchController.text.trim().isEmpty) return;
-    _debounce?.cancel();
-    _search();
-  }
-
-  /// Whether [state] is the flat list of every path (it lands as a
-  /// "search" with an empty query).
-  static bool _isFlatList(LearningPathsState state) =>
-      state is LearningPathsLoaded &&
-      state.categories.isEmpty &&
-      (state.searchQuery?.isEmpty ?? true) &&
-      !state.isSearching &&
-      state.searchResults != null;
 
   void _toggleSearch() {
     setState(() {
@@ -183,6 +167,54 @@ class _AllPathsPageState extends State<AllPathsPage> {
     });
   }
 
+  /// A chip lists its category; a search covers every path, so it is
+  /// cleared.
+  void _selectCategory(String? category) {
+    _debounce?.cancel();
+    if (_searchController.text.isNotEmpty) _searchController.clear();
+    _bloc.add(AllPathsCategorySelected(category));
+  }
+
+  /// Whether the page [key] was just asked for (and so is not asked again).
+  bool _recentlyAsked(String key) {
+    final now = DateTime.now();
+    final at = _lastPageAt;
+    if (key == _lastPageKey &&
+        at != null &&
+        now.difference(at) < _pageRetryAfter) {
+      return true;
+    }
+    _lastPageKey = key;
+    _lastPageAt = now;
+    return false;
+  }
+
+  /// Asks for the next page when the list is near its end, or too short to
+  /// scroll. A failed page waits for the footer's Retry.
+  void _maybeLoadMore() {
+    if (!mounted || !_scrollController.hasClients) return;
+    final state = _bloc.state;
+    if (state.status != AllPathsStatus.loaded ||
+        !state.hasMore ||
+        state.loadingMore ||
+        state.moreFailed ||
+        state.refreshing) {
+      return;
+    }
+    if (_scrollController.position.extentAfter > _loadMoreExtent) return;
+    final key =
+        '${state.language}|${state.category}|${state.query}|${state.nextOffset}';
+    if (_recentlyAsked(key)) return;
+    _bloc.add(const AllPathsMoreRequested());
+  }
+
+  Future<void> _refresh() {
+    final done = Completer<void>();
+    _lastPageKey = null;
+    _bloc.add(AllPathsRefreshed(done: done));
+    return done.future;
+  }
+
   Future<void> _openPath(LearningPath path) =>
       guestPathGate(context, path, () => _pushPath(path));
 
@@ -192,7 +224,7 @@ class _AllPathsPageState extends State<AllPathsPage> {
         '/learning-path/${path.id}?source=studyTopics',
         extra: path);
     if (!mounted || changed != true) return;
-    _load();
+    _refresh();
   }
 
   void _goBack() {
@@ -203,13 +235,16 @@ class _AllPathsPageState extends State<AllPathsPage> {
     }
   }
 
-  /// Categories in the order they first appear (the paths come in curated
-  /// order, categories with them).
-  List<String> _categories() {
+  /// Every category from the server; if that failed, those of the loaded
+  /// paths. The selected one is always listed.
+  List<String> _categories(AllPathsState state) {
     final seen = <String>{};
+    final names = state.categories.isNotEmpty
+        ? [for (final c in state.categories) c.name]
+        : [for (final p in state.paths) p.category];
     return [
-      for (final p in _all)
-        if (p.category.trim().isNotEmpty && seen.add(p.category)) p.category,
+      for (final c in [...names, if (state.category != null) state.category!])
+        if (c.trim().isNotEmpty && seen.add(c)) c,
     ];
   }
 
@@ -220,34 +255,32 @@ class _AllPathsPageState extends State<AllPathsPage> {
       backgroundColor: palette.page,
       body: SafeArea(
         bottom: false,
-        child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
+        child: BlocConsumer<AllPathsBloc, AllPathsState>(
           listenWhen: (previous, current) =>
-              _isFlatList(current) && current != previous,
-          listener: (context, state) => _onFlatListLoaded(),
-          builder: (context, state) {
-            // The flat load lands as a "search" with an empty query; a
-            // real search later replaces those results, so keep the list.
-            if (_isFlatList(state)) {
-              _all = (state as LearningPathsLoaded).searchResults!;
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(context),
-                if (_searchOpen) _buildSearchField(context),
-                _buildChips(context),
-                const SizedBox(height: 8),
-                Expanded(child: _buildBody(context, state)),
-              ],
-            );
-          },
+              previous.paths.length != current.paths.length ||
+              previous.status != current.status ||
+              previous.hasMore != current.hasMore,
+          // A first page too short to scroll asks for the next at once.
+          listener: (context, state) => WidgetsBinding.instance
+              .addPostFrameCallback((_) => _maybeLoadMore()),
+          builder: (context, state) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(context, state),
+              if (_searchOpen) _buildSearchField(context),
+              _buildChips(context, state),
+              const SizedBox(height: 8),
+              Expanded(child: _buildBody(context, state)),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AllPathsState state) {
     final palette = ReaderPalette.of(context);
+    final total = state.allTotal;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
       child: Row(
@@ -278,11 +311,10 @@ class _AllPathsPageState extends State<AllPathsPage> {
                       ),
                     ),
                   ),
-                  if (_all.isNotEmpty) ...[
+                  if (total != null && total > 0) ...[
                     const SizedBox(height: 2),
                     Text(
-                      context.tr(
-                          TranslationKeys.allPathsCount, {'n': _all.length}),
+                      context.tr(TranslationKeys.allPathsCount, {'n': total}),
                       style: AppFonts.inter(fontSize: 13, color: palette.gold),
                     ),
                   ],
@@ -337,9 +369,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
     );
   }
 
-  Widget _buildChips(BuildContext context) {
+  Widget _buildChips(BuildContext context, AllPathsState state) {
     final l10n = AppLocalizations.of(context)!;
-    final categories = _categories();
+    final categories = _categories(state);
     return SizedBox(
       height: 32,
       child: ListView(
@@ -349,16 +381,16 @@ class _AllPathsPageState extends State<AllPathsPage> {
           CategoryChip(
             key: const Key('all_paths_chip_all'),
             label: context.tr(TranslationKeys.allPathsAll),
-            selected: _category == null,
-            onTap: () => setState(() => _category = null),
+            selected: state.category == null,
+            onTap: () => _selectCategory(null),
           ),
           for (final c in categories) ...[
             const SizedBox(width: 8),
             CategoryChip(
               key: Key('all_paths_chip_$c'),
               label: l10n.translateLearningPathCategory(c),
-              selected: _category == c,
-              onTap: () => setState(() => _category = c),
+              selected: state.category == c,
+              onTap: () => _selectCategory(c),
             ),
           ],
         ],
@@ -366,84 +398,68 @@ class _AllPathsPageState extends State<AllPathsPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, LearningPathsState state) {
-    final palette = ReaderPalette.of(context);
-    final query = _searchController.text.trim();
-    final searching = query.isNotEmpty;
-
-    if (state is LearningPathsError && _all.isEmpty) {
+  Widget _buildBody(BuildContext context, AllPathsState state) {
+    if (state.status == AllPathsStatus.error) {
       return _Message(
         icon: Icons.error_outline,
         text: context.tr(TranslationKeys.commonErrorTryAgain),
         actionLabel: context.tr(TranslationKeys.topicsHubRetry),
-        onAction: _load,
+        onAction: () {
+          _lastPageKey = null;
+          _bloc.add(const AllPathsRetried());
+        },
       );
     }
-    final loading = _all.isEmpty &&
-        (state is LearningPathsInitial || state is LearningPathsLoading);
-    // Searching: only results for exactly what is typed are shown; until
-    // they land (debounce, request, a reload that replaced them) it is busy.
-    final results = searching &&
-            state is LearningPathsLoaded &&
-            !state.isSearching &&
-            state.searchQuery == query
-        ? state
-        : null;
-    final busy = searching && results == null && state is! LearningPathsError;
-    if (loading || busy) {
+    if (state.status == AllPathsStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (searching && (results == null || results.searchFailed)) {
-      return _Message(
-        icon: Icons.error_outline,
-        text: context.tr(TranslationKeys.commonErrorTryAgain),
-        actionLabel: context.tr(TranslationKeys.topicsHubRetry),
-        onAction: _search,
-      );
-    }
 
-    final source =
-        searching ? (results!.searchResults ?? const <LearningPath>[]) : _all;
-    final filtered = _category == null
-        ? source
-        : source.where((p) => p.category == _category).toList();
-
+    final paths = state.paths;
     final home = sl.isRegistered<HomeBloc>() ? sl<HomeBloc>().state : null;
-    final current = currentPathIn(_all, home: home);
-    final pinned =
-        current != null && filtered.any((p) => p.id == current.path.id);
+    final current = currentPathIn(paths, home: home);
     final rows = [
-      if (pinned) current.path,
-      for (final p in filtered)
-        if (!pinned || p.id != current.path.id) p,
+      if (current != null) current.path,
+      for (final p in paths)
+        if (current == null || p.id != current.path.id) p,
     ];
 
     if (rows.isEmpty) {
-      return _Message(
-        icon: Icons.route_outlined,
-        text: searching
-            ? context
-                .tr(TranslationKeys.topicsHubNoSearchResults, {'query': query})
-            : context.tr(TranslationKeys.learningPathsEmpty),
+      return RefreshIndicator(
+        onRefresh: _refresh,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: _Message(
+                icon: Icons.route_outlined,
+                text: state.searching
+                    ? context.tr(TranslationKeys.topicsHubNoSearchResults,
+                        {'query': state.query})
+                    : context.tr(TranslationKeys.learningPathsEmpty),
+              ),
+            ),
+          ),
+        ),
       );
     }
 
+    final showFooter = state.loadingMore || state.moreFailed;
     return RefreshIndicator(
-      onRefresh: () async {
-        await _load();
-        await Future.delayed(const Duration(milliseconds: 500));
-      },
+      onRefresh: _refresh,
       child: ListView.separated(
         key: const Key('all_paths_list'),
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
             16, 4, 16, 16 + MediaQuery.paddingOf(context).bottom),
-        itemCount: rows.length,
+        itemCount: rows.length + (showFooter ? 1 : 0),
         // Rows are spaced, not ruled, as in the design.
         separatorBuilder: (_, __) => const SizedBox(height: 4),
         itemBuilder: (context, index) {
+          if (index == rows.length) return _buildFooter(context, state);
           final path = rows[index];
-          final isCurrent = pinned && index == 0;
+          final isCurrent = current != null && index == 0;
           return PathListRow(
             key: Key('all_paths_row_${path.id}'),
             path: path,
@@ -452,6 +468,49 @@ class _AllPathsPageState extends State<AllPathsPage> {
             onTap: () => _openPath(path),
           );
         },
+      ),
+    );
+  }
+
+  /// A small spinner while the next page loads; Retry when it failed.
+  Widget _buildFooter(BuildContext context, AllPathsState state) {
+    final palette = ReaderPalette.of(context);
+    if (state.moreFailed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            Text(
+              context.tr(TranslationKeys.commonErrorTryAgain),
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(fontSize: 13, color: palette.muted),
+            ),
+            TextButton(
+              key: const Key('all_paths_more_retry'),
+              onPressed: () =>
+                  _bloc.add(const AllPathsMoreRequested(retry: true)),
+              child: Text(
+                context.tr(TranslationKeys.topicsHubRetry),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: palette.accentIcon,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const Padding(
+      key: Key('all_paths_more_loading'),
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
     );
   }

@@ -41,6 +41,11 @@ abstract class LearningPathsRepository {
     bool forceRefresh = false,
   });
 
+  /// Every category with its path count, in the user's priority order,
+  /// without loading any path.
+  Future<Either<Failure, List<LearningPathCategorySummary>>>
+      getLearningPathCategorySummaries({String language = 'en'});
+
   /// Get more paths for a single category (per-category pagination).
   ///
   /// [category] - The category name to load more paths for

@@ -170,6 +170,24 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   }
 
   @override
+  Future<Either<Failure, List<LearningPathCategorySummary>>>
+      getLearningPathCategorySummaries({String language = 'en'}) async {
+    try {
+      return Right(await _remoteDataSource.getLearningPathCategorySummaries(
+          language: language));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } catch (e) {
+      Logger.error('[LearningPathsRepo] Failed to load path categories',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to load path categories.'));
+    }
+  }
+
+  @override
   Future<Either<Failure, LearningPathCategory>> getLearningPathsForCategory({
     required String category,
     String language = 'en',

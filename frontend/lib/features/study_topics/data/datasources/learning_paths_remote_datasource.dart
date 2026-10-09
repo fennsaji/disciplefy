@@ -7,6 +7,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/models/reset_progress_result.dart';
 import '../../../../core/services/http_service.dart';
+import '../../domain/entities/learning_path.dart';
 import '../models/learning_path_model.dart';
 import '../services/learning_paths_cache_service.dart';
 import '../../../../core/utils/logger.dart';
@@ -47,6 +48,12 @@ abstract class LearningPathsRemoteDataSource {
   /// The last recommended path fetched for the current user in [language],
   /// or null when none is stored. Never touches the network.
   Future<RecommendedPathResponseModel?> getCachedRecommendedPath({
+    String language = 'en',
+  });
+
+  /// Every category with its path count (`action: 'categories'`), without
+  /// any path. Never cached: it is one light request.
+  Future<List<LearningPathCategorySummary>> getLearningPathCategorySummaries({
     String language = 'en',
   });
 
@@ -270,6 +277,37 @@ class LearningPathsRemoteDataSourceImpl
       throw NetworkException(
         message: 'Failed to connect to learning paths service',
         code: 'LEARNING_PATH_CATEGORIES_NETWORK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<List<LearningPathCategorySummary>> getLearningPathCategorySummaries({
+    String language = 'en',
+  }) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.post(
+        '$_baseUrl$_endpoint',
+        headers: headers,
+        body: jsonEncode({'action': 'categories', 'language': language}),
+      );
+      if (response.statusCode != 200) {
+        throw ServerException(
+          message: 'Failed to fetch path categories: ${response.statusCode}',
+          code: 'PATH_CATEGORIES_API_ERROR',
+        );
+      }
+      return parseCategorySummaries(response.body);
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } catch (e) {
+      _logDebug('Exception in getLearningPathCategorySummaries: $e');
+      throw NetworkException(
+        message: 'Failed to connect to learning paths service',
+        code: 'PATH_CATEGORIES_NETWORK_ERROR',
       );
     }
   }
