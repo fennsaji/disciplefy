@@ -78,27 +78,26 @@ class StreamingStudyContent extends StatelessWidget {
     // jumped up when the stream finished and the line went away.
     return Stack(
       children: [
-        SingleChildScrollView(
+        CustomScrollView(
           controller: scrollController,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              StudyGuideBody(
-                studyMode: studyMode,
-                sections: StudyGuideSections.fromStreaming(
-                  content,
-                  isPartial: isPartial,
-                ),
-                inputType: inputType,
-                title: StudyGuideLayout.displayTitle(inputType, inputValue),
-                contentFontSize: contentFontSize,
-                tracker: tracker,
-                lesson: lesson,
-                headerAccessory: headerAccessory,
+          slivers: [
+            StudyGuideBody(
+              studyMode: studyMode,
+              sections: StudyGuideSections.fromStreaming(
+                content,
+                isPartial: isPartial,
               ),
-              SizedBox(height: StudyGuideLayout.endGap(context)),
-            ],
-          ),
+              inputType: inputType,
+              title: StudyGuideLayout.displayTitle(inputType, inputValue),
+              contentFontSize: contentFontSize,
+              tracker: tracker,
+              lesson: lesson,
+              headerAccessory: headerAccessory,
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(height: StudyGuideLayout.endGap(context)),
+            ),
+          ],
         ),
         if (!content.isComplete && !isPartial)
           Positioned(

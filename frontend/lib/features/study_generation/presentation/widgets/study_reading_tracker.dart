@@ -37,16 +37,28 @@ class StudyReadingTracker extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Spec indices of the rendered sections, top to bottom. Set by the body
+  /// while building, like [total].
+  List<int> sectionOrder = const [];
+
   /// Recounts read sections. [thresholdY] is a global y coordinate (from the
-  /// top of the screen); sections whose top is above it count as read.
-  /// [atBottom] counts every rendered section.
+  /// top of the screen); a section whose top is above it counts as read, and
+  /// so does every section before it — the body builds sections lazily, so
+  /// those may no longer be laid out. [atBottom] counts every section.
   void update({required double thresholdY, bool atBottom = false}) {
     var count = 0;
-    for (final key in _keys.values) {
-      final box = key.currentContext?.findRenderObject();
-      if (box is! RenderBox || !box.attached || !box.hasSize) continue;
-      if (atBottom || box.localToGlobal(Offset.zero).dy < thresholdY) {
-        count++;
+    if (atBottom) {
+      count = total;
+    } else {
+      final order = sectionOrder.isNotEmpty
+          ? sectionOrder
+          : (_keys.keys.toList()..sort());
+      for (var position = 0; position < order.length; position++) {
+        final box = _keys[order[position]]?.currentContext?.findRenderObject();
+        if (box is! RenderBox || !box.attached || !box.hasSize) continue;
+        if (box.localToGlobal(Offset.zero).dy < thresholdY) {
+          count = position + 1;
+        }
       }
     }
     if (count > _readCount) {
