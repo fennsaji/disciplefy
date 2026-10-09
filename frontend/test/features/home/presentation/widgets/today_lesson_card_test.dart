@@ -6,6 +6,7 @@ import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_from_summary.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -74,6 +75,37 @@ const hiSummary = ActivePathSummary(
     total: 8,
   ),
 );
+
+ActivePathSummary _withTotal(ActivePathSummary s, int total, int done) =>
+    ActivePathSummary(
+      pathId: s.pathId,
+      title: s.title,
+      description: '',
+      discipleLevel: '',
+      lessonTotal: total,
+      lessonsCompleted: done,
+      milestoneNumbers: const [5, 17],
+      next: done >= total
+          ? null
+          : NextLesson(
+              topicId: 't',
+              title: s.next!.title,
+              description: '',
+              inputType: 'topic',
+              number: done + 1,
+              total: total,
+            ),
+    );
+
+Widget _card(ActivePathSummary summary,
+        {VoidCallback? onStart, VoidCallback? onSeePath}) =>
+    TodayLessonCard(
+        summary: summary,
+        mode: StudyMode.standard,
+        onModeChanged: (_) {},
+        onStart: onStart ?? () {},
+        onChooseNextPath: () {},
+        onSeePath: onSeePath ?? () {});
 
 void main() {
   setUpAll(() async {
@@ -318,4 +350,110 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  group('merged path card', () {
+    final card = find.byKey(const Key('today_path_card'));
+
+    testWidgets('one card: strip on top, then eyebrow, title and button',
+        (tester) async {
+      var started = 0;
+      var opened = 0;
+      await tester.pumpWidget(welcomeApp(
+          screen: Scaffold(
+              body: _card(summary4of8,
+                  onStart: () => started++, onSeePath: () => opened++))));
+      expect(card, findsOneWidget);
+      final strip =
+          find.descendant(of: card, matching: find.byType(PathProgressStrip));
+      expect(strip, findsOneWidget);
+      // The strip sits above the eyebrow, inside the same card.
+      expect(
+          tester.getBottomLeft(strip).dy,
+          lessThanOrEqualTo(
+              tester.getTopLeft(find.text('TODAY · LESSON 4')).dy));
+      // "Today" is said once, by the eyebrow.
+      expect(find.text('Today'), findsNothing);
+      expect(find.byKey(const Key('strip_today')), findsNothing);
+      // The current dot keeps its emphasis.
+      expect(tester.getSize(find.byKey(const Key('strip_dot_4'))).width, 28);
+
+      await tester.tap(find.text('Start lesson 4'));
+      expect(started, 1);
+      expect(opened, 0);
+      await tester.tap(find.byKey(const Key('strip_dot_6')));
+      expect(opened, 1);
+      expect(started, 1);
+    });
+
+    testWidgets('strip semantics stay on the strip area', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester
+          .pumpWidget(welcomeApp(screen: Scaffold(body: _card(summary4of8))));
+      expect(find.bySemanticsLabel('3 of 8 lessons done'), findsOneWidget);
+      expect(find.text('Start lesson 4'), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('long path: bar and Lesson n of m caption inside the card',
+        (tester) async {
+      await tester.pumpWidget(welcomeApp(
+          screen: Scaffold(body: _card(_withTotal(summary4of8, 29, 11)))));
+      expect(
+          find.descendant(
+              of: card, matching: find.byKey(const Key('strip_caption'))),
+          findsOneWidget);
+      expect(find.text('Lesson 12 of 29'), findsOneWidget);
+      expect(find.text('18 to go'), findsOneWidget);
+      expect(find.textContaining('Today'), findsNothing);
+      expect(find.text('TODAY · LESSON 12'), findsOneWidget);
+    });
+
+    testWidgets('finished: strip all checked and the finished state',
+        (tester) async {
+      await tester.pumpWidget(
+          welcomeApp(screen: Scaffold(body: _card(finishedSummary))));
+      expect(card, findsOneWidget);
+      expect(
+          find.descendant(of: card, matching: find.byIcon(Icons.check_rounded)),
+          findsNWidgets(8));
+      expect(find.text('You finished New Believer Essentials'), findsOneWidget);
+      expect(find.text('Choose your next path'), findsOneWidget);
+      expect(find.textContaining('TODAY'), findsNothing);
+    });
+
+    for (final lang in ['en', 'hi', 'ml']) {
+      final base = lang == 'ml'
+          ? mlSummary
+          : lang == 'hi'
+              ? hiSummary
+              : summary4of8;
+      for (final total in [8, 10, 16, 29]) {
+        for (final finished in [false, true]) {
+          testWidgets(
+              '$lang 320px 1.3x: $total lessons${finished ? ' finished' : ''} fits',
+              (tester) async {
+            useSurface(tester, const Size(320, 600));
+            final summary =
+                _withTotal(base, total, finished ? total : total - 3);
+            await tester.pumpWidget(welcomeApp(
+                language: lang,
+                screen: Builder(
+                  builder: (context) => MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(textScaler: const TextScaler.linear(1.3)),
+                    child: Scaffold(
+                      body: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: _card(summary),
+                      ),
+                    ),
+                  ),
+                )));
+            expectNoTruncatedText(tester, allow: {base.next!.title});
+            expect(tester.takeException(), isNull);
+          });
+        }
+      }
+    }
+  });
 }

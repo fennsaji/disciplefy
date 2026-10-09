@@ -6,7 +6,6 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
-import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -38,13 +37,13 @@ LearningPath? topicsCurrentPath(
   return null;
 }
 
-/// The top of the Topics tab: the path the user is on ("See path"), its
-/// progress strip and the same lesson card Home shows (eyebrow, Quick/Full
-/// mode chip, lesson title and "Start lesson N").
+/// The top of the Topics tab: the path the user is on ("See path") above the
+/// same card Home shows ([TodayLessonCard]: progress strip, eyebrow,
+/// Quick/Full mode chip, lesson title and "Start lesson N").
 ///
 /// Without a path ([summary] is null) it shows a "Start a path" button that
-/// calls [onBrowse] instead of an empty strip. A finished path shows its
-/// strip and the lesson card's "You finished" state, whose button calls
+/// calls [onBrowse] instead of an empty strip. A finished path shows the
+/// card's "You finished" state (strip all checked), whose button calls
 /// [onChooseNextPath].
 class TopicsCurrentPathCard extends StatelessWidget {
   final ActivePathSummary? summary;
@@ -79,8 +78,6 @@ class TopicsCurrentPathCard extends StatelessWidget {
     final summary = this.summary;
     if (summary == null) return _StartAPath(onBrowse: onBrowse);
     final palette = ReaderPalette.of(context);
-    final next = summary.next;
-    final total = summary.lessonTotal;
     return Column(
       key: const Key('topics_current_path_card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,14 +119,6 @@ class TopicsCurrentPathCard extends StatelessWidget {
             ),
           ],
         ),
-        PathProgressStrip(
-          total: total,
-          completed: summary.lessonsCompleted,
-          current: summary.currentLessonNumber,
-          milestones: summary.milestoneNumbers,
-          onTap: onSeePath,
-        ),
-        const SizedBox(height: 12),
         TodayLessonCard(
           key: const Key('topics_current_path_lesson'),
           summary: summary,

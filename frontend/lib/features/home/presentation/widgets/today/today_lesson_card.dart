@@ -4,15 +4,17 @@ import 'package:disciplefy_bible_study/core/extensions/translation_extension.dar
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
-/// Today's lesson in the active path: eyebrow, a Quick/Full mode chip, the
-/// lesson title and one "Start lesson N" button.
+/// The active path's one card on Home and Topics: its progress strip on top
+/// (tapping it opens the path), then today's lesson: eyebrow, a Quick/Full
+/// mode chip, the lesson title and one "Start lesson N" button.
 ///
-/// When the path is finished it shows "You finished {path}" and a
-/// "Choose your next path" button instead. When the next lesson is missing
-/// but the path is not finished (partial data), it shows the path title and
-/// a "See path" button.
+/// When the path is finished the strip is all checked and the card shows
+/// "You finished {path}" and a "Choose your next path" button instead. When
+/// the next lesson is missing but the path is not finished (partial data),
+/// it shows the path title and a "See path" button.
 ///
 /// The card owns no state: [mode] is chosen (and persisted) by the caller,
 /// which [onModeChanged] notifies when the user picks another mode.
@@ -23,7 +25,8 @@ class TodayLessonCard extends StatelessWidget {
   final VoidCallback onStart;
   final VoidCallback? onChooseNextPath;
 
-  /// Opens the path page (the fallback when no next lesson is known).
+  /// Opens the path page: from the strip, and as the fallback button when
+  /// no next lesson is known.
   final VoidCallback? onSeePath;
 
   const TodayLessonCard({
@@ -40,22 +43,47 @@ class TodayLessonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final next = summary.next;
+    final total = summary.lessonTotal;
+    final remaining = (total - summary.lessonsCompleted).clamp(0, total);
     return Container(
+      key: const Key('today_path_card'),
       width: double.infinity,
-      padding: next != null
-          ? const EdgeInsets.fromLTRB(16, 16 - _ModeChip.slack, 16, 16)
-          : const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       decoration: BoxDecoration(
         color: palette.card,
         borderRadius: BorderRadius.circular(16),
         // A soft gold edge marks today's lesson as the one thing to do.
         border: Border.all(color: palette.gold.withValues(alpha: 0.33)),
       ),
-      child: next != null
-          ? _lesson(context, palette, next)
-          : summary.isFinished
-              ? _finished(context, palette)
-              : _seePath(context, palette),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PathProgressStrip(
+            total: total,
+            completed: summary.lessonsCompleted,
+            current: summary.currentLessonNumber,
+            milestones: summary.milestoneNumbers,
+            onTap: onSeePath,
+            // Long paths say where you are under the bar; dots show it.
+            lessonLabel: next == null
+                ? null
+                : context.tr(TranslationKeys.homeTodayLessonOf,
+                    {'n': next.number, 'm': total}),
+            toGoLabel: remaining > 0
+                ? context.tr(TranslationKeys.homeTodayToGo, {'k': remaining})
+                : null,
+          ),
+          // The mode chip's 7px tap margin adds to the gap above the eyebrow.
+          SizedBox(height: next != null ? 4 : 10),
+          if (next != null)
+            _lesson(context, palette, next)
+          else if (summary.isFinished)
+            _finished(context, palette)
+          else
+            _seePath(context, palette),
+        ],
+      ),
     );
   }
 
@@ -71,7 +99,7 @@ class TodayLessonCard extends StatelessWidget {
   Widget _lesson(BuildContext context, ReaderPalette palette, NextLesson next) {
     final theme = Theme.of(context);
     // The mode chip is drawn 26px tall inside a 40px tap row: the 7px above
-    // and below it come out of the card's top padding and the next gap.
+    // and below it come out of the gap under the strip and the next gap.
     final eyebrow =
         context.tr(TranslationKeys.homeTodayLessonEyebrow, {'n': next.number});
     return Column(

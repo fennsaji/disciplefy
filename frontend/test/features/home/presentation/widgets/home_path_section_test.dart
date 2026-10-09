@@ -394,7 +394,7 @@ void main() {
     expect(find.text('detail:p1:home'), findsOneWidget);
   });
 
-  testWidgets('long paths: the caption sits inside the strip card',
+  testWidgets('long paths: the caption sits inside the path card',
       (tester) async {
     ActivePathSummary long(int total, int done) => ActivePathSummary(
           pathId: 'p1',
@@ -426,6 +426,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Lesson 12 of 29'), findsOneWidget);
     expect(find.text('18 to go'), findsOneWidget);
+  });
+
+  testWidgets('one card holds the strip and the lesson, no Today label',
+      (tester) async {
+    await tester.pumpWidget(app(section(summary4of8)));
+    await tester.pumpAndSettle();
+    final card = find.byKey(const Key('today_path_card'));
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.byType(PathProgressStrip)),
+        findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('Start lesson 4')),
+        findsOneWidget);
+    expect(find.text('Today'), findsNothing);
+    // The header stays above the card.
+    expect(tester.getBottomLeft(find.text('New Believer Essentials')).dy,
+        lessThanOrEqualTo(tester.getTopLeft(card).dy));
+  });
+
+  testWidgets('loading skeleton is as tall as the loaded section',
+      (tester) async {
+    await tester.pumpWidget(app(section(null, loading: true)));
+    await tester.pump();
+    final skeleton =
+        tester.getSize(find.byKey(const Key('home_path_placeholder'))).height;
+    await tester.pumpWidget(app(section(summary4of8)));
+    await tester.pumpAndSettle();
+    final loaded = tester.getSize(find.byType(HomePathSection)).height;
+    expect((skeleton - loaded).abs(), lessThanOrEqualTo(2));
   });
 
   testWidgets('the strip opens the path too', (tester) async {

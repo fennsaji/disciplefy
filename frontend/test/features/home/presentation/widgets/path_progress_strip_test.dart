@@ -24,14 +24,17 @@ void main() {
     expect(stripTierFor(21), StripTier.smooth);
   });
 
-  testWidgets('8 lessons: 8 dots, 3 checked, Today, no dates', (tester) async {
+  testWidgets('8 lessons: 8 dots, 3 checked, no Today label, no dates',
+      (tester) async {
     await tester.pumpWidget(welcomeApp(
         screen: const PathProgressStrip(total: 8, completed: 3, current: 4)));
     for (var n = 1; n <= 8; n++) {
       expect(find.byKey(Key('strip_dot_$n')), findsOneWidget);
     }
     expect(find.byIcon(Icons.check_rounded), findsNWidgets(3));
-    expect(find.text('Today'), findsOneWidget);
+    // The lesson card's "TODAY · LESSON N" eyebrow says it once.
+    expect(find.text('Today'), findsNothing);
+    expect(find.byKey(const Key('strip_today')), findsNothing);
     expect(find.text('Tomorrow'), findsNothing);
   });
 
@@ -80,8 +83,33 @@ void main() {
       expect(find.byKey(Key('strip_tick_$m')), findsOneWidget);
     }
     expect(find.byKey(const Key('strip_dot_1')), findsNothing);
-    expect(find.byKey(const Key('strip_today')), findsOneWidget);
+    expect(find.byKey(const Key('strip_today')), findsNothing);
   });
+
+  testWidgets('long-path caption has no Today label', (tester) async {
+    await tester.pumpWidget(welcomeApp(
+        screen: const PathProgressStrip(
+            total: 29,
+            completed: 11,
+            current: 12,
+            lessonLabel: 'Lesson 12 of 29',
+            toGoLabel: '17 to go')));
+    expect(find.text('Lesson 12 of 29'), findsOneWidget);
+    expect(find.textContaining('Today'), findsNothing);
+  });
+
+  for (final total in [8, 16, 29]) {
+    testWidgets('$total lessons: the tap area is at least 40px tall',
+        (tester) async {
+      await tester.pumpWidget(welcomeApp(
+          screen: Center(
+              child: PathProgressStrip(
+                  total: total, completed: 2, current: 3, onTap: () {}))));
+      expect(
+          tester.getSize(find.byKey(const Key('path_progress_strip'))).height,
+          greaterThanOrEqualTo(40));
+    });
+  }
 
   testWidgets('tap on the strip calls onTap', (tester) async {
     var taps = 0;
