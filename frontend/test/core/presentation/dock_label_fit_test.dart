@@ -73,71 +73,111 @@ void main() {
     return base * painted / laidOut;
   }
 
-  for (final width in [360.0, 390.0]) {
-    for (final lang in ['en', 'hi', 'ml']) {
-      for (final dark in [false, true]) {
-        final name = '${width.toInt()}px $lang ${dark ? 'dark' : 'light'}';
-        testWidgets('dock fits all five items: $name', (tester) async {
-          final l10n =
-              await pumpDock(tester, width: width, lang: lang, dark: dark);
+  Future<double> dockHeight(WidgetTester tester) async =>
+      tester.getSize(find.byType(DisciplefyBottomNav)).height;
 
-          expect(tester.takeException(), isNull);
-          for (final tab in fiveTabs) {
-            final label = labelOf(l10n, tab);
-            expect(find.text(label), findsOneWidget, reason: label);
-            // Shown at full size: the label must not be scaled below the
-            // readable minimum.
-            final effective = paintedFontSize(tester, find.text(label));
-            expect(effective, greaterThanOrEqualTo(12 - 0.01),
-                reason:
-                    '$label is scaled to ${effective.toStringAsFixed(1)}pt');
-          }
-          expectNoTruncatedText(tester);
-        });
-      }
+  void expectOnlySelected(AppLocalizations l10n) {
+    for (final tab in fiveTabs) {
+      final label = labelOf(l10n, tab);
+      expect(
+          find.text(label), tab == fiveTabs[1] ? findsOneWidget : findsNothing,
+          reason: label);
     }
   }
 
-  // The narrowest supported phone, at the default and the 130% in-app text
-  // size: labels keep a gap between them, never overlap, never go below the
-  // 11pt floor and never overflow the dock.
-  for (final scale in [1.0, 1.3]) {
-    for (final lang in ['en', 'hi', 'ml']) {
-      for (final dark in [false, true]) {
-        final name = '320px x$scale $lang ${dark ? 'dark' : 'light'}';
-        testWidgets('dock labels never collide: $name', (tester) async {
-          final l10n = await pumpDock(tester,
-              width: 320, lang: lang, dark: dark, textScale: scale);
+  testWidgets('en at 390 shows every label at 12pt+', (tester) async {
+    final l10n = await pumpDock(tester, width: 390, lang: 'en', dark: false);
+    expect(tester.takeException(), isNull);
+    for (final tab in fiveTabs) {
+      final label = labelOf(l10n, tab);
+      expect(find.text(label), findsOneWidget, reason: label);
+      expect(paintedFontSize(tester, find.text(label)),
+          greaterThanOrEqualTo(12 - 0.01));
+    }
+    expectNoTruncatedText(tester);
+  });
 
-          expect(tester.takeException(), isNull);
-          final dock = tester.getRect(find.byType(DisciplefyBottomNav));
-          final rects = <Rect>[];
-          for (final tab in fiveTabs) {
-            final label = labelOf(l10n, tab);
-            final text = find.text(label);
-            expect(text, findsOneWidget, reason: label);
-            final rect = tester.getRect(text);
-            expect(rect.left, greaterThanOrEqualTo(dock.left), reason: label);
-            expect(rect.right, lessThanOrEqualTo(dock.right), reason: label);
-            final effective = paintedFontSize(tester, text);
-            expect(
-                effective,
-                greaterThanOrEqualTo(
-                    DisciplefyBottomNav.minLabelFontSize - 0.01),
-                reason:
-                    '$label is scaled to ${effective.toStringAsFixed(1)}pt');
-            rects.add(rect);
-          }
-          rects.sort((a, b) => a.left.compareTo(b.left));
-          for (var i = 1; i < rects.length; i++) {
-            expect(rects[i].left - rects[i - 1].right,
-                greaterThanOrEqualTo(2 * DisciplefyBottomNav.slotGap - 0.01),
-                reason: 'labels ${i - 1} and $i touch or overlap');
-          }
-          // The shipped labels fit by scaling; none needs the ellipsis.
-          expectNoTruncatedText(tester);
-        });
-      }
+  // Measured with the real fonts: Hindi labels are short and Malayalam fits
+  // 360 at 1x, so those still show every label; crowding comes from a
+  // narrower dock or a larger text scale.
+  final crowded = <(String, double, String, double)>[
+    ('ml 320', 320, 'ml', 1),
+    ('hi 320 x1.3', 320, 'hi', 1.3),
+    ('ml 360 x1.3', 360, 'ml', 1.3),
+    ('hi 360 x1.3', 360, 'hi', 1.3),
+    ('en 390 x1.3', 390, 'en', 1.3),
+  ];
+  for (final c in crowded) {
+    for (final dark in [false, true]) {
+      testWidgets('crowded shows only the selected label: ${c.$1} dark=$dark',
+          (tester) async {
+        final l10n = await pumpDock(tester,
+            width: c.$2, lang: c.$3, dark: dark, textScale: c.$4);
+        expect(tester.takeException(), isNull);
+        expectOnlySelected(l10n);
+        final selected = find.text(labelOf(l10n, fiveTabs[1]));
+        expect(
+            paintedFontSize(tester, selected), greaterThanOrEqualTo(12 - 0.01));
+        // Tap targets: equal slots, at least 48px.
+        final slots = find.byType(Tooltip).evaluate().length;
+        expect(slots, 5);
+        for (final e in find.byType(Tooltip).evaluate()) {
+          final size = tester.getSize(find.byWidget(e.widget));
+          expect(size.width, greaterThanOrEqualTo(48));
+          expect(size.height, greaterThanOrEqualTo(48));
+        }
+        final widths = [
+          for (final e in find.byType(Tooltip).evaluate())
+            tester.getSize(find.byWidget(e.widget)).width
+        ];
+        for (final w in widths) {
+          expect(w, closeTo(widths.first, 0.01));
+        }
+        expectNoTruncatedText(tester);
+      });
     }
   }
+
+  for (final c in [('ml', 360.0), ('hi', 360.0), ('hi', 320.0)]) {
+    testWidgets('${c.$1} at ${c.$2.toInt()} fits, so every label shows',
+        (tester) async {
+      final l10n = await pumpDock(tester, width: c.$2, lang: c.$1, dark: false);
+      expect(tester.takeException(), isNull);
+      for (final tab in fiveTabs) {
+        expect(find.text(labelOf(l10n, tab)), findsOneWidget);
+      }
+      expectNoTruncatedText(tester);
+    });
+  }
+
+  testWidgets('every tab keeps its semantics label and a tooltip',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    final l10n = await pumpDock(tester, width: 320, lang: 'ml', dark: false);
+    for (final tab in fiveTabs) {
+      expect(find.bySemanticsLabel(RegExp(RegExp.escape(tab.semanticLabel))),
+          findsOneWidget,
+          reason: tab.id);
+      expect(find.byTooltip(labelOf(l10n, tab)), findsOneWidget,
+          reason: tab.id);
+    }
+    semantics.dispose();
+  });
+
+  testWidgets('dock height is identical in every mode', (tester) async {
+    final heights = <double>[];
+    for (final c in [
+      (390.0, 'en', 1.0),
+      (360.0, 'ml', 1.0),
+      (320.0, 'hi', 1.0),
+      (390.0, 'en', 1.3),
+    ]) {
+      await pumpDock(tester,
+          width: c.$1, lang: c.$2, dark: false, textScale: c.$3);
+      heights.add(await dockHeight(tester));
+    }
+    for (final h in heights) {
+      expect(h, closeTo(heights.first, 0.01), reason: '$heights');
+    }
+  });
 }

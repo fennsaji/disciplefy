@@ -130,14 +130,15 @@ class DisciplefyBottomNav extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) => Row(
-            children: _buildTabItems(context, constraints.maxWidth),
+            children: _buildTabItems(
+                context, _allLabelsFit(context, constraints.maxWidth)),
           ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildTabItems(BuildContext context, double width) {
+  List<Widget> _buildTabItems(BuildContext context, bool showAll) {
     final l10n = AppLocalizations.of(context)!;
     // Dock tabs covered by the home tour, in dock order. Step numbers here
     // are fallbacks; the running tour numbers them (hidden tabs excluded).
@@ -166,7 +167,6 @@ class DisciplefyBottomNav extends StatelessWidget {
     const bodySteps = 2;
     final tourTabIds = tabs.map((t) => t.id).where(tourSteps.containsKey);
     final totalSteps = bodySteps + tourTabIds.length;
-    final flexes = _itemFlexes(context, l10n, width);
 
     return tabs.asMap().entries.map((entry) {
       final index = entry.key;
@@ -177,11 +177,13 @@ class DisciplefyBottomNav extends StatelessWidget {
           ? _DisciplerNavItem(
               tab: tab,
               isSelected: isSelected,
+              showLabel: showAll || isSelected,
               onTap: () => _handleTap(context, index),
             )
           : _BottomNavItem(
               tab: tab,
               isSelected: isSelected,
+              showLabel: showAll || isSelected,
               onTap: () => _handleTap(context, index),
             );
 
@@ -191,7 +193,6 @@ class DisciplefyBottomNav extends StatelessWidget {
       if (step != null) {
         final (key, title, description) = step;
         return Expanded(
-          flex: flexes[index],
           child: WalkthroughTooltip(
             showcaseKey: key,
             title: title,
@@ -205,7 +206,7 @@ class DisciplefyBottomNav extends StatelessWidget {
         );
       }
 
-      return Expanded(flex: flexes[index], child: _gapped(navItem));
+      return Expanded(child: _gapped(navItem));
     }).toList();
   }
 
@@ -214,49 +215,38 @@ class DisciplefyBottomNav extends StatelessWidget {
   static const double slotGap = 3;
 
   /// Smallest size a label is scaled to before it is ellipsized instead.
-  static const double minLabelFontSize = 11;
-
-  /// Narrowest slot an item gets: room for its icon pill and a short label.
-  static const double _minItemWidth = 56;
-
   static Widget _gapped(Widget child) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: slotGap),
         child: child,
       );
 
-  /// Width share of each item. Equal while every label fits an equal slot;
-  /// otherwise a longer label ("Community") takes room from the items with
-  /// short labels, so labels stay at full size where the dock allows it and
-  /// shrink evenly where it does not.
-  List<int> _itemFlexes(
-      BuildContext context, AppLocalizations l10n, double available) {
+  /// True when every label fits on one line, at [labelFontSize] and the
+  /// current text scale, inside an equal slot. Measured with the real style,
+  /// so it adapts to any language or text size. Otherwise only the selected
+  /// tab shows its label.
+  bool _allLabelsFit(BuildContext context, double available) {
+    final l10n = AppLocalizations.of(context)!;
     final scaler = MediaQuery.textScalerOf(context);
     final direction = Directionality.of(context);
-    final needs = [
-      for (final tab in tabs)
-        () {
-          final painter = TextPainter(
-            text: TextSpan(
-              text: tab.id == disciplerTab.id
-                  ? l10n.navDiscipler
-                  : l10n.navLabel(tab.id),
-              style: AppFonts.inter(
-                  fontSize: labelFontSize, fontWeight: FontWeight.w600),
-            ),
-            maxLines: 1,
-            textDirection: direction,
-            textScaler: scaler,
-          )..layout();
-          final width = painter.width + 2 * slotGap + 2;
-          painter.dispose();
-          return width < _minItemWidth ? _minItemWidth : width;
-        }(),
-    ];
-    final equal = available / tabs.length;
-    if (needs.every((w) => w <= equal)) {
-      return List.filled(tabs.length, 1);
+    final slot = available / tabs.length - 2;
+    for (final tab in tabs) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: tab.id == disciplerTab.id
+              ? l10n.navDiscipler
+              : l10n.navLabel(tab.id),
+          style: AppFonts.inter(
+              fontSize: labelFontSize, fontWeight: FontWeight.w600),
+        ),
+        maxLines: 1,
+        textDirection: direction,
+        textScaler: scaler,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      if (width > slot) return false;
     }
-    return [for (final w in needs) w.ceil()];
+    return true;
   }
 
   void _handleTap(BuildContext context, int index) {
@@ -327,17 +317,37 @@ class _DockItemLayout extends StatelessWidget {
   final Widget visual;
   final String label;
   final bool isSelected;
+  final bool showLabel;
   final _DockPalette palette;
 
   const _DockItemLayout({
     required this.visual,
     required this.label,
     required this.isSelected,
+    required this.showLabel,
     required this.palette,
   });
 
+  /// Height of one label line at the current text scale.
+  double _labelHeight(BuildContext context, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final h = painter.height;
+    painter.dispose();
+    return h;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final labelStyle = AppFonts.inter(
+      fontSize: DisciplefyBottomNav.labelFontSize,
+      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      color: isSelected ? palette.selected : palette.inactive,
+    );
     // At least 60px so Inter labels keep their place; Devanagari and
     // Malayalam lines are taller, so the item grows into the dock's spare
     // height instead of overflowing.
@@ -352,93 +362,28 @@ class _DockItemLayout extends StatelessWidget {
           // the row sits centred in the dock.
           SizedBox(height: 44, child: Center(child: visual)),
           const SizedBox(height: 3),
-          // Flexible so a very large text size shrinks the label to the dock
-          // height rather than overflowing it.
-          Flexible(
-            child: _DockLabel(
-              label: label,
-              style: AppFonts.inter(
-                fontSize: DisciplefyBottomNav.labelFontSize,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? palette.selected : palette.inactive,
-              ),
-            ),
+          // The label's height is always reserved (a hidden label leaves an
+          // empty box of the same height) so the dock never changes height. A lone label
+          // may spill into its neighbours' empty space; it is never wrapped
+          // or shrunk.
+          SizedBox(
+            height: _labelHeight(context, labelStyle),
+            child: showLabel
+                ? OverflowBox(
+                    maxWidth: 400,
+                    child: AnimatedDefaultTextStyle(
+                      duration: AppAnimations.fast,
+                      curve: AppAnimations.defaultCurve,
+                      textAlign: TextAlign.center,
+                      style: labelStyle,
+                      child: Text(label, maxLines: 1, softWrap: false),
+                    ),
+                  )
+                : null,
           ),
         ],
       ),
     );
-  }
-}
-
-/// A dock label that always stays inside its slot: full size when it fits,
-/// scaled down to no less than [DisciplefyBottomNav.minLabelFontSize] when
-/// it nearly fits, and ellipsized at that size otherwise. The full label
-/// stays in the semantics tree either way.
-class _DockLabel extends StatelessWidget {
-  final String label;
-  final TextStyle style;
-
-  const _DockLabel({required this.label, required this.style});
-
-  @override
-  Widget build(BuildContext context) {
-    final scaler = MediaQuery.textScalerOf(context);
-    return LayoutBuilder(builder: (context, constraints) {
-      final painter = TextPainter(
-        text: TextSpan(text: label, style: style),
-        maxLines: 1,
-        textDirection: Directionality.of(context),
-        textScaler: scaler,
-      )..layout();
-      final width = painter.width;
-      final height = painter.height;
-      painter.dispose();
-
-      final scale = [
-        1.0,
-        if (constraints.hasBoundedWidth && width > 0)
-          constraints.maxWidth / width,
-        if (constraints.hasBoundedHeight && height > 0)
-          constraints.maxHeight / height,
-      ].reduce((a, b) => a < b ? a : b);
-      final renderedSize =
-          scaler.scale(DisciplefyBottomNav.labelFontSize) * scale;
-
-      final Widget text;
-      if (scale >= 1) {
-        text = Text(label, maxLines: 1, softWrap: false);
-      } else if (renderedSize >= DisciplefyBottomNav.minLabelFontSize) {
-        text = FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(label, maxLines: 1, softWrap: false),
-        );
-      } else {
-        // Too long even at the minimum size: keep the minimum and end with
-        // an ellipsis rather than shrinking into unreadable text.
-        text = FittedBox(
-          fit: BoxFit.scaleDown,
-          child: SizedBox(
-            width: constraints.maxWidth,
-            child: Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              textScaler: TextScaler.noScaling,
-              style: TextStyle(fontSize: DisciplefyBottomNav.minLabelFontSize),
-            ),
-          ),
-        );
-      }
-      return AnimatedDefaultTextStyle(
-        duration: AppAnimations.fast,
-        curve: AppAnimations.defaultCurve,
-        style: style,
-        textAlign: TextAlign.center,
-        child: text,
-      );
-    });
   }
 }
 
@@ -448,11 +393,13 @@ class _DockLabel extends StatelessWidget {
 class _DisciplerNavItem extends StatelessWidget {
   final NavTab tab;
   final bool isSelected;
+  final bool showLabel;
   final VoidCallback onTap;
 
   const _DisciplerNavItem({
     required this.tab,
     required this.isSelected,
+    required this.showLabel,
     required this.onTap,
   });
 
@@ -461,55 +408,59 @@ class _DisciplerNavItem extends StatelessWidget {
     final palette = _DockPalette.of(context);
     final label = AppLocalizations.of(context)?.navDiscipler ?? tab.label;
 
-    return Semantics(
-      label: tab.semanticLabel,
-      button: true,
-      selected: isSelected,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: _DockItemLayout(
-          label: label,
-          isSelected: isSelected,
-          palette: palette,
-          visual: AnimatedContainer(
-            key: const Key('nav_discipler_ring'),
-            duration: AppAnimations.fast,
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? palette.ring : Colors.transparent,
-                width: 2,
-              ),
-            ),
-            // The brand's Discipler mark on gold (brand/discipler/
-            // discipler-mark-on-gold.svg): symbol plus the two sparkles.
-            child: Container(
-              width: 36,
-              height: 36,
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        label: tab.semanticLabel,
+        button: true,
+        selected: isSelected,
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: _DockItemLayout(
+            label: label,
+            isSelected: isSelected,
+            showLabel: showLabel,
+            palette: palette,
+            visual: AnimatedContainer(
+              key: const Key('nav_discipler_ring'),
+              duration: AppAnimations.fast,
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brandGoldDeep.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                border: Border.all(
+                  color: isSelected ? palette.ring : Colors.transparent,
+                  width: 2,
+                ),
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/brand/discipler-mark-on-gold.png',
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.cover,
-                  cacheWidth: 128,
-                  errorBuilder: (_, __, ___) => const ColoredBox(
-                    color: AppColors.brandGold,
-                    child: Icon(Icons.graphic_eq, color: ReaderPalette.ink),
+              // The brand's Discipler mark on gold (brand/discipler/
+              // discipler-mark-on-gold.svg): symbol plus the two sparkles.
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brandGoldDeep.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/brand/discipler-mark-on-gold.png',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.cover,
+                    cacheWidth: 128,
+                    errorBuilder: (_, __, ___) => const ColoredBox(
+                      color: AppColors.brandGold,
+                      child: Icon(Icons.graphic_eq, color: ReaderPalette.ink),
+                    ),
                   ),
                 ),
               ),
@@ -525,11 +476,13 @@ class _DisciplerNavItem extends StatelessWidget {
 class _BottomNavItem extends StatefulWidget {
   final NavTab tab;
   final bool isSelected;
+  final bool showLabel;
   final VoidCallback onTap;
 
   const _BottomNavItem({
     required this.tab,
     required this.isSelected,
+    required this.showLabel,
     required this.onTap,
   });
 
@@ -575,35 +528,38 @@ class _BottomNavItemState extends State<_BottomNavItem>
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: Semantics(
-          label: widget.tab.semanticLabel,
-          button: true,
-          selected: selected,
-          enabled: true,
-          focusable: true,
-          child: _DockItemLayout(
-            label: AppLocalizations.of(context)?.navLabel(widget.tab.id) ??
-                widget.tab.label,
-            isSelected: selected,
-            palette: palette,
-            visual: AnimatedContainer(
-              duration: AppAnimations.fast,
-              curve: AppAnimations.defaultCurve,
-              width: 48,
-              height: 30,
-              decoration: BoxDecoration(
-                color: selected ? palette.tint : Colors.transparent,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: selected ? palette.tintBorder : Colors.transparent,
+        child: Tooltip(
+          message: _label(context),
+          child: Semantics(
+            label: widget.tab.semanticLabel,
+            button: true,
+            selected: selected,
+            enabled: true,
+            focusable: true,
+            child: _DockItemLayout(
+              label: _label(context),
+              isSelected: selected,
+              showLabel: widget.showLabel,
+              palette: palette,
+              visual: AnimatedContainer(
+                duration: AppAnimations.fast,
+                curve: AppAnimations.defaultCurve,
+                width: 48,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: selected ? palette.tint : Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: selected ? palette.tintBorder : Colors.transparent,
+                  ),
                 ),
-              ),
-              child: Icon(
-                selected && widget.tab.activeIcon != null
-                    ? widget.tab.activeIcon!
-                    : widget.tab.icon,
-                size: 20,
-                color: selected ? palette.selected : palette.inactive,
+                child: Icon(
+                  selected && widget.tab.activeIcon != null
+                      ? widget.tab.activeIcon!
+                      : widget.tab.icon,
+                  size: 20,
+                  color: selected ? palette.selected : palette.inactive,
+                ),
               ),
             ),
           ),
@@ -611,4 +567,7 @@ class _BottomNavItemState extends State<_BottomNavItem>
       ),
     );
   }
+
+  String _label(BuildContext context) =>
+      AppLocalizations.of(context)?.navLabel(widget.tab.id) ?? widget.tab.label;
 }
