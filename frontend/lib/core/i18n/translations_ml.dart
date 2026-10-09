@@ -2493,6 +2493,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'suggestion_2': 'എന്നെ വേദനിപ്പിച്ച ഒരാളോട് ഞാൻ എങ്ങനെ ക്ഷമിക്കും?',
       'suggestion_3': 'റോമർ 8:28 യഥാർത്ഥത്തിൽ എന്താണ് അർത്ഥമാക്കുന്നത്?',
       'quota_left': 'ഈ മാസം {limit}-ൽ {remaining} ശേഷിക്കുന്നു',
+      'not_in_plan': 'നിങ്ങളുടെ പ്ലാനിൽ ഇല്ല · പ്ലാനുകൾ കാണുക',
       'status_ready': 'തയ്യാർ',
       'status_listening': 'കേൾക്കുന്നു',
       'status_thinking': 'ചിന്തിക്കുന്നു',

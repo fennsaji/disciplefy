@@ -2397,6 +2397,7 @@ const Map<String, dynamic> hindiTranslations = {
       'suggestion_2': 'जिसने मुझे चोट पहुँचाई, उसे मैं कैसे क्षमा करूँ?',
       'suggestion_3': 'रोमियों 8:28 का असली अर्थ क्या है?',
       'quota_left': 'इस महीने {limit} में से {remaining} शेष',
+      'not_in_plan': 'आपके प्लान में नहीं · प्लान देखें',
       'status_ready': 'तैयार',
       'status_listening': 'सुन रहा है',
       'status_thinking': 'सोच रहा है',

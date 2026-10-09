@@ -19,91 +19,132 @@ Color endTint(ReaderPalette palette) =>
 Color endInk(ReaderPalette palette) =>
     palette.isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626);
 
+/// Darkest and lightest pixels [disciplerHeaderPhoto] can show once decoded
+/// as a wash, used to check what sits over the header against the worst case.
+const Color disciplerPhotoDarkestPixel = Color(0xFF071521);
+const Color disciplerPhotoLightestPixel = Color(0xFF917BBE);
+
+/// Deep red label for an exhausted allowance: Red-800 on light, Red-300 on
+/// dark, both 5.5:1 or more on [quotaWarningFill].
+Color quotaWarningInk(ReaderPalette palette) =>
+    palette.isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B);
+
+/// Opaque red tint, so the photo never shows through the pill.
+Color quotaWarningFill(ReaderPalette palette) =>
+    Color.alphaBlend(endTint(palette), palette.raised);
+
 /// Whether the monthly allowance is shown, and how.
 ///
-/// Unlimited plans (premium, or a negative remaining count) read as
-/// "Unlimited"; one or fewer left is "low" and always shown. Otherwise the
-/// allowance only shows while quota alerts are on.
+/// Unlimited plans show nothing. A plan without Discipler (a limit of 0)
+/// shows a calm "Not in your plan · See plans" link. A plan with N a month
+/// shows "{left} of {N} left this month" while quota alerts are on or when
+/// one or none is left; it turns red only when none is left.
 class QuotaDisplay {
   final VoiceQuotaEntity quota;
   final bool notifyQuota;
 
-  const QuotaDisplay(this.quota, {required this.notifyQuota});
+  /// Opens the plans when the "not in your plan" link is tapped.
+  final VoidCallback? onSeePlans;
 
-  bool get isUnlimited => quota.tier == 'premium' || quota.quotaRemaining < 0;
-  bool get isLow => !isUnlimited && quota.quotaRemaining <= 1;
-  bool get isVisible => notifyQuota || isLow;
+  const QuotaDisplay(this.quota, {required this.notifyQuota, this.onSeePlans});
+
+  /// The server reports unlimited as -1 or 999999.
+  static const int _unlimitedFloor = 999999;
+
+  bool get isUnlimited =>
+      quota.tier == 'premium' ||
+      quota.quotaLimit < 0 ||
+      quota.quotaRemaining < 0 ||
+      quota.quotaLimit >= _unlimitedFloor;
+  bool get isNotInPlan => !isUnlimited && quota.quotaLimit == 0;
+  bool get isExhausted =>
+      !isUnlimited && quota.quotaLimit > 0 && quota.quotaRemaining <= 0;
+  bool get isLow =>
+      !isUnlimited && quota.quotaLimit > 0 && quota.quotaRemaining <= 1;
+  bool get isVisible => !isUnlimited && (isNotInPlan || notifyQuota || isLow);
 }
 
-/// Pill with the conversations left this month ("3 of 3 left this month" /
-/// "Unlimited"); red-tinted when one or none is left.
+/// Pill with the conversations left this month ("2 of 3 left this month"),
+/// deep red when none is left, or a "Not in your plan · See plans" link.
+/// Always on an opaque fill, so it reads the same over the header photo.
 class DisciplerQuotaChip extends StatelessWidget {
   final QuotaDisplay display;
 
-  /// Sits on the header photo (darker fill in dark theme).
-  final bool onPhoto;
-
-  const DisciplerQuotaChip({
-    super.key,
-    required this.display,
-    this.onPhoto = false,
-  });
+  const DisciplerQuotaChip({super.key, required this.display});
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final quota = display.quota;
-    final low = display.isLow;
-    final ink = low ? endInk(palette) : palette.text;
-    final iconInk = low ? endInk(palette) : palette.gold;
-    final fill = low
-        ? endTint(palette)
-        : onPhoto && palette.isDark
-            ? Colors.black.withValues(alpha: 0.45)
-            : palette.raised;
-    final label = display.isUnlimited
-        ? context.tr('voice_buddy.unlimited')
+    final exhausted = display.isExhausted;
+    final notInPlan = display.isNotInPlan;
+    final ink = exhausted ? quotaWarningInk(palette) : palette.text;
+    final iconInk = exhausted ? quotaWarningInk(palette) : palette.accentIcon;
+    final fill = exhausted ? quotaWarningFill(palette) : palette.raised;
+    final label = notInPlan
+        ? context.tr(TranslationKeys.voiceSessionNotInPlan)
         : context.tr(TranslationKeys.voiceSessionQuotaLeft, {
             'remaining': quota.quotaRemaining,
             'limit': quota.quotaLimit,
           });
 
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            exhausted
+                ? Icons.warning_amber_rounded
+                : notInPlan
+                    ? Icons.workspace_premium_outlined
+                    : Icons.forum_outlined,
+            size: 16,
+            color: iconInk,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: ink,
+                height: 1.3,
+              ),
+            ),
+          ),
+          if (notInPlan) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded, size: 16, color: palette.muted),
+          ],
+        ],
+      ),
+    );
+
+    if (notInPlan) {
+      return Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: display.onSeePlans,
+            borderRadius: BorderRadius.circular(20),
+            child: pill,
+          ),
+        ),
+      );
+    }
     return Semantics(
       label: '${context.tr('voice_buddy.conversations_remaining')}: $label',
       excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              low
-                  ? Icons.warning_amber_rounded
-                  : display.isUnlimited
-                      ? Icons.all_inclusive
-                      : Icons.forum_outlined,
-              size: 16,
-              color: iconInk,
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: ink,
-                  height: 1.3,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: pill,
     );
   }
 }

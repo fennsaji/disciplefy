@@ -3233,6 +3233,7 @@ class TranslationKeys {
 
   /// Takes `{remaining}` and `{limit}`.
   static const voiceSessionQuotaLeft = 'voice_buddy.session.quota_left';
+  static const voiceSessionNotInPlan = 'voice_buddy.session.not_in_plan';
   static const voiceSessionStatusReady = 'voice_buddy.session.status_ready';
   static const voiceSessionStatusListening =
       'voice_buddy.session.status_listening';

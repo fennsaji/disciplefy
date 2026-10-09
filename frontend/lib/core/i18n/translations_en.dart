@@ -2398,6 +2398,7 @@ const Map<String, dynamic> englishTranslations = {
       'suggestion_2': 'How do I forgive someone who hurt me?',
       'suggestion_3': 'What does Romans 8:28 really mean?',
       'quota_left': '{remaining} of {limit} left this month',
+      'not_in_plan': 'Not in your plan · See plans',
       'status_ready': 'Ready',
       'status_listening': 'Listening',
       'status_thinking': 'Thinking',
