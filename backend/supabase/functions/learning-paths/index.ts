@@ -29,6 +29,7 @@ import {
 import {
   loadCompletedTopicCounts,
   loadEnrolledPathIds,
+  loadNextLessonNumbers,
   loadPathTranslations,
   pathProgressPercentage,
   resolveShortTitle,
@@ -108,6 +109,11 @@ interface LearningPath {
   next_topic_title?: string;
   /** First incomplete lesson; null when finished. Recommended path only. */
   next_lesson?: NextLessonJson | null;
+  /**
+   * 1-based number of the first unfinished lesson, from the lesson rows; null
+   * when finished. List endpoints, signed-in users only (absent otherwise).
+   */
+  next_lesson_number?: number | null;
   /** 1-based lesson numbers of milestones. Recommended path only. */
   milestone_positions?: number[];
 }
@@ -506,6 +512,7 @@ async function withNextTopic(
     const extras = buildRecommendedExtras(data[0].topics, !!userId, path.title);
     const enriched: LearningPath = { ...path, ...extras };
     if (extras.next_lesson) enriched.next_topic_title = extras.next_lesson.title;
+    enriched.next_lesson_number = extras.next_lesson?.lesson_number ?? null;
     return enriched;
   } catch (e) {
     console.error('[RECOMMENDED_PATH] Next lesson lookup failed:', e instanceof Error ? e.message : 'unknown');
@@ -683,6 +690,22 @@ function mapPathRow(
   };
 }
 
+/**
+ * Adds next_lesson_number to list rows for a signed-in user. Best effort: on
+ * a failed read the field is left out and the app falls back to its count.
+ */
+async function withNextLessonNumbers<T extends LearningPath>(
+  // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
+  supabaseClient: any,
+  paths: T[],
+  userId: string | null | undefined,
+): Promise<T[]> {
+  if (!userId || paths.length === 0) return paths;
+  const numbers = await loadNextLessonNumbers(supabaseClient, paths.map((p) => p.id), userId);
+  if (!numbers) return paths;
+  return paths.map((p) => (numbers.has(p.id) ? { ...p, next_lesson_number: numbers.get(p.id) ?? null } : p));
+}
+
 // ============================================================================
 // List Learning Paths — category-grouped (primary) + flat (legacy)
 // ============================================================================
@@ -778,6 +801,11 @@ async function handleListPaths(
     language,
   );
 
+  // Next unfinished lesson per path on the page, in one batch.
+  const nextNumbers = userId
+    ? await loadNextLessonNumbers(supabaseServiceClient, pageRows.map((r) => r.path_id as string), userId)
+    : null;
+
   // Step 3: build response
   const categories: LearningPathCategoryResult[] = pageCategories.map(
     (cat: Record<string, unknown>, i: number) => {
@@ -791,7 +819,8 @@ async function handleListPaths(
       const rows: Record<string, unknown>[] = pathRows || [];
       const hasMoreInCategory = rows.length > PATHS_PER_CATEGORY;
       const paths = (hasMoreInCategory ? rows.slice(0, PATHS_PER_CATEGORY) : rows)
-        .map((row) => mapPathRow(row, guestIds, shortTitles));
+        .map((row) => mapPathRow(row, guestIds, shortTitles))
+        .map((p) => (nextNumbers?.has(p.id) ? { ...p, next_lesson_number: nextNumbers.get(p.id) ?? null } : p));
 
       return {
         name: cat.category as string,
@@ -893,10 +922,10 @@ async function handleListPathsFlat(
     pageRows.map((r) => r.path_id as string),
     language,
   );
-  const paths = pageRows.map((row: Record<string, unknown>) => ({
+  const paths = await withNextLessonNumbers(supabaseServiceClient, pageRows.map((row: Record<string, unknown>) => ({
     ...mapPathRow(row, guestIds, shortTitles),
     fellowship_completed: completedPathIds.has(row.path_id as string),
-  }));
+  })), userId);
 
   return new Response(
     JSON.stringify({
@@ -975,7 +1004,11 @@ async function handleListPathsByCategory(
     pageRows.map((r) => r.path_id as string),
     language,
   );
-  const paths = pageRows.map((row) => mapPathRow(row, guestIds, shortTitles));
+  const paths = await withNextLessonNumbers(
+    supabaseServiceClient,
+    pageRows.map((row) => mapPathRow(row, guestIds, shortTitles)),
+    userId,
+  );
 
   return new Response(
     JSON.stringify({ success: true, data: { paths, has_more: hasMore, category, offset } }),

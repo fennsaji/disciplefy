@@ -5,6 +5,7 @@ import {
   groupPathTranslations,
   loadCompletedTopicCounts,
   loadEnrolledPathIds,
+  nextLessonNumberPerPath,
   pathProgressPercentage,
   resolveShortTitle,
 } from './batch-loaders.ts'
@@ -115,4 +116,22 @@ Deno.test('resolveShortTitle: without a translated title the English short title
 Deno.test('resolveShortTitle: blank short titles read as none', () => {
   assertEquals(resolveShortTitle('en', '   ', undefined), null)
   assertEquals(resolveShortTitle('hi', 'Short', { title: 'T', description: 'd', short_title: '  ' }), null)
+})
+
+/**
+ * All paths' "Lesson N of M" used completed + 1: with lessons 1 and 3 done it
+ * named lesson 3, which is finished. The next lesson comes from the rows.
+ */
+Deno.test('nextLessonNumberPerPath: first unfinished lesson by position, null when finished', () => {
+  const topics = [
+    { learning_path_id: 'p', topic_id: 'c', position: 2 },
+    { learning_path_id: 'p', topic_id: 'a', position: 0 },
+    { learning_path_id: 'p', topic_id: 'b', position: 1 },
+    { learning_path_id: 'p', topic_id: 'd', position: 3 },
+    { learning_path_id: 'q', topic_id: 'x', position: 0 },
+  ]
+  const out = nextLessonNumberPerPath(['p', 'q', 'empty'], topics, [{ topic_id: 'a' }, { topic_id: 'c' }, { topic_id: 'x' }])
+  assertEquals(out.get('p'), 2) // lesson 2 ('b'), not completed+1 = 3
+  assertEquals(out.get('q'), null)
+  assertEquals(out.get('empty'), null)
 })

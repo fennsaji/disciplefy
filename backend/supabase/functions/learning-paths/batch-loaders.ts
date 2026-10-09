@@ -173,3 +173,62 @@ export function pathProgressPercentage(
   if (topicsCount <= 0) return 0;
   return Math.min(100, Math.round((topicsCompleted * 100) / topicsCount));
 }
+
+/**
+ * 1-based number of each path's first unfinished visible lesson for one
+ * user, from the lesson rows; null when every lesson is done (or the path has
+ * none). Lets list rows say "Lesson N of M" without assuming lessons were
+ * finished in order ("completed + 1" named lesson 3 when 1 and 3 were done).
+ *
+ * Null map on a failed read, so callers just omit the field.
+ */
+export async function loadNextLessonNumbers(
+  client: Client,
+  pathIds: string[],
+  userId: string,
+): Promise<Map<string, number | null> | null> {
+  const ids = [...new Set(pathIds.filter(Boolean))];
+  if (ids.length === 0) return new Map();
+
+  const { data: pathTopics, error: topicsError } = await client
+    .from('learning_path_topics')
+    .select('learning_path_id, topic_id, position, recommended_topics!inner(is_active)')
+    .in('learning_path_id', ids)
+    .eq('is_active', true)
+    .eq('recommended_topics.is_active', true);
+  if (topicsError) return null;
+
+  const rows = (pathTopics ?? []) as Array<{ learning_path_id: string; topic_id: string; position: number }>;
+  const topicIds = [...new Set(rows.map((r) => r.topic_id))];
+  let completed: Array<{ topic_id: string }> = [];
+  if (topicIds.length > 0) {
+    const { data, error } = await client
+      .from('user_topic_progress')
+      .select('topic_id')
+      .eq('user_id', userId)
+      .in('topic_id', topicIds)
+      .not('completed_at', 'is', null);
+    if (error) return null;
+    completed = (data ?? []) as Array<{ topic_id: string }>;
+  }
+
+  return nextLessonNumberPerPath(ids, rows, completed);
+}
+
+/** Pure step of loadNextLessonNumbers, exported for tests. */
+export function nextLessonNumberPerPath(
+  pathIds: string[],
+  pathTopics: Array<{ learning_path_id: string; topic_id: string; position: number }>,
+  completed: Array<{ topic_id: string }>,
+): Map<string, number | null> {
+  const done = new Set(completed.map((r) => r.topic_id));
+  const out = new Map<string, number | null>();
+  for (const id of pathIds) {
+    const lessons = pathTopics
+      .filter((t) => t.learning_path_id === id)
+      .sort((a, b) => a.position - b.position);
+    const i = lessons.findIndex((t) => !done.has(t.topic_id));
+    out.set(id, i < 0 ? null : i + 1);
+  }
+  return out;
+}
