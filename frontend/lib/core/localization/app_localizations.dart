@@ -1065,8 +1065,7 @@ class AppLocalizations {
       'joinFellowshipCodeLabel': 'आमंत्रण कोड',
       'joinFellowshipCodeHint': 'आमंत्रण कोड दर्ज करें',
       'joinFellowshipButton': 'संगति में शामिल हों',
-      'joinFellowshipHelper':
-          'आमंत्रण कोड संगति मेंटरों द्वारा दिए जाते हैं।',
+      'joinFellowshipHelper': 'आमंत्रण कोड संगति मेंटरों द्वारा दिए जाते हैं।',
       'fellowshipDefaultTitle': 'संगति',
       'fellowshipTabFeed': 'फ़ीड',
       'fellowshipTabLessons': 'पाठ',
