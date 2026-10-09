@@ -36,7 +36,7 @@ One vocabulary for the whole app, in both `lib/core/i18n/translations_*.dart` an
 | Scripture (UI label) | Scripture | वचन; बाइबल in sentences (not पवित्रशास्त्र) | തിരുവെഴുത്ത് / വേദഭാഗം |
 | Fellowship | Fellowship | संगति (owner-confirmed) | കൂട്ടായ്മ (owner-confirmed) |
 | Lesson | Lesson | पाठ | പാഠം |
-| Quick read | Quick read | लघु पढ़ाई (mode name); लघु on space-tight chips | വേഗ വായന |
+| Quick read | Quick read | छोटी पढ़ाई (mode name); छोटी on space-tight chips; "छोटी या पूरी गाइड" | വേഗ വായന |
 | Standard (mode) / Full guide | Standard, Full guide | सामान्य / सामान्य पढ़ाई; पूरी गाइड (the Standard *plan* stays स्टैंडर्ड) | സാധാരണ / സാധാരണ പഠനം; പൂർണ ഗൈഡ് (the Standard *plan* stays സ്റ്റാൻഡേർഡ്) |
 | Deep dive | Deep dive | गहरी पढ़ाई | ആഴത്തിൽ (short) / ആഴത്തിലുള്ള പഠനം |
 | Follow-up question | Follow-up (question) | आगे के सवाल | തുടർചോദ്യം (one word) |
@@ -53,6 +53,19 @@ One vocabulary for the whole app, in both `lib/core/i18n/translations_*.dart` an
 | Level: Follower | Follower | अनुयायी | അനുയായി |
 | Level: Disciple | Disciple | शिष्य | ശിഷ്യൻ |
 | Level: Leader | Leader | नेता | നേതാവ് |
+| Daily (credits, limit) | 15 daily credits, Daily limit | हर दिन 15 क्रेडिट; रोज़ की सीमा; label रोज़ | ദിവസവും 15 ക്രെഡിറ്റ്; ദിവസ പരിധി; label ദിവസവും |
+| Limit | Limit | सीमा | പരിധി |
+| Unlimited | Unlimited | असीमित | പരിധിയില്ലാത്ത |
+| Best for … | Best for group leaders | … के लिए सबसे अच्छा (समूह के अगुवों, सक्रिय बाइबल विद्यार्थियों, पास्टरों और शिक्षकों) | … ക്ക് (ഗ്രൂപ്പ് നേതാക്കൾക്ക്, പാസ്റ്റർമാർക്കും അധ്യാപകർക്കും) |
+| Features | Features | सुविधाएं / सुविधा | സവിശേഷതകൾ / സവിശേഷത |
+| Free / Standard users | Free users | फ्री प्लान में …; स्टैंडर्ड प्लान में … | സൗജന്യ ഉപയോക്താക്കൾ; സ്റ്റാൻഡേർഡ് ഉപയോക്താക്കൾ |
+| Current plan | Current plan | मौजूदा प्लान | നിലവിലെ പ്ലാൻ |
+| Assign (a path) | Assign | सौंपें / सौंपा | — |
+| History, Statistics | History, Statistics | इतिहास, आंकड़े | ചരിത്രം, കണക്കുകൾ |
+| Delete, Edit, Cancel | Delete, Edit, Cancel | हटाएं, बदलें, रद्द करें | ഇല്ലാതാക്കൂ, തിരുത്തൂ, റദ്ദാക്കൂ |
+| Practice | Practice | अभ्यास | പരിശീലനം |
+| Preferences | Preferences | प्राथमिकताएं | മുൻഗണനകൾ |
+| Disciplefy (app name) | Disciplefy | Disciplefy (Latin script) | Disciplefy (Latin script) |
 
 ## Where we departed from the native reviewer, and why
 
@@ -84,5 +97,13 @@ The owner asked for simple everyday words over transliterations in both language
 - **Hindi:** लर्निंग पाथ / पाथ → सीखने का रास्ता / रास्ता; स्टडी गाइड → अध्ययन गाइड; स्मरण वचन → याद वचन; क्विक रीड / डीप डाइव → लघु पढ़ाई / गहरी पढ़ाई (Standard mode सामान्य); फॉलो-अप प्रश्न → आगे के सवाल; सेव करें → सहेजें; Done पूर्ण → हो गया; पवित्रशास्त्र in UI labels → वचन / बाइबल; streak counts → लगातार {n} दिन.
 - **Malayalam:** സ്റ്റ്രീക്ക് → തുടർച്ച; ക്വിക്ക് റീഡ് / ഡീപ്പ് ഡൈവ് → വേഗ വായന / ആഴത്തിലുള്ള പഠനം (Standard mode സാധാരണ); സ്റ്റഡി → പഠനം; ഫോളോ-അപ്പ് → തുടർചോദ്യങ്ങൾ.
 - **Kept:** संगति / കൂട്ടായ്മ; क्रेडिट / ക്രെഡിറ്റ്; प्लान / പ്ലാൻ (योजना reads as a government "scheme"); अपग्रेड / അപ്‌ഗ്രേഡ്; സേവ്; ഗൈഡ്; മനഃപാഠ വാക്യം (an everyday school word); the Standard / Premium plan names.
+
+### Follow-up (October 2026)
+
+- **Quick read, Hindi:** लघु पढ़ाई → छोटी पढ़ाई (chip छोटी). लघु is bookish.
+- **Hindi leftovers from before both passes:** डेली → रोज़ / हर दिन; लिमिट → सीमा; बेस्ट → सबसे अच्छा; ग्रुप लीडर्स → समूह के अगुवे (the church word); एक्टिव स्टूडेंट्स → सक्रिय विद्यार्थी; पास्टर्स और टीचर्स → पास्टरों और शिक्षकों; फीचर(्स) → सुविधा(एं); असाइन → सौंपें; यूज़ / यूज़र्स → इस्तेमाल / "… प्लान में"; हिस्ट्री → इतिहास; स्टैटिस्टिक्स → आंकड़े; प्राइवेसी पॉलिसी → गोपनीयता नीति; डिलीट / एडिट / कैंसल → हटाएं / बदलें / रद्द करें; स्मृति → याद; स्वचालित प्रकटीकरण → अपने आप दिखाएं; डिसाइपलर / डिसाइपलफाई → Discipler / Disciplefy.
+- **Malayalam leftovers:** ഡെയ്ലി → ദിവസവും / ദിവസ; ലിമിറ്റ് / അൺലിമിറ്റഡ് → പരിധി / പരിധിയില്ലാത്ത; ഫ്രീ യൂസേഴ്‌സ് → സൗജന്യ ഉപയോക്താക്കൾ; ലീഡർസ് → നേതാക്കൾ; ടീച്ചർ → അധ്യാപകൻ; ഫീച്ചർ → സവിശേഷത; പ്രാക്ടീസ് → പരിശീലനം; ഹിസ്റ്ററി / സ്റ്റാറ്റിസ്റ്റിക്സ് → ചരിത്രം / കണക്കുകൾ; ഡിലീറ്റ് / എഡിറ്റ് / കാൻസൽ → ഇല്ലാതാക്കൂ / തിരുത്തൂ / റദ്ദാക്കൂ; ഡിസൈപ്പിൾഫൈ → Disciplefy. Garbled words from an old pass were fixed too (പ്രാതമ്യം / പ്രാപ്തരുകൾ → മുൻഗണന / മുൻഗണനകൾ, ശിഫാരസ്സു → ശുപാർശ, കുറവുന്നു → കുറയുന്നു, വേണംഎന്നാലും → വേണമെങ്കിലും, ലാഗൂ → ബാധകം, സുധാരണ ആവശ്യം → മെച്ചപ്പെടണം, തേർച്ച → തിരഞ്ഞെടുപ്പ്, പ്രഗതി → പുരോഗതി, and a Hindi "।" → ".").
+- **Kept as everyday words:** लीडरबोर्ड / ലീഡർബോർഡ് (feature name), एक्सेस / ആക്‌സസ്, डिफ़ॉल्ट / ഡിഫോൾട്ട്, वॉयस / വോയ്സ്, रीसेट, सबमिट (Hindi), फीडबैक, पैकेज, इनवॉइस, प्रीमियम, ट्रायल, ലെവൽ, പ്രിവ്യൂ, ഡ്രാഫ്റ്റ്.
+- **Left for an owner decision:** मेंटर / മെൻ്റർ (the fellowship role; some Hindi strings already say मार्गदर्शक), फ्रीज़ दिन / ഫ്രീസ് ദിനം (streak-freeze feature name), चैंपियन, the मास्टर / മാസ്റ്റർ mastery label.
 
 `wording_guard_test` bans the replaced forms in both languages.
