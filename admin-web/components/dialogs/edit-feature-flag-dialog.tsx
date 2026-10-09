@@ -282,6 +282,14 @@ export default function EditFeatureFlagDialog({
             </p>
           </div>
 
+          {flag.category === 'rollout' && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                Rollout switch: the app reads only <strong>Feature Enabled</strong>. Plans and rollout percentage do not apply.
+              </p>
+            </div>
+          )}
+
           {/* Category Badge */}
           {flag.category && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -303,7 +311,7 @@ export default function EditFeatureFlagDialog({
           {/* Database Update Notice */}
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
             <p className="text-xs text-green-800 dark:text-green-200">
-              ✅ <strong>Database Update:</strong> Changes will be saved to the <code className="bg-green-100 dark:bg-green-800 px-1 rounded">feature_flags</code> table and take effect immediately across all systems (5-minute cache).
+              ✅ <strong>Database Update:</strong> Changes will be saved to the <code className="bg-green-100 dark:bg-green-800 px-1 rounded">feature_flags</code> table and reach the app within a few minutes (server cache 1 minute; the app refreshes its copy on launch and when reopened after 5 minutes).
             </p>
           </div>
 
