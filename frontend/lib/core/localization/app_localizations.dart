@@ -1066,7 +1066,7 @@ class AppLocalizations {
       'joinFellowshipCodeHint': 'आमंत्रण कोड दर्ज करें',
       'joinFellowshipButton': 'संगति में शामिल हों',
       'joinFellowshipHelper':
-          'आमंत्रण कोड संगति मार्गदर्शकों द्वारा दिए जाते हैं।',
+          'आमंत्रण कोड संगति मेंटरों द्वारा दिए जाते हैं।',
       'fellowshipDefaultTitle': 'संगति',
       'fellowshipTabFeed': 'फ़ीड',
       'fellowshipTabLessons': 'पाठ',
@@ -1096,7 +1096,7 @@ class AppLocalizations {
       'lessonsNoPathMentor':
           'अभी कोई सीखने का रास्ता नहीं सौंपा गया है।\nसौंपने के लिए नीचे टैप करें।',
       'lessonsNoPathMember':
-          'आपके मार्गदर्शक ने अभी कोई सीखने का रास्ता नहीं सौंपा है।',
+          'आपके मेंटर ने अभी कोई सीखने का रास्ता नहीं सौंपा है।',
       'lessonsCurrentStudy': 'वर्तमान अध्ययन',
       'lessonsSelectPath': 'एक सीखने का रास्ता चुनें',
       'lessonsPickPathTitle': 'अपनी संगति के लिए एक सीखने का रास्ता चुनें',
@@ -1186,10 +1186,10 @@ class AppLocalizations {
       'inviteRevoke': 'रद्द करें',
       'inviteRevokeSuccess': 'आमंत्रण रद्द किया गया',
       // Transfer mentor
-      'transferMentorTitle': 'मार्गदर्शक भूमिका स्थानांतरित करें',
+      'transferMentorTitle': 'मेंटर भूमिका स्थानांतरित करें',
       'transferMentorConfirm':
-          'इस सदस्य को मार्गदर्शक भूमिका दें? आप एक सामान्य सदस्य बन जाएंगे।',
-      'transferMentorSuccess': 'मार्गदर्शक भूमिका स्थानांतरित की गई',
+          'इस सदस्य को मेंटर भूमिका दें? आप एक सामान्य सदस्य बन जाएंगे।',
+      'transferMentorSuccess': 'मेंटर भूमिका स्थानांतरित की गई',
       'removeMemberTitle': 'सदस्य हटाएं',
       'removeMemberConfirm':
           'इस सदस्य को संगति से हटाएं? वे नए आमंत्रण से पुनः शामिल हो सकते हैं।',
