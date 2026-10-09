@@ -33,12 +33,13 @@ One vocabulary for the whole app, in both `lib/core/i18n/translations_*.dart` an
 | {n} study credits daily | 15 study credits daily | हर दिन 15 अध्ययन क्रेडिट | ദിവസവും 15 പഠന ക്രെഡിറ്റുകൾ |
 | Plan | Plan | प्लान | പ്ലാൻ |
 | Upgrade | Upgrade | अपग्रेड (करें) | അപ്‌ഗ്രേഡ് (with ZWNJ) |
-| Fellowship | Fellowship | संगति | കൂട്ടായ്മ |
+| Fellowship | Fellowship | संगति (owner-confirmed) | കൂട്ടായ്മ (owner-confirmed) |
 | Lesson | Lesson | पाठ | പാഠം |
-| Quick read | Quick read | क्विक | ക്വിക്ക് |
+| Quick read | Quick read | क्विक रीड (mode name); क्विक on space-tight chips | ക്വിക്ക് റീഡ് (mode name); ക്വിക്ക് on space-tight chips |
 | Standard / Full guide | Standard, Full guide | स्टैंडर्ड; पूरी गाइड | സ്റ്റാൻഡേർഡ്; പൂർണ ഗൈഡ് |
-| Deep dive | Deep dive | डीप डाइव | ഡീപ് ഡൈവ് / ആഴത്തിലുള്ള പഠനം (in preview copy) |
-| Follow-up question | Follow-up (question) | फॉलो-अप प्रश्न | തുടർചോദ്യം |
+| Deep dive | Deep dive | डीप डाइव (गहन अध्ययन in preview copy) | ഡീപ്പ് ഡൈവ് / ആഴത്തിലുള്ള പഠനം (in preview copy) |
+| Follow-up question | Follow-up (question) | फॉलो-अप प्रश्न | തുടർചോദ്യം (one word) |
+| Daily verse / Verse of the day | Daily verse | आज का वचन or दैनिक वचन (never आयत) | ഇന്നത്തെ വചനം or ദിനവചനം (not ദൈനിക / ദിവസത്തെ വചനം) |
 | See all | See all | सभी देखें | എല്ലാം കാണൂ |
 | Due (review) | Due | दोहराना है | ബാക്കി |
 | Done | Done | पूर्ण | പൂർത്തിയായി |
@@ -62,5 +63,13 @@ One vocabulary for the whole app, in both `lib/core/i18n/translations_*.dart` an
 - **Done, Hindi: पूर्ण.** This is the reviewer's first option. "पाठ पूरा" would wrongly read as "lesson complete" on the text-size sheet.
 - **Verse, Hindi: आयत kept for counts and verse lists.** The reviewer flagged only the Scripture tab and the streak hint; both now say वचन. Replacing every आयत would change gender agreement in about 50 strings with no reviewer request behind it.
 - **Streak, Malayalam: സ്റ്റ്രീക്ക്.** This reverses an earlier choice (തുടർച്ച) on the reviewer's recommendation. Adverbial "തുടർച്ചയായി" (continuously) stays where it means "in a row", not the streak noun.
-- **Fellowship: संगति / കൂട്ടായ്മ (native words), not transliterated.** The reviewer allowed either form as long as one is used everywhere. Both runtimes already used the native word in most strings (Hindi about 56 to 25, Malayalam about 60 to 20), and it is the natural church word, so the transliterated forms were switched to it.
+- **Fellowship: संगति / കൂട്ടായ്മ (native words), not transliterated.** The owner confirmed this after the October localization review, whose terminology sheet suggested फेलोशिप / ഫെലോഷിപ്പ്. The reviewer allowed either form as long as one is used everywhere. Both runtimes already used the native word in most strings (Hindi about 56 to 25, Malayalam about 60 to 20), and it is the natural church word, so the transliterated forms were switched to it.
 - **Save: सेव करें / സേവ് ചെയ്യൂ on buttons.** Hindi status messages keep सहेजा गया where they already read naturally.
+
+## Owner localization review (October 2026)
+
+The owner's review spreadsheet was applied with one rule: change a string only when the sheet's text is better (more natural, more accurate, or fixes an error). Where the current text and the sheet are equally good, the current text stays. Per-row decisions are in `.superpowers/sdd/localization-review-apply-report.md`.
+
+- **Kept, although the sheet's terminology guide differs:** संगति / കൂട്ടായ്മ for Fellowship; पाथ as the short form of लर्निंग पाथ; आयत for verse counts and lists; both बाइबल and बाइबिल spellings where they already read well; ക്രെഡിറ്റ് (singular) after numbers and in compounds; വേദഭാഗം for a Scripture passage; the short क्विक / ക്വിക്ക് chips.
+- **Adopted for consistency:** study mode names are क्विक रीड / डीप डाइव and ക്വിക്ക് റീഡ് / ഡീപ്പ് ഡൈവ് (they were लघु पढ़ाई / गहरी पढ़ाई and വേഗ വായന / ആഴത്തിൽ). The daily verse is never आयत in Hindi. Leftover "सीखने के रास्ते / मार्ग" now say लर्निंग पाथ, and leftover "പഠന സഹായി" for a study guide now says പഠന ഗൈഡ്.
+- **Fit:** the reviewer's Malayalam "Choose quick or full guide" (with the verb) overflows the 280px intro step title, so it is ക്വിക്ക് അല്ലെങ്കിൽ പൂർണ ഗൈഡ്.

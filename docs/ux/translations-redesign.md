@@ -2,7 +2,7 @@
 
 Source: `frontend/lib/core/i18n/translations_{en,hi,ml}.dart`, compared with the pre-redesign base. **New** = key did not exist; **Changed** = text edited. Grouped by feature (top-level key). Hindi and Malayalam follow `docs/ux/translation-style-guide.md` (vocabulary from the native-speaker review).
 
-Totals: 1111 new, 200 changed, 87 features.
+Totals: 1111 new, 228 changed, 87 features.
 
 
 ## ledger (117)
@@ -111,12 +111,12 @@ Totals: 1111 new, 200 changed, 87 features.
 | `stats_error` | New | Couldn't load the summary | सारांश लोड नहीं हो सका | സംഗ്രഹം ലോഡ് ചെയ്യാനായില്ല |
 | `status_active` | New | Active | सक्रिय | സജീവം |
 | `status_failed` | New | Failed | विफल | പരാജയം |
-| `status_pending` | New | Pending | लंबित | ബാക്കി |
+| `status_pending` | New | Pending | लंबित | പെൻഡിംഗ് |
 | `status_success` | New | Success | सफल | വിജയം |
 | `studies` | New | studies | अध्ययन | പഠനങ്ങൾ |
 | `study_costs_line` | New | Quick Read from 10 · Standard from 20 · Deep Dive from 30 · Follow-up 5. You see the exact cost before each study. | क्विक रीड 10 से · स्टैंडर्ड 20 से · डीप डाइव 30 से · प्रश्न 5। हर अध्ययन से पहले सही कीमत दिखती है। | ക്വിക്ക് റീഡ് 10 മുതൽ · സ്റ്റാൻഡേർഡ് 20 മുതൽ · ഡീപ്പ് ഡൈവ് 30 മുതൽ · ചോദ്യം 5. ഓരോ പഠനത്തിനും മുമ്പ് കൃത്യമായ ചെലവ് കാണാം. |
 | `study_costs_title` | New | What a study costs | एक अध्ययन की कीमत | ഒരു പഠനത്തിന്റെ ചെലവ് |
-| `study_guide` | New | Study guide | स्टडी गाइड | പഠന സഹായി |
+| `study_guide` | New | Study guide | स्टडी गाइड | പഠന ഗൈഡ് |
 | `subscriptions_paused` | New | New subscriptions are temporarily unavailable. Please check back later. | नई सदस्यताएं अस्थायी रूप से उपलब्ध नहीं हैं। कृपया बाद में देखें। | പുതിയ സബ്സ്ക്രിപ്ഷനുകൾ താൽക്കാലികമായി ലഭ്യമല്ല. പിന്നീട് നോക്കൂ. |
 | `today` | New | Today | आज | ഇന്ന് |
 | `total` | New | total | कुल | ആകെ |
@@ -247,25 +247,25 @@ Totals: 1111 new, 200 changed, 87 features.
 | `generate.secondary` | New | See an example | उदाहरण देखें | ഉദാഹരണം കാണൂ |
 | `generate.step1_body` | New | A passage, a word, or something you are facing. | कोई अंश, शब्द, या आपकी स्थिति। | ഒരു ഭാഗം, ഒരു വാക്ക്, ഒരു സാഹചര്യം. |
 | `generate.step1_title` | New | Type a verse or topic | वचन या विषय लिखें | വചനമോ വിഷയമോ |
-| `generate.step2_body` | New | 3 minutes, or about 8 for the full study. | 3 मिनट, या पूरी के लिए लगभग 8। | 3 മിനിറ്റ്, പൂർണ്ണ പഠനത്തിന് ഏകദേശം 8. |
-| `generate.step2_title` | New | Choose quick or full guide | क्विक या पूरी गाइड | ക്വിക്ക് അല്ലെങ്കിൽ പൂർണ്ണം |
+| `generate.step2_body` | New | 3 minutes, or about 8 for the full study. | 3 मिनट, या पूरी गाइड के लिए लगभग 8। | 3 മിനിറ്റ്, പൂർണ്ണ പഠനത്തിന് ഏകദേശം 8. |
+| `generate.step2_title` | New | Choose quick or full guide | क्विक या पूरी गाइड चुनें | ക്വിക്ക് അല്ലെങ്കിൽ പൂർണ ഗൈഡ് |
 | `generate.step3_body` | New | Keep guides to come back to later. | गाइड बाद के लिए रखें। | ഗൈഡുകൾ പിന്നീട് നോക്കാൻ സൂക്ഷിക്കാം. |
 | `generate.step3_title` | New | Read, reflect, save | पढ़ें, सोचें, सहेजें | വായന, ധ്യാനം, സേവ് |
-| `generate.title` | New | Study any passage or question on your mind | कोई भी वचन या सवाल पढ़ें | മനസ്സിലുള്ള ഏത് വചനവും ചോദ്യവും പഠിക്കാം |
+| `generate.title` | New | Study any passage or question on your mind | अपने मन में आए किसी भी वचन या सवाल का अध्ययन करें | മനസ്സിലുള്ള ഏത് വചനവും ചോദ്യവും പഠിക്കാം |
 | `memory.eyebrow` | New | Memory verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
-| `memory.primary` | New | Practise this verse · 1 min | यह वचन दोहराएँ · 1 मि | ഈ വചനം പരിശീലിക്കൂ · 1 മി |
+| `memory.primary` | New | Practise this verse · 1 min | इस वचन का अभ्यास करें · 1 मिनट | ഈ വചനം പരിശീലിക്കൂ · 1 മി |
 | `memory.saved` | New | Saved to your memory verses | स्मरण वचनों में सहेजा गया | മനഃപാഠ വാക്യങ്ങളിൽ സേവ് ചെയ്തു |
-| `memory.secondary` | New | Choose my own verse | अपना वचन चुनें | സ്വന്തം വചനം |
+| `memory.secondary` | New | Choose my own verse | अपना वचन चुनें | സ്വന്തം വചനം തിരഞ്ഞെടുക്കൂ |
 | `memory.step1_body` | New | Pick one, or start with the suggestion below. | खुद चुनें, या नीचे वाले से शुरू करें। | സ്വയം എടുക്കാം, അല്ലെങ്കിൽ താഴെയുള്ളത്. |
 | `memory.step1_title` | New | Save a verse | वचन सेव करें | വചനം ചേർക്കൂ |
 | `memory.step2_body` | New | Fill the gaps, then type it from memory. | खाली जगह भरें, फिर याद से लिखें। | വിട്ടഭാഗം നിറയ്ക്കൂ, പിന്നെ ഓർമ്മയിൽ നിന്ന്. |
-| `memory.step2_title` | New | Practise for one minute | एक मिनट अभ्यास | ഒരു മിനിറ്റ് പരിശീലനം |
+| `memory.step2_title` | New | Practise for one minute | एक मिनट अभ्यास करें | ഒരു മിനിറ്റ് പരിശീലിക്കൂ |
 | `memory.step3_body` | New | Reviews get further apart as it sticks. | याद होने पर दोहराना कम होता है। | ഉറയ്ക്കുമ്പോൾ ഇടവേള കൂടും. |
 | `memory.step3_title` | New | We bring it back | हम फिर याद दिलाएँगे | വീണ്ടും ഓർമ്മിപ്പിക്കും |
-| `memory.title` | New | Hide God's word in your heart, a minute a day | रोज़ एक मिनट, वचन मन में रखें | ദിവസം ഒരു മിനിറ്റ്, വചനം ഹൃദയത്തിൽ |
+| `memory.title` | New | Hide God's word in your heart, a minute a day | रोज़ एक मिनट, परमेश्वर के वचन को अपने हृदय में रखें | ദിവസവും ഒരു മിനിറ്റ്, ദൈവവചനം ഹൃദയത്തിൽ സൂക്ഷിക്കൂ |
 | `paths.eyebrow` | New | Learning paths | लर्निंग पाथ | പഠന പാതകൾ |
 | `paths.primary` | New | Browse paths | पाथ देखें | പാതകൾ കാണൂ |
-| `paths.secondary` | New | Maybe later | बाद में | പിന്നീട് |
+| `paths.secondary` | New | Maybe later | बाद में | പിന്നീടാകാം |
 | `paths.step1_body` | New | Foundations, Gospels, prayer, hard times and more. | नींव, सुसमाचार, प्रार्थना, कठिन समय और भी। | അടിസ്ഥാനം, സുവിശേഷം, പ്രാർത്ഥന എന്നിവയും മറ്റും. |
 | `paths.step1_title` | New | Pick a path | पाथ चुनें | പാത എടുക്കൂ |
 | `paths.step2_body` | New | Quick read or full guide, about 3–5 minutes. | क्विक या पूरी गाइड, लगभग 3–5 मिनट। | ക്വിക്ക് അല്ലെങ്കിൽ പൂർണ്ണ ഗൈഡ്, 3–5 മിനിറ്റ്. |
@@ -417,7 +417,7 @@ Totals: 1111 new, 200 changed, 87 features.
 | `settings.continue_learning_title` | New | Continue learning | अध्ययन जारी रखें | പഠനം തുടരുക |
 | `settings.daily_section_title` | New | Daily | दैनिक | ദിവസേന |
 | `settings.daily_verse_description` | Changed | Every morning at 8:00 AM | हर सुबह 8:00 बजे | എല്ലാ ദിവസവും രാവിലെ 8:00-ന് |
-| `settings.daily_verse_title` | Changed | Daily verse | दैनिक वचन | ദൈനിക വചനം |
+| `settings.daily_verse_title` | Changed | Daily verse | दैनिक वचन | ഇന്നത്തെ വചനം |
 | `settings.discipler_activity_description` | New | A summary of what Discipler did in groups you mentor | आपके मार्गदर्शन वाले समूहों में Discipler की गतिविधि का सारांश | നിങ്ങൾ നയിക്കുന്ന ഗ്രൂപ്പുകളിലെ Discipler പ്രവർത്തനത്തിന്റെ സംഗ്രഹം |
 | `settings.discipler_activity_title` | New | Discipler activity | Discipler गतिविधि | Discipler പ്രവർത്തനം |
 | `settings.discipler_reply_description` | New | When Discipler answers a question in your fellowship | जब Discipler आपके समूह में किसी प्रश्न का उत्तर दे | നിങ്ങളുടെ കൂട്ടായ്മയിലെ ചോദ്യത്തിന് Discipler ഉത്തരം നൽകുമ്പോൾ |
@@ -533,7 +533,7 @@ Totals: 1111 new, 200 changed, 87 features.
 | `preview_interpretation` | New | Interpretation | व्याख्या | വ്യാഖ്യാനം |
 | `preview_listening` | New | listening | सुन रहा है | കേൾക്കുന്നു |
 | `preview_question` | New | Why did Jesus speak in parables? | यीशु दृष्टांतों में क्यों बोलते थे? | യേശു ഉപമകളിലൂടെ സംസാരിച്ചത് എന്തുകൊണ്ട്? |
-| `preview_review_meta` | New | Review · 3 due | दोहराव · 3 बाकी | പുനരവലോകനം · 3 ബാക്കി |
+| `preview_review_meta` | New | Review · 3 due | दोहराव · 3 बाकी | ആവർത്തനം · 3 ബാക്കി |
 | `preview_scripture_meta` | New | Scripture · Deep dive · 12 min | पवित्रशास्त्र · गहन अध्ययन · 12 मिनट | തിരുവെഴുത്ത് · ആഴത്തിലുള്ള പഠനം · 12 മിനിറ്റ് |
 | `preview_study_now` | New | Study now | अभी पढ़ें | ഇപ്പോൾ പഠിക്കൂ |
 | `preview_summary` | New | Summary | सारांश | സംഗ്രഹം |
@@ -542,12 +542,12 @@ Totals: 1111 new, 200 changed, 87 features.
 | `preview_topic_meta` | New | Topic · Standard · 8 min | विषय · स्टैंडर्ड · 8 मिनट | വിഷയം · സ്റ്റാൻഡേർഡ് · 8 മിനിറ്റ് |
 | `preview_verse_of_day` | New | Verse of the day | आज का वचन | ഇന്നത്തെ വചനം |
 | `skip_intro` | New | Skip | छोड़ें | ഒഴിവാക്കുക |
-| `slide1_description` | New | Receive daily verses with instant study guides. Tap any verse to dive deeper with personalized insights, context, and practical applications. | हर दिन वचन और तुरंत स्टडी गाइड पाएं। किसी भी वचन पर टैप करें और व्यक्तिगत अंतर्दृष्टि, संदर्भ और व्यावहारिक प्रयोग के साथ गहराई में जाएं। | ദിവസവും വചനങ്ങളും ഉടനടി പഠന സഹായികളും നേടൂ. ഏതു വചനത്തിലും ടാപ്പ് ചെയ്ത് വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ, പശ്ചാത്തലം, പ്രായോഗിക പാഠങ്ങൾ എന്നിവയിലേക്ക് ആഴത്തിൽ ഇറങ്ങൂ. |
+| `slide1_description` | New | Receive daily verses with instant study guides. Tap any verse to dive deeper with personalized insights, context, and practical applications. | हर दिन वचन और तुरंत स्टडी गाइड पाएं। किसी भी वचन पर टैप करें और व्यक्तिगत अंतर्दृष्टि, संदर्भ और व्यावहारिक प्रयोग के साथ गहराई में जाएं। | ദിവസവും വചനങ്ങളും ഉടനടി പഠന ഗൈഡുകളും നേടൂ. ഏതു വചനത്തിലും ടാപ്പ് ചെയ്ത് വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ, പശ്ചാത്തലം, പ്രായോഗിക പാഠങ്ങൾ എന്നിവയിലേക്ക് ആഴത്തിൽ ഇറങ്ങൂ. |
 | `slide1_eyebrow` | New | Daily verse | दैनिक वचन | ദിനവചനം |
 | `slide1_title` | New | Start each day with God's Word | हर दिन की शुरुआत परमेश्वर के वचन से करें | ഓരോ ദിവസവും ദൈവവചനത്തോടെ ആരംഭിക്കൂ |
 | `slide1_verse` | New | Your word is a lamp for my feet, a light on my path. | तेरा वचन मेरे पांव के लिये दीपक, और मेरे मार्ग के लिये उजियाला है। | നിന്റെ വചനം എന്റെ കാലിന്നു ദീപവും എന്റെ പാതയ്ക്കു പ്രകാശവും ആകുന്നു. |
 | `slide2_description` | New | Enter any scripture or topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points. | कोई भी वचन या विषय दर्ज करें और संदर्भ, व्याख्या, मनन के प्रश्न और प्रार्थना बिंदुओं के साथ पूरी स्टडी गाइड बनाएं। | ഏതു വേദഭാഗമോ വിഷയമോ നൽകി പശ്ചാത്തലം, വ്യാഖ്യാനം, ധ്യാന ചോദ്യങ്ങൾ, പ്രാർത്ഥനാ വിഷയങ്ങൾ എന്നിവയുള്ള സമഗ്ര പഠന സഹായികൾ തയ്യാറാക്കൂ. |
-| `slide2_eyebrow` | New | Study guides | स्टडी गाइड | പഠന സഹായികൾ |
+| `slide2_eyebrow` | New | Study guides | स्टडी गाइड | പഠന ഗൈഡുകൾ |
 | `slide2_title` | New | Personalized insights for your journey | आपकी यात्रा के लिए व्यक्तिगत अंतर्दृष्टि | നിങ്ങളുടെ യാത്രയ്ക്കായി വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ |
 | `slide2_verse` | New | All Scripture is God-breathed and is useful for teaching... | सम्पूर्ण पवित्रशास्त्र परमेश्वर की प्रेरणा से रचा गया है और उपदेश के लिये लाभदायक है... | എല്ലാ തിരുവെഴുത്തും ദൈവശ്വാസീയമാകയാൽ ഉപദേശത്തിന്നു പ്രയോജനമുള്ളതു... |
 | `slide3_description` | New | Have natural voice conversations about Scripture. Ask questions, get answers, and deepen your understanding through guided dialogue. | पवित्रशास्त्र के बारे में सहज आवाज़ में बातचीत करें। प्रश्न पूछें, उत्तर पाएं और मार्गदर्शित संवाद से अपनी समझ बढ़ाएं। | തിരുവെഴുത്തിനെക്കുറിച്ച് സ്വാഭാവികമായി ശബ്ദത്തിൽ സംസാരിക്കൂ. ചോദ്യങ്ങൾ ചോദിക്കൂ, ഉത്തരങ്ങൾ നേടൂ, മാർഗനിർദേശമുള്ള സംഭാഷണത്തിലൂടെ ഗ്രാഹ്യം ആഴപ്പെടുത്തൂ. |
@@ -556,7 +556,7 @@ Totals: 1111 new, 200 changed, 87 features.
 | `slide3_verse` | New | Call to me and I will answer you... | मुझ से प्रार्थना कर और मैं तेरी सुनकर तुझे उत्तर दूंगा... | എന്നോടു വിളിച്ചപേക്ഷിക്ക; ഞാൻ നിനക്കു ഉത്തരം അരുളും... |
 | `slide4_description` | New | Memorize Scripture with scientifically-proven spaced repetition. Review verses at optimal intervals to commit them to long-term memory. | वैज्ञानिक रूप से प्रमाणित स्पेस्ड रिपिटीशन से वचन याद करें। सही अंतराल पर दोहराएं ताकि वचन लंबे समय तक याद रहें। | ശാസ്ത്രീയമായി തെളിയിക്കപ്പെട്ട സ്പേസ്ഡ് റിപ്പീറ്റേഷനിലൂടെ വചനം മനഃപാഠമാക്കൂ. ശരിയായ ഇടവേളകളിൽ ആവർത്തിച്ച് ദീർഘകാലം ഓർമ്മയിൽ സൂക്ഷിക്കൂ. |
 | `slide4_eyebrow` | New | Memory verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
-| `slide4_title` | New | Hide God's Word in your heart | परमेश्वर के वचन को अपने हृदय में रखें | ദൈവവചനം ഹൃദയത്തിൽ സംഗ്രഹിക്കൂ |
+| `slide4_title` | New | Hide God's Word in your heart | परमेश्वर के वचन को अपने हृदय में रखें | ദൈവവചനം ഹൃദയത്തിൽ സൂക്ഷിക്കൂ |
 | `slide4_verse` | New | I have hidden your word in my heart that I might not sin against you. | मैं ने तेरे वचन को अपने हृदय में रख छोड़ा है, कि तेरे विरुद्ध पाप न करूं। | ഞാൻ നിന്നോടു പാപം ചെയ്യാതിരിപ്പാൻ നിന്റെ വചനത്തെ എന്റെ ഹൃദയത്തിൽ സംഗ്രഹിക്കുന്നു. |
 
 ## payments_feedback (35)
@@ -633,6 +633,40 @@ Totals: 1111 new, 200 changed, 87 features.
 | `status_not_queued` | New | Not in queue | कतार में नहीं | ക്യൂവിൽ ഇല്ല |
 | `status_waiting` | New | Waiting in queue | कतार में प्रतीक्षारत | ക്യൂവിൽ കാത്തിരിക്കുന്നു |
 
+## home (29)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `all_caught_up` | New | All caught up | सब पूरा हो गया | എല്ലാം പൂർത്തിയായി |
+| `all_paths` | New | All paths | सभी पाथ | എല്ലാ പാതകളും |
+| `available_offline` | New | Available offline | ऑफ़लाइन उपलब्ध | ഓഫ്‌ലൈനിൽ ലഭ്യമാണ് |
+| `browse_paths` | New | Browse learning paths | लर्निंग पाथ देखें | പഠന പാതകൾ കാണൂ |
+| `browse_paths_hint` | New | Pick a path to start your journey | अपनी यात्रा शुरू करने के लिए एक पाथ चुनें | യാത്ര തുടങ്ങാൻ ഒരു പാത തിരഞ്ഞെടുക്കൂ |
+| `continue_learning` | New | Continue learning | सीखना जारी रखें | പഠനം തുടരൂ |
+| `day_streak` | New | {count}-day streak | {count} दिन की स्ट्रीक | {count} ദിവസ സ്റ്റ്രീക്ക് |
+| `explore_learning_paths` | Changed | Explore Learning Paths | लर्निंग पाथ देखें | പഠന പാതകൾ കാണുക |
+| `generate_study_guide` | Changed | Generate Study Guide | स्टडी गाइड बनाएं | ഗൈഡ് ഉണ്ടാക്കൂ |
+| `good_afternoon` | New | Good afternoon, {name} | शुभ दोपहर, {name} | ശുഭ മദ്ധ്യാഹ്നം, {name} |
+| `good_evening` | New | Good evening, {name} | शुभ संध्या, {name} | ശുഭ സായാഹ്നം, {name} |
+| `good_morning` | New | Good morning, {name} | सुप्रभात, {name} | സുപ്രഭാതം, {name} |
+| `keep_it_alive` | New | Keep it alive | इसे बनाए रखें | തുടർന്നും നിലനിർത്തൂ |
+| `meeting_live` | New | LIVE | लाइव | തത്സമയം |
+| `meeting_now_ends` | New | Now · ends {time} | अभी · {time} पर समाप्त | ഇപ്പോൾ · {time}-ന് അവസാനിക്കും |
+| `meeting_today` | New | Today | आज | ഇന്ന് |
+| `meeting_today_at` | New | Today · {time} | आज · {time} | ഇന്ന് · {time} |
+| `memory_verses` | Changed | Memory Verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
+| `no_streak_yet` | New | No streak yet | अभी कोई स्ट्रीक नहीं | ഇതുവരെ സ്റ്റ്രീക്ക് ഇല്ല |
+| `nothing_due` | New | Nothing due today | आज कुछ बाकी नहीं | ഇന്ന് ഒന്നും ബാക്കിയില്ല |
+| `personalize_prompt_description` | Changed | Help us understand your spiritual journey so we can suggest the right paths for you. | अपनी आध्यात्मिक यात्रा के बारे में बताएं ताकि हम आपके लिए सही पाथ सुझा सकें। | നിങ്ങളുടെ ആത്മീയ യാത്രയെക്കുറിച്ച് പറയൂ, ഉചിതമായ പാതകൾ നിർദ്ദേശിക്കാം. |
+| `ready_for_next_step` | New | You're ready for your next step | आप अगले कदम के लिए तैयार हैं | അടുത്ത ചുവടിനായി നിങ്ങൾ തയ്യാറാണ് |
+| `review_more` | New | +{count} more | +{count} और | +{count} കൂടി |
+| `start_here` | New | Start here · {count} lessons | यहाँ से शुरू करें · {count} पाठ | ഇവിടെ തുടങ്ങൂ · {count} പാഠങ്ങൾ |
+| `start_streak_hint` | New | Read today's verse | आज का वचन पढ़ें | ഇന്നത്തെ വചനം വായിക്കൂ |
+| `study_now` | New | Study now | अभी अध्ययन करें | ഇപ്പോൾ പഠിക്കൂ |
+| `to_review` | New | {count} to review | {count} समीक्षा के लिए | {count} പുനരവലോകനത്തിന് |
+| `topics_progress` | New | {done} of {total} lessons | {total} में से {done} पाठ | {total}-ൽ {done} പാഠങ്ങൾ |
+| `topics_progress_next` | New | {done} of {total} · Next: {title} | {total} में से {done} · अगला: {title} | {total}-ൽ {done} · അടുത്തത്: {title} |
+
 ## account (28)
 
 | Key | | English | Hindi | Malayalam |
@@ -666,38 +700,37 @@ Totals: 1111 new, 200 changed, 87 features.
 | `second_path_title` | New | Your next path needs an account | अगले पाथ के लिए खाता चाहिए | അടുത്ത പാതയ്ക്ക് അക്കൗണ്ട് വേണം |
 | `sign_up_to_start` | New | Sign up to start | साइन अप करें | സൈൻ അപ്പ് |
 
-## home (28)
+## memory (27)
 
 | Key | | English | Hindi | Malayalam |
 |---|---|---|---|---|
-| `all_caught_up` | New | All caught up | सब पूरा हो गया | എല്ലാം പൂർത്തിയായി |
-| `all_paths` | New | All paths | सभी पाथ | എല്ലാ പാതകളും |
-| `available_offline` | New | Available offline | ऑफ़लाइन उपलब्ध | ഓഫ്‌ലൈനിൽ ലഭ്യമാണ് |
-| `browse_paths` | New | Browse learning paths | लर्निंग पाथ देखें | പഠന പാതകൾ കാണൂ |
-| `browse_paths_hint` | New | Pick a path to start your journey | अपनी यात्रा शुरू करने के लिए एक पाथ चुनें | യാത്ര തുടങ്ങാൻ ഒരു പാത തിരഞ്ഞെടുക്കൂ |
-| `continue_learning` | New | Continue learning | सीखना जारी रखें | പഠനം തുടരൂ |
-| `day_streak` | New | {count}-day streak | {count} दिन की स्ट्रीक | {count} ദിവസ സ്റ്റ്രീക്ക് |
-| `generate_study_guide` | Changed | Generate Study Guide | स्टडी गाइड बनाएं | ഗൈഡ് ഉണ്ടാക്കൂ |
-| `good_afternoon` | New | Good afternoon, {name} | शुभ दोपहर, {name} | ശുഭ മദ്ധ്യാഹ്നം, {name} |
-| `good_evening` | New | Good evening, {name} | शुभ संध्या, {name} | ശുഭ സായാഹ്നം, {name} |
-| `good_morning` | New | Good morning, {name} | सुप्रभात, {name} | സുപ്രഭാതം, {name} |
-| `keep_it_alive` | New | Keep it alive | इसे बनाए रखें | തുടർന്നും നിലനിർത്തൂ |
-| `meeting_live` | New | LIVE | लाइव | തത്സമയം |
-| `meeting_now_ends` | New | Now · ends {time} | अभी · {time} पर समाप्त | ഇപ്പോൾ · {time}-ന് അവസാനിക്കും |
-| `meeting_today` | New | Today | आज | ഇന്ന് |
-| `meeting_today_at` | New | Today · {time} | आज · {time} | ഇന്ന് · {time} |
-| `memory_verses` | Changed | Memory Verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
-| `no_streak_yet` | New | No streak yet | अभी कोई स्ट्रीक नहीं | ഇതുവരെ സ്റ്റ്രീക്ക് ഇല്ല |
-| `nothing_due` | New | Nothing due today | आज कुछ बाकी नहीं | ഇന്ന് ഒന്നും ബാക്കിയില്ല |
-| `personalize_prompt_description` | Changed | Help us understand your spiritual journey so we can suggest the right paths for you. | अपनी आध्यात्मिक यात्रा के बारे में बताएं ताकि हम आपके लिए सही पाथ सुझा सकें। | നിങ്ങളുടെ ആത്മീയ യാത്രയെക്കുറിച്ച് പറയൂ, ഉചിതമായ പാതകൾ നിർദ്ദേശിക്കാം. |
-| `ready_for_next_step` | New | You're ready for your next step | आप अगले कदम के लिए तैयार हैं | അടുത്ത ചുവടിനായി നിങ്ങൾ തയ്യാറാണ് |
-| `review_more` | New | +{count} more | +{count} और | +{count} കൂടി |
-| `start_here` | New | Start here · {count} lessons | यहाँ से शुरू करें · {count} पाठ | ഇവിടെ തുടങ്ങൂ · {count} പാഠങ്ങൾ |
-| `start_streak_hint` | New | Read today's verse | आज का वचन पढ़ें | ഇന്നത്തെ വചനം വായിക്കൂ |
-| `study_now` | New | Study now | अभी अध्ययन करें | ഇപ്പോൾ പഠിക്കൂ |
-| `to_review` | New | {count} to review | {count} समीक्षा के लिए | {count} പുനരവലോകനത്തിന് |
-| `topics_progress` | New | {done} of {total} lessons | {total} में से {done} पाठ | {total}-ൽ {done} പാഠങ്ങൾ |
-| `topics_progress_next` | New | {done} of {total} · Next: {title} | {total} में से {done} · अगला: {title} | {total}-ൽ {done} · അടുത്തത്: {title} |
+| `addOptions.fromDaily` | Changed | Add from Daily Verse | दैनिक वचन से जोड़ें | ഇന്നത്തെ വചനത്തിൽ നിന്ന് ചേർക്കുക |
+| `addOptions.fromDailyDesc` | Changed | Add today's verse to your memory deck | आज का वचन स्मरण वचनों में जोड़ें | ഇന്നത്തെ വചനം മനഃപാഠ വാക്യങ്ങളിലേക്ക് ചേർക്കുക |
+| `addOptions.title` | Changed | Add Memory Verse | स्मरण वचन जोड़ें | മനഃപാഠ വാക്യം ചേർക്കുക |
+| `add_verse` | New | Add a verse | वचन जोड़ें | വചനം ചേർക്കൂ |
+| `champions` | New | Champions | चैंपियन | ചാമ്പ്യന്മാർ |
+| `dailyVerseNotLoaded` | Changed | Daily verse not loaded yet. Please wait or go to the home screen first. | दैनिक वचन अभी तक लोड नहीं हुआ है। कृपया प्रतीक्षा करें या पहले होम स्क्रीन पर जाएं। | ഇന്നത്തെ വചനം ഇതുവരെ ലോഡ് ചെയ്തിട്ടില്ല. ദയവായി കാത്തിരിക്കുക അല്ലെങ്കിൽ ആദ്യം ഹോം സ്ക്രീനിലേക്ക് പോകുക. |
+| `delete.confirmation` | Changed | Are you sure you want to remove this verse from your memory deck? This action cannot be undone. | क्या आप वाकई इस वचन को अपने स्मरण वचनों से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती। | നിങ്ങളുടെ മനഃപാഠ വാക്യങ്ങളിൽ നിന്ന് ഈ വാക്യം നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുണ്ടോ? ഈ പ്രവർത്തനം പഴയപടിയാക്കാൻ കഴിയില്ല. |
+| `delete.success` | Changed | Verse removed from memory deck | वचन स्मरण वचनों से हटा दिया गया | വാക്യം മനഃപാഠ വാക്യങ്ങളിൽ നിന്ന് നീക്കം ചെയ്തു |
+| `due` | New | Due | दोहराना है | ബാക്കി |
+| `flipCard.day_one` | New | 1 day | 1 दिन | 1 ദിവസം |
+| `flipCard.review_one` | New | 1 review | 1 समीक्षा | 1 അവലോകനം |
+| `footnote` | New | Saved verses come back for a short review when they are due. | सहेजे वचन समय पर दोहराने के लिए लौटते हैं। | സേവ് ചെയ്ത വാക്യങ്ങൾ സമയത്ത് തിരികെ വരും. |
+| `fullyMastered` | New | Fully Mastered | पूर्ण महारत | പൂർണ്ണ പ്രാവീണ്യം |
+| `header_line` | New | {streak}-day streak · {count} verses | {streak} दिन की स्ट्रीक · {count} वचन | {streak} ദിവസം · {count} വാക്യം |
+| `header_line_one` | New | {streak}-day streak · {count} verse | {streak} दिन की स्ट्रीक · {count} वचन | {streak} ദിവസം · {count} വാക്യം |
+| `heatMap.dayStreak` | Changed | {count} day streak | {count} दिन की स्ट्रीक | {count} ദിവസ സ്റ്റ്രീക്ക് |
+| `heatMap.longestStreak` | Changed | Longest streak: {days} days | सबसे लंबी स्ट्रीक: {days} दिन | ഏറ്റവും നീണ്ട സ്റ്റ്രീക്ക്: {days} ദിവസം |
+| `heatMap.longestStreakOne` | New | Longest streak: 1 day | सबसे लंबी स्ट्रीक: 1 दिन | ഏറ്റവും നീണ്ട സ്റ്റ്രീക്ക്: 1 ദിവസം |
+| `perfectRecalls` | New | Perfect | पूर्ण स्मरण | മികച്ച സ്മരണ |
+| `reset.itemStreak` | Changed | Your memory streak will reset to zero | स्मरण वचनों की स्ट्रीक शून्य हो जाएगी | മനഃപാഠ വാക്യ സ്റ്റ്രീക്ക് പൂജ്യമാകും |
+| `reset.success` | Changed | All memory verses deleted | सभी स्मरण वचन हटा दिए गए | എല്ലാ മനഃപാഠ വാക്യങ്ങളും ഇല്ലാതാക്കി |
+| `reset.title` | Changed | Delete all memory verses? | सभी स्मरण वचन हटाएं? | എല്ലാ മനഃപാഠ വാക്യങ്ങളും ഇല്ലാതാക്കണോ? |
+| `reviewMilestone` | New | Review Milestone | समीक्षा मील का पत्थर | അവലോകന നാഴികക്കല്ല് |
+| `save_todays_verse` | New | Save today's verse | आज का वचन सेव करें | ഇന്നത്തെ വചനം ചേർക്കൂ |
+| `statistics` | New | Statistics | आँकड़े | കണക്കുകൾ |
+| `suggested.alreadyAdded` | Changed | Already in your deck | आपके संग्रह में है | ഇതിനകം ശേഖരത്തിലുണ്ട് |
+| `title` | Changed | Memory Verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
 
 ## community_fellowship (25)
 
@@ -728,36 +761,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `type_desc_prayer` | New | Prayer request | प्रार्थना निवेदन | പ്രാർത്ഥനാ വിഷയം |
 | `type_desc_question` | New | Ask anything | कुछ भी पूछें | എന്തും ചോദിക്കുക |
 | `view_all_posts` | New | View all posts | सभी पोस्ट देखें | എല്ലാ പോസ്റ്റുകളും കാണുക |
-
-## memory (25)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `addOptions.fromDailyDesc` | Changed | Add today's verse to your memory deck | आज का वचन स्मरण वचनों में जोड़ें | ഇന്നത്തെ വാക്യം മനഃപാഠ വാക്യങ്ങളിലേക്ക് ചേർക്കുക |
-| `addOptions.title` | Changed | Add Memory Verse | स्मरण वचन जोड़ें | മനഃപാഠ വാക്യം ചേർക്കുക |
-| `add_verse` | New | Add a verse | वचन जोड़ें | വചനം ചേർക്കൂ |
-| `champions` | New | Champions | चैंपियन | ചാമ്പ്യന്മാർ |
-| `delete.confirmation` | Changed | Are you sure you want to remove this verse from your memory deck? This action cannot be undone. | क्या आप वाकई इस वचन को अपने स्मरण वचनों से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती। | നിങ്ങളുടെ മനഃപാഠ വാക്യങ്ങളിൽ നിന്ന് ഈ വാക്യം നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുണ്ടോ? ഈ പ്രവർത്തനം പഴയപടിയാക്കാൻ കഴിയില്ല. |
-| `delete.success` | Changed | Verse removed from memory deck | वचन स्मरण वचनों से हटा दिया गया | വാക്യം മനഃപാഠ വാക്യങ്ങളിൽ നിന്ന് നീക്കം ചെയ്തു |
-| `due` | New | Due | दोहराना है | ബാക്കി |
-| `flipCard.day_one` | New | 1 day | 1 दिन | 1 ദിവസം |
-| `flipCard.review_one` | New | 1 review | 1 समीक्षा | 1 അവലോകനം |
-| `footnote` | New | Saved verses come back for a short review when they are due. | सहेजे वचन समय पर दोहराने के लिए लौटते हैं। | സേവ് ചെയ്ത വാക്യങ്ങൾ സമയത്ത് തിരികെ വരും. |
-| `fullyMastered` | New | Fully Mastered | पूर्ण महारत | പൂർണ്ണ പ്രാവീണ്യം |
-| `header_line` | New | {streak}-day streak · {count} verses | {streak} दिन की स्ट्रीक · {count} वचन | {streak} ദിവസം · {count} വാക്യം |
-| `header_line_one` | New | {streak}-day streak · {count} verse | {streak} दिन की स्ट्रीक · {count} वचन | {streak} ദിവസം · {count} വാക്യം |
-| `heatMap.dayStreak` | Changed | {count} day streak | {count} दिन की स्ट्रीक | {count} ദിവസ സ്റ്റ്രീക്ക് |
-| `heatMap.longestStreak` | Changed | Longest streak: {days} days | सबसे लंबी स्ट्रीक: {days} दिन | ഏറ്റവും നീണ്ട സ്റ്റ്രീക്ക്: {days} ദിവസം |
-| `heatMap.longestStreakOne` | New | Longest streak: 1 day | सबसे लंबी स्ट्रीक: 1 दिन | ഏറ്റവും നീണ്ട സ്റ്റ്രീക്ക്: 1 ദിവസം |
-| `perfectRecalls` | New | Perfect | पूर्ण स्मरण | മികച്ച സ്മരണ |
-| `reset.itemStreak` | Changed | Your memory streak will reset to zero | स्मरण वचनों की स्ट्रीक शून्य हो जाएगी | മനഃപാഠ വാക്യ സ്റ്റ്രീക്ക് പൂജ്യമാകും |
-| `reset.success` | Changed | All memory verses deleted | सभी स्मरण वचन हटा दिए गए | എല്ലാ മനഃപാഠ വാക്യങ്ങളും ഇല്ലാതാക്കി |
-| `reset.title` | Changed | Delete all memory verses? | सभी स्मरण वचन हटाएं? | എല്ലാ മനഃപാഠ വാക്യങ്ങളും ഇല്ലാതാക്കണോ? |
-| `reviewMilestone` | New | Review Milestone | समीक्षा मील का पत्थर | അവലോകന നാഴികക്കല്ല് |
-| `save_todays_verse` | New | Save today's verse | आज का वचन सेव करें | ഇന്നത്തെ വചനം ചേർക്കൂ |
-| `statistics` | New | Statistics | आँकड़े | കണക്കുകൾ |
-| `suggested.alreadyAdded` | Changed | Already in your deck | आपके संग्रह में है | ഇതിനകം ശേഖരത്തിലുണ്ട് |
-| `title` | Changed | Memory Verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
 
 ## study_guide (24)
 
@@ -816,6 +819,60 @@ Totals: 1111 new, 200 changed, 87 features.
 | `subtitle` | New | Help us personalize your Bible study experience by sharing a bit about yourself. | अपने बारे में थोड़ा बताकर अपने बाइबल अध्ययन अनुभव को व्यक्तिगत बनाने में हमारी मदद करें। | നിങ്ങളെക്കുറിച്ച് അൽപ്പം പങ്കുവെച്ച് നിങ്ങളുടെ ബൈബിൾ പഠന അനുഭവം വ്യക്തിഗതമാക്കാൻ ഞങ്ങളെ സഹായിക്കൂ. |
 | `title` | New | Tell us about yourself | हमें अपने बारे में बताएं | നിങ്ങളെക്കുറിച്ച് പറയൂ |
 
+## learning_paths (22)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `continue_lesson` | New | Continue · Lesson {n} | जारी रखें · पाठ {n} | തുടരുക · പാഠം {n} |
+| `empty` | Changed | No Learning Paths | कोई लर्निंग पाथ नहीं | പഠന പാതകൾ ഇല്ല |
+| `empty_message` | Changed | Check back later for new learning paths | नए लर्निंग पाथ के लिए बाद में देखें | പുതിയ പഠന പാതകൾക്കായി പിന്നീട് പരിശോധിക്കുക |
+| `enrolled_error` | Changed | Failed to enroll in learning path | लर्निंग पाथ में नामांकन नहीं हो सका | പഠന പാതയിൽ ചേരാനായില്ല |
+| `enrolled_success` | Changed | Successfully enrolled in learning path | लर्निंग पाथ में सफलतापूर्वक नामांकन हुआ | പഠന പാതയിൽ വിജയകരമായി ചേർന്നു |
+| `enrolling` | Changed | Enrolling in path... | पाथ में नामांकन हो रहा है... | പാതയിൽ ചേരുന്നു... |
+| `error` | Changed | Unable to Load Paths | पाथ लोड नहीं हुए | പാതകൾ ലോഡ് ചെയ്യാനായില്ല |
+| `error_message` | Changed | Something went wrong while loading learning paths | लर्निंग पाथ लोड करते समय कुछ गलत हुआ | പഠന പാതകൾ ലോഡ് ചെയ്യുമ്പോൾ എന്തോ തകരാറുണ്ടായി |
+| `failed_to_load` | Changed | Failed to load path details | पाथ की जानकारी लोड नहीं हुई | പാതയുടെ വിശദാംശങ്ങൾ ലോഡ് ചെയ്യാനായില്ല |
+| `lessons_days` | New | {n} lessons · {d} days | {n} पाठ · {d} दिन | {n} പാഠം · {d} ദിവസം |
+| `loading_details` | Changed | Loading path details... | पाथ की जानकारी लोड हो रही है... | പാതയുടെ വിശദാംശങ്ങൾ ലോഡ് ചെയ്യുന്നു... |
+| `loading_topics` | Changed | Loading lessons... | पाठ लोड हो रहे हैं... | പാഠങ്ങൾ ലോഡ് ചെയ്യുന്നു... |
+| `next_topic` | Changed | Next lesson | अगला पाठ | അടുത്ത പാഠം |
+| `offline_title` | New | You're offline | आप ऑफ़लाइन हैं | നിങ്ങൾ ഓഫ്‌ലൈനാണ് |
+| `path_completed` | Changed | Path Completed! | पाथ पूर्ण! | പാത പൂർത്തിയായി! |
+| `resume_path` | Changed | Resume Path | पाथ जारी रखें | പാത തുടരുക |
+| `review_lesson` | New | Review · Lesson 1 | दोहराएँ · पाठ 1 | വീണ്ടും · പാഠം 1 |
+| `start_lesson` | New | Start lesson {n} | पाठ {n} शुरू करें | പാഠം {n} തുടങ്ങാം |
+| `start_path` | Changed | Start Path | पाथ शुरू करें | പാത ആരംഭിക്കുക |
+| `title` | Changed | Learning Paths | लर्निंग पाथ | പഠന പാതകൾ |
+| `topics` | Changed | Lessons | पाठ | പാഠം |
+| `topics_completed` | Changed | {completed} of {total} done | {total} में से {completed} पूर्ण | {total}-ൽ {completed} പൂർത്തിയായി |
+
+## tokens (22)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `dialog.plan_credits_per_day` | New | {credits} credits/day — ₹{price}/month | {credits} क्रेडिट/दिन — ₹{price}/माह | {credits} ക്രെഡിറ്റ്/ദിവസം — ₹{price}/മാസം |
+| `dialog.plan_unlimited` | New | Unlimited credits — ₹{price}/month | असीमित क्रेडिट — ₹{price}/माह | പരിധിയില്ലാത്ത ക്രെഡിറ്റ് — ₹{price}/മാസം |
+| `history.empty` | Changed | No purchases yet | कोई खरीद इतिहास नहीं | വാങ്ങൽ ചരിത്രമില്ല |
+| `history.title` | Changed | Purchase history | खरीद इतिहास | വാങ്ങൽ ചരിത്രം |
+| `management.failed_to_load` | Changed | Failed to load credit information | क्रेडिट जानकारी लोड नहीं हुई | ക്രെഡിറ്റ് വിവരം ലോഡ് ആയില്ല |
+| `management.refresh` | Changed | Refresh credit status | क्रेडिट अपडेट करें | ക്രെഡിറ്റ് പുതുക്കൂ |
+| `management.upgrade_coming_soon` | Changed | Plan upgrade coming soon! | प्लान अपग्रेड जल्द आ रहा है! | പ്ലാൻ അപ്‌ഗ്രേഡ് ഉടൻ വരുന്നു! |
+| `plans.upgrade_plan` | Changed | Upgrade Plan | प्लान अपग्रेड करें | പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ |
+| `plans.upgrade_premium` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
+| `plans.upgrade_standard` | Changed | Upgrade to Standard | स्टैंडर्ड में अपग्रेड करें | സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
+| `plans.upgrade_to_premium` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യൂ |
+| `plans.upgrade_to_standard` | Changed | Upgrade to Standard | स्टैंडर्ड में अपग्रेड करें | സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യൂ |
+| `purchase.iap_success` | Changed | Purchase successful! {tokens} credits added to your account. | खरीदारी सफल! {tokens} क्रेडिट आपके खाते में जोड़े गए। | വാങ്ങൽ വിജയകരം! {tokens} ക്രെഡിറ്റുകൾ നിങ്ങളുടെ അക്കൗണ്ടിൽ ചേർത്തു. |
+| `purchase.restricted_free` | Changed | Free users cannot purchase additional credits. Upgrade to Standard plan to buy extra credits or Premium for unlimited access. | फ्री यूज़र्स अतिरिक्त क्रेडिट नहीं खरीद सकते। स्टैंडर्ड प्लान में अपग्रेड करें या प्रीमियम लें असीमित एक्सेस के लिए। | ഫ്രീ യൂസേഴ്‌സിന് അധിക ക്രെഡിറ്റുകൾ വാങ്ങാൻ കഴിയില്ല। സ്റ്റാൻഡേർഡ് പ്ലാനിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക അല്ലെങ്കിൽ പരിധിയില്ലാത്ത ആക്‌സസിനായി പ്രീമിയം എടുക്കുക. |
+| `purchase_dialog.upgrade_plan` | Changed | Upgrade Plan | प्लान अपग्रेड करें | പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യുക |
+| `soft_paywall.low_title` | Changed | Running low on credits | क्रेडिट कम हो रहे हैं | ക്രെഡിറ്റ് കുറയുന്നു |
+| `stats.avg_per_token` | Changed | Average per credit | प्रति क्रेडिट औसत | ഓരോ ക്രെഡിറ്റിനും ശരാശരി |
+| `stats.feature_follow_ups` | New | Follow-up questions | फॉलो-अप प्रश्न | തുടർചോദ്യങ്ങൾ |
+| `stats.feature_lessons` | New | Lessons | पाठ | പാഠങ്ങൾ |
+| `stats.last_usage` | Changed | Last used | अंतिम उपयोग | അവസാന ഉപയോഗം |
+| `stats.study_mode` | Changed | Study mode | स्टडी मोड | പഠന മോഡ് |
+| `usage.title` | Changed | Usage history | उपयोग हिस्ट्री | ഉപയോഗ ചരിത്രം |
+
 ## first_run (21)
 
 | Key | | English | Hindi | Malayalam |
@@ -867,32 +924,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `send_code` | New | Send verification code | सत्यापन कोड भेजें | സ്ഥിരീകരണ കോഡ് അയയ്ക്കുക |
 | `subtitle` | New | We'll send you a verification code to confirm your number | आपका नंबर पुष्टि करने के लिए हम आपको एक सत्यापन कोड भेजेंगे | നിങ്ങളുടെ നമ്പർ സ്ഥിരീകരിക്കാൻ ഞങ്ങൾ ഒരു സ്ഥിരീകരണ കോഡ് അയയ്ക്കും |
 | `title` | New | Enter your phone number | अपना फ़ोन नंबर दर्ज करें | നിങ്ങളുടെ ഫോൺ നമ്പർ നൽകുക |
-
-## tokens (21)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `dialog.plan_credits_per_day` | New | {credits} credits/day — ₹{price}/month | {credits} क्रेडिट/दिन — ₹{price}/माह | {credits} ക്രെഡിറ്റ്/ദിവസം — ₹{price}/മാസം |
-| `dialog.plan_unlimited` | New | Unlimited credits — ₹{price}/month | असीमित क्रेडिट — ₹{price}/माह | പരിധിയില്ലാത്ത ക്രെഡിറ്റ് — ₹{price}/മാസം |
-| `history.empty` | Changed | No purchases yet | कोई खरीद इतिहास नहीं | വാങ്ങൽ ചരിത്രമില്ല |
-| `history.title` | Changed | Purchase history | खरीद इतिहास | വാങ്ങൽ ചരിത്രം |
-| `management.failed_to_load` | Changed | Failed to load credit information | क्रेडिट जानकारी लोड नहीं हुई | ക്രെഡിറ്റ് വിവരം ലോഡ് ആയില്ല |
-| `management.refresh` | Changed | Refresh credit status | क्रेडिट अपडेट करें | ക്രെഡിറ്റ് പുതുക്കൂ |
-| `management.upgrade_coming_soon` | Changed | Plan upgrade coming soon! | योजना अपग्रेड जल्द आ रहा है! | പ്ലാൻ അപ്‌ഗ്രേഡ് ഉടൻ വരുന്നു! |
-| `plans.upgrade_plan` | Changed | Upgrade Plan | प्लान अपग्रेड करें | പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ |
-| `plans.upgrade_premium` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
-| `plans.upgrade_standard` | Changed | Upgrade to Standard | स्टैंडर्ड में अपग्रेड करें | സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
-| `plans.upgrade_to_premium` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യൂ |
-| `plans.upgrade_to_standard` | Changed | Upgrade to Standard | स्टैंडर्ड में अपग्रेड करें | സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യൂ |
-| `purchase.iap_success` | Changed | Purchase successful! {tokens} credits added to your account. | खरीदारी सफल! {tokens} क्रेडिट आपके खाते में जोड़े गए। | വാങ്ങൽ വിജയകരം! {tokens} ക്രെഡിറ്റുകൾ നിങ്ങളുടെ അക്കൗണ്ടിൽ ചേർത്തു. |
-| `purchase.restricted_free` | Changed | Free users cannot purchase additional credits. Upgrade to Standard plan to buy extra credits or Premium for unlimited access. | फ्री यूज़र्स अतिरिक्त क्रेडिट नहीं खरीद सकते। स्टैंडर्ड प्लान में अपग्रेड करें या प्रीमियम लें असीमित एक्सेस के लिए। | ഫ്രീ യൂസേഴ്‌സിന് അധിക ക്രെഡിറ്റുകൾ വാങ്ങാൻ കഴിയില്ല। സ്റ്റാൻഡേർഡ് പ്ലാനിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക അല്ലെങ്കിൽ പരിധിയില്ലാത്ത ആക്‌സസിനായി പ്രീമിയം എടുക്കുക. |
-| `purchase_dialog.upgrade_plan` | Changed | Upgrade Plan | प्लान अपग्रेड करें | പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യുക |
-| `stats.avg_per_token` | Changed | Average per credit | प्रति क्रेडिट औसत | ഓരോ ക്രെഡിറ്റിനും ശരാശരി |
-| `stats.feature_follow_ups` | New | Follow-up questions | फॉलो-अप प्रश्न | തുടർചോദ്യങ്ങൾ |
-| `stats.feature_lessons` | New | Lessons | पाठ | പാഠങ്ങൾ |
-| `stats.last_usage` | Changed | Last used | अंतिम उपयोग | അവസാന ഉപയോഗം |
-| `stats.study_mode` | Changed | Study mode | स्टडी मोड | പഠന മോഡ് |
-| `usage.title` | Changed | Usage history | उपयोग हिस्ट्री | ഉപയോഗ ചരിത്രം |
 
 ## guide_feedback (19)
 
@@ -1092,13 +1123,13 @@ Totals: 1111 new, 200 changed, 87 features.
 | `leaderboard_label` | New | Leaderboard | लीडरबोर्ड | ലീഡർബോർഡ് |
 | `level_range` | New | {from} to {to} | {from} से {to} | {from} മുതൽ {to} വരെ |
 | `next_topic` | New | Next: {title} | अगला: {title} | അടുത്തത്: {title} |
-| `no_filter_results` | New | No paths match the selected filters | चुने गए फ़िल्टर से कोई रास्ता मेल नहीं खाता | തിരഞ്ഞെടുത്ത ഫിൽട്ടറുകൾക്ക് പൊരുത്തമുള്ള പാതകളില്ല |
-| `no_search_results` | New | No paths found for "{query}" | "{query}" के लिए कोई रास्ता नहीं मिला | "{query}" എന്നതിന് പാതകളൊന്നും കണ്ടെത്തിയില്ല |
-| `offline_message` | New | You're offline. Learning Paths require an internet connection. | आप ऑफ़लाइन हैं। सीखने के रास्तों के लिए इंटरनेट कनेक्शन ज़रूरी है। | നിങ്ങൾ ഓഫ്‌ലൈനാണ്. പഠന പാതകൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്. |
-| `paths_count` | New | {count} paths | {count} रास्ते | {count} പാതകൾ |
-| `paths_count_one` | New | {count} path | {count} रास्ता | {count} പാത |
+| `no_filter_results` | New | No paths match the selected filters | चुने गए फ़िल्टर से कोई पाथ मेल नहीं खाता | തിരഞ്ഞെടുത്ത ഫിൽട്ടറുകൾക്ക് പൊരുത്തമുള്ള പാതകളില്ല |
+| `no_search_results` | New | No paths found for "{query}" | "{query}" के लिए कोई पाथ नहीं मिला | "{query}" എന്നതിന് പാതകളൊന്നും കണ്ടെത്തിയില്ല |
+| `offline_message` | New | You're offline. Learning Paths require an internet connection. | आप ऑफ़लाइन हैं। लर्निंग पाथ के लिए इंटरनेट कनेक्शन ज़रूरी है। | നിങ്ങൾ ഓഫ്‌ലൈനാണ്. പഠന പാതകൾക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്. |
+| `paths_count` | New | {count} paths | {count} पाथ | {count} പാതകൾ |
+| `paths_count_one` | New | {count} path | {count} पाथ | {count} പാത |
 | `retry` | New | Retry | फिर कोशिश करें | വീണ്ടും ശ്രമിക്കുക |
-| `search_paths` | New | Search {count} paths | {count} रास्ते खोजें | {count} പാതകളിൽ തിരയുക |
+| `search_paths` | New | Search {count} paths | {count} पाथ खोजें | {count} പാതകളിൽ തിരയുക |
 | `see_all` | New | See all | सभी देखें | എല്ലാം കാണൂ |
 | `streak_label` | New | Study streak | अध्ययन स्ट्रीक | പഠന സ്റ്റ്രീക്ക് |
 | `streak_value` | New | {count} days | {count} दिन | {count} ദിവസം |
@@ -1293,33 +1324,35 @@ Totals: 1111 new, 200 changed, 87 features.
 | `quick_read` | New | Quick read · {min} min | क्विक · {min} मिनट | ക്വിക്ക് · {min} മിനിറ്റ് |
 | `up_next` | New | Up next | आगे | അടുത്തത് |
 
-## learning_paths (9)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `continue_lesson` | New | Continue · Lesson {n} | जारी रखें · पाठ {n} | തുടരുക · പാഠം {n} |
-| `lessons_days` | New | {n} lessons · {d} days | {n} पाठ · {d} दिन | {n} പാഠം · {d} ദിവസം |
-| `loading_topics` | Changed | Loading lessons... | पाठ लोड हो रहे हैं... | പാഠങ്ങൾ ലോഡ് ചെയ്യുന്നു... |
-| `next_topic` | Changed | Next lesson | अगला पाठ | അടുത്ത പാഠം |
-| `offline_title` | New | You're offline | आप ऑफ़लाइन हैं | നിങ്ങൾ ഓഫ്‌ലൈനാണ് |
-| `review_lesson` | New | Review · Lesson 1 | दोहराएँ · पाठ 1 | വീണ്ടും · പാഠം 1 |
-| `start_lesson` | New | Start lesson {n} | पाठ {n} शुरू करें | പാഠം {n} തുടങ്ങാം |
-| `topics` | Changed | Lessons | पाठ | പാഠം |
-| `topics_completed` | Changed | {completed} of {total} done | {total} में से {completed} पूर्ण | {total}-ൽ {completed} പൂർത്തിയായി |
-
-## login (9)
+## login (10)
 
 | Key | | English | Hindi | Malayalam |
 |---|---|---|---|---|
 | `chip_daily_verse` | New | Daily verse | दैनिक वचन | ദിനവചനം |
 | `chip_discipler` | New | Talk to Discipler | Discipler से बात करें | Discipler-നോട് സംസാരിക്കുക |
 | `chip_memory_verses` | New | Memory verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
-| `chip_study_guides` | New | Study guides | स्टडी गाइड | പഠന സഹായികൾ |
+| `chip_study_guides` | New | Study guides | स्टडी गाइड | പഠന ഗൈഡുകൾ |
 | `feature_ai_study_guides` | Changed | Personalized Study Guides | व्यक्तिगत स्टडी गाइड | വ്യക്തിഗത പഠന ഗൈഡുകൾ |
-| `feature_daily_verse_subtitle` | Changed | Start each day with inspiring scripture and instant study guides | प्रेरणादायक शास्त्र और त्वरित स्टडी गाइड के साथ हर दिन शुरू करें | പ്രചോദനാത്മക വചനങ്ങളും പെട്ടെന്നുള്ള പഠന ഗൈഡുകളും ഉപയോഗിച്ച് ഓരോ ദിവസവും ആരംഭിക്കുക |
+| `feature_daily_verse` | Changed | Daily Verse & Insights | दैनिक वचन और अंतर्दृष्टि | ഇന്നത്തെ വചനവും ഉൾക്കാഴ്ചകളും |
+| `feature_daily_verse_subtitle` | Changed | Start each day with inspiring scripture and instant study guides | प्रेरणादायक पवित्रशास्त्र और त्वरित स्टडी गाइड के साथ हर दिन शुरू करें | പ്രചോദനാത്മക വചനങ്ങളും പെട്ടെന്നുള്ള പഠന ഗൈഡുകളും ഉപയോഗിച്ച് ഓരോ ദിവസവും ആരംഭിക്കുക |
 | `feature_memory_verse` | Changed | Memory Verses | स्मरण वचन | മനഃപാഠ വാക്യങ്ങൾ |
 | `feature_voice_discipler` | Changed | Talk to Discipler | Discipler से बात करें | Discipler-നോട് സംസാരിക്കുക |
 | `languages_line` | New | English · Hindi · Malayalam | अंग्रेज़ी · हिन्दी · मलयालम | ഇംഗ്ലീഷ് · ഹിന്ദി · മലയാളം |
+
+## pricing (10)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `free.feature1` | Changed | 15 study credits daily | हर दिन 15 अध्ययन क्रेडिट | ദിവസവും 15 പഠന ക്രെഡിറ്റുകൾ |
+| `free.feature2` | Changed | Daily verse notifications | दैनिक वचन सूचनाएं | ഇന്നത്തെ വചന അറിയിപ്പുകൾ |
+| `free.feature3` | Changed | Learning paths & Study topics | लर्निंग पाथ और स्टडी टॉपिक्स | പഠന പാതകളും സ്റ്റഡി ടോപ്പിക്കുകളും |
+| `plus.feature1` | Changed | 60 study credits daily | हर दिन 60 अध्ययन क्रेडिट | ദിവസവും 60 പഠന ക്രെഡിറ്റുകൾ |
+| `plus.feature5` | Changed | Study guide history | स्टडी गाइड इतिहास | പഠന ഗൈഡ് ചരിത്രം |
+| `premium.feature2` | Changed | Talk to Discipler | Discipler से बात करें | Discipler-നോട് സംസാരിക്കുക |
+| `premium.feature4` | Changed | Unlimited follow-up questions | असीमित फॉलो-अप प्रश्न | പരിധിയില്ലാത്ത തുടർചോദ്യങ്ങൾ |
+| `standard.feature1` | Changed | 40 study credits daily | हर दिन 40 अध्ययन क्रेडिट | ദിവസവും 40 പഠന ക്രെഡിറ്റുകൾ |
+| `standard.feature2` | Changed | Discipler (3 chats/month) | Discipler (3 चैट/माह) | Discipler (3 ചാറ്റ്/മാസം) |
+| `standard.feature5` | Changed | Study guide history | स्टडी गाइड इतिहास | പഠന ഗൈഡ് ചരിത്രം |
 
 ## practice_mode (9)
 
@@ -1348,6 +1381,20 @@ Totals: 1111 new, 200 changed, 87 features.
 | `message_default` | New | Your dedication is inspiring! | आपका समर्पण प्रेरणादायक है! | നിങ്ങളുടെ സമർപ്പണം പ്രചോദനമാണ്! |
 | `title_days` | New | {count}-Day Streak! | {count} दिन की स्ट्रीक! | {count} ദിവസ സ്റ്റ്രീക്ക്! |
 | `title_year` | New | Full Year Streak! | पूरा साल लगातार! | ഒരു വർഷം തുടർച്ചയായി! |
+
+## study_mode (9)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `deep.duration_label` | Changed | 12-Minute Deep Dive | 12 मिनट का डीप डाइव | 12 മിനിറ്റ് ഡീപ്പ് ഡൈവ് |
+| `deep.name` | Changed | Deep Dive | डीप डाइव | ഡീപ്പ് ഡൈവ് |
+| `deep.short_name` | New | Deep Dive | डीप डाइव | ഡീപ്പ് ഡൈവ് |
+| `lectio.short_name` | New | Lectio | लेक्टियो | ലെക്‌ഷ്യോ |
+| `minutes` | New | {count} min | {count} मिनट | {count} മിനിറ്റ് |
+| `quick.name` | Changed | Quick Read | क्विक रीड | ക്വിക്ക് റീഡ് |
+| `quick.short_name` | New | Quick Read | क्विक रीड | ക്വിക്ക് റീഡ് |
+| `sermon.short_name` | New | Sermon | उपदेश | പ്രഭാഷണം |
+| `standard.short_name` | New | Standard | सामान्य | സ്റ്റാൻഡേർഡ് |
 
 ## study_topics (9)
 
@@ -1389,19 +1436,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `status_locked` | New | Locked | लॉक है | ലോക്ക് ചെയ്തു |
 | `status_upcoming` | New | Upcoming | आगामी | വരാനിരിക്കുന്നത് |
 | `xp_earned` | New | +{xp} XP earned | +{xp} XP अर्जित | +{xp} XP നേടി |
-
-## pricing (8)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `free.feature1` | Changed | 15 study credits daily | हर दिन 15 अध्ययन क्रेडिट | ദിവസവും 15 പഠന ക്രെഡിറ്റുകൾ |
-| `free.feature3` | Changed | Learning paths & Study topics | लर्निंग पाथ और स्टडी टॉपिक्स | പഠന പാതകളും സ്റ്റഡി ടോപ്പിക്കുകളും |
-| `plus.feature1` | Changed | 60 study credits daily | हर दिन 60 अध्ययन क्रेडिट | ദിവസവും 60 പഠന ക്രെഡിറ്റുകൾ |
-| `plus.feature5` | Changed | Study guide history | स्टडी गाइड इतिहास | പഠന ഗൈഡ് ചരിത്രം |
-| `premium.feature2` | Changed | Talk to Discipler | Discipler से बात करें | Discipler-നോട് സംസാരിക്കുക |
-| `standard.feature1` | Changed | 40 study credits daily | हर दिन 40 अध्ययन क्रेडिट | ദിവസവും 40 പഠന ക്രെഡിറ്റുകൾ |
-| `standard.feature2` | Changed | Discipler (3 chats/month) | Discipler (3 चैट/माह) | Discipler (3 ചാറ്റ്/മാസം) |
-| `standard.feature5` | Changed | Study guide history | स्टडी गाइड इतिहास | പഠന ഗൈഡ് ചരിത്രം |
 
 ## reflection_journal (8)
 
@@ -1453,6 +1487,18 @@ Totals: 1111 new, 200 changed, 87 features.
 | `exit.title` | New | Exit App | ऐप बंद करें | ആപ്പ് അടയ്ക്കണോ |
 | `messages.error_try_again` | New | Something went wrong. Please try again. | कुछ गड़बड़ हुई। कृपया दोबारा कोशिश करें। | എന്തോ കുഴപ്പം സംഭവിച്ചു. വീണ്ടും ശ്രമിക്കൂ. |
 
+## follow_up_chat (7)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `greeting` | New | Ask me anything about this study. I'll answer from Scripture. | इस अध्ययन के बारे में कुछ भी पूछें। मैं पवित्रशास्त्र से जवाब दूँगा। | ഈ പഠനത്തെക്കുറിച്ച് എന്തും ചോദിക്കൂ. തിരുവെഴുത്തിൽ നിന്ന് ഞാൻ മറുപടി പറയാം. |
+| `prompt_apply` | New | How can I apply this to my life? | मैं इसे अपने जीवन में कैसे लागू करूँ? | ഇത് എന്റെ ജീവിതത്തിൽ എങ്ങനെ പ്രയോഗിക്കാം? |
+| `prompt_explain` | New | Explain this passage in simple words | इस अंश को आसान शब्दों में समझाइए | ഈ ഭാഗം ലളിതമായി വിശദീകരിക്കൂ |
+| `prompt_verses` | New | Which other verses teach this? | और कौन-से वचन यही सिखाते हैं? | ഇതേ കാര്യം പഠിപ്പിക്കുന്ന മറ്റു വാക്യങ്ങൾ ഏതെല്ലാം? |
+| `send` | New | Send | भेजें | അയയ്ക്കുക |
+| `title` | Changed | Follow-up Questions | फॉलो-अप प्रश्न | തുടർചോദ്യങ്ങൾ |
+| `upgrade_plan` | Changed | Upgrade Plan | प्लान अपग्रेड करें | പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ |
+
 ## practice_tier_locked (7)
 
 | Key | | English | Hindi | Malayalam |
@@ -1464,17 +1510,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `title` | New | Upgrade Required | अपग्रेड ज़रूरी है | അപ്‌ഗ്രേഡ് ആവശ്യമാണ് |
 | `unlock_with` | New | Unlock advanced practice modes with: | उन्नत अभ्यास मोड इनके साथ अनलॉक करें: | വിപുലമായ പരിശീലന രീതികൾ ഇവയിലൂടെ അൺലോക്ക് ചെയ്യൂ: |
 | `upgrade_now` | New | Upgrade Now | अभी अपग्रेड करें | അപ്‌ഗ്രേഡ് ചെയ്യൂ |
-
-## follow_up_chat (6)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `greeting` | New | Ask me anything about this study. I'll answer from Scripture. | इस अध्ययन के बारे में कुछ भी पूछें। मैं पवित्रशास्त्र से जवाब दूँगा। | ഈ പഠനത്തെക്കുറിച്ച് എന്തും ചോദിക്കൂ. തിരുവെഴുത്തിൽ നിന്ന് ഞാൻ മറുപടി പറയാം. |
-| `prompt_apply` | New | How can I apply this to my life? | मैं इसे अपने जीवन में कैसे लागू करूँ? | ഇത് എന്റെ ജീവിതത്തിൽ എങ്ങനെ പ്രയോഗിക്കാം? |
-| `prompt_explain` | New | Explain this passage in simple words | इस अंश को आसान शब्दों में समझाइए | ഈ ഭാഗം ലളിതമായി വിശദീകരിക്കൂ |
-| `prompt_verses` | New | Which other verses teach this? | और कौन-से वचन यही सिखाते हैं? | ഇതേ കാര്യം പഠിപ്പിക്കുന്ന മറ്റു വാക്യങ്ങൾ ഏതെല്ലാം? |
-| `send` | New | Send | भेजें | അയയ്ക്കുക |
-| `upgrade_plan` | Changed | Upgrade Plan | प्लान अपग्रेड करें | പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ |
 
 ## goal (6)
 
@@ -1509,17 +1544,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `trial_until` | New | Free trial until {date} | {date} तक मुफ़्त ट्रायल | {date} വരെ ട്രയൽ |
 | `view_plans` | New | View plans | प्लान देखें | പ്ലാനുകൾ |
 
-## study_mode (6)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `deep.short_name` | New | Deep Dive | गहरी पढ़ाई | ആഴത്തിൽ |
-| `lectio.short_name` | New | Lectio | लेक्टियो | ലെക്‌ഷ്യോ |
-| `minutes` | New | {count} min | {count} मिनट | {count} മിനിറ്റ് |
-| `quick.short_name` | New | Quick Read | लघु पढ़ाई | വേഗ വായന |
-| `sermon.short_name` | New | Sermon | उपदेश | പ്രഭാഷണം |
-| `standard.short_name` | New | Standard | सामान्य | സ്റ്റാൻഡേർഡ് |
-
 ## all_paths (5)
 
 | Key | | English | Hindi | Malayalam |
@@ -1529,6 +1553,16 @@ Totals: 1111 new, 200 changed, 87 features.
 | `current` | New | Current | वर्तमान | ഇപ്പോൾ |
 | `lesson_of` | New | Lesson {n} of {total} | पाठ {n}/{total} | പാഠം {n}/{total} |
 | `title` | New | All paths | सभी पाथ | പാതകൾ |
+
+## daily_verse (5)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `add_to_memory` | Changed | Add to Memory Verses | स्मरण वचनों में जोड़ें | മനഃപാഠ വാക്യങ്ങളിലേക്ക് ചേർക്കുക |
+| `already_in_memory` | Changed | Already in Memory Verses | पहले से स्मरण वचनों में है | ഇതിനകം മനഃപാഠ വാക്യങ്ങളിലുണ്ട് |
+| `loading` | Changed | Loading Verse of the Day... | आज का वचन लोड हो रहा है... | ഇന്നത്തെ വചനം ലോഡ് ചെയ്യുന്നു... |
+| `of_the_day` | Changed | Verse of the Day | आज का वचन | ഇന്നത്തെ വചനം |
+| `tap_to_generate` | Changed | Tap to generate study guide | स्टडी गाइड बनाने के लिए टैप करें | പഠന ഗൈഡ് സൃഷ്ടിക്കാൻ ടാപ്പ് ചെയ്യുക |
 
 ## email_auth (5)
 
@@ -1559,6 +1593,16 @@ Totals: 1111 new, 200 changed, 87 features.
 | `expected_said` | New | Expected: {expected} You said: {said} | अपेक्षित: {expected} आपने कहा: {said} | പ്രതീക്ഷിച്ചത്: {expected} നിങ്ങൾ പറഞ്ഞത്: {said} |
 | `hint` | New | Hint | संकेत | സൂചന |
 | `hint_count` | New | Hint · {count} | संकेत · {count} | സൂചന · {count} |
+
+## premium (5)
+
+| Key | | English | Hindi | Malayalam |
+|---|---|---|---|---|
+| `disciplefy_premium` | Changed | Disciplefy Premium | Disciplefy प्रीमियम | ഡിസൈപ്പിൾഫൈ പ്രീമിയം |
+| `followup_questions` | Changed | Follow-up questions | फॉलो-अप प्रश्न | തുടർചോദ്യങ്ങൾ |
+| `unlimited_followups` | Changed | Unlimited Follow-ups | असीमित फॉलो-अप | പരിധിയില്ലാത്ത തുടർചോദ്യങ്ങൾ |
+| `upgrade_button` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
+| `upgrade_title` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
 
 ## topics (5)
 
@@ -1606,14 +1650,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `upgrade_button` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
 | `upgrade_prompt` | Changed | Upgrade to Premium for unlimited access | असीमित एक्सेस के लिए प्रीमियम में अपग्रेड करें | എല്ലാ പ്രീമിയം ഫീച്ചറുകളും അൺലോക്ക് ചെയ്യാൻ പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
 
-## daily_verse (3)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `add_to_memory` | Changed | Add to Memory Verses | स्मरण वचनों में जोड़ें | മനഃപാഠ വാക്യങ്ങളിലേക്ക് ചേർക്കുക |
-| `already_in_memory` | Changed | Already in Memory Verses | पहले से स्मरण वचनों में है | ഇതിനകം മനഃപാഠ വാക്യങ്ങളിലുണ്ട് |
-| `tap_to_generate` | Changed | Tap to generate study guide | स्टडी गाइड बनाने के लिए टैप करें | പഠന ഗൈഡ് സൃഷ്ടിക്കാൻ ടാപ്പ് ചെയ്യുക |
-
 ## mode_selection (3)
 
 | Key | | English | Hindi | Malayalam |
@@ -1621,14 +1657,6 @@ Totals: 1111 new, 200 changed, 87 features.
 | `always_use_recommended` | Changed | Always use recommended | हमेशा सुझाया गया मोड | എപ്പോഴും ശുപാർശ ചെയ്ത മോഡ് |
 | `recommended_badge` | Changed | RECOMMENDED | अनुशंसित | ശുപാർശ ചെയ്യുന്നത് |
 | `time_question` | New | How much time do you have? | आपके पास कितना समय है? | നിങ്ങൾക്ക് എത്ര സമയമുണ്ട്? |
-
-## premium (3)
-
-| Key | | English | Hindi | Malayalam |
-|---|---|---|---|---|
-| `disciplefy_premium` | Changed | Disciplefy Premium | Disciplefy प्रीमियम | ഡിസൈപ്പിൾഫൈ പ്രീമിയം |
-| `upgrade_button` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
-| `upgrade_title` | Changed | Upgrade to Premium | प्रीमियम में अपग्रेड करें | പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക |
 
 ## progressive_reveal (3)
 
