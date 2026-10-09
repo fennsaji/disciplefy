@@ -31,6 +31,16 @@ class _FakePrefs extends Fake implements LanguagePreferenceService {
 
 /// Real lesson titles of New Believer Essentials, as the backend returns them.
 const _titles = {
+  'en': [
+    'Who Is Jesus Christ?',
+    'One God, Three Persons',
+    'Why Read the Bible?',
+    'Assurance of Your Salvation',
+    'How to Pray',
+    'The Importance of the Church',
+    "Baptism and the Lord's Supper",
+    'Sharing Your Faith',
+  ],
   'hi': [
     'यीशु मसीह कौन हैं?',
     'एक परमेश्वर, तीन व्यक्ति',
@@ -54,6 +64,7 @@ const _titles = {
 };
 
 const _pathTitle = {
+  'en': 'New Believer Essentials',
   'hi': 'विश्वास की नींव',
   'ml': 'വിശ്വാസ അടിസ്ഥാനങ്ങൾ',
 };
@@ -151,7 +162,29 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  for (final c in fitCases()) {
+  for (final c in fitCases(languages: const ['en', 'hi', 'ml'])) {
+    for (final scale in const [1.0, 1.3]) {
+      testWidgets('${c.name} ${scale}x: bottom button labels are never cut',
+          (tester) async {
+        sl.allowReassignment = true;
+        addTearDown(() => sl.allowReassignment = false);
+        for (final n in const [4, 8]) {
+          await tester.pumpWidget(const SizedBox());
+          await pumpPage(tester, c, n, height: 640, textScale: scale);
+          expect(tester.takeException(), isNull);
+          final screen = tester.view.physicalSize.height;
+          for (final b in [
+            ...tester.widgetList(find.byType(FilledButton)),
+            ...tester.widgetList(find.byType(OutlinedButton)),
+          ]) {
+            expect(tester.getRect(find.byWidget(b)).bottom,
+                lessThanOrEqualTo(screen));
+          }
+          expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
+        }
+      });
+    }
+
     testWidgets('${c.name}: lesson 4 complete fits', (tester) async {
       await pumpPage(tester, c, 4);
       expect(
@@ -180,13 +213,7 @@ void main() {
       expect(tester.getRect(find.byType(OutlinedButton)).bottom,
           lessThanOrEqualTo(screen));
       expect(tester.takeException(), isNull);
-      // The card's copy must not be cut. The fixed 40px page buttons are
-      // checked at 1x by the tests above.
-      expectNoTruncatedText(tester, allow: {
-        ..._titles[c.lang]!,
-        translations.getTranslation('lesson.continue_to', {'n': 3}),
-        translations.getTranslation('lesson.back_home'),
-      });
+      expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
     });
 
     testWidgets('${c.name}: last lesson fits', (tester) async {
