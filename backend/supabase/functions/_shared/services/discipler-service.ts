@@ -67,17 +67,59 @@ export async function recordActivity(db: SupabaseClient, args: {
   if (error) console.error('[discipler] activity insert error (non-fatal):', error)
 }
 
-export async function pushUsers(db: SupabaseClient, userIds: string[], notification: { title: string; body: string }, data: Record<string, string>): Promise<void> {
-  if (userIds.length === 0) return
+/** Per-recipient result of a push: delivered to at least one device, rejected on every device, or no device registered. */
+export type PushOutcome = 'sent' | 'failed' | 'no_device'
+
+/**
+ * Folds per-token FCM results into one outcome per user. `results` is in the
+ * same order as `tokenRows`. A user counts as sent when any of their devices
+ * accepted the push.
+ */
+export function pushOutcomesByUser(
+  userIds: string[],
+  tokenRows: Array<{ user_id: string; fcm_token: string }>,
+  results: Array<{ success: boolean }>,
+): Map<string, PushOutcome> {
+  const out = new Map<string, PushOutcome>(userIds.map((id) => [id, 'no_device']))
+  tokenRows.forEach((row, i) => {
+    const ok = results[i]?.success === true
+    const prev = out.get(row.user_id)
+    if (ok) out.set(row.user_id, 'sent')
+    else if (prev !== 'sent') out.set(row.user_id, 'failed')
+  })
+  return out
+}
+
+/**
+ * Sends to every device of `userIds` and reports what actually happened per
+ * user. A transport error before any send marks every user with a device as
+ * failed (never as sent).
+ */
+export async function pushUsersWithOutcome(
+  db: SupabaseClient,
+  userIds: string[],
+  notification: { title: string; body: string },
+  data: Record<string, string>,
+): Promise<Map<string, PushOutcome>> {
+  if (userIds.length === 0) return new Map()
+  let tokenRows: Array<{ user_id: string; fcm_token: string }> = []
   try {
-    const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', userIds)
-    const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-    if (tokens.length === 0) return
+    const { data: rows, error } = await db.from('user_notification_tokens').select('user_id, fcm_token').in('user_id', userIds)
+    if (error) throw new Error(error.message)
+    tokenRows = ((rows ?? []) as Array<{ user_id: string; fcm_token: string }>).filter((r) => r.fcm_token)
+    if (tokenRows.length === 0) return pushOutcomesByUser(userIds, [], [])
+    const tokens = tokenRows.map((r) => r.fcm_token)
     const result = await new FCMService().sendBatchNotifications(tokens, notification, data)
     await purgeInvalidTokens(db, tokens, result.results)
+    return pushOutcomesByUser(userIds, tokenRows, result.results)
   } catch (err) {
     console.error('[discipler] push error (non-fatal):', err)
+    return pushOutcomesByUser(userIds, tokenRows, tokenRows.map(() => ({ success: false })))
   }
+}
+
+export async function pushUsers(db: SupabaseClient, userIds: string[], notification: { title: string; body: string }, data: Record<string, string>): Promise<void> {
+  await pushUsersWithOutcome(db, userIds, notification, data)
 }
 
 /**
@@ -165,8 +207,11 @@ export interface DeliverOptions {
 
 /** What one {@link deliverOrQueue} call did, for the caller's logs. */
 export interface DeliverResult {
+  /** Recipients sent to now (excluding those FCM rejected on every device). */
   sentTo: number
   queuedTo: number
+  /** Recipients whose push FCM rejected on every device (logged as failed). */
+  failedTo?: number
 }
 
 /** A fellowship_members row as far as push reachability is concerned. */
@@ -260,6 +305,7 @@ export async function deliverOrQueue(
   }
 
   const now = new Date()
+  let failedTo = 0
   let sendNow: string[] = recipients
   // Recipients held for the morning, paired with the offset that decided it —
   // the offset is needed again to compute each row's own not_before.
@@ -334,16 +380,22 @@ export async function deliverOrQueue(
     // longer than the log insert, and these run in a fire-and-forget context
     // whose isolate can be torn down once the response has been written.
     // Chaining the log behind the send meant it never happened.
+    // Log the real outcome per recipient: a push FCM rejected on every
+    // device is 'failed', not 'sent'. Callers run this inside waitUntil
+    // (runInBackground), so the log after the send is not lost.
+    const outcomes = await pushUsersWithOutcome(db, sendNow, notification, data)
+    const sentIds = sendNow.filter((id) => outcomes.get(id) === 'sent')
+    failedTo = sendNow.filter((id) => outcomes.get(id) === 'failed').length
     await Promise.all([
-      pushUsers(db, sendNow, notification, data),
-      logPushes(sendNow, notification, opts.kind, 'sent'),
+      logPushes(sentIds, notification, opts.kind, 'sent'),
+      logPushes(sendNow.filter((id) => outcomes.get(id) === 'failed'), notification, opts.kind, 'failed'),
     ])
   }
   if (toQueue.length > 0) {
     console.log(`[deliverOrQueue] ${opts.kind}: queued for ${toQueue.length} recipient(s) until their 07:00 local`)
   }
 
-  return { sentTo: sendNow.length, queuedTo: toQueue.length }
+  return { sentTo: sendNow.length - failedTo, queuedTo: toQueue.length, failedTo }
 }
 
 /**
