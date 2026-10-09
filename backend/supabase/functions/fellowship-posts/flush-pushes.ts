@@ -46,13 +46,7 @@ export async function handleFlushPushes(req: Request, services: ServiceContainer
 
   const db = services.supabaseServiceClient
 
-  const { data: rows, error } = await db
-    .from('notification_push_queue')
-    .select('id, user_id, kind, title, body, data')
-    .eq('status', 'pending')
-    .lte('not_before', new Date().toISOString())
-    .order('not_before', { ascending: true })
-    .limit(BATCH_SIZE)
+  const { rows, error } = await claimDueRows(db)
 
   if (error) {
     console.error('[flush-pushes] Claim query failed:', error.message)
@@ -86,6 +80,35 @@ export async function handleFlushPushes(req: Request, services: ServiceContainer
 
   console.log(`[flush-pushes] claimed=${due.length} sent=${sent} retrying=${retrying} failed=${failed}`)
   return json({ claimed: due.length, sent, failed, retrying })
+}
+
+/** How long a claimed row stays invisible to other runs (seconds). */
+const CLAIM_LEASE_SECONDS = 300
+
+/**
+ * Claims due rows atomically (FOR UPDATE SKIP LOCKED + a lease on not_before),
+ * so two overlapping runs never both send the same row. Falls back to the
+ * plain read only while the claim RPC is not yet deployed.
+ */
+async function claimDueRows(
+  db: SupabaseClient,
+): Promise<{ rows: QueueRow[] | null; error: { message: string } | null }> {
+  const { data, error } = await db.rpc('claim_due_push_queue_rows', {
+    p_limit: BATCH_SIZE,
+    p_lease_seconds: CLAIM_LEASE_SECONDS,
+  })
+  if (!error) return { rows: (data ?? []) as QueueRow[], error: null }
+  if (error.code !== 'PGRST202' && error.code !== '42883') return { rows: null, error }
+
+  console.warn('[flush-pushes] claim RPC missing, using unclaimed read')
+  const fallback = await db
+    .from('notification_push_queue')
+    .select('id, user_id, kind, title, body, data')
+    .eq('status', 'pending')
+    .lte('not_before', new Date().toISOString())
+    .order('not_before', { ascending: true })
+    .limit(BATCH_SIZE)
+  return { rows: (fallback.data ?? null) as QueueRow[] | null, error: fallback.error }
 }
 
 async function markSent(db: SupabaseClient, id: string): Promise<void> {
