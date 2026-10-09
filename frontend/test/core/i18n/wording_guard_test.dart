@@ -133,6 +133,23 @@ void main() {
       'क्विक',
       'डीप डाइव',
       'फॉलो-अप',
+      // Quick read is छोटी पढ़ाई (chip: छोटी); लघु is bookish.
+      'लघु',
+      'डेली',
+      'बेस्ट',
+      'लीडर्स',
+      'फीचर',
+      'असाइन',
+      'यूज़र्स',
+      'यूज ',
+      'लिमिट',
+      'हिस्ट्री',
+      'स्टैटिस्टिक्स',
+      'प्राइवेसी',
+      'कैंसल',
+      'डिलीट',
+      'स्मृति',
+      'डिसाइपल',
     ];
     final values = flatten(hindiTranslations).map((e) => e.value);
     final bad = [
@@ -162,7 +179,7 @@ void main() {
 
   test('Malayalam uses simple everyday words, not transliterations', () {
     // Owner rule: common English words people use (ക്രെഡിറ്റ്, പ്ലാൻ, സേവ്,
-    // ഗൈഡ്, Discipler) are fine; otherwise plain Malayalam. A streak is
+    // ഗൈഡ്, പെൻഡിംഗ്, Discipler) are fine; otherwise plain Malayalam. A streak is
     // തുടർച്ച; the study modes are വേഗ വായന / സാധാരണ / ആഴത്തിലുള്ള പഠനം.
     const oldTerms = [
       'സ്റ്റ്രീ',
@@ -173,6 +190,28 @@ void main() {
       'ഫോളോ',
       'ലേണിംഗ്',
       'പാത്ത്',
+      'ഡെയ്ലി',
+      'യൂസേഴ്',
+      'യൂസർമാ',
+      'ലീഡർസ',
+      'ഫീച്ചർ',
+      'ലിമിറ്റ്',
+      'അൺലിമിറ്റഡ്',
+      'കറന്റ്',
+      'ഹിസ്റ്ററി',
+      'സ്റ്റാറ്റിസ്റ്റിക്സ്',
+      'പ്രാക്ടീസ്',
+      'ഡിലീറ്റ്',
+      'കാൻസൽ',
+      'ഡിസൈപ്പിൾ',
+      // Garbled words (Hindi loans) from an old machine pass.
+      'പ്രാതമ്യം',
+      'പ്രാപ്തരുകൾ',
+      'ലാഗൂ',
+      'സുധാരണ',
+      'വേണംഎന്നാലും',
+      // Malayalam ends sentences with a full stop, not the Hindi danda.
+      '।',
     ];
     final values = flatten(malayalamTranslations).map((e) => e.value);
     final bad = [
