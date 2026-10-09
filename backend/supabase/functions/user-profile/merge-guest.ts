@@ -68,3 +68,35 @@ export const MERGE_GUEST_NOT_ANONYMOUS = 'merge_guest:not_anonymous'
 export function isGuestNotAnonymousError(error: { code?: string; message?: string } | null): boolean {
   return error?.code === 'P0001' && error.message === MERGE_GUEST_NOT_ANONYMOUS
 }
+
+/** Minimal RPC surface used by [mergeGuestNewForYou]. */
+export type RpcCaller = (
+  fn: string,
+  args: Record<string, unknown>
+) => PromiseLike<{ error: { code?: string } | null }>
+
+/**
+ * Carries the guest's Home "New for you" history into the account through
+ * `public.merge_guest_new_for_you`. Best effort: returns false (never throws)
+ * when it could not; features tried as a guest are still found from the
+ * merged data on the account's next sync.
+ */
+export async function mergeGuestNewForYou(
+  rpc: RpcCaller,
+  guestId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    const { error } = await rpc('merge_guest_new_for_you', { p_guest: guestId, p_user: userId })
+    if (error) {
+      console.warn('[USER_PROFILE] merge_guest new-for-you skipped', { code: error.code })
+      return false
+    }
+    return true
+  } catch (e) {
+    console.warn('[USER_PROFILE] merge_guest new-for-you skipped', {
+      reason: e instanceof Error ? e.name : 'unknown',
+    })
+    return false
+  }
+}

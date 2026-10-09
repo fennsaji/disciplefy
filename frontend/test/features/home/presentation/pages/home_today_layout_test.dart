@@ -378,7 +378,12 @@ void main() {
     sl.registerSingleton<CommunityRepository>(community);
     sl.registerSingleton<LearningPathsRepository>(paths);
     sl.registerFactory<NewForYouCubit>(
-      () => NewForYouCubit(prefs: prefs, clock: () => DateTime(2026, 10, 7)),
+      () => NewForYouCubit(
+        prefs: prefs,
+        clock: () => DateTime(2026, 10, 7),
+        // Past the first week, when the banner may show.
+        accountCreatedAt: () => DateTime(2026, 9, 2),
+      ),
     );
     GuestPathEnrollment.currentUserId = () => 'u1';
   });
@@ -675,10 +680,11 @@ void main() {
       expect(find.byKey(const Key('home_memory_pill_lock')), findsNothing);
     });
 
-    testWidgets('full user: New for you reads memory and fellowships',
-        (tester) async {
+    testWidgets(
+        'full user: New for you needs no feature calls (tried kinds come '
+        'from the server sync)', (tester) async {
       await pumpHome(tester, summary: _summary4of8);
-      verify(() => community.getFellowships('en')).called(1);
+      verifyNever(() => community.getFellowships(any()));
       // First banner is paths, under the lesson card.
       expect(find.text('Explore more learning paths'), findsOneWidget);
     });

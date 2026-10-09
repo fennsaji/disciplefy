@@ -89,6 +89,8 @@ import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/home/presentation/bloc/recommended_topics_bloc.dart';
 import '../../features/home/presentation/bloc/home_study_generation_bloc.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_you_cubit.dart';
+import 'package:disciplefy_bible_study/features/home/data/services/new_for_you_remote_impl.dart';
+import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_you_remote.dart';
 import 'package:disciplefy_bible_study/features/home/data/services/feature_intro_source_impl.dart';
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_source.dart';
 import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
@@ -761,8 +763,14 @@ Future<void> initializeDependencies() async {
   );
 
   // "New for you" banner schedule (one per Home mount).
+  sl.registerLazySingleton<NewForYouRemote>(
+    () => NewForYouRemoteImpl(client: sl<SupabaseClient>()),
+  );
   sl.registerFactory(
-    () => NewForYouCubit(prefs: sl<SharedPreferences>()),
+    () => NewForYouCubit(
+      prefs: sl<SharedPreferences>(),
+      remote: sl<NewForYouRemote>(),
+    ),
   );
 
   // Data and actions behind the feature introductions.

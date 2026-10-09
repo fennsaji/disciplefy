@@ -220,7 +220,9 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       cubit = NewForYouCubit(
           prefs: await SharedPreferences.getInstance(),
-          clock: () => DateTime(2026, 10, 6));
+          clock: () => DateTime(2026, 10, 6),
+          // Past the first week, when the banner may show.
+          accountCreatedAt: () => DateTime(2026, 9, 2));
     });
 
     tearDown(() => cubit.close());
@@ -236,7 +238,7 @@ void main() {
       expect(find.byType(NewForYouBanner), findsNothing);
     });
 
-    testWidgets('opening marks it done and opens the introduction',
+    testWidgets('opening ends today\'s banner and opens the introduction',
         (tester) async {
       await cubit.load(
           'u1',
