@@ -39985,19 +39985,100 @@
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "oMScz",
+                                  "id": "Y7QI8C",
+                                  "name": "Today lesson card",
                                   "width": "fill_container",
                                   "fill": "#17171C",
                                   "cornerRadius": 16,
                                   "stroke": "#E3B15455",
                                   "strokeWidth": 1.2,
                                   "layout": "vertical",
-                                  "gap": 8,
-                                  "padding": 14,
+                                  "gap": 10,
+                                  "padding": 16,
                                   "children": [
                                     {
                                       "type": "frame",
-                                      "id": "TYoBu",
+                                      "id": "STIOb",
+                                      "width": "fill_container",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "O8e2y",
+                                          "fill": "#E3B154",
+                                          "content": "TODAY · LESSON 4",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "600",
+                                          "letterSpacing": 1.6
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "V5SrB",
+                                          "width": "fill_container",
+                                          "height": 1
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "x0dV1",
+                                          "height": 26,
+                                          "cornerRadius": 13,
+                                          "stroke": "#FFFFFF24",
+                                          "strokeWidth": 1,
+                                          "gap": 4,
+                                          "padding": [
+                                            0,
+                                            9
+                                          ],
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "icon",
+                                              "id": "vgOyV",
+                                              "name": "book-open",
+                                              "width": 12,
+                                              "height": 12,
+                                              "icon": "book-open",
+                                              "library": "lucide",
+                                              "fill": "#9CA3AF"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "l1SC7",
+                                              "fill": "#9CA3AF",
+                                              "content": "Full guide · 8 min",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 12,
+                                              "fontWeight": "600"
+                                            },
+                                            {
+                                              "type": "icon",
+                                              "id": "ApCHO",
+                                              "name": "chevron-down",
+                                              "width": 12,
+                                              "height": 12,
+                                              "icon": "chevron-down",
+                                              "library": "lucide",
+                                              "fill": "#9CA3AF"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "PCl3P",
+                                      "fill": "#F2F2F4",
+                                      "textGrowth": "fixed-width",
+                                      "width": "fill_container",
+                                      "content": "Confidence in Your Salvation",
+                                      "fontFamily": "Poppins",
+                                      "fontSize": 18,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "eHgyN",
                                       "width": "fill_container",
                                       "height": 40,
                                       "fill": "#FFFFFF",
@@ -40012,9 +40093,9 @@
                                       "children": [
                                         {
                                           "type": "text",
-                                          "id": "Rcs75",
+                                          "id": "LCwQr",
                                           "fill": "#1A1917",
-                                          "content": "Continue",
+                                          "content": "Start lesson 4",
                                           "fontFamily": "Inter",
                                           "fontSize": 15,
                                           "fontWeight": "600"
@@ -44442,19 +44523,100 @@
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "J4vBC",
+                                  "id": "G1Xppq",
+                                  "name": "Today lesson card",
                                   "width": "fill_container",
                                   "fill": "#FFFFFF",
                                   "cornerRadius": 16,
                                   "stroke": "#B8860B55",
                                   "strokeWidth": 1.2,
                                   "layout": "vertical",
-                                  "gap": 8,
-                                  "padding": 14,
+                                  "gap": 10,
+                                  "padding": 16,
                                   "children": [
                                     {
                                       "type": "frame",
-                                      "id": "QesYK",
+                                      "id": "HQXR3",
+                                      "width": "fill_container",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "aR3P1",
+                                          "fill": "#986910",
+                                          "content": "TODAY · LESSON 4",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "600",
+                                          "letterSpacing": 1.6
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "f6gZnM",
+                                          "width": "fill_container",
+                                          "height": 1
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "gRjRL",
+                                          "height": 26,
+                                          "cornerRadius": 13,
+                                          "stroke": "#16161D24",
+                                          "strokeWidth": 1,
+                                          "gap": 4,
+                                          "padding": [
+                                            0,
+                                            9
+                                          ],
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "icon",
+                                              "id": "sfGV0",
+                                              "name": "book-open",
+                                              "width": 12,
+                                              "height": 12,
+                                              "icon": "book-open",
+                                              "library": "lucide",
+                                              "fill": "#6F6B61"
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "hJKOf",
+                                              "fill": "#6F6B61",
+                                              "content": "Full guide · 8 min",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 12,
+                                              "fontWeight": "600"
+                                            },
+                                            {
+                                              "type": "icon",
+                                              "id": "SC7J9",
+                                              "name": "chevron-down",
+                                              "width": 12,
+                                              "height": 12,
+                                              "icon": "chevron-down",
+                                              "library": "lucide",
+                                              "fill": "#6F6B61"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "E0gGnY",
+                                      "fill": "#1A1917",
+                                      "textGrowth": "fixed-width",
+                                      "width": "fill_container",
+                                      "content": "Confidence in Your Salvation",
+                                      "fontFamily": "Poppins",
+                                      "fontSize": 18,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "WjwDq",
                                       "width": "fill_container",
                                       "height": 40,
                                       "fill": "#1A1917",
@@ -44469,9 +44631,9 @@
                                       "children": [
                                         {
                                           "type": "text",
-                                          "id": "ST3Lu",
+                                          "id": "CF6nO",
                                           "fill": "#FFFFFF",
-                                          "content": "Continue",
+                                          "content": "Start lesson 4",
                                           "fontFamily": "Inter",
                                           "fontSize": 15,
                                           "fontWeight": "600"
