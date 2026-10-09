@@ -811,6 +811,18 @@ class LanguagePreferenceService {
     }
   }
 
+  /// The saved default study mode as [getStudyModePreferenceRaw] would
+  /// return it, read synchronously from the cached profile or this device,
+  /// without re-syncing local storage. Lets screens and routes start on the
+  /// saved mode on their first frame.
+  String? peekStudyModePreferenceRaw() {
+    if (_authStateProvider.isAuthenticated) {
+      final profile = _authStateProvider.userProfile;
+      if (profile != null) return profile['default_study_mode'] as String?;
+    }
+    return _prefs.getString(_studyModePreferenceKey);
+  }
+
   /// Get learning-path-specific study mode preference.
   ///
   /// Priority:

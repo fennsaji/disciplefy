@@ -2443,6 +2443,9 @@ class TranslationKeys {
   /// "{count} min" duration label.
   static const studyModeMinutes = 'study_mode.minutes';
 
+  /// Compact "{count} min" for one-line depth controls ("3 മി", "3 मि").
+  static const studyModeMinutesShort = 'study_mode.minutes_short';
+
   /// Headline of the full-height depth chooser.
   static const modeSelectionTimeQuestion = 'mode_selection.time_question';
 
@@ -3230,6 +3233,7 @@ class TranslationKeys {
 
   /// Takes `{remaining}` and `{limit}`.
   static const voiceSessionQuotaLeft = 'voice_buddy.session.quota_left';
+  static const voiceSessionNotInPlan = 'voice_buddy.session.not_in_plan';
   static const voiceSessionStatusReady = 'voice_buddy.session.status_ready';
   static const voiceSessionStatusListening =
       'voice_buddy.session.status_listening';
@@ -3677,6 +3681,9 @@ class TranslationKeys {
   // Single-input Generate screen.
   static const generateSimpleEyebrow = 'generate_simple.eyebrow';
   static const generateSimpleTitle = 'generate_simple.title';
+
+  /// Short line under the title: what can go in the input.
+  static const generateSimpleSubtitle = 'generate_simple.subtitle';
   static const generateSimpleHint = 'generate_simple.hint';
   static const generateSimpleTypeScripture = 'generate_simple.type_scripture';
   static const generateSimpleTypeTopic = 'generate_simple.type_topic';

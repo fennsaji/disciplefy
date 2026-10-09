@@ -123,7 +123,10 @@ class VoiceSessionView extends StatelessWidget {
           right: 0,
           height: media.size.height * 0.62,
           child: const WelcomePhotoBackdrop(
-              asset: disciplerHeaderPhoto, blurred: true),
+            asset: disciplerHeaderPhoto,
+            blurred: true,
+            headerScrim: true,
+          ),
         ),
         SafeArea(
           bottom: false,
@@ -135,7 +138,7 @@ class VoiceSessionView extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: DisciplerQuotaChip(display: quota!, onPhoto: true),
+                    child: DisciplerQuotaChip(display: quota!),
                   ),
                 ),
               Expanded(

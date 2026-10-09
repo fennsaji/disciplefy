@@ -153,30 +153,37 @@ class WelcomePhotoBackdrop extends StatelessWidget {
   /// Blur the photo into a soft colour wash (decoded tiny, then upscaled).
   final bool blurred;
 
+  /// Use the stronger [photoHeaderScrim], for small text and icons that sit
+  /// over the photo itself rather than below it.
+  final bool headerScrim;
+
   const WelcomePhotoBackdrop({
     super.key,
     required this.asset,
     this.alignment = Alignment.center,
     this.blurred = false,
+    this.headerScrim = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final page = palette.page;
-    final shade = palette.isDark
-        ? [
-            Colors.black.withValues(alpha: 0.38),
-            Colors.black.withValues(alpha: 0.34),
-            page.withValues(alpha: 0.74),
-            page,
-          ]
-        : [
-            page.withValues(alpha: 0.34),
-            page.withValues(alpha: 0.42),
-            page.withValues(alpha: 0.82),
-            page,
-          ];
+    final shade = headerScrim
+        ? photoHeaderScrim(palette)
+        : palette.isDark
+            ? [
+                Colors.black.withValues(alpha: 0.38),
+                Colors.black.withValues(alpha: 0.34),
+                page.withValues(alpha: 0.74),
+                page,
+              ]
+            : [
+                page.withValues(alpha: 0.34),
+                page.withValues(alpha: 0.42),
+                page.withValues(alpha: 0.82),
+                page,
+              ];
 
     return ExcludeSemantics(
       child: LayoutBuilder(
@@ -199,7 +206,9 @@ class WelcomePhotoBackdrop extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: shade,
-                  stops: const [0, 0.35, 0.62, 1],
+                  stops: headerScrim
+                      ? photoHeaderScrimStops
+                      : const [0, 0.35, 0.62, 1],
                 ),
               ),
             ),

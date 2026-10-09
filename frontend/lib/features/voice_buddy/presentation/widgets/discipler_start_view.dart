@@ -14,8 +14,8 @@ const List<String> disciplerSuggestionKeys = [
   TranslationKeys.voiceSessionSuggestion3,
 ];
 
-/// The Discipler tab before a conversation: a photo header with the monthly
-/// allowance and settings, the title and description, the language chip,
+/// The Discipler tab before a conversation: a photo header (under the
+/// header scrim) with the monthly allowance and settings on opaque fills, the title and description, the language chip,
 /// "Start talking" / "Type", and suggested questions.
 class DisciplerStartView extends StatelessWidget {
   /// Allowance chip; null hides it.
@@ -50,8 +50,11 @@ class DisciplerStartView extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
+    // Inside the tab shell this already includes the floating dock's height.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Stack(
         children: [
           Positioned(
@@ -60,10 +63,14 @@ class DisciplerStartView extends StatelessWidget {
             right: 0,
             height: _photoHeight + topInset,
             child: const WelcomePhotoBackdrop(
-                asset: disciplerHeaderPhoto, blurred: true),
+              asset: disciplerHeaderPhoto,
+              blurred: true,
+              headerScrim: true,
+            ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, 24),
+            padding:
+                EdgeInsets.fromLTRB(16, topInset + 8, 16, bottomInset + 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -74,7 +81,13 @@ class DisciplerStartView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      WelcomeEyebrow(context.tr('voice_buddy.title')),
+                      // Deep gold on light: the brighter label gold drops
+                      // under 4.5:1 over the scrim on the photo's darkest
+                      // pixel.
+                      WelcomeEyebrow(
+                        context.tr('voice_buddy.title'),
+                        color: palette.isDark ? null : palette.goldOnTint,
+                      ),
                       const SizedBox(height: 4),
                       Semantics(
                         header: true,
@@ -89,10 +102,12 @@ class DisciplerStartView extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 13,
                           height: 1.3,
-                          // Over the photo on dark, as the design's #DADAE0.
+                          // Over the photo: the design's #DADAE0 on dark;
+                          // ink on light, where muted drops under 4.5:1 on
+                          // the scrim over the photo's darkest pixel.
                           color: palette.isDark
                               ? const Color(0xFFDADAE0)
-                              : palette.muted,
+                              : palette.text,
                         ),
                       ),
                     ],
@@ -132,13 +147,14 @@ class DisciplerStartView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (onBack != null) ...[
-          IconButton(
+          SessionRoundButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back),
-            color: palette.text,
+            icon: Icons.arrow_back,
+            fill: palette.raised,
+            ink: palette.text,
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
         Expanded(
           child: Align(
@@ -146,16 +162,19 @@ class DisciplerStartView extends StatelessWidget {
             child: quota != null && quota!.isVisible
                 ? Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: DisciplerQuotaChip(display: quota!, onPhoto: true),
+                    child: DisciplerQuotaChip(display: quota!),
                   )
                 : const SizedBox.shrink(),
           ),
         ),
         const SizedBox(width: 8),
-        IconButton(
+        // On its own opaque fill: bare, the icon fell to about 3:1 over
+        // the photo's darkest pixel on light.
+        SessionRoundButton(
           onPressed: onSettings,
-          icon: const Icon(Icons.settings_outlined),
-          color: palette.text,
+          icon: Icons.settings_outlined,
+          fill: palette.raised,
+          ink: palette.text,
           tooltip: context.tr('voice_buddy.settings.title'),
         ),
       ],

@@ -1014,7 +1014,7 @@ export default function SystemConfigPage() {
                         type="button"
                         onClick={() => {
                           const action = flag.enabled ? 'Disable' : 'Enable'
-                          if (!confirm(`${action} "${flag.name}"? This takes effect immediately in production.`)) return
+                          if (!confirm(`${action} "${flag.name}"? The app picks this up within a few minutes.`)) return
                           toggleFeatureFlag.mutate({ flag_id: flag.id, enabled: !flag.enabled })
                         }}
                         disabled={toggleFeatureFlag.isPending && toggleFeatureFlag.variables?.flag_id === flag.id}

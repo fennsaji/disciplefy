@@ -181,6 +181,12 @@ class SystemConfigService extends ChangeNotifier {
     }
   }
 
+  /// Refetch when the config is older than the cache TTL (or missing).
+  ///
+  /// Called when the app returns to the foreground, so an admin flag change
+  /// reaches a running app instead of waiting for the next cold start.
+  Future<void> refreshIfStale() => fetchSystemConfig();
+
   /// Check if a feature is enabled for the given plan
   bool isFeatureEnabled(String featureKey, String planType) {
     final feature = _config?.featureFlags[featureKey];

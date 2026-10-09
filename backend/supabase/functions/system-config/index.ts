@@ -14,6 +14,7 @@ import { getFeatureFlags, isTesterEmail, applyTesterBypass } from '../_shared/se
 import { MemoryVerseConfigService } from '../_shared/services/memory-verse-config-service.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts'
+import { systemConfigCacheControl } from './cache-control.ts'
 
 /**
  * One memory verse config service per worker, so its 5-minute cache actually
@@ -32,14 +33,6 @@ function getMemoryVerseConfigService(): MemoryVerseConfigService {
   }
   return memoryVerseConfigService
 }
-
-/**
- * The response is the same for every caller unless tester bypass applied, so
- * it may be shared briefly; Vary keeps an authorised caller from being served
- * an anonymous copy. A tester-specific response is never stored.
- */
-const PUBLIC_CACHE_CONTROL = 'public, max-age=60, stale-while-revalidate=300'
-const PRIVATE_CACHE_CONTROL = 'private, no-store'
 
 // CORS headers for all responses
 const corsHeaders = {
@@ -67,7 +60,7 @@ Deno.serve(async (req) => {
     console.log('[SystemConfig] Fetching system configuration (public endpoint)')
 
     // System config, feature flags and memory verse config are independent
-    // (all 5-min cached); read them together rather than one after another.
+    // (each cached server-side); read them together rather than one after another.
     const [systemConfig, featureFlags, memoryVerseConfig] = await Promise.all([
       getSystemConfig(),
       getFeatureFlags(),
@@ -150,7 +143,7 @@ Deno.serve(async (req) => {
       {
         headers: {
           ...corsHeaders,
-          'Cache-Control': testerBypassActive ? PRIVATE_CACHE_CONTROL : PUBLIC_CACHE_CONTROL,
+          'Cache-Control': systemConfigCacheControl(testerBypassActive),
           'Vary': 'Authorization',
         },
         status: 200,

@@ -93,21 +93,21 @@ class NotificationServiceWeb {
       // Check service worker availability
       await _checkServiceWorkerStatus();
 
-      // Request permission using permission handler
-      Logger.debug('[FCM Web] 📋 Requesting notification permission...');
+      // Only read the permission: the browser prompt belongs to the in-app
+      // sheet's "Turn on", which calls initialize() again once it is granted.
+      Logger.debug('[FCM Web] 📋 Checking notification permission...');
       bool hasPermission = false;
       try {
-        hasPermission = await _permissionHandler!.requestPermissions();
+        hasPermission = await _permissionHandler!.areNotificationsEnabled();
       } catch (e, stackTrace) {
-        Logger.error('[FCM Web] ❌ Permission request failed with error: $e');
+        Logger.error('[FCM Web] ❌ Permission check failed with error: $e');
         Logger.debug('[FCM Web] Stack trace: $stackTrace');
-        Logger.warning(
-            '[FCM Web] ⚠️  This is likely a service worker or browser compatibility issue');
         return;
       }
 
       if (!hasPermission) {
-        Logger.error('[FCM Web] ❌ Notification permission denied by user');
+        Logger.debug(
+            '[FCM Web] Notification permission not granted yet, push not started');
         return;
       }
       Logger.debug('[FCM Web] ✅ Notification permission granted');

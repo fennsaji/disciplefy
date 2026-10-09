@@ -62,6 +62,7 @@ import 'package:disciplefy_bible_study/features/subscription/presentation/widget
 import '../../../study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../../study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_mode_switch.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_bar_label.dart';
 import '../../data/services/reading_progress_store.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
@@ -2878,9 +2879,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  /// Quick/Full switch under a lesson's title; null outside lessons.
+  /// Quick Read / Standard switch under a lesson's title; null outside
+  /// lessons and where [LessonModeSwitch.shownFor] hides it (the header then
+  /// closes up, no gap).
   Widget? _buildLessonModeSwitch() {
     if (widget.lesson == null) return null;
+    if (!LessonModeSwitch.shownFor(
+        mode: widget.studyMode, isGuest: GuestRouteGate.currentUserIsGuest())) {
+      return null;
+    }
     return LessonModeSwitch(
       current: widget.studyMode,
       onChanged: _switchLessonMode,
@@ -3505,21 +3512,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                   )
                                 : const Icon(Icons.headphones_rounded,
                                     size: 18),
-                            // Shrinks rather than cutting on narrow phones.
-                            label: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                isLoading
-                                    ? context
-                                        .tr(TranslationKeys.studyGuideLoading)
-                                    : context
-                                        .tr(TranslationKeys.studyGuideListen),
-                                maxLines: 1,
-                                style: AppFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            // Same size as the Discipler label beside it.
+                            label: StudyBarLabel(
+                              isLoading
+                                  ? context
+                                      .tr(TranslationKeys.studyGuideLoading)
+                                  : context
+                                      .tr(TranslationKeys.studyGuideListen),
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: foreground,
@@ -3569,34 +3568,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                           onTap: _askDiscipler,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Flat ink glyph, no disc, on the white or
-                                // gold pill.
-                                const DisciplerGlyph(
-                                  size: 20,
-                                  variant: DisciplerGlyphVariant.ink,
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      context
-                                          .tr(TranslationKeys.studyGuideAskAi),
-                                      maxLines: 1,
-                                      style: AppFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: palette.isDark
-                                            ? palette.ctaInk
-                                            : palette.onSelected,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            child: StudyBarIconLabel(
+                              // Flat ink glyph, no disc, on the white or
+                              // gold pill.
+                              icon: const DisciplerGlyph(
+                                size: 20,
+                                variant: DisciplerGlyphVariant.ink,
+                              ),
+                              iconWidth: 20,
+                              text: context.tr(TranslationKeys.studyGuideAskAi),
+                              color: palette.isDark
+                                  ? palette.ctaInk
+                                  : palette.onSelected,
                             ),
                           ),
                         ),

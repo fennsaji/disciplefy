@@ -43,6 +43,7 @@ import '../../features/community/presentation/screens/blocked_users_screen.dart'
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/domain/entities/learning_path.dart';
 import '../../features/study_topics/domain/entities/lesson_ref.dart';
+import 'package:disciplefy_bible_study/core/constants/study_mode_preferences.dart';
 import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_query_listener.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/guest_lesson_nudge.dart';
@@ -1334,9 +1335,8 @@ class AppRouter {
           final navigationSource =
               sl<StudyNavigator>().parseNavigationSource(sourceString);
 
-          // Parse study mode (default to standard)
           final studyMode =
-              studyModeFromString(modeString) ?? StudyMode.standard;
+              studyModeForLink(modeString, isLesson: lesson != null);
 
           return slideRightTransitionPage(
             child: MaxWidthWrapper(

@@ -6,10 +6,16 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
-/// Two-segment "Quick read · 3 min / Full guide · 8 min" switch shown under a
+/// Two-segment "Quick Read · 3 min / Standard · 8 min" switch shown under a
 /// lesson's title. The current segment is filled with the palette's selected
 /// gold; tapping the other reports it through [onChanged].
 class LessonModeSwitch extends StatelessWidget {
+  /// Owner rule: the switch is offered on a Quick Read lesson (to move up
+  /// to Standard) and to a guest; a signed-in reader of a Standard or deeper
+  /// lesson does not see it at all.
+  static bool shownFor({required StudyMode mode, required bool isGuest}) =>
+      isGuest || mode == StudyMode.quick;
+
   final StudyMode current;
   final ValueChanged<StudyMode> onChanged;
 

@@ -28,9 +28,10 @@ class _MockNotificationBloc
     extends MockBloc<NotificationEvent, NotificationState>
     implements NotificationBloc {}
 
-/// Daily verse notifications are on by default. The "turn on notifications"
-/// sheet is for users who turned them off — never for a permission that was
-/// simply not answered yet (the system asks for that itself).
+/// Daily verse notifications are on by default. Nothing asks the OS for the
+/// permission at startup, so this sheet is the one soft ask: it shows once for
+/// a permission that is not granted, whether unanswered or refused, and only
+/// its "Turn on" raises the OS dialog.
 @GenerateMocks([NotificationService])
 void main() {
   late MockNotificationService service;
@@ -74,21 +75,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('permission not answered yet: no sheet', (tester) async {
+  testWidgets('permission not answered yet: sheet asks', (tester) async {
     when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
-    when(service.isNotificationPermissionDenied())
-        .thenAnswer((_) async => false);
 
     await prompt(tester);
 
-    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.byType(BottomSheet), findsOneWidget);
+    verifyNever(service.requestPermissions());
   });
 
-  testWidgets('permission refused by the user: sheet asks again',
-      (tester) async {
+  testWidgets('permission refused by the user: sheet asks', (tester) async {
     when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
-    when(service.isNotificationPermissionDenied())
-        .thenAnswer((_) async => true);
 
     await prompt(tester);
 
@@ -102,14 +99,11 @@ void main() {
       await prompt(tester, type: type);
       expect(find.byType(BottomSheet), findsNothing, reason: '$type');
     }
-    verifyNever(service.isNotificationPermissionDenied());
   });
 
   testWidgets('refused permission: asked once, never again for any type',
       (tester) async {
     when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
-    when(service.isNotificationPermissionDenied())
-        .thenAnswer((_) async => true);
 
     await prompt(tester);
     expect(find.byType(BottomSheet), findsOneWidget);
@@ -128,8 +122,6 @@ void main() {
     SharedPreferences.setMockInitialValues(
         {NotificationPromptPolicy.askedKey: true});
     when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
-    when(service.isNotificationPermissionDenied())
-        .thenAnswer((_) async => true);
 
     await prompt(tester, type: NotificationPromptType.recommendedTopic);
 
@@ -142,17 +134,12 @@ void main() {
       return NotificationPromptPolicy(await SharedPreferences.getInstance());
     }
 
-    test('only a refused, never-asked permission shows', () async {
+    test('only a not-granted, never-asked permission shows', () async {
       final p = await policy();
-      expect(p.shouldShow(permissionGranted: true, permissionDenied: false),
-          isFalse);
-      expect(p.shouldShow(permissionGranted: false, permissionDenied: false),
-          isFalse);
-      expect(p.shouldShow(permissionGranted: false, permissionDenied: true),
-          isTrue);
+      expect(p.shouldShow(permissionGranted: true), isFalse);
+      expect(p.shouldShow(permissionGranted: false), isTrue);
       await p.markAsked();
-      expect(p.shouldShow(permissionGranted: false, permissionDenied: true),
-          isFalse);
+      expect(p.shouldShow(permissionGranted: false), isFalse);
     });
   });
 
@@ -243,6 +230,29 @@ void main() {
           .verify(() =>
               analytics.track(NuxEvent.reminderOptIn, {'type': 'streakLost'}))
           .called(1);
+    });
+
+    testWidgets('turn on asks the OS for a permission not yet granted',
+        (tester) async {
+      when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
+      when(service.requestPermissions()).thenAnswer((_) async => true);
+      await open(tester, dark: false, code: 'en');
+
+      await tester.tap(find.byType(PopupPrimaryButton));
+      await tester.pumpAndSettle();
+
+      verify(service.requestPermissions()).called(1);
+    });
+
+    testWidgets('not now never asks the OS', (tester) async {
+      when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
+      final (results, _) = await open(tester, dark: false, code: 'en');
+
+      await tester.tap(find.byType(PopupTextButton));
+      await tester.pumpAndSettle();
+
+      expect(results, [false]);
+      verifyNever(service.requestPermissions());
     });
 
     testWidgets('enable with permission refused reports nothing',

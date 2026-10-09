@@ -36,8 +36,8 @@ One vocabulary for the whole app, in both `lib/core/i18n/translations_*.dart` an
 | Scripture (UI label) | Scripture | वचन; बाइबल in sentences (not पवित्रशास्त्र) | തിരുവെഴുത്ത് / വേദഭാഗം |
 | Fellowship | Fellowship | संगति (owner-confirmed) | കൂട്ടായ്മ (owner-confirmed) |
 | Lesson | Lesson | पाठ | പാഠം |
-| Quick read | Quick read | छोटी पढ़ाई (mode name); छोटी on space-tight chips; "छोटी या पूरी गाइड" | വേഗ വായന |
-| Standard (mode) / Full guide | Standard, Full guide | सामान्य / सामान्य पढ़ाई; पूरी गाइड (the Standard *plan* stays स्टैंडर्ड) | സാധാരണ / സാധാരണ പഠനം; പൂർണ ഗൈഡ് (the Standard *plan* stays സ്റ്റാൻഡേർഡ്) |
+| Quick Read (mode) | Quick Read (always this casing) | छोटी पढ़ाई, on chips and switches too | വേഗ വായന |
+| Standard (mode) | Standard; Standard Study as the full name. Never "Full guide" (owner, October 2026: one name everywhere) | सामान्य / सामान्य पढ़ाई; never पूरी गाइड (the Standard *plan* stays स्टैंडर्ड) | സാധാരണ / സാധാരണ പഠനം; never പൂർണ ഗൈഡ് (the Standard *plan* stays സ്റ്റാൻഡേർഡ്) |
 | Deep dive | Deep dive | गहरी पढ़ाई | ആഴത്തിൽ (short) / ആഴത്തിലുള്ള പഠനം |
 | Follow-up question | Follow-up (question) | आगे के सवाल | തുടർചോദ്യം (one word) |
 | Daily verse / Verse of the day | Daily verse | आज का वचन or दैनिक वचन (never आयत) | ഇന്നത്തെ വചനം or ദിനവചനം (not ദൈനിക / ദിവസത്തെ വചനം) |
@@ -88,7 +88,7 @@ The owner's review spreadsheet was applied with one rule: change a string only w
 
 - **Kept, although the sheet's terminology guide differs:** संगति / കൂട്ടായ്മ for Fellowship; आयत for verse counts and lists; both बाइबल and बाइबिल spellings where they already read well; ക്രെഡിറ്റ് (singular) after numbers and in compounds; വേദഭാഗം for a Scripture passage.
 - **Adopted for consistency:** the daily verse is never आयत in Hindi, and leftover "പഠന സഹായി" for a study guide now says പഠന ഗൈഡ്. (Its study-mode and learning-path changes were reversed by the owner simple-words pass below.)
-- **Fit:** the reviewer's Malayalam "Choose quick or full guide" (with the verb) overflows the 280px intro step title, so it is വേഗ വായനയോ പൂർണ ഗൈഡോ (no verb; it fits the slot but needs a ratio exemption).
+- **Fit:** the reviewer's Malayalam "Choose quick or full guide" (with the verb) overflows the 280px intro step title, so it is വേഗ വായനയോ സാധാരണ പഠനമോ (no verb). "Full guide" itself was retired for the Standard mode name; `wording_guard_test` bans it in all three languages.
 
 ## Owner simple-words pass (October 2026)
 

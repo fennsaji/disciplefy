@@ -57,7 +57,8 @@ class _SeenWalkthroughs extends Fake implements WalkthroughRepository {
   Future<void> markSeen(WalkthroughScreen screen) async {}
 }
 
-final _today = DateTime.now();
+// Read at use time, so a run that crosses midnight still agrees with the app.
+DateTime get _today => DateTime.now();
 
 MemoryVerseEntity _verse(
   String id,

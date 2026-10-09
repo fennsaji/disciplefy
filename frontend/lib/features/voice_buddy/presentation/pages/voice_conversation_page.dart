@@ -298,6 +298,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           : QuotaDisplay(
               state.quota!,
               notifyQuota: state.notifyDailyQuotaReached,
+              onSeePlans: () => _showVoiceUpsell(state.quota!.tier),
             );
 
   void _onStateChanged(BuildContext context, VoiceConversationState state) {

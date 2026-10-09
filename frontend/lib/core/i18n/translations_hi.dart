@@ -582,8 +582,8 @@ const Map<String, dynamic> hindiTranslations = {
     'today_label': 'आज',
     'lesson_eyebrow': 'आज · पाठ {n}',
     'start_lesson': 'पाठ {n} शुरू करें',
-    'mode_quick': 'छोटी · {min} मि',
-    'mode_standard': 'पूरी गाइड · {min} मि',
+    'mode_quick': 'छोटी पढ़ाई · {min} मि',
+    'mode_standard': 'सामान्य · {min} मि',
     'path_finished': 'आपने {path} पूरा किया',
     'choose_next_path': 'अगला रास्ता चुनें',
     'see_path': 'रास्ता देखें',
@@ -639,7 +639,7 @@ const Map<String, dynamic> hindiTranslations = {
       'step1_title': 'रास्ता चुनें',
       'step1_body': 'नींव, सुसमाचार, प्रार्थना, कठिन समय और भी।',
       'step2_title': 'रोज़ एक छोटा पाठ',
-      'step2_body': 'छोटी या पूरी गाइड, लगभग 3–5 मिनट।',
+      'step2_body': 'छोटी पढ़ाई या सामान्य, लगभग 3–5 मिनट।',
       'step3_title': 'प्रगति देखें',
       'step3_body': 'हर कदम देखें, वहीं से आगे बढ़ें।',
       'primary': 'रास्ते देखें',
@@ -663,8 +663,8 @@ const Map<String, dynamic> hindiTranslations = {
       'title': 'अपने मन में आए किसी भी वचन या सवाल का अध्ययन करें',
       'step1_title': 'वचन या विषय लिखें',
       'step1_body': 'कोई अंश, शब्द, या आपकी स्थिति।',
-      'step2_title': 'छोटी या पूरी गाइड चुनें',
-      'step2_body': '3 मिनट, या पूरी गाइड के लिए लगभग 8।',
+      'step2_title': 'छोटी पढ़ाई या सामान्य चुनें',
+      'step2_body': '3 मिनट, या सामान्य पढ़ाई के लिए लगभग 8।',
       'step3_title': 'पढ़ें, सोचें, सहेजें',
       'step3_body': 'गाइड बाद के लिए रखें।',
       'primary': 'अध्ययन शुरू करें',
@@ -1006,7 +1006,8 @@ const Map<String, dynamic> hindiTranslations = {
   'generate_simple': {
     'eyebrow': 'अध्ययन बनाएँ',
     'title': 'आज क्या पढ़ें?',
-    'hint': 'जैसे यूहन्ना 3:16, क्षमा, या कोई प्रश्न',
+    'subtitle': 'कोई वचन, विषय या प्रश्न लिखें',
+    'hint': 'जैसे यूहन्ना 3:16 या क्षमा',
     'type_scripture': 'वचन',
     'type_topic': 'विषय',
     'type_question': 'प्रश्न',
@@ -1044,9 +1045,9 @@ const Map<String, dynamic> hindiTranslations = {
     'continue_to': 'पाठ {n} पर जाएँ',
     'back_home': 'होम पर जाएँ',
     'path_finished': 'आपने {path} पूरा किया',
-    'full_guide_link': 'पूरा अध्ययन? पूरी गाइड पढ़ें',
-    'quick_read': 'छोटी · {min} मिनट',
-    'full_guide': 'पूरी गाइड · {min} मिनट',
+    'full_guide_link': 'और पढ़ना है? सामान्य पढ़ाई खोलें',
+    'quick_read': 'छोटी पढ़ाई · {min} मिनट',
+    'full_guide': 'सामान्य · {min} मिनट',
   },
   'onboarding': {
     'skip_intro': 'छोड़ें',
@@ -1231,7 +1232,7 @@ const Map<String, dynamic> hindiTranslations = {
     'offline_empty_title': 'अभी तक कोई ऑफ़लाइन गाइड डाउनलोड नहीं हुई',
     'offline_empty_subtitle':
         'ऑफ़लाइन पढ़ने के लिए कोई सीखने का रास्ता डाउनलोड करें',
-    'offline_path_empty': 'इस रास्ते में कोई पूरी गाइड नहीं है',
+    'offline_path_empty': 'इस रास्ते की कोई गाइड अभी पूरी नहीं हुई',
     'offline_path_progress': '{total} में से {done} गाइड डाउनलोड हुईं',
     'offline_clear_all_title': 'सभी ऑफ़लाइन गाइड हटाएँ?',
     'offline_clear_all_message':
@@ -2396,6 +2397,7 @@ const Map<String, dynamic> hindiTranslations = {
       'suggestion_2': 'जिसने मुझे चोट पहुँचाई, उसे मैं कैसे क्षमा करूँ?',
       'suggestion_3': 'रोमियों 8:28 का असली अर्थ क्या है?',
       'quota_left': 'इस महीने {limit} में से {remaining} शेष',
+      'not_in_plan': 'आपके प्लान में नहीं · प्लान देखें',
       'status_ready': 'तैयार',
       'status_listening': 'सुन रहा है',
       'status_thinking': 'सोच रहा है',
@@ -3040,6 +3042,7 @@ const Map<String, dynamic> hindiTranslations = {
   },
   'study_mode': {
     'minutes': '{count} मिनट',
+    'minutes_short': '{count} मि',
     'quick': {
       'short_name': 'छोटी पढ़ाई',
       'name': 'छोटी पढ़ाई',
@@ -3049,7 +3052,7 @@ const Map<String, dynamic> hindiTranslations = {
     'standard': {
       'short_name': 'सामान्य',
       'name': 'सामान्य पढ़ाई',
-      'description': '6 हिस्सों के साथ पूरा गाइड',
+      'description': '6 हिस्सों में पूरी पढ़ाई',
       'duration_label': '8 मिनट की पढ़ाई',
     },
     'deep': {

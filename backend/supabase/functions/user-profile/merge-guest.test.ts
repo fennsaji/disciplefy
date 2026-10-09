@@ -2,6 +2,7 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import {
   GUEST_TOKEN_HEADER,
   isGuestNotAnonymousError,
+  mergeGuestNewForYou,
   normalizeMergeCounts,
   readGuestToken,
   validateMergeRequest,
@@ -56,4 +57,19 @@ Deno.test('only the not_anonymous RPC error maps to an invalid guest token', () 
   assertEquals(isGuestNotAnonymousError({ code: '22023', message: 'merge_guest:not_anonymous' }), false)
   assertEquals(isGuestNotAnonymousError({ code: '23505', message: 'duplicate key' }), false)
   assertEquals(isGuestNotAnonymousError(null), false)
+})
+
+Deno.test('mergeGuestNewForYou calls the merge function with guest and user', async () => {
+  const calls: Array<[string, Record<string, unknown>]> = []
+  const ok = await mergeGuestNewForYou(async (fn, args) => {
+    calls.push([fn, args])
+    return { error: null }
+  }, 'g', 'u')
+  assertEquals(ok, true)
+  assertEquals(calls, [['merge_guest_new_for_you', { p_guest: 'g', p_user: 'u' }]])
+})
+
+Deno.test('mergeGuestNewForYou never fails the merge', async () => {
+  assertEquals(await mergeGuestNewForYou(async () => ({ error: { code: '42883' } }), 'g', 'u'), false)
+  assertEquals(await mergeGuestNewForYou(() => Promise.reject(new Error('down')), 'g', 'u'), false)
 })

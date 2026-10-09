@@ -96,7 +96,12 @@ class VoiceQuotaModel extends VoiceQuotaEntity {
     required super.tier,
   });
 
+  /// Throws [FormatException] for an error payload, which is not an
+  /// allowance (read as one it showed "0 of 0 left this month").
   factory VoiceQuotaModel.fromJson(Map<String, dynamic> json) {
+    if (json['error'] != null) {
+      throw FormatException('Voice quota error: ${json['error']}');
+    }
     return VoiceQuotaModel(
       canStart: json['can_start'] as bool? ?? false,
       quotaLimit: json['quota_limit'] as int? ?? 0,

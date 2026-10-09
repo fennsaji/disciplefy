@@ -605,7 +605,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             }
           },
           child: ListenableBuilder(
-            listenable: sl<AuthStateProvider>(),
+            // The rollout switches too, so the Today layout follows an
+            // admin toggle once the config refreshes.
+            listenable: Listenable.merge([
+              sl<AuthStateProvider>(),
+              if (sl.isRegistered<RolloutFlags>()) sl<RolloutFlags>(),
+            ]),
             builder: (context, _) {
               final authProvider = sl<AuthStateProvider>();
               final currentUserName = authProvider.currentUserName;

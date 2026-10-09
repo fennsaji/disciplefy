@@ -76,7 +76,9 @@ class _MockTokenCosts extends Mock implements TokenCostRepository {}
 
 class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   final AppLanguage language;
-  _FakeLanguageService(this.language);
+  final String? savedMode;
+  final bool cached;
+  _FakeLanguageService(this.language, {this.savedMode, this.cached = true});
 
   @override
   Stream<AppLanguage> get languageChanges => const Stream.empty();
@@ -91,7 +93,11 @@ class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   Future<bool> isStudyContentLanguageDefault() async => true;
 
   @override
-  Future<String?> getStudyModePreferenceRaw() async => null;
+  Future<String?> getStudyModePreferenceRaw() async => savedMode;
+
+  @override
+  String? peekStudyModePreferenceRaw() =>
+      cached ? savedMode : throw StateError('not cached');
 
   @override
   Future<void> saveStudyContentLanguage(AppLanguage? language) async {}
@@ -103,9 +109,28 @@ class _FakeDefaultLanguage extends Fake implements GetDefaultStudyLanguage {
       const Right(StudyLanguage.english);
 }
 
-class _FakeSystemConfig extends Fake implements SystemConfigService {
-  final bool singleInput;
+class _FakeSystemConfig extends Fake
+    with ChangeNotifier
+    implements SystemConfigService {
+  bool singleInput;
   _FakeSystemConfig({this.singleInput = true});
+
+  /// An admin toggle arriving with a config refresh.
+  void toggle(bool on) {
+    singleInput = on;
+    notifyListeners();
+  }
+
+  @override
+  SystemConfig? get config => SystemConfig.fromJson({
+        'featureFlags': {
+          RolloutFlags.generateSingleInputKey: {
+            'enabled': singleInput,
+            'plans': <String>[],
+            'displayMode': 'hide',
+          },
+        },
+      });
 
   @override
   bool isFeatureEnabled(String featureKey, String planType) =>
@@ -178,11 +203,14 @@ late _MockTokenCosts _costRepo;
 Future<void> _register({
   AppLanguage language = AppLanguage.english,
   bool singleInput = true,
+  String? savedMode,
+  bool cached = true,
 }) async {
   SharedPreferences.setMockInitialValues(
       {'user_language_preference': language.code});
   final prefs = await SharedPreferences.getInstance();
-  final languageService = _FakeLanguageService(language);
+  final languageService =
+      _FakeLanguageService(language, savedMode: savedMode, cached: cached);
   final savedGuides = _MockSavedGuidesBloc();
   when(() => savedGuides.state).thenReturn(SavedGuidesInitial());
   _costRepo = _MockTokenCosts();
@@ -213,6 +241,7 @@ Widget _app({
   int credits = 50,
   Widget? home,
   bool premium = false,
+  double textScale = 1,
 }) {
   final tokenBloc = _MockTokenBloc();
   when(() => tokenBloc.state).thenReturn(TokenLoaded(
@@ -257,6 +286,11 @@ Widget _app({
       localizationsDelegates: const [AppLocalizations.delegate],
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
     ),
   );
 }
@@ -268,12 +302,15 @@ Future<void> pumpSimple(
   int credits = 50,
   Size size = const Size(390, 1400),
   bool premium = false,
+  String? savedMode,
+  double textScale = 1,
 }) async {
-  await _register(language: language);
+  await _register(language: language, savedMode: savedMode);
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(_app(dark: dark, credits: credits, premium: premium));
+  await tester.pumpWidget(_app(
+      dark: dark, credits: credits, premium: premium, textScale: textScale));
   await tester.pumpAndSettle();
 }
 
@@ -302,7 +339,7 @@ void main() {
 
     await _type(tester, 'What is the purpose of prayer?');
     expect(find.text('Question'), findsOneWidget);
-    expect(find.text('Using 10 credits'), findsOneWidget);
+    expect(find.text('Using 20 credits'), findsOneWidget);
     expect(find.text('Scripture'), findsNothing); // no type tabs
   });
 
@@ -399,20 +436,90 @@ void main() {
     expect(guide, findsOneWidget);
     final text = tester.widget<Text>(guide).data!;
     expect(text, contains('type=scripture'));
-    expect(text, contains('mode=quick'));
+    expect(text, contains('mode=standard'));
     expect(text, contains('input=Romans%208'));
   });
 
-  testWidgets('Standard depth is passed through', (tester) async {
+  testWidgets('Quick depth picked on the switch is passed through',
+      (tester) async {
     await pumpSimple(tester);
-    await tester.tap(find.byKey(const ValueKey('depth_switch_standard')));
+    await tester.tap(find.byKey(const ValueKey('depth_switch_quick')));
     await tester.pump();
     await _type(tester, 'Forgiveness');
     await _tapGenerate(tester);
 
     final text = tester.widget<Text>(find.textContaining('guide:')).data!;
     expect(text, contains('type=topic'));
-    expect(text, contains('mode=standard'));
+    expect(text, contains('mode=quick'));
+  });
+
+  group('initial depth follows the saved default study mode', () {
+    bool selected(WidgetTester tester, String mode) => tester
+        .widgetList<Semantics>(find.ancestor(
+            of: find.byKey(ValueKey('depth_switch_$mode')),
+            matching: find.byType(Semantics)))
+        .any((s) => s.properties.selected == true);
+
+    Future<String> generated(WidgetTester tester) async {
+      await _type(tester, 'Grace');
+      await _tapGenerate(tester);
+      return tester.widget<Text>(find.textContaining('guide:')).data!;
+    }
+
+    for (final unset in [null, 'recommended', 'ask']) {
+      testWidgets('"$unset" falls back to Standard', (tester) async {
+        await pumpSimple(tester, savedMode: unset);
+        expect(selected(tester, 'standard'), isTrue);
+        expect(selected(tester, 'quick'), isFalse);
+        expect(await generated(tester), contains('mode=standard'));
+      });
+    }
+
+    testWidgets('saved quick selects Quick', (tester) async {
+      await pumpSimple(tester, savedMode: 'quick');
+      expect(selected(tester, 'quick'), isTrue);
+      expect(await generated(tester), contains('mode=quick'));
+    });
+
+    testWidgets('saved standard selects Standard', (tester) async {
+      await pumpSimple(tester, savedMode: 'standard');
+      expect(selected(tester, 'standard'), isTrue);
+      expect(await generated(tester), contains('mode=standard'));
+    });
+
+    testWidgets('saved deep is named below the switch with its cost',
+        (tester) async {
+      await pumpSimple(tester, savedMode: 'deep');
+      expect(selected(tester, 'quick'), isFalse);
+      expect(selected(tester, 'standard'), isFalse);
+      expect(find.text('Deep Dive · 12 min'), findsOneWidget);
+      expect(find.text('Using 30 credits'), findsOneWidget);
+      expect(await generated(tester), contains('mode=deep'));
+    });
+
+    testWidgets('without a cached value the saved mode is read before showing',
+        (tester) async {
+      await _register(savedMode: 'quick', cached: false);
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+      expect(
+          tester
+              .widget<Visibility>(find.ancestor(
+                  of: find.byType(DepthSwitch),
+                  matching: find.byType(Visibility)))
+              .visible,
+          isTrue);
+      expect(selected(tester, 'quick'), isTrue);
+    });
+
+    testWidgets('the cost line follows the saved mode', (tester) async {
+      await pumpSimple(tester, savedMode: 'quick');
+      await _type(tester, 'Grace');
+      expect(find.text('Using 10 credits'), findsOneWidget);
+    });
   });
 
   testWidgets('typed text keeps the field one line; the tag is solid gold',
@@ -508,7 +615,7 @@ void main() {
     final text = tester.widget<Text>(find.textContaining('guide:')).data!;
     expect(text, contains('input=Psalm%2023%3A1'));
     expect(text, contains('type=scripture'));
-    expect(text, contains('mode=quick'));
+    expect(text, contains('mode=standard'));
   });
 
   testWidgets('a suggestion chip fills the input', (tester) async {
@@ -534,6 +641,25 @@ void main() {
     expect(find.text('Topic'), findsOneWidget);
   });
 
+  testWidgets('Generate tab follows an admin toggle without a restart',
+      (tester) async {
+    await _register();
+    final config = _FakeSystemConfig(singleInput: false);
+    await GetIt.instance.unregister<RolloutFlags>();
+    GetIt.instance.registerSingleton<RolloutFlags>(RolloutFlags(config));
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(home: const GenerateTabPage()));
+    await tester.pumpAndSettle();
+    expect(find.byType(GenerateStudyScreen), findsOneWidget);
+
+    config.toggle(true);
+    await tester.pumpAndSettle();
+    expect(find.byType(GenerateSimpleScreen), findsOneWidget);
+    expect(find.byType(GenerateStudyScreen), findsNothing);
+  });
+
   group('Generate tab picks the screen by flag', () {
     for (final on in [true, false]) {
       testWidgets('generate_single_input ${on ? 'on' : 'off'}', (tester) async {
@@ -553,6 +679,91 @@ void main() {
             on ? findsNothing : findsOneWidget);
       });
     }
+  });
+
+  group('the input field keeps one height', () {
+    setUpAll(loadAppFonts);
+
+    for (final language in AppLanguage.values) {
+      for (final scale in [1.0, 1.3]) {
+        testWidgets('320px ${language.code} ${scale}x: empty = typed',
+            (tester) async {
+          await pumpSimple(tester,
+              language: language,
+              size: const Size(320, 1400),
+              textScale: scale);
+          final field = find.byKey(const Key('generate_simple_field'));
+          final empty = tester.getSize(field).height;
+          expect(empty, 56);
+          // The title, subtitle and chips fit; the hint may only ellipsize
+          // at 1.3x.
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester, allow: {
+            if (scale > 1)
+              tester
+                  .widget<TextField>(find.byType(TextField))
+                  .decoration!
+                  .hintText!,
+            _verse.translations.esv,
+            _verse.translations.hindi,
+            _verse.translations.malayalam,
+          });
+
+          await _type(tester,
+              'What does the Bible say about forgiveness and grace today?');
+          expect(tester.getSize(field).height, empty);
+          expect(tester.takeException(), isNull);
+
+          await tester.tap(find.byTooltip('Delete'));
+          await tester.pumpAndSettle();
+          expect(tester.getSize(field).height, empty);
+        });
+      }
+    }
+
+    for (final width in [320.0, 360.0]) {
+      for (final language in AppLanguage.values) {
+        for (final scale in [1.0, 1.3]) {
+          testWidgets(
+              'depth switch stays one line: ${width.toInt()}px '
+              '${language.code} ${scale}x', (tester) async {
+            await pumpSimple(tester,
+                language: language, size: Size(width, 1400), textScale: scale);
+            for (final mode in ['quick', 'standard']) {
+              final segment = find.byKey(ValueKey('depth_switch_$mode'));
+              // 40 is the segment's minimum: taller means it wrapped.
+              expect(tester.getSize(segment).height, 40,
+                  reason: '$mode wrapped');
+            }
+            expect(tester.takeException(), isNull);
+            // At normal size nothing in the switch is cut off.
+            if (scale == 1.0) {
+              // The verse row ellipsizes by design.
+              expectNoTruncatedText(tester,
+                  ignoreUnder: [find.byType(VerseOfDayRow)]);
+            }
+          });
+        }
+      }
+    }
+
+    testWidgets('the depth switch uses the short minute form', (tester) async {
+      await pumpSimple(tester, language: AppLanguage.malayalam);
+      expect(find.text('3 മി'), findsOneWidget);
+      expect(find.text('8 മി'), findsOneWidget);
+    });
+
+    testWidgets('a subtitle under the title says what to type', (tester) async {
+      await pumpSimple(tester);
+      expect(find.byKey(const Key('generate_simple_subtitle')), findsOneWidget);
+      expect(find.text('Type a verse, a topic or a question'), findsOneWidget);
+      expect(find.text('e.g. John 3:16, grace'), findsOneWidget);
+      final title =
+          tester.getBottomLeft(find.text('What shall we study today?'));
+      final subtitle =
+          tester.getTopLeft(find.byKey(const Key('generate_simple_subtitle')));
+      expect(subtitle.dy, greaterThanOrEqualTo(title.dy));
+    });
   });
 
   group('no cut-off text at 360px and 320px', () {

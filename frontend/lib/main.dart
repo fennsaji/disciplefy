@@ -506,10 +506,10 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
   /// Initialize push notification service (mobile)
   Future<void> _initializeNotifications() async {
     try {
-      _notificationService = NotificationService(
-        supabaseClient: sl(),
-        router: AppRouter.router,
-      );
+      // The shared instance: the in-app permission sheet and AuthBloc use it
+      // too, so a permission granted there registers through these listeners.
+      // initialize() never asks for the permission itself.
+      _notificationService = sl<NotificationService>();
 
       await _notificationService!.initialize();
 
@@ -526,12 +526,16 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
   /// Initialize web push notification service
   Future<void> _initializeWebNotifications() async {
     try {
-      _notificationServiceWeb = NotificationServiceWeb(
+      final webService = NotificationServiceWeb(
         supabaseClient: sl(),
         router: AppRouter.router,
       );
+      _notificationServiceWeb = webService;
+      // The browser prompt belongs to the in-app sheet; once it grants the
+      // permission, start web push from there.
+      sl<NotificationService>().onWebPermissionGranted = webService.initialize;
 
-      await _notificationServiceWeb!.initialize();
+      await webService.initialize();
 
       Logger.warning(
           '✅ [MAIN] Web NotificationService initialized successfully');
@@ -608,6 +612,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
     if (state == AppLifecycleState.resumed) {
       Logger.debug('[MAIN] App resumed — refreshing subscription status');
       sl<SubscriptionBloc>().add(const RefreshSubscription());
+      // Pick up admin feature-flag changes (no-op while the config is fresh).
+      sl<SystemConfigService>().refreshIfStale();
     }
   }
 

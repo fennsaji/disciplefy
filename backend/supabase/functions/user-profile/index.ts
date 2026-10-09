@@ -19,6 +19,7 @@ import { assertFullAccount } from '../_shared/auth/user-context.ts'
 import {
   GUEST_TOKEN_INVALID,
   isGuestNotAnonymousError,
+  mergeGuestNewForYou,
   normalizeMergeCounts,
   readGuestToken,
   validateMergeRequest,
@@ -589,6 +590,15 @@ async function handleMergeGuest(
     console.error('[USER_PROFILE] merge_guest failed', { code: error.code })
     throw new AppError('DATABASE_ERROR', 'Could not merge guest progress', 500)
   }
+
+  // The guest's Home "New for you" history (kinds dismissed or shown). Best
+  // effort: on failure the account keeps its own history and the features
+  // tried as a guest are still found from the merged data on the next sync.
+  await mergeGuestNewForYou(
+    (fn, args) => services.supabaseServiceClient.rpc(fn, args),
+    guest.id,
+    callerId
+  )
 
   const counts = normalizeMergeCounts(data)
   console.log('[USER_PROFILE] merge_guest done', counts)

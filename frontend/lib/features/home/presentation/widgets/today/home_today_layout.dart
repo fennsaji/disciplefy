@@ -11,7 +11,6 @@ import 'package:disciplefy_bible_study/core/services/language_preference_service
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
-import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
 import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
@@ -24,8 +23,6 @@ import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_v
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_path_section.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/new_for_you_banner.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/save_progress_row.dart';
-import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
-import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
@@ -110,12 +107,11 @@ class HomeTodayLayout extends StatefulWidget {
 
 class _HomeTodayLayoutState extends State<HomeTodayLayout> {
   static const _sectionPadding = EdgeInsets.symmetric(horizontal: 20);
-  static const _memoryWait = Duration(seconds: 4);
 
   late final NewForYouCubit _newForYou = sl<NewForYouCubit>();
   bool _newForYouRequested = false;
 
-  /// The learning-path preference; [StudyMode.standard] until it is read.
+  /// The learning-path preference; [StudyMode.standard] if it cannot be read.
   StudyMode _savedMode = StudyMode.standard;
 
   /// The mode picked on the card in this session, which wins over defaults.
@@ -139,10 +135,11 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
     super.dispose();
   }
 
-  Future<void> _readSavedMode() async {
+  /// Read synchronously in initState so the card's first frame already
+  /// shows the saved mode (no Standard → saved jump).
+  void _readSavedMode() {
     try {
-      final mode = await resolveNextLessonMode();
-      if (mounted) setState(() => _savedMode = mode);
+      _savedMode = nextLessonModeNow();
     } catch (e) {
       Logger.warning('Today: lesson mode preference unavailable',
           tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
@@ -183,58 +180,20 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
       final config = sl<SystemConfigService>();
       final hidden =
           hiddenNewForYouKinds((key) => config.shouldHideFeature(key, plan));
-      // A guest is only ever offered paths: no memory or fellowship calls,
-      // both need an account.
-      final used = guest ? const <NewForYouKind>{} : await _usedKinds();
+      // Features already tried, the start date and other devices' history
+      // come from the server inside the cubit (sync_new_for_you); a guest is
+      // never offered account-only kinds.
       final eligibility = buildEligibility(
         isGuest: guest,
         firstLessonCompleted: FirstRunFlags.firstLessonCompleted ||
             (summary?.lessonsCompleted ?? 0) > 0,
         hiddenFeatures: hidden,
-        usedFeatures: used,
       );
       if (!mounted) return;
       await _newForYou.load(userId, eligibility);
     } catch (e) {
       Logger.warning('Today: New for you unavailable',
           tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
-    }
-  }
-
-  /// Features already in use. When a signal cannot be read, the feature
-  /// counts as used: it is not promoted this time and can be later.
-  Future<Set<NewForYouKind>> _usedKinds() async {
-    final results = await Future.wait([_memoryUsed(), _fellowshipsUsed()]);
-    return {
-      if (results[0]) NewForYouKind.memory,
-      if (results[1]) NewForYouKind.fellowships,
-    };
-  }
-
-  Future<bool> _memoryUsed() async {
-    try {
-      final bloc = context.read<MemoryVerseBloc>();
-      var state = bloc.state;
-      if (state is! DueVersesLoaded && state is! MemoryVerseError) {
-        state = await bloc.stream
-            .firstWhere((s) => s is DueVersesLoaded || s is MemoryVerseError)
-            .timeout(_memoryWait);
-      }
-      return state is DueVersesLoaded ? state.statistics.totalVerses > 0 : true;
-    } catch (_) {
-      return true;
-    }
-  }
-
-  Future<bool> _fellowshipsUsed() async {
-    try {
-      final language =
-          await sl<LanguagePreferenceService>().getStudyContentLanguage();
-      final result =
-          await sl<CommunityRepository>().getFellowships(language.code);
-      return result.fold((_) => true, (list) => list.isNotEmpty);
-    } catch (_) {
-      return true;
     }
   }
 
