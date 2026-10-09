@@ -227,26 +227,23 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                     primaryFill,
                     ReaderPalette.ink,
                   ),
-                  child: Text(
-                    context.tr(TranslationKeys.lessonContinueTo,
-                        {'n': lesson.lessonNumber + 1}),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: _ButtonLabel(context.tr(
+                      TranslationKeys.lessonContinueTo,
+                      {'n': lesson.lessonNumber + 1})),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () => context.go(AppRoutes.home),
                   style: _outlinedStyle(palette),
-                  child: Text(context.tr(TranslationKeys.lessonBackHome),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child:
+                      _ButtonLabel(context.tr(TranslationKeys.lessonBackHome)),
                 ),
               ] else
                 FilledButton(
                   onPressed: () => context.go(AppRoutes.home),
                   style: _buttonStyle(primaryFill, ReaderPalette.ink),
-                  child: Text(context.tr(TranslationKeys.lessonBackHome),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child:
+                      _ButtonLabel(context.tr(TranslationKeys.lessonBackHome)),
                 ),
             ],
           ),
@@ -258,8 +255,9 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
   ButtonStyle _buttonStyle(Color bg, Color fg) => FilledButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: fg,
+        // At least 40px; grows to a second line rather than cut the label.
         minimumSize: const Size.fromHeight(40),
-        maximumSize: const Size.fromHeight(40),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
@@ -268,11 +266,27 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
   ButtonStyle _outlinedStyle(ReaderPalette palette) => OutlinedButton.styleFrom(
         foregroundColor: palette.text,
         side: BorderSide(color: palette.outline),
+        // At least 40px; grows to a second line rather than cut the label.
         minimumSize: const Size.fromHeight(40),
-        maximumSize: const Size.fromHeight(40),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      );
+}
+
+/// A bottom-button label: up to two centred lines, never cut off.
+class _ButtonLabel extends StatelessWidget {
+  final String text;
+
+  const _ButtonLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        style: const TextStyle(height: 1.25),
       );
 }
 

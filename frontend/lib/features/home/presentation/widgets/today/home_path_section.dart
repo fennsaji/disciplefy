@@ -13,13 +13,11 @@ import 'package:disciplefy_bible_study/features/auth/presentation/widgets/accoun
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_from_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/choose_first_path_card.dart';
-import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
-/// Home's path block: the active path's header ("See path"), its progress
-/// strip (with "Lesson n of m" / "k to go" on long paths), and today's
-/// lesson card.
+/// Home's path block: the active path's header ("See path") above one card
+/// holding its progress strip and today's lesson ([TodayLessonCard]).
 ///
 /// Without a path (and not loading) it shows [ChooseFirstPathCard] instead,
 /// never a lesson card.
@@ -112,9 +110,6 @@ class _ActivePathState extends State<_ActivePath> {
   Widget build(BuildContext context) {
     final summary = widget.summary;
     final palette = ReaderPalette.of(context);
-    final next = summary.next;
-    final total = summary.lessonTotal;
-    final remaining = (total - summary.lessonsCompleted).clamp(0, total);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -139,7 +134,7 @@ class _ActivePathState extends State<_ActivePath> {
               style: TextButton.styleFrom(
                 foregroundColor: palette.gold,
                 // 40px tall to tap; the gap under the header is dropped so
-                // the strip moves by 2px only.
+                // the card moves by 2px only.
                 minimumSize: const Size(0, 40),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -156,22 +151,6 @@ class _ActivePathState extends State<_ActivePath> {
             ),
           ],
         ),
-        PathProgressStrip(
-          total: total,
-          completed: summary.lessonsCompleted,
-          current: summary.currentLessonNumber,
-          milestones: summary.milestoneNumbers,
-          onTap: () => _openPath(context),
-          // Long paths say where you are inside the strip card; dots show it.
-          lessonLabel: next == null
-              ? null
-              : context.tr(TranslationKeys.homeTodayLessonOf,
-                  {'n': next.number, 'm': total}),
-          toGoLabel: remaining > 0
-              ? context.tr(TranslationKeys.homeTodayToGo, {'k': remaining})
-              : null,
-        ),
-        const SizedBox(height: 10),
         TodayLessonCard(
           summary: summary,
           mode: widget.mode,
@@ -185,8 +164,8 @@ class _ActivePathState extends State<_ActivePath> {
   }
 }
 
-/// Skeleton of the section (header, strip, lesson card) while the path
-/// loads: the same height as the loaded section, so nothing jumps.
+/// Skeleton of the section (header, then one card for the strip and lesson)
+/// while the path loads: the loaded section's height, so nothing jumps.
 class _PathPlaceholder extends StatelessWidget {
   const _PathPlaceholder();
 
@@ -219,15 +198,16 @@ class _PathPlaceholder extends StatelessWidget {
             child: bar(160, 14),
           ),
           const SizedBox(height: 6),
-          Container(height: 56, decoration: card()),
-          const SizedBox(height: 12),
+          // One card: the strip, then eyebrow, title and button.
           Container(
-            height: 128,
-            padding: const EdgeInsets.all(16),
+            height: 192,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             decoration: card(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                bar(double.infinity, 28),
+                const SizedBox(height: 22),
                 bar(110, 10),
                 const SizedBox(height: 14),
                 bar(200, 16),

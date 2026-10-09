@@ -31,6 +31,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
 
   // Cache for learning paths (flat, used for enrolled paths / recommended)
   LearningPathsResult? _cachedPaths;
+
+  /// Page size [_cachedPaths] was fetched with: it only answers a request
+  /// for the same size.
+  int? _cachedPathsLimit;
   DateTime? _cacheTimestamp;
   String? _pathsCacheScope;
   static const _cacheDuration = Duration(hours: 24);
@@ -59,11 +63,16 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     String? search,
     String? fellowshipId,
   }) async {
-    // Only use cache for non-search, non-fellowship first-page requests without force-refresh
-    if (!forceRefresh &&
-        offset == 0 &&
+    // Only the unfiltered first page of the same size is cached: a page
+    // fetched with another limit, a search or a fellowship's flags must not
+    // answer this request.
+    final cacheable = offset == 0 &&
         search == null &&
         fellowshipId == null &&
+        includeEnrolled;
+    if (!forceRefresh &&
+        cacheable &&
+        _cachedPathsLimit == limit &&
         _isCacheValid(language)) {
       return Right(_cachedPaths!);
     }
@@ -76,13 +85,14 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         offset: offset,
         search: search,
         fellowshipId: fellowshipId,
+        forceRefresh: forceRefresh,
       );
 
       final result = response.toEntity();
 
-      // Cache only non-search first-page results
-      if (offset == 0 && search == null) {
+      if (cacheable) {
         _cachedPaths = result;
+        _cachedPathsLimit = limit;
         _cacheTimestamp = DateTime.now();
         _pathsCacheScope = LearningCacheScope.scopeFor(language);
       }
@@ -91,9 +101,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      // Return cached data if available (first page only)
+      // Return cached data if available (same first page only)
       if (_cachedPaths != null &&
-          offset == 0 &&
+          cacheable &&
+          _cachedPathsLimit == limit &&
           _pathsCacheScope == LearningCacheScope.scopeFor(language)) {
         return Right(_cachedPaths!);
       }
@@ -436,6 +447,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     _categoriesCacheTimestamp = null;
     _categoriesCacheScope = null;
     _cachedPaths = null;
+    _cachedPathsLimit = null;
     _cacheTimestamp = null;
     _pathsCacheScope = null;
     _detailsCache.clear();

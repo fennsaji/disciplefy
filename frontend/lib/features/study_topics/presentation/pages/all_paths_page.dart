@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
+import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
@@ -81,6 +82,10 @@ class _AllPathsPageState extends State<AllPathsPage> {
   /// The full flat list, kept while a search replaces the bloc's results.
   List<LearningPath> _all = const [];
 
+  /// Content-language changes made elsewhere (Settings) while this page
+  /// stays mounted in the Topics branch.
+  StreamSubscription<AppLanguage>? _languageSub;
+
   LearningPathsBloc get _bloc => context.read<LearningPathsBloc>();
 
   @override
@@ -89,11 +94,28 @@ class _AllPathsPageState extends State<AllPathsPage> {
     _category = widget.initialCategory;
     _language = widget.language;
     _searchController.addListener(() => setState(() {}));
+    if (sl.isRegistered<LanguagePreferenceService>()) {
+      _languageSub = sl<LanguagePreferenceService>()
+          .studyContentLanguageChanges
+          .listen(_onLanguageChanged);
+    }
+    _load();
+  }
+
+  /// Lists the paths again in the new content language; the old list is
+  /// dropped so its titles are never shown under the new language.
+  void _onLanguageChanged(AppLanguage language) {
+    if (!mounted || language.code == _language) return;
+    setState(() {
+      _language = language.code;
+      _all = const [];
+    });
     _load();
   }
 
   @override
   void dispose() {
+    _languageSub?.cancel();
     _navGuard.dispose();
     _debounce?.cancel();
     _searchController.dispose();
@@ -123,12 +145,33 @@ class _AllPathsPageState extends State<AllPathsPage> {
 
   void _onSearchChanged(String query) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () async {
-      final language = await _resolveLanguage();
-      if (!mounted) return;
-      _bloc.add(SearchLearningPaths(query: query.trim(), language: language));
-    });
+    _debounce = Timer(const Duration(milliseconds: 400), _search);
   }
+
+  Future<void> _search() async {
+    final language = await _resolveLanguage();
+    if (!mounted) return;
+    _bloc.add(SearchLearningPaths(
+        query: _searchController.text.trim(), language: language));
+  }
+
+  /// The flat list landed (open, refresh, return from a path, language
+  /// switch): it replaced any search results in the bloc, so search again
+  /// for what is still typed.
+  void _onFlatListLoaded() {
+    if (_searchController.text.trim().isEmpty) return;
+    _debounce?.cancel();
+    _search();
+  }
+
+  /// Whether [state] is the flat list of every path (it lands as a
+  /// "search" with an empty query).
+  static bool _isFlatList(LearningPathsState state) =>
+      state is LearningPathsLoaded &&
+      state.categories.isEmpty &&
+      (state.searchQuery?.isEmpty ?? true) &&
+      !state.isSearching &&
+      state.searchResults != null;
 
   void _toggleSearch() {
     setState(() {
@@ -177,16 +220,15 @@ class _AllPathsPageState extends State<AllPathsPage> {
       backgroundColor: palette.page,
       body: SafeArea(
         bottom: false,
-        child: BlocBuilder<LearningPathsBloc, LearningPathsState>(
+        child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
+          listenWhen: (previous, current) =>
+              _isFlatList(current) && current != previous,
+          listener: (context, state) => _onFlatListLoaded(),
           builder: (context, state) {
             // The flat load lands as a "search" with an empty query; a
             // real search later replaces those results, so keep the list.
-            if (state is LearningPathsLoaded &&
-                state.categories.isEmpty &&
-                (state.searchQuery?.isEmpty ?? true) &&
-                !state.isSearching &&
-                state.searchResults != null) {
-              _all = state.searchResults!;
+            if (_isFlatList(state)) {
+              _all = (state as LearningPathsLoaded).searchResults!;
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -326,7 +368,8 @@ class _AllPathsPageState extends State<AllPathsPage> {
 
   Widget _buildBody(BuildContext context, LearningPathsState state) {
     final palette = ReaderPalette.of(context);
-    final searching = _searchController.text.trim().isNotEmpty;
+    final query = _searchController.text.trim();
+    final searching = query.isNotEmpty;
 
     if (state is LearningPathsError && _all.isEmpty) {
       return _Message(
@@ -338,14 +381,29 @@ class _AllPathsPageState extends State<AllPathsPage> {
     }
     final loading = _all.isEmpty &&
         (state is LearningPathsInitial || state is LearningPathsLoading);
-    final busy = searching && state is LearningPathsLoaded && state.isSearching;
+    // Searching: only results for exactly what is typed are shown; until
+    // they land (debounce, request, a reload that replaced them) it is busy.
+    final results = searching &&
+            state is LearningPathsLoaded &&
+            !state.isSearching &&
+            state.searchQuery == query
+        ? state
+        : null;
+    final busy = searching && results == null && state is! LearningPathsError;
     if (loading || busy) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (searching && (results == null || results.searchFailed)) {
+      return _Message(
+        icon: Icons.error_outline,
+        text: context.tr(TranslationKeys.commonErrorTryAgain),
+        actionLabel: context.tr(TranslationKeys.topicsHubRetry),
+        onAction: _search,
+      );
+    }
 
-    final source = searching && state is LearningPathsLoaded
-        ? (state.searchResults ?? const <LearningPath>[])
-        : _all;
+    final source =
+        searching ? (results!.searchResults ?? const <LearningPath>[]) : _all;
     final filtered = _category == null
         ? source
         : source.where((p) => p.category == _category).toList();
@@ -364,8 +422,8 @@ class _AllPathsPageState extends State<AllPathsPage> {
       return _Message(
         icon: Icons.route_outlined,
         text: searching
-            ? context.tr(TranslationKeys.topicsHubNoSearchResults,
-                {'query': _searchController.text.trim()})
+            ? context
+                .tr(TranslationKeys.topicsHubNoSearchResults, {'query': query})
             : context.tr(TranslationKeys.learningPathsEmpty),
       );
     }

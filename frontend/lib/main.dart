@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -293,6 +294,12 @@ Future<void> _initializeFirebase() async {
       // Note: Requires firebase_options.dart generated via FlutterFire CLI
       await Firebase.initializeApp();
 
+      // iOS only: attest the app with Firebase App Check. Isolated so a
+      // failure never affects push, crash reporting or sign-in.
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await _activateAppCheck();
+      }
+
       // Set up background message handler (mobile only)
       FirebaseMessaging.onBackgroundMessage(
         firebaseMessagingBackgroundHandler,
@@ -335,6 +342,28 @@ Future<void> _initializeFirebase() async {
       Logger.debug(
           '   For mobile: Run "flutterfire configure" to set up Firebase');
     }
+  }
+}
+
+/// Activates Firebase App Check on iOS (App Attest, falling back to
+/// DeviceCheck on devices without App Attest; debug provider in debug builds).
+///
+/// Enforcement is not on yet, so any failure is logged (metadata only) and
+/// swallowed: the app and Google Sign-In keep working without attestation.
+/// Google Sign-In's own App Check token is configured natively in
+/// AppDelegate.swift (see docs/ops/ios-app-check.md).
+Future<void> _activateAppCheck() async {
+  try {
+    await FirebaseAppCheck.instance.activate(
+      appleProvider: kDebugMode
+          ? AppleProvider.debug
+          : AppleProvider.appAttestWithDeviceCheckFallback,
+    );
+    Logger.debug('✅ [MAIN] Firebase App Check activated',
+        context: {'debugProvider': kDebugMode});
+  } catch (e) {
+    Logger.warning('⚠️ [MAIN] Firebase App Check activation failed',
+        context: {'errorType': e.runtimeType.toString()});
   }
 }
 

@@ -438,6 +438,9 @@
     };
   </script>
   
+  <!-- App Check is iOS-only. Stop FlutterFire from downloading the unused
+       Firebase App Check JS SDK on web (keeps web loading unchanged). -->
+  <script>window.flutterfire_ignore_scripts = ['app_check'];</script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

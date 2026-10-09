@@ -15,6 +15,7 @@ import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/path_progress_strip.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -245,6 +246,22 @@ void main() {
     await tester.ensureVisible(find.text('Browse all paths'));
     await tester.tap(find.text('Browse all paths'));
     expect(taps, ['continue', 'see_path', 'see_all:Foundations', 'browse_all']);
+  });
+
+  testWidgets('Topics uses Home\'s merged card: strip inside, no Today label',
+      (tester) async {
+    final taps = <String>[];
+    await pumpTopics(tester,
+        summary: summary4of8,
+        categories: [cat('Foundations', 2)],
+        onTap: taps.add);
+    final card = find.byKey(const Key('today_path_card'));
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.byType(PathProgressStrip)),
+        findsOneWidget);
+    expect(find.text('Today'), findsNothing);
+    await tester.tap(find.byType(PathProgressStrip));
+    expect(taps, ['see_path']);
   });
 
   testWidgets('no enrolled path shows Start a path, categories still load',

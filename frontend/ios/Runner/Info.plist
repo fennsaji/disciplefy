@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<!-- iOS OAuth client ID (same as CLIENT_ID in GoogleService-Info.plist).
+		     Google Sign-In names its App Check resource after it. -->
+		<key>GIDClientID</key>
+		<string>16888340359-mlgetf72t019egd30vm8ppvkm4rsdtot.apps.googleusercontent.com</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

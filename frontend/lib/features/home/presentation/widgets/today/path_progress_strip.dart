@@ -14,13 +14,16 @@ StripTier stripTierFor(int total) {
   return StripTier.smooth;
 }
 
-/// Progress through the active path, inside a tappable card.
+/// Progress through the active path: the top of [TodayLessonCard], drawn
+/// without a frame of its own and tappable as one area (at least 40px tall).
 ///
 /// [current] is the next lesson number, or [total] when the path is finished.
+/// The current lesson is marked by its dot or knob alone: the lesson card's
+/// "TODAY · LESSON N" eyebrow below says which day it is.
 ///
 /// With [lessonLabel] ("Lesson 4 of 16"), the bar and segment tiers end in a
-/// caption row inside the card: the label, "· Today", [toGoLabel] (smooth bar
-/// only) and a chevron. Dots need no caption: "Today" sits under the dot.
+/// caption row: the label, [toGoLabel] (smooth bar only) and a chevron. Dots
+/// need no caption.
 class PathProgressStrip extends StatelessWidget {
   final int total;
   final int completed;
@@ -45,6 +48,9 @@ class PathProgressStrip extends StatelessWidget {
   static const double _currentSize = 28;
   static const double _futureSize = 18;
 
+  /// The strip's tap area is never shorter than this.
+  static const double minTapHeight = 40;
+
   // Normalised inputs: callers may pass out-of-range values.
   int get _total => total < 0 ? 0 : total;
   int get _completed => completed.clamp(0, _total);
@@ -58,8 +64,6 @@ class PathProgressStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final safeTotal = _total < 1 ? 1 : _total;
-    final slot = (_current.clamp(1, safeTotal) - 0.5) / safeTotal;
     final tier = stripTierFor(_total);
     final caption = tier != StripTier.dots && lessonLabel != null;
 
@@ -73,53 +77,34 @@ class PathProgressStrip extends StatelessWidget {
         strip = _smooth(palette);
     }
 
-    final todayStyle = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: palette.gold,
-    );
-
     return Semantics(
       button: onTap != null,
       label: context.tr(TranslationKeys.homeTodayStripSemantics,
           {'done': _completed, 'total': _total}),
       excludeSemantics: true,
       child: Material(
-        color: palette.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: palette.hairline),
-        ),
-        clipBehavior: Clip.antiAlias,
+        type: MaterialType.transparency,
         child: InkWell(
+          key: const Key('path_progress_strip'),
           onTap: onTap,
-          child: Padding(
-            padding: tier == StripTier.dots
-                ? const EdgeInsets.all(14)
-                : const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                strip,
-                if (caption)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: _caption(palette, todayStyle,
-                        showToGo: tier == StripTier.smooth),
-                  )
-                // Nothing is "today" on a finished path.
-                else if (!_finished) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment(slot * 2 - 1, 0),
-                    child: Text(
-                      context.tr(TranslationKeys.homeTodayLabel),
-                      key: const Key('strip_today'),
-                      style: todayStyle,
+          borderRadius: BorderRadius.circular(10),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: minTapHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  strip,
+                  if (caption)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child:
+                          _caption(palette, showToGo: tier == StripTier.smooth),
                     ),
-                  ),
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -127,59 +112,37 @@ class PathProgressStrip extends StatelessWidget {
     );
   }
 
-  /// "Lesson 4 of 16 · Today ... 17 to go >".
-  Widget _caption(ReaderPalette palette, TextStyle todayStyle,
-      {required bool showToGo}) {
+  /// "Lesson 4 of 16 ... 17 to go >".
+  Widget _caption(ReaderPalette palette, {required bool showToGo}) {
     final toGo = toGoLabel;
-    return Builder(
-      builder: (context) => Row(
-        key: const Key('strip_caption'),
-        children: [
-          Flexible(
-            child: Text.rich(
-              TextSpan(children: [
-                TextSpan(
-                  text: lessonLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: palette.text,
-                  ),
-                ),
-                if (!_finished) ...[
-                  TextSpan(
-                    text: '  ·  ',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: palette.muted,
-                    ),
-                  ),
-                  TextSpan(
-                    text: context.tr(TranslationKeys.homeTodayLabel),
-                    style: todayStyle,
-                  ),
-                ],
-              ]),
-              key: const Key('strip_today'),
+    return Row(
+      key: const Key('strip_caption'),
+      children: [
+        Flexible(
+          child: Text(
+            lessonLabel!,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
             ),
           ),
-          const Spacer(),
-          if (showToGo && toGo != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              toGo,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: palette.muted,
-              ),
+        ),
+        const Spacer(),
+        if (showToGo && toGo != null) ...[
+          const SizedBox(width: 8),
+          Text(
+            toGo,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: palette.muted,
             ),
-          ],
-          const SizedBox(width: 5),
-          Icon(Icons.chevron_right_rounded, size: 14, color: palette.muted),
+          ),
         ],
-      ),
+        const SizedBox(width: 5),
+        Icon(Icons.chevron_right_rounded, size: 14, color: palette.muted),
+      ],
     );
   }
 

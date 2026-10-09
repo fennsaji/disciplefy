@@ -16,7 +16,7 @@ enum GuestNudge {
   /// Lesson 1 of the first run: the full sign-up block with "Not now".
   signUpBlock,
 
-  /// Lessons 3 and 6: the dismissible "Keep these days safe" card.
+  /// Every other lesson: the dismissible "Keep these days safe" card.
   keepProgressCard,
 
   /// Last lesson of the path: sign-up block plus the next paths.
@@ -33,10 +33,8 @@ GuestNudge guestNudgeFor({
   if (!isGuest) return GuestNudge.none;
   if (isLastLesson) return GuestNudge.pathFinished;
   if (firstRun && lessonNumber == 1) return GuestNudge.signUpBlock;
-  if (lessonNumber == 3 || lessonNumber == 6) {
-    return GuestNudge.keepProgressCard;
-  }
-  return GuestNudge.none;
+  // Every other screen keeps a way to sign up.
+  return GuestNudge.keepProgressCard;
 }
 
 /// Remembers which "Keep these days safe" cards the guest closed, in Hive

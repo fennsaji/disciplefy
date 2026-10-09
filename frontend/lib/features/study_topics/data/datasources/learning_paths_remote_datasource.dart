@@ -14,6 +14,8 @@ import '../../../../core/utils/logger.dart';
 /// Remote data source for learning paths operations.
 abstract class LearningPathsRemoteDataSource {
   /// Get available learning paths (flat list, used for enrolled paths etc.).
+  ///
+  /// [forceRefresh] skips the persisted first page and fetches it again.
   Future<LearningPathsResponseModel> getLearningPaths({
     String language = 'en',
     bool includeEnrolled = true,
@@ -21,6 +23,7 @@ abstract class LearningPathsRemoteDataSource {
     int offset = 0,
     String? search,
     String? fellowshipId,
+    bool forceRefresh = false,
   });
 
   /// Get learning paths grouped by category (primary listing endpoint).
@@ -117,11 +120,20 @@ class LearningPathsRemoteDataSourceImpl
     int offset = 0,
     String? search,
     String? fellowshipId,
+    bool forceRefresh = false,
   }) async {
-    // Only use persistent cache when not searching and no fellowship context
-    if (offset == 0 && search == null && fellowshipId == null) {
+    // The persisted first page is keyed by its page size: a page cached for
+    // a 10-path request must never answer a 100-path one (All paths listed
+    // only the first 10). Searches and fellowship listings (which carry
+    // per-fellowship flags) are never cached.
+    final cacheable = offset == 0 &&
+        search == null &&
+        fellowshipId == null &&
+        includeEnrolled;
+    final cacheType = 'paths_l$limit';
+    if (cacheable && !forceRefresh) {
       final cached =
-          await _cache.getCachedResponse(type: 'paths', language: language);
+          await _cache.getCachedResponse(type: cacheType, language: language);
       if (cached != null) {
         _logDebug('Returning cached learning paths ($language)');
         return _parsePathsResponse(cached);
@@ -157,10 +169,9 @@ class LearningPathsRemoteDataSourceImpl
       _logDebug('Learning paths API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        // Only cache non-search first-page results
-        if (offset == 0 && search == null) {
+        if (cacheable) {
           await _cache.cacheResponse(
-              type: 'paths', language: language, responseBody: response.body);
+              type: cacheType, language: language, responseBody: response.body);
         }
         return _parsePathsResponse(response.body);
       } else {

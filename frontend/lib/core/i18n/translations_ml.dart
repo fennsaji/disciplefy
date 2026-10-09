@@ -3443,6 +3443,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'benefit_groups': 'ഗ്രൂപ്പിൽ ചേരാം, പുരോഗതി സൂക്ഷിക്കാം',
     'check_email': 'സ്ഥിരീകരിക്കാൻ ഇമെയിൽ നോക്കൂ: {email}',
     'keep_days_safe': '{n} ദിവസ തുടർച്ച കാക്കൂ',
+    'keep_day_safe': '1 ദിവസ തുടർച്ച കാക്കൂ',
     'keep_cta': 'സൂക്ഷിക്കാൻ സൈൻ അപ്പ്',
     'next_paths': 'അടുത്ത പാതകൾ',
     'sign_up_to_start': 'സൈൻ അപ്പ്',

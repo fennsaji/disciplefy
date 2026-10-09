@@ -3327,6 +3327,7 @@ const Map<String, dynamic> englishTranslations = {
     'benefit_groups': 'Join groups and keep your progress',
     'check_email': 'Check your email to confirm: {email}',
     'keep_days_safe': 'Keep these {n} days safe',
+    'keep_day_safe': 'Keep this day safe',
     'keep_cta': 'Sign up to keep them',
     'next_paths': 'Your next paths',
     'sign_up_to_start': 'Sign up to start',

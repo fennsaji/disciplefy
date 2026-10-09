@@ -133,6 +133,7 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
     int? offset = 0,
     String? search,
     String? fellowshipId,
+    bool? forceRefresh = false,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -145,6 +146,7 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
             #offset: offset,
             #search: search,
             #fellowshipId: fellowshipId,
+            #forceRefresh: forceRefresh,
           },
         ),
         returnValue: _i5.Future<_i2.LearningPathsResponseModel>.value(
@@ -160,6 +162,7 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
               #offset: offset,
               #search: search,
               #fellowshipId: fellowshipId,
+              #forceRefresh: forceRefresh,
             },
           ),
         )),

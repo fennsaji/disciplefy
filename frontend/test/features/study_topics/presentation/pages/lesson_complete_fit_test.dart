@@ -7,6 +7,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/guest_lesson_nudge.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -20,6 +22,8 @@ import '../../../../helpers/welcome_test_harness.dart';
 
 class _MockRepo extends Mock implements LearningPathsRepository {}
 
+class _MockGuest extends Mock implements GuestSessionService {}
+
 class _FakePrefs extends Fake implements LanguagePreferenceService {
   @override
   String? getLearningPathStudyModePreferenceRaw() => 'recommended';
@@ -27,6 +31,16 @@ class _FakePrefs extends Fake implements LanguagePreferenceService {
 
 /// Real lesson titles of New Believer Essentials, as the backend returns them.
 const _titles = {
+  'en': [
+    'Who Is Jesus Christ?',
+    'One God, Three Persons',
+    'Why Read the Bible?',
+    'Assurance of Your Salvation',
+    'How to Pray',
+    'The Importance of the Church',
+    "Baptism and the Lord's Supper",
+    'Sharing Your Faith',
+  ],
   'hi': [
     'यीशु मसीह कौन हैं?',
     'एक परमेश्वर, तीन व्यक्ति',
@@ -50,6 +64,7 @@ const _titles = {
 };
 
 const _pathTitle = {
+  'en': 'New Believer Essentials',
   'hi': 'विश्वास की नींव',
   'ml': 'വിശ്വാസ അടിസ്ഥാനങ്ങൾ',
 };
@@ -96,7 +111,8 @@ void main() {
     return sl.reset();
   });
 
-  Future<void> pumpPage(WidgetTester tester, FitCase c, int n) async {
+  Future<void> pumpPage(WidgetTester tester, FitCase c, int n,
+      {bool guest = false, double height = 780, double textScale = 1}) async {
     final repo = _MockRepo();
     when(() => repo.getLearningPathDetails(
           pathId: any(named: 'pathId'),
@@ -104,29 +120,71 @@ void main() {
           forceRefresh: any(named: 'forceRefresh'),
         )).thenAnswer((_) async => Right(_path(c.lang)));
     sl.registerSingleton<LearningPathsRepository>(repo);
-    useFitSurface(tester, c);
+    if (guest) {
+      final session = _MockGuest();
+      when(() => session.isGuest).thenReturn(true);
+      sl.registerSingleton<GuestSessionService>(session);
+    }
+    useFitSurface(tester, c, height: height);
     await tester.pumpWidget(welcomeApp(
       language: c.lang,
       dark: c.dark,
       path: '/lesson-complete',
-      screen: LessonCompletePage(
-        args: LessonCompleteArgs(
-          lesson: LessonRef(
-            pathId: 'p',
-            pathTitle: _pathTitle[c.lang]!,
-            lessonNumber: n,
-            lessonTotal: 8,
+      screen: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: LessonCompletePage(
+            args: LessonCompleteArgs(
+              lesson: LessonRef(
+                pathId: 'p',
+                pathTitle: _pathTitle[c.lang]!,
+                lessonNumber: n,
+                lessonTotal: 8,
+              ),
+              lessonTitle: _titles[c.lang]![n - 1],
+              mode: StudyMode.quick,
+              language: c.lang,
+            ),
+            extraSections: [
+              GuestLessonNudge(
+                pathId: 'p',
+                lessonNumber: n,
+                isLastLesson: n == 8,
+                firstRun: false,
+                language: c.lang,
+              ),
+            ],
           ),
-          lessonTitle: _titles[c.lang]![n - 1],
-          mode: StudyMode.quick,
-          language: c.lang,
         ),
       ),
     ));
     await tester.pumpAndSettle();
   }
 
-  for (final c in fitCases()) {
+  for (final c in fitCases(languages: const ['en', 'hi', 'ml'])) {
+    for (final scale in const [1.0, 1.3]) {
+      testWidgets('${c.name} ${scale}x: bottom button labels are never cut',
+          (tester) async {
+        sl.allowReassignment = true;
+        addTearDown(() => sl.allowReassignment = false);
+        for (final n in const [4, 8]) {
+          await tester.pumpWidget(const SizedBox());
+          await pumpPage(tester, c, n, height: 640, textScale: scale);
+          expect(tester.takeException(), isNull);
+          final screen = tester.view.physicalSize.height;
+          for (final b in [
+            ...tester.widgetList(find.byType(FilledButton)),
+            ...tester.widgetList(find.byType(OutlinedButton)),
+          ]) {
+            expect(tester.getRect(find.byWidget(b)).bottom,
+                lessThanOrEqualTo(screen));
+          }
+          expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
+        }
+      });
+    }
+
     testWidgets('${c.name}: lesson 4 complete fits', (tester) async {
       await pumpPage(tester, c, 4);
       expect(
@@ -138,6 +196,23 @@ void main() {
       expect(find.byType(OutlinedButton), findsOneWidget);
       expect(tester.takeException(), isNull);
       // Lesson titles may clamp at two lines by design.
+      expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
+    });
+
+    testWidgets('${c.name}: guest lesson 2 card fits at 640 and 1.3x',
+        (tester) async {
+      await pumpPage(tester, c, 2, guest: true, height: 640, textScale: 1.3);
+      final card = find.byKey(const Key('keep_progress_card'));
+      expect(card, findsOneWidget);
+      await tester.ensureVisible(card);
+      await tester.pumpAndSettle();
+      // Continue / Back home stay on screen below the scrolling content.
+      final screen = tester.view.physicalSize.height;
+      expect(tester.getRect(find.byType(FilledButton)).bottom,
+          lessThanOrEqualTo(screen));
+      expect(tester.getRect(find.byType(OutlinedButton)).bottom,
+          lessThanOrEqualTo(screen));
+      expect(tester.takeException(), isNull);
       expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
     });
 
