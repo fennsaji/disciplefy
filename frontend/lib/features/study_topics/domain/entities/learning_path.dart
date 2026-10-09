@@ -40,6 +40,14 @@ class LearningPath extends Equatable {
   /// with the recommended path; `null` elsewhere or when nothing is left.
   final String? nextTopicTitle;
 
+  /// 1-based number of the first unfinished lesson, read from the lesson rows
+  /// by the server; `null` when every lesson is done. Only meaningful when
+  /// [nextLessonNumberKnown] (older servers do not send it).
+  final int? nextLessonNumber;
+
+  /// Whether the server sent [nextLessonNumber] for this path.
+  final bool nextLessonNumberKnown;
+
   const LearningPath({
     required this.id,
     required this.slug,
@@ -62,6 +70,8 @@ class LearningPath extends Equatable {
     this.fellowshipCompleted = false,
     this.displayOrder,
     this.nextTopicTitle,
+    this.nextLessonNumber,
+    this.nextLessonNumberKnown = false,
   });
 
   @override
@@ -87,11 +97,23 @@ class LearningPath extends Equatable {
         fellowshipCompleted,
         displayOrder,
         nextTopicTitle,
+        nextLessonNumber,
+        nextLessonNumberKnown,
       ];
 
   /// [shortTitle] when it has text, otherwise [title].
   String get displayTitle =>
       (shortTitle?.trim().isNotEmpty ?? false) ? shortTitle! : title;
+
+  /// The lesson the user is on: the first unfinished one when the server
+  /// sent it ([topicsCount] once finished), else the old count-based guess.
+  int get currentLessonNumber {
+    if (topicsCount <= 0) return 1;
+    if (nextLessonNumberKnown) {
+      return (nextLessonNumber ?? topicsCount).clamp(1, topicsCount);
+    }
+    return (topicsCompleted + 1).clamp(1, topicsCount);
+  }
 
   /// Number of topics completed, derived from progress percentage.
   int get topicsCompleted =>
@@ -125,6 +147,9 @@ class LearningPath extends Equatable {
       displayOrder: displayOrder,
       // A progress change may finish that topic; drop rather than show stale.
       nextTopicTitle: progressPercentage == null ? nextTopicTitle : null,
+      nextLessonNumber: progressPercentage == null ? nextLessonNumber : null,
+      nextLessonNumberKnown:
+          progressPercentage == null && nextLessonNumberKnown,
     );
   }
 

@@ -125,8 +125,7 @@ class TopicsCurrentPathCard extends StatelessWidget {
         PathProgressStrip(
           total: total,
           completed: summary.lessonsCompleted,
-          current: next?.number ??
-              (summary.isFinished ? total : summary.lessonsCompleted + 1),
+          current: summary.currentLessonNumber,
           milestones: summary.milestoneNumbers,
           onTap: onSeePath,
         ),

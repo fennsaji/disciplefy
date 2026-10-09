@@ -42,6 +42,13 @@ class ActivePathSummary extends Equatable {
   final List<int> milestoneNumbers;
   final String? recommendedMode;
 
+  /// 1-based number of the first unfinished lesson from the server's lesson
+  /// rows; null when finished. Only meaningful when [nextLessonNumberKnown].
+  final int? nextLessonNumber;
+
+  /// Whether the server sent [nextLessonNumber] (older servers do not).
+  final bool nextLessonNumberKnown;
+
   const ActivePathSummary({
     required this.pathId,
     required this.title,
@@ -53,10 +60,22 @@ class ActivePathSummary extends Equatable {
     this.next,
     this.milestoneNumbers = const [],
     this.recommendedMode,
+    this.nextLessonNumber,
+    this.nextLessonNumberKnown = false,
   });
 
   String get displayTitle =>
       (shortTitle?.isNotEmpty ?? false) ? shortTitle! : title;
+
+  /// The lesson to highlight: [next]'s number, else the server's next lesson
+  /// number (the last lesson once finished), else the old count-based guess.
+  int get currentLessonNumber {
+    if (next != null) return next!.number;
+    if (nextLessonNumberKnown) {
+      return nextLessonNumber ?? lessonTotal;
+    }
+    return isFinished ? lessonTotal : lessonsCompleted + 1;
+  }
 
   bool get isFinished =>
       next == null && lessonsCompleted >= lessonTotal && lessonTotal > 0;
@@ -73,5 +92,7 @@ class ActivePathSummary extends Equatable {
         next,
         milestoneNumbers,
         recommendedMode,
+        nextLessonNumber,
+        nextLessonNumberKnown,
       ];
 }

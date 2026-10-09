@@ -59,4 +59,38 @@ void main() {
     expect(s.next, isNull);
     expect(s.milestoneNumbers, [1]);
   });
+
+  // Out-of-order completion: lessons 1 and 3 of 4 done. The strip used
+  // "completed + 1" = 3, which is finished; the server's lesson rows say 2.
+  test('highlights the server next_lesson_number, not completed + 1', () {
+    final s = ActivePathSummaryModel.fromJson({
+      'id': 'p',
+      'title': 'Romans',
+      'topics_count': 4,
+      'topics_completed': 2,
+      'next_lesson_number': 2,
+    });
+    expect(s.nextLessonNumberKnown, isTrue);
+    expect(s.currentLessonNumber, 2);
+  });
+
+  test('next_lesson_number null means finished: the last lesson', () {
+    final s = ActivePathSummaryModel.fromJson({
+      'id': 'p',
+      'topics_count': 4,
+      'topics_completed': 4,
+      'next_lesson_number': null,
+    });
+    expect(s.currentLessonNumber, 4);
+  });
+
+  test('older servers without the field keep the count-based guess', () {
+    final s = ActivePathSummaryModel.fromJson({
+      'id': 'p',
+      'topics_count': 4,
+      'topics_completed': 2,
+    });
+    expect(s.nextLessonNumberKnown, isFalse);
+    expect(s.currentLessonNumber, 3);
+  });
 }

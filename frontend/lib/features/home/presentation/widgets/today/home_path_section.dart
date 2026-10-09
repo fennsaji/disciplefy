@@ -159,8 +159,7 @@ class _ActivePathState extends State<_ActivePath> {
         PathProgressStrip(
           total: total,
           completed: summary.lessonsCompleted,
-          current: next?.number ??
-              (summary.isFinished ? total : summary.lessonsCompleted + 1),
+          current: summary.currentLessonNumber,
           milestones: summary.milestoneNumbers,
           onTap: () => _openPath(context),
           // Long paths say where you are inside the strip card; dots show it.

@@ -74,7 +74,7 @@ class TopicsContinueData {
     return TopicsContinueData(
       pathId: path.id,
       title: path.displayTitle,
-      currentTopic: (path.topicsCompleted + 1).clamp(1, path.topicsCount),
+      currentTopic: path.currentLessonNumber,
       totalTopics: path.topicsCount,
       progressPercentage: path.progressPercentage.clamp(0, 100),
     );

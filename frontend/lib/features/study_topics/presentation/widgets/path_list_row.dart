@@ -30,7 +30,7 @@ int? enrolledLessonOf(LearningPath path) {
   if (!path.isEnrolled || path.isCompleted || path.topicsCount <= 0) {
     return null;
   }
-  return (path.topicsCompleted + 1).clamp(1, path.topicsCount);
+  return path.currentLessonNumber;
 }
 
 /// One path in a list (Topics categories, All paths, category page): a

@@ -29,6 +29,10 @@ class ActivePathSummaryModel {
       next: next,
       milestoneNumbers: _ints(pathJson['milestone_positions']),
       recommendedMode: mode is String && mode.isNotEmpty ? mode : defaultMode,
+      nextLessonNumber: pathJson['next_lesson_number'] is num
+          ? (pathJson['next_lesson_number'] as num).toInt()
+          : null,
+      nextLessonNumberKnown: pathJson.containsKey('next_lesson_number'),
     );
   }
 

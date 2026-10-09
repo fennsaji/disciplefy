@@ -47,10 +47,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
     ..sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
   if (enrolled.isEmpty) return null;
   final path = enrolled.first;
-  return (
-    path: path,
-    lesson: (path.topicsCompleted + 1).clamp(1, path.topicsCount),
-  );
+  return (path: path, lesson: path.currentLessonNumber);
 }
 
 /// Every learning path, filtered client-side by category chips ("All",
