@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import Firebase
+import GoogleSignIn
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -11,6 +12,7 @@ import Firebase
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     FirebaseApp.configure()
+    configureGoogleSignInAppCheck()
     GeneratedPluginRegistrant.register(with: self)
 
     // Register for push notifications
@@ -28,6 +30,34 @@ import Firebase
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// Prepares App Check for Google Sign-In so its OAuth requests carry an
+  /// App Check token (App Attest in release, debug provider in debug builds
+  /// and on the simulator). Must run before the first sign-in. Enforcement is
+  /// not on yet: failures are logged and sign-in proceeds without a token.
+  /// See docs/ops/ios-app-check.md.
+  private func configureGoogleSignInAppCheck() {
+    #if DEBUG || targetEnvironment(simulator)
+    // The iOS API key from GoogleService-Info.plist; it must allow the
+    // Firebase App Check API. The debug token is printed to the Xcode console
+    // after "App Check debug token:" and must be registered in Firebase.
+    guard let apiKey = FirebaseApp.app()?.options.apiKey else {
+      NSLog("[AppCheck] Google Sign-In debug provider skipped: no API key")
+      return
+    }
+    GIDSignIn.sharedInstance.configureDebugProvider(withAPIKey: apiKey) { error in
+      if let error = error as NSError? {
+        NSLog("[AppCheck] Google Sign-In debug provider failed: %@ %ld", error.domain, error.code)
+      }
+    }
+    #else
+    GIDSignIn.sharedInstance.configure { error in
+      if let error = error as NSError? {
+        NSLog("[AppCheck] Google Sign-In App Check failed: %@ %ld", error.domain, error.code)
+      }
+    }
+    #endif
   }
 }
 
