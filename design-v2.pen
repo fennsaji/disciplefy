@@ -4052,15 +4052,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "IISJ5",
+                              "id": "Gz2ce",
                               "width": "fill_container",
                               "fill": "#17171C",
                               "cornerRadius": 16,
-                              "stroke": "#FFFFFF0D",
-                              "strokeWidth": 1,
+                              "stroke": "#E3B15455",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -4235,38 +4235,8 @@
                                   "id": "q90Jz",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "Gru7S",
-                                      "x": 25,
-                                      "y": 0,
-                                      "fill": "#E3B154",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "Gz2ce",
-                              "width": "fill_container",
-                              "fill": "#17171C",
-                              "cornerRadius": 16,
-                              "stroke": "#E3B15455",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "VQdq9",
@@ -9369,15 +9339,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "wdvTZ",
+                              "id": "FZCIQ",
                               "width": "fill_container",
                               "fill": "#17171C",
                               "cornerRadius": 16,
-                              "stroke": "#FFFFFF0D",
-                              "strokeWidth": 1,
+                              "stroke": "#E3B15455",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -9552,38 +9522,8 @@
                                   "id": "Mrdiu",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "B1ANra",
-                                      "x": 25,
-                                      "y": 0,
-                                      "fill": "#E3B154",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "FZCIQ",
-                              "width": "fill_container",
-                              "fill": "#17171C",
-                              "cornerRadius": 16,
-                              "stroke": "#E3B15455",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "b6F9fZ",
@@ -12085,15 +12025,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "X1ev0",
+                              "id": "wZzmU",
                               "width": "fill_container",
                               "fill": "#FFFFFF",
                               "cornerRadius": 16,
-                              "stroke": "#E9E5DB",
-                              "strokeWidth": 1,
+                              "stroke": "#B8860B55",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -12268,38 +12208,8 @@
                                   "id": "VSCvx",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "HaG4D",
-                                      "x": 25,
-                                      "y": 0,
-                                      "fill": "#986910",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "wZzmU",
-                              "width": "fill_container",
-                              "fill": "#FFFFFF",
-                              "cornerRadius": 16,
-                              "stroke": "#B8860B55",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "VbJiW",
@@ -14416,15 +14326,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "cwzOx",
+                              "id": "Fen3h",
                               "width": "fill_container",
                               "fill": "#17171C",
                               "cornerRadius": 16,
-                              "stroke": "#FFFFFF0D",
-                              "strokeWidth": 1,
+                              "stroke": "#E3B15455",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -14621,38 +14531,8 @@
                                   "id": "SvUys",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "t7voPv",
-                                      "x": 110,
-                                      "y": 0,
-                                      "fill": "#E3B154",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "Fen3h",
-                              "width": "fill_container",
-                              "fill": "#17171C",
-                              "cornerRadius": 16,
-                              "stroke": "#E3B15455",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "qmwwH",
@@ -15660,15 +15540,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "mBylh",
+                              "id": "Yrzzz",
                               "width": "fill_container",
                               "fill": "#FFFFFF",
                               "cornerRadius": 16,
-                              "stroke": "#E9E5DB",
-                              "strokeWidth": 1,
+                              "stroke": "#B8860B55",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -15865,38 +15745,8 @@
                                   "id": "eRoA8",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "bipOG",
-                                      "x": 110,
-                                      "y": 0,
-                                      "fill": "#986910",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "Yrzzz",
-                              "width": "fill_container",
-                              "fill": "#FFFFFF",
-                              "cornerRadius": 16,
-                              "stroke": "#B8860B55",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "t5aVi",
@@ -16919,15 +16769,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "GlIQ2",
+                              "id": "MtlZO",
                               "width": "fill_container",
                               "fill": "#17171C",
                               "cornerRadius": 16,
-                              "stroke": "#FFFFFF0D",
-                              "strokeWidth": 1,
+                              "stroke": "#E3B15455",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -17102,38 +16952,8 @@
                                   "id": "PfxYW",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "mIJr7",
-                                      "x": 25,
-                                      "y": 0,
-                                      "fill": "#E3B154",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "MtlZO",
-                              "width": "fill_container",
-                              "fill": "#17171C",
-                              "cornerRadius": 16,
-                              "stroke": "#E3B15455",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "w3iHdO",
@@ -19428,15 +19248,15 @@
                             },
                             {
                               "type": "frame",
-                              "id": "iZNKx",
+                              "id": "t2moKd",
                               "width": "fill_container",
                               "fill": "#17171C",
                               "cornerRadius": 16,
-                              "stroke": "#FFFFFF0D",
-                              "strokeWidth": 1,
+                              "stroke": "#E3B15455",
+                              "strokeWidth": 1.2,
                               "layout": "vertical",
-                              "gap": 8,
-                              "padding": 14,
+                              "gap": 12,
+                              "padding": 16,
                               "children": [
                                 {
                                   "type": "frame",
@@ -19633,38 +19453,8 @@
                                   "id": "j2zmb",
                                   "width": "fill_container",
                                   "height": 14,
-                                  "layout": "none",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "xb3iI",
-                                      "x": 110,
-                                      "y": 0,
-                                      "fill": "#E3B154",
-                                      "textGrowth": "fixed-width",
-                                      "width": 60,
-                                      "content": "Today",
-                                      "textAlign": "center",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 12,
-                                      "fontWeight": "600"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "t2moKd",
-                              "width": "fill_container",
-                              "fill": "#17171C",
-                              "cornerRadius": 16,
-                              "stroke": "#E3B15455",
-                              "strokeWidth": 1.2,
-                              "layout": "vertical",
-                              "gap": 10,
-                              "padding": 16,
-                              "children": [
+                                  "layout": "none"
+                                },
                                 {
                                   "type": "frame",
                                   "id": "dvdif",
@@ -20402,15 +20192,15 @@
                         },
                         {
                           "type": "frame",
-                          "id": "b6EnJb",
+                          "id": "wT5dH",
                           "width": "fill_container",
                           "fill": "#17171C",
                           "cornerRadius": 16,
-                          "stroke": "#FFFFFF0D",
-                          "strokeWidth": 1,
+                          "stroke": "#E3B15455",
+                          "strokeWidth": 1.2,
                           "layout": "vertical",
-                          "gap": 8,
-                          "padding": 14,
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
                               "type": "frame",
@@ -20607,38 +20397,8 @@
                               "id": "X5LAz",
                               "width": "fill_container",
                               "height": 14,
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "BnY9y",
-                                  "x": 110,
-                                  "y": 0,
-                                  "fill": "#E3B154",
-                                  "textGrowth": "fixed-width",
-                                  "width": 60,
-                                  "content": "Today",
-                                  "textAlign": "center",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "wT5dH",
-                          "width": "fill_container",
-                          "fill": "#17171C",
-                          "cornerRadius": 16,
-                          "stroke": "#E3B15455",
-                          "strokeWidth": 1.2,
-                          "layout": "vertical",
-                          "gap": 10,
-                          "padding": 16,
-                          "children": [
+                              "layout": "none"
+                            },
                             {
                               "type": "frame",
                               "id": "aUSn9",
@@ -21016,15 +20776,15 @@
                         },
                         {
                           "type": "frame",
-                          "id": "L9uOw",
+                          "id": "G5ESmY",
                           "width": "fill_container",
                           "fill": "#17171C",
                           "cornerRadius": 16,
-                          "stroke": "#FFFFFF0D",
-                          "strokeWidth": 1,
+                          "stroke": "#E3B15455",
+                          "strokeWidth": 1.2,
                           "layout": "vertical",
-                          "gap": 8,
-                          "padding": 14,
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
                               "type": "frame",
@@ -21221,38 +20981,8 @@
                               "id": "uBH1Z",
                               "width": "fill_container",
                               "height": 14,
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "G8WJr",
-                                  "x": 110,
-                                  "y": 0,
-                                  "fill": "#E3B154",
-                                  "textGrowth": "fixed-width",
-                                  "width": 60,
-                                  "content": "Today",
-                                  "textAlign": "center",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "G5ESmY",
-                          "width": "fill_container",
-                          "fill": "#17171C",
-                          "cornerRadius": 16,
-                          "stroke": "#E3B15455",
-                          "strokeWidth": 1.2,
-                          "layout": "vertical",
-                          "gap": 10,
-                          "padding": 16,
-                          "children": [
+                              "layout": "none"
+                            },
                             {
                               "type": "frame",
                               "id": "Jsiu3",
@@ -21630,15 +21360,15 @@
                         },
                         {
                           "type": "frame",
-                          "id": "AMDiP",
+                          "id": "KQ5YQ",
                           "width": "fill_container",
                           "fill": "#17171C",
                           "cornerRadius": 16,
-                          "stroke": "#FFFFFF0D",
-                          "strokeWidth": 1,
+                          "stroke": "#E3B15455",
+                          "strokeWidth": 1.2,
                           "layout": "vertical",
-                          "gap": 8,
-                          "padding": 14,
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
                               "type": "frame",
@@ -21835,38 +21565,8 @@
                               "id": "n0wTJ",
                               "width": "fill_container",
                               "height": 14,
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "ZVyvE",
-                                  "x": 110,
-                                  "y": 0,
-                                  "fill": "#E3B154",
-                                  "textGrowth": "fixed-width",
-                                  "width": 60,
-                                  "content": "Today",
-                                  "textAlign": "center",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "KQ5YQ",
-                          "width": "fill_container",
-                          "fill": "#17171C",
-                          "cornerRadius": 16,
-                          "stroke": "#E3B15455",
-                          "strokeWidth": 1.2,
-                          "layout": "vertical",
-                          "gap": 10,
-                          "padding": 16,
-                          "children": [
+                              "layout": "none"
+                            },
                             {
                               "type": "frame",
                               "id": "FaHZ5",
@@ -22244,15 +21944,15 @@
                         },
                         {
                           "type": "frame",
-                          "id": "lbMlO",
+                          "id": "j7qOAF",
                           "width": "fill_container",
                           "fill": "#17171C",
                           "cornerRadius": 16,
-                          "stroke": "#FFFFFF0D",
-                          "strokeWidth": 1,
+                          "stroke": "#E3B15455",
+                          "strokeWidth": 1.2,
                           "layout": "vertical",
-                          "gap": 8,
-                          "padding": 14,
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
                               "type": "frame",
@@ -22449,38 +22149,8 @@
                               "id": "d10hTq",
                               "width": "fill_container",
                               "height": 14,
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "rJEfS",
-                                  "x": 110,
-                                  "y": 0,
-                                  "fill": "#E3B154",
-                                  "textGrowth": "fixed-width",
-                                  "width": 60,
-                                  "content": "Today",
-                                  "textAlign": "center",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "j7qOAF",
-                          "width": "fill_container",
-                          "fill": "#17171C",
-                          "cornerRadius": 16,
-                          "stroke": "#E3B15455",
-                          "strokeWidth": 1.2,
-                          "layout": "vertical",
-                          "gap": 10,
-                          "padding": 16,
-                          "children": [
+                              "layout": "none"
+                            },
                             {
                               "type": "frame",
                               "id": "sS7CS",
@@ -22858,15 +22528,15 @@
                         },
                         {
                           "type": "frame",
-                          "id": "C3BeAP",
+                          "id": "PR0dJ",
                           "width": "fill_container",
                           "fill": "#17171C",
                           "cornerRadius": 16,
-                          "stroke": "#FFFFFF0D",
-                          "strokeWidth": 1,
+                          "stroke": "#E3B15455",
+                          "strokeWidth": 1.2,
                           "layout": "vertical",
-                          "gap": 8,
-                          "padding": 14,
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
                               "type": "frame",
@@ -23063,38 +22733,8 @@
                               "id": "eMC4K",
                               "width": "fill_container",
                               "height": 14,
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "nYAb5",
-                                  "x": 110,
-                                  "y": 0,
-                                  "fill": "#E3B154",
-                                  "textGrowth": "fixed-width",
-                                  "width": 60,
-                                  "content": "Today",
-                                  "textAlign": "center",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "PR0dJ",
-                          "width": "fill_container",
-                          "fill": "#17171C",
-                          "cornerRadius": 16,
-                          "stroke": "#E3B15455",
-                          "strokeWidth": 1.2,
-                          "layout": "vertical",
-                          "gap": 10,
-                          "padding": 16,
-                          "children": [
+                              "layout": "none"
+                            },
                             {
                               "type": "frame",
                               "id": "T55qp",
@@ -39758,15 +39398,16 @@
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "cMEdH",
+                                  "id": "Y7QI8C",
+                                  "name": "Today lesson card",
                                   "width": "fill_container",
                                   "fill": "#17171C",
                                   "cornerRadius": 16,
-                                  "stroke": "#FFFFFF0D",
-                                  "strokeWidth": 1,
+                                  "stroke": "#E3B15455",
+                                  "strokeWidth": 1.2,
                                   "layout": "vertical",
-                                  "gap": 8,
-                                  "padding": 14,
+                                  "gap": 12,
+                                  "padding": 16,
                                   "children": [
                                     {
                                       "type": "frame",
@@ -39963,39 +39604,8 @@
                                       "id": "dCNR6",
                                       "width": "fill_container",
                                       "height": 14,
-                                      "layout": "none",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "IoXMS",
-                                          "x": 110,
-                                          "y": 0,
-                                          "fill": "#E3B154",
-                                          "textGrowth": "fixed-width",
-                                          "width": 60,
-                                          "content": "Today",
-                                          "textAlign": "center",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "600"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "Y7QI8C",
-                                  "name": "Today lesson card",
-                                  "width": "fill_container",
-                                  "fill": "#17171C",
-                                  "cornerRadius": 16,
-                                  "stroke": "#E3B15455",
-                                  "strokeWidth": 1.2,
-                                  "layout": "vertical",
-                                  "gap": 10,
-                                  "padding": 16,
-                                  "children": [
+                                      "layout": "none"
+                                    },
                                     {
                                       "type": "frame",
                                       "id": "STIOb",
@@ -44296,15 +43906,16 @@
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "naAnn",
+                                  "id": "G1Xppq",
+                                  "name": "Today lesson card",
                                   "width": "fill_container",
                                   "fill": "#FFFFFF",
                                   "cornerRadius": 16,
-                                  "stroke": "#E9E5DB",
-                                  "strokeWidth": 1,
+                                  "stroke": "#B8860B55",
+                                  "strokeWidth": 1.2,
                                   "layout": "vertical",
-                                  "gap": 8,
-                                  "padding": 14,
+                                  "gap": 12,
+                                  "padding": 16,
                                   "children": [
                                     {
                                       "type": "frame",
@@ -44501,39 +44112,8 @@
                                       "id": "Gkotw",
                                       "width": "fill_container",
                                       "height": 14,
-                                      "layout": "none",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "C5lhA",
-                                          "x": 110,
-                                          "y": 0,
-                                          "fill": "#986910",
-                                          "textGrowth": "fixed-width",
-                                          "width": 60,
-                                          "content": "Today",
-                                          "textAlign": "center",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "600"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "G1Xppq",
-                                  "name": "Today lesson card",
-                                  "width": "fill_container",
-                                  "fill": "#FFFFFF",
-                                  "cornerRadius": 16,
-                                  "stroke": "#B8860B55",
-                                  "strokeWidth": 1.2,
-                                  "layout": "vertical",
-                                  "gap": 10,
-                                  "padding": 16,
-                                  "children": [
+                                      "layout": "none"
+                                    },
                                     {
                                       "type": "frame",
                                       "id": "HQXR3",
