@@ -107,7 +107,7 @@ class NotificationPromptConfig {
       NotificationPromptType.streakReminder: {
         'en': 'Streak Reminder',
         'hi': 'स्ट्रीक रिमाइंडर',
-        'ml': 'സ്ട്രീക് ഓർമ്മപ്പെടുത്തൽ',
+        'ml': 'സ്റ്റ്രീക്ക് ഓർമ്മപ്പെടുത്തൽ',
       },
       NotificationPromptType.streakMilestone: {
         'en': 'Milestone Celebrations',
@@ -117,7 +117,7 @@ class NotificationPromptConfig {
       NotificationPromptType.streakLost: {
         'en': 'Streak Reset Motivation',
         'hi': 'स्ट्रीक रीसेट प्रेरणा',
-        'ml': 'സ്ട്രീക് റീസെറ്റ് പ്രചോദനം',
+        'ml': 'സ്റ്റ്രീക്ക് റീസെറ്റ് പ്രചോദനം',
       },
       NotificationPromptType.memoryVerseReminder: {
         'en': 'Memory Verse Reminders',
@@ -166,7 +166,7 @@ class NotificationPromptConfig {
         'hi':
             'अपनी निरंतरता का जश्न मनाएं! जब आप स्ट्रीक माइलस्टोन तक पहुंचें तो सूचना प्राप्त करें।',
         'ml':
-            'നിങ്ങളുടെ സ്ഥിരത ആഘോഷിക്കൂ! സ്ട്രീക് നാഴികക്കല്ലുകളിൽ എത്തുമ്പോൾ അറിയിപ്പ് ലഭിക്കുക.',
+            'നിങ്ങളുടെ സ്ഥിരത ആഘോഷിക്കൂ! സ്റ്റ്രീക്ക് നാഴികക്കല്ലുകളിൽ എത്തുമ്പോൾ അറിയിപ്പ് ലഭിക്കുക.',
       },
       NotificationPromptType.streakLost: {
         'en':
@@ -174,7 +174,7 @@ class NotificationPromptConfig {
         'hi':
             'जब आपकी स्ट्रीक रीसेट हो तो प्रोत्साहन का एक कोमल संदेश प्राप्त करें — हर नया दिन एक नई शुरुआत है।',
         'ml':
-            'നിങ്ങളുടെ സ്ട്രീക് റീസെറ്റ് ആകുമ്പോൾ ഒരു സൗമ്യമായ പ്രോത്സാഹന സന്ദേശം ലഭിക്കുക — ഓരോ പുതിയ ദിവസവും ഒരു പുതിയ തുടക്കമാണ്.',
+            'നിങ്ങളുടെ സ്റ്റ്രീക്ക് റീസെറ്റ് ആകുമ്പോൾ ഒരു സൗമ്യമായ പ്രോത്സാഹന സന്ദേശം ലഭിക്കുക — ഓരോ പുതിയ ദിവസവും ഒരു പുതിയ തുടക്കമാണ്.',
       },
       NotificationPromptType.memoryVerseReminder: {
         'en':

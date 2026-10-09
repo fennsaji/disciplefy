@@ -832,29 +832,29 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'डिसाइपलफाई में आपका स्वागत है',
       'onboarding_welcome_subtitle':
-          'जेफ रीड पद्धति के अनुसार व्यक्तिगत बाइबल अध्ययन गाइड',
+          'जेफ रीड पद्धति के अनुसार व्यक्तिगत बाइबल स्टडी गाइड',
       'onboarding_language_title': 'अपनी भाषा चुनें',
       'onboarding_language_subtitle': 'ऐप के लिए अपनी पसंदीदा भाषा चुनें',
       'onboarding_purpose_title': 'अपने बाइबल अध्ययन को बदलें',
       'onboarding_purpose_subtitle':
-          'किसी भी आयत या विषय के लिए व्यक्तिगत अध्ययन गाइड बनाएं',
+          'किसी भी आयत या विषय के लिए व्यक्तिगत स्टडी गाइड बनाएं',
       'language_english': 'English',
       'language_hindi': 'हिन्दी',
       'language_malayalam': 'മലയാളം',
 
       // Study Input
-      'study_input_title': 'अध्ययन गाइड बनाएं',
+      'study_input_title': 'स्टडी गाइड बनाएं',
       'study_input_verse_tab': 'बाइबल आयत',
       'study_input_topic_tab': 'विषय',
       'study_input_verse_hint': 'बाइबल संदर्भ दर्ज करें (जैसे, यूहन्ना 3:16)',
       'study_input_topic_hint': 'अध्ययन विषय दर्ज करें (जैसे, विश्वास, प्रेम)',
-      'study_input_generate_button': 'अध्ययन गाइड बनाएं',
+      'study_input_generate_button': 'स्टडी गाइड बनाएं',
       'study_input_verse_validation': 'कृपया एक वैध बाइबल संदर्भ दर्ज करें',
       'study_input_topic_validation': 'कृपया एक विषय दर्ज करें (2-100 अक्षर)',
-      'study_input_generating': 'आपका अध्ययन गाइड बनाया जा रहा है...',
+      'study_input_generating': 'आपका स्टडी गाइड बनाया जा रहा है...',
 
       // Study Result
-      'study_result_title': 'अध्ययन गाइड',
+      'study_result_title': 'स्टडी गाइड',
       'study_result_new_button': 'नया गाइड बनाएं',
       'study_result_share_button': 'साझा करें',
 
@@ -868,7 +868,7 @@ class AppLocalizations {
           'कोई ईमेल ऐप नहीं मिला। कृपया techsupport@disciplefy.in पर लिखें',
 
       // Loading Screen Stages
-      'loading_stage_preparing': 'आपका अध्ययन गाइड तैयार किया जा रहा है...',
+      'loading_stage_preparing': 'आपका स्टडी गाइड तैयार किया जा रहा है...',
       'loading_stage_analyzing':
           'धर्मग्रंथ संदर्भ का विश्लेषण किया जा रहा है...',
       'loading_stage_gathering': 'अंतर्दृष्टि एकत्र की जा रही है...',
@@ -883,7 +883,7 @@ class AppLocalizations {
       'progress_xp_total': 'कुल XP',
       'progress_xp_to_next_level': 'अगले स्तर तक XP',
       'progress_max_level': 'अधिकतम स्तर प्राप्त!',
-      'progress_streaks': 'लगातार दिन',
+      'progress_streaks': 'स्ट्रीक',
       'progress_study_streak': 'अध्ययन',
       'progress_verse_streak': 'वचन',
       'progress_days': 'दिन',
@@ -891,7 +891,7 @@ class AppLocalizations {
       'progress_statistics': 'आंकड़े',
       'progress_studies': 'अध्ययन',
       'progress_time_spent': 'समय बिताया',
-      'progress_memory_verses': 'याद वचन',
+      'progress_memory_verses': 'स्मरण वचन',
       'progress_voice_sessions': 'वॉयस सत्र',
       'progress_saved_guides': 'सहेजी गई गाइड',
       'progress_study_days': 'अध्ययन दिवस',
@@ -910,10 +910,10 @@ class AppLocalizations {
       'progress_awesome': 'शानदार!',
 
       // Achievement Categories
-      'achievement_category_study': 'अध्ययन गाइड',
-      'achievement_category_streak': 'लगातार अध्ययन',
-      'achievement_category_memory': 'याद वचन',
-      'achievement_category_voice': 'वॉयस डिसाइप्लर',
+      'achievement_category_study': 'स्टडी गाइड',
+      'achievement_category_streak': 'अध्ययन स्ट्रीक',
+      'achievement_category_memory': 'स्मरण वचन',
+      'achievement_category_voice': 'Discipler से बात करें',
       'achievement_category_saved': 'सहेजे गए गाइड',
 
       // First Century Christian Facts for Loading Screen (60 facts - Hindi)
@@ -1092,20 +1092,20 @@ class AppLocalizations {
       'lessonsComing': 'पाठ जल्द आ रहे हैं',
       'lessonsDescription':
           'आपकी संगति के अध्ययन मार्गदर्शिकाएं यहाँ दिखाई देंगी।',
-      'lessonsAssignPath': 'लर्निंग पथ असाइन करें',
-      'lessonsChangePath': 'लर्निंग पथ बदलें',
+      'lessonsAssignPath': 'लर्निंग पाथ असाइन करें',
+      'lessonsChangePath': 'लर्निंग पाथ बदलें',
       'lessonsNoPathMentor':
-          'अभी कोई लर्निंग पथ असाइन नहीं है।\nएक असाइन करने के लिए नीचे टैप करें।',
+          'अभी कोई लर्निंग पाथ असाइन नहीं है।\nएक असाइन करने के लिए नीचे टैप करें।',
       'lessonsNoPathMember':
-          'आपके मार्गदर्शक ने अभी कोई लर्निंग पथ असाइन नहीं किया है।',
+          'आपके मार्गदर्शक ने अभी कोई लर्निंग पाथ असाइन नहीं किया है।',
       'lessonsCurrentStudy': 'वर्तमान अध्ययन',
-      'lessonsSelectPath': 'एक लर्निंग पथ चुनें',
-      'lessonsPickPathTitle': 'अपनी संगति के लिए एक लर्निंग पथ चुनें',
-      'lessonsChoosePathTitle': 'एक लर्निंग पथ चुनें',
+      'lessonsSelectPath': 'एक लर्निंग पाथ चुनें',
+      'lessonsPickPathTitle': 'अपनी संगति के लिए एक लर्निंग पाथ चुनें',
+      'lessonsChoosePathTitle': 'एक लर्निंग पाथ चुनें',
       'lessonsChoosePathSubtitle': 'सब मिलकर इसे पढ़ते हैं, एक बार में एक पाठ।',
       'lessonsCurrentPathTag': 'वर्तमान',
-      'searchPathsHint': 'लर्निंग पथ खोजें...',
-      'searchNoResults': 'कोई पथ मेल नहीं खाता',
+      'searchPathsHint': 'लर्निंग पाथ खोजें...',
+      'searchNoResults': 'कोई पाथ मेल नहीं खाता',
       'lessonsGuide': 'मार्गदर्शिका',
       'lessonsTitle': 'पाठ',
       'lessonsCurrentLesson': 'वर्तमान पाठ',
@@ -1144,7 +1144,7 @@ class AppLocalizations {
       'inviteGenerateLink': 'नया लिंक बनाएं',
       'inviteNoLinks': 'कोई सक्रिय आमंत्रण लिंक नहीं',
       'inviteNoLinksDescription':
-          'इस फ़ेलोशिप में लोगों को आमंत्रित करने के लिए एक लिंक बनाएं।',
+          'इस संगति में लोगों को आमंत्रित करने के लिए एक लिंक बनाएं।',
       'inviteUnlimited': 'असीमित जुड़ाव',
       'inviteJoinedSuffix': 'शामिल हुए',
       'inviteCopyLink': 'लिंक कॉपी करें',
@@ -1167,8 +1167,8 @@ class AppLocalizations {
       'lessonsPathCompleteBody':
           'आपकी संगति ने "{pathTitle}" पूरा कर लिया है। अगला शुरू करना चाहते हैं?',
       'lessonsLater': 'बाद में',
-      'lessonsChooseNextPath': 'अगला पथ चुनें',
-      'lessonsPathAssignedSuccess': 'शिक्षण पथ सफलतापूर्वक सौंपा गया!',
+      'lessonsChooseNextPath': 'अगला पाथ चुनें',
+      'lessonsPathAssignedSuccess': 'लर्निंग पाथ सफलतापूर्वक सौंपा गया!',
       'lessonsProgressResetSuccess': 'प्रगति गाइड 1 पर रीसेट की गई।',
       'lessonsResetConfirm':
           'यह संगति की प्रगति को वापस गाइड 1 पर रीसेट कर देगा। सभी सदस्यों को गाइड फिर से पूरे करने होंगे।',
@@ -1207,7 +1207,7 @@ class AppLocalizations {
       'blockUserTitle': 'उपयोगकर्ता को ब्लॉक करें',
       'blockUserConfirmTitle': 'इस उपयोगकर्ता को ब्लॉक करें?',
       'blockUserConfirmBody':
-          'आप उनकी पोस्ट और टिप्पणियाँ नहीं देख पाएंगे, और वे आपकी नहीं देख पाएंगे। यह आपकी सभी फ़ेलोशिप पर लागू होता है। हमारी टीम को सूचित किया जाता है ताकि हम सामग्री की समीक्षा कर सकें।',
+          'आप उनकी पोस्ट और टिप्पणियाँ नहीं देख पाएंगे, और वे आपकी नहीं देख पाएंगे। यह आपकी सभी संगतियों पर लागू होता है। हमारी टीम को सूचित किया जाता है ताकि हम सामग्री की समीक्षा कर सकें।',
       'blockUserConfirmAction': 'ब्लॉक करें',
       'blockUserCancel': 'रद्द करें',
       'blockUserSuccess': 'उपयोगकर्ता ब्लॉक किया गया',
@@ -1255,8 +1255,8 @@ class AppLocalizations {
       'meetingsSyncBannerTitle': 'नए सदस्यों को कैलेंडर इनवाइट नहीं मिले',
       'meetingsSyncCalendar': 'कैलेंडर से सिंक करें',
       'meetingsSyncReconnect': 'कृपया Google Calendar फिर से कनेक्ट करें',
-      'homeAssignPathMentor': 'अध्ययन पथ असाइन करें',
-      'homeNoPathAssigned': 'कोई अध्ययन पथ नहीं',
+      'homeAssignPathMentor': 'लर्निंग पाथ असाइन करें',
+      'homeNoPathAssigned': 'कोई लर्निंग पाथ नहीं',
       'fellowshipRecentActivity': 'हाल की गतिविधि',
       'fellowshipViewAll': 'सभी देखें',
       'feedReadMore': 'और पढ़ें',
@@ -1277,13 +1277,13 @@ class AppLocalizations {
       'walkthroughHomeDailyVerseTitle': 'आपका दैनिक वचन',
       'walkthroughHomeDailyVerseDesc':
           'हर दिन एक नया बाइबल वचन — इसे पढ़ें, कॉपी करें या साझा करें',
-      'walkthroughHomeGenerateTitle': 'अध्ययन गाइड बनाएं',
+      'walkthroughHomeGenerateTitle': 'स्टडी गाइड बनाएं',
       'walkthroughHomeGenerateDesc':
-          'किसी भी विषय या वचन पर व्यक्तिगत बाइबल अध्ययन गाइड बनाएं',
+          'किसी भी विषय या वचन पर व्यक्तिगत बाइबल स्टडी गाइड बनाएं',
       'walkthroughHomeTopicsTitle': 'सीखने के मार्ग',
       'walkthroughHomeTopicsDesc':
           'बाइबल सीखने के लिए तैयार अध्ययन योजनाएं हैं — और देखने के लिए Topics दबाएं',
-      'walkthroughHomeMemoryTitle': 'याद वचन',
+      'walkthroughHomeMemoryTitle': 'स्मरण वचन',
       'walkthroughHomeMemoryDesc':
           'जो वचन आप याद करना चाहते हैं — आज अभ्यास के लिए दबाएं',
       'walkthroughGenerateModeTitle': 'इनपुट प्रकार चुनें',
@@ -1294,8 +1294,8 @@ class AppLocalizations {
           '"क्षमा", "यूहन्ना 3:16" या "चिंता से कैसे निपटें?" जैसा कुछ टाइप करें',
       'walkthroughGenerateButtonTitle': 'अपना अध्ययन बनाएं',
       'walkthroughGenerateButtonDesc':
-          'अपनी बाइबल अध्ययन गाइड बनाने के लिए दबाएं',
-      'walkthroughDisciplerTitle': 'शिष्य गुरु',
+          'अपनी बाइबल स्टडी गाइड बनाने के लिए दबाएं',
+      'walkthroughDisciplerTitle': 'Discipler',
       'walkthroughDisciplerDesc':
           'कोई भी बाइबल सवाल पूछें और जवाब पाएं — जैसे हमेशा एक बाइबल शिक्षक उपलब्ध हो',
       'walkthroughStudyGuideInputTitle': 'अपना विषय दर्ज करें',
@@ -1303,7 +1303,7 @@ class AppLocalizations {
           '"आशा" जैसा कोई विषय या "रोमियों 8:1" जैसा वचन टाइप करें',
       'walkthroughStudyGuideGenerateTitle': 'अपना अध्ययन बनाएं',
       'walkthroughStudyGuideGenerateDesc':
-          'Generate दबाएं और आपकी अध्ययन गाइड कुछ ही सेकंड में तैयार',
+          'Generate दबाएं और आपकी स्टडी गाइड कुछ ही सेकंड में तैयार',
       'walkthroughLearningPathsTitle': 'एक मार्ग शुरू करें',
       'walkthroughLearningPathsDesc':
           'कोई भी मार्ग दबाएं और धीरे-धीरे बाइबल सीखें',
@@ -1313,7 +1313,7 @@ class AppLocalizations {
           'आपके लिए चुने गए अध्ययन — जहाँ छोड़ा वहाँ से जारी रखें या कुछ नया शुरू करें',
       'walkthroughMemoryAddTitle': 'एक वचन जोड़ें',
       'walkthroughMemoryAddDesc': 'याद करने के लिए बाइबल का एक वचन जोड़ें',
-      'walkthroughMemoryVerseTitle': 'आपका याद वचन',
+      'walkthroughMemoryVerseTitle': 'आपका स्मरण वचन',
       'walkthroughMemoryVerseDesc':
           'अभ्यास सत्र शुरू करने के लिए इस वचन को दबाएं',
       'walkthroughPracticeModesTitle': 'अभ्यास मोड',
@@ -1438,7 +1438,7 @@ class AppLocalizations {
       'discard': 'हटाएं',
       'unsavedChangesTitle': 'अपने बदलाव सहेजें?',
       'unsavedChangesMessage': 'आपके कुछ बदलाव अभी तक सहेजे नहीं गए हैं।',
-      'openStudyGuide': 'अध्ययन गाइड खोलें',
+      'openStudyGuide': 'स्टडी गाइड खोलें',
       'postTypeDaily': 'आज का अध्ययन',
       'openFullStudy': 'पूरा अध्ययन खोलें',
       'askAMentor': 'मेंटर से पूछें',
@@ -1450,7 +1450,7 @@ class AppLocalizations {
       'contactEmail': 'ईमेल',
       'mentorContactTitle': 'सदस्यों के लिए संपर्क',
       'mentorContactSubtitle':
-          'सदस्य आपसे सीधे संपर्क कर सकते हैं। इसे केवल यह फ़ेलोशिप देखती है।',
+          'सदस्य आपसे सीधे संपर्क कर सकते हैं। इसे केवल यह संगति देखती है।',
       'mentorContactBlankHint': 'उस विकल्प को छिपाने के लिए खाली छोड़ें।',
       'saveContactDetails': 'संपर्क विवरण सहेजें',
       'navDiscipler': 'Discipler',
@@ -1458,7 +1458,7 @@ class AppLocalizations {
       'mentorContactInvalidEmail': 'मान्य ईमेल पता दर्ज करें।',
       'mentorMessageBody':
           'नमस्ते, मैं Disciplefy पर {fellowship} से हूँ और मेरा एक सवाल है।',
-      'mentorMessageSubject': 'मेरी फ़ेलोशिप से सवाल',
+      'mentorMessageSubject': 'मेरी संगति से सवाल',
       'mentionSheetTitle': 'मेंशन करें',
       'disciplerMentionSubtitle': 'अध्ययन सहायक · आपकी भाषा में उत्तर',
       'mentorLabel': 'मेंटर',
@@ -1495,7 +1495,7 @@ class AppLocalizations {
       'timeAgoDays': '{count} दि पहले',
       'sharePost': 'पोस्ट साझा करें',
       'sharePostSuffix': 'Disciplefy पर',
-      'fellowshipSettingsTitle': 'फेलोशिप सेटिंग्स',
+      'fellowshipSettingsTitle': 'संगति सेटिंग्स',
       'disciplerSettingsSection': 'डिसाइपलर',
       'disciplerAllowedByAdmin': 'एडमिन द्वारा अनुमत',
       'disciplerAnswerQuestions': 'प्रश्नों के उत्तर दें',
@@ -1528,7 +1528,7 @@ class AppLocalizations {
           'दैनिक पोस्ट बंद हैं। नीचे दैनिक अध्ययन पोस्ट करें चालू करें।',
       'dailyPostPostedToday': 'आज की पोस्ट भेज दी गई है',
       'dailyPostLastPost': 'पिछली पोस्ट',
-      'dailyPostPath': 'अध्ययन पथ',
+      'dailyPostPath': 'लर्निंग पाथ',
       'dailyPostNothingNext': 'पोस्ट करने के लिए कुछ नया नहीं है',
       'dailyPostToday': 'आज',
       'dailyPostTomorrow': 'कल',
@@ -1598,7 +1598,7 @@ class AppLocalizations {
       'disciplerEditTitle': 'डिसाइपलर का लेख संपादित करें',
       'disciplerEditHint': 'सदस्यों को आपके बदलाव तुरंत दिखेंगे।',
       'disciplerEditSaved': 'बदलाव सहेजे गए',
-      'createFellowshipOfficial': 'आधिकारिक Disciplefy फेलोशिप',
+      'createFellowshipOfficial': 'आधिकारिक Disciplefy संगति',
       'createFellowshipDisciplerAllowed': 'डिसाइपलर के उत्तरों की अनुमति दें',
       'createFellowshipDailyAllowed': 'दैनिक अध्ययन पोस्ट की अनुमति दें',
       'adminOptionsLabel': 'एडमिन विकल्प',
@@ -1676,7 +1676,7 @@ class AppLocalizations {
       'progress_xp_total': 'ആകെ XP',
       'progress_xp_to_next_level': 'അടുത്ത ലെവലിലേക്ക് XP',
       'progress_max_level': 'പരമാവധി ലെവൽ എത്തി!',
-      'progress_streaks': 'തുടർച്ചകൾ',
+      'progress_streaks': 'സ്റ്റ്രീക്കുകൾ',
       'progress_study_streak': 'പഠനം',
       'progress_verse_streak': 'വചനം',
       'progress_days': 'ദിവസം',
@@ -1684,7 +1684,7 @@ class AppLocalizations {
       'progress_statistics': 'സ്ഥിതിവിവരക്കണക്കുകൾ',
       'progress_studies': 'പഠനങ്ങൾ',
       'progress_time_spent': 'ചെലവഴിച്ച സമയം',
-      'progress_memory_verses': 'സ്മരണ വാക്യങ്ങൾ',
+      'progress_memory_verses': 'മനഃപാഠ വാക്യങ്ങൾ',
       'progress_voice_sessions': 'വോയ്സ് സെഷനുകൾ',
       'progress_saved_guides': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
       'progress_study_days': 'പഠന ദിനങ്ങൾ',
@@ -1704,9 +1704,9 @@ class AppLocalizations {
 
       // Achievement Categories
       'achievement_category_study': 'പഠന ഗൈഡുകൾ',
-      'achievement_category_streak': 'പഠന തുടർച്ചകൾ',
-      'achievement_category_memory': 'സ്മരണ വാക്യങ്ങൾ',
-      'achievement_category_voice': 'വോയ്സ് ഡിസൈപ്ലർ',
+      'achievement_category_streak': 'പഠന സ്റ്റ്രീക്കുകൾ',
+      'achievement_category_memory': 'മനഃപാഠ വാക്യങ്ങൾ',
+      'achievement_category_voice': 'Discipler-നോട് സംസാരിക്കുക',
       'achievement_category_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
 
       // First Century Christian Facts for Loading Screen (60 facts - Malayalam)
@@ -1844,7 +1844,7 @@ class AppLocalizations {
           'വിശ്വാസികളുടെ സമൂഹത്തോടൊപ്പം ബൈബിൾ പഠിക്കാൻ ഒരു കൂട്ടായ്മയിൽ ചേരുക.',
       'communityJoinFellowship': 'ഒരു കൂട്ടായ്മയിൽ ചേരുക',
       'communityMyFellowships': 'എന്റെ കൂട്ടായ്മകൾ',
-      'communityDiscover': 'പൊതു ഫെല്ലോഷിപ്പുകൾ പര്യവേക്ഷണം ചെയ്യുക',
+      'communityDiscover': 'പൊതു കൂട്ടായ്മകൾ പര്യവേക്ഷണം ചെയ്യുക',
       'communityMembers': 'അംഗങ്ങൾ',
       'navHome': 'ഹോം',
       'navGenerate': 'പഠനം',
@@ -1886,22 +1886,22 @@ class AppLocalizations {
       'feedCreatePost': 'പോസ്റ്റ് ചെയ്യുക',
       'lessonsComing': 'പാഠങ്ങൾ ഉടൻ വരും',
       'lessonsDescription': 'നിങ്ങളുടെ കൂട്ടായ്മ പഠന ഗൈഡുകൾ ഇവിടെ ദൃശ്യമാകും.',
-      'lessonsAssignPath': 'ലേണിംഗ് പാത്ത് നിശ്ചയിക്കുക',
-      'lessonsChangePath': 'ലേണിംഗ് പാത്ത് മാറ്റുക',
+      'lessonsAssignPath': 'പഠന പാത നിശ്ചയിക്കുക',
+      'lessonsChangePath': 'പഠന പാത മാറ്റുക',
       'lessonsNoPathMentor':
-          'ഇതുവരെ ഒരു ലേണിംഗ് പാത്ത് നിശ്ചയിച്ചിട്ടില്ല.\nഒന്ന് നിശ്ചയിക്കാൻ ചുവടെ ടാപ്പ് ചെയ്യുക.',
+          'ഇതുവരെ ഒരു പഠന പാത നിശ്ചയിച്ചിട്ടില്ല.\nഒന്ന് നിശ്ചയിക്കാൻ ചുവടെ ടാപ്പ് ചെയ്യുക.',
       'lessonsNoPathMember':
-          'നിങ്ങളുടെ മെൻ്ററർ ഇതുവരെ ഒരു ലേണിംഗ് പാത്ത് നിശ്ചയിച്ചിട്ടില്ല.',
+          'നിങ്ങളുടെ മെൻ്ററർ ഇതുവരെ ഒരു പഠന പാത നിശ്ചയിച്ചിട്ടില്ല.',
       'lessonsCurrentStudy': 'നിലവിലെ പഠനം',
-      'lessonsSelectPath': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'lessonsSelectPath': 'ഒരു പഠന പാത തിരഞ്ഞെടുക്കുക',
       'lessonsPickPathTitle':
-          'നിങ്ങളുടെ കൂട്ടായ്മക്കായി ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
-      'lessonsChoosePathTitle': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+          'നിങ്ങളുടെ കൂട്ടായ്മക്കായി ഒരു പഠന പാത തിരഞ്ഞെടുക്കുക',
+      'lessonsChoosePathTitle': 'ഒരു പഠന പാത തിരഞ്ഞെടുക്കുക',
       'lessonsChoosePathSubtitle':
           'എല്ലാവരും ഒരുമിച്ച് പഠിക്കുന്നു, ഒരു സമയം ഒരു പാഠം.',
       'lessonsCurrentPathTag': 'നിലവിലുള്ളത്',
-      'searchPathsHint': 'ലേണിംഗ് പാത്തുകൾ തിരയുക...',
-      'searchNoResults': 'തിരയലുമായി പൊരുത്തപ്പെടുന്ന പാത്തുകൾ ഇല്ല',
+      'searchPathsHint': 'പഠന പാതകൾ തിരയുക...',
+      'searchNoResults': 'തിരയലുമായി പൊരുത്തപ്പെടുന്ന പാതകൾ ഇല്ല',
       'lessonsGuide': 'ഗൈഡ്',
       'lessonsTitle': 'പാഠങ്ങൾ',
       'lessonsCurrentLesson': 'നിലവിലെ പാഠം',
@@ -2082,7 +2082,7 @@ class AppLocalizations {
       'walkthroughHomeTopicsTitle': 'പഠന പാതകൾ',
       'walkthroughHomeTopicsDesc':
           'ബൈബിൾ പഠിക്കാൻ തയ്യാറാക്കിയ പദ്ധതികൾ ഇവിടെ ഉണ്ട് — കൂടുതൽ കാണാൻ Topics ടാപ്പ് ചെയ്യുക',
-      'walkthroughHomeMemoryTitle': 'സ്മരണ വാക്യങ്ങൾ',
+      'walkthroughHomeMemoryTitle': 'മനഃപാഠ വാക്യങ്ങൾ',
       'walkthroughHomeMemoryDesc':
           'നിങ്ങൾ ഓർക്കാൻ ആഗ്രഹിക്കുന്ന വചനങ്ങൾ — ഇന്ന് പ്രാക്ടീസ് ചെയ്യാൻ ടാപ്പ് ചെയ്യുക',
       'walkthroughGenerateModeTitle': 'ഇൻപുട്ട് തരം തിരഞ്ഞെടുക്കുക',
@@ -2112,21 +2112,21 @@ class AppLocalizations {
           'നിങ്ങൾക്കായി തിരഞ്ഞെടുത്ത പഠന പദ്ധതികൾ — നിർത്തിയ ഇടത്ത് നിന്ന് തുടരുക',
       'walkthroughMemoryAddTitle': 'ഒരു വചനം ചേർക്കുക',
       'walkthroughMemoryAddDesc': 'ഓർക്കാൻ തുടങ്ങാൻ ഒരു ബൈബിൾ വചനം ചേർക്കുക',
-      'walkthroughMemoryVerseTitle': 'നിങ്ങളുടെ സ്മരണ വാക്യം',
+      'walkthroughMemoryVerseTitle': 'നിങ്ങളുടെ മനഃപാഠ വാക്യം',
       'walkthroughMemoryVerseDesc':
           'ഒരു പ്രാക്ടീസ് സെഷൻ ആരംഭിക്കാൻ ഈ വചനം ടാപ്പ് ചെയ്യുക',
       'walkthroughPracticeModesTitle': 'പ്രാക്ടീസ് മോഡുകൾ',
       'walkthroughPracticeModesDesc':
           'പ്രാക്ടീസ് ചെയ്യാൻ ഒരു രീതി തിരഞ്ഞെടുക്കുക — ഫ്ലാഷ്കാർഡ്, ശൂന്യം നിരത്തുക, കൂടുതൽ',
-      'walkthroughCommunityTabsTitle': 'ഫെലോഷിപ്പുകൾ കാണുക',
+      'walkthroughCommunityTabsTitle': 'കൂട്ടായ്മകൾ കാണുക',
       'walkthroughCommunityTabsDesc':
-          'നിങ്ങളുടെ ഗ്രൂപ്പുകൾ കാണുക അല്ലെങ്കിൽ പുതിയ ഫെലോഷിപ്പുകൾ കണ്ടെത്തുക',
-      'walkthroughCommunityFabTitle': 'ഫെലോഷിപ്പിൽ ചേരുക',
+          'നിങ്ങളുടെ ഗ്രൂപ്പുകൾ കാണുക അല്ലെങ്കിൽ പുതിയ കൂട്ടായ്മകൾ കണ്ടെത്തുക',
+      'walkthroughCommunityFabTitle': 'കൂട്ടായ്മയിൽ ചേരുക',
       'walkthroughCommunityFabDesc':
-          'ഫെലോഷിപ്പ് കോഡ് ഉണ്ടോ? ഒരു ഗ്രൂപ്പിൽ ചേരാൻ ടാപ്പ് ചെയ്യുക',
+          'കൂട്ടായ്മ കോഡ് ഉണ്ടോ? ഒരു ഗ്രൂപ്പിൽ ചേരാൻ ടാപ്പ് ചെയ്യുക',
       'walkthroughCommunityNavTitle': 'കമ്മ്യൂണിറ്റി',
       'walkthroughCommunityNavDesc':
-          'ഫെലോഷിപ്പുകളിൽ ചേർന്ന് മറ്റ് വിശ്വാസികളോടൊപ്പം ബൈബിൾ പഠിക്കുക',
+          'കൂട്ടായ്മകളിൽ ചേർന്ന് മറ്റ് വിശ്വാസികളോടൊപ്പം ബൈബിൾ പഠിക്കുക',
       'walkthroughChatInputTitle': 'എന്തും ചോദിക്കുക',
       'walkthroughChatInputDesc':
           'എന്തും ചോദിക്കുക — ഉദാ: "ക്ഷമയെക്കുറിച്ച് ബൈബിൾ എന്ത് പറയുന്നു?"',
@@ -2230,10 +2230,10 @@ class AppLocalizations {
       'walkthrough.practice_type_it_out.desc':
           'മുഴുവൻ വചനം ഓർമ്മിച്ച് വാക്ക്-വഴി-വാക്ക് ടൈപ്പ് ചെയ്യുക.',
       // Discipler, mentors, sharing and fellowship settings
-      'disciplerName': 'ഡിസൈപ്ലർ',
+      'disciplerName': 'Discipler',
       'disciplerAiChip': 'സഹായി',
       'disciplerFooter':
-          'ഡിസൈപ്ലർ ഒരു പഠന സഹായിയാണ്. മെന്റർമാർ ഉത്തരങ്ങൾ പരിശോധിക്കും.',
+          'Discipler ഒരു പഠന സഹായിയാണ്. മെന്റർമാർ ഉത്തരങ്ങൾ പരിശോധിക്കും.',
       'disciplerDraftBadge': 'ഡ്രാഫ്റ്റ് · മെന്റർമാർക്ക് മാത്രം',
       'approve': 'അംഗീകരിക്കുക',
       'discard': 'നിരസിക്കുക',
@@ -2251,7 +2251,7 @@ class AppLocalizations {
       'contactEmail': 'ഇമെയിൽ',
       'mentorContactTitle': 'അംഗങ്ങൾക്കുള്ള ബന്ധപ്പെടൽ',
       'mentorContactSubtitle':
-          'അംഗങ്ങൾക്ക് നിങ്ങളെ നേരിട്ട് ബന്ധപ്പെടാം. ഈ ഫെലോഷിപ്പ് മാത്രമേ ഇത് കാണൂ.',
+          'അംഗങ്ങൾക്ക് നിങ്ങളെ നേരിട്ട് ബന്ധപ്പെടാം. ഈ കൂട്ടായ്മ മാത്രമേ ഇത് കാണൂ.',
       'mentorContactBlankHint': 'ആ ഓപ്ഷൻ മറയ്ക്കാൻ ശൂന്യമായി വിടുക.',
       'saveContactDetails': 'ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ സേവ് ചെയ്യുക',
       'navDiscipler': 'Discipler',
@@ -2259,7 +2259,7 @@ class AppLocalizations {
       'mentorContactInvalidEmail': 'സാധുവായ ഇമെയിൽ വിലാസം നൽകുക.',
       'mentorMessageBody':
           'നമസ്കാരം, ഞാൻ Disciplefy-ൽ {fellowship}-ൽ നിന്നാണ്, എനിക്ക് ഒരു ചോദ്യമുണ്ട്.',
-      'mentorMessageSubject': 'എന്റെ ഫെലോഷിപ്പിൽ നിന്നുള്ള ചോദ്യം',
+      'mentorMessageSubject': 'എന്റെ കൂട്ടായ്മയിൽ നിന്നുള്ള ചോദ്യം',
       'mentionSheetTitle': 'മെൻഷൻ',
       'disciplerMentionSubtitle': 'പഠന സഹായി · നിങ്ങളുടെ ഭാഷയിൽ മറുപടി',
       'mentorLabel': 'മെന്റർ',
@@ -2296,8 +2296,8 @@ class AppLocalizations {
       'timeAgoDays': '{count} ദി മുമ്പ്',
       'sharePost': 'പോസ്റ്റ് പങ്കിടുക',
       'sharePostSuffix': 'Disciplefy-യിൽ',
-      'fellowshipSettingsTitle': 'ഫെലോഷിപ്പ് സെറ്റിംഗ്സ്',
-      'disciplerSettingsSection': 'ഡിസൈപ്ലർ',
+      'fellowshipSettingsTitle': 'കൂട്ടായ്മ സെറ്റിംഗ്സ്',
+      'disciplerSettingsSection': 'Discipler',
       'disciplerAllowedByAdmin': 'അഡ്മിൻ അനുവദിച്ചത്',
       'disciplerAnswerQuestions': 'ചോദ്യങ്ങൾക്ക് ഉത്തരം നൽകുക',
       'disciplerModeOff': 'ഓഫ്',
@@ -2317,12 +2317,12 @@ class AppLocalizations {
       'frequencyDaily': 'ദിവസവും',
       'frequencyEveryTwoDays': '2 ദിവസത്തിലൊരിക്കൽ',
       'frequencyWeekly': 'ആഴ്ചതോറും',
-      'disciplerAdvancesLessons': 'ഡിസൈപ്ലർ പാഠങ്ങൾ മുന്നോട്ട് നീക്കും',
+      'disciplerAdvancesLessons': 'Discipler പാഠങ്ങൾ മുന്നോട്ട് നീക്കും',
       'disciplerAdvancesLessonsSubtitle':
           'ഓരോ പോസ്റ്റിനു ശേഷവും ഗ്രൂപ്പിനെ അടുത്ത പാഠത്തിലേക്ക് നീക്കുന്നു',
-      'disciplerAdvancesPath': 'ഡിസൈപ്ലർ ലേണിംഗ് പാത്ത് മുന്നോട്ട് നീക്കും',
+      'disciplerAdvancesPath': 'Discipler പഠന പാത മുന്നോട്ട് നീക്കും',
       'disciplerAdvancesPathSubtitle':
-          'നിലവിലെ പാത്ത് പൂർത്തിയാകുമ്പോൾ പുതിയത് സ്വയം തിരഞ്ഞെടുക്കുന്നു. ഓഫ് ആണെങ്കിൽ അത് നിങ്ങൾക്ക് വിടുന്നു.',
+          'നിലവിലെ പാത പൂർത്തിയാകുമ്പോൾ പുതിയത് സ്വയം തിരഞ്ഞെടുക്കുന്നു. ഓഫ് ആണെങ്കിൽ അത് നിങ്ങൾക്ക് വിടുന്നു.',
       'dailyPostScreenTitle': 'ദിവസേനയുള്ള പോസ്റ്റ്',
       'dailyPostNextTitle': 'അടുത്ത പോസ്റ്റ്',
       'dailyPostOff':
@@ -2383,8 +2383,8 @@ class AppLocalizations {
           'ഈ പാഠം പുതുതായി എഴുതിയ രൂപത്തിൽ വീണ്ടും പോസ്റ്റ് ചെയ്യണോ? അംഗങ്ങളെ അറിയിക്കും.',
       'dailyPostDoneRepost': 'വീണ്ടും പോസ്റ്റ് ചെയ്തു',
       'dailyPostPostDeleted': 'നീക്കം ചെയ്തു',
-      'disciplerNotifyToggle': 'ഡിസൈപ്ലർ പ്രവർത്തനത്തെക്കുറിച്ച് അറിയിക്കുക',
-      'disciplerActivityTitle': 'ഡിസൈപ്ലർ പ്രവർത്തനം',
+      'disciplerNotifyToggle': 'Discipler പ്രവർത്തനത്തെക്കുറിച്ച് അറിയിക്കുക',
+      'disciplerActivityTitle': 'Discipler പ്രവർത്തനം',
       'activityTabAll': 'എല്ലാം',
       'activityTabReview': 'പരിശോധന',
       'activityTabReplies': 'മറുപടികൾ',
@@ -2394,14 +2394,14 @@ class AppLocalizations {
       'activityKindReplied': 'മറുപടി നൽകി',
       'activityKindReacted': 'പ്രതികരിച്ചു',
       'activityKindDaily': 'ദൈനംദിന പഠനം',
-      'activityEmpty': 'ഡിസൈപ്ലറിൽ നിന്ന് ഇതുവരെ ഒന്നുമില്ല.',
+      'activityEmpty': 'Discipler-ൽ നിന്ന് ഇതുവരെ ഒന്നുമില്ല.',
       'deleteAction': 'ഇല്ലാതാക്കുക',
       'editAction': 'തിരുത്തുക',
-      'disciplerEditTitle': 'ഡിസൈപ്ലറിന്റെ എഴുത്ത് തിരുത്തുക',
+      'disciplerEditTitle': 'Discipler-ന്റെ എഴുത്ത് തിരുത്തുക',
       'disciplerEditHint': 'നിങ്ങളുടെ മാറ്റങ്ങൾ അംഗങ്ങൾക്ക് ഉടൻ കാണാം.',
       'disciplerEditSaved': 'മാറ്റങ്ങൾ സേവ് ചെയ്തു',
-      'createFellowshipOfficial': 'ഔദ്യോഗിക Disciplefy ഫെലോഷിപ്പ്',
-      'createFellowshipDisciplerAllowed': 'ഡിസൈപ്ലർ മറുപടികൾ അനുവദിക്കുക',
+      'createFellowshipOfficial': 'ഔദ്യോഗിക Disciplefy കൂട്ടായ്മ',
+      'createFellowshipDisciplerAllowed': 'Discipler മറുപടികൾ അനുവദിക്കുക',
       'createFellowshipDailyAllowed': 'ദിവസേനയുള്ള പഠന പോസ്റ്റ് അനുവദിക്കുക',
       'adminOptionsLabel': 'അഡ്മിൻ ഓപ്ഷനുകൾ',
       'disciplerHelperSubtitle': 'പഠന സഹായി',
