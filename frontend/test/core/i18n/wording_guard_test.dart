@@ -163,6 +163,16 @@ void main() {
     expect(values.where((v) => oldTerms.any(v.contains)), isEmpty);
   });
 
+  test('the daily verse is वचन / വചനം, never आयत or ദൈനിക', () {
+    final hi = flatten(hindiTranslations).map((e) => e.value);
+    final ml = flatten(malayalamTranslations).map((e) => e.value);
+    expect(hi.where((v) => v.contains('दैनिक आयत') || v.contains('दिन की आयत')),
+        isEmpty);
+    expect(
+        ml.where((v) => v.contains('ദൈനിക വചന') || v.contains('ദിവസത്തെ വചന')),
+        isEmpty);
+  });
+
   test('every guarded en key exists in hi and ml', () {
     final hi = Map.fromEntries(flatten(hindiTranslations));
     final ml = Map.fromEntries(flatten(malayalamTranslations));

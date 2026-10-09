@@ -1090,8 +1090,7 @@ class AppLocalizations {
       'feedCreateContentHint': 'आपके मन में क्या है?',
       'feedCreatePost': 'पोस्ट करें',
       'lessonsComing': 'पाठ जल्द आ रहे हैं',
-      'lessonsDescription':
-          'आपकी संगति के अध्ययन मार्गदर्शिकाएं यहाँ दिखाई देंगी।',
+      'lessonsDescription': 'आपकी संगति की स्टडी गाइड यहाँ दिखाई देंगी।',
       'lessonsAssignPath': 'लर्निंग पाथ असाइन करें',
       'lessonsChangePath': 'लर्निंग पाथ बदलें',
       'lessonsNoPathMentor':
@@ -1106,7 +1105,7 @@ class AppLocalizations {
       'lessonsCurrentPathTag': 'वर्तमान',
       'searchPathsHint': 'लर्निंग पाथ खोजें...',
       'searchNoResults': 'कोई पाथ मेल नहीं खाता',
-      'lessonsGuide': 'मार्गदर्शिका',
+      'lessonsGuide': 'गाइड',
       'lessonsTitle': 'पाठ',
       'lessonsCurrentLesson': 'वर्तमान पाठ',
       'lessonsAllLessons': 'सभी पाठ',
@@ -1280,7 +1279,7 @@ class AppLocalizations {
       'walkthroughHomeGenerateTitle': 'स्टडी गाइड बनाएं',
       'walkthroughHomeGenerateDesc':
           'किसी भी विषय या वचन पर व्यक्तिगत बाइबल स्टडी गाइड बनाएं',
-      'walkthroughHomeTopicsTitle': 'सीखने के मार्ग',
+      'walkthroughHomeTopicsTitle': 'लर्निंग पाथ',
       'walkthroughHomeTopicsDesc':
           'बाइबल सीखने के लिए तैयार अध्ययन योजनाएं हैं — और देखने के लिए Topics दबाएं',
       'walkthroughHomeMemoryTitle': 'स्मरण वचन',
@@ -1304,11 +1303,11 @@ class AppLocalizations {
       'walkthroughStudyGuideGenerateTitle': 'अपना अध्ययन बनाएं',
       'walkthroughStudyGuideGenerateDesc':
           'Generate दबाएं और आपकी स्टडी गाइड कुछ ही सेकंड में तैयार',
-      'walkthroughLearningPathsTitle': 'एक मार्ग शुरू करें',
+      'walkthroughLearningPathsTitle': 'एक पाथ शुरू करें',
       'walkthroughLearningPathsDesc':
-          'कोई भी मार्ग दबाएं और धीरे-धीरे बाइबल सीखें',
+          'कोई भी पाथ दबाएं और धीरे-धीरे बाइबल सीखें',
       'walkthroughForYouTitle': 'आपके लिए',
-      'forYouSectionSubtitle': 'आपके लिए सीखने के मार्ग',
+      'forYouSectionSubtitle': 'आपके लिए लर्निंग पाथ',
       'walkthroughForYouDesc':
           'आपके लिए चुने गए अध्ययन — जहाँ छोड़ा वहाँ से जारी रखें या कुछ नया शुरू करें',
       'walkthroughMemoryAddTitle': 'एक वचन जोड़ें',
@@ -2073,7 +2072,7 @@ class AppLocalizations {
       'walkthroughHomeDisciplerTitle': 'Discipler-നോട് സംസാരിക്കുക',
       'walkthroughHomeDisciplerDesc':
           'ശബ്ദത്തിലൂടെയോ ടെക്സ്റ്റിലൂടെയോ ബൈബിളിനെക്കുറിച്ച് ചോദ്യങ്ങൾ ചോദിക്കുക',
-      'walkthroughHomeDailyVerseTitle': 'നിങ്ങളുടെ ദൈനിക വചനം',
+      'walkthroughHomeDailyVerseTitle': 'ഇന്നത്തെ വചനം',
       'walkthroughHomeDailyVerseDesc':
           'ഓരോ ദിവസവും ഒരു പുതിയ ബൈബിൾ വചനം — വായിക്കുക, പകർത്തുക, അല്ലെങ്കിൽ പങ്കിടുക',
       'walkthroughHomeGenerateTitle': 'പഠന ഗൈഡ് ഉണ്ടാക്കുക',

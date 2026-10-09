@@ -32,6 +32,7 @@ const ratioExempt = <String, String>{
   'generate_simple.using_credits:ml': 'needs the verb "will be spent"',
   'credits.view_saved:ml': 'says "guides", not just "saved"; button',
   'topics.see_all:ml': '"See all" needs the verb; fits the slot',
+  'intro.memory.secondary:ml': 'owner review adds the verb; full-width button',
 };
 
 String? lookup(String code, String key) {

@@ -536,7 +536,7 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'follow_up_chat': {
     'send': 'അയയ്ക്കുക',
-    'title': 'തുടർ ചോദ്യങ്ങൾ',
+    'title': 'തുടർചോദ്യങ്ങൾ',
     'expand_tooltip': 'ചാറ്റ് വികസിപ്പിക്കൂ',
     'collapse_tooltip': 'ചാറ്റ് ചുരുക്കൂ',
     'starting_conversation': 'തുടങ്ങുന്നു...',
@@ -653,19 +653,19 @@ const Map<String, dynamic> malayalamTranslations = {
       'step3_title': 'പുരോഗതി കാണാം',
       'step3_body': 'നിർത്തിയിടത്തുനിന്ന് തുടരാം.',
       'primary': 'പാതകൾ കാണൂ',
-      'secondary': 'പിന്നീട്',
+      'secondary': 'പിന്നീടാകാം',
     },
     'memory': {
       'eyebrow': 'മനഃപാഠ വാക്യങ്ങൾ',
-      'title': 'ദിവസം ഒരു മിനിറ്റ്, വചനം ഹൃദയത്തിൽ',
+      'title': 'ദിവസവും ഒരു മിനിറ്റ്, ദൈവവചനം ഹൃദയത്തിൽ സൂക്ഷിക്കൂ',
       'step1_title': 'വചനം ചേർക്കൂ',
       'step1_body': 'സ്വയം എടുക്കാം, അല്ലെങ്കിൽ താഴെയുള്ളത്.',
-      'step2_title': 'ഒരു മിനിറ്റ് പരിശീലനം',
+      'step2_title': 'ഒരു മിനിറ്റ് പരിശീലിക്കൂ',
       'step2_body': 'വിട്ടഭാഗം നിറയ്ക്കൂ, പിന്നെ ഓർമ്മയിൽ നിന്ന്.',
       'step3_title': 'വീണ്ടും ഓർമ്മിപ്പിക്കും',
       'step3_body': 'ഉറയ്ക്കുമ്പോൾ ഇടവേള കൂടും.',
       'primary': 'ഈ വചനം പരിശീലിക്കൂ · 1 മി',
-      'secondary': 'സ്വന്തം വചനം',
+      'secondary': 'സ്വന്തം വചനം തിരഞ്ഞെടുക്കൂ',
       'saved': 'മനഃപാഠ വാക്യങ്ങളിൽ സേവ് ചെയ്തു',
     },
     'generate': {
@@ -673,7 +673,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'title': 'മനസ്സിലുള്ള ഏത് വചനവും ചോദ്യവും പഠിക്കാം',
       'step1_title': 'വചനമോ വിഷയമോ',
       'step1_body': 'ഒരു ഭാഗം, ഒരു വാക്ക്, ഒരു സാഹചര്യം.',
-      'step2_title': 'ക്വിക്ക് അല്ലെങ്കിൽ പൂർണ്ണം',
+      'step2_title': 'ക്വിക്ക് അല്ലെങ്കിൽ പൂർണ ഗൈഡ്',
       'step2_body': '3 മിനിറ്റ്, പൂർണ്ണ പഠനത്തിന് ഏകദേശം 8.',
       'step3_title': 'വായന, ധ്യാനം, സേവ്',
       'step3_body': 'ഗൈഡുകൾ പിന്നീട് നോക്കാൻ സൂക്ഷിക്കാം.',
@@ -769,8 +769,8 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'daily_verse': {
     'refreshing': 'പുതുക്കുന്നു...',
-    'loading': 'ദിവസത്തെ വചനം ലോഡ് ചെയ്യുന്നു...',
-    'of_the_day': 'ദിവസത്തെ വചനം',
+    'loading': 'ഇന്നത്തെ വചനം ലോഡ് ചെയ്യുന്നു...',
+    'of_the_day': 'ഇന്നത്തെ വചനം',
     'cached': 'കാഷ് ചെയ്തത്',
     'offline_mode': 'ഓഫ്‌ലൈൻ മോഡ്',
     'tap_to_generate': 'പഠന ഗൈഡ് സൃഷ്ടിക്കാൻ ടാപ്പ് ചെയ്യുക',
@@ -865,7 +865,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'minutes_ago': '{count} മിനിറ്റ് മുമ്പ്',
   },
   'login': {
-    'chip_study_guides': 'പഠന സഹായികൾ',
+    'chip_study_guides': 'പഠന ഗൈഡുകൾ',
     'chip_daily_verse': 'ദിനവചനം',
     'chip_discipler': 'Discipler-നോട് സംസാരിക്കുക',
     'chip_memory_verses': 'മനഃപാഠ വാക്യങ്ങൾ',
@@ -883,7 +883,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'feature_multi_language': 'ബഹു-ഭാഷാ പിന്തുണ',
     'feature_multi_language_subtitle':
         'ഇംഗ്ലീഷ്, ഹിന്ദി, മലയാളം എന്നിവയില്‍ പഠിക്കുക',
-    'feature_daily_verse': 'ദൈനിക വചനവും ഉൾക്കാഴ്ചകളും',
+    'feature_daily_verse': 'ഇന്നത്തെ വചനവും ഉൾക്കാഴ്ചകളും',
     'feature_daily_verse_subtitle':
         'പ്രചോദനാത്മക വചനങ്ങളും പെട്ടെന്നുള്ള പഠന ഗൈഡുകളും ഉപയോഗിച്ച് ഓരോ ദിവസവും ആരംഭിക്കുക',
     'feature_voice_discipler': 'Discipler-നോട് സംസാരിക്കുക',
@@ -1075,10 +1075,10 @@ const Map<String, dynamic> malayalamTranslations = {
     'slide1_eyebrow': 'ദിനവചനം',
     'slide1_title': 'ഓരോ ദിവസവും ദൈവവചനത്തോടെ ആരംഭിക്കൂ',
     'slide1_description':
-        'ദിവസവും വചനങ്ങളും ഉടനടി പഠന സഹായികളും നേടൂ. ഏതു വചനത്തിലും ടാപ്പ് ചെയ്ത് വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ, പശ്ചാത്തലം, പ്രായോഗിക പാഠങ്ങൾ എന്നിവയിലേക്ക് ആഴത്തിൽ ഇറങ്ങൂ.',
+        'ദിവസവും വചനങ്ങളും ഉടനടി പഠന ഗൈഡുകളും നേടൂ. ഏതു വചനത്തിലും ടാപ്പ് ചെയ്ത് വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ, പശ്ചാത്തലം, പ്രായോഗിക പാഠങ്ങൾ എന്നിവയിലേക്ക് ആഴത്തിൽ ഇറങ്ങൂ.',
     'slide1_verse':
         'നിന്റെ വചനം എന്റെ കാലിന്നു ദീപവും എന്റെ പാതയ്ക്കു പ്രകാശവും ആകുന്നു.',
-    'slide2_eyebrow': 'പഠന സഹായികൾ',
+    'slide2_eyebrow': 'പഠന ഗൈഡുകൾ',
     'slide2_title': 'നിങ്ങളുടെ യാത്രയ്ക്കായി വ്യക്തിഗത ഉൾക്കാഴ്ചകൾ',
     'slide2_description':
         'ഏതു വേദഭാഗമോ വിഷയമോ നൽകി പശ്ചാത്തലം, വ്യാഖ്യാനം, ധ്യാന ചോദ്യങ്ങൾ, പ്രാർത്ഥനാ വിഷയങ്ങൾ എന്നിവയുള്ള സമഗ്ര പഠന സഹായികൾ തയ്യാറാക്കൂ.',
@@ -1090,7 +1090,7 @@ const Map<String, dynamic> malayalamTranslations = {
         'തിരുവെഴുത്തിനെക്കുറിച്ച് സ്വാഭാവികമായി ശബ്ദത്തിൽ സംസാരിക്കൂ. ചോദ്യങ്ങൾ ചോദിക്കൂ, ഉത്തരങ്ങൾ നേടൂ, മാർഗനിർദേശമുള്ള സംഭാഷണത്തിലൂടെ ഗ്രാഹ്യം ആഴപ്പെടുത്തൂ.',
     'slide3_verse': 'എന്നോടു വിളിച്ചപേക്ഷിക്ക; ഞാൻ നിനക്കു ഉത്തരം അരുളും...',
     'slide4_eyebrow': 'മനഃപാഠ വാക്യങ്ങൾ',
-    'slide4_title': 'ദൈവവചനം ഹൃദയത്തിൽ സംഗ്രഹിക്കൂ',
+    'slide4_title': 'ദൈവവചനം ഹൃദയത്തിൽ സൂക്ഷിക്കൂ',
     'slide4_description':
         'ശാസ്ത്രീയമായി തെളിയിക്കപ്പെട്ട സ്പേസ്ഡ് റിപ്പീറ്റേഷനിലൂടെ വചനം മനഃപാഠമാക്കൂ. ശരിയായ ഇടവേളകളിൽ ആവർത്തിച്ച് ദീർഘകാലം ഓർമ്മയിൽ സൂക്ഷിക്കൂ.',
     'slide4_verse':
@@ -1111,7 +1111,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'preview_question': 'യേശു ഉപമകളിലൂടെ സംസാരിച്ചത് എന്തുകൊണ്ട്?',
     'preview_answer':
         'ഉപമകൾ കേൾവിക്കാരനെ ഉള്ളിലേക്കു ക്ഷണിക്കുന്നു. തുറന്ന ഹൃദയങ്ങൾ ഗ്രഹിക്കേണ്ടതിന് യേശു ദൈനംദിന ചിത്രങ്ങൾ ഉപയോഗിച്ചു (മത്തായി 13:13).',
-    'preview_review_meta': 'പുനരവലോകനം · 3 ബാക്കി',
+    'preview_review_meta': 'ആവർത്തനം · 3 ബാക്കി',
     'preview_blank_start': 'ഞാൻ നിന്നോടു',
     'preview_blank_end': 'നിന്റെ വചനത്തെ എന്റെ ഹൃദയത്തിൽ സംഗ്രഹിക്കുന്നു.',
     'preview_again': 'വീണ്ടും',
@@ -1507,7 +1507,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'tryDifferentFilter':
         'മറ്റൊരു ഭാഷാ ഫിൽട്ടർ തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ ഈ ഭാഷയിൽ വാക്യങ്ങൾ ചേർക്കുക.',
     'dailyVerseNotLoaded':
-        'ദൈനംദിന വാക്യം ഇതുവരെ ലോഡ് ചെയ്തിട്ടില്ല. ദയവായി കാത്തിരിക്കുക അല്ലെങ്കിൽ ആദ്യം ഹോം സ്ക്രീനിലേക്ക് പോകുക.',
+        'ഇന്നത്തെ വചനം ഇതുവരെ ലോഡ് ചെയ്തിട്ടില്ല. ദയവായി കാത്തിരിക്കുക അല്ലെങ്കിൽ ആദ്യം ഹോം സ്ക്രീനിലേക്ക് പോകുക.',
     'delete': {
       'title': 'വാക്യം ഇല്ലാതാക്കുക',
       'confirmation':
@@ -1628,8 +1628,8 @@ const Map<String, dynamic> malayalamTranslations = {
     },
     'addOptions': {
       'title': 'മനഃപാഠ വാക്യം ചേർക്കുക',
-      'fromDaily': 'ദൈനംദിന വാക്യത്തിൽ നിന്ന് ചേർക്കുക',
-      'fromDailyDesc': 'ഇന്നത്തെ വാക്യം മനഃപാഠ വാക്യങ്ങളിലേക്ക് ചേർക്കുക',
+      'fromDaily': 'ഇന്നത്തെ വചനത്തിൽ നിന്ന് ചേർക്കുക',
+      'fromDailyDesc': 'ഇന്നത്തെ വചനം മനഃപാഠ വാക്യങ്ങളിലേക്ക് ചേർക്കുക',
       'suggested': 'നിർദ്ദേശിച്ച വാക്യം ചേർക്കുക',
       'suggestedDesc': 'പ്രസിദ്ധമായ ബൈബിൾ വാക്യങ്ങളിൽ നിന്ന് തിരഞ്ഞെടുക്കുക',
       'custom': 'കസ്റ്റം വാക്യം ചേർക്കുക',
@@ -1772,7 +1772,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'permissions_granted': '✓ അറിയിപ്പ് അനുമതി നൽകി',
       'permissions_denied': '❌ അറിയിപ്പ് അനുമതി നിരസിച്ചു',
       'preferences_title': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
-      'daily_verse_title': 'ദൈനിക വചനം',
+      'daily_verse_title': 'ഇന്നത്തെ വചനം',
       'daily_verse_description': 'എല്ലാ ദിവസവും രാവിലെ 8:00-ന്',
       'recommended_topics_title': 'ശിഫാരസ്സു ചെയ്യുന്ന വിഷയങ്ങൾ',
       'recommended_topics_description': 'രാവിലെ 9:00-ന് പഠന നിർദ്ദേശങ്ങൾ',
@@ -1916,7 +1916,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'from_daily': 'ദിവസേന',
     'from_purchased': 'വാങ്ങിയത്',
     'daily_plus_purchased': 'ദിവസേന + {count} വാങ്ങിയത്',
-    'study_guide': 'പഠന സഹായി',
+    'study_guide': 'പഠന ഗൈഡ്',
     'follow_up': 'തുടർചോദ്യം',
     'stats_error': 'സംഗ്രഹം ലോഡ് ചെയ്യാനായില്ല',
     'purchases_title': 'വാങ്ങലുകൾ',
@@ -1926,7 +1926,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'spent': 'ചെലവ്',
     'credits_count': '{count} ക്രെഡിറ്റുകൾ',
     'status_success': 'വിജയം',
-    'status_pending': 'ബാക്കി',
+    'status_pending': 'പെൻഡിംഗ്',
     'status_failed': 'പരാജയം',
     'report_issue': 'പ്രശ്നം റിപ്പോർട്ട് ചെയ്യൂ',
     'details': 'വിശദാംശങ്ങൾ',
@@ -2236,7 +2236,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'used_title': 'ഇന്നത്തെ ക്രെഡിറ്റ് തീർന്നു',
       'used_message':
           'ഇന്ന് നല്ല പഠനം! 🎉 ക്രെഡിറ്റ് {resetTime} പുതുക്കുന്നു — നാളെ വീണ്ടും ഗൈഡ് ഉണ്ടാക്കൂ.',
-      'low_title': 'ക്രെഡിറ്റ് കുറവുന്നു',
+      'low_title': 'ക്രെഡിറ്റ് കുറയുന്നു',
       'low_message':
           'ഇന്ന് {count} ക്രെഡിറ്റ് മാത്രം ബാക്കി. {resetTime} പുതുക്കുന്നു.',
       'see_plans': 'പ്ലാൻ കാണൂ',
@@ -2273,7 +2273,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'what_you_get': 'നിങ്ങൾക്ക് ലഭിക്കുന്നത്',
     'unlimited_tokens': 'പരിധിയില്ലാത്ത ക്രെഡിറ്റുകൾ',
     'unlimited_tokens_desc': 'ദൈനംദിന പരിധികളില്ലാതെ പഠന ഗൈഡുകൾ സൃഷ്ടിക്കുക',
-    'unlimited_followups': 'പരിധിയില്ലാത്ത ഫോളോ-അപ്പുകൾ',
+    'unlimited_followups': 'പരിധിയില്ലാത്ത തുടർചോദ്യങ്ങൾ',
     'unlimited_followups_desc':
         'Discipler-നോട് നിങ്ങൾക്ക് ഇഷ്ടമുള്ളത്ര ചോദ്യങ്ങൾ ചോദിക്കുക',
     'ai_models': 'മുന്നേറ്റ പഠന എഞ്ചിൻ',
@@ -2288,7 +2288,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'ai_discipler_desc': 'ബൈബിൾ പഠനത്തിനുള്ള വോയ്‌സ് അസിസ്റ്റന്റ്',
     'plan_comparison': 'പ്ലാൻ താരതമ്യം',
     'daily_tokens': 'ദൈനംദിന ക്രെഡിറ്റുകൾ',
-    'followup_questions': 'ഫോളോ-അപ്പ് ചോദ്യങ്ങൾ',
+    'followup_questions': 'തുടർചോദ്യങ്ങൾ',
     'ai_model': 'പഠന എഞ്ചിൻ',
     'support': 'പിന്തുണ',
     'limited': 'പരിമിതം',
@@ -2630,7 +2630,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'premium_plan': 'പ്രീമിയം',
     'free': {
       'feature1': 'ദിവസവും 15 പഠന ക്രെഡിറ്റുകൾ',
-      'feature2': 'ദൈനിക വചന അറിയിപ്പുകൾ',
+      'feature2': 'ഇന്നത്തെ വചന അറിയിപ്പുകൾ',
       'feature3': 'പഠന പാതകളും സ്റ്റഡി ടോപ്പിക്കുകളും',
       'feature4': 'അധിക ക്രെഡിറ്റുകൾ വാങ്ങുക',
     },
@@ -2653,7 +2653,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'feature1': 'അൺലിമിറ്റഡ് പഠന ക്രെഡിറ്റുകൾ',
       'feature2': 'Discipler-നോട് സംസാരിക്കുക',
       'feature3': 'എല്ലാ സ്റ്റാൻഡേർഡ് സവിശേഷതകളും',
-      'feature4': 'അൺലിമിറ്റഡ് ഫോളോ-അപ്പ് ചോദ്യങ്ങൾ',
+      'feature4': 'പരിധിയില്ലാത്ത തുടർചോദ്യങ്ങൾ',
       'feature5': 'മുന്നേറ്റ പഠന എഞ്ചിൻ',
       'feature6': 'എപ്പോൾ വേണമെങ്കിലും റദ്ദാക്കുക',
     },
@@ -3148,8 +3148,8 @@ const Map<String, dynamic> malayalamTranslations = {
   'study_mode': {
     'minutes': '{count} മിനിറ്റ്',
     'quick': {
-      'short_name': 'വേഗ വായന',
-      'name': 'വേഗത്തിലുള്ള വായന',
+      'short_name': 'ക്വിക്ക് റീഡ്',
+      'name': 'ക്വിക്ക് റീഡ്',
       'description': 'പ്രധാന അനുഭവം + വചനം + 1 ചിന്ത',
       'duration_label': '3 മിനിറ്റ് വായന',
     },
@@ -3160,10 +3160,10 @@ const Map<String, dynamic> malayalamTranslations = {
       'duration_label': '8 മിനിറ്റ് പഠനം',
     },
     'deep': {
-      'short_name': 'ആഴത്തിൽ',
-      'name': 'ആഴത്തിലുള്ള പഠനം',
+      'short_name': 'ഡീപ്പ് ഡൈവ്',
+      'name': 'ഡീപ്പ് ഡൈവ്',
       'description': '+ വാക്ക് പഠനം + വിസ്തൃത സന്ദർഭം',
-      'duration_label': '12 മിനിറ്റ് ആഴത്തിലുള്ള പഠനം',
+      'duration_label': '12 മിനിറ്റ് ഡീപ്പ് ഡൈവ്',
     },
     'lectio': {
       'short_name': 'ലെക്‌ഷ്യോ',
