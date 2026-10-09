@@ -137,9 +137,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     CheckNotificationPermissions event,
     Emitter<NotificationState> emit,
   ) async {
-    // This would check permission status without requesting
-    // For now, we'll use the same logic as requesting
-    final result = await requestPermissions(NoParams());
+    // Reads the status only: a check must never raise the OS dialog.
+    final result = await checkPermissions(NoParams());
 
     result.fold(
       (failure) => emit(

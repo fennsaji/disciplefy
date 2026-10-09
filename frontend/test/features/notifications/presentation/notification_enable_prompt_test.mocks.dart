@@ -74,6 +74,17 @@ class MockNotificationService extends _i1.Mock
       ) as _i3.Future<bool>);
 
   @override
+  set onWebPermissionGranted(
+          _i3.Future<void> Function()? _onWebPermissionGranted) =>
+      super.noSuchMethod(
+        Invocation.setter(
+          #onWebPermissionGranted,
+          _onWebPermissionGranted,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   _i3.Future<bool> requestPermissions() => (super.noSuchMethod(
         Invocation.method(
           #requestPermissions,
@@ -92,9 +103,9 @@ class MockNotificationService extends _i1.Mock
       ) as _i3.Future<bool>);
 
   @override
-  _i3.Future<bool> isNotificationPermissionDenied() => (super.noSuchMethod(
+  _i3.Future<bool> startPushIfPermitted() => (super.noSuchMethod(
         Invocation.method(
-          #isNotificationPermissionDenied,
+          #startPushIfPermitted,
           [],
         ),
         returnValue: _i3.Future<bool>.value(false),

@@ -32,9 +32,26 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 }
 
+/// The OS notification permission, split so that reading it can never raise
+/// the system dialog. Only the in-app "turn on notifications" sheet calls
+/// [request]; startup only calls [isGranted].
+abstract class NotificationPermissionPlatform {
+  /// Whether notifications are allowed now. Never prompts.
+  Future<bool> isGranted();
+
+  /// Raises the OS permission dialog (when the OS still allows one).
+  Future<bool> request();
+}
+
 class NotificationService {
   final SupabaseClient _supabaseClient;
   final GoRouter _router;
+  final NotificationPermissionPlatform? _permissionPlatform;
+  final Future<void> Function()? _onPushPermitted;
+
+  /// Web only: starts the web push service (token, listeners) once the
+  /// browser permission is granted from the in-app sheet. Set by main.dart.
+  Future<void> Function()? onWebPermissionGranted;
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -195,8 +212,12 @@ class NotificationService {
   NotificationService({
     required SupabaseClient supabaseClient,
     required GoRouter router,
+    @visibleForTesting NotificationPermissionPlatform? permissionPlatform,
+    @visibleForTesting Future<void> Function()? onPushPermitted,
   })  : _supabaseClient = supabaseClient,
-        _router = router;
+        _router = router,
+        _permissionPlatform = permissionPlatform,
+        _onPushPermitted = onPushPermitted;
 
   // ============================================================================
   // Initialization
@@ -231,21 +252,11 @@ class NotificationService {
       // Initialize local notifications
       await _initializeLocalNotifications();
 
-      // Request permissions
-      final permissionGranted = await requestPermissions();
-
-      if (permissionGranted) {
-        // Get FCM token
-        await _getFCMToken();
-
-        // Register token with backend
-        if (_fcmToken != null) {
-          await _registerTokenWithBackend();
-        }
-
-        // Setup notification listeners
-        _setupNotificationListeners();
-
+      // Never request the permission here: on Android 13+ and iOS that
+      // raises the OS dialog at launch, over first run. The in-app sheet
+      // (showNotificationEnablePrompt) asks; startup only registers when the
+      // user already allowed notifications.
+      if (await startPushIfPermitted()) {
         // Handle notification that opened the app from terminated state
         await _handleInitialMessage();
       }
@@ -331,9 +342,57 @@ class NotificationService {
   /// after a permanent denial, where re-requesting does nothing.
   Future<bool> openPermissionSettings() => openAppSettings();
 
-  /// Request notification permissions
+  /// Registers this device for push (FCM token, listeners) when the OS
+  /// permission is already granted. Only reads the permission, so it never
+  /// shows the OS dialog. Returns whether push was started.
+  Future<bool> startPushIfPermitted() async {
+    if (!await areNotificationsEnabled()) {
+      Logger.debug(
+          '[NotificationService] Permission not granted, push not started');
+      return false;
+    }
+    await _startPush();
+    return true;
+  }
+
+  Future<void> _startPush() async {
+    final override = _onPushPermitted;
+    if (override != null) return override();
+
+    if (kIsWeb) {
+      await onWebPermissionGranted?.call();
+      return;
+    }
+
+    _firebaseMessaging ??= FirebaseMessaging.instance;
+    await _getFCMToken();
+    if (_fcmToken != null) {
+      await _registerTokenWithBackend();
+    }
+    _setupNotificationListeners();
+  }
+
+  /// Shows the OS notification permission dialog and, when granted, registers
+  /// this device for push. Only the in-app sheet and Settings call this, from
+  /// a user tap.
   Future<bool> requestPermissions() async {
+    final platform = _permissionPlatform;
+    final granted = platform != null
+        ? await platform.request().catchError((_) => false)
+        : await _requestOnDevice();
+    if (granted) {
+      try {
+        await _startPush();
+      } catch (e) {
+        Logger.error('[NotificationService] Push start error: $e');
+      }
+    }
+    return granted;
+  }
+
+  Future<bool> _requestOnDevice() async {
     try {
+      _firebaseMessaging ??= FirebaseMessaging.instance;
       if (kIsWeb) {
         // Web permissions (using default values)
         final messagingPermission =
@@ -371,8 +430,12 @@ class NotificationService {
     }
   }
 
-  /// Check if notifications are enabled
+  /// Whether the OS notification permission is granted. Never prompts.
   Future<bool> areNotificationsEnabled() async {
+    final platform = _permissionPlatform;
+    if (platform != null) {
+      return platform.isGranted().catchError((_) => false);
+    }
     try {
       if (kIsWeb) {
         // For web, try to initialize Firebase Messaging if not already done
@@ -390,6 +453,7 @@ class NotificationService {
         final settings = await _firebaseMessaging?.getNotificationSettings();
         return settings?.authorizationStatus == AuthorizationStatus.authorized;
       } else if (Platform.isIOS) {
+        _firebaseMessaging ??= FirebaseMessaging.instance;
         final settings = await _firebaseMessaging?.getNotificationSettings();
         return settings?.authorizationStatus == AuthorizationStatus.authorized;
       } else if (Platform.isAndroid) {
@@ -398,29 +462,6 @@ class NotificationService {
       return false;
     } catch (e) {
       Logger.error('[NotificationService] Check permissions error: $e');
-      return false;
-    }
-  }
-
-  /// True only when the user has actively refused notifications at the
-  /// system level. "Not asked yet" is not a refusal: the permission request
-  /// made at sign-in (or the browser's own prompt) covers that case, so the
-  /// in-app "turn on notifications" sheet should not.
-  Future<bool> isNotificationPermissionDenied() async {
-    try {
-      if (kIsWeb || Platform.isIOS) {
-        _firebaseMessaging ??= FirebaseMessaging.instance;
-        final settings = await _firebaseMessaging?.getNotificationSettings();
-        return settings?.authorizationStatus == AuthorizationStatus.denied;
-      } else if (Platform.isAndroid) {
-        // Android asks at sign-in (initialize), so a denied status after that
-        // is the user's answer.
-        final status = await Permission.notification.status;
-        return status.isDenied || status.isPermanentlyDenied;
-      }
-      return false;
-    } catch (e) {
-      Logger.error('[NotificationService] Check permission denial error: $e');
       return false;
     }
   }

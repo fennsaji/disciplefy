@@ -7,6 +7,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../onboarding/domain/first_run_flags.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -200,9 +202,10 @@ class NotificationPromptConfig {
 /// Shows the notification enable sheet.
 ///
 /// Every notification category is on by default, so this never asks about a
-/// category preference — that is what Settings is for. It appears only when
-/// the OS/browser permission was explicitly refused, and at most once per
-/// install across all notification types (see [NotificationPromptPolicy]).
+/// category preference — that is what Settings is for. It is the soft ask for
+/// the OS/browser permission: it appears while that permission is not granted,
+/// at most once per install across all notification types (see
+/// [NotificationPromptPolicy]), and only its "Turn on" raises the OS dialog.
 ///
 /// Returns true if the user enabled, false if declined, null if not shown.
 Future<bool?> showNotificationEnablePrompt({
@@ -216,20 +219,14 @@ Future<bool?> showNotificationEnablePrompt({
 
   if (!forceShow) {
     if (policy.hasAsked) return null;
+    // Never during the quiet first run: it waits for lesson 1 to be done.
+    if (!FirstRunFlags.notificationPromptsAllowed) return null;
 
-    final service = sl<NotificationService>();
-    final granted =
-        await service.areNotificationsEnabled().catchError((_) => true);
-    final denied = granted
-        ? false
-        : await service
-            .isNotificationPermissionDenied()
-            .catchError((_) => false);
+    final granted = await sl<NotificationService>()
+        .areNotificationsEnabled()
+        .catchError((_) => true);
 
-    if (!policy.shouldShow(
-        permissionGranted: granted, permissionDenied: denied)) {
-      return null;
-    }
+    if (!policy.shouldShow(permissionGranted: granted)) return null;
   }
 
   if (!context.mounted) return null;
