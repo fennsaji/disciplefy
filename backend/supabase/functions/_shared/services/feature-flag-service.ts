@@ -9,7 +9,7 @@
  * - Restricted to specific subscription plans
  * - Rolled out to a percentage of users (future enhancement)
  *
- * Implements 5-minute TTL caching pattern to minimize database queries.
+ * Caches rows for one minute (FEATURE_FLAGS_CACHE_TTL_MS) per worker.
  *
  * @example
  * ```typescript
@@ -44,7 +44,9 @@ interface CacheEntry {
 // Cache Configuration
 // ============================================================================
 
-const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+// Short so an admin toggle reaches the app within about a minute; the query
+// is a single small table read.
+export const FEATURE_FLAGS_CACHE_TTL_MS = 60 * 1000
 let flagsCache: CacheEntry | null = null
 
 // ============================================================================
@@ -62,7 +64,7 @@ function getSupabaseClient() {
 function isCacheValid(entry: CacheEntry | null): boolean {
   if (!entry) return false
   const age = Date.now() - entry.timestamp
-  return age < CACHE_TTL_MS
+  return age < FEATURE_FLAGS_CACHE_TTL_MS
 }
 
 function getCacheAge(entry: CacheEntry | null): number {
@@ -73,6 +75,24 @@ function getCacheAge(entry: CacheEntry | null): number {
 // ============================================================================
 // Database Fetch
 // ============================================================================
+
+/**
+ * One feature_flags row as a FeatureFlag. A rollout_percentage of 0 is kept
+ * (only a missing value means 100).
+ */
+// deno-lint-ignore no-explicit-any
+export function mapFeatureFlagRow(row: any): FeatureFlag {
+  return {
+    featureKey: row.feature_key,
+    featureName: row.feature_name,
+    isEnabled: row.is_enabled === true,
+    enabledForPlans: row.enabled_for_plans || [],
+    rolloutPercentage: row.rollout_percentage ?? 100,
+    displayMode: (row.display_mode || 'hide') as 'hide' | 'lock', // Default to 'hide' for backward compatibility
+    metadata: row.metadata || {},
+    allowTesterBypass: row.allow_tester_bypass === true,
+  }
+}
 
 async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
   const supabase = getSupabaseClient()
@@ -94,17 +114,7 @@ async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
     return []
   }
 
-  // Transform database rows to FeatureFlag objects
-  const flags: FeatureFlag[] = data.map(row => ({
-    featureKey: row.feature_key,
-    featureName: row.feature_name,
-    isEnabled: row.is_enabled,
-    enabledForPlans: row.enabled_for_plans || [],
-    rolloutPercentage: row.rollout_percentage || 100,
-    displayMode: (row.display_mode || 'hide') as 'hide' | 'lock', // Default to 'hide' for backward compatibility
-    metadata: row.metadata || {},
-    allowTesterBypass: row.allow_tester_bypass === true,
-  }))
+  const flags: FeatureFlag[] = data.map(mapFeatureFlagRow)
 
   return flags
 }
@@ -116,7 +126,7 @@ async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
 /**
  * Get all enabled feature flags
  *
- * Uses 5-minute in-memory cache to minimize database queries.
+ * Uses a one-minute in-memory cache to minimize database queries.
  * Flags are automatically refreshed when cache expires.
  *
  * @param forceRefresh - Force fetch from database, bypassing cache
@@ -298,14 +308,14 @@ async function fetchTesterEmails(): Promise<string[]> {
 
 /**
  * Check whether an email is in the tester allowlist.
- * Uses the same 5-minute TTL caching pattern as feature flags.
+ * Cached for one minute, like the feature flags.
  * Fail-safe: returns false on any error or for missing/anonymous emails.
  */
 export async function isTesterEmail(email: string | null | undefined): Promise<boolean> {
   if (!email) return false
 
   const now = Date.now()
-  if (!testerEmailsCache || now - testerEmailsCache.timestamp >= CACHE_TTL_MS) {
+  if (!testerEmailsCache || now - testerEmailsCache.timestamp >= FEATURE_FLAGS_CACHE_TTL_MS) {
     testerEmailsCache = {
       emails: await fetchTesterEmails(),
       timestamp: now,
