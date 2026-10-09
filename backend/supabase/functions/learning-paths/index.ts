@@ -18,6 +18,7 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
 import { buildRecommendedExtras, type NextLessonJson } from './next-lesson.ts';
 import { flatListTotal, loadActivePathCount } from './list-total.ts';
+import { loadCategorySummaries } from './category-summaries.ts';
 import {
   assertGuestMayEnroll,
   loadGuestAccessiblePathIds,
@@ -567,6 +568,10 @@ async function handleLearningPaths(
   const action = url.searchParams.get('action');
 
   // Check if this is a recommended paths (plural) request
+  if ((method === 'GET' || method === 'POST') && action === 'categories') {
+    return handleListCategories(services, userContext);
+  }
+
   if ((method === 'GET' || method === 'POST') && action === 'recommended_paths') {
     return handleGetRecommendedPaths(req, services, userContext);
   }
@@ -601,6 +606,9 @@ async function handleLearningPaths(
         const body = await clonedReq.json();
         if (body.pathId) {
           return handleGetPathDetails(req, services, userContext, body.pathId, body.language);
+        }
+        if (body.action === 'categories') {
+          return handleListCategories(services, userContext);
         }
         if (body.action === 'category_paths') {
           return handleListPathsByCategory(req, services, userContext);
@@ -938,6 +946,31 @@ async function handleListPathsFlat(
         offset,
       },
     }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+
+// ============================================================================
+// Every category with its path count (no paths)
+// ============================================================================
+
+/**
+ * Every category with its active-path count, in the user's priority order.
+ * Body `{ action: 'categories' }` or `?action=categories`. Paths are not
+ * loaded: All paths shows every category chip before listing any path.
+ */
+async function handleListCategories(
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
+  const categories = await loadCategorySummaries(services.supabaseServiceClient, userId ?? null);
+  if (!categories) {
+    console.error('[LearningPaths] category summaries failed');
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch learning path categories', 500);
+  }
+  return new Response(
+    JSON.stringify({ success: true, data: { categories } }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
