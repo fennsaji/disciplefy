@@ -54,6 +54,28 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
   /// Ignores a double tap; never held across the awaited push.
   final TapGuard _navGuard = TapGuard();
 
+  /// Last page asked for and when. A failed page emits a state, which asks
+  /// again; without this a short list retried in a tight loop offline.
+  String? _lastPageKey;
+  DateTime? _lastPageAt;
+  static const Duration _pageRetryAfter = Duration(seconds: 3);
+
+  /// Whether the page [key] was just asked for (and so is not asked again).
+  bool _recentlyAsked(String key) {
+    final now = DateTime.now();
+    final at = _lastPageAt;
+    if (key == _lastPageKey &&
+        at != null &&
+        now.difference(at) < _pageRetryAfter) {
+      return true;
+    }
+    _lastPageKey = key;
+    _lastPageAt = now;
+    return false;
+  }
+
+  bool get _searching => _searchController.text.trim().isNotEmpty;
+
   LearningPathsBloc get _bloc => context.read<LearningPathsBloc>();
 
   @override
@@ -61,7 +83,7 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
     super.initState();
     _language = widget.language;
     _scrollController.addListener(_onScroll);
-    _searchController.addListener(() => setState(() {}));
+    _searchController.addListener(_onSearchChanged);
     _ensureLoaded();
   }
 
@@ -101,6 +123,13 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
     }
   }
 
+  /// A search covers the whole category, so typing loads the rest of it.
+  void _onSearchChanged() {
+    setState(() {});
+    final state = _bloc.state;
+    if (state is LearningPathsLoaded) _afterLoaded(state);
+  }
+
   LearningPathCategory? _categoryIn(LearningPathsLoaded state) =>
       state.categories.where((c) => c.name == widget.category).firstOrNull;
 
@@ -111,9 +140,16 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
     final category = _categoryIn(state);
     if (category == null) {
       // Not on the loaded category pages yet: fetch the next page.
-      if (state.hasMoreCategories && !state.isFetchingMoreCategories) {
+      if (state.hasMoreCategories &&
+          !state.isFetchingMoreCategories &&
+          !_recentlyAsked('categories:${state.nextCategoryOffset}')) {
         _bloc.add(LoadMoreCategories(language: language));
       }
+      return;
+    }
+    // Searching matches every path of the category, not only those loaded.
+    if (_searching) {
+      _loadMore();
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -136,7 +172,8 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
     final category = _categoryIn(state);
     if (category == null ||
         !category.hasMoreInCategory ||
-        state.loadingCategories.contains(category.name)) {
+        state.loadingCategories.contains(category.name) ||
+        _recentlyAsked('paths:${category.name}:${category.nextPathOffset}')) {
       return;
     }
     _bloc.add(LoadMorePathsForCategory(
@@ -362,10 +399,18 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
 
     final paths = _filtered(category.paths);
     final isLoadingMore = state.loadingCategories.contains(category.name);
+    // A search with no match yet among the loaded paths is still looking
+    // while the rest of the category loads.
+    if (paths.isEmpty &&
+        _searching &&
+        (isLoadingMore || category.hasMoreInCategory)) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return RefreshIndicator(
       onRefresh: () async {
         final language = await _resolveLanguage();
+        _lastPageKey = null;
         _bloc.add(RefreshLearningPaths(language: language));
         await Future.delayed(const Duration(milliseconds: 500));
       },

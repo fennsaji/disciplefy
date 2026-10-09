@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
@@ -39,6 +40,48 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
 
   static const _categoryPageSize = 4;
   static const _pathsPerCategory = 3;
+
+  /// Page size of the flat list (All paths, fellowship picker, search). The
+  /// list is fetched page by page until the server reports no more.
+  static const flatPageSize = 50;
+
+  /// Upper bound on flat-list pages, so a server that never stops reporting
+  /// `has_more` cannot loop forever (100 pages = 5000 paths).
+  static const _maxFlatPages = 100;
+
+  /// Every page of the flat list (search when [search] is set), in server
+  /// order with duplicates dropped. Left on the first failed page: a partial
+  /// list would look complete.
+  Future<Either<Failure, List<LearningPath>>> _fetchAllFlat({
+    required String language,
+    String? search,
+    String? fellowshipId,
+  }) async {
+    final paths = <LearningPath>[];
+    final seen = <String>{};
+    var offset = 0;
+    for (var page = 0; page < _maxFlatPages; page++) {
+      final result = await _repository.getLearningPaths(
+        language: language,
+        limit: flatPageSize,
+        offset: offset,
+        forceRefresh: true,
+        search: search,
+        fellowshipId: fellowshipId,
+      );
+      Failure? failure;
+      LearningPathsResult? data;
+      result.fold((f) => failure = f, (d) => data = d);
+      if (data == null) return Left(failure!);
+      final pageData = data!;
+      for (final p in pageData.paths) {
+        if (seen.add(p.id)) paths.add(p);
+      }
+      offset += pageData.paths.length;
+      if (!pageData.hasMore || pageData.paths.isEmpty) break;
+    }
+    return Right(paths);
+  }
 
   LearningPathsBloc({
     required LearningPathsRepository repository,
@@ -288,9 +331,12 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     result.fold(
       (failure) => emit(current.copyWith(isFetchingMoreCategories: false)),
       (categoriesResult) {
+        // A category already listed (the order shifted between pages) is
+        // not listed twice.
+        final known = current.categories.map((c) => c.name).toSet();
         final combined = [
           ...current.categories,
-          ...categoriesResult.categories,
+          ...categoriesResult.categories.where((c) => known.add(c.name)),
         ];
         final enrolledPaths =
             combined.expand((c) => c.paths).where((p) => p.isEnrolled).toList();
@@ -353,8 +399,14 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
             updatedCategories.indexWhere((c) => c.name == event.category);
         if (idx != -1) {
           final existing = updatedCategories[idx];
+          // A path already listed (the order shifted between pages, e.g. a
+          // path finished meanwhile moved down) is not listed twice.
+          final ids = existing.paths.map((p) => p.id).toSet();
           updatedCategories[idx] = existing.copyWith(
-            paths: [...existing.paths, ...newCatData.paths],
+            paths: [
+              ...existing.paths,
+              ...newCatData.paths.where((p) => ids.add(p.id)),
+            ],
             hasMoreInCategory: newCatData.hasMoreInCategory,
             nextPathOffset: newCatData.nextPathOffset,
           );
@@ -393,10 +445,8 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       emit(const LearningPathsLoading());
     }
 
-    final result = await _repository.getLearningPaths(
+    final result = await _fetchAllFlat(
       language: event.language,
-      limit: 100,
-      forceRefresh: true,
       fellowshipId: event.fellowshipId,
     );
 
@@ -405,9 +455,9 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     result.fold(
       (failure) => emit(
           LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
-      (data) => emit(LearningPathsLoaded(
+      (paths) => emit(LearningPathsLoaded(
         categories: const [],
-        searchResults: data.paths,
+        searchResults: paths,
         searchQuery: '',
       )),
     );
@@ -469,11 +519,9 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       ));
     }
 
-    // Search using the user's content language
-    final result = await _repository.getLearningPaths(
+    // Search using the user's content language, every page of matches.
+    final result = await _fetchAllFlat(
       language: event.language,
-      forceRefresh: true,
-      limit: 50,
       search: event.query,
     );
 
@@ -481,9 +529,20 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     // list renders "no paths found" for what was actually a network failure,
     // with no error and no way to retry.
     final searchFailed = result.isLeft();
-    final paths = result.fold((_) => <LearningPath>[], (data) => data.paths);
+    final paths = result.fold((_) => <LearningPath>[], (data) => data);
 
     final afterSearch = state;
+    // Events run concurrently: a slower, older search ("ma") must not
+    // overwrite the results of the query the user has since typed ("mark"),
+    // nor come back after the search was cleared. (An empty query is the
+    // flat listing, which a search still replaces.)
+    final shownQuery =
+        afterSearch is LearningPathsLoaded ? afterSearch.searchQuery : null;
+    if (afterSearch is LearningPathsLoaded &&
+        shownQuery != event.query &&
+        shownQuery != '') {
+      return;
+    }
     if (afterSearch is LearningPathsLoaded) {
       emit(afterSearch.copyWith(
         searchQuery: event.query,

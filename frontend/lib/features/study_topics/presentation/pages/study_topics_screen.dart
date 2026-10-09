@@ -726,7 +726,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// open the account sheet.
   Future<void> _openAllPaths() async {
     if (!_navGuard.tryAcquire()) return;
-    await context.push<void>(AppRoutes.allPaths);
+    // In the language Topics lists its paths in, not a re-read preference.
+    await context.push<void>(Uri(
+        path: AppRoutes.allPaths,
+        queryParameters: {'language': widget.currentLanguage}).toString());
     if (!mounted) return;
     _reloadAfterProgressChange();
   }
