@@ -33,6 +33,7 @@ const ratioExempt = <String, String>{
   'credits.view_saved:ml': 'says "guides", not just "saved"; button',
   'topics.see_all:ml': '"See all" needs the verb; fits the slot',
   'intro.memory.secondary:ml': 'owner review adds the verb; full-width button',
+  'intro.generate.step2_title:ml': 'plain Malayalam mode name; fits the slot',
 };
 
 String? lookup(String code, String key) {

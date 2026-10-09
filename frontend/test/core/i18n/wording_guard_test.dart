@@ -113,20 +113,39 @@ void main() {
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
-  test('Hindi uses one memory-verse term (स्मरण वचन) and स्ट्रीक', () {
+  test('Hindi uses simple everyday terms, not transliterations', () {
+    // Owner rule: simple everyday Hindi over transliteration; transliterate
+    // only when the Hindi word is literary or unclear.
     const oldTerms = [
-      'याद वचन',
+      'स्मरण वचन',
       'याद वर्सेज',
       'स्मृति आयत',
       'स्मृति वचन',
       'स्मरण पद',
       'याद आयत',
       'मेमोरी डेक',
+      'लर्निंग',
+      'पाथ',
+      'पथ',
+      'सीखने के मार्ग',
+      'स्टडी',
+      'मार्गदर्शिका',
+      'क्विक',
+      'डीप डाइव',
+      'फॉलो-अप',
     ];
     final values = flatten(hindiTranslations).map((e) => e.value);
-    expect(values.where((v) => oldTerms.any(v.contains)), isEmpty);
+    final bad = [
+      for (final v in values)
+        for (final t in oldTerms)
+          if (v.contains(t)) '$t: $v',
+    ];
+    expect(bad, isEmpty, reason: bad.join('\n'));
+    // "लगातार दिन" is not a noun; counts read "लगातार {n} दिन" and the noun
+    // stays स्ट्रीक.
     expect(values.where((v) => v.contains('लगातार दिन')), isEmpty);
-    expect(values.where((v) => v.contains('पथ')), isEmpty);
+    // Save is सहेजें, not सेव करें (सेवा "service" is fine).
+    expect(values.where((v) => RegExp('सेव(?![ाक])').hasMatch(v)), isEmpty);
   });
 
   test('path items are lessons (पाठ / പാഠം), never topics, in hi and ml', () {
@@ -141,10 +160,27 @@ void main() {
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
-  test('Malayalam says സ്റ്റ്രീക്ക് for a streak, not തുടർച്ച', () {
+  test('Malayalam uses simple everyday words, not transliterations', () {
+    // Owner rule: common English words people use (ക്രെഡിറ്റ്, പ്ലാൻ, സേവ്,
+    // ഗൈഡ്, Discipler) are fine; otherwise plain Malayalam. A streak is
+    // തുടർച്ച; the study modes are വേഗ വായന / സാധാരണ / ആഴത്തിലുള്ള പഠനം.
+    const oldTerms = [
+      'സ്റ്റ്രീ',
+      'സ്ട്രീ',
+      'ക്വിക്ക്',
+      'ഡീപ്പ്',
+      'സ്റ്റഡി',
+      'ഫോളോ',
+      'ലേണിംഗ്',
+      'പാത്ത്',
+    ];
     final values = flatten(malayalamTranslations).map((e) => e.value);
-    expect(values.where((v) => v.contains('സ്ട്രീ')), isEmpty);
-    expect(values.where((v) => RegExp('തുടർച്ച(?![യാ])').hasMatch(v)), isEmpty);
+    final bad = [
+      for (final v in values)
+        for (final t in oldTerms)
+          if (v.contains(t)) '$t: $v',
+    ];
+    expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
   test('Malayalam uses one memory-verse term (മനഃപാഠ വാക്യം)', () {

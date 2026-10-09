@@ -832,29 +832,29 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'डिसाइपलफाई में आपका स्वागत है',
       'onboarding_welcome_subtitle':
-          'जेफ रीड पद्धति के अनुसार व्यक्तिगत बाइबल स्टडी गाइड',
+          'जेफ रीड पद्धति के अनुसार व्यक्तिगत बाइबल अध्ययन गाइड',
       'onboarding_language_title': 'अपनी भाषा चुनें',
       'onboarding_language_subtitle': 'ऐप के लिए अपनी पसंदीदा भाषा चुनें',
       'onboarding_purpose_title': 'अपने बाइबल अध्ययन को बदलें',
       'onboarding_purpose_subtitle':
-          'किसी भी आयत या विषय के लिए व्यक्तिगत स्टडी गाइड बनाएं',
+          'किसी भी आयत या विषय के लिए व्यक्तिगत अध्ययन गाइड बनाएं',
       'language_english': 'English',
       'language_hindi': 'हिन्दी',
       'language_malayalam': 'മലയാളം',
 
       // Study Input
-      'study_input_title': 'स्टडी गाइड बनाएं',
+      'study_input_title': 'अध्ययन गाइड बनाएं',
       'study_input_verse_tab': 'बाइबल आयत',
       'study_input_topic_tab': 'विषय',
       'study_input_verse_hint': 'बाइबल संदर्भ दर्ज करें (जैसे, यूहन्ना 3:16)',
       'study_input_topic_hint': 'अध्ययन विषय दर्ज करें (जैसे, विश्वास, प्रेम)',
-      'study_input_generate_button': 'स्टडी गाइड बनाएं',
+      'study_input_generate_button': 'अध्ययन गाइड बनाएं',
       'study_input_verse_validation': 'कृपया एक वैध बाइबल संदर्भ दर्ज करें',
       'study_input_topic_validation': 'कृपया एक विषय दर्ज करें (2-100 अक्षर)',
-      'study_input_generating': 'आपका स्टडी गाइड बनाया जा रहा है...',
+      'study_input_generating': 'आपका अध्ययन गाइड बनाया जा रहा है...',
 
       // Study Result
-      'study_result_title': 'स्टडी गाइड',
+      'study_result_title': 'अध्ययन गाइड',
       'study_result_new_button': 'नया गाइड बनाएं',
       'study_result_share_button': 'साझा करें',
 
@@ -868,7 +868,7 @@ class AppLocalizations {
           'कोई ईमेल ऐप नहीं मिला। कृपया techsupport@disciplefy.in पर लिखें',
 
       // Loading Screen Stages
-      'loading_stage_preparing': 'आपका स्टडी गाइड तैयार किया जा रहा है...',
+      'loading_stage_preparing': 'आपका अध्ययन गाइड तैयार किया जा रहा है...',
       'loading_stage_analyzing':
           'धर्मग्रंथ संदर्भ का विश्लेषण किया जा रहा है...',
       'loading_stage_gathering': 'अंतर्दृष्टि एकत्र की जा रही है...',
@@ -891,7 +891,7 @@ class AppLocalizations {
       'progress_statistics': 'आंकड़े',
       'progress_studies': 'अध्ययन',
       'progress_time_spent': 'समय बिताया',
-      'progress_memory_verses': 'स्मरण वचन',
+      'progress_memory_verses': 'याद वचन',
       'progress_voice_sessions': 'वॉयस सत्र',
       'progress_saved_guides': 'सहेजी गई गाइड',
       'progress_study_days': 'अध्ययन दिवस',
@@ -910,9 +910,9 @@ class AppLocalizations {
       'progress_awesome': 'शानदार!',
 
       // Achievement Categories
-      'achievement_category_study': 'स्टडी गाइड',
+      'achievement_category_study': 'अध्ययन गाइड',
       'achievement_category_streak': 'अध्ययन स्ट्रीक',
-      'achievement_category_memory': 'स्मरण वचन',
+      'achievement_category_memory': 'याद वचन',
       'achievement_category_voice': 'Discipler से बात करें',
       'achievement_category_saved': 'सहेजे गए गाइड',
 
@@ -1090,21 +1090,21 @@ class AppLocalizations {
       'feedCreateContentHint': 'आपके मन में क्या है?',
       'feedCreatePost': 'पोस्ट करें',
       'lessonsComing': 'पाठ जल्द आ रहे हैं',
-      'lessonsDescription': 'आपकी संगति की स्टडी गाइड यहाँ दिखाई देंगी।',
-      'lessonsAssignPath': 'लर्निंग पाथ असाइन करें',
-      'lessonsChangePath': 'लर्निंग पाथ बदलें',
+      'lessonsDescription': 'आपकी संगति की अध्ययन गाइड यहाँ दिखाई देंगी।',
+      'lessonsAssignPath': 'सीखने का रास्ता असाइन करें',
+      'lessonsChangePath': 'सीखने का रास्ता बदलें',
       'lessonsNoPathMentor':
-          'अभी कोई लर्निंग पाथ असाइन नहीं है।\nएक असाइन करने के लिए नीचे टैप करें।',
+          'अभी कोई सीखने का रास्ता असाइन नहीं है।\nएक असाइन करने के लिए नीचे टैप करें।',
       'lessonsNoPathMember':
-          'आपके मार्गदर्शक ने अभी कोई लर्निंग पाथ असाइन नहीं किया है।',
+          'आपके मार्गदर्शक ने अभी कोई सीखने का रास्ता असाइन नहीं किया है।',
       'lessonsCurrentStudy': 'वर्तमान अध्ययन',
-      'lessonsSelectPath': 'एक लर्निंग पाथ चुनें',
-      'lessonsPickPathTitle': 'अपनी संगति के लिए एक लर्निंग पाथ चुनें',
-      'lessonsChoosePathTitle': 'एक लर्निंग पाथ चुनें',
+      'lessonsSelectPath': 'एक सीखने का रास्ता चुनें',
+      'lessonsPickPathTitle': 'अपनी संगति के लिए एक सीखने का रास्ता चुनें',
+      'lessonsChoosePathTitle': 'एक सीखने का रास्ता चुनें',
       'lessonsChoosePathSubtitle': 'सब मिलकर इसे पढ़ते हैं, एक बार में एक पाठ।',
       'lessonsCurrentPathTag': 'वर्तमान',
-      'searchPathsHint': 'लर्निंग पाथ खोजें...',
-      'searchNoResults': 'कोई पाथ मेल नहीं खाता',
+      'searchPathsHint': 'सीखने के रास्ते खोजें...',
+      'searchNoResults': 'कोई रास्ता मेल नहीं खाता',
       'lessonsGuide': 'गाइड',
       'lessonsTitle': 'पाठ',
       'lessonsCurrentLesson': 'वर्तमान पाठ',
@@ -1166,8 +1166,8 @@ class AppLocalizations {
       'lessonsPathCompleteBody':
           'आपकी संगति ने "{pathTitle}" पूरा कर लिया है। अगला शुरू करना चाहते हैं?',
       'lessonsLater': 'बाद में',
-      'lessonsChooseNextPath': 'अगला पाथ चुनें',
-      'lessonsPathAssignedSuccess': 'लर्निंग पाथ सफलतापूर्वक सौंपा गया!',
+      'lessonsChooseNextPath': 'अगला रास्ता चुनें',
+      'lessonsPathAssignedSuccess': 'सीखने का रास्ता सफलतापूर्वक सौंपा गया!',
       'lessonsProgressResetSuccess': 'प्रगति गाइड 1 पर रीसेट की गई।',
       'lessonsResetConfirm':
           'यह संगति की प्रगति को वापस गाइड 1 पर रीसेट कर देगा। सभी सदस्यों को गाइड फिर से पूरे करने होंगे।',
@@ -1254,8 +1254,8 @@ class AppLocalizations {
       'meetingsSyncBannerTitle': 'नए सदस्यों को कैलेंडर इनवाइट नहीं मिले',
       'meetingsSyncCalendar': 'कैलेंडर से सिंक करें',
       'meetingsSyncReconnect': 'कृपया Google Calendar फिर से कनेक्ट करें',
-      'homeAssignPathMentor': 'लर्निंग पाथ असाइन करें',
-      'homeNoPathAssigned': 'कोई लर्निंग पाथ नहीं',
+      'homeAssignPathMentor': 'सीखने का रास्ता असाइन करें',
+      'homeNoPathAssigned': 'कोई सीखने का रास्ता नहीं',
       'fellowshipRecentActivity': 'हाल की गतिविधि',
       'fellowshipViewAll': 'सभी देखें',
       'feedReadMore': 'और पढ़ें',
@@ -1276,13 +1276,13 @@ class AppLocalizations {
       'walkthroughHomeDailyVerseTitle': 'आपका दैनिक वचन',
       'walkthroughHomeDailyVerseDesc':
           'हर दिन एक नया बाइबल वचन — इसे पढ़ें, कॉपी करें या साझा करें',
-      'walkthroughHomeGenerateTitle': 'स्टडी गाइड बनाएं',
+      'walkthroughHomeGenerateTitle': 'अध्ययन गाइड बनाएं',
       'walkthroughHomeGenerateDesc':
-          'किसी भी विषय या वचन पर व्यक्तिगत बाइबल स्टडी गाइड बनाएं',
-      'walkthroughHomeTopicsTitle': 'लर्निंग पाथ',
+          'किसी भी विषय या वचन पर व्यक्तिगत बाइबल अध्ययन गाइड बनाएं',
+      'walkthroughHomeTopicsTitle': 'सीखने के रास्ते',
       'walkthroughHomeTopicsDesc':
           'बाइबल सीखने के लिए तैयार अध्ययन योजनाएं हैं — और देखने के लिए Topics दबाएं',
-      'walkthroughHomeMemoryTitle': 'स्मरण वचन',
+      'walkthroughHomeMemoryTitle': 'याद वचन',
       'walkthroughHomeMemoryDesc':
           'जो वचन आप याद करना चाहते हैं — आज अभ्यास के लिए दबाएं',
       'walkthroughGenerateModeTitle': 'इनपुट प्रकार चुनें',
@@ -1293,7 +1293,7 @@ class AppLocalizations {
           '"क्षमा", "यूहन्ना 3:16" या "चिंता से कैसे निपटें?" जैसा कुछ टाइप करें',
       'walkthroughGenerateButtonTitle': 'अपना अध्ययन बनाएं',
       'walkthroughGenerateButtonDesc':
-          'अपनी बाइबल स्टडी गाइड बनाने के लिए दबाएं',
+          'अपनी बाइबल अध्ययन गाइड बनाने के लिए दबाएं',
       'walkthroughDisciplerTitle': 'Discipler',
       'walkthroughDisciplerDesc':
           'कोई भी बाइबल सवाल पूछें और जवाब पाएं — जैसे हमेशा एक बाइबल शिक्षक उपलब्ध हो',
@@ -1302,17 +1302,17 @@ class AppLocalizations {
           '"आशा" जैसा कोई विषय या "रोमियों 8:1" जैसा वचन टाइप करें',
       'walkthroughStudyGuideGenerateTitle': 'अपना अध्ययन बनाएं',
       'walkthroughStudyGuideGenerateDesc':
-          'Generate दबाएं और आपकी स्टडी गाइड कुछ ही सेकंड में तैयार',
-      'walkthroughLearningPathsTitle': 'एक पाथ शुरू करें',
+          'Generate दबाएं और आपकी अध्ययन गाइड कुछ ही सेकंड में तैयार',
+      'walkthroughLearningPathsTitle': 'एक रास्ता शुरू करें',
       'walkthroughLearningPathsDesc':
-          'कोई भी पाथ दबाएं और धीरे-धीरे बाइबल सीखें',
+          'कोई भी रास्ता दबाएं और धीरे-धीरे बाइबल सीखें',
       'walkthroughForYouTitle': 'आपके लिए',
-      'forYouSectionSubtitle': 'आपके लिए लर्निंग पाथ',
+      'forYouSectionSubtitle': 'आपके लिए सीखने के रास्ते',
       'walkthroughForYouDesc':
           'आपके लिए चुने गए अध्ययन — जहाँ छोड़ा वहाँ से जारी रखें या कुछ नया शुरू करें',
       'walkthroughMemoryAddTitle': 'एक वचन जोड़ें',
       'walkthroughMemoryAddDesc': 'याद करने के लिए बाइबल का एक वचन जोड़ें',
-      'walkthroughMemoryVerseTitle': 'आपका स्मरण वचन',
+      'walkthroughMemoryVerseTitle': 'आपका याद वचन',
       'walkthroughMemoryVerseDesc':
           'अभ्यास सत्र शुरू करने के लिए इस वचन को दबाएं',
       'walkthroughPracticeModesTitle': 'अभ्यास मोड',
@@ -1437,7 +1437,7 @@ class AppLocalizations {
       'discard': 'हटाएं',
       'unsavedChangesTitle': 'अपने बदलाव सहेजें?',
       'unsavedChangesMessage': 'आपके कुछ बदलाव अभी तक सहेजे नहीं गए हैं।',
-      'openStudyGuide': 'स्टडी गाइड खोलें',
+      'openStudyGuide': 'अध्ययन गाइड खोलें',
       'postTypeDaily': 'आज का अध्ययन',
       'openFullStudy': 'पूरा अध्ययन खोलें',
       'askAMentor': 'मेंटर से पूछें',
@@ -1518,16 +1518,16 @@ class AppLocalizations {
       'disciplerAdvancesLessons': 'डिसाइपलर पाठ आगे बढ़ाए',
       'disciplerAdvancesLessonsSubtitle':
           'हर पोस्ट के बाद समूह को अगले पाठ पर ले जाता है',
-      'disciplerAdvancesPath': 'डिसाइपलर लर्निंग पाथ आगे बढ़ाए',
+      'disciplerAdvancesPath': 'Discipler सीखने का रास्ता आगे बढ़ाए',
       'disciplerAdvancesPathSubtitle':
-          'वर्तमान पाथ पूरा होने पर नया पाथ खुद चुनता है। बंद होने पर यह आप पर छोड़ देता है।',
+          'अभी का रास्ता पूरा होने पर नया रास्ता खुद चुनता है। बंद होने पर यह आप पर छोड़ देता है।',
       'dailyPostScreenTitle': 'दैनिक पोस्ट',
       'dailyPostNextTitle': 'अगली पोस्ट',
       'dailyPostOff':
           'दैनिक पोस्ट बंद हैं। नीचे दैनिक अध्ययन पोस्ट करें चालू करें।',
       'dailyPostPostedToday': 'आज की पोस्ट भेज दी गई है',
       'dailyPostLastPost': 'पिछली पोस्ट',
-      'dailyPostPath': 'लर्निंग पाथ',
+      'dailyPostPath': 'सीखने का रास्ता',
       'dailyPostNothingNext': 'पोस्ट करने के लिए कुछ नया नहीं है',
       'dailyPostToday': 'आज',
       'dailyPostTomorrow': 'कल',
@@ -1675,7 +1675,7 @@ class AppLocalizations {
       'progress_xp_total': 'ആകെ XP',
       'progress_xp_to_next_level': 'അടുത്ത ലെവലിലേക്ക് XP',
       'progress_max_level': 'പരമാവധി ലെവൽ എത്തി!',
-      'progress_streaks': 'സ്റ്റ്രീക്കുകൾ',
+      'progress_streaks': 'തുടർച്ചകൾ',
       'progress_study_streak': 'പഠനം',
       'progress_verse_streak': 'വചനം',
       'progress_days': 'ദിവസം',
@@ -1703,7 +1703,7 @@ class AppLocalizations {
 
       // Achievement Categories
       'achievement_category_study': 'പഠന ഗൈഡുകൾ',
-      'achievement_category_streak': 'പഠന സ്റ്റ്രീക്കുകൾ',
+      'achievement_category_streak': 'പഠന തുടർച്ചകൾ',
       'achievement_category_memory': 'മനഃപാഠ വാക്യങ്ങൾ',
       'achievement_category_voice': 'Discipler-നോട് സംസാരിക്കുക',
       'achievement_category_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
