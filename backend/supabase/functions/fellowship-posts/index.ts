@@ -11,6 +11,7 @@
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { runInBackground } from '../_shared/utils/background-task.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
@@ -674,7 +675,7 @@ async function handleToggleReaction(req: Request, services: ServiceContainer): P
 
   // Notify post author when someone adds a reaction (not on remove, not self-reaction)
   if (action === 'added' && post.author_user_id !== user.id) {
-    ;(async () => {
+    runInBackground((async () => {
       try {
         // A reaction is the least urgent push there is — it always waits for
         // the author's morning if it would land in their night.
@@ -683,7 +684,7 @@ async function handleToggleReaction(req: Request, services: ServiceContainer): P
           { type: 'fellowship_reaction', fellowship_id: post.fellowship_id, post_id: body.post_id, reaction_type: reactionType },
           { kind: 'fellowship_reaction' })
       } catch (err) { console.error('[fellowship-posts/react] FCM error (non-fatal):', err) }
-    })()
+    })(), 'fellowship-posts/react notify')
   }
 
   return new Response(

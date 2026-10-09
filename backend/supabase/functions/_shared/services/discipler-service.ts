@@ -169,6 +169,45 @@ export interface DeliverResult {
   queuedTo: number
 }
 
+/** A fellowship_members row as far as push reachability is concerned. */
+export interface FellowshipMemberReach {
+  user_id: string
+  is_active: boolean | null
+  notifications_muted: boolean | null
+}
+
+/**
+ * The recipients a fellowship push may reach: active members who have not
+ * muted the fellowship. Anyone without a membership row (left, removed) is
+ * dropped. Order of `recipients` is kept.
+ */
+export function reachableFellowshipMembers(recipients: string[], rows: FellowshipMemberReach[]): string[] {
+  const ok = new Set(rows.filter((r) => r.is_active === true && r.notifications_muted !== true).map((r) => r.user_id))
+  return recipients.filter((id) => ok.has(id))
+}
+
+/**
+ * Loads membership for `recipients` and applies {@link reachableFellowshipMembers}.
+ * Returns null when the lookup failed — callers then fail open (a missed push
+ * is worse than one to a muted member).
+ */
+async function loadReachableFellowshipMembers(
+  db: SupabaseClient,
+  fellowshipId: string,
+  recipients: string[],
+): Promise<string[] | null> {
+  const { data: rows, error } = await db
+    .from('fellowship_members')
+    .select('user_id, is_active, notifications_muted')
+    .eq('fellowship_id', fellowshipId)
+    .in('user_id', recipients)
+  if (error) {
+    console.error('[deliverOrQueue] Membership lookup failed, not filtering (non-fatal):', error.message)
+    return null
+  }
+  return reachableFellowshipMembers(recipients, (rows ?? []) as FellowshipMemberReach[])
+}
+
 /**
  * Send a push now, or hold it until the recipient's morning.
  *
@@ -204,24 +243,18 @@ export async function deliverOrQueue(
   let recipients = [...new Set(userIds)].filter(Boolean)
   if (recipients.length === 0) return { sentTo: 0, queuedTo: 0 }
 
-  // A member who muted this fellowship gets none of its pushes, urgent ones
-  // included: muting is their own explicit choice about this group. Every
-  // fellowship push carries fellowship_id in its data payload.
+  // Fellowship pushes go only to people who are still active members and
+  // have not muted it. Muting is their own explicit choice about this group
+  // (urgent pushes included); someone who left or was removed is no longer an
+  // audience at all — comment threads and post authors were otherwise still
+  // reached after leaving. Every fellowship push carries fellowship_id.
   const fellowshipId = data.fellowship_id
   if (fellowshipId) {
-    const { data: mutedRows, error: muteError } = await db
-      .from('fellowship_members')
-      .select('user_id')
-      .eq('fellowship_id', fellowshipId)
-      .eq('notifications_muted', true)
-      .in('user_id', recipients)
-    if (muteError) {
-      // Fail open: a missed push is worse than one the user muted.
-      console.error('[deliverOrQueue] Mute lookup failed, sending to all (non-fatal):', muteError.message)
-    } else if (mutedRows && mutedRows.length > 0) {
-      const muted = new Set((mutedRows as { user_id: string }[]).map((r) => r.user_id))
-      recipients = recipients.filter((id) => !muted.has(id))
-      console.log(`[deliverOrQueue] ${muted.size} recipient(s) muted this fellowship`)
+    const reachable = await loadReachableFellowshipMembers(db, fellowshipId, recipients)
+    if (reachable) {
+      const dropped = recipients.length - reachable.length
+      recipients = reachable
+      if (dropped > 0) console.log(`[deliverOrQueue] ${dropped} recipient(s) muted or no longer in this fellowship`)
       if (recipients.length === 0) return { sentTo: 0, queuedTo: 0 }
     }
   }
@@ -314,6 +347,32 @@ export async function deliverOrQueue(
 }
 
 /**
+ * Whether a queued push should still go out: the recipient is still an
+ * active, unmuted member of its fellowship (when it has one) and has not
+ * switched its type off. Lookup errors fail open.
+ */
+async function queuedRowStillWanted(
+  db: SupabaseClient,
+  row: { user_id: string; kind: string; data: Record<string, string> },
+): Promise<boolean> {
+  const fellowshipId = row.data?.fellowship_id
+  if (fellowshipId) {
+    const reachable = await loadReachableFellowshipMembers(db, fellowshipId, [row.user_id])
+    if (reachable && reachable.length === 0) return false
+  }
+  const prefColumn = PREFERENCE_COLUMN[row.kind]
+  if (prefColumn) {
+    const { data: pref, error } = await db
+      .from('user_notification_preferences')
+      .select(prefColumn)
+      .eq('user_id', row.user_id)
+      .maybeSingle()
+    if (!error && pref && (pref as unknown as Record<string, unknown>)[prefColumn] === false) return false
+  }
+  return true
+}
+
+/**
  * Send a single already-queued row.
  *
  * Shared with the flush route so a released push logs exactly like an
@@ -325,6 +384,13 @@ export async function deliverQueuedRow(
   db: SupabaseClient,
   row: { id: string; user_id: string; kind: string; title: string; body: string; data: Record<string, string> },
 ): Promise<void> {
+  // Held overnight: the recipient may have left the fellowship, muted it or
+  // switched this type off since it was queued. Re-check before sending; a
+  // row that no longer applies is done, not failed.
+  if (!(await queuedRowStillWanted(db, row))) {
+    console.log(`[flush-pushes] Row ${row.id} (${row.kind}) skipped: recipient no longer wants it`)
+    return
+  }
   const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', row.user_id)
   const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
   if (tokens.length === 0) {

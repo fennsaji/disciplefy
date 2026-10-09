@@ -15,6 +15,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { createCalendarEvent, cancelCalendarEvent, refreshGoogleAccessToken } from '../_shared/utils/google-calendar.ts'
 import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
+import { runInBackground } from '../_shared/utils/background-task.ts'
 
 // ---------------------------------------------------------------------------
 // List meetings  GET /fellowship-meetings?fellowship_id=UUID
@@ -270,16 +271,16 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
     throw new AppError('DATABASE_ERROR', 'Failed to save meeting', 500)
   }
 
-  ;(async () => {
+  runInBackground((async () => {
     try {
       await db.from('meeting_reminders').insert([
         { meeting_id: meeting.id, remind_at: new Date(startsAt.getTime() - 60 * 60 * 1000).toISOString(), offset_label: '1 hour' },
         { meeting_id: meeting.id, remind_at: new Date(startsAt.getTime() - 10 * 60 * 1000).toISOString(), offset_label: '10 minutes' },
       ])
     } catch (err) { console.error('[fellowship-meetings/create] Failed to schedule reminders (non-fatal):', err) }
-  })()
+  })(), 'fellowship-meetings/create reminders')
 
-  ;(async () => {
+  runInBackground((async () => {
     try {
       const { data: members } = await db.from('fellowship_members').select('user_id')
         .eq('fellowship_id', body.fellowship_id).eq('is_active', true)
@@ -310,7 +311,8 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       try {
         // An announcement of a future meeting can wait for the morning — the
         // reminders that actually matter (below) are urgent and never deferred.
-        await deliverOrQueue(db, allMemberIds,
+        // Not to the creator: they just scheduled it.
+        await deliverOrQueue(db, allMemberIds.filter((id: string) => id !== user.id),
           { title: `📅 New Meeting: ${meeting.title}`, body: `${dateStr} at ${timeStr} · ${durationLabel}` },
           { type: 'fellowship_meeting', fellowship_id: body.fellowship_id, meeting_id: meeting.id, meet_link: meeting.meet_link ?? '' },
           { kind: 'fellowship_meeting' })
@@ -338,7 +340,7 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
         )
       )
     } catch (err) { console.error('[fellowship-meetings/create] Notification error (non-fatal):', err) }
-  })()
+  })(), 'fellowship-meetings/create notify')
 
   return new Response(
     JSON.stringify({
@@ -408,11 +410,12 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
   }
 
   // Notify all active members that the meeting was cancelled (fire-and-forget)
-  ;(async () => {
+  runInBackground((async () => {
     try {
       const { data: members } = await db.from('fellowship_members').select('user_id')
         .eq('fellowship_id', meeting.fellowship_id).eq('is_active', true)
-      const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id)
+      // Not to the person who cancelled it.
+      const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id).filter((id: string) => id !== user.id)
       if (memberIds.length === 0) return
       // URGENT: a cancellation delivered after the slot has passed is worse
       // than useless — the member already showed up to an empty call.
@@ -421,7 +424,7 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
         { type: 'fellowship_meeting_cancelled', fellowship_id: meeting.fellowship_id, meeting_id: body.meeting_id },
         { kind: 'fellowship_meeting_cancelled', urgent: true })
     } catch (err) { console.error('[fellowship-meetings/cancel] FCM error (non-fatal):', err) }
-  })()
+  })(), 'fellowship-meetings/cancel notify')
 
   return new Response(JSON.stringify({ success: true, message: 'Meeting cancelled' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
