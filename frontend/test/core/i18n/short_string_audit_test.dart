@@ -29,6 +29,9 @@ const ratioExempt = <String, String>{
   'all_paths.all:ml': 'no shorter word for "All"',
   'memory.save_todays_verse:ml': 'full-width button; 5px over',
   'settings.more:ml': 'no shorter word for "More"',
+  'generate_simple.using_credits:ml': 'needs the verb "will be spent"',
+  'credits.view_saved:ml': 'says "guides", not just "saved"; button',
+  'topics.see_all:ml': '"See all" needs the verb; fits the slot',
 };
 
 String? lookup(String code, String key) {

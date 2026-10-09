@@ -113,8 +113,9 @@ void main() {
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
-  test('Hindi uses one memory-verse term (याद वचन) and no स्ट्रीक', () {
+  test('Hindi uses one memory-verse term (स्मरण वचन) and स्ट्रीक', () {
     const oldTerms = [
+      'याद वचन',
       'याद वर्सेज',
       'स्मृति आयत',
       'स्मृति वचन',
@@ -124,7 +125,8 @@ void main() {
     ];
     final values = flatten(hindiTranslations).map((e) => e.value);
     expect(values.where((v) => oldTerms.any(v.contains)), isEmpty);
-    expect(values.where((v) => v.contains('स्ट्रीक')), isEmpty);
+    expect(values.where((v) => v.contains('लगातार दिन')), isEmpty);
+    expect(values.where((v) => v.contains('पथ')), isEmpty);
   });
 
   test('path items are lessons (पाठ / പാഠം), never topics, in hi and ml', () {
@@ -139,13 +141,15 @@ void main() {
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
-  test('Malayalam says തുടർച്ച for a streak, not സ്ട്രീക്ക്', () {
+  test('Malayalam says സ്റ്റ്രീക്ക് for a streak, not തുടർച്ച', () {
     final values = flatten(malayalamTranslations).map((e) => e.value);
     expect(values.where((v) => v.contains('സ്ട്രീ')), isEmpty);
+    expect(values.where((v) => RegExp('തുടർച്ച(?![യാ])').hasMatch(v)), isEmpty);
   });
 
-  test('Malayalam uses one memory-verse term (സ്മരണ വാക്യം)', () {
+  test('Malayalam uses one memory-verse term (മനഃപാഠ വാക്യം)', () {
     const oldTerms = [
+      'സ്മരണ വാക്യ',
       'മെമ്മറി വേഴ്',
       'മെമ്മറി വെർസ',
       'മെമ്മറി വചന',
@@ -153,7 +157,6 @@ void main() {
       'മെമ്മറി ഡെക്ക',
       'ഓർമ്മ വാക്യ',
       'ഓർമ്മ വചന',
-      'മനഃപാഠ വാക്യ',
       'മനഃപാഠ വചന',
     ];
     final values = flatten(malayalamTranslations).map((e) => e.value);

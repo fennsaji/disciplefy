@@ -450,7 +450,7 @@ void main() {
 
     const subtitles = {
       AppLanguage.english: 'Standard study guide · 8 min',
-      AppLanguage.hindi: 'सामान्य अध्ययन गाइड · 8 मिनट',
+      AppLanguage.hindi: 'सामान्य स्टडी गाइड · 8 मिनट',
       AppLanguage.malayalam: 'സ്റ്റാൻഡേർഡ് പഠന ഗൈഡ് · 8 മിനിറ്റ്',
     };
 
