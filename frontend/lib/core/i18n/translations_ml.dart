@@ -1787,7 +1787,7 @@ const Map<String, dynamic> malayalamTranslations = {
       'subtitle': 'തുടരാൻ സഹായിക്കുന്ന ഓർമ്മപ്പെടുത്തലുകൾ',
       'daily_section_title': 'ദിവസേന',
       'streak_section_title': 'സ്റ്റ്രീക്ക്',
-      'memory_verse_section_title': 'സ്മൃതി വചനം',
+      'memory_verse_section_title': 'മനഃപാഠ വാക്യം',
       'memory_verse_reminder_title': 'ദൈനിക അവലോകന ഓർമ്മപ്പെടുത്തൽ',
       'memory_verse_reminder_description':
           'അവലോകനത്തിന് വചനങ്ങൾ ഉള്ളപ്പോൾ ദിവസേന ഓർമ്മപ്പെടുത്തൽ നേടുക',
