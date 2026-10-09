@@ -3677,6 +3677,9 @@ class TranslationKeys {
   // Single-input Generate screen.
   static const generateSimpleEyebrow = 'generate_simple.eyebrow';
   static const generateSimpleTitle = 'generate_simple.title';
+
+  /// Short line under the title: what can go in the input.
+  static const generateSimpleSubtitle = 'generate_simple.subtitle';
   static const generateSimpleHint = 'generate_simple.hint';
   static const generateSimpleTypeScripture = 'generate_simple.type_scripture';
   static const generateSimpleTypeTopic = 'generate_simple.type_topic';

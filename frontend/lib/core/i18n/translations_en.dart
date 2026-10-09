@@ -1015,7 +1015,8 @@ const Map<String, dynamic> englishTranslations = {
   'generate_simple': {
     'eyebrow': 'GENERATE A STUDY',
     'title': 'What shall we study today?',
-    'hint': 'e.g., John 3:16, Forgiveness, or a question',
+    'subtitle': 'Type a verse, a topic or a question',
+    'hint': 'e.g. John 3:16, grace',
     'type_scripture': 'Scripture',
     'type_topic': 'Topic',
     'type_question': 'Question',

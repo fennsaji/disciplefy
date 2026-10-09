@@ -222,6 +222,7 @@ Widget _app({
   int credits = 50,
   Widget? home,
   bool premium = false,
+  double textScale = 1,
 }) {
   final tokenBloc = _MockTokenBloc();
   when(() => tokenBloc.state).thenReturn(TokenLoaded(
@@ -266,6 +267,11 @@ Widget _app({
       localizationsDelegates: const [AppLocalizations.delegate],
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
     ),
   );
 }
@@ -278,12 +284,14 @@ Future<void> pumpSimple(
   Size size = const Size(390, 1400),
   bool premium = false,
   String? savedMode,
+  double textScale = 1,
 }) async {
   await _register(language: language, savedMode: savedMode);
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(_app(dark: dark, credits: credits, premium: premium));
+  await tester.pumpWidget(_app(
+      dark: dark, credits: credits, premium: premium, textScale: textScale));
   await tester.pumpAndSettle();
 }
 
@@ -633,6 +641,59 @@ void main() {
             on ? findsNothing : findsOneWidget);
       });
     }
+  });
+
+  group('the input field keeps one height', () {
+    setUpAll(loadAppFonts);
+
+    for (final language in AppLanguage.values) {
+      for (final scale in [1.0, 1.3]) {
+        testWidgets('320px ${language.code} ${scale}x: empty = typed',
+            (tester) async {
+          await pumpSimple(tester,
+              language: language,
+              size: const Size(320, 1400),
+              textScale: scale);
+          final field = find.byKey(const Key('generate_simple_field'));
+          final empty = tester.getSize(field).height;
+          expect(empty, 56);
+          // The title, subtitle and chips fit; the hint may only ellipsize
+          // at 1.3x.
+          expect(tester.takeException(), isNull);
+          expectNoTruncatedText(tester, allow: {
+            if (scale > 1)
+              tester
+                  .widget<TextField>(find.byType(TextField))
+                  .decoration!
+                  .hintText!,
+            _verse.translations.esv,
+            _verse.translations.hindi,
+            _verse.translations.malayalam,
+          });
+
+          await _type(tester,
+              'What does the Bible say about forgiveness and grace today?');
+          expect(tester.getSize(field).height, empty);
+          expect(tester.takeException(), isNull);
+
+          await tester.tap(find.byTooltip('Delete'));
+          await tester.pumpAndSettle();
+          expect(tester.getSize(field).height, empty);
+        });
+      }
+    }
+
+    testWidgets('a subtitle under the title says what to type', (tester) async {
+      await pumpSimple(tester);
+      expect(find.byKey(const Key('generate_simple_subtitle')), findsOneWidget);
+      expect(find.text('Type a verse, a topic or a question'), findsOneWidget);
+      expect(find.text('e.g. John 3:16, grace'), findsOneWidget);
+      final title =
+          tester.getBottomLeft(find.text('What shall we study today?'));
+      final subtitle =
+          tester.getTopLeft(find.byKey(const Key('generate_simple_subtitle')));
+      expect(subtitle.dy, greaterThanOrEqualTo(title.dy));
+    });
   });
 
   group('no cut-off text at 360px and 320px', () {

@@ -1006,7 +1006,8 @@ const Map<String, dynamic> hindiTranslations = {
   'generate_simple': {
     'eyebrow': 'अध्ययन बनाएँ',
     'title': 'आज क्या पढ़ें?',
-    'hint': 'जैसे यूहन्ना 3:16, क्षमा, या कोई प्रश्न',
+    'subtitle': 'कोई वचन, विषय या प्रश्न लिखें',
+    'hint': 'जैसे यूहन्ना 3:16 या क्षमा',
     'type_scripture': 'वचन',
     'type_topic': 'विषय',
     'type_question': 'प्रश्न',

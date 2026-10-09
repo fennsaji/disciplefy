@@ -1025,7 +1025,8 @@ const Map<String, dynamic> malayalamTranslations = {
   'generate_simple': {
     'eyebrow': 'പഠനം തയ്യാറാക്കാം',
     'title': 'ഇന്ന് എന്ത് പഠിക്കാം?',
-    'hint': 'ഉദാ: യോഹന്നാൻ 3:16, ക്ഷമ, ഒരു ചോദ്യം',
+    'subtitle': 'ഒരു വചനമോ വിഷയമോ ചോദ്യമോ എഴുതൂ',
+    'hint': 'ഉദാ: യോഹന്നാൻ 3:16',
     'type_scripture': 'വചനം',
     'type_topic': 'വിഷയം',
     'type_question': 'ചോദ്യം',

@@ -103,6 +103,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   static const double _gutter = 20;
   static const double _heroHeight = 400;
   static const double _buttonHeight = 40;
+  static const double _fieldHeight = 56;
 
   @override
   void initState() {
@@ -700,6 +701,17 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
             color: ink.text,
           ),
         ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr(TranslationKeys.generateSimpleSubtitle),
+          key: const Key('generate_simple_subtitle'),
+          style: AppFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            height: 1.35,
+            color: ink.muted,
+          ),
+        ),
       ],
     );
   }
@@ -707,9 +719,12 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   /// White search field with the clear button and the language pill.
   Widget _inputField() {
     final palette = ReaderPalette.of(context);
+    // One fixed height, empty or typed: the hint is one line and typed text
+    // scrolls sideways, so nothing below the field moves.
     return Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.fromLTRB(18, 4, 8, 4),
+      key: const Key('generate_simple_field'),
+      height: _fieldHeight,
+      padding: const EdgeInsets.fromLTRB(14, 0, 6, 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
@@ -727,15 +742,14 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
         children: [
           const Icon(Icons.search_rounded,
               size: 20, color: SearchFieldColors.muted),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Focus(
               onFocusChange: (_) => setState(() {}),
               child: TextField(
                 controller: _controller,
                 focusNode: _focus,
-                minLines: 1,
-                maxLines: 3,
+                // Single line (the default): typed text scrolls sideways.
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _generate(),
                 cursorColor: SearchFieldColors.ink,
@@ -745,17 +759,14 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                   color: SearchFieldColors.ink,
                 ),
                 decoration: InputDecoration(
-                  // Only while empty: a hidden hint still takes its wrapped
-                  // height, which grew the field once the clear button
-                  // narrowed it.
                   hintText: _controller.text.isEmpty
                       ? context.tr(TranslationKeys.generateSimpleHint)
                       : null,
-                  hintMaxLines: 3,
+                  hintMaxLines: 1,
                   hintStyle: AppFonts.inter(
                     fontSize: 15,
                     color: SearchFieldColors.hint,
-                  ),
+                  ).copyWith(overflow: TextOverflow.ellipsis),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
