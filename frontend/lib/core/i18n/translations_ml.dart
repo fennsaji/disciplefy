@@ -404,7 +404,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'key_verse': 'പ്രധാന വചനം',
     'quick_reflection': '🤔 പെട്ടെന്നുള്ള ചിന്ത',
     'brief_prayer': 'ഹ്രസ്വ പ്രാർത്ഥന',
-    'ask_ai': 'Discipler-നോട് ചോദിക്കൂ',
+    'ask_ai': 'Discipler-ൽ ചോദിക്കൂ',
     'comprehensive_overview': 'സമ്പൂർണ്ണ വിവരണം',
     'in_depth_interpretation': 'ആഴത്തിലുള്ള വ്യാഖ്യാനവും വാക്ക് പഠനവും',
     'historical_context': 'ചരിത്രപരമായ പശ്ചാത്തലവും ക്രോസ് റഫറൻസുകളും',

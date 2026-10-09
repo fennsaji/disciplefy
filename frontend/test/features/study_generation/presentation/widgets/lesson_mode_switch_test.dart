@@ -99,4 +99,29 @@ void main() {
       });
     }
   }
+
+  group('who sees the switch', () {
+    test('a signed-in reader of a Quick Read lesson', () {
+      expect(LessonModeSwitch.shownFor(mode: StudyMode.quick, isGuest: false),
+          isTrue);
+    });
+
+    test('a guest, in any mode', () {
+      for (final mode in StudyMode.values) {
+        expect(LessonModeSwitch.shownFor(mode: mode, isGuest: true), isTrue);
+      }
+    });
+
+    test('not a signed-in reader of Standard or deeper', () {
+      for (final mode in [
+        StudyMode.standard,
+        StudyMode.deep,
+        StudyMode.lectio,
+        StudyMode.sermon,
+      ]) {
+        expect(LessonModeSwitch.shownFor(mode: mode, isGuest: false), isFalse,
+            reason: mode.name);
+      }
+    });
+  });
 }
