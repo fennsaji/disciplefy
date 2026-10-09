@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
@@ -455,5 +456,94 @@ void main() {
         }
       }
     }
+  });
+
+  group('eyebrow stays on one line next to (or above) the mode chip', () {
+    const eyebrows = {
+      'en': 'TODAY · LESSON 7',
+      'hi': 'आज · पाठ 7',
+      'ml': 'ഇന്ന് · പാഠം 7',
+    };
+
+    /// True when [finder]'s paragraph is one line: no taller than the same
+    /// text laid out without a width limit.
+    bool oneLine(WidgetTester tester, Finder finder) {
+      final paragraph = tester.renderObject<RenderParagraph>(finder);
+      final painter = TextPainter(
+        text: paragraph.text,
+        textDirection: paragraph.textDirection,
+        textScaler: paragraph.textScaler,
+      )..layout();
+      final single = painter.height;
+      painter.dispose();
+      return paragraph.size.height <= single + 0.5;
+    }
+
+    for (final lang in ['en', 'hi', 'ml']) {
+      final base = lang == 'ml'
+          ? mlSummary
+          : lang == 'hi'
+              ? hiSummary
+              : summary4of8;
+      for (final width in [320.0, 360.0, 412.0]) {
+        for (final scale in [1.0, 1.3]) {
+          for (final mode in [StudyMode.standard, StudyMode.quick]) {
+            testWidgets(
+                '$lang ${width.toInt()}px ${scale}x ${mode.name}: one line, '
+                'chip whole', (tester) async {
+              useSurface(tester, Size(width, 700));
+              final summary = _withTotal(base, 12, 6);
+              await tester.pumpWidget(welcomeApp(
+                  language: lang,
+                  screen: Builder(
+                    builder: (context) => MediaQuery(
+                      data: MediaQuery.of(context)
+                          .copyWith(textScaler: TextScaler.linear(scale)),
+                      child: Scaffold(
+                        body: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TodayLessonCard(
+                              summary: summary,
+                              mode: mode,
+                              onModeChanged: (_) {},
+                              onStart: () {}),
+                        ),
+                      ),
+                    ),
+                  )));
+              final eyebrow = find.text(eyebrows[lang]!);
+              expect(eyebrow, findsOneWidget);
+              expect(oneLine(tester, eyebrow), isTrue,
+                  reason: 'eyebrow wrapped');
+              final chip = find.byKey(const Key('today_mode_chip'));
+              expect(chip, findsOneWidget);
+              // Never overlapping: the chip is beside the eyebrow or below.
+              final e = tester.getRect(eyebrow);
+              final c = tester.getRect(chip);
+              expect(e.overlaps(c), isFalse);
+              expectNoTruncatedText(tester, allow: {summary.next!.title});
+              expect(tester.takeException(), isNull);
+            });
+          }
+        }
+      }
+    }
+
+    testWidgets('en 412px 1.0x: the chip sits on the eyebrow row, at the end',
+        (tester) async {
+      useSurface(tester, const Size(412, 700));
+      await tester.pumpWidget(welcomeApp(
+          language: 'en',
+          screen: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _card(_withTotal(summary4of8, 12, 6)),
+            ),
+          )));
+      final e = tester.getRect(find.text('TODAY · LESSON 7'));
+      final c = tester.getRect(find.byKey(const Key('today_mode_chip')));
+      expect((e.center.dy - c.center.dy).abs(), lessThan(4));
+      expect(c.right, greaterThan(412 - 16 - 30));
+    });
   });
 }

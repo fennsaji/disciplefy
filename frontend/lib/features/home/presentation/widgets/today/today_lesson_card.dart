@@ -106,25 +106,19 @@ class TodayLessonCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                eyebrow,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  // Wide tracking only suits Latin caps; Devanagari and
-                  // Malayalam need the room to stay on one line.
-                  letterSpacing:
-                      RegExp(r'^[\x00-\x7F·]*$').hasMatch(eyebrow) ? 1.6 : 0.3,
-                  color: palette.gold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            _ModeChip(mode: mode, onChanged: onModeChanged),
-          ],
+        _EyebrowRow(
+          eyebrow: eyebrow,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            // Wide tracking only suits Latin caps; Devanagari and
+            // Malayalam need the room to stay on one line.
+            letterSpacing:
+                RegExp(r'^[\x00-\x7F·]*$').hasMatch(eyebrow) ? 1.6 : 0.3,
+            color: palette.gold,
+          ),
+          chipWidth: _ModeChip.widthFor(context, mode),
+          chip: _ModeChip(mode: mode, onChanged: onModeChanged),
         ),
         const SizedBox(height: 10 - _ModeChip.slack),
         Text(
@@ -222,6 +216,71 @@ String _modeLabel(BuildContext context, StudyMode mode) => context.tr(
       {'min': mode.durationMinutes},
     );
 
+/// The "TODAY · LESSON N" eyebrow with the mode chip at the row's end.
+///
+/// The eyebrow never wraps: when the eyebrow and the chip do not both fit on
+/// one line (narrow phones, large text), the chip moves under the eyebrow,
+/// whole; an eyebrow wider than the card on its own is scaled down.
+class _EyebrowRow extends StatelessWidget {
+  static const double _gap = 8;
+
+  final String eyebrow;
+  final TextStyle? style;
+  final double chipWidth;
+  final Widget chip;
+
+  const _EyebrowRow({
+    required this.eyebrow,
+    required this.style,
+    required this.chipWidth,
+    required this.chip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = Text(eyebrow, style: style, maxLines: 1, softWrap: false);
+    return LayoutBuilder(builder: (context, constraints) {
+      final eyebrowWidth = _textWidth(context, eyebrow, style);
+      if (eyebrowWidth + _gap + chipWidth <= constraints.maxWidth) {
+        return Row(
+          children: [
+            Expanded(child: label),
+            const SizedBox(width: _gap),
+            chip,
+          ],
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The chip's tap margin keeps the eyebrow clear of the strip.
+          const SizedBox(height: _ModeChip.slack),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: label,
+          ),
+          chip,
+        ],
+      );
+    });
+  }
+}
+
+/// Width of [text] on one line in [style], at the current text scale.
+double _textWidth(BuildContext context, String text, TextStyle? style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width.ceilToDouble();
+}
+
 /// A 26px outlined chip showing the current mode, in a 40px tap area; opens
 /// a Quick/Full menu.
 class _ModeChip extends StatefulWidget {
@@ -233,6 +292,22 @@ class _ModeChip extends StatefulWidget {
   /// Drawn height and the transparent tap margin above and below it.
   static const double height = 26;
   static const double slack = 7;
+
+  /// Horizontal padding, border and the two icons with their gaps.
+  static const double _chrome = 9 * 2 + 1 * 2 + 12 + 4 + 4 + 14;
+
+  static TextStyle? labelStyle(BuildContext context, Color ink) =>
+      Theme.of(context).textTheme.labelMedium?.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: ink,
+          );
+
+  /// The drawn chip's width for [mode] at the current text scale.
+  static double widthFor(BuildContext context, StudyMode mode) =>
+      _chrome +
+      _textWidth(context, _modeLabel(context, mode),
+          labelStyle(context, const Color(0xFF000000)));
 
   @override
   State<_ModeChip> createState() => _ModeChipState();
@@ -250,11 +325,7 @@ class _ModeChipState extends State<_ModeChip> {
     final ink = palette.isDark
         ? palette.muted
         : ReaderPalette.ink.withValues(alpha: 0.68);
-    final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: ink,
-        );
+    final labelStyle = _ModeChip.labelStyle(context, ink);
     return PopupMenuButton<StudyMode>(
       key: _menuKey,
       initialValue: mode,
