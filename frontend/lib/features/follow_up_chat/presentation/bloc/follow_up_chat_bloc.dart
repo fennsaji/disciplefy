@@ -29,11 +29,18 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
 
   StreamSubscription? _streamSubscription;
 
+  /// True when the signed-in user is a guest. The chat needs an account
+  /// (the server answers a guest with 403 ACCOUNT_REQUIRED), so a guest's
+  /// bloc makes no calls and stays in [FollowUpChatInitial].
+  final bool Function() _isGuest;
+
   FollowUpChatBloc({
     required HttpService httpService,
     required ConversationService conversationService,
+    bool Function()? isGuest,
   })  : _httpService = httpService,
         _conversationService = conversationService,
+        _isGuest = isGuest ?? _never,
         super(const FollowUpChatInitial()) {
     on<StartConversationEvent>(_onStartConversation);
     on<SendQuestionEvent>(_onSendQuestion);
@@ -46,6 +53,8 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
     on<CancelRequestEvent>(_onCancelRequest);
   }
 
+  static bool _never() => false;
+
   @override
   Future<void> close() {
     _cleanupStream();
@@ -57,6 +66,7 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
     StartConversationEvent event,
     Emitter<FollowUpChatState> emit,
   ) async {
+    if (_isGuest()) return;
     emit(const FollowUpChatLoading());
 
     try {
@@ -97,6 +107,7 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
     SendQuestionEvent event,
     Emitter<FollowUpChatState> emit,
   ) async {
+    if (_isGuest()) return;
     final currentState = state;
     if (currentState is! FollowUpChatLoaded) {
       emit(const FollowUpChatError('No active conversation'));

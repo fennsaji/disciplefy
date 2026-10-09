@@ -95,7 +95,7 @@ void main() {
       (tester) async {
     await pump(tester, selected: 0);
     final iconYs = [
-      for (final icon in [Icons.home, Icons.auto_awesome_outlined])
+      for (final icon in [Icons.home_outlined, Icons.auto_awesome_outlined])
         tester.getCenter(find.byIcon(icon)).dy,
       tester.getCenter(find.byKey(const Key('nav_discipler_ring'))).dy,
     ];

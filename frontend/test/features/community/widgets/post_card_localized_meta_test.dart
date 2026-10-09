@@ -151,7 +151,7 @@ void main() {
     const expectedLabel = {
       AppLanguage.english: 'SCRIPTURE · STANDARD · 8 MIN',
       AppLanguage.hindi: 'वचन · सामान्य · 8 मिनट',
-      AppLanguage.malayalam: 'വേദഭാഗം · സ്റ്റാൻഡേർഡ് · 8 മിനിറ്റ്',
+      AppLanguage.malayalam: 'വേദഭാഗം · സാധാരണ · 8 മിനിറ്റ്',
     };
 
     for (final entry in expectedLabel.entries) {
@@ -451,7 +451,7 @@ void main() {
     const subtitles = {
       AppLanguage.english: 'Standard study guide · 8 min',
       AppLanguage.hindi: 'सामान्य अध्ययन गाइड · 8 मिनट',
-      AppLanguage.malayalam: 'സ്റ്റാൻഡേർഡ് പഠന ഗൈഡ് · 8 മിനിറ്റ്',
+      AppLanguage.malayalam: 'സാധാരണ പഠന ഗൈഡ് · 8 മിനിറ്റ്',
     };
 
     for (final entry in subtitles.entries) {

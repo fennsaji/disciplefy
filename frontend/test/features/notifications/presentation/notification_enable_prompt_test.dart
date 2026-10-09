@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/core/services/notification_service.dart';
@@ -18,6 +19,7 @@ import 'package:mockito/mockito.dart';
 import 'package:mocktail/mocktail.dart' as mt;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/mock_activation_analytics.dart';
 import '../../../helpers/text_fit.dart';
 import '../../../helpers/welcome_test_harness.dart';
 import 'notification_enable_prompt_test.mocks.dart';
@@ -226,6 +228,36 @@ void main() {
           .verify(() => bloc.add(
               const UpdateNotificationPreferences(streakLostEnabled: true)))
           .called(1);
+    });
+
+    testWidgets('enable with permission reports a reminder opt-in',
+        (tester) async {
+      final analytics = registerMockAnalytics();
+      when(service.areNotificationsEnabled()).thenAnswer((_) async => true);
+      await open(tester, dark: false, code: 'en');
+
+      await tester.tap(find.byType(PopupPrimaryButton));
+      await tester.pumpAndSettle();
+
+      mt
+          .verify(() =>
+              analytics.track(NuxEvent.reminderOptIn, {'type': 'streakLost'}))
+          .called(1);
+    });
+
+    testWidgets('enable with permission refused reports nothing',
+        (tester) async {
+      final analytics = registerMockAnalytics();
+      when(service.areNotificationsEnabled()).thenAnswer((_) async => false);
+      when(service.requestPermissions()).thenAnswer((_) async => false);
+      when(service.isPermissionPermanentlyDenied())
+          .thenAnswer((_) async => false);
+      await open(tester, dark: false, code: 'en');
+
+      await tester.tap(find.byType(PopupPrimaryButton));
+      await tester.pumpAndSettle();
+
+      mt.verifyNever(() => analytics.track(mt.any(), mt.any()));
     });
   });
 }

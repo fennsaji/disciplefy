@@ -406,6 +406,7 @@ async function processRazorpayPayment(params: {
 
 // Create the Edge Function using the factory pattern
 createSimpleFunction(handleTokenPurchase, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   // Payments / subscription / account / admin: session revocation must be honoured.
   verifyWithAuthServer: true,
   enableAnalytics: true,

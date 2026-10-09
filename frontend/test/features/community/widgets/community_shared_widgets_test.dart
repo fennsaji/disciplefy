@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:disciplefy_bible_study/core/constants/discipler.dart';
@@ -182,8 +183,13 @@ void main() {
     expect(find.text('Matthew 16:15-16'), findsOneWidget);
     // Narrow card: replies collapse to icon + count, full label in tooltip.
     expect(find.byTooltip('2 replies'), findsOneWidget);
-    // Only mentors/admins get the manage menu.
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    // Everyone gets the menu for Copy text; Edit/Delete stay with
+    // mentors and admins.
+    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Copy text'), findsOneWidget);
+    expect(find.text('Edit'), findsNothing);
   });
 
   testWidgets('a daily post without path data shows no eyebrow',
@@ -287,7 +293,7 @@ void main() {
 
       expect(find.text('Mentor: Fenn (you) · 1 member'), findsOneWidget);
       expect(find.text('Mentor: Fenn · 1 member'), findsOneWidget);
-      expect(find.text('Mentor: Discipler · 3 members'), findsOneWidget);
+      expect(find.text('Guided by Discipler · 3 members'), findsOneWidget);
       expect(find.text('5 members'), findsOneWidget);
     });
 
@@ -301,6 +307,28 @@ void main() {
           find.byType(LinearProgressIndicator));
       expect(bar.value, closeTo(2 / 29, 1e-9));
     });
+
+    for (final language in AppLanguage.values) {
+      for (final width in [320.0, 360.0]) {
+        testWidgets(
+            'current study ${language.code} at ${width.toInt()}: the path '
+            'keeps at least half the row', (tester) async {
+          await pump(tester, const FellowshipCurrentStudyRow(study: study),
+              language: language, size: Size(width, 640));
+          final row = tester.getSize(find.byType(FellowshipCurrentStudyRow));
+          final title = find.textContaining('The Gospel of Matthew');
+          // The path's text box is at least half the row (no word a line).
+          final para = tester.renderObject<RenderParagraph>(title);
+          expect(
+              para.size.width + 1,
+              greaterThanOrEqualTo(
+                  row.width * 0.5 > para.getMaxIntrinsicWidth(100)
+                      ? para.getMaxIntrinsicWidth(100)
+                      : row.width * 0.5));
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
 
     testWidgets('a finished study names the path and fills the bar',
         (tester) async {
@@ -414,5 +442,38 @@ void main() {
     await tester.tap(find.text('Busy'));
     expect(pressed, 0);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('card pills are 32px with a 40px tap area; large pills are 40px',
+      (tester) async {
+    var pressed = 0;
+    await pump(
+      tester,
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CommunityCtaPill(
+            key: const Key('small'), label: 'Join', onPressed: () => pressed++),
+        CommunityCtaPill(
+            key: const Key('large'),
+            large: true,
+            label: 'Join a fellowship',
+            onPressed: () {}),
+        CommunityRaisedPill(
+            key: const Key('chip'), label: 'Hindi', onPressed: () {}),
+      ]),
+    );
+    final small = find.byKey(const Key('small'));
+    expect(tester.getSize(small).height, 40);
+    expect(
+        tester
+            .getSize(
+                find.descendant(of: small, matching: find.byType(Material)))
+            .height,
+        32);
+    expect(tester.getSize(find.byKey(const Key('large'))).height, 40);
+    expect(tester.getSize(find.byKey(const Key('chip'))).height, 40);
+    // The 4px above the visible pill still presses it.
+    final top = tester.getTopLeft(small);
+    await tester.tapAt(top + const Offset(20, 1));
+    expect(pressed, 1);
   });
 }

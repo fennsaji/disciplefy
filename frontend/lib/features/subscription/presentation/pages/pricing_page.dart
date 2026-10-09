@@ -469,7 +469,7 @@ class _PricingPageState extends State<PricingPage> {
         break;
       case 2: // Plus
         badge = context.tr(TranslationKeys.ledgerRecommended);
-        badgeColor = AppColors.tierPlus; // Violet — matches plus-upgrade page
+        badgeColor = AppColors.tierPlus;
         isHighlighted = true;
         break;
       case 3: // Premium

@@ -12,6 +12,9 @@ import '../screens/maintenance_screen.dart';
 import '../services/system_config_service.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
+import '../../features/onboarding/presentation/bloc/first_run_cubit.dart';
+import '../../features/onboarding/presentation/pages/first_run_language_page.dart';
+import '../../features/onboarding/presentation/pages/growth_goal_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/presentation/screens/study_guide_open_screen.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
@@ -25,15 +28,24 @@ import '../../features/profile_setup/presentation/pages/profile_setup_screen.dar
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
-import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
+import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_content.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/pages/feature_intro_page.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/pages/generate_tab_page.dart';
 import '../navigation/study_navigator.dart';
 import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/bible_attribution_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_more_page.dart';
 import '../../features/settings/presentation/pages/offline_guides_screen.dart';
 import '../../features/community/presentation/screens/blocked_users_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
+import '../../features/study_topics/domain/entities/learning_path.dart';
+import '../../features/study_topics/domain/entities/lesson_ref.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_query_listener.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/guest_lesson_nudge.dart';
+import '../../features/study_topics/presentation/pages/lesson_complete_page.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/token_purchase_page.dart';
@@ -80,6 +92,7 @@ import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.da
 import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_category_page.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/all_paths_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../widgets/locked_feature_wrapper.dart';
@@ -152,6 +165,29 @@ class AppRouter {
           state: state,
         ),
       ),
+      // New first run (new_first_run flag): language, then goal. The guard
+      // keeps these public and out of the terms gate (terms are accepted on
+      // the goal screen).
+      GoRoute(
+        path: AppRoutes.welcome,
+        name: 'welcome',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          child: const MaxWidthWrapper(child: FirstRunLanguagePage()),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'goal',
+            name: 'welcome_goal',
+            builder: (context, state) => MaxWidthWrapper(
+              child: BlocProvider<FirstRunCubit>(
+                create: (_) => sl<FirstRunCubit>(),
+                child: const GrowthGoalPage(),
+              ),
+            ),
+          ),
+        ],
+      ),
       GoRoute(
         path: AppRoutes.languageSelection,
         name: 'language_selection',
@@ -178,9 +214,22 @@ class AppRouter {
                 name: 'home',
                 builder: (context, state) => MaxWidthWrapper(
                   child: BlocProvider<MemoryVerseBloc>(
-                    create: (_) =>
-                        sl<MemoryVerseBloc>()..add(const LoadDueVerses()),
-                    child: const HomeScreen(),
+                    // Memory verses need an account: a guest's Home never
+                    // asks for the deck (Home loads it after sign-up).
+                    create: (_) {
+                      final bloc = sl<MemoryVerseBloc>();
+                      if (!GuestRouteGate.currentUserIsGuest()) {
+                        bloc.add(const LoadDueVerses());
+                      }
+                      return bloc;
+                    },
+                    // `?account=<reason>` (a guest stopped by the route
+                    // gate) opens the account-needed sheet once.
+                    child: AccountQueryListener(
+                      reason:
+                          state.uri.queryParameters[AccountReasons.queryParam],
+                      child: const HomeScreen(),
+                    ),
                   ),
                 ),
               ),
@@ -192,8 +241,11 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.generateStudy,
                 name: 'generate_study',
-                builder: (context, state) =>
-                    const MaxWidthWrapper(child: GenerateStudyScreen()),
+                // generate_single_input picks the screen; off keeps the
+                // shipped one.
+                builder: (context, state) => MaxWidthWrapper(
+                    child: GenerateTabPage(
+                        prefill: state.uri.queryParameters['prefill'])),
               ),
             ],
           ),
@@ -209,6 +261,25 @@ class AppRouter {
                   return MaxWidthWrapper(
                       child: StudyTopicsScreen(topicId: topicId));
                 },
+              ),
+              // Every path with category chips ("Browse all paths"). In the
+              // Topics branch so the dock stays; open to guests (locked rows
+              // open the account sheet).
+              GoRoute(
+                path: AppRoutes.allPaths,
+                name: 'all_paths',
+                builder: (context, state) => MaxWidthWrapper(
+                  child: LockedFeatureWrapper(
+                    featureKey: 'learning_paths',
+                    child: BlocProvider(
+                      create: (context) => sl<LearningPathsBloc>(),
+                      child: AllPathsPage(
+                        initialCategory: state.uri.queryParameters['category'],
+                        language: state.uri.queryParameters['language'],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -416,8 +487,13 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.discipler,
                 name: 'discipler_tab',
-                builder: (context, state) => const MaxWidthWrapper(
-                  child: VoiceConversationPage(asTab: true),
+                // `?prefill=` (from the Discipler introduction) puts a
+                // question in the text box; it is never sent for the user.
+                builder: (context, state) => MaxWidthWrapper(
+                  child: VoiceConversationPage(
+                    asTab: true,
+                    prefill: state.uri.queryParameters['prefill'],
+                  ),
                 ),
               ),
             ],
@@ -426,6 +502,20 @@ class AppRouter {
       ),
 
       // Standalone Routes (outside shell)
+      GoRoute(
+        path: AppRoutes.featureIntro,
+        name: 'feature_intro',
+        parentNavigatorKey: rootNavigatorKey,
+        redirect: (context, state) =>
+            newForYouKindNamed(state.pathParameters['kind']) == null
+                ? AppRoutes.home
+                : null,
+        builder: (context, state) => MaxWidthWrapper(
+          child: FeatureIntroPage(
+            kind: newForYouKindNamed(state.pathParameters['kind'])!,
+          ),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.saved,
         name: 'saved',
@@ -455,6 +545,14 @@ class AppRouter {
         name: 'settings',
         pageBuilder: (context, state) => slideUpTransitionPage(
           child: const MaxWidthWrapper(child: SettingsScreen()),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsMore,
+        name: 'settingsMore',
+        pageBuilder: (context, state) => slideUpTransitionPage(
+          child: const MaxWidthWrapper(child: SettingsMorePage()),
           state: state,
         ),
       ),
@@ -499,28 +597,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.tokenPurchase,
         name: 'token_purchase',
+        // A reload or deep link has no balance to show: open Credits,
+        // which fetches it and offers Get credits.
+        redirect: (context, state) =>
+            state.extra is TokenStatus ? null : AppRoutes.tokenManagement,
         builder: (context, state) {
-          final tokenStatus = state.extra as TokenStatus?;
-          if (tokenStatus == null) {
-            return MaxWidthWrapper(
-              child: Scaffold(
-                appBar: AppBar(),
-                body: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Unable to load token purchase page.'),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Go Back'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
+          final tokenStatus = state.extra! as TokenStatus;
           return MaxWidthWrapper(
             child: TokenPurchasePage(
               tokenStatus: tokenStatus,
@@ -873,7 +955,14 @@ class AppRouter {
               featureKey: 'learning_paths',
               child: BlocProvider(
                 create: (context) => sl<LearningPathsBloc>(),
-                child: LearningPathDetailPage(pathId: pathId, source: source),
+                child: LearningPathDetailPage(
+                  pathId: pathId,
+                  source: source,
+                  // The row that was tapped, when a list opened the page.
+                  initialPath: state.extra is LearningPath
+                      ? state.extra as LearningPath
+                      : null,
+                ),
               ),
             ),
           );
@@ -1188,6 +1277,40 @@ class AppRouter {
         },
       ),
 
+      // Lesson complete - shown after "Mark complete" on a path lesson.
+      GoRoute(
+        path: AppRoutes.lessonComplete,
+        name: 'lesson_complete',
+        pageBuilder: (context, state) {
+          final args = state.extra;
+          // A cold start or restored URL has no extra: nothing to show.
+          if (args is! LessonCompleteArgs) {
+            return slideRightTransitionPage(
+              child: const _RedirectHome(),
+              state: state,
+            );
+          }
+          return slideRightTransitionPage(
+            child: MaxWidthWrapper(
+              child: LessonCompletePage(
+                args: args,
+                // Guest sign-up nudges (renders nothing for a full account).
+                extraSections: [
+                  GuestLessonNudge(
+                    pathId: args.lesson.pathId,
+                    lessonNumber: args.lesson.lessonNumber,
+                    isLastLesson: args.lesson.isLast,
+                    firstRun: args.firstRun,
+                    language: args.language,
+                  ),
+                ],
+              ),
+            ),
+            state: state,
+          );
+        },
+      ),
+
       // Study Guide V2 - Dynamic generation from query parameters
       GoRoute(
         path: AppRoutes.studyGuideV2,
@@ -1204,6 +1327,7 @@ class AppRouter {
           final language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
           final modeString = state.uri.queryParameters['mode'];
+          final lesson = LessonRef.fromQuery(state.uri.queryParameters);
 
           // Parse navigation source
           final navigationSource =
@@ -1226,6 +1350,10 @@ class AppRouter {
                 language: language,
                 navigationSource: navigationSource,
                 studyMode: studyMode,
+                lesson: lesson,
+                firstRun:
+                    state.uri.queryParameters[FirstRunCubit.firstRunParam] ==
+                        '1',
               ),
             ),
             state: state,
@@ -1457,4 +1585,25 @@ extension AppRouterExtension on GoRouter {
   /// Navigates to the members tab of a specific fellowship.
   void goToFellowshipMembers(String fellowshipId) =>
       go('/community/$fellowshipId/members');
+}
+
+/// Sends the user home on the next frame (route with no usable arguments).
+class _RedirectHome extends StatefulWidget {
+  const _RedirectHome();
+
+  @override
+  State<_RedirectHome> createState() => _RedirectHomeState();
+}
+
+class _RedirectHomeState extends State<_RedirectHome> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(AppRoutes.home);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const Scaffold();
 }

@@ -388,6 +388,7 @@ async function handleInvites(req: Request, services: ServiceContainer): Promise<
 }
 
 createSimpleFunction(handleInvites, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST'],
   enableAnalytics: true,
   timeout: 10000,

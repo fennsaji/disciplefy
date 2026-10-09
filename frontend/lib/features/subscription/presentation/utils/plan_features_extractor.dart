@@ -37,7 +37,8 @@ class PlanFeaturesExtractor {
       if (dailyTokens == -1) {
         features.add('Unlimited study credits (all study modes)');
       } else if (dailyTokens == 15) {
-        features.add('$dailyTokens study credits daily (Quick Read only)');
+        features
+            .add('$dailyTokens study credits daily (Quick Read and Standard)');
       } else {
         features.add('$dailyTokens study credits daily (all study modes)');
       }
@@ -47,7 +48,7 @@ class PlanFeaturesExtractor {
     features.add('Learning paths & Study topics');
 
     if (dailyTokens != null && dailyTokens != -1) {
-      features.add('Purchase additional tokens (2 tokens/₹1)');
+      features.add('Purchase additional credits (2 credits/₹1)');
     }
 
     if (followUps != null && followUps > 0) {

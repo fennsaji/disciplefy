@@ -29,7 +29,7 @@ class SettingsProfileCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 6, 16),
       decoration: BoxDecoration(
         color: palette.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: palette.hairline),
       ),
       child: Row(
@@ -77,7 +77,7 @@ class SettingsProfileCard extends StatelessWidget {
   }
 }
 
-/// 52pt indigo circle with the name's initial, or the profile photo.
+/// 52pt gold circle with the name's initial, or the profile photo.
 class SettingsAvatar extends StatelessWidget {
   final String name;
   final String? photoUrl;
@@ -99,8 +99,8 @@ class SettingsAvatar extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: settingsPrimaryFill,
+      decoration: BoxDecoration(
+        color: settingsPrimaryFill(context),
         shape: BoxShape.circle,
       ),
       child: Text(
@@ -108,7 +108,7 @@ class SettingsAvatar extends StatelessWidget {
         style: AppFonts.poppins(
           fontSize: size * 0.38,
           fontWeight: FontWeight.w600,
-          color: settingsPrimaryInk,
+          color: settingsPrimaryInk(context),
         ),
       ),
     );

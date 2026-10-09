@@ -15,6 +15,8 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { createCalendarEvent, cancelCalendarEvent, refreshGoogleAccessToken } from '../_shared/utils/google-calendar.ts'
 import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
+import { runInBackground } from '../_shared/utils/background-task.ts'
+import { type MeetingRecurrence, nextReminderOccurrence, reminderOffsetMs } from '../_shared/utils/meeting-recurrence.ts'
 
 // ---------------------------------------------------------------------------
 // List meetings  GET /fellowship-meetings?fellowship_id=UUID
@@ -270,16 +272,16 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
     throw new AppError('DATABASE_ERROR', 'Failed to save meeting', 500)
   }
 
-  ;(async () => {
+  runInBackground((async () => {
     try {
       await db.from('meeting_reminders').insert([
-        { meeting_id: meeting.id, remind_at: new Date(startsAt.getTime() - 60 * 60 * 1000).toISOString(), offset_label: '1 hour' },
-        { meeting_id: meeting.id, remind_at: new Date(startsAt.getTime() - 10 * 60 * 1000).toISOString(), offset_label: '10 minutes' },
+        { meeting_id: meeting.id, remind_at: new Date(startsAt.getTime() - 60 * 60 * 1000).toISOString(), offset_label: '1 hour', occurrence_starts_at: startsAt.toISOString() },
+        { meeting_id: meeting.id, remind_at: new Date(startsAt.getTime() - 10 * 60 * 1000).toISOString(), offset_label: '10 minutes', occurrence_starts_at: startsAt.toISOString() },
       ])
     } catch (err) { console.error('[fellowship-meetings/create] Failed to schedule reminders (non-fatal):', err) }
-  })()
+  })(), 'fellowship-meetings/create reminders')
 
-  ;(async () => {
+  runInBackground((async () => {
     try {
       const { data: members } = await db.from('fellowship_members').select('user_id')
         .eq('fellowship_id', body.fellowship_id).eq('is_active', true)
@@ -310,7 +312,8 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       try {
         // An announcement of a future meeting can wait for the morning — the
         // reminders that actually matter (below) are urgent and never deferred.
-        await deliverOrQueue(db, allMemberIds,
+        // Not to the creator: they just scheduled it.
+        await deliverOrQueue(db, allMemberIds.filter((id: string) => id !== user.id),
           { title: `📅 New Meeting: ${meeting.title}`, body: `${dateStr} at ${timeStr} · ${durationLabel}` },
           { type: 'fellowship_meeting', fellowship_id: body.fellowship_id, meeting_id: meeting.id, meet_link: meeting.meet_link ?? '' },
           { kind: 'fellowship_meeting' })
@@ -338,7 +341,7 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
         )
       )
     } catch (err) { console.error('[fellowship-meetings/create] Notification error (non-fatal):', err) }
-  })()
+  })(), 'fellowship-meetings/create notify')
 
   return new Response(
     JSON.stringify({
@@ -408,11 +411,12 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
   }
 
   // Notify all active members that the meeting was cancelled (fire-and-forget)
-  ;(async () => {
+  runInBackground((async () => {
     try {
       const { data: members } = await db.from('fellowship_members').select('user_id')
         .eq('fellowship_id', meeting.fellowship_id).eq('is_active', true)
-      const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id)
+      // Not to the person who cancelled it.
+      const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id).filter((id: string) => id !== user.id)
       if (memberIds.length === 0) return
       // URGENT: a cancellation delivered after the slot has passed is worse
       // than useless — the member already showed up to an empty call.
@@ -421,7 +425,7 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
         { type: 'fellowship_meeting_cancelled', fellowship_id: meeting.fellowship_id, meeting_id: body.meeting_id },
         { kind: 'fellowship_meeting_cancelled', urgent: true })
     } catch (err) { console.error('[fellowship-meetings/cancel] FCM error (non-fatal):', err) }
-  })()
+  })(), 'fellowship-meetings/cancel notify')
 
   return new Response(JSON.stringify({ success: true, message: 'Meeting cancelled' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
@@ -431,6 +435,39 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
 // Authenticated via X-Cron-Secret header, or the service-role key that pg_cron
 // sends (no user JWT required). Triggered every minute by pg_cron.
 // ---------------------------------------------------------------------------
+
+/** A claimed reminder is invisible to other runs for this long. */
+const REMINDER_LEASE_MS = 2 * 60_000
+
+/** Give up on a reminder after this many failed sends. */
+const MAX_REMINDER_ATTEMPTS = 3
+
+async function markReminderDone(db: ServiceContainer['supabaseServiceClient'], id: string): Promise<void> {
+  const { error } = await db.from('meeting_reminders').update({ sent_at: new Date().toISOString() }).eq('id', id)
+  if (error) console.error(`[fellowship-meetings/reminder] Could not mark reminder ${id} done:`, error.message)
+}
+
+/**
+ * Recurring meetings store only their first occurrence; queue this reminder
+ * for the next occurrence still ahead. Idempotent through the unique
+ * (meeting_id, offset_label, occurrence_starts_at) index.
+ */
+async function scheduleNextOccurrence(
+  db: ServiceContainer['supabaseServiceClient'],
+  reminder: { meeting_id: string; offset_label: string },
+  meeting: { recurrence: MeetingRecurrence },
+  occurrenceStart: Date,
+): Promise<void> {
+  const next = nextReminderOccurrence(occurrenceStart, meeting.recurrence, reminder.offset_label, Date.now())
+  if (!next) return
+  const { error } = await db.from('meeting_reminders').upsert({
+    meeting_id: reminder.meeting_id,
+    offset_label: reminder.offset_label,
+    occurrence_starts_at: next.toISOString(),
+    remind_at: new Date(next.getTime() - reminderOffsetMs(reminder.offset_label)).toISOString(),
+  }, { onConflict: 'meeting_id,offset_label,occurrence_starts_at', ignoreDuplicates: true })
+  if (error) console.error('[fellowship-meetings/reminder] Could not schedule next occurrence:', error.message)
+}
 
 async function handleReminder(req: Request, services: ServiceContainer): Promise<Response> {
   const cronSecret = Deno.env.get('CRON_SECRET')
@@ -445,11 +482,13 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
 
   const db = services.supabaseServiceClient
 
+  const nowIso = new Date().toISOString()
   const { data: reminders, error } = await db
     .from('meeting_reminders')
-    .select(`id, offset_label, meeting_id, fellowship_meetings ( fellowship_id, title, starts_at, is_cancelled )`)
-    .lte('remind_at', new Date().toISOString())
+    .select(`id, offset_label, meeting_id, occurrence_starts_at, attempts, fellowship_meetings ( fellowship_id, title, starts_at, recurrence, is_cancelled )`)
+    .lte('remind_at', nowIso)
     .is('sent_at', null)
+    .or(`claimed_until.is.null,claimed_until.lt.${nowIso}`)
 
   if (error) {
     console.error('[fellowship-meetings/reminder] Query error:', error)
@@ -464,21 +503,29 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
 
   for (const reminder of reminders) {
     const meeting = reminder.fellowship_meetings as unknown as {
-      fellowship_id: string; title: string; starts_at: string; is_cancelled: boolean
+      fellowship_id: string; title: string; starts_at: string; recurrence: MeetingRecurrence; is_cancelled: boolean
     } | null
 
-    // Claim the reminder before sending, so two overlapping runs never both
-    // send it: only the run whose update flips sent_at from null goes on.
+    // Claim with a short lease, so two overlapping runs never both send it.
+    // sent_at is only stamped once the push actually went out; a failed send
+    // is retried after the lease, up to MAX_REMINDER_ATTEMPTS.
+    const attempts = ((reminder.attempts as number | null) ?? 0) + 1
+    const claimNow = new Date()
     const { data: claimed } = await db.from('meeting_reminders')
-      .update({ sent_at: new Date().toISOString() })
+      .update({ claimed_until: new Date(claimNow.getTime() + REMINDER_LEASE_MS).toISOString(), attempts })
       .eq('id', reminder.id)
       .is('sent_at', null)
+      .or(`claimed_until.is.null,claimed_until.lt.${claimNow.toISOString()}`)
       .select('id')
     if (!claimed || claimed.length === 0) continue
 
-    // A cancelled meeting, or one that has already started, gets no
+    const occurrenceStart = new Date((reminder.occurrence_starts_at as string | null) ?? meeting?.starts_at ?? 0)
+
+    // A cancelled meeting, or an occurrence that has already started, gets no
     // "starts in …" push.
-    if (!meeting || meeting.is_cancelled || new Date(meeting.starts_at).getTime() <= Date.now()) {
+    if (!meeting || meeting.is_cancelled || occurrenceStart.getTime() <= Date.now()) {
+      await markReminderDone(db, reminder.id)
+      if (meeting && !meeting.is_cancelled) await scheduleNextOccurrence(db, reminder, meeting, occurrenceStart)
       continue
     }
 
@@ -487,26 +534,39 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
       ? { title: '📹 Meeting in 10 minutes', body: `"${meeting.title}" is about to begin` }
       : { title: '⏰ Meeting in 1 hour', body: `"${meeting.title}" starts in 1 hour` }
 
-    const { data: memberRows } = await db.from('fellowship_members').select('user_id')
-      .eq('fellowship_id', meeting.fellowship_id).eq('is_active', true)
-    const memberIds = (memberRows ?? []).map((m: { user_id: string }) => m.user_id)
+    let delivered = true
+    try {
+      const { data: memberRows, error: memberError } = await db.from('fellowship_members').select('user_id')
+        .eq('fellowship_id', meeting.fellowship_id).eq('is_active', true)
+      if (memberError) throw new Error(memberError.message)
+      const memberIds = (memberRows ?? []).map((m: { user_id: string }) => m.user_id)
 
-    if (memberIds.length > 0) {
-      try {
+      if (memberIds.length > 0) {
         // URGENT: "starts in 10 minutes" is meaningless once held until 07:00,
         // and a meeting genuinely scheduled for 6 AM must still be announced.
-        await deliverOrQueue(db, memberIds, notif, {
+        const result = await deliverOrQueue(db, memberIds, notif, {
           type: 'fellowship_meeting_reminder',
           fellowship_id: meeting.fellowship_id,
           meeting_id: reminder.meeting_id,
           offset_label: reminder.offset_label,
         }, { kind: 'fellowship_meeting_reminder', urgent: true })
-      } catch (fcmErr) {
-        console.error('[fellowship-meetings/reminder] FCM error for meeting', reminder.meeting_id, fcmErr)
+        // Retry only when nobody was reached and someone was rejected: a
+        // partial success must not resend to the members already notified.
+        delivered = !(result.sentTo === 0 && result.queuedTo === 0 && (result.failedTo ?? 0) > 0)
       }
+    } catch (fcmErr) {
+      console.error('[fellowship-meetings/reminder] FCM error for meeting', reminder.meeting_id, fcmErr)
+      delivered = false
     }
 
-    sent++
+    if (!delivered && attempts < MAX_REMINDER_ATTEMPTS) {
+      // Left unsent; picked up again once the lease expires.
+      continue
+    }
+
+    await markReminderDone(db, reminder.id)
+    await scheduleNextOccurrence(db, reminder, meeting, occurrenceStart)
+    if (delivered) sent++
   }
 
   console.log(`[fellowship-meetings/reminder] Sent ${sent}/${reminders.length} reminders`)
@@ -953,6 +1013,7 @@ async function handleMeetings(req: Request, services: ServiceContainer): Promise
 }
 
 createSimpleFunction(handleMeetings, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST'],
   enableAnalytics: true,
   timeout: 20000,

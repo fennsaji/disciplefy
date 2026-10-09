@@ -3,15 +3,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Raw semantic accents are fill colours. Painted onto text or icons they fail
-/// WCAG on one theme — warning is 2.2:1 on white, brandPrimary 2.6:1 on the
-/// dark surface — so widgets use the theme-resolved accessors instead
-/// (`context.appSuccess`, `appWarning`, `appError`, `appInfo`,
-/// `appBrandAccent`).
+/// WCAG on one theme — warning is 2.2:1 on white, brandGold 1.9:1 on the
+/// light page — so widgets use the theme-resolved accessors instead
+/// (`context.appSuccess`, `appWarning`, `appError`, `appInfo`, `appAccent`).
 ///
 /// Fills, borders and tints are unaffected: those are written as
 /// `AppColors.error.withValues(...)` and keep the base token.
 void main() {
-  const guarded = ['success', 'warning', 'error', 'info', 'brandPrimary'];
+  const guarded = ['success', 'warning', 'error', 'info'];
   const aliases = [
     'successColor',
     'warningColor',

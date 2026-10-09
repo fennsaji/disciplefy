@@ -13,6 +13,7 @@ abstract class SavedGuidesRemoteDataSource {
   Future<List<SavedGuideModel>> getRecentGuides({
     int limit = 20,
     int offset = 0,
+    bool ownOnly = false,
   });
 
   /// Toggle save/unsave a guide via API
@@ -45,10 +46,12 @@ class SavedGuidesRemoteDataSourceImpl implements SavedGuidesRemoteDataSource {
   Future<List<SavedGuideModel>> getRecentGuides({
     int limit = 20,
     int offset = 0,
+    bool ownOnly = false,
   }) async =>
       await _apiService.getStudyGuides(
         limit: limit,
         offset: offset,
+        ownOnly: ownOnly,
       );
 
   @override

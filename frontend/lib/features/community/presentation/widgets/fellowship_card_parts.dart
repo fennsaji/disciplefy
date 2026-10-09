@@ -15,7 +15,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/d
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/member_avatar.dart';
 
 /// Card surface of a fellowship (My fellowships, Discover): card fill,
-/// 22 radius, 1px hairline and a faint indigo glow in the top-left corner.
+/// 22 radius, 1px hairline and a faint gold glow in the top-left corner.
 class FellowshipCardShell extends StatelessWidget {
   final Widget child;
 
@@ -27,7 +27,7 @@ class FellowshipCardShell extends StatelessWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.padding = const EdgeInsets.fromLTRB(20, 18, 20, 18),
+    this.padding = const EdgeInsets.fromLTRB(14, 16, 14, 14),
   });
 
   @override
@@ -49,9 +49,8 @@ class FellowshipCardShell extends StatelessWidget {
               center: Alignment.topLeft,
               radius: 1.3,
               colors: [
-                AppColors.brandPrimary
-                    .withValues(alpha: palette.isDark ? 0.18 : 0.07),
-                AppColors.brandPrimary.withValues(alpha: 0),
+                palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.07),
+                palette.gold.withValues(alpha: 0),
               ],
             ),
           ),
@@ -70,10 +69,10 @@ class FellowshipOfficialChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.14),
-        borderRadius: BorderRadius.circular(20),
+        color: palette.gold.withValues(alpha: palette.isDark ? 0.20 : 0.14),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         AppLocalizations.of(context)!.officialBadge,
@@ -81,8 +80,8 @@ class FellowshipOfficialChip extends StatelessWidget {
         softWrap: false,
         style: AppFonts.inter(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: palette.gold,
+          fontWeight: FontWeight.w700,
+          color: palette.goldOnTint,
         ),
       ),
     );
@@ -187,7 +186,8 @@ String? realMentorName(String? name) {
   return trimmed;
 }
 
-/// One mentor avatar + "Mentor: {name} · {N} members".
+/// One mentor avatar + "Mentor: {name} · {N} members" (or "Guided by
+/// Discipler · {N} members").
 ///
 /// [leading] goes before the avatar (Discover's language chip). The text
 /// wraps rather than truncating.
@@ -204,7 +204,7 @@ class FellowshipMentorRow extends StatelessWidget {
     required this.mentor,
     required this.memberCount,
     this.leading,
-    this.avatarRadius = 14,
+    this.avatarRadius = 13,
   });
 
   @override
@@ -233,7 +233,7 @@ class FellowshipMentorRow extends StatelessWidget {
           child: Text(
             text,
             style: AppFonts.inter(
-              fontSize: 14.5,
+              fontSize: 12.5,
               color: palette.muted,
               height: 1.35,
             ),
@@ -244,8 +244,9 @@ class FellowshipMentorRow extends StatelessWidget {
   }
 }
 
-/// "Mentor: {name} · {N} members" (or just the member count when the mentor
-/// is unknown). Shared by [FellowshipMentorRow] and the fellowship home meta.
+/// "Mentor: {name} · {N} members", "Guided by Discipler · {N} members" for
+/// Discipler-led groups, or just the member count when the mentor is unknown.
+/// Shared by [FellowshipMentorRow] and the fellowship home meta.
 String fellowshipMentorLine(
   BuildContext context,
   FellowshipMentorInfo mentor,
@@ -253,7 +254,10 @@ String fellowshipMentorLine(
 ) {
   final l10n = AppLocalizations.of(context)!;
   final members = '$memberCount ${l10n.communityMembersCount(memberCount)}';
-  var name = mentor.isDiscipler ? l10n.disciplerName : mentor.name;
+  if (mentor.isDiscipler) {
+    return '${context.tr(TranslationKeys.communityGuidedByDiscipler)} · $members';
+  }
+  var name = mentor.name;
   if (name == null || name.trim().isEmpty) return members;
   if (mentor.isCurrentUser) {
     name = context.tr(TranslationKeys.communitySharedMentorYou, {'name': name});
@@ -293,12 +297,10 @@ class FellowshipCurrentStudyRow extends StatelessWidget {
     final progress = progressInfo.fraction;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: palette.isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : palette.raised,
-        borderRadius: BorderRadius.circular(16),
+        color: palette.raised,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -312,42 +314,62 @@ class FellowshipCurrentStudyRow extends StatelessWidget {
                     finished
                         ? Icons.check_circle_rounded
                         : Icons.menu_book_outlined,
-                    size: 18,
+                    size: 14,
                     color: palette.gold),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                flex: 3,
-                child: Text(
-                  title,
-                  style: AppFonts.inter(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: palette.text,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              if (doneLabel != null) ...[
-                const SizedBox(width: 10),
-                // Wraps (never clips) when a translation runs long.
-                Flexible(
-                  flex: 2,
-                  child: Text(
-                    doneLabel,
-                    textAlign: TextAlign.end,
+                child: LayoutBuilder(builder: (context, box) {
+                  final titleText = Text(
+                    title,
                     style: AppFonts.inter(
-                      fontSize: 13.5,
-                      color: palette.muted,
-                      height: 1.35,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                      height: 1.3,
                     ),
-                  ),
-                ),
-              ],
+                  );
+                  if (doneLabel == null) return titleText;
+                  final doneStyle = AppFonts.inter(
+                    fontSize: 12,
+                    color: palette.muted,
+                    height: 1.35,
+                  );
+                  // "n of m" sits at the right as designed while it takes
+                  // under a third of the row; a longer translation moves
+                  // under the path so the path never wraps a word a line.
+                  final painter = TextPainter(
+                    text: TextSpan(text: doneLabel, style: doneStyle),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                    maxLines: 1,
+                  )..layout();
+                  final fits = painter.width + 10 <= box.maxWidth * 0.32;
+                  painter.dispose();
+                  if (fits) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: titleText),
+                        const SizedBox(width: 10),
+                        Text(doneLabel, style: doneStyle),
+                      ],
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      titleText,
+                      const SizedBox(height: 2),
+                      Text(doneLabel, style: doneStyle),
+                    ],
+                  );
+                }),
+              ),
             ],
           ),
           if (progress != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             CommunityProgressBar(value: progress),
           ],
         ],
@@ -391,19 +413,19 @@ class FellowshipLanguageChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: palette.isDark
             ? Colors.white.withValues(alpha: 0.08)
             : palette.raised,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(11),
       ),
       child: Text(
         language.toUpperCase(),
         maxLines: 1,
         softWrap: false,
         style: AppFonts.inter(
-          fontSize: 12.5,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           color: palette.text,
           letterSpacing: 0.4,

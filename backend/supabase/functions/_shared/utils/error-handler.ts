@@ -12,11 +12,13 @@ export class AppError extends Error {
    * @param code - Application-specific error code
    * @param message - Human-readable error message
    * @param statusCode - HTTP status code (defaults to 400)
+   * @param details - Optional client-safe details, sent as `error.details`
    */
   constructor(
     public readonly code: string,
     public override readonly message: string,
-    public readonly statusCode: number = 400
+    public readonly statusCode: number = 400,
+    public readonly details?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'AppError'
@@ -36,6 +38,7 @@ interface ErrorResponse {
     readonly message: string
     readonly timestamp?: string
     readonly requestId?: string
+    readonly details?: Record<string, unknown>
   }
 }
 
@@ -77,7 +80,8 @@ export class ErrorHandler {
         error.message,
         error.statusCode,
         corsHeaders,
-        requestId
+        requestId,
+        error.details
       )
     }
 
@@ -101,6 +105,7 @@ export class ErrorHandler {
    * @param statusCode - HTTP status code
    * @param corsHeaders - CORS headers
    * @param requestId - Optional request ID
+   * @param details - Optional client-safe details
    * @returns HTTP response with error
    */
   private static createErrorResponse(
@@ -108,7 +113,8 @@ export class ErrorHandler {
     message: string,
     statusCode: number,
     corsHeaders: Record<string, string>,
-    requestId?: string
+    requestId?: string,
+    details?: Record<string, unknown>
   ): Response {
     
     const errorResponse: ErrorResponse = {
@@ -117,7 +123,8 @@ export class ErrorHandler {
         code,
         message,
         timestamp: new Date().toISOString(),
-        ...(requestId && { requestId })
+        ...(requestId && { requestId }),
+        ...(details && { details })
       }
     }
 
@@ -307,6 +314,17 @@ export class ErrorHandler {
       'Insufficient permissions to perform this action'
 
     return new AppError('PERMISSION_DENIED', message, 403)
+  }
+
+  /**
+   * Creates the error returned to a guest (Supabase anonymous user) on an
+   * account-only feature. Code `ACCOUNT_REQUIRED`, HTTP 403.
+   */
+  static createAccountRequiredError(
+    message = 'Create an account to use this.',
+    details?: Record<string, unknown>
+  ): AppError {
+    return new AppError('ACCOUNT_REQUIRED', message, 403, details)
   }
 
   /**

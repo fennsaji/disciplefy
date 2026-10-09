@@ -372,7 +372,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.inter(
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.5,
                                 color: palette.gold,
@@ -532,17 +532,15 @@ class _RememberChoiceToggle extends StatelessWidget {
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  color:
-                      ticked ? ReaderPalette.selectedFill : Colors.transparent,
+                  color: ticked ? palette.selectedFill : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color:
-                        ticked ? ReaderPalette.selectedFill : palette.outline,
+                    color: ticked ? palette.selectedFill : palette.outline,
                     width: 2,
                   ),
                 ),
                 child: ticked
-                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                    ? Icon(Icons.check, size: 14, color: palette.onSelected)
                     : null,
               ),
               const SizedBox(width: 10),
@@ -591,9 +589,10 @@ class _ModeOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final onSelected = Colors.white.withValues(alpha: 0.8);
-    final titleColor = isSelected ? Colors.white : palette.text;
-    final secondary = isSelected ? onSelected : palette.muted;
+    // Selected depth: the card keeps its fill and gains a gold ring and wash,
+    // as the design's depth list.
+    final titleColor = palette.text;
+    final secondary = palette.muted;
     final radius = BorderRadius.circular(20);
 
     return Semantics(
@@ -602,13 +601,17 @@ class _ModeOptionCard extends StatelessWidget {
       child: Opacity(
         opacity: isLocked ? 0.6 : 1,
         child: Material(
-          color: isSelected ? ReaderPalette.selectedFill : palette.card,
+          color: isSelected
+              ? Color.alphaBlend(
+                  palette.selectedFill
+                      .withValues(alpha: palette.isDark ? 0.10 : 0.08),
+                  palette.card)
+              : palette.card,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: BorderSide(
-              color: isSelected
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : palette.hairline,
+              color: isSelected ? palette.selectedFill : palette.hairline,
+              width: isSelected ? 1.5 : 1,
             ),
           ),
           child: InkWell(
@@ -622,7 +625,7 @@ class _ModeOptionCard extends StatelessWidget {
                   Icon(
                     mode.outlineIcon,
                     size: 22,
-                    color: isSelected ? Colors.white : palette.accentIcon,
+                    color: palette.accentIcon,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -645,7 +648,7 @@ class _ModeOptionCard extends StatelessWidget {
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2,
-                              color: isSelected ? onSelected : palette.gold,
+                              color: palette.gold,
                             ),
                           ),
                         ],
@@ -696,7 +699,7 @@ class _ModeOptionCard extends StatelessWidget {
                       else if (tokenCost != null)
                         CreditCost(
                           cost: tokenCost!,
-                          color: isSelected ? onSelected : palette.gold,
+                          color: palette.gold,
                         ),
                     ],
                   ),

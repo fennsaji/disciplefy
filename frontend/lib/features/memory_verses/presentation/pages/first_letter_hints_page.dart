@@ -364,7 +364,7 @@ class _HintWordsView extends StatelessWidget {
 }
 
 /// One word: its first letter on a raised tile, tap to reveal the word
-/// (counts as a hint). Revealed words use the indigo selected fill.
+/// (counts as a hint). Revealed words use the gold selected fill.
 class _HintWordTile extends StatelessWidget {
   final HintWord hintWord;
   final int index;
@@ -392,7 +392,7 @@ class _HintWordTile extends StatelessWidget {
             }),
       excludeSemantics: true,
       child: Material(
-        color: revealed ? ReaderPalette.selectedFill : palette.raised,
+        color: revealed ? palette.selectedFill : palette.raised,
         borderRadius: radius,
         child: InkWell(
           onTap: revealed ? null : onTap,
@@ -410,7 +410,7 @@ class _HintWordTile extends StatelessWidget {
                   style: AppFonts.inter(
                     fontSize: revealed ? 15.5 : 17,
                     fontWeight: FontWeight.w700,
-                    color: revealed ? Colors.white : palette.accentIcon,
+                    color: revealed ? palette.onSelected : palette.accentIcon,
                   ),
                 ),
               ),

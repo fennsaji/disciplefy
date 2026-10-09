@@ -4,11 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
-import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
-import 'package:disciplefy_bible_study/core/constants/study_mode_preferences.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
@@ -21,19 +18,20 @@ import 'package:disciplefy_bible_study/core/services/system_config_service.dart'
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
-import 'package:disciplefy_bible_study/core/utils/platform_utils.dart';
 import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
 import 'package:disciplefy_bible_study/features/auth/domain/utils/auth_validator.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
     as auth_states;
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
-import 'package:disciplefy_bible_study/features/feedback/presentation/widgets/feedback_bottom_sheet.dart';
-import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
-import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_more_page.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_profile_card.dart';
 import 'package:disciplefy_bible_study/core/widgets/status_message_view.dart';
@@ -44,11 +42,9 @@ import 'package:disciplefy_bible_study/features/settings/presentation/widgets/se
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
-import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_api_service.dart';
-import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dart';
 
 /// Settings in the grouped-cards design.
@@ -80,6 +76,13 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   void initState() {
     super.initState();
     _loadDownloadedPaths();
+    // The My progress row shows the streak; load it if nothing has yet.
+    if (sl.isRegistered<GamificationBloc>() &&
+        sl<AuthStateProvider>().isAuthenticated &&
+        !isGuestUser() &&
+        sl<GamificationBloc>().state.stats == null) {
+      sl<GamificationBloc>().add(const LoadGamificationStats());
+    }
   }
 
   Future<void> _loadDownloadedPaths() async {
@@ -158,10 +161,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 },
                 builder: (context, state) {
                   if (state is SettingsLoading) {
-                    return const Center(
+                    return Center(
                       child: CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            settingsPrimaryFill(context)),
                         strokeWidth: 3,
                       ),
                     );
@@ -207,11 +210,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   Widget _buildSettingsList(BuildContext context, SettingsLoaded state) {
     final authProvider = sl<AuthStateProvider>();
     final isAuthenticated = authProvider.isAuthenticated;
+    final isGuest = _isGuest;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
       children: [
-        if (isAuthenticated) ...[
+        if (isAuthenticated && isGuest) ...[
+          const _GuestNote(),
+          ..._youSection(context),
+        ] else if (isAuthenticated) ...[
           SettingsProfileCard(
             name: authProvider.profileBasedDisplayName,
             email: authProvider.userEmail ??
@@ -230,10 +237,20 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           ..._youSection(context),
         ],
         ..._preferencesSection(context, state),
-        if (isAuthenticated) ..._studySection(context, authProvider),
-        ..._helpSection(context),
-        ..._aboutSection(context, state),
-        ..._accountSection(context, isAuthenticated),
+        // Study, help and legal rows live one tap away.
+        const SizedBox(height: 18),
+        SettingsGroup(
+          children: [
+            SettingsRow(
+              key: const Key('settings_more'),
+              icon: Icons.more_horiz_rounded,
+              title: context.tr(TranslationKeys.settingsMore),
+              subtitle: context.tr(TranslationKeys.settingsMoreSubtitle),
+              onTap: () => context.push(AppRoutes.settingsMore),
+            ),
+          ],
+        ),
+        ..._accountSection(context, isAuthenticated, isGuest: isGuest),
       ],
     );
   }
@@ -242,12 +259,9 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   // Sections
   // -------------------------------------------------------------------------
 
-  String _userPlan() {
-    final tokenState = sl<TokenBloc>().state;
-    return tokenState is TokenLoaded
-        ? tokenState.tokenStatus.userPlan.name
-        : 'free';
-  }
+  bool get _isGuest => isGuestUser();
+
+  String _userPlan() => currentPlanCode(sl<TokenBloc>().state);
 
   List<Widget> _youSection(BuildContext context) {
     final userPlan = _userPlan();
@@ -264,12 +278,15 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           if (showProgress)
             LockedFeatureWrapper(
               featureKey: 'leaderboard',
-              child: SettingsRow(
-                icon: Icons.emoji_events_outlined,
-                tone: SettingsTone.gold,
-                title: context.tr(TranslationKeys.gamificationTitle),
-                subtitle: context.tr(TranslationKeys.gamificationSubtitle),
-                onTap: () => context.push(AppRoutes.statsDashboard),
+              child: _StreakValue(
+                builder: (streak) => SettingsRow(
+                  key: const Key('settings_my_progress'),
+                  icon: Icons.emoji_events_outlined,
+                  title: context.tr(TranslationKeys.gamificationTitle),
+                  subtitle: context.tr(TranslationKeys.gamificationSubtitle),
+                  value: streak,
+                  onTap: () => context.push(AppRoutes.statsDashboard),
+                ),
               ),
             ),
           if (showReflections)
@@ -286,10 +303,11 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
           // My Plan — unified plan and subscription management.
           SettingsRow(
+            key: const Key('settings_my_plan'),
             icon: Icons.workspace_premium_outlined,
-            tone: SettingsTone.gold,
             title: context.tr(TranslationKeys.settingsMyPlan),
             subtitle: context.tr(TranslationKeys.settingsMyPlanSubtitle),
+            value: planDisplayName(context, userPlan),
             onTap: () => context.push(AppRoutes.myPlan),
           ),
         ],
@@ -327,20 +345,12 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           // the Topics screen's menu.
           _ContentLanguageSubtitle(
             appLanguageCode: state.settings.language,
-            builder: (subtitle) => SettingsRow(
+            builder: (value) => SettingsRow(
+              key: const Key('settings_content_language'),
               icon: Icons.menu_book_outlined,
               title: context.tr(TranslationKeys.settingsContentLanguage),
-              subtitle: subtitle,
+              value: value,
               onTap: () => showContentLanguageSheet(context),
-            ),
-          ),
-          ListenableBuilder(
-            listenable: sl<FontScaleService>(),
-            builder: (context, _) => SettingsRow(
-              icon: Icons.text_fields,
-              title: context.tr(TranslationKeys.settingsTextSize),
-              value: fontScaleLevelLabel(context, sl<FontScaleService>().level),
-              onTap: () => showTextSizeSheet(context),
             ),
           ),
           SettingsRow(
@@ -370,173 +380,46 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 .push('/offline-guides')
                 .then((_) => _loadDownloadedPaths()),
           ),
-        ],
-      ),
-    ];
-  }
-
-  List<Widget> _studySection(
-      BuildContext context, AuthStateProvider authProvider) {
-    final defaultMode =
-        authProvider.userProfile?['default_study_mode'] as String?;
-    final learningPathMode =
-        authProvider.userProfile?['learning_path_study_mode'] as String?;
-
-    final String studyModeSubtitle;
-    if (StudyModePreferences.isGeneralAskEveryTime(defaultMode)) {
-      studyModeSubtitle = context.tr(TranslationKeys.settingsAskEveryTime);
-    } else if (StudyModePreferences.isRecommended(defaultMode)) {
-      studyModeSubtitle = context.tr(TranslationKeys.settingsUseRecommended);
-    } else {
-      studyModeSubtitle = context
-          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
-          .replaceAll('{mode}', studyModeNameForValue(context, defaultMode!));
-    }
-
-    final String learningPathSubtitle;
-    if (StudyModePreferences.isLearningPathAskEveryTime(learningPathMode)) {
-      learningPathSubtitle = context.tr(TranslationKeys.settingsAskEveryTime);
-    } else if (StudyModePreferences.isRecommended(learningPathMode)) {
-      learningPathSubtitle = context.tr(TranslationKeys.settingsUseRecommended);
-    } else {
-      learningPathSubtitle = context
-          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
-          .replaceAll(
-              '{mode}', studyModeNameForValue(context, learningPathMode!));
-    }
-
-    return [
-      SettingsSectionLabel(context.tr(TranslationKeys.settingsSectionStudy)),
-      SettingsGroup(
-        children: [
-          SettingsRow(
-            icon: Icons.auto_awesome_outlined,
-            title: context.tr(TranslationKeys.settingsRetakeQuestionnaire),
-            subtitle:
-                context.tr(TranslationKeys.settingsRetakeQuestionnaireSubtitle),
-            onTap: () => _navigateToQuestionnaire(context),
-          ),
-          SettingsRow(
-            icon: Icons.school_outlined,
-            title: context.tr(TranslationKeys.settingsStudyModePreference),
-            subtitle: studyModeSubtitle,
-            onTap: () => showStudyModeSheet(context, defaultMode),
-          ),
-          SettingsRow(
-            icon: Icons.route_outlined,
-            title: context
-                .tr(TranslationKeys.settingsLearningPathStudyModePreference),
-            subtitle: learningPathSubtitle,
-            onTap: () =>
-                showLearningPathStudyModeSheet(context, learningPathMode),
+          ListenableBuilder(
+            listenable: sl<FontScaleService>(),
+            builder: (context, _) => SettingsRow(
+              icon: Icons.text_fields,
+              title: context.tr(TranslationKeys.settingsTextSize),
+              value: fontScaleLevelLabel(context, sl<FontScaleService>().level),
+              onTap: () => showTextSizeSheet(context),
+            ),
           ),
         ],
       ),
     ];
   }
 
-  List<Widget> _helpSection(BuildContext context) => [
-        SettingsSectionLabel(context.tr(TranslationKeys.settingsHelpSupport)),
-        SettingsGroup(
-          children: [
-            SettingsRow(
-              icon: Icons.chat_bubble_outline_rounded,
-              title: context.tr(TranslationKeys.settingsFeedback),
-              subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
-              onTap: () => showFeedbackBottomSheet(context),
-            ),
-            SettingsRow(
-              icon: Icons.receipt_long_outlined,
-              tone: SettingsTone.gold,
-              title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
-              subtitle: context
-                  .tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
-              onTap: () => context.push(AppRoutes.purchaseHistory),
-            ),
-            SettingsRow(
-              icon: Icons.mail_outline_rounded,
-              tone: SettingsTone.sky,
-              title: context.tr(TranslationKeys.settingsContactUs),
-              subtitle: context.tr(TranslationKeys.settingsContactUsSubtitle),
-              onTap: () => showContactSheet(context),
-            ),
-            SettingsRow(
-              icon: Icons.replay_rounded,
-              title: context.tr(TranslationKeys.settingsReplayWalkthrough),
-              subtitle:
-                  context.tr(TranslationKeys.settingsReplayWalkthroughSubtitle),
-              onTap: () => _replayWalkthrough(context),
-            ),
-          ],
-        ),
-      ];
-
-  List<Widget> _aboutSection(BuildContext context, SettingsLoaded state) => [
-        SettingsSectionLabel(context.tr(TranslationKeys.settingsAbout)),
-        SettingsGroup(
-          children: [
-            SettingsRow(
-              icon: Icons.favorite_outline,
-              tone: SettingsTone.pink,
-              title: context.tr(TranslationKeys.settingsSupportDeveloper),
-              subtitle:
-                  context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
-              // iOS: tips must go through In-App Purchase (guideline 3.1.1);
-              // Android/web keep the external Buy Me a Coffee link.
-              onTap: () => PlatformUtils.isIOS
-                  ? showTipSheet(context)
-                  : showSupportSheet(context),
-            ),
-            SettingsRow(
-              icon: Icons.book_outlined,
-              tone: SettingsTone.gold,
-              title: context.tr(TranslationKeys.settingsBibleAttribution),
-              subtitle:
-                  context.tr(TranslationKeys.settingsBibleAttributionSubtitle),
-              onTap: () => context.push(AppRoutes.bibleAttribution),
-            ),
-            SettingsRow(
-              icon: Icons.verified_user_outlined,
-              title: context.tr(TranslationKeys.settingsPrivacyPolicy),
-              subtitle:
-                  context.tr(TranslationKeys.settingsPrivacyPolicySubtitle),
-              onTap: () => _launchExternal(LegalUrls.privacy),
-            ),
-            SettingsRow(
-              icon: Icons.description_outlined,
-              title: context.tr(TranslationKeys.settingsTermsOfService),
-              subtitle:
-                  context.tr(TranslationKeys.settingsTermsOfServiceSubtitle),
-              onTap: () => _launchExternal(LegalUrls.terms),
-            ),
-            SettingsRow(
-              icon: Icons.receipt_outlined,
-              title: context.tr(TranslationKeys.settingsRefundPolicy),
-              subtitle:
-                  context.tr(TranslationKeys.settingsRefundPolicySubtitle),
-              onTap: () => _launchExternal('https://www.disciplefy.in/refund'),
-            ),
-            SettingsRow(
-              icon: Icons.info_outline,
-              title: context.tr(TranslationKeys.settingsAppVersion),
-              value: state.settings.appVersion,
-            ),
-          ],
-        ),
-      ];
-
-  List<Widget> _accountSection(BuildContext context, bool isAuthenticated) => [
+  List<Widget> _accountSection(BuildContext context, bool isAuthenticated,
+          {required bool isGuest}) =>
+      [
         SettingsSectionLabel(context.tr(TranslationKeys.settingsAccount)),
         SettingsGroup(
           children: [
-            SettingsRow(
-              icon: Icons.block,
-              title: context.tr(TranslationKeys.settingsBlockedUsers),
-              subtitle:
-                  context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
-              onTap: () => context.push(AppRoutes.blockedUsers),
-            ),
-            if (isAuthenticated) ...[
+            // Blocking is for Community, which a guest cannot use.
+            if (!isGuest)
+              SettingsRow(
+                icon: Icons.block,
+                title: context.tr(TranslationKeys.settingsBlockedUsers),
+                subtitle:
+                    context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
+                onTap: () => context.push(AppRoutes.blockedUsers),
+              ),
+            if (isAuthenticated && isGuest)
+              SettingsRow(
+                key: const Key('settings_save_progress'),
+                icon: Icons.cloud_upload_outlined,
+                title: context.tr(TranslationKeys.settingsSaveProgress),
+                subtitle:
+                    context.tr(TranslationKeys.settingsSaveProgressSubtitle),
+                onTap: () => AccountNeededSheet.show(
+                    context, AccountReason.saveProgress),
+              )
+            else if (isAuthenticated) ...[
               SettingsRow(
                 icon: Icons.logout_rounded,
                 title: context.tr(TranslationKeys.settingsSignOut),
@@ -566,51 +449,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------
-
-  /// Navigate to the personalization questionnaire.
-  void _navigateToQuestionnaire(BuildContext context) {
-    context.push('/personalization-questionnaire').then((_) {
-      // Clear LearningPaths repository cache so Study Topics gets fresh data.
-      sl<LearningPathsRepository>().clearCache();
-      // Refresh all personalization-dependent data.
-      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
-      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
-    });
-  }
-
-  /// Replay app walkthrough by resetting all walkthrough seen states.
-  Future<void> _replayWalkthrough(BuildContext context) async {
-    unawaited(showSettingsLoader(context));
-
-    try {
-      await sl<WalkthroughRepository>().resetAll();
-
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
-        showAppSnackBar(
-          context,
-          context.tr(TranslationKeys.settingsReplayWalkthroughSuccess),
-          tone: AppSnackTone.success,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
-        showAppSnackBar(
-          context,
-          context.tr(TranslationKeys.settingsReplayWalkthroughError),
-          tone: AppSnackTone.error,
-        );
-      }
-    }
-  }
-
-  Future<void> _launchExternal(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 
   /// Lets the user set or correct their display name.
   ///
@@ -760,59 +598,135 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   }
 
   /// Delete-account confirmation; dispatches [DeleteAccountRequested].
+  ///
+  /// As in the design, the user types DELETE before the red action unlocks,
+  /// so an account is never removed by a stray tap.
   void _showDeleteAccountDialog(BuildContext context) {
     final authBloc = context.read<AuthBloc>();
     showDialog(
       context: context,
-      builder: (dialogContext) {
-        final red = SettingsToneColors.of(dialogContext, SettingsTone.red);
-        return SettingsDialog(
-          title: dialogContext.tr(TranslationKeys.settingsDeleteAccountTitle),
-          titleColor: red.foreground,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DeleteAccountWarningBox(
-                title: dialogContext
-                    .tr(TranslationKeys.settingsDeleteAccountLoseTitle),
-                items: [
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLoseGuides),
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLoseVerses),
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLoseProgress),
-                  dialogContext
-                      .tr(TranslationKeys.settingsDeleteAccountLosePlan),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(dialogContext
-                  .tr(TranslationKeys.settingsDeleteAccountMessage)),
+      builder: (dialogContext) => DeleteAccountDialog(
+        onConfirm: () {
+          setState(() => _isDeletingAccount = true);
+          authBloc.add(const DeleteAccountRequested());
+        },
+      ),
+    );
+  }
+}
+
+/// The delete-account dialog: what is lost, the typed DELETE check, and
+/// "Delete my account" / "Keep my account".
+class DeleteAccountDialog extends StatefulWidget {
+  final VoidCallback onConfirm;
+
+  const DeleteAccountDialog({super.key, required this.onConfirm});
+
+  /// The word to type; kept in English in every language, like the design.
+  static const confirmWord = 'DELETE';
+
+  @override
+  State<DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _confirmed =>
+      _controller.text.trim().toUpperCase() == DeleteAccountDialog.confirmWord;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final red = SettingsToneColors.of(context, SettingsTone.red);
+    return SettingsDialog(
+      title: context.tr(TranslationKeys.settingsDeleteAccountTitle),
+      titleColor: red.foreground,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DeleteAccountWarningBox(
+            title: context.tr(TranslationKeys.settingsDeleteAccountLoseTitle),
+            items: [
+              context.tr(TranslationKeys.settingsDeleteAccountLoseGuides),
+              context.tr(TranslationKeys.settingsDeleteAccountLoseVerses),
+              context.tr(TranslationKeys.settingsDeleteAccountLoseProgress),
+              context.tr(TranslationKeys.settingsDeleteAccountLosePlan),
             ],
           ),
-          actions: [
-            SettingsButton(
-              label: dialogContext.tr(TranslationKeys.commonCancel),
-              kind: SettingsButtonKind.neutral,
-              height: 46,
-              onPressed: () => Navigator.of(dialogContext).pop(),
+          const SizedBox(height: 12),
+          Text(context.tr(TranslationKeys.settingsDeleteAccountMessage)),
+          const SizedBox(height: 14),
+          Text(
+            context.tr(TranslationKeys.settingsDeleteAccountTypeToConfirm),
+            style: AppFonts.inter(fontSize: 12.5, color: palette.muted),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            key: const Key('delete_account_confirm_field'),
+            controller: _controller,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.characters,
+            onChanged: (_) => setState(() {}),
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 2,
+              color: palette.text,
             ),
-            SettingsButton(
-              label: dialogContext
-                  .tr(TranslationKeys.settingsDeleteAccountConfirm),
-              kind: SettingsButtonKind.destructive,
-              height: 46,
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                setState(() => _isDeletingAccount = true);
-                authBloc.add(const DeleteAccountRequested());
-              },
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: DeleteAccountDialog.confirmWord,
+              hintStyle: AppFonts.inter(
+                fontSize: 14,
+                letterSpacing: 2,
+                color: palette.dim,
+              ),
+              filled: true,
+              fillColor: palette.raised,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(color: red.foreground, width: 1.2),
+              ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
+      actions: [
+        SettingsButton(
+          key: const Key('delete_account_keep'),
+          label: context.tr(TranslationKeys.settingsDeleteAccountKeep),
+          kind: SettingsButtonKind.neutral,
+          height: 40,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        SettingsButton(
+          key: const Key('delete_account_confirm'),
+          label: context.tr(TranslationKeys.settingsDeleteAccountConfirm),
+          kind: SettingsButtonKind.destructive,
+          height: 40,
+          onPressed: _confirmed
+              ? () {
+                  Navigator.of(context).pop();
+                  widget.onConfirm();
+                }
+              : null,
+        ),
+      ],
     );
   }
 }
@@ -892,9 +806,9 @@ class DeleteAccountWarningBox extends StatelessWidget {
   }
 }
 
-/// Resolves the Content Language row's subtitle: the chosen language, or
-/// "Same as app language (X)". Rebuilds when either language changes, since
-/// "Default" follows the app language.
+/// Resolves the Content language row's value: the chosen language, or
+/// "Same as app". Rebuilds when either language changes, since "Default"
+/// follows the app language.
 class _ContentLanguageSubtitle extends StatefulWidget {
   final String appLanguageCode;
   final Widget Function(String subtitle) builder;
@@ -947,11 +861,79 @@ class _ContentLanguageSubtitleState extends State<_ContentLanguageSubtitle> {
 
   @override
   Widget build(BuildContext context) {
-    final appLanguage = AppLanguage.fromCode(widget.appLanguageCode);
-    final subtitle = _isDefault || _language == null
-        ? context.tr(TranslationKeys.settingsContentLanguageFollowsApp,
-            {'language': appLanguage.displayName})
+    // "Same as app" while it follows the app language (that language is the
+    // App language row's value right above), else the chosen language.
+    final value = _isDefault || _language == null
+        ? context.tr(TranslationKeys.settingsContentLanguageSame)
         : _language!.displayName;
-    return widget.builder(subtitle);
+    return widget.builder(value);
   }
 }
+
+/// "You're using a guest account…" line shown in place of the profile card.
+class _GuestNote extends StatelessWidget {
+  const _GuestNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return Container(
+      key: const Key('settings_guest_note'),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.person_outline_rounded, size: 22, color: palette.muted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              context.tr(TranslationKeys.settingsGuestNote),
+              style: AppFonts.inter(
+                fontSize: 14,
+                height: 1.4,
+                color: palette.text,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The current study streak as "13-day streak", or null while it is unknown
+/// or zero. Rebuilds as the gamification stats load.
+class _StreakValue extends StatelessWidget {
+  final Widget Function(String? streak) builder;
+
+  const _StreakValue({required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!sl.isRegistered<GamificationBloc>()) return builder(null);
+    return BlocBuilder<GamificationBloc, GamificationState>(
+      bloc: sl<GamificationBloc>(),
+      buildWhen: (a, b) => a.stats != b.stats,
+      builder: (context, state) {
+        final days = state.stats?.verseCurrentStreak ?? 0;
+        return builder(days > 0
+            ? context.tr(TranslationKeys.homeDayStreak, {'count': days})
+            : null);
+      },
+    );
+  }
+}
+
+/// Display name of a plan code ("Standard"), as on My plan.
+String planDisplayName(BuildContext context, String planCode) =>
+    switch (planCode) {
+      'standard' => context.tr(TranslationKeys.plansStandard),
+      'plus' => context.tr(TranslationKeys.plansPlus),
+      'premium' => context.tr(TranslationKeys.plansPremium),
+      _ => context.tr(TranslationKeys.plansFree),
+    };

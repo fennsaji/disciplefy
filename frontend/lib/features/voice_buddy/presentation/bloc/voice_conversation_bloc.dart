@@ -718,6 +718,10 @@ class VoiceConversationBloc
     }
   }
 
+  @visibleForTesting
+  void handleStreamingEventForTest(Map<String, dynamic> data) =>
+      _handleStreamingEvent(data);
+
   /// Handle individual streaming events from the backend
   void _handleStreamingEvent(Map<String, dynamic> data) {
     // The backend sends event type as a separate SSE field, but our bridge
@@ -1015,6 +1019,10 @@ class VoiceConversationBloc
     StreamCompleted event,
     Emitter<VoiceConversationState> emit,
   ) {
+    // The monthly conversation quota is not streamed; reload it so the chip
+    // reflects the server's count after each reply.
+    _safeAdd(const CheckQuota());
+
     // Add assistant message to local state
     final assistantMessage = ConversationMessageEntity(
       id: DateTime.now().millisecondsSinceEpoch.toString(),

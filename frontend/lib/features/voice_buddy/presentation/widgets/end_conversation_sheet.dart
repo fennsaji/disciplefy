@@ -159,7 +159,7 @@ class _EndConversationSheetState extends State<EndConversationSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: ReaderPalette.selectedFill),
+              borderSide: BorderSide(color: palette.selectedFill),
             ),
           ),
         ),
@@ -216,13 +216,13 @@ class _ChoiceCard extends StatelessWidget {
       inMutuallyExclusiveGroup: true,
       child: Material(
         color: selected
-            ? ReaderPalette.selectedFill
+            ? palette.selectedFill
                 .withValues(alpha: palette.isDark ? 0.16 : 0.07)
             : palette.raised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
           side: selected
-              ? const BorderSide(color: ReaderPalette.selectedFill, width: 1.5)
+              ? BorderSide(color: palette.selectedFill, width: 1.5)
               : BorderSide.none,
         ),
         child: InkWell(
@@ -280,8 +280,8 @@ class _SheetButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: fill,
         foregroundColor: ink,
-        minimumSize: const Size(0, 52),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: const StadiumBorder(),
         elevation: 0,
       ),
@@ -289,8 +289,8 @@ class _SheetButton extends StatelessWidget {
         label,
         textAlign: TextAlign.center,
         style: AppFonts.inter(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
+          fontSize: 14.5,
+          fontWeight: FontWeight.w600,
           color: ink,
           height: 1.25,
         ),

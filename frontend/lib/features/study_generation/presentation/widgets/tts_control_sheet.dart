@@ -408,21 +408,18 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? ReaderPalette.selectedFill
-                        : palette.raised,
+                    color: isSelected ? palette.selectedFill : palette.raised,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: isSelected
-                          ? ReaderPalette.selectedFill
-                          : palette.hairline,
+                      color:
+                          isSelected ? palette.selectedFill : palette.hairline,
                     ),
                   ),
                   child: Center(
                     child: Text(
                       '${speed}x',
                       style: AppFonts.inter(
-                        color: isSelected ? Colors.white : palette.text,
+                        color: isSelected ? palette.onSelected : palette.text,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 14,
@@ -465,7 +462,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: isCurrentSection && isPlaying
-                      ? AppColors.brandPrimary
+                      ? palette.gold
                           .withValues(alpha: palette.isDark ? 0.2 : 0.08)
                       : null,
                   border: index < sectionNames.length - 1
@@ -481,7 +478,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isCurrentSection && isPlaying
-                            ? palette.gold
+                            ? palette.selectedFill
                             : (isCurrentSection
                                 ? palette.gold.withValues(alpha: 0.25)
                                 : Colors.transparent),
@@ -495,9 +492,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                           ? Icon(
                               Icons.play_arrow,
                               size: 14,
-                              color: palette.isDark
-                                  ? AppColors.brandPrimaryInk
-                                  : Colors.white,
+                              color: palette.onSelected,
                             )
                           : null,
                     ),

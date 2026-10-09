@@ -203,7 +203,7 @@ void main() {
           'Prayer',
           'Praise',
           'Question',
-          'Study Note',
+          'Study note',
         ]) {
           expect(
               find.descendant(
@@ -211,7 +211,7 @@ void main() {
               findsOneWidget,
               reason: 'chip "$label"');
         }
-        expect(find.text('Shared Guide'), findsNothing);
+        expect(find.text('Shared guide'), findsNothing);
 
         expect(find.text('I prayed 4'), findsOneWidget);
         expect(find.text('Praise 9'), findsOneWidget);
@@ -412,7 +412,7 @@ void main() {
         expect(find.text('Share guide'), findsOneWidget);
         expect(find.text('Verse study · English'), findsOneWidget);
         expect(find.text('SHARE TO FELLOWSHIP'), findsOneWidget);
-        expect(find.text('Mentor: Discipler · 4 members'), findsOneWidget);
+        expect(find.text('Guided by Discipler · 4 members'), findsOneWidget);
         expect(find.text('Mentor: Fenn (you) · 1 member'), findsOneWidget);
         // Placeholder mentor name → member count only.
         expect(find.text('7 members'), findsOneWidget);

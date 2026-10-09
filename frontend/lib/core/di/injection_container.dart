@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:hive/hive.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -9,6 +11,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
+import '../../features/auth/data/services/guest_session_service.dart';
+import '../../features/auth/data/services/oauth_service.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/domain/repositories/storage_repository.dart';
 import '../../features/auth/data/repositories/storage_repository_impl.dart';
@@ -26,6 +30,7 @@ import '../../features/auth/presentation/bloc/phone_auth_bloc.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
 import '../../features/study_generation/data/repositories/token_cost_repository.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import '../../features/study_generation/data/services/tts_notification_service.dart';
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
 import '../../features/study_generation/data/datasources/study_local_data_source.dart';
@@ -83,6 +88,9 @@ import '../../features/home/data/services/recommended_guides_service.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/home/presentation/bloc/recommended_topics_bloc.dart';
 import '../../features/home/presentation/bloc/home_study_generation_bloc.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_you_cubit.dart';
+import 'package:disciplefy_bible_study/features/home/data/services/feature_intro_source_impl.dart';
+import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_source.dart';
 import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
 import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
 import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
@@ -90,6 +98,7 @@ import '../../features/onboarding/domain/usecases/get_onboarding_state.dart';
 import '../../features/onboarding/domain/usecases/save_language_preference.dart';
 import '../../features/onboarding/domain/usecases/complete_onboarding.dart';
 import '../../features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import '../../features/onboarding/presentation/bloc/first_run_cubit.dart';
 import '../../features/user_profile/data/repositories/user_profile_repository_impl.dart';
 import '../../features/user_profile/data/services/user_profile_service.dart';
 import '../../features/user_profile/domain/repositories/user_profile_repository.dart';
@@ -121,6 +130,7 @@ import '../services/locale_service.dart';
 import '../services/font_scale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/system_config_service.dart';
+import '../services/rollout_flags.dart';
 import '../services/pricing_service.dart';
 import '../services/bible_books_service.dart';
 import '../services/iap_service.dart';
@@ -150,6 +160,7 @@ import '../services/notification_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
 import '../router/app_router.dart';
+import '../router/guest_route_gate.dart';
 import '../../features/tokens/data/datasources/token_remote_data_source.dart';
 import '../../features/tokens/data/repositories/token_repository_impl.dart';
 import '../../features/tokens/data/repositories/payment_method_repository_impl.dart';
@@ -258,6 +269,9 @@ Future<void> initializeDependencies() async {
   //! Core
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => Supabase.instance.client);
+  sl.registerLazySingleton<ActivationAnalytics>(
+    () => ActivationAnalytics(client: sl<SupabaseClient>()),
+  );
   sl.registerLazySingleton(() => Connectivity());
   sl.registerLazySingleton<NetworkInfo>(
     () => NetworkInfoImpl(sl()),
@@ -280,6 +294,7 @@ Future<void> initializeDependencies() async {
 
   // Register SystemConfigService (for maintenance mode, feature flags, app version)
   sl.registerLazySingleton(() => SystemConfigService());
+  sl.registerLazySingleton(() => RolloutFlags(sl()));
 
   // Register PricingService (for dynamic subscription pricing from database)
   sl.registerLazySingleton(() => PricingService());
@@ -344,6 +359,13 @@ Future<void> initializeDependencies() async {
 
   //! Auth
   sl.registerLazySingleton(() => AuthService());
+  sl.registerLazySingleton<GuestSessionService>(
+    () => GuestSessionService(
+      sl<SupabaseClient>().auth,
+      sl<SupabaseClient>().functions,
+      OAuthService(),
+    ),
+  );
   sl.registerFactory(() => AuthBloc(authService: sl()));
 
   // Phone Auth DataSource
@@ -419,6 +441,11 @@ Future<void> initializeDependencies() async {
   // Token Cost Repository for fetching token costs from backend
   sl.registerLazySingleton<TokenCostRepository>(
     () => TokenCostRepository(supabaseClient: sl()),
+  );
+
+  // Shared cache → credits → navigate checks for starting a study
+  sl.registerLazySingleton<StudyLaunchService>(
+    () => StudyLaunchService(sl<StudyLocalDataSource>()),
   );
 
   //! Reflections (Reflect Mode)
@@ -626,6 +653,7 @@ Future<void> initializeDependencies() async {
         notificationService: sl(),
         suggestedVersesCacheService: sl(),
         connectivityBloc: sl(),
+        isGuest: GuestRouteGate.currentUserIsGuest,
       ));
 
   //! Saved Guides
@@ -732,6 +760,21 @@ Future<void> initializeDependencies() async {
     dispose: (bloc) => bloc.close(),
   );
 
+  // "New for you" banner schedule (one per Home mount).
+  sl.registerFactory(
+    () => NewForYouCubit(prefs: sl<SharedPreferences>()),
+  );
+
+  // Data and actions behind the feature introductions.
+  sl.registerLazySingleton<FeatureIntroSource>(
+    () => FeatureIntroSourceImpl(
+      paths: sl(),
+      getDailyVerse: sl(),
+      addVerseFromDaily: sl(),
+      community: sl(),
+    ),
+  );
+
   //! Study Topics
   sl.registerLazySingleton<StudyTopicsRemoteDataSource>(
     () => StudyTopicsRemoteDataSourceImpl(httpService: sl()),
@@ -814,6 +857,16 @@ Future<void> initializeDependencies() async {
         getOnboardingState: sl(),
         saveLanguagePreference: sl(),
         completeOnboarding: sl(),
+      ));
+
+  // New first run: goal screen → guest → path → lesson 1.
+  sl.registerFactory(() => FirstRunCubit(
+        guest: sl(),
+        paths: sl(),
+        flags: sl(),
+        language: sl(),
+        settings: Hive.box('app_settings'),
+        walkthrough: sl(),
       ));
 
   //! User Profile
@@ -906,6 +959,7 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => FollowUpChatBloc(
         httpService: sl(),
         conversationService: sl(),
+        isGuest: GuestRouteGate.currentUserIsGuest,
       ));
 
   //! Notifications
@@ -1041,7 +1095,10 @@ Future<void> initializeDependencies() async {
 
   // Repository (depends on datasource)
   sl.registerLazySingleton<CommunityRepository>(
-    () => CommunityRepositoryImpl(datasource: sl()),
+    () => CommunityRepositoryImpl(
+      datasource: sl(),
+      isGuest: GuestRouteGate.currentUserIsGuest,
+    ),
   );
 
   // BLoCs (depend on repository)

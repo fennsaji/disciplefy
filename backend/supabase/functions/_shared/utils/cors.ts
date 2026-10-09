@@ -18,7 +18,7 @@ const ALLOWED_ORIGINS = [
  */
 export function getCorsHeaders(origin?: string | null): Record<string, string> {
   const baseHeaders: Record<string, string> = {
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id, x-anonymous-session-id, cache-control',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id, x-anonymous-session-id, cache-control, x-guest-token',
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
     'Vary': 'Origin'
   }
@@ -64,7 +64,7 @@ export function getCorsHeaders(origin?: string | null): Record<string, string> {
  */
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id, x-anonymous-session-id, cache-control',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id, x-anonymous-session-id, cache-control, x-guest-token',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 }
 

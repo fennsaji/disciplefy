@@ -501,8 +501,8 @@ class CommunityGroupLabel extends StatelessWidget {
 }
 
 /// Full-width primary action in the community CTA colours
-/// ([ReaderPalette.ctaFill]/`ctaInk`): white with indigo ink on dark, indigo
-/// with white ink on light. The label wraps instead of truncating; a
+/// ([ReaderPalette.ctaFill]/`ctaInk`): white with ink text on dark, ink
+/// with white text on light. The label wraps instead of truncating; a
 /// spinner replaces the icon while [loading].
 class CommunityWideCta extends StatelessWidget {
   final String label;

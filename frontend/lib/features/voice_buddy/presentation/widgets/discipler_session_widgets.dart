@@ -185,14 +185,14 @@ class SessionEndPill extends StatelessWidget {
               maxWidth: 104,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Center(
                 widthFactor: 1,
                 child: Text(
                   context.tr('voice_buddy.conversation.end_button'),
                   textAlign: TextAlign.center,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: endInk(palette),
                   ),
@@ -255,7 +255,7 @@ class WaveformBars extends StatelessWidget {
   }
 }
 
-/// Big indigo disc at the centre of the voice session.
+/// Big gold disc at the centre of the voice session.
 class VoiceOrb extends StatelessWidget {
   final Widget child;
   final double size;
@@ -272,7 +272,7 @@ class VoiceOrb extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [AppColors.brandSecondary, AppColors.brandPrimaryDeep],
+          colors: [AppColors.brandGold, AppColors.streakGlow],
         ),
       ),
       alignment: Alignment.center,

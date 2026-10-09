@@ -341,8 +341,8 @@ class _GuidePreviewCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.brandPrimary
-                  .withValues(alpha: palette.isDark ? 0.22 : 0.10),
+              color:
+                  palette.gold.withValues(alpha: palette.isDark ? 0.22 : 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.menu_book_outlined,
@@ -466,20 +466,18 @@ class _FellowshipRow extends StatelessWidget {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? ReaderPalette.selectedFill
-                        : Colors.transparent,
+                    color:
+                        isSelected ? palette.selectedFill : Colors.transparent,
                     border: Border.all(
-                      color: isSelected
-                          ? ReaderPalette.selectedFill
-                          : palette.outline,
+                      color:
+                          isSelected ? palette.selectedFill : palette.outline,
                       width: 1.6,
                     ),
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: isSelected
-                      ? const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 16)
+                      ? Icon(Icons.check_rounded,
+                          color: palette.onSelected, size: 16)
                       : null,
                 ),
               ],

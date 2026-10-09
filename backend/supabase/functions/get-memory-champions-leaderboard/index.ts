@@ -197,6 +197,9 @@ async function handleGetMemoryChampionsLeaderboard(
 // Create the authenticated function
 createAuthenticatedFunction(handleGetMemoryChampionsLeaderboard, {
   allowedMethods: ['GET'],
+  // Memory verses need an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'memory_verses',
   enableAnalytics: true,
   timeout: 30000
 })

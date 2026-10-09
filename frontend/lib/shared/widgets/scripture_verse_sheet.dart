@@ -352,7 +352,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
                         Text(
                           bibleTranslationNotice(_langCode!)!,
                           style: AppFonts.inter(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             color: palette.muted,
                           ),
                         ),

@@ -92,7 +92,7 @@ void main() {
     locale.value = const Locale('hi');
     await tester.pumpAndSettle();
 
-    expect(find.text('फेलोशिप में जुड़ें'), findsOneWidget,
+    expect(find.text('संगति से जुड़ें'), findsOneWidget,
         reason: 'context.tr must depend on the ambient locale, or screens '
             'already built keep rendering the previous language');
     expect(find.text('Join fellowship'), findsNothing);
@@ -107,7 +107,7 @@ void main() {
     locale.value = const Locale('ml');
     await tester.pumpAndSettle();
 
-    expect(find.text('ഫെല്ലോഷിപ്പിൽ ചേരുക'), findsOneWidget);
+    expect(find.text('കൂട്ടായ്മയിൽ ചേരുക'), findsOneWidget);
   });
 
   testWidgets('tr still works with no Localizations ancestor', (tester) async {

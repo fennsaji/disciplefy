@@ -31,7 +31,10 @@ import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-servic
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
 import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
-import { resolveTopicLanguage } from '../_shared/utils/content-language.ts'
+import { parseStudyLanguage, resolveTopicLanguage } from '../_shared/utils/content-language.ts'
+import { resolveCatalogueRequest } from '../_shared/utils/lesson-pricing.ts'
+import { catalogueTopicOrThrow, lessonContext, loadCatalogueTopic } from '../_shared/utils/catalogue-topic.ts'
+import { assertGuestMayGenerate } from './guest-generation.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -41,6 +44,7 @@ import {
   ParsedSection,
   CompleteStudyGuide
 } from '../_shared/services/streaming-json-parser.ts'
+import { expectedSectionTotal } from '../_shared/services/mode-sections.ts'
 
 /**
  * Type definitions for multi-pass generation data
@@ -128,7 +132,10 @@ function parseRequestParams(req: Request): {
   const path_title = url.searchParams.get('path_title') || undefined
   const path_description = url.searchParams.get('path_description') || undefined
   const disciple_level = url.searchParams.get('disciple_level') || undefined
-  const requestedLanguage = url.searchParams.get('language') || 'en'
+  const requestedLanguage = parseStudyLanguage(url.searchParams.get('language'))
+  if (requestedLanguage === null) {
+    throw new AppError('VALIDATION_ERROR', 'language must be one of en, hi, ml', 400)
+  }
   const mode = url.searchParams.get('mode') as StudyMode | null
   // TODO: Remove or update this when learning path token pricing is finalized.
   const topic_id = url.searchParams.get('topic_id') || undefined
@@ -196,27 +203,6 @@ function validateStudyGuideCompleteness(content: Record<string, unknown>): strin
   }
 
   return missing
-}
-
-/**
- * Look up the recommended study mode for a learning path topic.
- *
- * TODO: Remove or update this when learning path token pricing is finalized.
- * Returns the recommended_mode string (e.g. 'standard') if the topic belongs
- * to a learning path, or null if the topic_id is not found.
- */
-async function getLearningPathRecommendedMode(
-  supabase: any,
-  topicId: string
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('learning_path_topics')
-    .select('learning_paths!inner(recommended_mode)')
-    .eq('topic_id', topicId)
-    .limit(1)
-    .single()
-  if (error || !data) return null
-  return (data as any).learning_paths?.recommended_mode ?? null
 }
 
 /**
@@ -599,7 +585,7 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode, topic_id } = params
+  const { input_value, language, study_mode, topic_id } = params
 
   console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
@@ -618,18 +604,70 @@ async function handleStudyGenerateV2(
 
   const requiredFeature = modeFeatureMap[study_mode]
 
-  // A learning-path topic opens in the mode its path recommends, on every plan.
-  // Those guides are cached and cost nothing to serve again, and the catalogue
-  // is the part of the product that should stay open to everyone; the plan's
-  // mode rule is about the studies a user types in for themselves.
-  const isCataloguePath = topic_id
-    ? (await getLearningPathRecommendedMode(services.supabaseServiceClient, topic_id)) === study_mode
-    : false
+  // A learning-path lesson opens, free and on every plan, in Quick Read and in
+  // the mode its path recommends. Those guides are cached and cost nothing to
+  // serve again, and the catalogue is the part of the product that should stay
+  // open to everyone; the plan's mode rule and the credit charge are about the
+  // studies a user types in for themselves. Validated server-side via DB lookup.
+  //
+  // The client's topic_id is trusted only when input_value is one of that
+  // topic's catalogue titles. A mismatch is a normal paid study keyed by its
+  // input hash: it is never free and can never be written into (or read from)
+  // the shared cache row every reader of that lesson is served from.
+  // A failed read is a retryable 503: a real lesson must never turn paid
+  // because the database blinked. A non-UUID or unknown id is just not a lesson.
+  const catalogueTopic = catalogueTopicOrThrow(
+    topic_id ? await loadCatalogueTopic(services.supabaseServiceClient, topic_id, language) : null
+  )
+  const lpMode = catalogueTopic?.path?.recommendedMode ?? null
+  const catalogue = resolveCatalogueRequest({
+    topicId: topic_id,
+    inputValue: input_value,
+    titles: catalogueTopic?.titles ?? [],
+    recommendedMode: lpMode,
+    studyMode: study_mode
+  })
+  const isCataloguePath = catalogue.isFree
+
+  if (topic_id && !catalogue.cacheTopicId) {
+    console.warn(`⚠️ [STUDY-V2] topic_id ${topic_id} does not match the input; treating as a typed study`)
+  }
+
+  // A guest may only open a verified, free catalogue lesson of a path they are
+  // enrolled in that is guest-accessible: never a typed study, never a paid
+  // mode. Checked before any cache, token or model work (403 ACCOUNT_REQUIRED,
+  // reason `generate`).
+  await assertGuestMayGenerate(services.supabaseServiceClient, {
+    isGuest: userContext.isGuest === true,
+    userId: userContext.userId,
+    verifiedCatalogue: catalogue.cacheTopicId !== undefined && catalogue.isFree,
+    topicPathIds: catalogue.cacheTopicId ? catalogueTopic?.pathIds ?? [] : [],
+  })
+
+  // Prompt context and input type. A verified lesson is cached under its topic
+  // for every reader, so they come from the catalogue; any other request keeps
+  // its own input type and drops the catalogue fields, which only lesson
+  // launches send and which would otherwise reach a shared, hash-keyed guide.
+  const context = lessonContext(
+    {
+      inputType: params.input_type,
+      topicDescription: params.topic_description,
+      pathTitle: params.path_title,
+      pathDescription: params.path_description,
+      discipleLevel: params.disciple_level
+    },
+    catalogue.cacheTopicId ? catalogueTopic : null
+  )
+  const input_type = context.inputType
+  const topic_description = context.topicDescription
+  const path_title = context.pathTitle
+  const path_description = context.pathDescription
+  const disciple_level = context.discipleLevel
 
   const hasFeatureAccess = isCataloguePath || await isFeatureEnabledForPlan(requiredFeature, userPlan)
 
   if (isCataloguePath) {
-    console.log(`📚 [STUDY-V2] Learning-path topic in its recommended mode: ${study_mode} allowed on ${userPlan}`)
+    console.log(`📚 [STUDY-V2] Learning-path lesson (recommended mode: ${lpMode}): ${study_mode} allowed free on ${userPlan}`)
   }
 
   if (!hasFeatureAccess) {
@@ -673,10 +711,10 @@ async function handleStudyGenerateV2(
     value: input_value,
     language: language,
     study_mode: study_mode,
-    // Catalogue lesson, when the client sent one. The cache prefers it over the
-    // title hash so a lesson opened under a Hindi title still finds the guide
-    // the blog generator wrote for it.
-    topic_id: topic_id
+    // Catalogue lesson, only once verified against the catalogue. The cache
+    // prefers it over the title hash so a lesson opened under a Hindi title
+    // still finds the guide the blog generator wrote for it.
+    topic_id: catalogue.cacheTopicId
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
@@ -686,24 +724,17 @@ async function handleStudyGenerateV2(
   const tokenCost = tokenService.calculateTokenCost(targetLanguage, study_mode)
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
 
-  // TODO: Remove or update this when learning path token pricing is finalized.
-  // Study guide generation is free for all users when using a learning path topic
-  // in its recommended study mode. Validated server-side via DB lookup.
-  let isFreeGeneration = false
-  if (topic_id) {
-    const lpRecommendedMode = await getLearningPathRecommendedMode(
-      studyGuideRepository.getSupabaseClient(),
-      topic_id
-    )
-    if (lpRecommendedMode && lpRecommendedMode === study_mode) {
-      isFreeGeneration = true
-      console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (recommended mode: ${study_mode})`)
-    }
+  // A path lesson in Quick Read or its recommended mode costs no credits (see
+  // isCataloguePath above).
+  const isFreeGeneration = isCataloguePath
+  if (isFreeGeneration) {
+    console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (mode: ${study_mode})`)
   }
 
-  // The day's budget across every user. Learning-path studies are exempt: they
-  // come from the cache, so they cost nothing and there is no reason to take
-  // them away while the ceiling is in force.
+  // The day's budget across every user. Free learning-path lessons are exempt:
+  // the catalogue is finite and each lesson is generated once per language and
+  // mode, then served from the shared cache, so there is no reason to take them
+  // away while the ceiling is in force. Their model spend is still logged.
   if (!isFreeGeneration) {
     const budget = await checkCostCeiling(studyGuideRepository.getSupabaseClient())
     if (!budget.withinBudget) {
@@ -717,9 +748,9 @@ async function handleStudyGenerateV2(
     }
   }
 
-  // Ceilings on studies that actually call the model. A learning-path study in
-  // its recommended mode is served from the catalogue cache and costs nothing
-  // to repeat, so it is never counted and never blocked.
+  // Ceilings on studies that actually call the model. A free learning-path
+  // lesson (Quick Read or its recommended mode) is served from the catalogue
+  // cache and costs nothing to repeat, so it is never blocked.
   if (!isFreeGeneration && userContext.type === 'authenticated' && userContext.userId) {
     const limits = await checkFreshStudyLimits(
       studyGuideRepository.getSupabaseClient(),
@@ -1009,7 +1040,8 @@ async function handleStudyGenerateV2(
               controller,
               studyGuideRepository.getSupabaseClient(),
               emit,
-              encoder
+              encoder,
+              expectedSectionTotal(study_mode)
             )
             return
           }
@@ -1112,6 +1144,11 @@ async function handleStudyGenerateV2(
         )
         console.log(`🔍 [STUDY-V2] Multi-pass check: mode=${study_mode}, lang=${targetLanguage}, useMultiPass=${useMultiPass}`)
 
+        // Every section event carries the same total: the sections this mode
+        // streams. Multi-pass re-sends interpretation as parts arrive, so the
+        // client counts distinct sections against this total.
+        const sectionTotal = expectedSectionTotal(study_mode)
+
         // Declare streamingUsage variable for all paths
         let streamingUsage: LLMUsageMetadata | null = null
 
@@ -1126,7 +1163,7 @@ async function handleStudyGenerateV2(
           console.log(`🔄 [STUDY-V2] Using multi-pass generation for ${study_mode} in`, targetLanguage)
 
           // Emit init event
-          const parser = new StreamingJsonParser()
+          const parser = new StreamingJsonParser(study_mode)
           emit(createInitEvent('started', parser.getTotalSections()))
 
           try {
@@ -1179,7 +1216,7 @@ async function handleStudyGenerateV2(
               pass1Stream,
               'Sermon Pass 1/4',
               emit,
-              14,
+              sectionTotal,
               ['summary', 'context', 'passage']
             )
             const pass1Data = pass1Result.data as unknown as SermonPass1Data
@@ -1191,15 +1228,15 @@ async function handleStudyGenerateV2(
             // Safety nets: emit summary/context/passage if streaming parser missed them
             if (pass1Data.summary && !pass1Result.emittedSections.has('summary')) {
               console.log(`[LLM-MultiPass] ⚠️ Summary not emitted during streaming, emitting now (safety net)`)
-              emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, 14))
+              emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, sectionTotal))
             }
             if (pass1Data.context && !pass1Result.emittedSections.has('context')) {
               console.log(`[LLM-MultiPass] ⚠️ Context not emitted during streaming, emitting now (safety net)`)
-              emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, 14))
+              emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, sectionTotal))
             }
             if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
               console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
-              emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))
+              emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, sectionTotal))
             }
 
             // PROGRESSIVE SAVE: Save Pass 1 sections to in-progress table
@@ -1217,7 +1254,7 @@ async function handleStudyGenerateV2(
                 type: 'interpretation',
                 content: pass1Data.interpretationPart1,
                 index: 2
-              }, 14))
+              }, sectionTotal))
             }
 
             // PASS 2: Interpretation Part 2 (Point 2 ONLY) (STREAMING)
@@ -1250,7 +1287,7 @@ async function handleStudyGenerateV2(
               pass2Stream,
               'Sermon Pass 2/4',
               emit,
-              14,
+              sectionTotal,
               []
             )
             const pass2Data = pass2Result.data as unknown as SermonPass2Data
@@ -1272,7 +1309,7 @@ async function handleStudyGenerateV2(
                 type: 'interpretation',
                 content: combinedInterpretation,
                 index: 2
-              }, 14))
+              }, sectionTotal))
             }
 
             // PASS 3: Interpretation Part 3 (Point 3 ONLY) (STREAMING)
@@ -1306,7 +1343,7 @@ async function handleStudyGenerateV2(
               pass3Stream,
               'Sermon Pass 3/4',
               emit,
-              14,
+              sectionTotal,
               []
             )
             const pass3Data = pass3Result.data as unknown as SermonPass3Data
@@ -1328,7 +1365,7 @@ async function handleStudyGenerateV2(
                 type: 'interpretation',
                 content: combinedInterpretation,
                 index: 2
-              }, 14))
+              }, sectionTotal))
             }
 
             // PASS 4: Conclusion + Altar Call + Supporting Fields (STREAMING)
@@ -1367,7 +1404,7 @@ async function handleStudyGenerateV2(
               pass4Stream,
               'Sermon Pass 4/4',
               emit,
-              14,
+              sectionTotal,
               pass1Data,
               pass2Data,
               pass3Data,
@@ -1408,7 +1445,7 @@ async function handleStudyGenerateV2(
             // Safety net: emit full 4-part interpretation if parser missed interpretationPart4 during streaming
             if (!pass4Result.emittedSections.has('interpretationPart4') && studyGuideData.interpretation) {
               console.log(`[LLM-MultiPass] ⚠️ interpretationPart4 not emitted during streaming, emitting full sermon interpretation now (${studyGuideData.interpretation.length} chars)`)
-              emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, 14))
+              emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, sectionTotal))
             }
 
             // Emit optional sections (6+) immediately
@@ -1470,7 +1507,7 @@ async function handleStudyGenerateV2(
                 pass1Stream,
                 `${modeName} Pass 1/2`,
                 emit,
-                14,
+                sectionTotal,
                 ['summary', 'context', 'passage']  // Add passage to emit during Pass 1
               )
               const pass1Data = pass1Result.data as unknown as StandardPass1Data
@@ -1482,15 +1519,15 @@ async function handleStudyGenerateV2(
               // (can happen when LLM embeds unescaped quotes that confuse the streaming parser)
               if (pass1Data.summary && !pass1Result.emittedSections.has('summary')) {
                 console.log(`[LLM-MultiPass] ⚠️ Summary not emitted during streaming, emitting now (safety net)`)
-                emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, 14))
+                emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, sectionTotal))
               }
               if (pass1Data.context && !pass1Result.emittedSections.has('context')) {
                 console.log(`[LLM-MultiPass] ⚠️ Context not emitted during streaming, emitting now (safety net)`)
-                emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, 14))
+                emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, sectionTotal))
               }
               if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
                 console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
-                emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))
+                emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, sectionTotal))
               } else if (!pass1Data.passage) {
                 console.warn(`[LLM-MultiPass] ⚠️ LLM did not generate passage field in Pass 1`)
               }
@@ -1510,7 +1547,7 @@ async function handleStudyGenerateV2(
                   type: 'interpretation',
                   content: pass1Data.interpretationPart1,
                   index: 2
-                }, 14))
+                }, sectionTotal))
               }
 
               // PASS 2: Interpretation Part 2 + Supporting Fields (STREAMING)
@@ -1544,7 +1581,7 @@ async function handleStudyGenerateV2(
                 pass2Stream,
                 `${modeName} Pass 2/2`,
                 emit,
-                14,
+                sectionTotal,
                 pass1Data,
                 combinePasses
               )
@@ -1575,7 +1612,7 @@ async function handleStudyGenerateV2(
               // Safety net: emit combined interpretation if parser missed interpretationPart2 during streaming
               if (!pass2Result.emittedSections.has('interpretationPart2') && studyGuideData.interpretation) {
                 console.log(`[LLM-MultiPass] ⚠️ interpretationPart2 not emitted during streaming, emitting combined interpretation now (${studyGuideData.interpretation.length} chars)`)
-                emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, 14))
+                emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, sectionTotal))
               }
             }
 
@@ -1593,7 +1630,7 @@ async function handleStudyGenerateV2(
         } else {
           // Use regular streaming generation for all other modes
           // Initialize streaming JSON parser
-          const parser = new StreamingJsonParser()
+          const parser = new StreamingJsonParser(study_mode)
 
           // Emit init event with expected total sections
           emit(createInitEvent('started', parser.getTotalSections()))
@@ -1706,11 +1743,9 @@ async function handleStudyGenerateV2(
             // Add optional sections if present (in SECTION_ORDER)
 
 
-            const totalSections = allSections.length
-
             for (let i = emittedCount; i < allSections.length; i++) {
               const section = allSections[i]
-              emit(createSectionEvent(section, totalSections))
+              emit(createSectionEvent(section, sectionTotal))
 
               // Progressive save: Update in-progress record with fallback-emitted section
               if (inProgressId && section.content) {
@@ -1953,7 +1988,8 @@ async function pollForInProgressCompletion(
   controller: ReadableStreamDefaultController,
   supabase: any,
   emit: (data: string) => void,
-  encoder: TextEncoder
+  encoder: TextEncoder,
+  sectionTotal: number
 ): Promise<void> {
   const MAX_POLL_DURATION = 300000 // 5 minutes
   const POLL_INTERVAL = 2000 // 2 seconds
@@ -1986,7 +2022,7 @@ async function pollForInProgressCompletion(
               content: content as string,
               index: emittedSections.size
             },
-            10 // Total sections is approximate
+            sectionTotal
           ))
           emittedSections.add(sectionType)
         }

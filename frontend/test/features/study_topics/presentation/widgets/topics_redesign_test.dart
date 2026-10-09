@@ -336,7 +336,7 @@ void main() {
         lang: AppLanguage.english,
       ));
       await tester.pumpAndSettle();
-      expect(find.text('Study Topics'), findsOneWidget);
+      expect(find.text('Topics'), findsOneWidget);
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
       expect(find.byIcon(Icons.emoji_events_outlined), findsNothing);
     });
@@ -421,7 +421,8 @@ void main() {
       verify(() =>
               bloc.add(const LoadMorePathsForCategory(category: 'Foundations')))
           .called(greaterThan(0));
-      expect(find.text('9 paths · Seeker to Leader'), findsOneWidget);
+      expect(find.text('9 paths'), findsOneWidget);
+      expect(find.textContaining('Seeker'), findsNothing);
 
       await tester.tap(find.byKey(const Key('path_category_row_c')));
       await tester.pumpAndSettle();

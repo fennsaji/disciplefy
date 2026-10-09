@@ -180,13 +180,12 @@ class DepthModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final fill = isSelected ? ReaderPalette.selectedFill : palette.card;
-    final iconColor = isSelected ? Colors.white : palette.accentIcon;
-    final nameColor = isSelected ? Colors.white : palette.text;
-    final secondary =
-        isSelected ? Colors.white.withValues(alpha: 0.8) : palette.muted;
-    final costColor =
-        isSelected ? Colors.white.withValues(alpha: 0.8) : palette.gold;
+    final fill = isSelected ? palette.selectedFill : palette.card;
+    final onFill = palette.onSelected;
+    final iconColor = isSelected ? onFill : palette.accentIcon;
+    final nameColor = isSelected ? onFill : palette.text;
+    final secondary = isSelected ? palette.onSelectedMuted : palette.muted;
+    final costColor = isSelected ? palette.onSelectedMuted : palette.gold;
     final radius = BorderRadius.circular(18);
 
     return Semantics(
@@ -201,9 +200,7 @@ class DepthModeCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: BorderSide(
-              color: isSelected
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : palette.hairline,
+              color: isSelected ? palette.selectedFill : palette.hairline,
             ),
           ),
           child: InkWell(
@@ -226,30 +223,36 @@ class DepthModeCard extends StatelessWidget {
                           CreditCost(cost: cost!, color: costColor, size: 11),
                       ],
                     ),
-                    const Spacer(),
-                    // Hindi/Malayalam names can outgrow the card: shrink
-                    // rather than clip.
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        mode.localizedShortName(context),
-                        maxLines: 1,
-                        style: AppFonts.inter(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: nameColor,
+                    // Hindi/Malayalam names can outgrow the card and the
+                    // Devanagari/Malayalam fonts have taller lines than Inter:
+                    // shrink the name + duration block to the space left
+                    // rather than overflow the fixed-height card.
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.bottomLeft,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              mode.localizedShortName(context),
+                              maxLines: 1,
+                              style: AppFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: nameColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              mode.localizedDuration(context),
+                              maxLines: 1,
+                              style: AppFonts.inter(
+                                  fontSize: 12, color: secondary),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        mode.localizedDuration(context),
-                        maxLines: 1,
-                        style: AppFonts.inter(fontSize: 11.5, color: secondary),
                       ),
                     ),
                   ],

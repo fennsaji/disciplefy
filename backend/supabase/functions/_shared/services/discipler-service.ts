@@ -67,17 +67,59 @@ export async function recordActivity(db: SupabaseClient, args: {
   if (error) console.error('[discipler] activity insert error (non-fatal):', error)
 }
 
-export async function pushUsers(db: SupabaseClient, userIds: string[], notification: { title: string; body: string }, data: Record<string, string>): Promise<void> {
-  if (userIds.length === 0) return
+/** Per-recipient result of a push: delivered to at least one device, rejected on every device, or no device registered. */
+export type PushOutcome = 'sent' | 'failed' | 'no_device'
+
+/**
+ * Folds per-token FCM results into one outcome per user. `results` is in the
+ * same order as `tokenRows`. A user counts as sent when any of their devices
+ * accepted the push.
+ */
+export function pushOutcomesByUser(
+  userIds: string[],
+  tokenRows: Array<{ user_id: string; fcm_token: string }>,
+  results: Array<{ success: boolean }>,
+): Map<string, PushOutcome> {
+  const out = new Map<string, PushOutcome>(userIds.map((id) => [id, 'no_device']))
+  tokenRows.forEach((row, i) => {
+    const ok = results[i]?.success === true
+    const prev = out.get(row.user_id)
+    if (ok) out.set(row.user_id, 'sent')
+    else if (prev !== 'sent') out.set(row.user_id, 'failed')
+  })
+  return out
+}
+
+/**
+ * Sends to every device of `userIds` and reports what actually happened per
+ * user. A transport error before any send marks every user with a device as
+ * failed (never as sent).
+ */
+export async function pushUsersWithOutcome(
+  db: SupabaseClient,
+  userIds: string[],
+  notification: { title: string; body: string },
+  data: Record<string, string>,
+): Promise<Map<string, PushOutcome>> {
+  if (userIds.length === 0) return new Map()
+  let tokenRows: Array<{ user_id: string; fcm_token: string }> = []
   try {
-    const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', userIds)
-    const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-    if (tokens.length === 0) return
+    const { data: rows, error } = await db.from('user_notification_tokens').select('user_id, fcm_token').in('user_id', userIds)
+    if (error) throw new Error(error.message)
+    tokenRows = ((rows ?? []) as Array<{ user_id: string; fcm_token: string }>).filter((r) => r.fcm_token)
+    if (tokenRows.length === 0) return pushOutcomesByUser(userIds, [], [])
+    const tokens = tokenRows.map((r) => r.fcm_token)
     const result = await new FCMService().sendBatchNotifications(tokens, notification, data)
     await purgeInvalidTokens(db, tokens, result.results)
+    return pushOutcomesByUser(userIds, tokenRows, result.results)
   } catch (err) {
     console.error('[discipler] push error (non-fatal):', err)
+    return pushOutcomesByUser(userIds, tokenRows, tokenRows.map(() => ({ success: false })))
   }
+}
+
+export async function pushUsers(db: SupabaseClient, userIds: string[], notification: { title: string; body: string }, data: Record<string, string>): Promise<void> {
+  await pushUsersWithOutcome(db, userIds, notification, data)
 }
 
 /**
@@ -165,8 +207,50 @@ export interface DeliverOptions {
 
 /** What one {@link deliverOrQueue} call did, for the caller's logs. */
 export interface DeliverResult {
+  /** Recipients sent to now (excluding those FCM rejected on every device). */
   sentTo: number
   queuedTo: number
+  /** Recipients whose push FCM rejected on every device (logged as failed). */
+  failedTo?: number
+}
+
+/** A fellowship_members row as far as push reachability is concerned. */
+export interface FellowshipMemberReach {
+  user_id: string
+  is_active: boolean | null
+  notifications_muted: boolean | null
+}
+
+/**
+ * The recipients a fellowship push may reach: active members who have not
+ * muted the fellowship. Anyone without a membership row (left, removed) is
+ * dropped. Order of `recipients` is kept.
+ */
+export function reachableFellowshipMembers(recipients: string[], rows: FellowshipMemberReach[]): string[] {
+  const ok = new Set(rows.filter((r) => r.is_active === true && r.notifications_muted !== true).map((r) => r.user_id))
+  return recipients.filter((id) => ok.has(id))
+}
+
+/**
+ * Loads membership for `recipients` and applies {@link reachableFellowshipMembers}.
+ * Returns null when the lookup failed — callers then fail open (a missed push
+ * is worse than one to a muted member).
+ */
+async function loadReachableFellowshipMembers(
+  db: SupabaseClient,
+  fellowshipId: string,
+  recipients: string[],
+): Promise<string[] | null> {
+  const { data: rows, error } = await db
+    .from('fellowship_members')
+    .select('user_id, is_active, notifications_muted')
+    .eq('fellowship_id', fellowshipId)
+    .in('user_id', recipients)
+  if (error) {
+    console.error('[deliverOrQueue] Membership lookup failed, not filtering (non-fatal):', error.message)
+    return null
+  }
+  return reachableFellowshipMembers(recipients, (rows ?? []) as FellowshipMemberReach[])
 }
 
 /**
@@ -204,29 +288,24 @@ export async function deliverOrQueue(
   let recipients = [...new Set(userIds)].filter(Boolean)
   if (recipients.length === 0) return { sentTo: 0, queuedTo: 0 }
 
-  // A member who muted this fellowship gets none of its pushes, urgent ones
-  // included: muting is their own explicit choice about this group. Every
-  // fellowship push carries fellowship_id in its data payload.
+  // Fellowship pushes go only to people who are still active members and
+  // have not muted it. Muting is their own explicit choice about this group
+  // (urgent pushes included); someone who left or was removed is no longer an
+  // audience at all — comment threads and post authors were otherwise still
+  // reached after leaving. Every fellowship push carries fellowship_id.
   const fellowshipId = data.fellowship_id
   if (fellowshipId) {
-    const { data: mutedRows, error: muteError } = await db
-      .from('fellowship_members')
-      .select('user_id')
-      .eq('fellowship_id', fellowshipId)
-      .eq('notifications_muted', true)
-      .in('user_id', recipients)
-    if (muteError) {
-      // Fail open: a missed push is worse than one the user muted.
-      console.error('[deliverOrQueue] Mute lookup failed, sending to all (non-fatal):', muteError.message)
-    } else if (mutedRows && mutedRows.length > 0) {
-      const muted = new Set((mutedRows as { user_id: string }[]).map((r) => r.user_id))
-      recipients = recipients.filter((id) => !muted.has(id))
-      console.log(`[deliverOrQueue] ${muted.size} recipient(s) muted this fellowship`)
+    const reachable = await loadReachableFellowshipMembers(db, fellowshipId, recipients)
+    if (reachable) {
+      const dropped = recipients.length - reachable.length
+      recipients = reachable
+      if (dropped > 0) console.log(`[deliverOrQueue] ${dropped} recipient(s) muted or no longer in this fellowship`)
       if (recipients.length === 0) return { sentTo: 0, queuedTo: 0 }
     }
   }
 
   const now = new Date()
+  let failedTo = 0
   let sendNow: string[] = recipients
   // Recipients held for the morning, paired with the offset that decided it —
   // the offset is needed again to compute each row's own not_before.
@@ -301,16 +380,48 @@ export async function deliverOrQueue(
     // longer than the log insert, and these run in a fire-and-forget context
     // whose isolate can be torn down once the response has been written.
     // Chaining the log behind the send meant it never happened.
+    // Log the real outcome per recipient: a push FCM rejected on every
+    // device is 'failed', not 'sent'. Callers run this inside waitUntil
+    // (runInBackground), so the log after the send is not lost.
+    const outcomes = await pushUsersWithOutcome(db, sendNow, notification, data)
+    const sentIds = sendNow.filter((id) => outcomes.get(id) === 'sent')
+    failedTo = sendNow.filter((id) => outcomes.get(id) === 'failed').length
     await Promise.all([
-      pushUsers(db, sendNow, notification, data),
-      logPushes(sendNow, notification, opts.kind, 'sent'),
+      logPushes(sentIds, notification, opts.kind, 'sent'),
+      logPushes(sendNow.filter((id) => outcomes.get(id) === 'failed'), notification, opts.kind, 'failed'),
     ])
   }
   if (toQueue.length > 0) {
     console.log(`[deliverOrQueue] ${opts.kind}: queued for ${toQueue.length} recipient(s) until their 07:00 local`)
   }
 
-  return { sentTo: sendNow.length, queuedTo: toQueue.length }
+  return { sentTo: sendNow.length - failedTo, queuedTo: toQueue.length, failedTo }
+}
+
+/**
+ * Whether a queued push should still go out: the recipient is still an
+ * active, unmuted member of its fellowship (when it has one) and has not
+ * switched its type off. Lookup errors fail open.
+ */
+async function queuedRowStillWanted(
+  db: SupabaseClient,
+  row: { user_id: string; kind: string; data: Record<string, string> },
+): Promise<boolean> {
+  const fellowshipId = row.data?.fellowship_id
+  if (fellowshipId) {
+    const reachable = await loadReachableFellowshipMembers(db, fellowshipId, [row.user_id])
+    if (reachable && reachable.length === 0) return false
+  }
+  const prefColumn = PREFERENCE_COLUMN[row.kind]
+  if (prefColumn) {
+    const { data: pref, error } = await db
+      .from('user_notification_preferences')
+      .select(prefColumn)
+      .eq('user_id', row.user_id)
+      .maybeSingle()
+    if (!error && pref && (pref as unknown as Record<string, unknown>)[prefColumn] === false) return false
+  }
+  return true
 }
 
 /**
@@ -325,6 +436,13 @@ export async function deliverQueuedRow(
   db: SupabaseClient,
   row: { id: string; user_id: string; kind: string; title: string; body: string; data: Record<string, string> },
 ): Promise<void> {
+  // Held overnight: the recipient may have left the fellowship, muted it or
+  // switched this type off since it was queued. Re-check before sending; a
+  // row that no longer applies is done, not failed.
+  if (!(await queuedRowStillWanted(db, row))) {
+    console.log(`[flush-pushes] Row ${row.id} (${row.kind}) skipped: recipient no longer wants it`)
+    return
+  }
   const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', row.user_id)
   const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
   if (tokens.length === 0) {

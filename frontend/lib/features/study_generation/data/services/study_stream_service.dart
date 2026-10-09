@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +14,26 @@ import '../../../../core/utils/logger.dart';
 /// Uses the study-generate-v2 endpoint which supports Server-Sent Events
 /// for progressive section rendering.
 class StudyStreamService {
+  /// Opens the SSE connection; [EventSourceBridge.connect] unless a test
+  /// passes its own.
+  final Stream<String> Function({
+    required String url,
+    Map<String, String>? headers,
+  }) _connect;
+
+  /// Auth headers for the request; the Supabase session unless a test passes
+  /// its own.
+  final Future<Map<String, String>> Function()? _authHeadersOverride;
+
+  StudyStreamService({
+    Stream<String> Function({
+      required String url,
+      Map<String, String>? headers,
+    })? connect,
+    Future<Map<String, String>> Function()? authHeaders,
+  })  : _connect = connect ?? EventSourceBridge.connect,
+        _authHeadersOverride = authHeaders;
+
   /// Stream study guide generation, yielding events as they arrive
   ///
   /// Parameters:
@@ -88,18 +109,66 @@ class StudyStreamService {
     Logger.debug('🌊 [STUDY_STREAM] Connecting to: $url');
 
     // Get auth headers for fetchEventSource (supports custom headers unlike native EventSource)
-    final authHeaders = await _getAuthHeaders();
+    final authHeaders =
+        await (_authHeadersOverride?.call() ?? _getAuthHeaders());
 
-    // Connect to SSE stream
-    final stream = EventSourceBridge.connect(
+    // Connect to SSE stream. A refused connection (HTTP 403
+    // ACCOUNT_REQUIRED: a guest's typed study or paid mode) arrives as a
+    // stream error carrying the response body; it becomes an error event
+    // so the UI offers an account instead of "generation failed".
+    final stream = _connect(
       url: url,
       headers: {
         'Accept': 'text/event-stream',
         'Cache-Control': 'no-cache',
         ...authHeaders,
       },
+    ).handleError(
+      (Object error) => throw _AccountRequiredSignal(accountRequiredIn(error)!),
+      test: (error) => accountRequiredIn(error) != null,
     );
 
+    try {
+      await for (final event in _events(stream)) {
+        yield event;
+        if (event is StudyStreamErrorEvent ||
+            event is StudyStreamCompleteEvent) {
+          break;
+        }
+      }
+    } on _AccountRequiredSignal catch (signal) {
+      yield signal.event;
+    }
+
+    Logger.debug('🌊 [STUDY_STREAM] Stream ended');
+  }
+
+  /// The `ACCOUNT_REQUIRED` error described by a refused connection
+  /// ([error]'s text holds the JSON body), or null for any other error.
+  static StudyStreamErrorEvent? accountRequiredIn(Object error) {
+    final text = error.toString();
+    if (!text.contains('ACCOUNT_REQUIRED')) return null;
+    final start = text.indexOf('{');
+    final end = text.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try {
+        final json = jsonDecode(text.substring(start, end + 1));
+        if (json is Map<String, dynamic>) {
+          final event = StudyStreamErrorEvent.fromJson(json);
+          if (event.code == 'ACCOUNT_REQUIRED') return event;
+        }
+      } catch (_) {
+        // Not JSON: fall through to the bare code.
+      }
+    }
+    return const StudyStreamErrorEvent(
+      code: 'ACCOUNT_REQUIRED',
+      message: 'Create an account to continue.',
+      retryable: false,
+    );
+  }
+
+  Stream<StudyStreamEvent> _events(Stream<String> stream) async* {
     await for (final rawData in stream) {
       Logger.debug('🌊 [STUDY_STREAM] Raw: $rawData');
 
@@ -120,7 +189,7 @@ class StudyStreamService {
         // If we got an error or complete event, we're done
         if (event is StudyStreamErrorEvent ||
             event is StudyStreamCompleteEvent) {
-          break;
+          return;
         }
       } on UnknownStudySectionException catch (e) {
         // A section this build does not model (e.g. the generator's internal
@@ -135,11 +204,9 @@ class StudyStreamService {
           message: 'Failed to parse stream event: $e',
           retryable: true,
         );
-        break;
+        return;
       }
     }
-
-    Logger.debug('🌊 [STUDY_STREAM] Stream ended');
   }
 
   /// Get authentication headers for fetchEventSource
@@ -168,6 +235,8 @@ class StudyStreamService {
     if (data.contains('"type"') && data.contains('"content"')) return 'section';
     if (data.contains('"studyGuideId"')) return 'complete';
     if (data.contains('"code"') && data.contains('"message"')) return 'error';
+    // The flat `{error: 'CODE', message}` shape.
+    if (data.contains('"error"') && data.contains('"message"')) return 'error';
     return 'unknown';
   }
 
@@ -178,4 +247,11 @@ class StudyStreamService {
   void closeAllConnections() {
     EventSourceBridge.closeAll();
   }
+}
+
+/// Carries an `ACCOUNT_REQUIRED` refusal out of the connection stream.
+class _AccountRequiredSignal implements Exception {
+  final StudyStreamErrorEvent event;
+
+  const _AccountRequiredSignal(this.event);
 }

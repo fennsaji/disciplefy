@@ -15,6 +15,7 @@ import { AppError } from '../utils/error-handler.ts'
 import { UserPlan } from '../types/token-types.ts'
 import { UserContext } from '../types/index.ts'
 import type { VerifiedIdentity } from '../auth/jwt-verifier.ts'
+import { toUserContext } from '../auth/user-context.ts'
 
 /**
  * Authentication result with additional metadata
@@ -152,6 +153,15 @@ export class AuthService {
     return pending
   }
 
+  /** Identity part of a UserContext, shared with the function factory (see auth/user-context.ts). */
+  private identityContext(user: { id: string; email?: string | null; is_anonymous?: boolean }): UserContext {
+    return toUserContext({
+      id: user.id,
+      email: user.email ?? undefined,
+      isAnonymous: user.is_anonymous === true
+    })
+  }
+
   private async resolveUserContext(req: Request): Promise<UserContext> {
     // Server-to-server: bypass auth.getUser() for trusted internal callers
     const internalKey = req.headers.get('X-Internal-Api-Key')
@@ -192,7 +202,7 @@ export class AuthService {
         throw new AppError('UNAUTHORIZED', 'Invalid user data in token', 401)
       }
       
-      // For authenticated users, check if they are admin
+      // For full accounts, check if they are admin (guests skip the profile lookup)
       let userType: 'admin' | 'user' | undefined = undefined
       if (!user.is_anonymous && user.id) {
         try {
@@ -205,13 +215,11 @@ export class AuthService {
         }
       }
       
-      // Create standardized user context
+      // Create standardized user context. An anonymous Supabase user is an
+      // authenticated guest (isGuest: true) with its own userId.
       const userContext: UserContext = {
-        type: user.is_anonymous ? 'anonymous' : 'authenticated',
-        userId: user.is_anonymous ? undefined : user.id,
-        sessionId: user.is_anonymous ? user.id : undefined,
-        userType,
-        email: user.is_anonymous ? undefined : (user.email ?? undefined)
+        ...this.identityContext(user),
+        userType
       }
       
       return userContext
@@ -245,11 +253,7 @@ export class AuthService {
       throw new AppError('UNAUTHORIZED', error?.message || 'Authentication failed', 401)
     }
     
-    const userContext: UserContext = {
-      type: user.is_anonymous ? 'anonymous' : 'authenticated',
-      userId: user.is_anonymous ? undefined : user.id,
-      sessionId: user.is_anonymous ? user.id : undefined
-    }
+    const userContext: UserContext = this.identityContext(user)
     
     return {
       userContext,
@@ -371,7 +375,7 @@ export class AuthService {
   async isAnonymous(req: Request): Promise<boolean> {
     try {
       const userContext = await this.getUserContext(req)
-      return userContext.type === 'anonymous'
+      return userContext.type === 'anonymous' || userContext.isGuest === true
     } catch {
       return false
     }
@@ -507,11 +511,7 @@ export class AuthService {
     if (provided) return provided
     const primed = this.getPrimedIdentity(req)
     if (primed) {
-      return {
-        type: primed.isAnonymous ? 'anonymous' : 'authenticated',
-        userId: primed.isAnonymous ? undefined : primed.id,
-        sessionId: primed.isAnonymous ? primed.id : undefined
-      }
+      return toUserContext(primed)
     }
     return this.getUserContext(req)
   }
@@ -521,6 +521,11 @@ export class AuthService {
       const userContext = await this.planIdentity(req, provided)
 
       if (userContext.type === 'anonymous') {
+        return 'free'
+      }
+
+      // Guests (Supabase anonymous users) cannot hold a subscription.
+      if (userContext.isGuest) {
         return 'free'
       }
 
@@ -683,7 +688,7 @@ export class AuthService {
    * It only handles anonymous → free and admin → premium; all other users get 'free'.
    */
   static determineUserPlan(userContext: UserContext, userProfile?: UserProfile | null): UserPlan {
-    if (userContext.type === 'anonymous') {
+    if (userContext.type === 'anonymous' || userContext.isGuest) {
       return 'free'
     }
     if (userProfile?.is_admin) {

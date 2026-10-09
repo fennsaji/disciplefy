@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/connectivity/connectivity_bloc.dart';
+import '../../../../core/error/account_required.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/mastery_progress_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
@@ -84,6 +85,11 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final MemoryVerseNotificationService notificationService;
   final SuggestedVersesCacheService suggestedVersesCacheService;
 
+  /// True while the user is a guest. Memory verses need an account, and the
+  /// server answers a guest with 403 ACCOUNT_REQUIRED, so the due list is
+  /// never fetched for one (Home's pill stays neutral, with no badge).
+  final bool Function() _isGuest;
+
   // Connectivity
   final ConnectivityBloc _connectivityBloc;
   StreamSubscription? _connectivitySubscription;
@@ -115,7 +121,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     required this.notificationService,
     required this.suggestedVersesCacheService,
     required ConnectivityBloc connectivityBloc,
+    bool Function()? isGuest,
   })  : _connectivityBloc = connectivityBloc,
+        _isGuest = isGuest ?? _never,
         super(const MemoryVerseInitial()) {
     on<LoadDueVerses>(_onLoadDueVerses);
     on<LoadMoreVerses>(_onLoadMoreVerses);
@@ -162,6 +170,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     return super.close();
   }
 
+  static bool _never() => false;
+
   /// Handles LoadDueVerses event with stale-while-revalidate pattern.
   ///
   /// 1. Immediately emits cached verses from local Hive storage (no spinner).
@@ -174,6 +184,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     LoadDueVerses event,
     Emitter<MemoryVerseState> emit,
   ) async {
+    if (_isGuest()) {
+      Logger.debug('📖 [BLOC] Guest: due verses not loaded');
+      return;
+    }
     try {
       Logger.debug(
           '📖 [BLOC] Loading due verses (limit: ${event.limit}, offset: ${event.offset})');
@@ -209,6 +223,14 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         (failure) {
           Logger.error(
               '❌ [BLOC] Load due verses failed: ${ErrorMessageSanitizer.sanitize(failure)}');
+          // An account is needed (a guest): nothing to show, not an error.
+          if (isAccountRequired(failure)) {
+            if (state is DueVersesLoaded) {
+              emit((state as DueVersesLoaded)
+                  .copyWith(isRefreshingInBackground: false));
+            }
+            return;
+          }
           // Only show error if we have no cached data to display
           if (state is! DueVersesLoaded) {
             emit(MemoryVerseError(
@@ -531,6 +553,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     SyncWithRemote event,
     Emitter<MemoryVerseState> emit,
   ) async {
+    if (_isGuest()) return;
     try {
       Logger.debug('🔄 [BLOC] Syncing with remote server');
 

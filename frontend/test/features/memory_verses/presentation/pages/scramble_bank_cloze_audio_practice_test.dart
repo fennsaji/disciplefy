@@ -340,7 +340,7 @@ void main() {
         (tester) async {
       await pumpMode(tester, const WordScramblePracticePage(verseId: 'v1'));
 
-      await tester.tap(find.byTooltip('Show Answer'));
+      await tester.tap(find.byTooltip('Show answer'));
       await tester.pump();
       await tapText(tester, 'Submit');
       await tester.pumpAndSettle();
@@ -414,7 +414,7 @@ void main() {
 
       await tapAction(tester, 'Hint');
       expect(action('Hint · 1'), findsOneWidget);
-      await tester.tap(find.byTooltip('Show Answer'));
+      await tester.tap(find.byTooltip('Show answer'));
       await tester.pumpAndSettle();
 
       expect(results!.showedAnswer, isTrue);
@@ -457,7 +457,7 @@ void main() {
         (tester) async {
       await pumpMode(tester, const ClozeReviewPage(verseId: 'v1'));
 
-      await tapAction(tester, 'Show Answer');
+      await tapAction(tester, 'Show answer');
       await tapText(tester, 'Check');
       await tester.pumpAndSettle();
 
@@ -504,7 +504,7 @@ void main() {
       await pumpMode(tester, const AudioPracticePage(verseId: 'v1'));
 
       expect(find.text(englishVerse.verseText), findsOneWidget);
-      await tapText(tester, 'Ready to Speak');
+      await tapText(tester, 'Ready to speak');
 
       expect(find.byKey(const ValueKey('audio_record_button')), findsOneWidget);
       expect(find.text('Tap the microphone to start'), findsOneWidget);

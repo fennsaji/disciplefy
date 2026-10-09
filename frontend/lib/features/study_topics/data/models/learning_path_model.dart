@@ -1,4 +1,10 @@
+import 'package:disciplefy_bible_study/features/home/data/models/active_path_summary_model.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/learning_path.dart';
+
+/// Colour for a path the API sent without one: the brand gold (the design
+/// has no indigo or violet). A path's own colour from the API always wins.
+const String kDefaultPathColor = '#E3B154';
 
 /// Model for parsing learning path data from API.
 class LearningPathModel extends LearningPath {
@@ -6,6 +12,7 @@ class LearningPathModel extends LearningPath {
     required super.id,
     required super.slug,
     required super.title,
+    super.shortTitle,
     required super.description,
     required super.iconName,
     required super.color,
@@ -15,6 +22,7 @@ class LearningPathModel extends LearningPath {
     super.recommendedMode,
     super.allowNonSequentialAccess,
     super.isFeatured,
+    super.guestAccessible,
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,
@@ -22,6 +30,8 @@ class LearningPathModel extends LearningPath {
     super.fellowshipCompleted,
     super.displayOrder,
     super.nextTopicTitle,
+    super.nextLessonNumber,
+    super.nextLessonNumberKnown,
   });
 
   factory LearningPathModel.fromJson(Map<String, dynamic> json) {
@@ -29,9 +39,10 @@ class LearningPathModel extends LearningPath {
       id: json['id'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
       title: json['title'] as String? ?? '',
+      shortTitle: LearningPathModel.nonBlank(json['short_title']),
       description: json['description'] as String? ?? '',
       iconName: json['icon_name'] as String? ?? 'school',
-      color: json['color'] as String? ?? '#6A4FB6',
+      color: json['color'] as String? ?? kDefaultPathColor,
       totalXp: json['total_xp'] as int? ?? 0,
       estimatedDays: json['estimated_days'] as int? ?? 7,
       discipleLevel: json['disciple_level'] as String? ?? 'believer',
@@ -39,6 +50,7 @@ class LearningPathModel extends LearningPath {
       allowNonSequentialAccess:
           json['allow_non_sequential_access'] as bool? ?? false,
       isFeatured: json['is_featured'] as bool? ?? false,
+      guestAccessible: json['guest_accessible'] == true,
       topicsCount: json['topics_count'] as int? ?? 0,
       isEnrolled: json['is_enrolled'] as bool? ?? false,
       progressPercentage: json['progress_percentage'] as int? ?? 0,
@@ -46,8 +58,13 @@ class LearningPathModel extends LearningPath {
       fellowshipCompleted: json['fellowship_completed'] as bool? ?? false,
       displayOrder: (json['display_order'] as num?)?.toInt(),
       nextTopicTitle: _nonBlank(json['next_topic_title']),
+      nextLessonNumber: (json['next_lesson_number'] as num?)?.toInt(),
+      nextLessonNumberKnown: json.containsKey('next_lesson_number'),
     );
   }
+
+  /// Trimmed [value] when it is a non-blank string, otherwise `null`.
+  static String? nonBlank(Object? value) => _nonBlank(value);
 
   static String? _nonBlank(Object? value) {
     if (value is! String) return null;
@@ -60,6 +77,7 @@ class LearningPathModel extends LearningPath {
       'id': id,
       'slug': slug,
       'title': title,
+      if (shortTitle != null) 'short_title': shortTitle,
       'description': description,
       'icon_name': iconName,
       'color': color,
@@ -68,11 +86,13 @@ class LearningPathModel extends LearningPath {
       'disciple_level': discipleLevel,
       'recommended_mode': recommendedMode,
       'is_featured': isFeatured,
+      'guest_accessible': guestAccessible,
       'topics_count': topicsCount,
       'is_enrolled': isEnrolled,
       'progress_percentage': progressPercentage,
       if (displayOrder != null) 'display_order': displayOrder,
       if (nextTopicTitle != null) 'next_topic_title': nextTopicTitle,
+      if (nextLessonNumberKnown) 'next_lesson_number': nextLessonNumber,
     };
   }
 }
@@ -129,6 +149,7 @@ class LearningPathDetailModel extends LearningPathDetail {
     required super.id,
     required super.slug,
     required super.title,
+    super.shortTitle,
     required super.description,
     required super.iconName,
     required super.color,
@@ -138,6 +159,7 @@ class LearningPathDetailModel extends LearningPathDetail {
     super.recommendedMode,
     super.allowNonSequentialAccess,
     super.isFeatured,
+    super.guestAccessible,
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,
@@ -157,9 +179,10 @@ class LearningPathDetailModel extends LearningPathDetail {
       id: json['id'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
       title: json['title'] as String? ?? '',
+      shortTitle: LearningPathModel.nonBlank(json['short_title']),
       description: json['description'] as String? ?? '',
       iconName: json['icon_name'] as String? ?? 'school',
-      color: json['color'] as String? ?? '#6A4FB6',
+      color: json['color'] as String? ?? kDefaultPathColor,
       totalXp: json['total_xp'] as int? ?? 0,
       estimatedDays: json['estimated_days'] as int? ?? 7,
       discipleLevel: json['disciple_level'] as String? ?? 'believer',
@@ -167,6 +190,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       allowNonSequentialAccess:
           json['allow_non_sequential_access'] as bool? ?? false,
       isFeatured: json['is_featured'] as bool? ?? false,
+      guestAccessible: json['guest_accessible'] == true,
       topicsCount: topics.length,
       isEnrolled: json['is_enrolled'] as bool? ?? false,
       progressPercentage: json['progress_percentage'] as int? ?? 0,
@@ -188,6 +212,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       'id': id,
       'slug': slug,
       'title': title,
+      if (shortTitle != null) 'short_title': shortTitle,
       'description': description,
       'icon_name': iconName,
       'color': color,
@@ -197,6 +222,7 @@ class LearningPathDetailModel extends LearningPathDetail {
       'recommended_mode': recommendedMode,
       'allow_non_sequential_access': allowNonSequentialAccess,
       'is_featured': isFeatured,
+      'guest_accessible': guestAccessible,
       'is_enrolled': isEnrolled,
       'progress_percentage': progressPercentage,
       'category': category,
@@ -427,10 +453,12 @@ class PersonalizedPathsResponseModel {
 class RecommendedPathResponseModel {
   final LearningPathModel? path;
   final String reason;
+  final ActivePathSummary? summary;
 
   const RecommendedPathResponseModel({
     required this.path,
     required this.reason,
+    this.summary,
   });
 
   factory RecommendedPathResponseModel.fromJson(Map<String, dynamic> json) {
@@ -440,6 +468,8 @@ class RecommendedPathResponseModel {
     return RecommendedPathResponseModel(
       path: pathJson != null ? LearningPathModel.fromJson(pathJson) : null,
       reason: data['reason'] as String? ?? 'featured',
+      summary:
+          pathJson != null ? ActivePathSummaryModel.fromJson(pathJson) : null,
     );
   }
 
@@ -448,6 +478,7 @@ class RecommendedPathResponseModel {
     return RecommendedPathResult(
       path: path!,
       reason: RecommendedPathResult.parseReason(reason),
+      summary: summary,
     );
   }
 }

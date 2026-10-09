@@ -196,6 +196,7 @@ function successResponse(kind: string, tokensCredited: number, alreadyFulfilled:
 }
 
 createSimpleFunction(handleConfirmApplePurchase, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   // Payments / subscription / account / admin: session revocation must be honoured.
   verifyWithAuthServer: true,
   allowedMethods: ['POST'],

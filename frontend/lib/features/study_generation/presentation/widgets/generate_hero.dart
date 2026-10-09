@@ -24,21 +24,27 @@ class GenerateHeroBackdrop extends StatelessWidget {
     final page = palette.page;
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
-    // Dark: a black shade that deepens into the page. Light: a heavy wash of
-    // the page colour at the top (dark ink title) thinning over the hills.
+    // Dark: a light black shade, so the mountains still read behind the
+    // verse row and "Choose depth" as in the design; from 60% of the hero
+    // down (where the depth header sits) secondary text still clears 4.5:1
+    // over the blurred photo. Light: the design fades the photo into the
+    // page by the chips row, so the wash reaches 94% page colour there.
     final shade = palette.isDark
         ? [
             Colors.black.withValues(alpha: 0.55),
             Colors.black.withValues(alpha: 0.30),
-            page.withValues(alpha: 0.55),
+            page.withValues(alpha: 0.62),
             page,
           ]
         : [
             page.withValues(alpha: 0.88),
-            page.withValues(alpha: 0.62),
-            page.withValues(alpha: 0.30),
+            page.withValues(alpha: 0.72),
+            page.withValues(alpha: 0.94),
             page,
           ];
+    final stops = palette.isDark
+        ? const [0.0, 0.42, 0.72, 1.0]
+        : const [0.0, 0.40, 0.56, 0.72];
 
     return ExcludeSemantics(
       child: LayoutBuilder(
@@ -63,7 +69,7 @@ class GenerateHeroBackdrop extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: shade,
-                    stops: const [0, 0.42, 0.78, 1],
+                    stops: stops,
                   ),
                 ),
               ),
@@ -248,20 +254,14 @@ class GenerateStudyButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final active = enabled && !loading;
-    final fill = active
-        ? palette.ctaFill
-        : (palette.isDark
-            ? Colors.white.withValues(alpha: 0.10)
-            : palette.text.withValues(alpha: 0.08));
-    final ink = active
-        ? palette.ctaInk
-        : (palette.isDark ? Colors.white.withValues(alpha: 0.45) : palette.dim);
-    // Cost chip: a soft indigo wash on the white dark-theme pill, a white
-    // wash on the indigo light-theme pill.
+    final fill = active ? palette.ctaFill : palette.disabledFill;
+    final ink = active ? palette.ctaInk : palette.disabledInk;
+    // Cost chip: a soft gold wash on the white dark-theme pill, a white
+    // wash on the ink light-theme pill.
     final chipFill = !active
         ? Colors.transparent
         : palette.isDark
-            ? AppColors.brandPrimary.withValues(alpha: 0.12)
+            ? palette.gold.withValues(alpha: 0.12)
             : Colors.white.withValues(alpha: 0.2);
 
     return SizedBox(

@@ -6,7 +6,7 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// A selectable language row: code circle, native name over its English
-/// name, and a radio on the right. The selected row gets an indigo border
+/// name, and a radio on the right. The selected row gets a gold border
 /// and tint.
 class LanguageSelectionCard extends StatelessWidget {
   final AppLanguage language;
@@ -35,14 +35,14 @@ class LanguageSelectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    const indigo = AppColors.brandPrimary;
+    final accent = palette.selectedFill;
     final radius = BorderRadius.circular(18);
 
     final fill = isSelected
-        ? indigo.withValues(alpha: palette.isDark ? 0.14 : 0.07)
+        ? accent.withValues(alpha: palette.isDark ? 0.14 : 0.07)
         : palette.card;
     final border = isSelected
-        ? const BorderSide(color: indigo, width: 1.5)
+        ? BorderSide(color: accent, width: 1.5)
         : BorderSide(color: palette.hairline);
 
     return Padding(
@@ -67,14 +67,14 @@ class LanguageSelectionCard extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isSelected ? indigo : palette.raised,
+                      color: isSelected ? accent : palette.raised,
                     ),
                     child: Text(
                       language.code.toUpperCase(),
                       style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : palette.muted,
+                        color: isSelected ? palette.onSelected : palette.muted,
                       ),
                     ),
                   ),
@@ -128,7 +128,7 @@ class _Radio extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isSelected ? AppColors.brandPrimary : Colors.transparent,
+        color: isSelected ? palette.selectedFill : Colors.transparent,
         border: isSelected
             ? null
             : Border.all(color: palette.dim.withValues(alpha: 0.8), width: 1.5),
@@ -137,9 +137,9 @@ class _Radio extends StatelessWidget {
           ? Container(
               width: 10,
               height: 10,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: palette.onSelected,
               ),
             )
           : null,

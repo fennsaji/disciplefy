@@ -12,7 +12,7 @@ import { getPassageGroundingBlock } from '../_shared/services/passage-grounding.
 import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { RequestValidator } from '../_shared/utils/request-validator.ts'
-import { AppError } from '../_shared/utils/error-handler.ts'
+import { AppError, ErrorHandler } from '../_shared/utils/error-handler.ts'
 import { StudyGuideInput } from '../_shared/types/index.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
@@ -97,6 +97,15 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
     services.getSecurityValidator()
   ])
   const userContext = await authService.getUserContext(req)
+
+  // Guests never type a study of their own. This endpoint takes no catalogue
+  // topic, so it serves no guest lesson (those go through study-generate-v2).
+  if (userContext.isGuest) {
+    throw ErrorHandler.createAccountRequiredError(
+      'Create an account to generate your own studies.',
+      { reason: 'generate' }
+    )
+  }
 
   // 2. Validate request body and parse data
   const { input_type, input_value, topic_description, language, study_mode } = await parseAndValidateRequest(req)

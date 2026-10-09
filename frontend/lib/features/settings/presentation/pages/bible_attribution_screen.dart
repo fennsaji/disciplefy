@@ -165,7 +165,6 @@ class _AttributionRow extends StatelessWidget {
         children: [
           const SettingsIconTile(
             icon: Icons.book_outlined,
-            tone: SettingsTone.gold,
           ),
           const SizedBox(width: 12),
           Expanded(

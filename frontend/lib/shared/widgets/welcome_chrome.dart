@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Shared chrome for the pre-auth screens (onboarding, login, email auth,
@@ -18,6 +19,32 @@ class WelcomePhotos {
   static const String greenHills = 'assets/images/hero/green_hills.webp';
   static const String valleyMist = 'assets/images/hero/valley_mist.webp';
   static const String winterSunset = 'assets/images/hero/winter_sunset.webp';
+  static const String nightStars = 'assets/images/hero/night_stars.webp';
+}
+
+/// The dark shade laid over a header photo (the same as Home's hero), so
+/// light text reads on any photo in both themes.
+class WelcomeSceneShade extends StatelessWidget {
+  const WelcomeSceneShade({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF0B0B0B).withValues(alpha: 0.72),
+            const Color(0xFF0B0B0B).withValues(alpha: 0.50),
+            const Color(0xFF0B0B0B).withValues(alpha: 0.70),
+            const Color(0xFF0B0B0B).withValues(alpha: 0.82),
+          ],
+          stops: const [0, 0.3, 0.7, 1],
+        ),
+      ),
+    );
+  }
 }
 
 /// Decode width for a 2000px-wide 3:2 photo covering a [width] x [height]
@@ -81,10 +108,10 @@ class WelcomeEyebrow extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     return Text(
       text.toUpperCase(),
-      style: AppFonts.poppins(
+      style: AppFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        letterSpacing: 2.2,
+        letterSpacing: 1.6,
         color: color ?? palette.gold,
       ),
     );
@@ -176,6 +203,15 @@ class WelcomePhotoBackdrop extends StatelessWidget {
                 ),
               ),
             ),
+            // At a fractional height the photo's anti-aliased last row
+            // bleeds through the fade as a grey seam; cover it.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 2,
+              child: ColoredBox(color: page),
+            ),
           ],
         ),
       ),
@@ -183,7 +219,7 @@ class WelcomePhotoBackdrop extends StatelessWidget {
   }
 }
 
-/// Full-width primary pill: white with indigo ink on dark, indigo with white
+/// Full-width primary pill: white with ink text on dark, ink with white
 /// ink on light. Shows a spinner instead of the label while [isLoading].
 class WelcomePrimaryButton extends StatelessWidget {
   final String label;
@@ -193,12 +229,16 @@ class WelcomePrimaryButton extends StatelessWidget {
   /// When false the pill hugs its label (onboarding's Continue).
   final bool expand;
 
+  /// Pill height. The first-run screens use the compact 40.
+  final double height;
+
   const WelcomePrimaryButton({
     super.key,
     required this.label,
     required this.onPressed,
     this.isLoading = false,
     this.expand = true,
+    this.height = 54,
   });
 
   @override
@@ -211,10 +251,16 @@ class WelcomePrimaryButton extends StatelessWidget {
         foregroundColor: palette.ctaInk,
         disabledBackgroundColor: palette.ctaFill.withValues(alpha: 0.5),
         disabledForegroundColor: palette.ctaInk.withValues(alpha: 0.7),
-        minimumSize: Size(expand ? double.infinity : 136, 54),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+        minimumSize: Size(expand ? double.infinity : 136, height),
+        padding: EdgeInsets.symmetric(
+            horizontal: 28, vertical: height < 48 ? 8 : 12),
         shape: const StadiumBorder(),
         elevation: 0,
+        // A compact pill keeps its height; the default 48 tap padding
+        // would make it look 48 tall in layout.
+        tapTargetSize: height < 48
+            ? MaterialTapTargetSize.shrinkWrap
+            : MaterialTapTargetSize.padded,
       ),
       child: isLoading
           ? SizedBox(
@@ -229,17 +275,33 @@ class WelcomePrimaryButton extends StatelessWidget {
               label,
               textAlign: TextAlign.center,
               style: AppFonts.inter(
-                fontSize: 16,
+                fontSize: height < 48 ? 15 : 16,
                 fontWeight: FontWeight.w600,
                 color: palette.ctaInk,
               ),
             ),
     );
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
+    // Dark theme: the white pill sits in a soft gold glow.
+    final glowing = palette.isDark && onPressed != null && !isLoading
+        ? DecoratedBox(
+            key: const Key('welcome_primary_glow'),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(height / 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brandGold.withValues(alpha: 0.8),
+                  blurRadius: 16,
+                ),
+              ],
+            ),
+            child: button,
+          )
+        : button;
+    return expand ? SizedBox(width: double.infinity, child: glowing) : glowing;
   }
 }
 
-/// Soft indigo glow behind the onboarding previews (a static gradient, no
+/// Soft gold glow behind the onboarding previews (a static gradient, no
 /// blur).
 class WelcomeGlow extends StatelessWidget {
   final Alignment center;
@@ -250,8 +312,8 @@ class WelcomeGlow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final glow = palette.isDark
-        ? const Color(0xFF3730A3).withValues(alpha: 0.38)
-        : const Color(0xFF6366F1).withValues(alpha: 0.10);
+        ? AppColors.brandGold.withValues(alpha: 0.14)
+        : AppColors.brandHighlightDark.withValues(alpha: 0.10);
     return IgnorePointer(
       child: DecoratedBox(
         decoration: BoxDecoration(

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/app_translations.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
@@ -81,10 +82,23 @@ void useSurface(WidgetTester tester, Size size) {
 /// routes, themed [dark] or light, with [bloc] provided.
 Widget welcomeApp({
   required Widget screen,
-  required String path,
-  required bool dark,
+  String path = '/',
+  bool dark = false,
   AuthBloc? bloc,
+  String? language,
 }) {
+  if (language != null) {
+    final service =
+        sl.isRegistered<TranslationService>() ? sl<TranslationService>() : null;
+    if (service is! FakeTranslationService) {
+      throw StateError(
+        'welcomeApp(language:) needs a FakeTranslationService registered in sl',
+      );
+    }
+    final previous = service.language;
+    addTearDown(() => service.language = previous);
+    service.language = AppLanguage.fromCode(language);
+  }
   final router = GoRouter(
     initialLocation: path,
     routes: [

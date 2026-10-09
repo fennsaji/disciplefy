@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 import 'package:go_router/go_router.dart';
 
@@ -81,6 +82,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         throw Exception(
             'Language preference persistence verification failed. Please try again.');
       }
+
+      ActivationAnalytics.maybeTrack(
+          NuxEvent.languageSelected, {'language': _selectedLanguage!.code});
 
       // Navigate to home screen only after successful verification
       if (mounted) {

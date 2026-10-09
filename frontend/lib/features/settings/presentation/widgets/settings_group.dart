@@ -10,13 +10,16 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 /// Every colour comes from [ReaderPalette] or [SettingsTone], so call sites
 /// never branch on brightness. No shadows, gradients or blur.
 
-/// Primary action fill in settings: indigo with white ink in both themes (unlike
+/// Primary action fill in settings: the gold selected fill with ink, as the
+/// design's Send feedback pill, toggles and radios (unlike
 /// [ReaderPalette.ctaFill], which is white on dark).
-const Color settingsPrimaryFill = ReaderPalette.selectedFill;
-const Color settingsPrimaryInk = Colors.white;
+Color settingsPrimaryFill(BuildContext context) =>
+    ReaderPalette.of(context).selectedFill;
+Color settingsPrimaryInk(BuildContext context) =>
+    ReaderPalette.of(context).onSelected;
 
 /// Colour family of a row's icon tile.
-enum SettingsTone { indigo, gold, green, sky, pink, red, amber }
+enum SettingsTone { gold, green, sky, pink, red, amber }
 
 /// Resolved icon colour and tile fill for a [SettingsTone].
 @immutable
@@ -31,11 +34,6 @@ class SettingsToneColors {
     final dark = palette.isDark;
     Color darkTint(Color c) => c.withValues(alpha: 0.15);
     switch (tone) {
-      case SettingsTone.indigo:
-        return SettingsToneColors(
-          palette.accentIcon,
-          dark ? darkTint(AppColors.brandSecondary) : const Color(0xFFEEEEFD),
-        );
       case SettingsTone.gold:
         return SettingsToneColors(
           palette.gold,
@@ -147,7 +145,7 @@ class SettingsTopBar extends StatelessWidget implements PreferredSizeWidget {
                         subtitle!,
                         maxLines: 3,
                         style: AppFonts.inter(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           color: palette.muted,
                           height: 1.25,
                         ),
@@ -176,7 +174,7 @@ class SettingsSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 20, 2, 8),
+      padding: const EdgeInsets.fromLTRB(2, 16, 2, 8),
       child: Row(
         children: [
           Expanded(
@@ -185,7 +183,7 @@ class SettingsSectionLabel extends StatelessWidget {
               child: Text(
                 text.toUpperCase(),
                 style: AppFonts.inter(
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
                   color: palette.muted,
@@ -259,7 +257,7 @@ class SettingsIconTile extends StatelessWidget {
   const SettingsIconTile({
     super.key,
     required this.icon,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
     this.size = 34,
   });
 
@@ -300,7 +298,7 @@ class SettingsRow extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
     this.subtitle,
     this.value,
     this.trailing,
@@ -321,72 +319,107 @@ class SettingsRow extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 58),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              SettingsIconTile(icon: icon, tone: effectiveTone),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w500,
-                        color: titleColor,
-                        height: 1.3,
-                      ),
-                    ),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+      child: LayoutBuilder(builder: (context, box) {
+        // The value takes at most 120pt, and less than a third of a narrow
+        // row (320pt Malayalam), so the title keeps its width.
+        final valueWidth = box.hasBoundedWidth
+            // The text area is the row less padding, icon tile and chevron
+            // (98pt); the value gets at most 35% of it.
+            ? ((box.maxWidth - 98) * 0.35).clamp(48.0, 120.0)
+            : 120.0;
+        final hasValue = value != null && value!.isNotEmpty;
+        // A value that would not fit on one line in its share moves under the
+        // title instead, so the title never breaks mid-word.
+        var valueBelow = false;
+        if (hasValue) {
+          final painter = TextPainter(
+            text: TextSpan(text: value, style: AppFonts.inter(fontSize: 13)),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout();
+          valueBelow = painter.width > valueWidth;
+          painter.dispose();
+        }
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 58),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                SettingsIconTile(icon: icon, tone: effectiveTone),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
+                        title,
                         style: AppFonts.inter(
-                          fontSize: 12,
-                          color: palette.muted,
-                          height: 1.35,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                          color: titleColor,
+                          height: 1.3,
                         ),
                       ),
+                      if (valueBelow) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          value!,
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.muted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                      if (subtitle != null && subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: AppFonts.inter(
+                            fontSize: 12,
+                            color: palette.muted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ),
-              if (value != null && value!.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                // Capped so a long value never squeezes the title away; it
-                // wraps rather than being cut.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 120),
-                  child: Text(
-                    value!,
-                    textAlign: TextAlign.end,
-                    style: AppFonts.inter(fontSize: 13, color: palette.muted),
                   ),
                 ),
+                if (hasValue && !valueBelow) ...[
+                  const SizedBox(width: 8),
+                  // Capped so a long value never squeezes the title away; it
+                  // wraps rather than being cut.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: valueWidth),
+                    child: Text(
+                      value!,
+                      textAlign: TextAlign.end,
+                      style: AppFonts.inter(fontSize: 13, color: palette.muted),
+                    ),
+                  ),
+                ],
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
+                ],
+                if (chevron) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.chevron_right, size: 18, color: palette.dim),
+                ],
               ],
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ],
-              if (chevron) ...[
-                const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 18, color: palette.dim),
-              ],
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }
 
-/// Indigo-track switch used by settings rows.
+/// Gold-track switch used by settings rows.
 class SettingsSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
@@ -400,17 +433,17 @@ class SettingsSwitch extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       activeThumbColor: Colors.white,
-      activeTrackColor: settingsPrimaryFill,
+      activeTrackColor: settingsPrimaryFill(context),
       inactiveThumbColor: Colors.white,
       inactiveTrackColor:
-          palette.isDark ? const Color(0xFF3A3A42) : const Color(0xFFE2E2E8),
+          palette.isDark ? const Color(0xFF3A3A42) : AppColors.lightBorder,
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
 
-/// Indigo-ring radio indicator.
+/// Gold-ring radio indicator.
 class SettingsRadioMark extends StatelessWidget {
   final bool selected;
 
@@ -425,7 +458,7 @@ class SettingsRadioMark extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? settingsPrimaryFill : palette.dim,
+          color: selected ? settingsPrimaryFill(context) : palette.dim,
           width: selected ? 7 : 1.5,
         ),
       ),
@@ -450,7 +483,7 @@ class SettingsRadioRow extends StatelessWidget {
     required this.onTap,
     this.subtitle,
     this.icon,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
   });
 
   @override
@@ -515,7 +548,7 @@ class SettingsRadioRow extends StatelessWidget {
 /// Visual kind of a [SettingsButton].
 enum SettingsButtonKind { primary, destructive, neutral }
 
-/// Pill button: indigo primary, red-tinted destructive or raised neutral.
+/// Pill button: gold primary, red-tinted destructive or raised neutral.
 ///
 /// The label is never cut off: it wraps to a second line (and the pill grows)
 /// when the width is tight. Put two of them side by side with
@@ -569,7 +602,10 @@ class SettingsButton extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     final red = SettingsToneColors.of(context, SettingsTone.red);
     final (Color fill, Color ink) = switch (kind) {
-      SettingsButtonKind.primary => (settingsPrimaryFill, settingsPrimaryInk),
+      SettingsButtonKind.primary => (
+          settingsPrimaryFill(context),
+          settingsPrimaryInk(context)
+        ),
       SettingsButtonKind.destructive => (red.fill, red.foreground),
       SettingsButtonKind.neutral => (palette.raised, palette.text),
     };
@@ -675,7 +711,7 @@ class SettingsStatTile extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
-    this.tone = SettingsTone.indigo,
+    this.tone = SettingsTone.gold,
   });
 
   @override

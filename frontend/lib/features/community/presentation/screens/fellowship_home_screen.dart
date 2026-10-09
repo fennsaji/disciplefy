@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/constants/discipler.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
@@ -17,6 +18,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/features/community/domain/utils/fellowship_lesson_language.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_entity.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_meeting_entity.dart';
 import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
@@ -613,21 +615,18 @@ class _FellowshipHomeContent extends StatelessWidget {
               // Studying together
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                   child: _StudyingTogetherCard(
                     isMentor: isMentor,
                     onLessonTap: () => _openLessons(context),
                   ),
                 ),
               ),
-              // Next meeting
+              // Next meeting (hidden for members when none is scheduled)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: _MeetingsSectionTile(
-                    isMentor: isMentor,
-                    onViewAll: () => _openMeetings(context),
-                  ),
+                child: _MeetingsSectionTile(
+                  isMentor: isMentor,
+                  onViewAll: () => _openMeetings(context),
                 ),
               ),
               // Feed preview
@@ -672,7 +671,7 @@ class _HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 36, 20, 0),
       // isMentor as well as members: the invite button below depends on it,
       // and it is re-derived from the roster after load — so on a deep link,
       // where the navigation extra is absent and the seed is false, the
@@ -690,13 +689,22 @@ class _HeroHeader extends StatelessWidget {
                   (m.mentorWhatsapp?.isNotEmpty ?? false) ||
                   (m.mentorEmail?.isNotEmpty ?? false))
               .toList();
-          final mentorNames = (mentorMembers.isNotEmpty
-                  ? mentorMembers.map((m) => m.displayName)
-                  : (fellowship?.mentors.map((m) => m.displayName) ??
-                      const <String>[]))
-              .map(realMentorName)
-              .whereType<String>()
-              .join(', ');
+          final mentorIds = mentorMembers.isNotEmpty
+              ? mentorMembers.map((m) => m.userId)
+              : (fellowship?.mentors.map((m) => m.userId) ?? const <String>[]);
+          // Official and Discipler-mentored groups read "Guided by
+          // Discipler", the same as their card on the Community tab.
+          final guidedByDiscipler = fellowship?.isOfficial == true ||
+              mentorIds.contains(kDisciplerUserId);
+          final mentorNames = guidedByDiscipler
+              ? ''
+              : (mentorMembers.isNotEmpty
+                      ? mentorMembers.map((m) => m.displayName)
+                      : (fellowship?.mentors.map((m) => m.displayName) ??
+                          const <String>[]))
+                  .map(realMentorName)
+                  .whereType<String>()
+                  .join(', ');
           final memberCount = membersState.members.isNotEmpty
               ? membersState.members.length
               : (fellowship?.memberCount ?? 0);
@@ -704,7 +712,9 @@ class _HeroHeader extends StatelessWidget {
           final meta = [
             if (fellowship?.isOfficial == true) l10n.officialBadge,
             '$memberCount ${l10n.communityMembersCount(memberCount)}',
-            if (mentorNames.isNotEmpty)
+            if (guidedByDiscipler)
+              context.tr(TranslationKeys.communityGuidedByDiscipler)
+            else if (mentorNames.isNotEmpty)
               context.tr(
                   TranslationKeys.communitySharedMentor, {'name': mentorNames}),
           ].join(' · ');
@@ -721,13 +731,13 @@ class _HeroHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CommunitySectionLabel(meta),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Semantics(
                 header: true,
                 child: Text(
                   title,
                   style: AppFonts.poppins(
-                    fontSize: 32,
+                    fontSize: 30,
                     fontWeight: FontWeight.w700,
                     color: palette.text,
                     height: 1.2,
@@ -737,12 +747,12 @@ class _HeroHeader extends StatelessWidget {
               if (showContactPrompt ||
                   mentorsWithContact.isNotEmpty ||
                   canInvite) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 // Wrap, not Row: these labels are far longer in Hindi and
                 // Malayalam, and a Row has no way to give way. Wrapping puts
                 // the next pill on its own line instead; each pill's label
                 // wraps too when it is wider than the screen.
-                Wrap(spacing: 10, runSpacing: 10, children: [
+                Wrap(spacing: 8, children: [
                   if (showContactPrompt)
                     CommunityRaisedPill(
                       icon: Icons.alternate_email_rounded,
@@ -873,7 +883,7 @@ class _StudyingTogetherCard extends StatelessWidget {
                       l10n.fellowshipViewLessons,
                       textAlign: TextAlign.end,
                       style: AppFonts.inter(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: palette.accentIcon,
                       ),
@@ -881,11 +891,11 @@ class _StudyingTogetherCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 heading,
                 style: AppFonts.poppins(
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: palette.text,
                   height: 1.35,
@@ -916,17 +926,17 @@ class _StudyingTogetherCard extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       if (progress.fraction != null) ...[
                         CommunityProgressBar(value: progress.fraction!),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                       ],
                       Text(
                         detail != null
                             ? '$groupProgress · $detail'
                             : groupProgress,
                         style: AppFonts.inter(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: palette.muted,
                         ),
                       ),
@@ -962,7 +972,7 @@ class _FeedPreviewSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1008,15 +1018,10 @@ class _FeedPreviewSection extends StatelessWidget {
               if (state.posts.isEmpty) {
                 return _PreviewMessage(
                   icon: Icons.chat_bubble_outline_rounded,
+                  // No "Post something" here: the floating New Post button
+                  // is the one way to post.
                   message:
                       state.canPost ? l10n.feedEmpty : l10n.feedEmptyReadOnly,
-                  action: state.canShowPostButton
-                      ? CommunityRaisedPill(
-                          icon: Icons.add,
-                          label: l10n.feedPostSomething,
-                          onPressed: onViewAll,
-                        )
-                      : null,
                 );
               }
 
@@ -1034,7 +1039,7 @@ class _FeedPreviewSection extends StatelessWidget {
                       // posts, so reacting and replying belong here too.
                       isMentor: state.isMentor,
                       currentUserId: state.currentUserId,
-                      maxContentLines: 3,
+                      maxContentLines: FellowshipPostCard.feedMaxContentLines,
                       isAdmin: isAdmin,
                       onPostTap: () {
                         final bloc = context.read<FellowshipFeedBloc>();
@@ -1130,12 +1135,10 @@ class _FeedPreviewSection extends StatelessWidget {
 class _PreviewMessage extends StatelessWidget {
   final IconData icon;
   final String message;
-  final Widget? action;
 
   const _PreviewMessage({
     required this.icon,
     required this.message,
-    this.action,
   });
 
   @override
@@ -1156,10 +1159,6 @@ class _PreviewMessage extends StatelessWidget {
               height: 1.45,
             ),
           ),
-          if (action != null) ...[
-            const SizedBox(height: 14),
-            action!,
-          ],
         ]),
       ),
     );
@@ -1506,8 +1505,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.brandPrimary
-                      .withValues(alpha: palette.isDark ? 0.18 : 0.08)
+                  ? palette.gold.withValues(alpha: palette.isDark ? 0.18 : 0.08)
                   : palette.raised,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
@@ -1522,7 +1520,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                   height: 42,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.brandPrimary
+                        ? palette.gold
                             .withValues(alpha: palette.isDark ? 0.28 : 0.12)
                         : palette.card,
                     borderRadius: BorderRadius.circular(12),
@@ -1767,77 +1765,91 @@ class _MeetingsSectionTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final palette = ReaderPalette.of(context);
     final materialL10n = MaterialLocalizations.of(context);
-    return FellowshipCardShell(
-      onTap: onViewAll,
-      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-      child: BlocBuilder<FellowshipMeetingsBloc, FellowshipMeetingsState>(
-        builder: (context, state) {
-          final next = state.meetings.isNotEmpty ? state.meetings.first : null;
-          final String title;
-          final String? subtitle;
-          if (next == null) {
-            title = l10n.meetingsTitle;
-            subtitle = isMentor
-                ? l10n.meetingsSchedulePrompt
-                : l10n.meetingsNoUpcoming;
-          } else {
-            title = l10n.meetingsNextNoTime(next.title);
-            final dt = DateTime.tryParse(next.startsAt)?.toLocal();
-            subtitle = dt == null
-                ? null
-                : '${materialL10n.formatMediumDate(dt)} · '
-                    '${materialL10n.formatTimeOfDay(TimeOfDay.fromDateTime(dt))}';
-          }
-          return Row(
+    return BlocBuilder<FellowshipMeetingsBloc, FellowshipMeetingsState>(
+      builder: (context, state) {
+        final next = state.meetings.isNotEmpty ? state.meetings.first : null;
+        // An empty "Meetings" row tells a member nothing; a mentor keeps it
+        // because it is where they schedule the first meeting.
+        if (next == null && !isMentor) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: FellowshipCardShell(
+            onTap: onViewAll,
+            padding: const EdgeInsets.all(14),
+            child: _meetingRow(context, next, l10n, palette, materialL10n),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _meetingRow(
+    BuildContext context,
+    FellowshipMeetingEntity? next,
+    AppLocalizations l10n,
+    ReaderPalette palette,
+    MaterialLocalizations materialL10n,
+  ) {
+    final String title;
+    final String? subtitle;
+    if (next == null) {
+      // Only a mentor gets here: the row invites them to schedule.
+      title = l10n.meetingsTitle;
+      subtitle = l10n.meetingsSchedulePrompt;
+    } else {
+      title = l10n.meetingsNextNoTime(next.title);
+      final dt = DateTime.tryParse(next.startsAt)?.toLocal();
+      subtitle = dt == null
+          ? null
+          : '${materialL10n.formatMediumDate(dt)} · '
+              '${materialL10n.formatTimeOfDay(TimeOfDay.fromDateTime(dt))}';
+    }
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: palette.gold.withValues(alpha: palette.isDark ? 0.20 : 0.10),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.videocam_outlined,
+            color: palette.accentIcon,
+            size: 17,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.brandPrimary
-                      .withValues(alpha: palette.isDark ? 0.24 : 0.10),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.videocam_outlined,
-                  color: palette.accentIcon,
-                  size: 24,
+              Text(
+                title,
+                style: AppFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                  height: 1.3,
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: palette.text,
-                        height: 1.3,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          color: palette.muted,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ],
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    color: palette.muted,
+                    height: 1.35,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded, size: 24, color: palette.dim),
+              ],
             ],
-          );
-        },
-      ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(Icons.chevron_right_rounded, size: 18, color: palette.dim),
+      ],
     );
   }
 }
@@ -1928,6 +1940,7 @@ class _NotAMemberCardState extends State<_NotAMemberCard> {
             ],
             const SizedBox(height: 16),
             CommunityCtaPill(
+              tall: true,
               label: context.tr(TranslationKeys.fellowshipJoinAction),
               loading: _joining,
               onPressed: _join,

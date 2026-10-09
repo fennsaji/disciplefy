@@ -370,6 +370,7 @@ async function handleUploadProfileImage(
 // ============================================================================
 
 createAuthenticatedFunction(handleUploadProfileImage, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['POST'],
   enableAnalytics: true,
   timeout: 30000 // 30s for image uploads

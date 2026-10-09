@@ -11,12 +11,16 @@ import 'package:disciplefy_bible_study/core/localization/app_localizations.dart'
 import 'package:disciplefy_bible_study/core/router/app_router.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_streak.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_level.dart';
+import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_stats.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_event.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/bloc/gamification_state.dart';
-import 'package:disciplefy_bible_study/features/gamification/presentation/widgets/achievement_unlock_dialog.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/unlock_dates.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
 import 'package:disciplefy_bible_study/shared/widgets/gold_marks.dart';
@@ -90,18 +94,15 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
           ),
         ),
       ),
-      body: BlocConsumer<GamificationBloc, GamificationState>(
-        listener: (context, state) {
-          // Show achievement unlock notification
-          if (state.hasPendingNotifications && state.nextNotification != null) {
-            _showAchievementUnlockDialog(context, state.nextNotification!);
-          }
-        },
+      // Achievement pop-ups are shown once, app-wide (main.dart); showing
+      // them here too stacked a second copy on this page.
+      body: BlocBuilder<GamificationBloc, GamificationState>(
         builder: (context, state) {
           if (state.status == GamificationStatus.loading &&
               state.stats == null) {
-            return const Center(
-              child: CircularProgressIndicator(color: settingsPrimaryFill),
+            return Center(
+              child: CircularProgressIndicator(
+                  color: settingsPrimaryFill(context)),
             );
           }
 
@@ -205,6 +206,31 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     ];
   }
 
+  /// The one daily streak, as Home shows it: the app-wide daily verse
+  /// bloc's copy when it has one (it updates the moment the verse is read
+  /// or a lesson finished), else null and the stats' copy of the same
+  /// streak is used.
+  DailyVerseStreak? _liveDailyStreak(BuildContext context) {
+    try {
+      final verseState = context.watch<DailyVerseBloc>().state;
+      if (verseState is DailyVerseLoaded) return verseState.streak;
+    } on ProviderNotFoundException {
+      // No daily verse bloc above this page (e.g. opened in isolation).
+    }
+    return null;
+  }
+
+  int _dailyStreak(BuildContext context, UserStats stats) =>
+      _liveDailyStreak(context)?.currentStreak ?? stats.verseCurrentStreak;
+
+  /// Best run of the same daily streak; never below the current one.
+  int _dailyBest(BuildContext context, UserStats stats) {
+    final live = _liveDailyStreak(context);
+    final longest = live?.longestStreak ?? stats.verseLongestStreak;
+    final current = live?.currentStreak ?? stats.verseCurrentStreak;
+    return longest > current ? longest : current;
+  }
+
   Widget _buildHeadlineStats(BuildContext context, GamificationState state) {
     final stats = state.stats!;
     return IntrinsicHeight(
@@ -214,8 +240,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
           Expanded(
             child: SettingsStatTile(
               icon: Icons.local_fire_department_outlined,
-              tone: SettingsTone.gold,
-              value: '${stats.studyCurrentStreak}',
+              value: '${_dailyStreak(context, stats)}',
               label: context.tr(TranslationKeys.gamificationDayStreakLabel),
             ),
           ),
@@ -241,34 +266,23 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     );
   }
 
+  /// The current daily streak is the headline "Day streak" tile; this
+  /// section adds its best run. There is one streak, so no separate study
+  /// or verse streak rows.
   List<Widget> _buildStreaksSection(
       BuildContext context, GamificationState state) {
     final l10n = AppLocalizations.of(context)!;
-    final stats = state.stats!;
-    String days(int n) => '$n ${l10n.progressDays}';
+    final best = _dailyBest(context, state.stats!);
+    if (best <= 0) return const [];
     return [
       SettingsSectionLabel(l10n.progressStreaks),
       SettingsGroup(
         children: [
           SettingsRow(
-            icon: Icons.local_fire_department_outlined,
-            tone: SettingsTone.gold,
-            title: l10n.progressStudyStreak,
-            value: days(stats.studyCurrentStreak),
+            icon: Icons.emoji_events_outlined,
+            title: l10n.progressPersonalBest,
+            value: '$best ${l10n.progressDays}',
           ),
-          SettingsRow(
-            icon: Icons.auto_stories_outlined,
-            tone: SettingsTone.sky,
-            title: l10n.progressVerseStreak,
-            value: days(stats.verseCurrentStreak),
-          ),
-          if (stats.studyLongestStreak > 0)
-            SettingsRow(
-              icon: Icons.emoji_events_outlined,
-              tone: SettingsTone.gold,
-              title: l10n.progressPersonalBest,
-              value: days(stats.studyLongestStreak),
-            ),
         ],
       ),
     ];
@@ -362,24 +376,6 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     );
   }
 
-  void _showAchievementUnlockDialog(
-      BuildContext context, AchievementUnlockResult result) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AchievementUnlockDialog(
-        achievement: result,
-        onDismiss: () {
-          Navigator.of(dialogContext).pop();
-          // Dismiss the notification from the bloc
-          context
-              .read<GamificationBloc>()
-              .add(const DismissAchievementNotification());
-        },
-      ),
-    );
-  }
-
   void _showAchievementDetails(
     BuildContext context,
     Achievement achievement,
@@ -431,8 +427,8 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                   value: achievement.getProgress(current),
                   minHeight: 6,
                   backgroundColor: palette.raised,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      settingsPrimaryFill(context)),
                 ),
               ),
               const SizedBox(height: 6),
@@ -447,7 +443,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ],
             if (achievement.isUnlocked && achievement.unlockedAt != null)
               Text(
-                '${l10n.progressUnlockedOn} ${_formatDate(achievement.unlockedAt!)}',
+                '${l10n.progressUnlockedOn} ${formatUnlockDate(achievement.unlockedAt!)}',
                 style: AppFonts.inter(fontSize: 12, color: palette.muted),
               )
             else if (!achievement.isUnlocked)
@@ -475,24 +471,6 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
         );
       },
     );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }
 
@@ -526,7 +504,8 @@ class _LevelCard extends StatelessWidget {
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
           colors: [
-            settingsPrimaryFill.withValues(alpha: palette.isDark ? 0.22 : 0.12),
+            settingsPrimaryFill(context)
+                .withValues(alpha: palette.isDark ? 0.22 : 0.12),
             palette.card,
           ],
         ),
@@ -539,7 +518,7 @@ class _LevelCard extends StatelessWidget {
           Text(
             level.title.toUpperCase(),
             style: AppFonts.inter(
-              fontSize: 11.5,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.6,
               color: palette.accentIcon,
@@ -580,7 +559,7 @@ class _LevelCard extends StatelessWidget {
                 minHeight: 7,
                 backgroundColor: palette.raised,
                 valueColor:
-                    const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+                    AlwaysStoppedAnimation<Color>(settingsPrimaryFill(context)),
               ),
             ),
           ),
@@ -658,8 +637,8 @@ class _ProfileHeader extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: SettingsToneColors.of(context, SettingsTone.indigo)
-                        .fill,
+                    color:
+                        SettingsToneColors.of(context, SettingsTone.gold).fill,
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: photoUrl == null
@@ -685,7 +664,7 @@ class _ProfileHeader extends StatelessWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: settingsPrimaryFill,
+                          color: settingsPrimaryFill(context),
                           border: Border.all(color: palette.card, width: 2),
                         ),
                         child: Text(
@@ -693,7 +672,7 @@ class _ProfileHeader extends StatelessWidget {
                           style: AppFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: settingsPrimaryInk(context),
                           ),
                         ),
                       ),
@@ -786,7 +765,8 @@ class _AchievementsProgressBar extends StatelessWidget {
           value: total > 0 ? unlocked / total : 0,
           minHeight: 6,
           backgroundColor: palette.raised,
-          valueColor: const AlwaysStoppedAnimation<Color>(settingsPrimaryFill),
+          valueColor:
+              AlwaysStoppedAnimation<Color>(settingsPrimaryFill(context)),
         ),
       ),
     );
@@ -834,14 +814,13 @@ class _AchievementRow extends StatelessWidget {
 
   String _relativeDate(BuildContext context, DateTime date) {
     final l10n = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(date.year, date.month, date.day))
-        .inDays;
-    if (days <= 0) return l10n.progressToday;
-    if (days == 1) return l10n.progressYesterday;
-    if (days < 7) return '$days ${l10n.progressDaysAgo}';
-    return '${date.day}/${date.month}/${date.year}';
+    return relativeUnlockLabel(
+      date,
+      now: DateTime.now(),
+      today: l10n.progressToday,
+      yesterday: l10n.progressYesterday,
+      daysAgo: l10n.progressDaysAgo,
+    );
   }
 
   @override
@@ -894,8 +873,8 @@ class _AchievementRow extends StatelessWidget {
                               value: achievement.getProgress(current),
                               minHeight: 5,
                               backgroundColor: palette.raised,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                  settingsPrimaryFill),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  settingsPrimaryFill(context)),
                             ),
                           ),
                         ),
@@ -903,7 +882,7 @@ class _AchievementRow extends StatelessWidget {
                         Text(
                           '${current.clamp(0, threshold)}/$threshold',
                           style: AppFonts.inter(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: palette.muted,
                           ),
@@ -916,7 +895,7 @@ class _AchievementRow extends StatelessWidget {
                     Text(
                       '${l10n.progressUnlocked} ${_relativeDate(context, achievement.unlockedAt!)}',
                       style: AppFonts.inter(
-                        fontSize: 11.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: palette.gold,
                       ),

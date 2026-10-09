@@ -134,6 +134,7 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
           joiningIds: updatedJoining,
           fellowships: updated,
           justJoinedName: () => event.fellowshipName,
+          justJoinedId: () => event.fellowshipId,
         ));
       },
     );
@@ -144,6 +145,9 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
     DiscoverJoinAcknowledged event,
     Emitter<DiscoverState> emit,
   ) {
-    emit(state.copyWith(justJoinedName: () => null));
+    emit(state.copyWith(
+      justJoinedName: () => null,
+      justJoinedId: () => null,
+    ));
   }
 }

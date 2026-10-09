@@ -55,7 +55,7 @@ enum VoiceLanguage {
 }
 
 /// Bottom sheet for choosing the language Discipler speaks in: one radio
-/// card per [VoiceLanguage], the selected one outlined in indigo.
+/// card per [VoiceLanguage], the selected one outlined in gold.
 ///
 /// Open it with [VoiceLanguageSheet.show], which resolves to the tapped
 /// language, or null when the sheet is dismissed.
@@ -151,11 +151,10 @@ class VoiceLanguageOptionCard extends StatelessWidget {
         : language.latinName;
 
     final fill = selected
-        ? ReaderPalette.selectedFill
-            .withValues(alpha: palette.isDark ? 0.16 : 0.07)
+        ? palette.selectedFill.withValues(alpha: palette.isDark ? 0.16 : 0.07)
         : (palette.isDark ? palette.raised : palette.page);
     final border = selected
-        ? const BorderSide(color: ReaderPalette.selectedFill, width: 1.5)
+        ? BorderSide(color: palette.selectedFill, width: 1.5)
         : BorderSide(color: palette.hairline);
 
     return Semantics(

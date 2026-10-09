@@ -21,6 +21,8 @@ import 'package:disciplefy_bible_study/features/community/domain/entities/fellow
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_guide_detail_screen.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/copy_text.dart';
+import 'package:disciplefy_bible_study/features/community/presentation/utils/markdown_text.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/daily_post_card.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_edit_dialog.dart';
@@ -32,7 +34,7 @@ import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lea
 
 /// Regex matching a mention token like `@Discipler` or `@Jane.Doe` in post
 /// or comment content.
-final RegExp _mentionRegex = RegExp(r'(@[A-Za-z][\w.]*)');
+final RegExp _mentionRegex = RegExp(r'(@[A-Za-z]\w*(?:\.\w+)*)');
 
 /// Splits [text] into [TextSpan]s, styling `@mention` tokens with
 /// [mentionStyle] and everything else with [baseStyle].
@@ -59,9 +61,26 @@ List<TextSpan> mentionSpans(
   return spans;
 }
 
+/// The whole of [post] as plain text for "Copy text" — never the clamped
+/// feed preview. `@mentions` stay as typed (`@Name`); Discipler text loses
+/// any stray markdown emphasis markers. A shared guide with no message falls
+/// back to the guide's title and summary. Empty when there is nothing to copy.
+String postCopyText(FellowshipPostEntity post) {
+  if (post.isDaily) return dailyPostPlainText(post.content);
+  final body =
+      (post.authorIsSystem ? stripEmphasisMarkers(post.content) : post.content)
+          .trim();
+  if (body.isNotEmpty) return body;
+  return [post.guideTitle?.trim(), post.guideSummary?.trim()]
+      .whereType<String>()
+      .where((s) => s.isNotEmpty)
+      .join('\n');
+}
+
 /// Returns the popup menu item keys to show for [post], in display order.
 ///
 /// - `'share'` is always present.
+/// - `'copy'` follows it whenever the post has text to copy.
 /// - `'delete'` is shown for mentors, admins, or the post's own author.
 /// - Discipler-authored (system) posts never show `'report'`/`'block'`.
 /// - `'report'` is shown for non-mentors viewing someone else's post.
@@ -72,7 +91,7 @@ List<String> postMenuItems(
   required bool isAdmin,
   String? currentUserId,
 }) {
-  final items = <String>['share'];
+  final items = <String>['share', if (postCopyText(post).isNotEmpty) 'copy'];
   final own = post.authorUserId == currentUserId;
   if ((isMentor || isAdmin) && post.authorIsSystem) items.add('edit');
   if (isMentor || isAdmin || own) items.add('delete');
@@ -111,7 +130,9 @@ Future<void> editDisciplerPost(
 ///
 /// Daily study posts (`postType == 'daily'`) render as a [DailyPostCard].
 ///
-/// Use [maxContentLines] to truncate content for preview contexts.
+/// Feeds pass [feedMaxContentLines] as [maxContentLines]: the whole post
+/// shows, and only an unusually long one is clamped — with an ellipsis and a
+/// "Read more" link that opens it. The post page passes nothing (no clamp).
 class FellowshipPostCard extends StatelessWidget {
   final FellowshipPostEntity post;
   final String fellowshipId;
@@ -122,8 +143,15 @@ class FellowshipPostCard extends StatelessWidget {
   /// Set to `false` for the Recent Activity preview.
   final bool interactive;
 
-  /// Truncates the content text. `null` = no limit.
+  /// Clamps the content text, adding a "Read more" link (which calls
+  /// [onPostTap]) when it overflows. `null` = no limit. Ignored when
+  /// [onPostTap] is null, since nothing could then show the rest.
   final int? maxContentLines;
+
+  /// Clamp used by feed cards. Generous on purpose: members' posts are
+  /// short reflections and should read in full; this only stops a wall of
+  /// text from swallowing the feed.
+  static const int feedMaxContentLines = 12;
 
   /// Called when the comment button is tapped (interactive mode only).
   /// If null, comment button is hidden.
@@ -182,10 +210,15 @@ class FellowshipPostCard extends StatelessWidget {
     final isSystem = post.authorIsSystem;
     final l10n = AppLocalizations.of(context)!;
 
-    return GestureDetector(
-      onTap: onPostTap,
-      behavior: HitTestBehavior.opaque,
-      child: _buildCard(context, palette, accentColor, isSystem, l10n),
+    // Long-press anywhere on the card opens its ⋮ menu (Copy text, Share…).
+    return LongPressMenuScope(
+      builder: (context, menuKey) => GestureDetector(
+        onTap: onPostTap,
+        onLongPress: interactive ? () => openLongPressMenu(menuKey) : null,
+        behavior: HitTestBehavior.opaque,
+        child:
+            _buildCard(context, palette, accentColor, isSystem, l10n, menuKey),
+      ),
     );
   }
 
@@ -195,12 +228,13 @@ class FellowshipPostCard extends StatelessWidget {
     Color accentColor,
     bool isSystem,
     AppLocalizations l10n,
+    GlobalKey<PopupMenuButtonState<String>> menuKey,
   ) {
-    final radius = BorderRadius.circular(22);
+    final radius = BorderRadius.circular(18);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: palette.card,
-        // Discipler's own (non-daily) posts keep a faint indigo wash so they
+        // Discipler's own (non-daily) posts keep a faint gold wash so they
         // still read as the helper's voice rather than a member's.
         gradient: isSystem
             ? LinearGradient(
@@ -208,7 +242,7 @@ class FellowshipPostCard extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Color.alphaBlend(
-                    AppColors.brandPrimary
+                    palette.gold
                         .withValues(alpha: palette.isDark ? 0.14 : 0.06),
                     palette.card,
                   ),
@@ -220,7 +254,7 @@ class FellowshipPostCard extends StatelessWidget {
         border: Border.all(color: palette.hairline),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 16, interactive ? 8 : 20, 12),
+        padding: EdgeInsets.fromLTRB(14, 14, interactive ? 4 : 14, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -228,13 +262,13 @@ class FellowshipPostCard extends StatelessWidget {
             Row(
               children: [
                 isSystem
-                    ? const DisciplerAvatar(radius: 18)
+                    ? const DisciplerAvatar(radius: 17)
                     : MemberAvatar(
                         displayName: post.authorDisplayName,
                         avatarUrl: post.authorAvatarUrl,
-                        radius: 18,
+                        radius: 17,
                       ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 // Wrap: the type chip sits at the right when it fits beside
                 // the name, and drops under it on narrow screens / long
                 // hi-ml labels instead of squeezing the name away.
@@ -258,7 +292,7 @@ class FellowshipPostCard extends StatelessWidget {
                                       ? l10n.disciplerName
                                       : post.authorDisplayName,
                                   style: AppFonts.inter(
-                                    fontSize: 15.5,
+                                    fontSize: 13.5,
                                     fontWeight: FontWeight.w600,
                                     color: palette.text,
                                   ),
@@ -284,6 +318,7 @@ class FellowshipPostCard extends StatelessWidget {
                 // Overflow menu — interactive mode only
                 if (interactive)
                   _PostMenuButton(
+                    menuKey: menuKey,
                     post: post,
                     isMentor: isMentor,
                     isAdmin: isAdmin,
@@ -296,33 +331,20 @@ class FellowshipPostCard extends StatelessWidget {
                   const SizedBox(width: 0),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // ── Content ────────────────────────────────────────────────────
             if (post.content.isNotEmpty)
               Padding(
-                padding: EdgeInsets.only(right: interactive ? 12 : 0),
-                child: Text.rich(
-                  TextSpan(
-                    children: mentionSpans(
-                      post.content,
-                      AppFonts.inter(
-                        fontSize: 15.5,
-                        color: palette.text,
-                        height: 1.55,
-                      ),
-                      AppFonts.inter(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w600,
-                        color: palette.accentIcon,
-                        height: 1.55,
-                      ),
-                    ),
-                  ),
+                padding: EdgeInsets.only(right: interactive ? 10 : 0),
+                child: FellowshipPostContent(
+                  content: post.content,
                   maxLines: maxContentLines,
-                  overflow: maxContentLines != null
-                      ? TextOverflow.ellipsis
-                      : TextOverflow.visible,
+                  onReadMore: onPostTap,
+                  // On the post's own page (no tap-through) the text can be
+                  // selected and partly copied; mentions are not links, so
+                  // nothing competes with the selection gestures.
+                  selectable: interactive && onPostTap == null,
                 ),
               ),
 
@@ -359,7 +381,7 @@ class FellowshipPostCard extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             // ── Footer ─────────────────────────────────────────────────────
             Padding(
@@ -381,10 +403,105 @@ class FellowshipPostCard extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Post body
+// ---------------------------------------------------------------------------
+
+/// A member post's text: every paragraph and line break as written, with
+/// `@mentions` in the accent colour.
+///
+/// With [maxLines] and [onReadMore] both set, text that would run past
+/// [maxLines] ends in an ellipsis followed by a visible "Read more" link
+/// that calls [onReadMore] — so a clamped post never looks complete.
+///
+/// [selectable] lets the reader select (and copy part of) the unclamped
+/// text, as on the post's own page.
+class FellowshipPostContent extends StatelessWidget {
+  final String content;
+  final int? maxLines;
+  final VoidCallback? onReadMore;
+  final bool selectable;
+
+  const FellowshipPostContent({
+    required this.content,
+    this.maxLines,
+    this.onReadMore,
+    this.selectable = false,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final span = TextSpan(
+      children: mentionSpans(
+        content,
+        AppFonts.inter(fontSize: 14, color: palette.text, height: 1.5),
+        AppFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: palette.accentIcon,
+          height: 1.5,
+        ),
+      ),
+    );
+    final limit = maxLines;
+    if (limit == null || onReadMore == null) {
+      final text = Text.rich(span, key: const Key('post_content'));
+      return selectable ? SelectionArea(child: text) : text;
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final painter = TextPainter(
+        text: span,
+        maxLines: limit,
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        locale: Localizations.maybeLocaleOf(context),
+      )..layout(maxWidth: constraints.maxWidth);
+      final overflows = painter.didExceedMaxLines;
+      painter.dispose();
+      if (!overflows) return Text.rich(span, key: const Key('post_content'));
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            span,
+            key: const Key('post_content'),
+            maxLines: limit,
+            overflow: TextOverflow.ellipsis,
+          ),
+          TextButton(
+            key: const Key('post_read_more'),
+            onPressed: onReadMore,
+            style: TextButton.styleFrom(
+              foregroundColor: palette.accentIcon,
+              minimumSize: const Size(48, 48),
+              padding: EdgeInsets.zero,
+              alignment: Alignment.centerLeft,
+            ),
+            child: Text(
+              AppLocalizations.of(context)!.feedReadMore,
+              style: AppFonts.inter(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+                color: palette.accentIcon,
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Overflow menu
 // ---------------------------------------------------------------------------
 
 class _PostMenuButton extends StatelessWidget {
+  /// Lets a long-press on the card open this menu.
+  final GlobalKey<PopupMenuButtonState<String>> menuKey;
   final FellowshipPostEntity post;
   final bool isMentor;
   final bool isAdmin;
@@ -401,6 +518,7 @@ class _PostMenuButton extends StatelessWidget {
     required this.onReportTap,
     required this.onBlockTap,
     required this.onShareTap,
+    required this.menuKey,
   });
 
   @override
@@ -432,12 +550,15 @@ class _PostMenuButton extends StatelessWidget {
     }
 
     return PopupMenuButton<String>(
+      key: menuKey,
       tooltip: context.tr(TranslationKeys.communitySharedMoreOptions),
       icon: Icon(Icons.more_vert, size: 20, color: palette.muted),
       color: palette.isDark ? palette.raised : palette.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       onSelected: (value) {
-        if (value == 'edit') {
+        if (value == 'copy') {
+          copyCommunityText(context, postCopyText(post));
+        } else if (value == 'edit') {
           editDisciplerPost(context, post);
         } else if (value == 'delete') {
           context.read<FellowshipFeedBloc>().add(
@@ -460,6 +581,8 @@ class _PostMenuButton extends StatelessWidget {
         ))
           switch (key) {
             'share' => item('share', Icons.share_outlined, l10n.sharePost),
+            'copy' => item('copy', Icons.copy_rounded,
+                context.tr(TranslationKeys.communityPostCopyText)),
             'edit' => item('edit', Icons.edit_outlined, l10n.editAction),
             'delete' => item(
                 'delete', Icons.delete_outline_rounded, l10n.deleteAction,
@@ -481,8 +604,8 @@ class _PostMenuButton extends StatelessWidget {
 /// the viewer has reacted.
 ///
 /// Prayer pink, praise gold, question sky blue, study note green, shared
-/// study guide lavender (the brand accent). Light theme uses darker shades so
-/// the text on a pale tint stays readable.
+/// study guide teal; anything else takes the gold accent. Light theme uses
+/// darker shades so the text on a pale tint stays readable.
 Color postTypeAccentColor(String postType, {bool isDark = false}) {
   switch (postType) {
     case 'prayer':
@@ -494,11 +617,13 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
     case 'study_note':
       return isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D);
     case 'shared_guide':
-      return isDark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary;
+      return isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E);
     case 'daily':
-      return AppColors.brandHighlightDark;
+      // Was the light selected-chip gold in both themes: 2.3:1 as text on
+      // the light card.
+      return isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
     default:
-      return isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+      return isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
   }
 }
 
@@ -521,7 +646,7 @@ class PostTimestamp extends StatelessWidget {
     return Text(
       formatPostTimestamp(context, createdAt, now: now),
       style: AppFonts.inter(
-        fontSize: 13,
+        fontSize: 12,
         color: ReaderPalette.of(context).muted,
       ),
     );
@@ -623,27 +748,31 @@ class PostTypeChip extends StatelessWidget {
     };
     if (cfg == null) return const SizedBox.shrink();
     final color = postTypeAccentColor(postType, isDark: palette.isDark);
+    final tintAlpha = palette.isDark ? 0.14 : 0.10;
+    // The accents are tuned for the page; on their own tint some drop below
+    // 5.5:1 (deep gold is 4.2:1), so the label is deepened just enough.
+    final ink = palette.onTint(color, alpha: tintAlpha);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: palette.isDark ? 0.14 : 0.10),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: tintAlpha),
+        borderRadius: BorderRadius.circular(11),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(cfg.icon, size: 14, color: color),
-          const SizedBox(width: 5),
+          Icon(cfg.icon, size: 12, color: ink),
+          const SizedBox(width: 4),
           // Flexible + wrapping: in a narrow header the chip wraps its
           // label rather than overflowing or cutting it.
           Flexible(
             child: Text(
               cfg.label,
               style: AppFonts.inter(
-                fontSize: 12.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: ink,
               ),
             ),
           ),
@@ -951,9 +1080,8 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    // Lavender brand accent: the same colour as the "Study guide" chip and
-    // the Discipler daily post's guide link, so both read as "open a study
-    // guide".
+    // Gold accent: the same colour as the Discipler daily post's guide link,
+    // so both read as "open a study guide".
     final accent = palette.accentIcon;
     final post = widget.post;
 
@@ -999,7 +1127,7 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
                       child: Text(
                         meta,
                         style: AppFonts.inter(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.2,
                           color: accent,
@@ -1123,8 +1251,7 @@ class FellowshipPostFooter extends StatelessWidget {
       final compactReplies = leading != null && rowWidth < compactRepliesBelow;
       final repliesLabel = postRepliesLabel(context, post.commentCount);
       final replyTextStyle = AppFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
+        fontSize: 12.5,
         color: palette.muted,
       );
       final replies = Tooltip(
@@ -1138,10 +1265,10 @@ class FellowshipPostFooter extends StatelessWidget {
             onTap: onCommentTap,
             borderRadius: BorderRadius.circular(22),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+              constraints: const BoxConstraints(minHeight: 40, minWidth: 40),
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: compactReplies ? 8 : 10,
+                  horizontal: compactReplies ? 6 : 8,
                   vertical: 8,
                 ),
                 child: Row(
@@ -1150,11 +1277,11 @@ class FellowshipPostFooter extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.chat_bubble_outline_rounded,
-                      size: 20,
+                      size: 15,
                       color: palette.muted,
                     ),
                     if (!compactReplies) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Flexible(
                           child: Text(repliesLabel, style: replyTextStyle)),
                     ] else if (post.commentCount > 0) ...[
@@ -1172,9 +1299,9 @@ class FellowshipPostFooter extends StatelessWidget {
       final share = IconButton(
         onPressed: onShareTap,
         tooltip: AppLocalizations.of(context)!.sharePost,
-        icon: Icon(Icons.share_outlined, size: 20, color: palette.muted),
+        icon: Icon(Icons.share_outlined, size: 15, color: palette.muted),
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       );
       final reaction = ConstrainedBox(
         // Capped so a long translated label wraps inside the pill instead

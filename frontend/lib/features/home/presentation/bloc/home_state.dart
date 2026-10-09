@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../study_generation/domain/entities/study_guide.dart';
 import '../../../study_topics/domain/entities/learning_path.dart';
@@ -128,6 +129,9 @@ class HomeCombinedState extends HomeState {
   /// Whether the active learning path is currently loading.
   final bool isLoadingActivePath;
 
+  /// Next-lesson summary of [activeLearningPath]; null when unavailable.
+  final ActivePathSummary? activePathSummary;
+
   const HomeCombinedState({
     this.topics = const [],
     this.isLoadingTopics = false,
@@ -141,6 +145,7 @@ class HomeCombinedState extends HomeState {
     this.activeLearningPath,
     this.learningPathReason,
     this.isLoadingActivePath = false,
+    this.activePathSummary,
   });
 
   @override
@@ -157,6 +162,7 @@ class HomeCombinedState extends HomeState {
         activeLearningPath,
         learningPathReason,
         isLoadingActivePath,
+        activePathSummary,
       ];
 
   /// Create a copy with updated values
@@ -173,6 +179,8 @@ class HomeCombinedState extends HomeState {
     LearningPath? activeLearningPath,
     LearningPathRecommendationReason? learningPathReason,
     bool? isLoadingActivePath,
+    ActivePathSummary? activePathSummary,
+    bool clearActivePathSummary = false,
     bool clearTopicsError = false,
     bool clearGenerationError = false,
     bool clearActiveLearningPath = false,
@@ -199,6 +207,9 @@ class HomeCombinedState extends HomeState {
             ? null
             : (learningPathReason ?? this.learningPathReason),
         isLoadingActivePath: isLoadingActivePath ?? this.isLoadingActivePath,
+        activePathSummary: (clearActiveLearningPath || clearActivePathSummary)
+            ? null
+            : (activePathSummary ?? this.activePathSummary),
       );
 }
 
@@ -218,6 +229,7 @@ class HomeStudyGuideGeneratedCombined extends HomeCombinedState {
     super.activeLearningPath,
     super.learningPathReason,
     super.isLoadingActivePath,
+    super.activePathSummary,
   }) : super(
           isGeneratingStudyGuide: false,
           generationError: null,

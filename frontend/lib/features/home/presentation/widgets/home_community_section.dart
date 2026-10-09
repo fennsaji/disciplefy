@@ -1,3 +1,4 @@
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -307,6 +308,12 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
   }
 
   Future<void> _load() async {
+    // Fellowships need an account (the server answers a guest with 403
+    // ACCOUNT_REQUIRED): render nothing rather than ask.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      if (mounted) setState(() => _loaded = true);
+      return;
+    }
     try {
       final repo = sl<CommunityRepository>();
       // This does not filter the list — membership decides which fellowships
@@ -696,16 +703,11 @@ class _ActivityRow extends StatelessWidget {
                     ),
                     if (preview.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(
-                        preview,
-                        key: const Key('home_activity_preview'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(
-                          fontSize: 13.5,
-                          height: 1.45,
-                          color: context.appTextSecondary,
-                        ),
+                      _ActivityPreview(
+                        preview: preview,
+                        // Daily studies are summarised by design; only a
+                        // member's own words need the "Read more" cue.
+                        showReadMore: !post.isDaily,
                       ),
                     ],
                     const SizedBox(height: 6),
@@ -722,6 +724,71 @@ class _ActivityRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The two-line preview under a home activity row. The row is a compact
+/// summary, so the text is clamped — but when it is, an ellipsis and a
+/// "Read more" cue make that plain (tapping the row opens the full post).
+class _ActivityPreview extends StatelessWidget {
+  final String preview;
+  final bool showReadMore;
+
+  const _ActivityPreview({required this.preview, required this.showReadMore});
+
+  static const int _maxLines = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    final base = AppFonts.inter(
+      fontSize: 13.5,
+      height: 1.45,
+      color: context.appTextSecondary,
+    );
+    final span = TextSpan(
+      children: mentionSpans(
+        preview,
+        base,
+        base.copyWith(fontWeight: FontWeight.w600, color: palette.accentIcon),
+      ),
+    );
+    final text = Text.rich(
+      span,
+      key: const Key('home_activity_preview'),
+      maxLines: _maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (!showReadMore) return text;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final painter = TextPainter(
+        text: span,
+        maxLines: _maxLines,
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        locale: Localizations.maybeLocaleOf(context),
+      )..layout(maxWidth: constraints.maxWidth);
+      final overflows = painter.didExceedMaxLines;
+      painter.dispose();
+      if (!overflows) return text;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          text,
+          const SizedBox(height: 2),
+          Text(
+            AppLocalizations.of(context)!.feedReadMore,
+            key: const Key('home_activity_read_more'),
+            style: AppFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: palette.accentIcon,
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 
@@ -950,7 +1017,7 @@ class _SuggestionRow extends StatelessWidget {
                       Text(
                         l10n.homeMembersCount(fellowship.memberCount),
                         style: AppFonts.inter(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           color: context.appTextTertiary,
                         ),
                       ),
@@ -963,7 +1030,7 @@ class _SuggestionRow extends StatelessWidget {
                           child: Text(
                             fellowship.mentorName!,
                             style: AppFonts.inter(
-                              fontSize: 11.5,
+                              fontSize: 12,
                               color: context.appTextTertiary,
                             ),
                             maxLines: 1,
@@ -992,6 +1059,9 @@ class _SuggestionRow extends StatelessWidget {
 class _OfficialPill extends StatelessWidget {
   const _OfficialPill();
 
+  /// Tint-label gold on the cream pill: 6.6:1 (#8D6608 was 4.5:1).
+  static const Color _ink = AppColors.brandGoldInk;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1001,7 +1071,7 @@ class _OfficialPill extends StatelessWidget {
         color: AppColors.brandHighlight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.brandHighlightDark.withValues(alpha: 0.4),
+          color: AppColors.brandGoldMark.withValues(alpha: 0.4),
         ),
       ),
       child: Text(
@@ -1009,7 +1079,7 @@ class _OfficialPill extends StatelessWidget {
         style: AppFonts.inter(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: AppColors.brandHighlightDark,
+          color: _ink,
           letterSpacing: 0.3,
         ),
       ),
@@ -1089,7 +1159,7 @@ class _EmptyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = context.appBrandAccent;
+    final accent = context.appAccent;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -1122,7 +1192,7 @@ class _EmptyRow extends StatelessWidget {
                   Text(
                     subtitle,
                     style: AppFonts.inter(
-                      fontSize: 11.5,
+                      fontSize: 12,
                       color: context.appTextSecondary,
                     ),
                   ),

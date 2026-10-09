@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'device_keyboard_handler.dart';
 import 'logger.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
 /// Performance monitoring system for keyboard interactions to identify
 /// and resolve performance bottlenecks that could cause shadow issues.
@@ -364,7 +365,7 @@ class KeyboardPerformanceOverlay extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.8),
+          color: ReaderPalette.ink.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(4),
         ),
         child: DefaultTextStyle(

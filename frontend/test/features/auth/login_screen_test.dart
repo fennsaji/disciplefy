@@ -13,7 +13,7 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
     as auth_states;
-import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
@@ -64,7 +64,7 @@ void main() {
         child: MaterialApp(
           theme: ThemeData(
             primarySwatch: Colors.blue,
-            colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
+            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brandGold),
           ),
           home: Scaffold(
             body: BlocProvider<AuthBloc>(

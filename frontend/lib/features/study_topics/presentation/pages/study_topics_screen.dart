@@ -21,6 +21,7 @@ import 'package:disciplefy_bible_study/core/services/system_config_service.dart'
 import 'package:disciplefy_bible_study/core/widgets/locked_feature_wrapper.dart';
 import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/utils/reset_progress_error_localizer.dart';
 import 'package:disciplefy_bible_study/core/widgets/destructive_confirm_dialog.dart';
@@ -41,15 +42,24 @@ import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcas
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/continue_learning_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/continue_learning_event.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/continue_learning_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/for_you_learning_paths_section.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_current_path_card.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_header_cards.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_layout.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
+import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_from_summary.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_today_layout.dart';
+import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
@@ -61,11 +71,12 @@ import 'package:disciplefy_bible_study/shared/widgets/content_language_sheet.dar
 /// Screen for browsing study topics and learning paths.
 ///
 /// Layout (top to bottom), over a photo wash:
-/// 1. Header — "Study Topics" and the overflow menu
-/// 2. Continue card — the path in progress and its next topic
+/// 1. Header — "Topics" and the overflow menu
+/// 2. Current path — progress strip and Home's lesson card (or "Start a
+///    path")
 /// 3. Study streak and Leaderboard tiles
-/// 4. For you — personalised paths (fellowship → in-progress → recommended)
-/// 5. Learning paths — search, level filters and category rows
+/// 4. Category groups, each with "See all" and at most two path rows
+/// 5. "Browse all paths" — every path, with category chips and search
 class StudyTopicsScreen extends StatefulWidget {
   /// Optional topic ID from deep link (e.g., from notification)
   final String? topicId;
@@ -114,9 +125,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   void _refreshInBackground() {
     if (!mounted || !_dataLoadingStarted) return;
     _learningPathsBloc
-      ..add(LoadLearningPaths(language: _currentLanguage, forceRefresh: true))
-      ..add(LoadPersonalizedPaths(
-          language: _currentLanguage, forceRefresh: true));
+        .add(LoadLearningPaths(language: _currentLanguage, forceRefresh: true));
     _continueLearningBloc
         .add(RefreshContinueLearning(language: _currentLanguage));
   }
@@ -232,8 +241,6 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     if (!mounted || code == _currentLanguage) return;
     setState(() => _currentLanguage = code);
     _learningPathsBloc.add(RefreshLearningPaths(language: code));
-    _learningPathsBloc
-        .add(LoadPersonalizedPaths(language: code, forceRefresh: true));
     _continueLearningBloc
         .add(LoadContinueLearning(language: code, forceRefresh: true));
   }
@@ -260,13 +267,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         forceRefresh: true,
       ));
 
-      // Load personalized paths for the For You section (questionnaire-based)
-      _learningPathsBloc.add(LoadPersonalizedPaths(
-        language: _currentLanguage,
-        forceRefresh: true,
-      ));
-
-      // The Continue card's current topic.
+      // In-progress topics (kept fresh for the reset flow and deep links).
       _continueLearningBloc.add(LoadContinueLearning(
         language: _currentLanguage,
         forceRefresh: true,
@@ -360,8 +361,17 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   static const String _washImage = 'assets/images/hero/green_hills.webp';
 
   // Track if we're currently navigating to prevent multiple navigations
-  bool _isNavigating = false;
-  final ScrollController _scrollController = ScrollController();
+  /// Ignores a double tap; never held across an awaited push (go_router
+  /// may never complete it, e.g. after Lesson complete → Back home).
+  final TapGuard _navGuard = TapGuard();
+
+  /// Category offset and time of the last "load more" request. The
+  /// near-end callback fires on every scroll frame and whenever the list
+  /// changes size (also when a failed page removes its spinner), so the
+  /// same page is asked for at most once every few seconds.
+  int? _loadMoreOffset;
+  DateTime? _loadMoreAt;
+  static const Duration _loadMoreRetryAfter = Duration(seconds: 3);
 
   // Builder context from ShowCaseWidget — use this for ShowCaseWidget.of() calls.
   // this.context is an ancestor of ShowCaseWidget; ShowCaseWidget.of(this.context) fails.
@@ -370,11 +380,23 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// Advances the showcase to the next step.
   VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
 
+  /// The user's path from Topics' own recommended-path call, used when
+  /// Home has not loaded one.
+  RecommendedPathResult? _fallbackPath;
+  bool _fallbackLoaded = false;
+
+  /// The learning-path lesson mode; [StudyMode.standard] until it is read.
+  StudyMode _savedMode = StudyMode.standard;
+
+  /// The mode picked on the lesson card in this session; wins over defaults.
+  StudyMode? _chosenMode;
+
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     _triggerWalkthroughIfNeeded();
+    _loadFallbackPath();
+    _readSavedMode();
 
     // Handle deep link navigation from notification
     if (widget.topicId != null) {
@@ -390,32 +412,86 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       final repo = sl<WalkthroughRepository>();
       if (await repo.hasSeen(WalkthroughScreen.learningPaths)) return;
       ShowCaseWidget.of(_showcaseContext!).startShowCase([
-        ShowcaseKeys.topicsPathList,
         ShowcaseKeys.topicsPathCard,
       ]);
     });
   }
 
   @override
+  void didUpdateWidget(covariant _StudyTopicsScreenContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentLanguage != widget.currentLanguage) {
+      _loadFallbackPath();
+    }
+  }
+
+  Future<void> _readSavedMode() async {
+    try {
+      final mode = await resolveNextLessonMode();
+      if (mounted) setState(() => _savedMode = mode);
+    } catch (e) {
+      Logger.warning('[STUDY_TOPICS] Lesson mode preference unavailable',
+          context: {'error': e.runtimeType.toString()});
+    }
+  }
+
+  /// The lesson mode on the card, as Home works it out.
+  StudyMode _modeFor(ActivePathSummary? summary) =>
+      _chosenMode ??
+      defaultTodayLessonMode(
+        summary: summary,
+        hasFirstRunGoal: FirstRunFlags.hasGoal,
+        saved: _savedMode,
+      );
+
+  void _onModeChanged(StudyMode mode) {
+    setState(() => _chosenMode = mode);
+    unawaited(persistLessonModePreference(mode.name));
+  }
+
+  Future<void> _loadFallbackPath() async {
+    try {
+      final result = await sl<LearningPathsRepository>()
+          .getRecommendedPath(language: widget.currentLanguage);
+      if (!mounted) return;
+      result.fold(
+        (failure) => Logger.warning('[STUDY_TOPICS] Current path unavailable',
+            context: {'error': failure.runtimeType.toString()}),
+        (path) => _fallbackPath = path,
+      );
+    } catch (e) {
+      Logger.warning('[STUDY_TOPICS] Current path unavailable',
+          context: {'error': e.runtimeType.toString()});
+    }
+    if (mounted) setState(() => _fallbackLoaded = true);
+  }
+
+  @override
   void dispose() {
-    _scrollController.dispose();
+    _navGuard.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    final pos = _scrollController.position;
-    if (pos.pixels >= pos.maxScrollExtent - 300) {
-      final bloc = context.read<LearningPathsBloc>();
-      final state = bloc.state;
-      final isSearchActive = state is LearningPathsLoaded &&
-          (state.searchQuery?.isNotEmpty ?? false);
-      if (state is LearningPathsLoaded &&
-          state.hasMoreCategories &&
-          !state.isFetchingMoreCategories &&
-          !isSearchActive) {
-        bloc.add(LoadMoreCategories(language: widget.currentLanguage));
-      }
+  /// Loads the next page of categories when the list nears its end.
+  void _loadMoreCategories() {
+    final bloc = context.read<LearningPathsBloc>();
+    final state = bloc.state;
+    if (state is! LearningPathsLoaded ||
+        !state.hasMoreCategories ||
+        state.isFetchingMoreCategories ||
+        (state.searchQuery?.isNotEmpty ?? false)) {
+      return;
     }
+    final now = DateTime.now();
+    final lastAt = _loadMoreAt;
+    if (_loadMoreOffset == state.nextCategoryOffset &&
+        lastAt != null &&
+        now.difference(lastAt) < _loadMoreRetryAfter) {
+      return;
+    }
+    _loadMoreOffset = state.nextCategoryOffset;
+    _loadMoreAt = now;
+    bloc.add(LoadMoreCategories(language: widget.currentLanguage));
   }
 
   /// Handle deep link to specific topic (e.g., from notification)
@@ -556,96 +632,103 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     // Show loading state while waiting for language to load and BLoC events to be dispatched
     final showInitialLoading = !widget.dataLoadingStarted;
 
-    return ListView(
-      controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
-      // The floating dock overlaps the page; its height is in the bottom
-      // inset, so the last card scrolls clear of it.
-      padding: EdgeInsets.fromLTRB(
-          0, 8, 0, 16 + MediaQuery.paddingOf(context).bottom),
-      children: [
-        // Continue card — the path in progress and its next topic
-        _buildContinueCard(context),
-
-        // Study streak + Leaderboard
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildStatTiles(context),
+    return TopicsLayout(
+      onNearEnd: _loadMoreCategories,
+      currentPath: _buildCurrentPath(context),
+      statTiles: _buildStatTiles(context),
+      paths: LockedFeatureWrapper(
+        featureKey: 'learning_paths',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showInitialLoading)
+              _buildLearningPathsLoadingState(context)
+            else
+              LearningPathsSection(
+                language: widget.currentLanguage,
+                compact: true,
+                onPathTap: _navigateToLearningPath,
+                onCategorySeeAll: _navigateToCategory,
+                onRetry: () => context.read<LearningPathsBloc>().add(
+                    RefreshLearningPaths(language: widget.currentLanguage)),
+                onNext: _showcaseContext != null ? _onNext : null,
+              ),
+            const SizedBox(height: 8),
+          ],
         ),
-
-        const SizedBox(height: 28),
-
-        // For You — personalised paths
-        ForYouLearningPathsSection(
-          onPathTap: _navigateToLearningPath,
-          onNext: _showcaseContext != null ? _onNext : null,
-        ),
-
-        const SizedBox(height: 28),
-
-        // Learning Paths (Curated Learning Journeys)
-        LockedFeatureWrapper(
-          featureKey: 'learning_paths',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (showInitialLoading)
-                _buildLearningPathsLoadingState(context)
-              else
-                LearningPathsSection(
-                  language: widget.currentLanguage,
-                  onPathTap: _navigateToLearningPath,
-                  onCategorySeeAll: _navigateToCategory,
-                  onRetry: () => context.read<LearningPathsBloc>().add(
-                      RefreshLearningPaths(language: widget.currentLanguage)),
-                  onNext: _showcaseContext != null ? _onNext : null,
-                ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ],
+      ),
+      onBrowseAll: _openAllPaths,
     );
   }
 
-  /// The Continue card, or nothing when no path is in progress.
-  Widget _buildContinueCard(BuildContext context) {
-    return BlocBuilder<LearningPathsBloc, LearningPathsState>(
-      buildWhen: (previous, current) =>
-          current is LearningPathsLoaded || previous is LearningPathsLoaded,
-      builder: (context, pathsState) {
-        return BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
-          builder: (context, continueState) {
-            final paths = pathsState is LearningPathsLoaded
-                ? {
-                    for (final p in [
-                      ...pathsState.enrolledPaths,
-                      ...pathsState.allPaths,
-                    ])
-                      p.id: p,
-                  }.values.toList()
-                : const <LearningPath>[];
-            final data = TopicsContinueData.resolve(
-              inProgressTopics: continueState is ContinueLearningLoaded
-                  ? continueState.topics
-                  : const [],
-              paths: paths,
-            );
-            if (data == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: LockedFeatureWrapper(
-                featureKey: 'learning_paths',
-                child: TopicsContinueCard(
-                  data: data,
-                  onTap: () => _navigateToPathId(data.pathId),
-                ),
-              ),
-            );
+  /// The current path (Home's, else Topics' own recommended-path call), or
+  /// "Start a path" when the user has none.
+  Widget _buildCurrentPath(BuildContext context) {
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, home) {
+        final summary = topicsPathSummary(home, _fallbackPath);
+        final path = topicsCurrentPath(home, _fallbackPath);
+        final waiting = summary == null &&
+            !_fallbackLoaded &&
+            !(home is HomeCombinedState && home.activeLearningPath != null);
+        if (waiting) return const SizedBox(height: 4);
+        final card = TopicsCurrentPathCard(
+          summary: summary,
+          mode: _modeFor(summary),
+          onModeChanged: _onModeChanged,
+          onChooseNextPath: _chooseNextPath,
+          onContinue: () {
+            if (summary != null) _continuePath(summary);
           },
+          onSeePath: () {
+            if (summary == null) return;
+            if (path != null) {
+              _navigateToLearningPath(path);
+            } else {
+              _navigateToPathId(summary.pathId);
+            }
+          },
+          onBrowse: _openAllPaths,
+        );
+        return LockedFeatureWrapper(
+          featureKey: 'learning_paths',
+          child: path == null
+              ? card
+              : GuestLockedPathTile(path: path, child: card),
         );
       },
     );
+  }
+
+  /// Opens the next lesson of [summary] in the mode shown on the card.
+  Future<void> _continuePath(ActivePathSummary summary) async {
+    if (summary.next == null || !_navGuard.tryAcquire()) return;
+    try {
+      final mode = _modeFor(summary);
+      await context.push(
+          buildLessonLaunchFromSummary(summary, mode, widget.currentLanguage));
+    } catch (e) {
+      Logger.warning('[STUDY_TOPICS] Could not open the next lesson',
+          context: {'error': e.runtimeType.toString()});
+    }
+    if (!mounted) return;
+    _reloadAfterProgressChange();
+  }
+
+  /// "Choose your next path" on a finished path: a guest's second path needs
+  /// an account first, as on Home.
+  Future<void> _chooseNextPath() async {
+    final allowed = await requireAccount(context, AccountReason.secondPath);
+    if (allowed && mounted) await _openAllPaths();
+  }
+
+  /// Every path, with category chips. Open to guests: locked rows there
+  /// open the account sheet.
+  Future<void> _openAllPaths() async {
+    if (!_navGuard.tryAcquire()) return;
+    await context.push<void>(AppRoutes.allPaths);
+    if (!mounted) return;
+    _reloadAfterProgressChange();
   }
 
   /// Study streak and (when the feature is visible) Leaderboard tiles.
@@ -654,74 +737,30 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       bloc: sl<GamificationBloc>(),
       builder: (context, state) {
         final stats = state.stats;
-        final streak = stats?.studyCurrentStreak;
-        final rank = stats?.leaderboardRank;
-        final streakTile = TopicsStatTile(
-          key: const Key('topics_streak_tile'),
-          icon: Icons.local_fire_department_outlined,
-          value: streak == null
-              ? null
-              : context.tr(
-                  streak == 1
-                      ? TranslationKeys.topicsHubStreakValueOne
-                      : TranslationKeys.topicsHubStreakValue,
-                  {'count': streak},
-                ),
-          label: context.tr(TranslationKeys.topicsHubStreakLabel),
-        );
-        if (!widget.isLeaderboardFeatureEnabled) return streakTile;
-        final leaderboardTile = TopicsStatTile(
-          key: const Key('topics_leaderboard_tile'),
-          icon: Icons.emoji_events_outlined,
-          value: rank != null && rank > 0 ? '#$rank' : null,
-          label: context.tr(TranslationKeys.topicsHubLeaderboardLabel),
-          onTap: () => openLeaderboardWithAccessCheck(context),
-        );
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: streakTile),
-              const SizedBox(width: 10),
-              Expanded(child: leaderboardTile),
-            ],
-          ),
+        return TopicsStatRow(
+          streak: stats?.studyCurrentStreak,
+          rank: stats?.leaderboardRank,
+          showLeaderboard: widget.isLeaderboardFeatureEnabled,
+          onLeaderboardTap: () => openLeaderboardWithAccessCheck(context),
         );
       },
     );
   }
 
-  /// Build loading state for Learning Paths section
+  /// Placeholder rows while the categories load (no heading: Topics has
+  /// none above its categories).
   Widget _buildLearningPathsLoadingState(BuildContext context) {
-    final palette = ReaderPalette.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            context.tr(TranslationKeys.learningPathsTitle),
-            style: AppFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: palette.text,
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        const SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              LearningPathCardSkeleton(),
-              SizedBox(width: 12),
-              LearningPathCardSkeleton(),
-            ],
-          ),
-        ),
-      ],
+    return const SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          LearningPathCardSkeleton(),
+          SizedBox(width: 12),
+          LearningPathCardSkeleton(),
+        ],
+      ),
     );
   }
 
@@ -746,7 +785,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   Future<void> _navigateToLearningPath(LearningPath path) {
     Logger.debug(
         '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
-    return _navigateToPathId(path.id);
+    return guestPathGate(
+        context, path, () => _navigateToPathId(path.id, path: path));
   }
 
   /// Navigate to learning path detail page.
@@ -757,16 +797,16 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// category pagination and loaded bloc state, forcing a full reload on the
   /// way back. `push` keeps the shell mounted underneath (and still updates the
   /// browser URL on web).
-  Future<void> _navigateToPathId(String pathId) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+  ///
+  /// [path], when known, lets the page show its header (and category)
+  /// before the detail loads.
+  Future<void> _navigateToPathId(String pathId, {LearningPath? path}) async {
+    if (!_navGuard.tryAcquire()) return;
 
     // Include source=studyTopics so a directly-opened deep link still has a
     // sensible back target.
-    final progressChanged =
-        await context.push<bool>('/learning-path/$pathId?source=studyTopics');
-
-    _isNavigating = false;
+    final progressChanged = await context
+        .push<bool>('/learning-path/$pathId?source=studyTopics', extra: path);
 
     // Only refetch when the detail page reports progress actually changed;
     // otherwise the preserved state stands and there is no visible reload.
@@ -775,36 +815,38 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   }
 
   void _reloadAfterProgressChange() {
-    context.read<LearningPathsBloc>()
-      ..add(LoadLearningPaths(
-        forceRefresh: true,
-        language: widget.currentLanguage,
-      ))
-      ..add(LoadPersonalizedPaths(
-          language: widget.currentLanguage, forceRefresh: true));
+    context.read<LearningPathsBloc>().add(LoadLearningPaths(
+          forceRefresh: true,
+          language: widget.currentLanguage,
+        ));
     context
         .read<ContinueLearningBloc>()
         .add(RefreshContinueLearning(language: widget.currentLanguage));
+    context
+        .read<HomeBloc>()
+        .add(const LoadActiveLearningPath(forceRefresh: true));
+    _loadFallbackPath();
   }
 
   /// Opens every path of [category]. Pushed (like the detail page) and given
   /// this tab's bloc so already-loaded paths show at once and pages loaded
   /// there are kept here.
   Future<void> _navigateToCategory(String category) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
     await context.push<void>(
       AppRoutes.learningPathCategoryLocation(category,
           language: widget.currentLanguage),
       extra: context.read<LearningPathsBloc>(),
     );
-    _isNavigating = false;
     if (!mounted) return;
     // The category page refetches paths itself after progress changes;
-    // keep the Continue card in step with it.
+    // keep the current path card in step with it.
     context
         .read<ContinueLearningBloc>()
         .add(RefreshContinueLearning(language: widget.currentLanguage));
+    context
+        .read<HomeBloc>()
+        .add(const LoadActiveLearningPath(forceRefresh: true));
   }
 }
 
@@ -849,7 +891,7 @@ void openLeaderboardWithAccessCheck(BuildContext context) {
   AppRouter.router.goToLeaderboard();
 }
 
-/// Header of the Study Topics screen: large "Study Topics" title and the
+/// Header of the Topics screen: large "Topics" title and the
 /// overflow menu (content language, study mode, reset progress).
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLanguageChange;
@@ -878,7 +920,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Semantics(
               header: true,
               child: Text(
-                context.tr(TranslationKeys.studyTopicsTitle),
+                context.tr(TranslationKeys.topicsTitle),
                 maxLines: 2,
                 style: AppFonts.poppins(
                   fontSize: 26,
@@ -1100,7 +1142,6 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 SettingsRadioRow(
                   icon: Icons.stars_outlined,
-                  tone: SettingsTone.gold,
                   title: recommended,
                   subtitle: sheetContext
                       .tr(TranslationKeys.settingsUseRecommendedSubtitle),

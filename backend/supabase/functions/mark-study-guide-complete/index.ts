@@ -11,6 +11,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
+import { recordTopicCompletion, runCompletionHooks } from '../_shared/services/topic-completion.ts';
 
 // ============================================================================
 // Types
@@ -214,12 +215,14 @@ async function handleMarkStudyGuideComplete(
   // finished lesson still counted as zero in fellowship and path progress.
   // Resolving the topic here makes the record entry-point independent. The
   // RPC only awards XP on the first completion, so it is safe alongside the
-  // client's own call.
+  // client's own call; whichever call records the first completion runs the
+  // follow-up hooks (score recalculation, fellowship auto-advance).
   await recordTopicProgress(
     supabase,
     userId,
     (userGuide as unknown as GuideWithSource).study_guides,
-    time_spent_seconds
+    time_spent_seconds,
+    userContext.isGuest === true
   );
 
   return new Response(
@@ -256,7 +259,8 @@ async function recordTopicProgress(
   supabase: ServiceContainer['supabaseServiceClient'],
   userId: string,
   guide: GuideWithSource['study_guides'],
-  timeSpentSeconds: number
+  timeSpentSeconds: number,
+  isGuest: boolean
 ): Promise<void> {
   try {
     const inputValue = guide?.input_value;
@@ -273,29 +277,16 @@ async function recordTopicProgress(
     }
     if (!topicId) return;
 
-    const { error: progressError } = await supabase.rpc('complete_topic_progress', {
-      p_user_id: userId,
-      p_topic_id: topicId,
-      p_time_spent_seconds: timeSpentSeconds ?? 0,
+    // Ensures the path is started first (not for guests), then completes.
+    const record = await recordTopicCompletion(supabase, {
+      userId,
+      topicId,
+      timeSpentSeconds: timeSpentSeconds ?? 0,
+      isGuest,
     });
-
-    if (progressError) {
-      console.warn('📋 [MARK_COMPLETE] Topic progress failed:', progressError.message);
-      return;
-    }
     console.log(`📋 [MARK_COMPLETE] Topic progress recorded for topic ${topicId}`);
 
-    const { data: pathId, error: pathError } = await supabase.rpc(
-      'ensure_learning_path_started',
-      { p_user_id: userId, p_topic_id: topicId }
-    );
-    if (pathError) {
-      console.warn('📋 [MARK_COMPLETE] ensure_learning_path_started failed:', pathError.message);
-      return;
-    }
-    if (pathId) {
-      console.log(`📋 [MARK_COMPLETE] Learning path ${pathId} ensured started for user`);
-    }
+    await runCompletionHooks(supabase, userId, topicId, record.is_first_completion);
   } catch (err) {
     console.warn(
       '📋 [MARK_COMPLETE] Topic progress skipped:',

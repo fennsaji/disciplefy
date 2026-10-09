@@ -643,8 +643,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
   Widget _buildSpeakingPhase() {
     final palette = ReaderPalette.of(context);
-    final micColor =
-        _isRecording ? AppColors.error : ReaderPalette.selectedFill;
+    final micColor = _isRecording ? AppColors.error : palette.selectedFill;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -690,7 +689,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                       _isRecording
                           ? Icons.stop_rounded
                           : Icons.mic_none_rounded,
-                      color: Colors.white,
+                      color: _isRecording ? Colors.white : palette.onSelected,
                       size: 44,
                     ),
                   ),

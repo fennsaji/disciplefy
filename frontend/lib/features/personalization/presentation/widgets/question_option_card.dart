@@ -77,14 +77,14 @@ class _OptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    const accent = ReaderPalette.selectedFill;
+    final accent = palette.selectedFill;
     final radius = BorderRadius.circular(18);
 
     final fill = isSelected
         ? accent.withValues(alpha: palette.isDark ? 0.14 : 0.07)
         : palette.card;
     final border = isSelected
-        ? const BorderSide(color: accent, width: 1.5)
+        ? BorderSide(color: accent, width: 1.5)
         : BorderSide(color: palette.hairline);
 
     return Padding(
@@ -114,13 +114,15 @@ class _OptionCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: isSelected
                             ? accent
-                            : AppColors.brandPrimary.withValues(
+                            : palette.gold.withValues(
                                 alpha: palette.isDark ? 0.18 : 0.08),
                       ),
                       child: Icon(
                         icon,
                         size: 20,
-                        color: isSelected ? Colors.white : palette.accentIcon,
+                        color: isSelected
+                            ? palette.onSelected
+                            : palette.accentIcon,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -149,7 +151,7 @@ class _OptionCard extends StatelessWidget {
   }
 }
 
-/// Empty ring (or rounded square) that fills with a white check.
+/// Empty ring (or rounded square) that fills gold with an ink check.
 class _CheckMark extends StatelessWidget {
   final bool isSelected;
   final bool square;
@@ -167,13 +169,13 @@ class _CheckMark extends StatelessWidget {
       decoration: BoxDecoration(
         shape: square ? BoxShape.rectangle : BoxShape.circle,
         borderRadius: square ? BorderRadius.circular(7) : null,
-        color: isSelected ? ReaderPalette.selectedFill : Colors.transparent,
+        color: isSelected ? palette.selectedFill : Colors.transparent,
         border: isSelected
             ? null
             : Border.all(color: palette.dim.withValues(alpha: 0.8), width: 1.5),
       ),
       child: isSelected
-          ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+          ? Icon(Icons.check_rounded, size: 16, color: palette.onSelected)
           : null,
     );
   }

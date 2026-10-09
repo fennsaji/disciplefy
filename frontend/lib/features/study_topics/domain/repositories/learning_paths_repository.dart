@@ -72,6 +72,13 @@ abstract class LearningPathsRepository {
     required String pathId,
   });
 
+  /// Enroll in the learning path with this [slug].
+  ///
+  /// The result carries the resolved `learningPathId`. A guest who already
+  /// holds a different path gets [AccountRequiredFailure] with reason
+  /// `second_path`.
+  Future<Either<Failure, EnrollmentResult>> enrollInPathBySlug(String slug);
+
   /// Reset all of the user's learning path progress.
   ///
   /// Irreversible. Clears enrollments, topic progress, study streak, and

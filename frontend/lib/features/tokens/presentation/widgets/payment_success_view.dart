@@ -89,9 +89,10 @@ class PaymentSuccessView extends StatelessWidget {
                         child: Container(
                           width: 72,
                           height: 72,
+                          // White on Emerald-800 is 7.7:1 (2.5:1 on -500).
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.success,
+                            color: AppColors.successDark,
                           ),
                           child: const Icon(Icons.check_rounded,
                               size: 38, color: Colors.white),

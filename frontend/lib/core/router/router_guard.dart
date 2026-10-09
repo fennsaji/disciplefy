@@ -9,8 +9,11 @@ import '../utils/logger.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/system_config_service.dart';
+import '../services/rollout_flags.dart';
+import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import '../di/injection_container.dart';
 import 'app_routes.dart';
+import 'guest_route_gate.dart';
 import '../services/session_refresh.dart';
 
 /// Router guard that handles authentication and onboarding logic
@@ -169,62 +172,12 @@ class RouterGuard {
     // Check Supabase auth first
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      // A full account is signed in: this device no longer needs a new first
+      // run when a guest session is lost.
+      GuestMarker.syncWithUser(isAnonymous: user.isAnonymous);
       // SECURITY FIX: Validate session expiration for all auth types
       final isExpired = _isSessionExpired();
-      if (isExpired) {
-        // The stored expiry tracks the ACCESS token (1h), not the session.
-        // With default Supabase settings sessions never expire, so an
-        // expired access token after long idle is normal — refresh it
-        // instead of forcing the user back to login.
-        final refresh = await _tryRefreshExpiredSession();
-        if (refresh == SessionRefreshResult.refreshed) {
-          Logger.info(
-            'Access token expired but session refreshed successfully',
-            tag: 'AUTH_SECURITY',
-            context: {'user_id': user.id, 'user_type': 'supabase'},
-          );
-          return AuthenticationState(
-            isAuthenticated: true,
-            userType: 'supabase',
-            userId: user.id,
-            userEmail: user.email,
-          );
-        }
-
-        // A refresh that timed out or died on the network says nothing about
-        // whether the session is still valid — only that we could not reach
-        // Supabase right now (typical when the app wakes from background and
-        // the radio has not reconnected). Keep the user signed in: the stored
-        // expiry tracks the 1h access token, not the session, and the backend
-        // re-verifies every request anyway. Logging out here would strand a
-        // perfectly valid user on the login screen for a transient blip.
-        if (refresh == SessionRefreshResult.inconclusive) {
-          Logger.warning(
-            'Session refresh inconclusive (network/timeout) — keeping user signed in',
-            tag: 'AUTH_SECURITY',
-            context: {'user_id': user.id, 'user_type': 'supabase'},
-          );
-          return AuthenticationState(
-            isAuthenticated: true,
-            userType: 'supabase',
-            userId: user.id,
-            userEmail: user.email,
-          );
-        }
-
-        Logger.info(
-          'User session expired and refresh failed',
-          tag: 'AUTH_SECURITY',
-          context: {
-            'user_id': user.id,
-            'user_type': 'supabase',
-            'session_expired': true,
-          },
-        );
-        // Clear expired session data
-        _clearExpiredSession();
-        return const AuthenticationState(isAuthenticated: false);
-      }
+      if (isExpired) return _authStateForExpiredSession(user);
 
       Logger.info(
         'User authenticated via Supabase',
@@ -239,6 +192,7 @@ class RouterGuard {
         userType: 'supabase',
         userId: user.id,
         userEmail: user.email,
+        isGuest: user.isAnonymous,
       );
     }
 
@@ -520,7 +474,8 @@ class RouterGuard {
       RouteAnalysis(
         currentPath: currentPath,
         isPublicRoute: _isPublicRoute(currentPath),
-        isOnboardingRoute: currentPath.startsWith(AppRoutes.onboarding),
+        isOnboardingRoute: currentPath.startsWith(AppRoutes.onboarding) ||
+            _isFirstRunRoute(currentPath),
         isAuthRoute: currentPath == AppRoutes.login ||
             currentPath == AppRoutes.phoneAuth ||
             currentPath == AppRoutes.phoneAuthVerify ||
@@ -546,10 +501,49 @@ class RouterGuard {
 
     return publicRoutes.contains(path) ||
         path.startsWith(AppRoutes.onboarding) ||
+        // The new first run is public only while its flag is on; with the
+        // flag off a stray /welcome link falls through to the slides.
+        (_isFirstRunRoute(path) && _newFirstRunEnabled()) ||
         path.startsWith('/auth/callback') ||
         path.startsWith('/phone-auth') || // Allow all phone auth related routes
         path.startsWith('/email-auth') || // Allow email auth routes
         path.startsWith('/password-reset'); // Allow password reset routes
+  }
+
+  /// `/welcome` and everything below it (the new first run).
+  static bool _isFirstRunRoute(String path) =>
+      path == AppRoutes.welcome || path.startsWith('${AppRoutes.welcome}/');
+
+  /// The `new_first_run` rollout flag. Off when [RolloutFlags] is not
+  /// registered or cannot be read, so routing never fails on the flag.
+  static bool _newFirstRunEnabled() {
+    try {
+      return sl.isRegistered<RolloutFlags>() && sl<RolloutFlags>().newFirstRun;
+    } catch (e) {
+      Logger.warning('new_first_run flag unreadable, treating as off',
+          tag: 'ROUTER', context: {'error': e.runtimeType.toString()});
+      return false;
+    }
+  }
+
+  /// Where a new, signed-out user starts: the new first run when its flag is
+  /// on, otherwise the onboarding slides.
+  static String _firstRunEntry() =>
+      _newFirstRunEnabled() ? AppRoutes.welcome : AppRoutes.onboarding;
+
+  /// Where a guest may not go: Home with `?account=<reason>`, or null.
+  ///
+  /// Only Home and Topics work for a guest; the table lives in
+  /// [GuestRouteGate.gatedPrefixes].
+  static String? _guestGateRedirect(String path) {
+    final reason = GuestRouteGate.reasonFor(path);
+    if (reason == null) return null;
+    Logger.info(
+      'Guest blocked from a route that needs an account',
+      tag: 'ROUTER',
+      context: {'attempted_route': path, 'reason': reason},
+    );
+    return GuestRouteGate.homeWithReason(reason);
   }
 
   /// Check if the route requires full authentication (not guest/anonymous)
@@ -743,6 +737,7 @@ class RouterGuard {
   static void _stashPendingDeepLink(String path) {
     if (path.isEmpty || path == '/' || path == AppRoutes.home) return;
     if (path.startsWith(AppRoutes.onboarding) ||
+        _isFirstRunRoute(path) ||
         path == AppRoutes.languageSelection ||
         path == AppRoutes.login) {
       return;
@@ -783,9 +778,42 @@ class RouterGuard {
       _termsGateRedirect(currentPath);
 
   /// Test-only entry point for the unauthenticated branch of the guard.
+  /// [onboardingCompleted] overrides the stored onboarding flag.
   @visibleForTesting
-  static String? debugUnauthenticatedRedirect(String currentPath) =>
-      _handleUnauthenticatedUser(_analyzeCurrentRoute(currentPath));
+  static String? debugUnauthenticatedRedirect(
+    String currentPath, {
+    bool? onboardingCompleted,
+  }) =>
+      _handleUnauthenticatedUser(
+        _analyzeCurrentRoute(currentPath),
+        onboardingOverride: onboardingCompleted == null
+            ? null
+            : OnboardingState(isCompleted: onboardingCompleted),
+      );
+
+  /// Test-only entry point for a signed-in user (or a guest when [isGuest])
+  /// with or without a completed language selection.
+  @visibleForTesting
+  static Future<String?> debugAuthenticatedRedirect(
+    String currentPath, {
+    required bool languageCompleted,
+    bool isGuest = false,
+  }) {
+    final analysis = _analyzeCurrentRoute(currentPath);
+    if (!languageCompleted) {
+      return Future.value(
+          _handleAuthenticatedUserWithoutLanguageSelection(analysis));
+    }
+    return _handleFullyAuthenticatedUser(
+      analysis,
+      AuthenticationState(
+        isAuthenticated: true,
+        userType: 'supabase',
+        userId: 'test-user',
+        isGuest: isGuest,
+      ),
+    );
+  }
 
   /// Test-only entry point for the language-selection interstitial.
   @visibleForTesting
@@ -807,7 +835,10 @@ class RouterGuard {
 
   /// Handle redirect logic for unauthenticated users
   /// Phase 2 Enhancement: Better analytics and edge case handling
-  static String? _handleUnauthenticatedUser(RouteAnalysis routeAnalysis) {
+  static String? _handleUnauthenticatedUser(
+    RouteAnalysis routeAnalysis, {
+    OnboardingState? onboardingOverride,
+  }) {
     // Guideline 1.2: block auth routes until the terms are accepted. This
     // must precede the public-route check below, because the routes being
     // gated are themselves public.
@@ -830,7 +861,10 @@ class RouterGuard {
     }
 
     // Phase 2: Enhanced handling for protected routes
-    final redirectTarget = _determineUnauthenticatedRedirect(routeAnalysis);
+    final redirectTarget = _determineUnauthenticatedRedirect(
+      routeAnalysis,
+      onboardingOverride: onboardingOverride,
+    );
     final redirectReason =
         _getUnauthenticatedRedirectReason(routeAnalysis, redirectTarget);
 
@@ -851,8 +885,23 @@ class RouterGuard {
   }
 
   /// Phase 2: Determine redirect target for unauthenticated users
-  static String _determineUnauthenticatedRedirect(RouteAnalysis routeAnalysis) {
-    final onboardingState = _getOnboardingState();
+  static String _determineUnauthenticatedRedirect(
+    RouteAnalysis routeAnalysis, {
+    OnboardingState? onboardingOverride,
+  }) {
+    final onboardingState = onboardingOverride ?? _getOnboardingState();
+
+    // A guest whose session was lost (refresh token gone) has no credentials
+    // to log in with: start a new first run instead of the login screen.
+    // Public routes (login itself) were let through before this point.
+    if (_newFirstRunEnabled() && GuestMarker.wasGuest) {
+      // Keep a shared link (fellowship invite etc.) for after the first run.
+      _stashPendingDeepLink(routeAnalysis.currentPath);
+      Logger.info('Lost guest session: starting a new first run',
+          tag: 'ROUTER',
+          context: {'attempted_route': routeAnalysis.currentPath});
+      return AppRoutes.welcome;
+    }
 
     // Helper: login URL with return path encoded as query param
     String loginWithRedirect() {
@@ -873,6 +922,11 @@ class RouterGuard {
 
     // Home page logic based on onboarding state
     if (routeAnalysis.currentPath == AppRoutes.home) {
+      return onboardingState.isCompleted ? AppRoutes.login : _firstRunEntry();
+    }
+
+    // A /welcome link while new_first_run is off: the shipped flow instead.
+    if (_isFirstRunRoute(routeAnalysis.currentPath)) {
       return onboardingState.isCompleted
           ? AppRoutes.login
           : AppRoutes.onboarding;
@@ -891,7 +945,7 @@ class RouterGuard {
     // New user going through onboarding — save deep link to Hive so it
     // survives the onboarding + login flow and is consumed on home arrival.
     _stashPendingDeepLink(routeAnalysis.currentPath);
-    return AppRoutes.onboarding;
+    return _firstRunEntry();
   }
 
   /// Phase 2: Get reason for unauthenticated user redirect
@@ -904,7 +958,8 @@ class RouterGuard {
       return 'protected_route_requires_auth';
     }
 
-    if (redirectTarget == AppRoutes.onboarding) {
+    if (redirectTarget == AppRoutes.onboarding ||
+        redirectTarget == AppRoutes.welcome) {
       return 'new_user_needs_onboarding';
     }
 
@@ -938,6 +993,12 @@ class RouterGuard {
       return null;
     }
 
+    // The new first run picks the language itself (its first screen), and a
+    // guest is created on its goal screen — leave it to finish.
+    if (_isFirstRunRoute(routeAnalysis.currentPath) && _newFirstRunEnabled()) {
+      return null;
+    }
+
     // Allow access to auth routes (logout, etc.)
     if (routeAnalysis.isAuthRoute) {
       return null;
@@ -962,9 +1023,24 @@ class RouterGuard {
     RouteAnalysis routeAnalysis,
     AuthenticationState authState,
   ) async {
+    // The goal screen creates the guest (startGuest) and then starts lesson
+    // 1 itself. The auth change re-runs this guard while it is still on
+    // screen; sending it home here would unmount it mid-flow. Every other
+    // first-run route (/welcome itself) sends a signed-in user home.
+    if (routeAnalysis.currentPath == AppRoutes.welcomeGoal &&
+        _newFirstRunEnabled()) {
+      return null;
+    }
+
     // Phase 2: Enhanced auth route blocking
     if (routeAnalysis.isAuthRoute || routeAnalysis.isOnboardingRoute) {
       return _handleAuthenticatedUserOnAuthRoutes(routeAnalysis, authState);
+    }
+
+    // Guests: only Home and Topics (and their reading screens) are open.
+    if (authState.isGuest) {
+      final gate = _guestGateRedirect(routeAnalysis.currentPath);
+      if (gate != null) return gate;
     }
 
     // Check for auto-free plan activation flag (new user flow)
@@ -984,7 +1060,9 @@ class RouterGuard {
     // Check for pending plan upgrade from pricing page
     // This must be checked here because the router may have redirected the user
     // through language selection flow before the login screen could handle it
-    if (routeAnalysis.currentPath == AppRoutes.home) {
+    // A guest cannot buy a plan (the upgrade routes are gated), so a stale
+    // flag would bounce between Home and the gate.
+    if (routeAnalysis.currentPath == AppRoutes.home && !authState.isGuest) {
       final pendingRedirect = await _checkPendingPlanUpgradeAsync();
       if (pendingRedirect != null) {
         return pendingRedirect;
@@ -1422,6 +1500,102 @@ class RouterGuard {
     }
   }
 
+  /// Test hook replacing [_tryRefreshExpiredSession].
+  @visibleForTesting
+  static Future<SessionRefreshResult> Function()? refreshForTesting;
+
+  /// Test hook replacing the local Supabase sign-out.
+  @visibleForTesting
+  static Future<void> Function()? localSignOutForTesting;
+
+  /// Test-only entry point for a signed-in [user] whose stored access-token
+  /// expiry has passed.
+  @visibleForTesting
+  static Future<AuthenticationState> debugExpiredSessionState(User user) =>
+      _authStateForExpiredSession(user);
+
+  /// The stored access-token expiry has passed for [user]: refresh, and only
+  /// when Supabase rejects the refresh treat the session as gone.
+  static Future<AuthenticationState> _authStateForExpiredSession(
+      User user) async {
+    // The stored expiry tracks the ACCESS token (1h), not the session.
+    // With default Supabase settings sessions never expire, so an
+    // expired access token after long idle is normal — refresh it
+    // instead of forcing the user back to login.
+    final refresh = await (refreshForTesting ?? _tryRefreshExpiredSession)();
+    if (refresh == SessionRefreshResult.refreshed) {
+      Logger.info(
+        'Access token expired but session refreshed successfully',
+        tag: 'AUTH_SECURITY',
+        context: {'user_id': user.id, 'user_type': 'supabase'},
+      );
+      return AuthenticationState(
+        isAuthenticated: true,
+        userType: 'supabase',
+        userId: user.id,
+        userEmail: user.email,
+        isGuest: user.isAnonymous,
+      );
+    }
+
+    // A refresh that timed out or died on the network says nothing about
+    // whether the session is still valid — only that we could not reach
+    // Supabase right now (typical when the app wakes from background and
+    // the radio has not reconnected). Keep the user signed in: the stored
+    // expiry tracks the 1h access token, not the session, and the backend
+    // re-verifies every request anyway. Logging out here would strand a
+    // perfectly valid user on the login screen for a transient blip.
+    if (refresh == SessionRefreshResult.inconclusive) {
+      Logger.warning(
+        'Session refresh inconclusive (network/timeout) — keeping user signed in',
+        tag: 'AUTH_SECURITY',
+        context: {'user_id': user.id, 'user_type': 'supabase'},
+      );
+      return AuthenticationState(
+        isAuthenticated: true,
+        userType: 'supabase',
+        userId: user.id,
+        userEmail: user.email,
+        isGuest: user.isAnonymous,
+      );
+    }
+
+    Logger.info(
+      'User session expired and refresh failed',
+      tag: 'AUTH_SECURITY',
+      context: {
+        'user_id': user.id,
+        'user_type': 'supabase',
+        'session_expired': true,
+      },
+    );
+    // Clear expired session data, and end the Supabase session too: without
+    // it currentUser stays set, the next evaluation (no stored expiry any
+    // more) reads the user as signed in again, and the guard flips between
+    // the two states.
+    _clearExpiredSession();
+    _signOutLocally();
+    return const AuthenticationState(isAuthenticated: false);
+  }
+
+  /// Ends the Supabase session on this device only. Not awaited: the local
+  /// session is dropped synchronously, and the server call that follows must
+  /// not hold up the redirect.
+  static void _signOutLocally() {
+    try {
+      // signOut() defaults to SignOutScope.local: this device only.
+      final signOut =
+          localSignOutForTesting ?? Supabase.instance.client.auth.signOut;
+      unawaited(signOut().catchError((Object e) {
+        Logger.warning('Local sign-out after a rejected refresh failed',
+            tag: 'AUTH_SECURITY', context: {'error': e.runtimeType.toString()});
+      }));
+    } catch (e) {
+      Logger.warning('Local sign-out after a rejected refresh failed',
+          tag: 'AUTH_SECURITY', context: {'error': e.runtimeType.toString()});
+    }
+  }
+
   // Serializes refresh attempts so concurrent guard evaluations don't fire
   // parallel refreshSession() calls (refresh tokens are single-use).
   static Future<SessionRefreshResult>? _refreshInFlight;
@@ -1607,12 +1781,17 @@ class AuthenticationState {
   final String? userId;
   final String? userEmail;
 
+  /// A Supabase anonymous user ("Not now" on the first run). Counts as
+  /// signed in, but only Home and Topics are open to them.
+  final bool isGuest;
+
   const AuthenticationState({
     required this.isAuthenticated,
     this.isInitializing = false, // Default to false for backward compatibility
     this.userType,
     this.userId,
     this.userEmail,
+    this.isGuest = false,
   });
 }
 

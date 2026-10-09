@@ -1320,6 +1320,7 @@ async function handleFellowship(req: Request, services: ServiceContainer): Promi
 }
 
 createSimpleFunction(handleFellowship, {
+  requireFullAccount: true, // guests get 403 ACCOUNT_REQUIRED
   allowedMethods: ['GET', 'POST', 'PATCH', 'DELETE'],
   enableAnalytics: true,
   timeout: 15000,

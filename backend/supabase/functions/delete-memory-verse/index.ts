@@ -149,6 +149,9 @@ async function handleDeleteMemoryVerse(
 // Create the authenticated function
 createAuthenticatedFunction(handleDeleteMemoryVerse, {
   allowedMethods: ['DELETE'],
+  // Memory verses need an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'memory_verses',
   enableAnalytics: true,
   timeout: 10000 // 10 seconds
 })

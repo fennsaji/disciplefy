@@ -320,10 +320,10 @@ void main() {
       await _openMenuFor(tester, 'Joel Mathew');
       for (final label in const [
         'Mute member',
-        'Transfer Mentor Role',
+        'Transfer mentor role',
         'Promote to Mentor',
-        'Remove Member',
-        'Block User',
+        'Remove member',
+        'Block user',
       ]) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
@@ -333,10 +333,10 @@ void main() {
       when(() => _bloc.state).thenReturn(_memberView);
       await _pump(tester, size: const Size(390, 1200));
       await _openMenuFor(tester, 'Priya Thomas');
-      expect(find.text('Block User'), findsOneWidget);
+      expect(find.text('Block user'), findsOneWidget);
       expect(find.text('Mute member'), findsNothing);
       expect(find.text('Unmute member'), findsNothing);
-      expect(find.text('Remove Member'), findsNothing);
+      expect(find.text('Remove member'), findsNothing);
       expect(find.text('Promote to Mentor'), findsNothing);
     });
 

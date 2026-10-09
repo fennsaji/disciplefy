@@ -31,6 +31,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/add_manual_verse_dialog.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_header_line.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/memory_ui.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_verse_list_item.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/milestone_celebration_dialog.dart';
@@ -51,9 +52,14 @@ import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcas
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 
-/// Memory verses deck: streak and counts, today's review goal, Champions
-/// and Statistics links, language filter, then the verses due for review and the ones coming up, as quiet
-/// rows split by hairlines.
+/// Memory verses deck: one streak-and-count line, today's review goal, the
+/// language filter (only when the deck holds two languages), then the verses
+/// due for review and the ones coming up. Statistics and Champions live in
+/// the ⋮ menu. An empty deck offers today's verse as the first one to save.
+/// The deck list and empty state sit 20px in from the edges, a little wider
+/// than the practice pages.
+const double _kHomeGutter = 20;
+
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
 
@@ -211,6 +217,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             backgroundColor: ReaderPalette.of(context).page,
             appBar: MemoryTopBar(
               title: context.tr(TranslationKeys.memoryTitle),
+              titleFontSize: 24,
               subtitle: _dueSubtitle(),
               onBack: _handleBackNavigation,
               actions: [
@@ -413,22 +420,23 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           SliverToBoxAdapter(
             child: Padding(
               padding:
-                  const EdgeInsets.fromLTRB(kMemoryGutter, 4, kMemoryGutter, 0),
+                  const EdgeInsets.fromLTRB(_kHomeGutter, 4, _kHomeGutter, 0),
               child: _buildSummary(state),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: _buildLanguageFilter(context),
+          if (_showLanguageFilter(state))
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: _buildLanguageFilter(context),
+              ),
             ),
-          ),
           if (state.verses.isEmpty)
             SliverToBoxAdapter(child: _buildFilteredEmptyMessage())
           else ...[
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+                padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
                 child: MemorySectionLabel(
                   '${context.tr(TranslationKeys.memoryDueForReview)} (${dueVerses.length})',
                   padding: const EdgeInsets.only(top: 20),
@@ -439,7 +447,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      kMemoryGutter, 12, kMemoryGutter, 4),
+                      _kHomeGutter, 12, _kHomeGutter, 4),
                   child: Text(
                     context.tr(TranslationKeys.memoryScreensNothingDue),
                     style: AppFonts.inter(fontSize: 14, color: palette.muted),
@@ -451,8 +459,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             if (upcomingVerses.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+                  padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
                   child: MemorySectionLabel(
                     context.tr(TranslationKeys.memoryScreensComingUp),
                     padding: const EdgeInsets.only(top: 24),
@@ -482,7 +489,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     String? firstVerseId,
   ) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: kMemoryGutter),
+      padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -492,6 +499,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               onTap: () => _navigateToReviewPage(context, verse.id),
               onDelete: () => _showDeleteConfirmation(context, verse),
               masteryLevel: verse.masteryLevel,
+              highlighted: verse.id == firstVerseId && verse.isDue,
             );
             if (verse.id == firstVerseId) {
               return WalkthroughTooltip(
@@ -524,14 +532,19 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     );
   }
 
-  /// Day streak / verses / mastered tiles, then the daily review goal bar.
+  /// Streak and verse count on one line, then the daily review goal bar.
   Widget _buildSummary(DueVersesLoaded state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildStatTiles(state),
+        MemoryHeaderLine(
+          streak: _memoryStreak?.currentStreak ?? 0,
+          verseCount: state.statistics.totalVerses,
+          onTap: _memoryStreak == null ? null : _onStreakTap,
+        ),
         if (_dailyGoal != null) ...[
-          const SizedBox(height: 20),
+          // The 40px streak line already carries ~8px below its text.
+          const SizedBox(height: 12),
           _buildGoalProgress(
             context.tr(TranslationKeys.memoryHomeDailyReviews),
             _dailyGoal!.completedReviews,
@@ -539,81 +552,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           ),
         ],
         const SizedBox(height: 16),
-        _buildQuickLinks(),
-        const SizedBox(height: 16),
         const MemoryHairline(),
       ],
-    );
-  }
-
-  /// Champions and Statistics entry points (also in the options menu).
-  Widget _buildQuickLinks() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: MemoryActionPill(
-            label: context.tr(TranslationKeys.memoryHomeChampions),
-            icon: Icons.emoji_events_outlined,
-            height: 44,
-            onPressed: () => context.push('/memory-verses/champions'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: MemoryActionPill(
-            label: context.tr(TranslationKeys.memoryHomeStatistics),
-            icon: Icons.bar_chart_outlined,
-            height: 44,
-            onPressed: () => context.push('/memory-verses/stats'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Three equal tiles: day streak (gold flame, taps into streak
-  /// protection like the old pill), verses (lavender) and mastered (gold).
-  Widget _buildStatTiles(DueVersesLoaded state) {
-    final palette = ReaderPalette.of(context);
-    final streak = _memoryStreak;
-    final total = state.statistics.totalVerses;
-    final mastered = state.statistics.masteredVerses;
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: _HomeStatTile(
-              icon: Icons.local_fire_department_outlined,
-              iconColor: palette.gold,
-              value: streak == null ? '–' : '${streak.currentStreak}',
-              label: context.tr(TranslationKeys.memoryScreensStatDayStreak),
-              onTap: streak == null ? null : _onStreakTap,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _HomeStatTile(
-              icon: Icons.psychology_outlined,
-              iconColor: palette.accentIcon,
-              value: '$total',
-              label: context.tr(total == 1
-                  ? TranslationKeys.memoryScreensStatVerse
-                  : TranslationKeys.memoryScreensStatVerses),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _HomeStatTile(
-              icon: Icons.emoji_events_outlined,
-              iconColor: palette.gold,
-              value: '$mastered',
-              label: context.tr(TranslationKeys.memoryScreensStatMastered),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -682,50 +622,194 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     );
   }
 
+  /// Empty deck: a short welcome, today's verse with "Save today's verse" as
+  /// the one primary action, a small "Add a verse" button for any other
+  /// verse, and a footnote on how saved verses come back.
   Widget _buildEmptyState() {
     final palette = ReaderPalette.of(context);
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_stories_outlined,
-                size: 44, color: palette.accentIcon),
-            const SizedBox(height: 18),
-            Text(
-              context.tr(TranslationKeys.memoryHomeNoVersesTitle),
-              textAlign: TextAlign.center,
-              style: AppFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: palette.text,
+        padding: const EdgeInsets.fromLTRB(_kHomeGutter, 38, _kHomeGutter, 32),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                key: const Key('memory_empty_icon_tile'),
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: palette.isDark
+                      ? palette.gold.withValues(alpha: 0.10)
+                      : AppColors.brandHighlight,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  Icons.psychology_outlined,
+                  size: 26,
+                  color: palette.isDark ? palette.gold : AppColors.brandGoldInk,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.memoryHomeNoVersesSubtitle),
-              textAlign: TextAlign.center,
-              style: AppFonts.inter(
-                fontSize: 14.5,
-                color: palette.muted,
-                height: 1.5,
+              const SizedBox(height: 8),
+              Text(
+                context.tr(TranslationKeys.memoryHomeNoVersesTitle),
+                textAlign: TextAlign.center,
+                style: AppFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: palette.text,
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: SizedBox(
-                width: double.infinity,
-                child: MemoryPrimaryPill(
-                  label: context.tr(TranslationKeys.memoryHomeAddFirstVerse),
-                  icon: Icons.add,
+              const SizedBox(height: 8),
+              Text(
+                context.tr(TranslationKeys.memoryHomeNoVersesSubtitle),
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 13.5,
+                  color: palette.muted,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 30),
+              _buildTodaysVerseCard(),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 32,
+                child: OutlinedButton.icon(
                   onPressed: () => _showAddVerseOptions(context),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: Text(context.tr(TranslationKeys.memoryAddVerse)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.text,
+                    side: BorderSide(color: palette.outline),
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    minimumSize: const Size(0, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: AppFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                context.tr(TranslationKeys.memoryFootnote),
+                textAlign: TextAlign.center,
+                style: AppFonts.inter(
+                  fontSize: 12,
+                  color: palette.muted,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The app-wide [DailyVerseBloc], or null where none is provided.
+  DailyVerseBloc? _dailyVerseBloc() {
+    try {
+      return context.read<DailyVerseBloc>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// "VERSE OF THE DAY" card holding the verse text, its reference and the
+  /// primary "Save today's verse" button (the same add-from-daily path the
+  /// add-verse sheet's Daily verse tile uses).
+  Widget _buildTodaysVerseCard() {
+    final palette = ReaderPalette.of(context);
+    final bloc = _dailyVerseBloc();
+
+    Widget verseBody(DailyVerseState? state) {
+      if (state is! VerseDataStateMixin) return const SizedBox.shrink();
+      final data = state as VerseDataStateMixin;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '\u201C${data.currentVerseText}\u201D',
+            style: AppFonts.poppins(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w500,
+              color: palette.text,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            data.verse.getReferenceText(data.currentLanguage),
+            style: AppFonts.inter(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: palette.muted,
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.gold.withValues(alpha: 0.33)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          MemorySectionLabel(
+            context.tr(TranslationKeys.dailyVerseOfTheDay),
+            padding: const EdgeInsets.only(top: 16, bottom: 8),
+          ),
+          if (bloc != null)
+            BlocBuilder<DailyVerseBloc, DailyVerseState>(
+              bloc: bloc,
+              builder: (_, state) => verseBody(state),
+            ),
+          DecoratedBox(
+            key: const Key('memory_save_today_glow'),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: palette.isDark
+                  ? [
+                      BoxShadow(
+                        color: palette.gold.withValues(alpha: 0.8),
+                        blurRadius: 16,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: SizedBox(
+              height: 40,
+              child: FilledButton.icon(
+                onPressed: () => _showAddFromDailyDialog(context),
+                icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                label: Text(
+                  context.tr(TranslationKeys.memorySaveTodaysVerse),
+                  textAlign: TextAlign.center,
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: palette.ctaFill,
+                  foregroundColor: palette.ctaInk,
+                  shape: const StadiumBorder(),
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  textStyle:
+                      AppFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -890,6 +974,13 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     }
   }
 
+  /// The filter only helps when the deck holds verses in two or more
+  /// languages; it stays while a filter is picked so it can be cleared.
+  bool _showLanguageFilter(DueVersesLoaded state) {
+    if (_selectedLanguageFilter != null) return true;
+    return state.verses.map((v) => v.language).toSet().length >= 2;
+  }
+
   Widget _buildLanguageFilter(BuildContext context) {
     return Semantics(
       label: context.tr(TranslationKeys.memoryFilterByLanguage),
@@ -922,6 +1013,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
     OptionsMenuSheet.show(
       context,
+      onAddVerse: () => _showAddVerseOptions(context),
       onSync: () => memoryVerseBloc
           .add(SyncWithRemote(language: _selectedLanguageFilter?.code)),
       onViewStatistics: () {
@@ -1101,79 +1193,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Home summary tile: icon top-left, big number, muted label that wraps.
-class _HomeStatTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
-  final VoidCallback? onTap;
-
-  const _HomeStatTile({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = ReaderPalette.of(context);
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-      side: BorderSide(color: palette.hairline),
-    );
-    return Semantics(
-      button: onTap != null,
-      label: '$value $label',
-      excludeSemantics: true,
-      child: Material(
-        color: palette.card,
-        shape: shape,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: shape,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, size: 22, color: iconColor),
-                const SizedBox(height: 10),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    value,
-                    maxLines: 1,
-                    style: AppFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: palette.text,
-                      height: 1.15,
-                      fontFeatures: kMemoryTabular,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: AppFonts.inter(
-                    fontSize: 12.5,
-                    color: palette.muted,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

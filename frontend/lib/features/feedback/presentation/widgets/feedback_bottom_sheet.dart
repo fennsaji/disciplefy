@@ -243,9 +243,8 @@ class _HelpfulOption extends StatelessWidget {
     final palette = ReaderPalette.of(context);
     final ink = selected ? palette.accentIcon : palette.muted;
     final fill = selected
-        ? (palette.isDark
-            ? settingsPrimaryFill.withValues(alpha: 0.18)
-            : const Color(0xFFEEF0FE))
+        ? settingsPrimaryFill(context)
+            .withValues(alpha: palette.isDark ? 0.18 : 0.12)
         : (palette.isDark ? palette.card : palette.raised);
     return Semantics(
       button: true,
@@ -256,7 +255,7 @@ class _HelpfulOption extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: selected ? settingsPrimaryFill : Colors.transparent,
+            color: selected ? settingsPrimaryFill(context) : Colors.transparent,
             width: 1.5,
           ),
         ),
@@ -291,7 +290,7 @@ class _HelpfulOption extends StatelessWidget {
   }
 }
 
-/// Topic chip: indigo (light) / white (dark) when selected.
+/// Topic chip: ink (light) / white (dark) when selected.
 class _CategoryChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -309,8 +308,8 @@ class _CategoryChip extends StatelessWidget {
     final Color fill;
     final Color ink;
     if (selected) {
-      fill = palette.isDark ? Colors.white : settingsPrimaryFill;
-      ink = palette.isDark ? AppColors.brandPrimaryInk : Colors.white;
+      fill = palette.ctaFill;
+      ink = palette.ctaInk;
     } else {
       fill = palette.isDark ? palette.raised : palette.card;
       ink = palette.muted;

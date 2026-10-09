@@ -97,7 +97,7 @@ class SoftPaywallDialog extends StatelessWidget {
         PopupHeader(
           icon: PopupIconCircle(
             icon: titleIcon,
-            tone: percentage >= 100 ? PopupTone.indigo : PopupTone.gold,
+            tone: percentage >= 100 ? PopupTone.accent : PopupTone.gold,
           ),
           eyebrow: context.tr(TranslationKeys.popupCreditsEyebrow),
           title: title,

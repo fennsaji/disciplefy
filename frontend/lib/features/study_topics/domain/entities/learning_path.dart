@@ -1,4 +1,6 @@
+import 'package:disciplefy_bible_study/features/home/domain/entities/active_path_summary.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 /// Represents a learning path - a curated collection of topics
 /// for structured learning journeys.
@@ -6,6 +8,11 @@ class LearningPath extends Equatable {
   final String id;
   final String slug;
   final String title;
+
+  /// Short display name (at most 28 characters) for headers and list rows,
+  /// in the content language; `null` when the path has none. Detail screens
+  /// keep [title]; everything else should read [displayTitle].
+  final String? shortTitle;
   final String description;
   final String iconName;
   final String color;
@@ -15,6 +22,10 @@ class LearningPath extends Equatable {
   final String? recommendedMode;
   final bool allowNonSequentialAccess;
   final bool isFeatured;
+
+  /// Whether a guest (no account yet) may enrol in and study this path.
+  /// Every other path is shown locked to a guest.
+  final bool guestAccessible;
   final int topicsCount;
   final bool isEnrolled;
   final int progressPercentage;
@@ -29,10 +40,19 @@ class LearningPath extends Equatable {
   /// with the recommended path; `null` elsewhere or when nothing is left.
   final String? nextTopicTitle;
 
+  /// 1-based number of the first unfinished lesson, read from the lesson rows
+  /// by the server; `null` when every lesson is done. Only meaningful when
+  /// [nextLessonNumberKnown] (older servers do not send it).
+  final int? nextLessonNumber;
+
+  /// Whether the server sent [nextLessonNumber] for this path.
+  final bool nextLessonNumberKnown;
+
   const LearningPath({
     required this.id,
     required this.slug,
     required this.title,
+    this.shortTitle,
     required this.description,
     required this.iconName,
     required this.color,
@@ -42,6 +62,7 @@ class LearningPath extends Equatable {
     this.recommendedMode,
     this.allowNonSequentialAccess = false,
     this.isFeatured = false,
+    this.guestAccessible = false,
     this.topicsCount = 0,
     this.isEnrolled = false,
     this.progressPercentage = 0,
@@ -49,6 +70,8 @@ class LearningPath extends Equatable {
     this.fellowshipCompleted = false,
     this.displayOrder,
     this.nextTopicTitle,
+    this.nextLessonNumber,
+    this.nextLessonNumberKnown = false,
   });
 
   @override
@@ -56,6 +79,7 @@ class LearningPath extends Equatable {
         id,
         slug,
         title,
+        shortTitle,
         description,
         iconName,
         color,
@@ -65,6 +89,7 @@ class LearningPath extends Equatable {
         recommendedMode,
         allowNonSequentialAccess,
         isFeatured,
+        guestAccessible,
         topicsCount,
         isEnrolled,
         progressPercentage,
@@ -72,7 +97,23 @@ class LearningPath extends Equatable {
         fellowshipCompleted,
         displayOrder,
         nextTopicTitle,
+        nextLessonNumber,
+        nextLessonNumberKnown,
       ];
+
+  /// [shortTitle] when it has text, otherwise [title].
+  String get displayTitle =>
+      (shortTitle?.trim().isNotEmpty ?? false) ? shortTitle! : title;
+
+  /// The lesson the user is on: the first unfinished one when the server
+  /// sent it ([topicsCount] once finished), else the old count-based guess.
+  int get currentLessonNumber {
+    if (topicsCount <= 0) return 1;
+    if (nextLessonNumberKnown) {
+      return (nextLessonNumber ?? topicsCount).clamp(1, topicsCount);
+    }
+    return (topicsCompleted + 1).clamp(1, topicsCount);
+  }
 
   /// Number of topics completed, derived from progress percentage.
   int get topicsCompleted =>
@@ -87,6 +128,7 @@ class LearningPath extends Equatable {
       id: id,
       slug: slug,
       title: title,
+      shortTitle: shortTitle,
       description: description,
       iconName: iconName,
       color: color,
@@ -96,6 +138,7 @@ class LearningPath extends Equatable {
       recommendedMode: recommendedMode,
       allowNonSequentialAccess: allowNonSequentialAccess,
       isFeatured: isFeatured,
+      guestAccessible: guestAccessible,
       topicsCount: topicsCount,
       isEnrolled: isEnrolled ?? this.isEnrolled,
       progressPercentage: progressPercentage ?? this.progressPercentage,
@@ -104,6 +147,9 @@ class LearningPath extends Equatable {
       displayOrder: displayOrder,
       // A progress change may finish that topic; drop rather than show stale.
       nextTopicTitle: progressPercentage == null ? nextTopicTitle : null,
+      nextLessonNumber: progressPercentage == null ? nextLessonNumber : null,
+      nextLessonNumberKnown:
+          progressPercentage == null && nextLessonNumberKnown,
     );
   }
 
@@ -166,6 +212,7 @@ class LearningPathDetail extends LearningPath {
     required super.id,
     required super.slug,
     required super.title,
+    super.shortTitle,
     required super.description,
     required super.iconName,
     required super.color,
@@ -175,6 +222,7 @@ class LearningPathDetail extends LearningPath {
     super.recommendedMode,
     super.allowNonSequentialAccess,
     super.isFeatured,
+    super.guestAccessible,
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,
@@ -183,6 +231,28 @@ class LearningPathDetail extends LearningPath {
     this.enrolledAt,
     this.topics = const [],
   });
+
+  @visibleForTesting
+  factory LearningPathDetail.forTest({
+    required String id,
+    required String title,
+    required String description,
+    required List<LearningPathTopic> topics,
+    bool isEnrolled = true,
+  }) =>
+      LearningPathDetail(
+        id: id,
+        slug: '',
+        title: title,
+        description: description,
+        iconName: '',
+        color: '',
+        totalXp: 0,
+        estimatedDays: 0,
+        discipleLevel: '',
+        isEnrolled: isEnrolled,
+        topics: topics,
+      );
 
   @override
   List<Object?> get props => [
@@ -312,9 +382,13 @@ class RecommendedPathResult {
   final LearningPath path;
   final LearningPathRecommendationReason reason;
 
+  /// Home summary (next lesson, completion, milestones). Null when absent.
+  final ActivePathSummary? summary;
+
   const RecommendedPathResult({
     required this.path,
     required this.reason,
+    this.summary,
   });
 
   /// Helper to parse reason from string

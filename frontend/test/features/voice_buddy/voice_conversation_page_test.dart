@@ -133,6 +133,7 @@ void main() {
     Stream<VoiceConversationState>? states,
     bool dark = true,
     Size size = const Size(390, 844),
+    String? prefill,
   }) async {
     useSurface(tester, size);
     whenListen(
@@ -144,7 +145,7 @@ void main() {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-      home: const VoiceConversationPage(asTab: true),
+      home: VoiceConversationPage(asTab: true, prefill: prefill),
     ));
     await tester.pump(const Duration(milliseconds: 50));
   }
@@ -338,6 +339,35 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
       verifyNever(() => bloc.add(any(that: isA<SendTextMessage>())));
       verifyNever(() => bloc.add(const StartListening()));
+    });
+
+    testWidgets('prefill: Type opens the chat with the question, unsent',
+        (tester) async {
+      const question = 'How do I know God hears my prayers?';
+      final states = StreamController<VoiceConversationState>();
+      addTearDown(states.close);
+      await pump(tester,
+          initial: _startState, states: states.stream, prefill: question);
+
+      // Nothing starts or sends on its own.
+      verifyNever(() => bloc.add(any(that: isA<StartConversation>())));
+      await tester.tap(find.text(tr(TranslationKeys.voiceSessionType)));
+      states.add(_ready());
+      await tester.pump();
+      await tester.pump();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, question);
+      verifyNever(() => bloc.add(any(that: isA<SendTextMessage>())));
+    });
+
+    testWidgets('prefill during a conversation opens the chat with it',
+        (tester) async {
+      const question = 'What does grace mean?';
+      await pump(tester, initial: _ready(), prefill: question);
+      await tester.pump();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, question);
+      verifyNever(() => bloc.add(any(that: isA<SendTextMessage>())));
     });
 
     testWidgets('no allowance: no conversation is started', (tester) async {

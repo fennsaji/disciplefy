@@ -196,21 +196,21 @@ class PracticeModeEntity extends Equatable {
   IconData get icon {
     switch (modeType) {
       case PracticeModeType.flipCard:
-        return Icons.flip;
+        return Icons.layers_outlined;
       case PracticeModeType.wordBank:
-        return Icons.touch_app;
+        return Icons.grid_view_rounded;
       case PracticeModeType.cloze:
-        return Icons.article_outlined;
+        return Icons.input_rounded;
       case PracticeModeType.firstLetter:
-        return Icons.format_size;
+        return Icons.title_rounded;
       case PracticeModeType.progressive:
         return Icons.visibility_outlined;
       case PracticeModeType.wordScramble:
         return Icons.shuffle;
       case PracticeModeType.audio:
-        return Icons.headphones;
+        return Icons.mic_none_rounded;
       case PracticeModeType.typeItOut:
-        return Icons.keyboard;
+        return Icons.keyboard_outlined;
     }
   }
 

@@ -1,12 +1,31 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/repositories/local_store_repository.dart';
+import '../../../../core/services/guest_marker.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Implementation of LocalStoreRepository that wraps Hive and SharedPreferences
 /// Isolates Hive and SharedPreferences SDKs from domain layer following Clean Architecture
 class LocalStoreRepositoryImpl implements LocalStoreRepository {
+  /// [isFullAccountSignedIn] reports whether a full (non-guest) account is
+  /// still signed in when the wipe runs. Defaults to reading Supabase.
+  LocalStoreRepositoryImpl({bool Function()? isFullAccountSignedIn})
+      : _isFullAccountSignedIn =
+            isFullAccountSignedIn ?? _supabaseFullAccountSignedIn;
+
+  final bool Function() _isFullAccountSignedIn;
+
+  static bool _supabaseFullAccountSignedIn() {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      return user != null && !user.isAnonymous;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Keys in app_settings box that should be cleared during logout
   static const List<String> _appSettingsUserKeys = [
     'user_type',
@@ -29,11 +48,18 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // acknowledgement, not user account data, and must survive logout so
       // the checkbox gate doesn't reappear on every sign-out.
       bool preservedTermsAccepted = false;
+      // Keep the guest marker through an involuntary logout (refresh token
+      // gone, forced logout, no session on resume): a guest has no
+      // credentials, so the router must start a new first run instead of
+      // showing the login screen. A full account signing out drops it.
+      bool preservedWasGuest = false;
       if (Hive.isBoxOpen('app_settings')) {
         final box = Hive.box('app_settings');
         preservedSettingsLanguage = box.get('settings_language');
         preservedTermsAccepted =
             box.get('terms_accepted', defaultValue: false) as bool;
+        preservedWasGuest =
+            box.get(GuestMarker.key) == true && !_isFullAccountSignedIn();
       }
 
       // Close all open Hive boxes
@@ -57,6 +83,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
         'terms_accepted': preservedTermsAccepted,
         if (preservedSettingsLanguage != null)
           'settings_language': preservedSettingsLanguage,
+        if (preservedWasGuest) GuestMarker.key: true,
       });
 
       // Clear SharedPreferences

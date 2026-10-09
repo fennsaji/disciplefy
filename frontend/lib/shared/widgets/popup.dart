@@ -11,8 +11,9 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 ///
 /// No blur, glow or per-frame animation, so they stay cheap on low-end phones.
 
-/// Colour of an icon circle: gold for rewards/achievements, indigo otherwise.
-enum PopupTone { gold, indigo }
+/// Colour of an icon circle: gold for rewards/achievements, the gold accent
+/// with a stronger wash otherwise.
+enum PopupTone { gold, accent }
 
 /// Corner radius shared by popups.
 const double kPopupRadius = 24;
@@ -124,7 +125,7 @@ class PopupIconCircle extends StatelessWidget {
     super.key,
     this.icon,
     this.child,
-    this.tone = PopupTone.indigo,
+    this.tone = PopupTone.accent,
     this.size = 56,
   }) : assert(icon != null || child != null);
 
@@ -137,8 +138,8 @@ class PopupIconCircle extends StatelessWidget {
           palette.gold.withValues(alpha: palette.isDark ? 0.16 : 0.12),
           palette.gold,
         ),
-      PopupTone.indigo => (
-          AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1),
+      PopupTone.accent => (
+          palette.gold.withValues(alpha: palette.isDark ? 0.24 : 0.1),
           palette.accentIcon,
         ),
     };
@@ -171,7 +172,7 @@ class PopupEyebrow extends StatelessWidget {
       text.toUpperCase(),
       textAlign: textAlign,
       style: AppFonts.inter(
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.5,
         color: palette.gold,
@@ -238,7 +239,7 @@ class PopupHeader extends StatelessWidget {
   }
 }
 
-/// Full-width primary pill: white with indigo ink on dark, indigo with white
+/// Full-width primary pill: white with ink text on dark, ink with white
 /// ink on light.
 class PopupPrimaryButton extends StatelessWidget {
   final String label;

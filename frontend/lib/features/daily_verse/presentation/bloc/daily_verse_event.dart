@@ -115,5 +115,12 @@ class LanguagePreferenceChanged extends DailyVerseEvent {
 /// Failures are silently handled as streak tracking is an optional feature
 /// and should not disrupt the core verse viewing experience.
 class MarkVerseAsViewed extends DailyVerseEvent {
-  const MarkVerseAsViewed();
+  /// True when a finished lesson counts toward the streak; only a read of
+  /// the verse itself is reported as a verse view.
+  final bool fromLesson;
+
+  const MarkVerseAsViewed({this.fromLesson = false});
+
+  @override
+  List<Object?> get props => [fromLesson];
 }

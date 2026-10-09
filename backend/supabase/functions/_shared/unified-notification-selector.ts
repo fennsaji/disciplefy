@@ -12,6 +12,16 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { selectTopicsForYouWithLearningPath, getLocalizedTopicContent } from './topic-selector.ts';
 import { formatError } from './utils/error-formatter.ts';
+import {
+  type ActivePathRow,
+  type PathTopicRow,
+  firstUnfinishedTopic,
+  isPathFinished,
+  pickContinueLearningTopic,
+} from './utils/next-path-topic.ts';
+
+/** Active paths looked at before giving up on "Continue Learning". */
+const CONTINUE_PATH_CANDIDATES = 10;
 
 // ============================================================================
 // Types
@@ -145,80 +155,145 @@ export async function selectNotificationForUser(
  *
  *  1. No active (enrolled, uncompleted) path at all -> null, caller falls
  *     back to a personalized "For You" topic.
- *  2. One active path -> its next topic (user_learning_path_progress.
- *     current_topic_position, advanced by the app's own completion trigger
- *     each time a topic in the path is finished).
- *  3. Several active paths -> the one with the most recent last_activity_at
- *     ("the path the user read most recently"), not a rotation or a cap —
- *     the position naturally advances once they act on the suggestion, so
- *     there is nothing to rate-limit the way the old "incomplete guide"
- *     reminder needed to be.
+ *  2. Active paths -> the first unfinished lesson of the most recently
+ *     active one (last_activity_at), at or after its stored cursor.
+ *  3. A path whose every visible lesson is done is skipped even when its
+ *     stored row still reads completed_at NULL / cursor 0 — a row created
+ *     after the lessons were finished (Review, starting a lesson, joining a
+ *     fellowship study) is never advanced by the completion trigger. The next
+ *     enrolled path with work left is used; none -> null (For You fallback).
  *
- * Mirrors the `next_in_path` CTE inside the get_in_progress_topics() SQL
- * function (20260721000003_update_learning_path_functions_for_visibility.sql)
- * — same is_active filters on both path and topic, same raw-position cursor
- * match against current_topic_position. That function returns several
- * candidates for the app's own "in progress" UI and is *not* ordered by
- * recency in its final result (DISTINCT ON collapses to topic_id order), so
- * it is not reused directly here; this is the narrower, single-path query
- * scenario 3 actually needs.
+ * "Done" means any completion record: user_topic_progress.completed_at or a
+ * completed study guide for that topic. Selection lives in the pure helper
+ * pickContinueLearningTopic (utils/next-path-topic.ts).
  */
 async function selectNextPathTopic(
   supabase: SupabaseClient,
   userId: string
 ): Promise<NextPathTopic | null> {
-  const { data: progress, error: progressError } = await supabase
+  // Several candidates, not just the most recent: the newest row is often a
+  // path the user has just finished (or re-opened to review) whose stored
+  // completed_at / cursor never caught up.
+  const { data: progressRows, error: progressError } = await supabase
     .from('user_learning_path_progress')
     .select('learning_path_id, current_topic_position, learning_paths!inner(is_active)')
     .eq('user_id', userId)
     .is('completed_at', null)
     .eq('learning_paths.is_active', true)
     .order('last_activity_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(CONTINUE_PATH_CANDIDATES);
 
   if (progressError) {
     console.error('[UnifiedSelector] Error fetching active learning path progress:', progressError);
     return null;
   }
 
-  if (!progress) {
+  const activePaths: ActivePathRow[] = (progressRows || []).map((r: any) => ({
+    learning_path_id: r.learning_path_id,
+    current_topic_position: r.current_topic_position,
+  }));
+  if (activePaths.length === 0) {
     return null;
   }
 
-  const { data: nextTopic, error: topicError } = await supabase
-    .from('learning_path_topics')
-    .select('topic_id, recommended_topics!inner(title, description, category, is_active)')
-    .eq('learning_path_id', progress.learning_path_id)
-    .eq('position', progress.current_topic_position)
-    .eq('is_active', true)
-    .eq('recommended_topics.is_active', true)
-    .maybeSingle();
-
-  if (topicError) {
-    console.error('[UnifiedSelector] Error fetching next path topic:', topicError);
+  const [topics, completedTopicIds] = await Promise.all([
+    fetchVisiblePathTopics(supabase, activePaths.map((p) => p.learning_path_id)),
+    fetchCompletedTopicIds(supabase, userId),
+  ]);
+  if (!topics || !completedTopicIds) {
+    // A failed read must not turn into a push about the wrong lesson.
     return null;
   }
 
-  if (!nextTopic) {
-    // Path exhausted or the cursor's topic was hidden since — nothing valid
-    // to suggest from this path.
+  const next = pickContinueLearningTopic(activePaths, topics, completedTopicIds);
+  if (!next) {
+    // Every enrolled path is finished (or has nothing visible left).
     return null;
   }
-
-  const topic = nextTopic.recommended_topics as unknown as {
-    title: string;
-    description: string;
-    category: string;
-  };
 
   return {
-    topic_id: nextTopic.topic_id,
-    topic_title: topic.title,
-    topic_description: topic.description,
-    topic_category: topic.category,
-    learning_path_id: progress.learning_path_id,
+    topic_id: next.topic_id,
+    topic_title: next.title,
+    topic_description: next.description,
+    topic_category: next.category,
+    learning_path_id: next.learning_path_id,
   };
+}
+
+/**
+ * Visible lessons (active link and active topic) of the given paths, or null
+ * on a read error.
+ */
+async function fetchVisiblePathTopics(
+  supabase: SupabaseClient,
+  pathIds: string[]
+): Promise<PathTopicRow[] | null> {
+  if (pathIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('learning_path_topics')
+    .select('learning_path_id, topic_id, position, recommended_topics!inner(title, description, category, is_active)')
+    .in('learning_path_id', pathIds)
+    .eq('is_active', true)
+    .eq('recommended_topics.is_active', true);
+
+  if (error) {
+    console.error('[UnifiedSelector] Error fetching path topics:', error);
+    return null;
+  }
+
+  return (data || []).map((row: any) => {
+    const rt = row.recommended_topics as { title: string; description: string; category: string };
+    return {
+      learning_path_id: row.learning_path_id,
+      topic_id: row.topic_id,
+      position: row.position,
+      title: rt.title,
+      description: rt.description,
+      category: rt.category,
+    };
+  });
+}
+
+/**
+ * Every topic the user has finished, from both completion records: per-topic
+ * progress rows and completed study guides (same sources the in-app For You
+ * list uses). Null on a read error.
+ */
+async function fetchCompletedTopicIds(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Set<string> | null> {
+  const [progress, guides] = await Promise.all([
+    supabase
+      .from('user_topic_progress')
+      .select('topic_id')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null),
+    supabase
+      .from('user_study_guides')
+      .select('study_guides!inner(topic_id)')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null),
+  ]);
+
+  if (progress.error) {
+    console.error('[UnifiedSelector] Error fetching completed topics:', progress.error);
+    return null;
+  }
+  if (guides.error) {
+    // Secondary source; per-topic rows are authoritative for paths.
+    console.error('[UnifiedSelector] Error fetching completed guides:', guides.error);
+  }
+
+  const ids = new Set<string>();
+  for (const row of progress.data || []) {
+    if ((row as any).topic_id) ids.add((row as any).topic_id);
+  }
+  for (const row of guides.data || []) {
+    const topicId = ((row as any).study_guides as { topic_id?: string } | null)?.topic_id;
+    if (topicId) ids.add(topicId);
+  }
+  return ids;
 }
 
 /**
@@ -348,8 +423,9 @@ interface RotatingTopicCandidate {
  * who never starts a path gets the identical push forever if they ignore it
  * (product decision, 4 Sept 2026).
  *
- * Walks the ranked candidates (best first), skipping any path whose first
- * topic has already been sent as a for_you/recommended_topic push. Once
+ * Walks the ranked candidates (best first), skipping paths the user has
+ * finished (stored completion or every visible lesson done) and any path whose
+ * first unfinished lesson has already been sent as a for_you/recommended_topic push. Once
  * every candidate has been tried, the cycle restarts from the top rather
  * than falling silent.
  *
@@ -380,7 +456,7 @@ async function selectRotatingForYouTopic(
     return null;
   }
 
-  const [{ data: completedPaths }, { data: sentLogs }] = await Promise.all([
+  const [{ data: completedPaths }, { data: sentLogs }, completedTopicIds] = await Promise.all([
     supabase
       .from('user_learning_path_progress')
       .select('learning_path_id, learning_paths!inner(slug)')
@@ -392,7 +468,12 @@ async function selectRotatingForYouTopic(
       .eq('user_id', userId)
       .in('notification_type', ['for_you', 'recommended_topic'])
       .not('topic_id', 'is', null),
+    fetchCompletedTopicIds(supabase, userId),
   ]);
+
+  if (!completedTopicIds) {
+    return null;
+  }
 
   const completedSlugs = new Set<string>(
     (completedPaths || []).map((p: any) => p.learning_paths?.slug).filter(Boolean)
@@ -409,37 +490,42 @@ async function selectRotatingForYouTopic(
     return null;
   }
 
+  const { data: paths, error: pathsError } = await supabase
+    .from('learning_paths')
+    .select('id, slug')
+    .in('slug', candidateSlugs)
+    .eq('is_active', true);
+  if (pathsError) {
+    console.error('[UnifiedSelector] Error fetching candidate paths:', pathsError);
+    return null;
+  }
+  const pathIdBySlug = new Map<string, string>(
+    (paths || []).map((p: { id: string; slug: string }) => [p.slug, p.id])
+  );
+
+  const topics = await fetchVisiblePathTopics(supabase, [...pathIdBySlug.values()]);
+  if (!topics) {
+    return null;
+  }
+
   let firstCandidateTopic: RotatingTopicCandidate | null = null;
 
   for (const slug of candidateSlugs) {
-    const { data: path } = await supabase
-      .from('learning_paths')
-      .select('id')
-      .eq('slug', slug)
-      .eq('is_active', true)
-      .maybeSingle();
-    if (!path) continue;
+    const pathId = pathIdBySlug.get(slug);
+    if (!pathId) continue;
 
-    const { data: firstTopic } = await supabase
-      .from('learning_path_topics')
-      .select('topic_id, recommended_topics!inner(title, description, category, is_active)')
-      .eq('learning_path_id', path.id)
-      .eq('position', 0)
-      .eq('is_active', true)
-      .eq('recommended_topics.is_active', true)
-      .maybeSingle();
-    if (!firstTopic) continue;
+    // Suggest the first lesson the user has not done — not lesson 1 of a path
+    // they already finished through topic rows (stored completed_at may lag).
+    const pathTopics = topics.filter((t) => t.learning_path_id === pathId);
+    if (isPathFinished(pathTopics, completedTopicIds)) continue;
+    const next = firstUnfinishedTopic(pathTopics, completedTopicIds);
+    if (!next) continue;
 
-    const rt = firstTopic.recommended_topics as unknown as {
-      title: string;
-      description: string;
-      category: string;
-    };
     const candidate: RotatingTopicCandidate = {
-      id: firstTopic.topic_id,
-      title: rt.title,
-      description: rt.description,
-      category: rt.category,
+      id: next.topic_id,
+      title: next.title,
+      description: next.description,
+      category: next.category,
     };
 
     if (!firstCandidateTopic) {

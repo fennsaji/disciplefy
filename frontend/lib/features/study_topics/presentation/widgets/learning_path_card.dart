@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/services/guest_path_enrollment.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_level_style.dart';
 
@@ -105,7 +107,22 @@ class LearningPathCard extends StatelessWidget {
                     constraints: const BoxConstraints(minHeight: 26),
                     child: Align(
                       alignment: Alignment.topLeft,
-                      child: _StatusBadge(path: path),
+                      // A path closed to the guest shows its lock first, on
+                      // the left, so it is visible even when the tile is only
+                      // partly scrolled into a row.
+                      child: ValueListenableBuilder<String?>(
+                        valueListenable: GuestPathEnrollment.changes,
+                        builder: (context, _, __) => isGuestLockedPath(path)
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GuestPathLockBadge(path: path),
+                                  const SizedBox(width: 6),
+                                  Flexible(child: _StatusBadge(path: path)),
+                                ],
+                              )
+                            : _StatusBadge(path: path),
+                      ),
                     ),
                   ),
                 ),
@@ -114,7 +131,7 @@ class LearningPathCard extends StatelessWidget {
                   eyebrow,
                   maxLines: 2,
                   style: AppFonts.inter(
-                    fontSize: 10.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                     color: PathLevelStyle.eyebrowGold,
@@ -129,7 +146,7 @@ class LearningPathCard extends StatelessWidget {
                         MediaQuery.textScalerOf(context).scale(16) * 1.25 * 2,
                   ),
                   child: Text(
-                    path.title,
+                    path.displayTitle,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.poppins(
@@ -254,7 +271,7 @@ class _TileProgress extends StatelessWidget {
         Text(
           '${path.progressPercentage}%',
           style: AppFonts.inter(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             color: PathLevelStyle.eyebrowGold,
           ),
@@ -301,7 +318,7 @@ class _StatusBadge extends StatelessWidget {
             child: Text(
               label,
               style: AppFonts.inter(
-                fontSize: 10.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),

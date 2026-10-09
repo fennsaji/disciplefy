@@ -13,6 +13,7 @@ import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
 import '../../../../core/utils/logger.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 
 /// BLoC for managing daily verse state and operations
 class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
@@ -33,9 +34,18 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   /// Whether a non-forced [LoadTodaysVerse] is being handled. The app-wide
   /// bloc is asked for today's verse by main.dart when it is created and by
   /// Home when it mounts — usually in the same frame — so a second request
-  /// while one is in flight is dropped instead of loading (and marking the
-  /// verse viewed) twice.
+  /// while one is in flight is dropped instead of loading twice.
   bool _isLoadingTodaysVerse = false;
+
+  /// Local calendar day the streak was last marked from this bloc.
+  DateTime? _streakMarkedOn;
+  String? _streakMarkedFor;
+
+  /// Local day and user of the last `nux.verse_viewed`, sent once per day.
+  DateTime? _viewTrackedOn;
+  String? _viewTrackedFor;
+
+  static DateTime _localDay(DateTime t) => DateTime(t.year, t.month, t.day);
 
   DailyVerseBloc({
     required this.getDailyVerse,
@@ -59,7 +69,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
     // `on<Event>` defaults to handling every event concurrently — if
     // MarkVerseAsViewed fires more than once for the same app open (e.g.
-    // _loadAndEmitVerse running more than once), each concurrent handler
+    // several read signals in the same moment), each concurrent handler
     // reads the SAME pre-update `state.streak` before any sibling's emit
     // lands, so each one independently sees the streak "cross" a milestone
     // and sends its own push. Same trigger, multiple identical notifications
@@ -379,17 +389,15 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
         // Load current streak for authenticated users
         final streak = await _loadStreak();
 
+        // Loading the verse does not count toward the streak: the UI sends
+        // MarkVerseAsViewed once the verse was actually read (on screen for
+        // a few seconds, copied, shared, studied).
         emit(DailyVerseLoaded(
           verse: verse,
           currentLanguage: preferredLanguage,
           preferredLanguage: preferredLanguage,
           streak: streak,
         ));
-
-        // Automatically mark verse as viewed for today (update streak)
-        if (verse.isToday) {
-          add(const MarkVerseAsViewed());
-        }
       },
     );
   }
@@ -413,9 +421,22 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     final currentState = state;
     if (currentState is! DailyVerseLoaded) return;
 
+    // The UI reports a read from several places (timer, copy, share, study);
+    // only the first one each local day reaches the server. A failed call
+    // leaves the day unmarked so the next read retries.
+    final today = _localDay(DateTime.now());
+    if (!event.fromLesson) _trackVerseView(today, currentState.streak?.userId);
+    // Keyed by user too: the bloc is app-wide and outlives a sign-out.
+    if (_streakMarkedOn == today &&
+        _streakMarkedFor == currentState.streak?.userId) {
+      return;
+    }
+
     try {
       final previousStreak = currentState.streak;
       final updatedStreak = await streakRepository.markVerseAsViewed();
+      _streakMarkedOn = today;
+      _streakMarkedFor = updatedStreak.userId;
 
       // Emit updated state with new streak
       emit(currentState.copyWith(streak: updatedStreak));
@@ -423,9 +444,19 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       // Check for milestone achievement or streak lost
       await _checkAndSendStreakNotifications(previousStreak, updatedStreak);
     } catch (e) {
-      // Silently fail - streak is optional feature
-      // Don't emit error state as verse is still valid
+      // Streak is secondary: keep the verse on screen, no error state. The
+      // day stays unmarked, so the next read retries.
+      Logger.warning(
+          '[DAILY_VERSE] Streak not updated (${e.runtimeType}); will retry');
     }
+  }
+
+  /// Reports the first verse read of [today] for [userId].
+  void _trackVerseView(DateTime today, String? userId) {
+    if (_viewTrackedOn == today && _viewTrackedFor == userId) return;
+    _viewTrackedOn = today;
+    _viewTrackedFor = userId;
+    ActivationAnalytics.maybeTrack(NuxEvent.verseViewed, {'source': 'home'});
   }
 
   /// Check if milestone reached or streak lost, and send notification

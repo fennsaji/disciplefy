@@ -182,7 +182,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   /// Markdown styles for a Discipler reply: Inter body, Poppins headings,
-  /// lavender (dark) / indigo (light) accents, raised code and quote fills.
+  /// gold accents, raised code and quote fills.
   MarkdownStyleSheet _markdownStyleSheet(BuildContext context, Color ink) {
     final palette = ReaderPalette.of(context);
     TextStyle body({FontWeight? weight, FontStyle? style, Color? color}) =>
@@ -403,16 +403,16 @@ class ChatBubble extends StatelessWidget {
   }
 
   /// Gets the background color based on message type and status.
-  /// User: white pill on dark, indigo pill on light. Reply: a card.
+  /// User: white pill on dark, ink pill on light. Reply: a card.
   Color _getBackgroundColor(ThemeData theme, bool isUser) {
     if (message.status == ChatMessageStatus.failed) {
       return AppColors.error.withValues(alpha: 0.1);
     }
     final isDark = theme.brightness == Brightness.dark;
     if (isUser) {
-      return isDark ? Colors.white : ReaderPalette.selectedFill;
+      return isDark ? Colors.white : ReaderPalette.ink;
     }
-    return isDark ? const Color(0xFF1A1A21) : Colors.white;
+    return isDark ? const Color(0xFF17171C) : Colors.white;
   }
 
   /// Border only where a fill alone would not separate from the page.
@@ -423,7 +423,7 @@ class ChatBubble extends StatelessWidget {
     if (isUser) return null;
     return theme.brightness == Brightness.dark
         ? Colors.white.withOpacity(0.06)
-        : const Color(0xFF16161D).withOpacity(0.08);
+        : ReaderPalette.ink.withValues(alpha: 0.08);
   }
 
   /// Gets the text color based on message type
@@ -432,8 +432,8 @@ class ChatBubble extends StatelessWidget {
       return AppColors.error;
     }
     final isDark = theme.brightness == Brightness.dark;
-    if (isUser) return isDark ? AppColors.brandPrimaryInk : Colors.white;
-    return isDark ? const Color(0xFFF2F2F4) : const Color(0xFF16161D);
+    if (isUser) return isDark ? ReaderPalette.ink : Colors.white;
+    return isDark ? const Color(0xFFF2F2F4) : ReaderPalette.ink;
   }
 
   /// Determines whether to show status indicator

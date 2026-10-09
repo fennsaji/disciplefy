@@ -24,6 +24,7 @@ import { UserContext } from '../types/index.ts'
 import { defaultServiceRoleLimiter, getRequestIdentifier } from '../utils/rate-limiter.ts'
 import { runInBackground } from '../utils/background-task.ts'
 import { getProjectJwtVerifier, JwtVerificationError, VerifiedIdentity } from '../auth/jwt-verifier.ts'
+import { toUserContext, enforceFullAccount } from '../auth/user-context.ts'
 
 /**
  * Handler function signature that Edge Functions must implement
@@ -86,6 +87,17 @@ interface FunctionConfig {
    * so endpoints that move money, change subscriptions or delete data set this.
    */
   readonly verifyWithAuthServer?: boolean
+  /**
+   * Reject guests (Supabase anonymous users) with 403 ACCOUNT_REQUIRED.
+   * Set on account-only functions: fellowships, Discipler, payments.
+   * Callers without a user JWT still reach the handler's own authentication.
+   */
+  readonly requireFullAccount?: boolean
+  /**
+   * With `requireFullAccount`: the reason sent as `error.details.reason` on a
+   * guest's 403, for the client's account-needed sheet (e.g. `memory_verses`).
+   */
+  readonly accountRequiredReason?: string | null
 }
 
 /**
@@ -99,7 +111,9 @@ const DEFAULT_CONFIG: Required<FunctionConfig> = {
   timeout: 60000, // 60 seconds
   corsHeaders: {},
   allowGuestOnJwtFailure: false, // Default: do not silently fall back to guest on JWT errors
-  verifyWithAuthServer: false
+  verifyWithAuthServer: false,
+  requireFullAccount: false,
+  accountRequiredReason: null
 }
 
 /**
@@ -194,13 +208,18 @@ export function createFunction(
         )
         metrics.authTime = performance.now()
       } catch (authError) {
-        // If auth is required, rethrow the error
-        if (finalConfig.requireAuth) {
+        // If auth is required, rethrow the error. An account-only function also
+        // rejects a user JWT it could not verify, so a guest never reaches a
+        // handler that re-reads the identity on its own.
+        if (finalConfig.requireAuth || (finalConfig.requireFullAccount && presentsUserJwt(req))) {
           throw authError
         }
         // Otherwise, continue without user context (anonymous access)
         metrics.authTime = performance.now()
       }
+
+      // Account-only functions: a guest gets 403 ACCOUNT_REQUIRED.
+      enforceFullAccount(finalConfig.requireFullAccount, userContext, finalConfig.accountRequiredReason)
 
       // Set up timeout. The timer is cleared once the race settles, so a fast
       // request does not leave a pending timer holding the worker open.
@@ -612,12 +631,20 @@ export async function parseUserContext(
   // Let AuthService reuse this verification for the rest of the request.
   services.authService.primeVerifiedIdentity(req, identity)
 
-  return {
-    type: identity.isAnonymous ? 'anonymous' : 'authenticated',
-    userId: identity.isAnonymous ? undefined : identity.id,
-    sessionId: identity.isAnonymous ? identity.id : undefined,
-    email: identity.email
-  }
+  // An anonymous Supabase user is an authenticated guest (isGuest: true).
+  return { ...toUserContext(identity) }
+}
+
+/**
+ * True when the request carries a bearer token other than the project anon key
+ * (header or EventSource query parameter), i.e. it claims a user identity.
+ */
+export function presentsUserJwt(req: Request): boolean {
+  const header = req.headers.get('Authorization')
+  const token = header
+    ? header.replace('Bearer ', '')
+    : new URL(req.url).searchParams.get('authorization')
+  return !!token && token !== config.supabaseAnonKey
 }
 
 /**

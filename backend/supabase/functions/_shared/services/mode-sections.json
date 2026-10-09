@@ -1,0 +1,8 @@
+{
+  "_comment": "Sections each study mode streams to the client, in order. Shared parity table: asserted by mode-sections.test.ts (backend) and frontend/test/features/study_generation/domain/expected_sections_test.dart. Multi-pass interpretation parts are combined into 'interpretation' before they are sent.",
+  "quick": ["summary", "context", "passage", "interpretation", "relatedVerses", "reflectionQuestions", "prayerPoints"],
+  "standard": ["summary", "context", "passage", "interpretation", "relatedVerses", "reflectionQuestions", "prayerPoints"],
+  "deep": ["summary", "context", "passage", "interpretation", "relatedVerses", "reflectionQuestions", "prayerPoints"],
+  "lectio": ["summary", "context", "passage", "interpretation", "relatedVerses", "reflectionQuestions", "prayerPoints"],
+  "sermon": ["summary", "context", "passage", "interpretation", "relatedVerses", "reflectionQuestions", "prayerPoints"]
+}

@@ -5,8 +5,8 @@ import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/widgets/memory_ui/style.dart';
 
-/// Stadium filter chip: raised fill; selected = CTA fill/ink (white + indigo
-/// ink on dark, indigo + white on light).
+/// Stadium filter chip: raised fill; selected = CTA fill/ink (white + ink
+/// on dark, ink + white on light).
 class MemoryChoiceChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -22,32 +22,43 @@ class MemoryChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final fill = selected ? palette.ctaFill : palette.raised;
-    final ink = selected ? palette.ctaInk : palette.muted;
+    // Selected: the gold fill with dark ink. Unselected: the card fill with a
+    // hairline; muted labels keep 5.5:1 on dark, light keeps ink.
+    final fill = selected ? palette.selectedFill : palette.card;
+    final ink = selected
+        ? palette.onSelected
+        : (palette.isDark ? palette.muted : palette.text);
+    const shape = StadiumBorder();
+    // A 32px chip drawn inside a 40px tap row.
     return Semantics(
       button: true,
       selected: selected,
-      child: Material(
-        color: fill,
-        shape: StadiumBorder(
-          side: BorderSide(
-            color: selected ? Colors.transparent : palette.hairline,
-          ),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const StadiumBorder(),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 40),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: shape,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 40),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
+              decoration: ShapeDecoration(
+                color: fill,
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    color: selected ? Colors.transparent : palette.hairline,
+                  ),
+                ),
+              ),
               child: Center(
                 widthFactor: 1,
+                heightFactor: 1,
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
                   style: AppFonts.inter(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: ink,
                   ),
@@ -113,12 +124,14 @@ class MemorySegmentedControl<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final selectedFill = palette.isDark ? palette.page : palette.card;
+    // The chosen segment is the gold fill with dark ink; the others are
+    // muted labels on the raised track. Light keeps ink labels (5.5:1).
+    final idleInk = palette.isDark ? palette.muted : palette.text;
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: palette.raised,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(19),
       ),
       child: Row(
         children: [
@@ -129,30 +142,30 @@ class MemorySegmentedControl<T> extends StatelessWidget {
                 selected: segment.value == selected,
                 child: Material(
                   color: segment.value == selected
-                      ? selectedFill
+                      ? palette.selectedFill
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     onTap: onChanged == null
                         ? null
                         : () => onChanged!(segment.value),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 40),
+                      constraints: const BoxConstraints(minHeight: 34),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 8),
+                            horizontal: 6, vertical: 6),
                         child: Center(
                           // Wraps to a second line rather than truncating.
                           child: Text(
                             segment.label,
                             textAlign: TextAlign.center,
                             style: AppFonts.inter(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: segment.value == selected
-                                  ? palette.text
-                                  : palette.muted,
+                                  ? palette.onSelected
+                                  : idleInk,
                             ),
                           ),
                         ),
@@ -173,7 +186,7 @@ enum MemoryTokenState {
   /// Card fill + hairline, normal text (word bank / available phrase).
   idle,
 
-  /// Indigo fill, white text (placed / selected word).
+  /// Gold fill, ink text (placed / selected word).
   selected,
 
   /// Green tint + border (checked correct).
@@ -236,18 +249,20 @@ class MemoryTokenChip extends StatelessWidget {
         border = palette.hairline;
         ink = palette.text;
       case MemoryTokenState.selected:
-        fill = ReaderPalette.selectedFill;
-        border = ReaderPalette.selectedFill;
-        ink = Colors.white;
+        fill = palette.selectedFill;
+        border = palette.selectedFill;
+        ink = palette.onSelected;
       case MemoryTokenState.correct:
         fill = AppColors.success.withValues(alpha: alpha);
         border = context.appSuccess;
-        ink = context.appSuccess;
+        ink = palette.onTint(context.appSuccess,
+            tint: AppColors.success, alpha: alpha);
         borderWidth = 1.5;
       case MemoryTokenState.wrong:
         fill = AppColors.error.withValues(alpha: alpha);
         border = context.appError;
-        ink = context.appError;
+        ink = palette.onTint(context.appError,
+            tint: AppColors.error, alpha: alpha);
         borderWidth = 1.5;
       case MemoryTokenState.blank:
         fill = Colors.transparent;
@@ -432,10 +447,11 @@ class MemoryStepIndicator extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    // White on Emerald-800 is 7.7:1 (on Emerald-500, 2.5:1).
                     color: i < currentIndex
-                        ? AppColors.success
+                        ? AppColors.successDark
                         : i == currentIndex
-                            ? ReaderPalette.selectedFill
+                            ? palette.selectedFill
                             : palette.raised,
                   ),
                   child: i < currentIndex
@@ -447,7 +463,7 @@ class MemoryStepIndicator extends StatelessWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: i == currentIndex
-                                ? Colors.white
+                                ? palette.onSelected
                                 : palette.muted,
                           ),
                         ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -48,11 +49,15 @@ import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../data/models/learning_path_download_model.dart';
 import '../../data/services/learning_path_download_service.dart';
 import '../../domain/entities/learning_path.dart';
+import '../../domain/utils/lesson_launch.dart';
+import '../../domain/utils/path_primary_cta.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
 import '../../../../core/utils/logger.dart';
 import '../widgets/learning_path_detail_parts.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 
 /// Detail page for a learning path showing topics and progress.
 class LearningPathDetailPage extends StatefulWidget {
@@ -87,6 +92,14 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   /// caller can refetch its own path list only when the data is actually stale
   /// — an ordinary look-and-go-back leaves the caller's state untouched.
   bool _progressChanged = false;
+
+  /// Set by the "Start lesson 1" tap on a path the user has not joined yet:
+  /// once enrolment succeeds the page opens lesson 1 instead of just
+  /// reloading, so one tap does both.
+  bool _startAfterEnroll = false;
+
+  /// Latest loaded detail, read by the enrolment listener.
+  LearningPathDetail? _lastLoadedDetail;
 
   @override
   void initState() {
@@ -137,9 +150,13 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   /// Navigate to topic and refresh on return
   Future<void> _navigateToTopic(
-      LearningPathTopic topic, LearningPathDetail path) async {
-    // Auto-enroll if not enrolled yet
-    if (!path.isEnrolled) {
+    LearningPathTopic topic,
+    LearningPathDetail path, {
+    bool alreadyEnrolled = false,
+  }) async {
+    // Auto-enroll if not enrolled yet (skipped when enrolment just succeeded
+    // and [path] is the pre-enrolment snapshot).
+    if (!path.isEnrolled && !alreadyEnrolled) {
       Logger.debug(
           '[LEARNING_PATH_DETAIL] Auto-enrolling user in path: ${path.title}');
       context
@@ -335,32 +352,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       languageService.saveStudyModePreference(mode);
     }
 
-    final encodedTitle = Uri.encodeComponent(topic.title);
-    final encodedDescription = Uri.encodeComponent(topic.description);
-    final encodedInputType = Uri.encodeComponent(topic.inputType);
-    final encodedPathTitle = Uri.encodeComponent(path.title);
-    final encodedPathDescription = Uri.encodeComponent(path.description);
-    final topicIdParam =
-        topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
-    final descriptionParam =
-        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
-    final pathIdParam = path.id.isNotEmpty ? '&path_id=${path.id}' : '';
-    final pathTitleParam =
-        path.title.isNotEmpty ? '&path_title=$encodedPathTitle' : '';
-    final pathDescriptionParam = path.description.isNotEmpty
-        ? '&path_description=$encodedPathDescription'
-        : '';
-    final discipleLevelParam = path.discipleLevel.isNotEmpty
-        ? '&disciple_level=${Uri.encodeComponent(path.discipleLevel)}'
-        : '';
-
     Logger.debug(
         '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}, path: ${path.title}, level: ${path.discipleLevel}');
 
     // Use push and await the result - when user returns, refresh the data
-    await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam$pathTitleParam$pathDescriptionParam$discipleLevelParam',
-    );
+    await context.push(buildLessonLaunchLocation(
+        path: path, topic: topic, mode: mode, language: _currentLanguage));
 
     // Persist that this topic was accessed so future visits bypass the token check
     _markTopicAsAccessed(topic);
@@ -415,6 +412,21 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     }
   }
 
+  /// Set once the guest lock was checked, so the sheet shows only once.
+  bool _guestLockChecked = false;
+
+  /// A path closed to the guest (a deep link, a shared URL) does not show
+  /// its detail: the account-needed sheet opens, and the page closes unless
+  /// the guest signs up.
+  Future<void> _guardGuestLockedPath(LearningPath path) async {
+    if (_guestLockChecked) return;
+    _guestLockChecked = true;
+    final reason = guestPathLockReason(path);
+    if (reason == null) return;
+    final linked = await AccountNeededSheet.show(context, reason);
+    if (!linked && mounted) _handleBackNavigation();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -431,7 +443,19 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             bottom: false,
             child: BlocConsumer<LearningPathsBloc, LearningPathsState>(
               listener: (context, state) {
+                if (state is LearningPathDetailLoaded) {
+                  _guardGuestLockedPath(state.pathDetail);
+                }
                 if (state is LearningPathEnrolled) {
+                  final path = _lastLoadedDetail;
+                  if (_startAfterEnroll && path != null) {
+                    _startAfterEnroll = false;
+                    final first = pathPrimaryCta(path)?.topic;
+                    if (first != null) {
+                      _navigateToTopic(first, path, alreadyEnrolled: true);
+                      return;
+                    }
+                  }
                   showAppSnackBar(
                     context,
                     context.tr(TranslationKeys.learningPathsEnrolledSuccess),
@@ -440,6 +464,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   // Reload details to show updated enrollment status
                   _loadPathDetails();
                 }
+                if (state is LearningPathsError) _startAfterEnroll = false;
+                final accountReason =
+                    state is LearningPathsError ? state.accountReason : null;
+                if (accountReason != null) {
+                  _onAccountRequired(accountReason);
+                }
               },
               builder: (context, state) {
                 if (state is LearningPathDetailLoading) {
@@ -447,10 +477,17 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 }
 
                 if (state is LearningPathsError) {
+                  // A guest who needs an account sees the sheet over the
+                  // path, not an error page.
+                  final shown = _lastLoadedDetail;
+                  if (state.accountReason != null && shown != null) {
+                    return _buildLoadedState(context, shown);
+                  }
                   return _buildErrorState(context, state);
                 }
 
                 if (state is LearningPathDetailLoaded) {
+                  _lastLoadedDetail = state.pathDetail;
                   return _buildLoadedState(context, state.pathDetail);
                 }
 
@@ -470,6 +507,16 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         ),
       ),
     );
+  }
+
+  /// Enrolling needs an account (a guest's second or other path): show the
+  /// account-needed sheet, then reload the path so the page is usable again.
+  Future<void> _onAccountRequired(String reason) async {
+    await AccountNeededSheet.show(
+      context,
+      AccountReasons.fromQuery(reason) ?? AccountReason.otherPath,
+    );
+    if (mounted) _loadPathDetails();
   }
 
   Widget _buildTopBar([LearningPathDetail? path]) {
@@ -528,7 +575,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         PathDetailStatusView(
           leading: PopupIconCircle(
             icon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
-            tone: isOffline ? PopupTone.indigo : PopupTone.gold,
+            tone: isOffline ? PopupTone.accent : PopupTone.gold,
             size: 64,
           ),
           title: isOffline
@@ -615,40 +662,46 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     );
   }
 
-  /// The bottom pill: enroll when not enrolled, otherwise open the next
-  /// topic, or review from the start once the path is complete.
+  /// The bottom pill: one tap enrols (if needed) and opens the lesson it
+  /// names; a finished path reviews lesson 1.
   ({String label, IconData icon, VoidCallback onPressed})? _primaryAction(
     BuildContext context,
     LearningPathDetail path,
   ) {
-    if (!path.isEnrolled) {
-      return (
-        label: context.tr(TranslationKeys.learningPathsStartPath),
-        icon: Icons.play_arrow_outlined,
-        onPressed: () => _enroll(path),
-      );
+    final cta = pathPrimaryCta(path);
+    if (cta == null) return null;
+    final n = {'n': cta.lessonNumber};
+    switch (cta.kind) {
+      case PathCtaKind.enrollAndStart:
+        return (
+          label: context.tr(TranslationKeys.learningPathsStartLesson, n),
+          icon: Icons.play_arrow_outlined,
+          onPressed: () => _enrollAndStart(path),
+        );
+      case PathCtaKind.start:
+        return (
+          label: context.tr(TranslationKeys.learningPathsStartLesson, n),
+          icon: Icons.play_arrow_outlined,
+          onPressed: () => _navigateToTopic(cta.topic, path),
+        );
+      case PathCtaKind.resume:
+        return (
+          label: context.tr(TranslationKeys.learningPathsContinueLesson, n),
+          icon: Icons.play_arrow_outlined,
+          onPressed: () => _navigateToTopic(cta.topic, path),
+        );
+      case PathCtaKind.review:
+        return (
+          label: context.tr(TranslationKeys.learningPathsReviewLesson),
+          icon: Icons.replay_rounded,
+          onPressed: () => _navigateToTopic(cta.topic, path),
+        );
     }
-    if (path.topics.isEmpty) return null;
+  }
 
-    final next = path.nextTopic;
-    if (next == null) {
-      final first = path.topics.first;
-      return (
-        label:
-            '${context.tr(TranslationKeys.learningPathsReview)} · ${first.title}',
-        icon: Icons.replay_rounded,
-        onPressed: () => _navigateToTopic(first, path),
-      );
-    }
-    final started = path.topics.any((t) => t.isCompleted || t.isInProgress);
-    final verb = context.tr(started
-        ? TranslationKeys.learningPathsContinue
-        : TranslationKeys.learningPathsStartPath);
-    return (
-      label: '$verb · ${next.title}',
-      icon: Icons.play_arrow_outlined,
-      onPressed: () => _navigateToTopic(next, path),
-    );
+  void _enrollAndStart(LearningPathDetail path) {
+    _startAfterEnroll = true;
+    _enroll(path);
   }
 
   void _enroll(LearningPath path) {
@@ -873,12 +926,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         ? path.category
         : (widget.initialPath?.category ?? '');
     return PathDetailHeader(
-      levelLabel: _getTranslatedDiscipleLevel(context, path.discipleLevel),
       category: category,
       title: path.title,
       description: path.description,
       topicsCount: path.topicsCount,
-      totalXp: path.totalXp,
       estimatedDays: path.estimatedDays,
       icon: iconForPath(path.iconName, category: category),
     );
@@ -936,53 +987,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       // (fellowship_study.current_guide_index), so only the label is shifted.
       number: topic.position + 1,
       title: topic.title,
-      category: topic.category,
-      xp: topic.xpValue,
       isMilestone: topic.isMilestone,
       status: status,
-      upNextLine: isNext ? _upNextLine(context, path) : null,
       onTap: isLocked ? null : () => _navigateToTopic(topic, path),
     );
-  }
-
-  /// "Next Topic · Standard · 8 min" — the mode the topic will open in:
-  /// the mode fixed in Settings, else the path's recommended mode.
-  String _upNextLine(BuildContext context, LearningPathDetail path) {
-    final pref =
-        sl<LanguagePreferenceService>().getLearningPathStudyModePreferenceRaw();
-    final mode =
-        (StudyModePreferences.isSpecificMode(pref, isLearningPath: true)
-                ? studyModeFromString(pref)
-                : null) ??
-            studyModeFromString(path.recommendedMode) ??
-            StudyMode.standard;
-    return [
-      context.tr(TranslationKeys.learningPathsNextTopic),
-      mode.localizedShortName(context),
-      mode.localizedDuration(context),
-    ].join(' · ');
-  }
-
-  String _getTranslatedDiscipleLevel(BuildContext context, String level) {
-    switch (level.toLowerCase()) {
-      case 'seeker':
-        return context.tr(TranslationKeys.discipleLevelSeeker);
-      case 'believer':
-        return context.tr(TranslationKeys.discipleLevelBeliever);
-      case 'disciple':
-        return context.tr(TranslationKeys.discipleLevelDisciple);
-      case 'leader':
-        return context.tr(TranslationKeys.discipleLevelLeader);
-      case 'follower':
-        return context.tr(TranslationKeys.discipleLevelFollower);
-      default:
-        return _capitalize(level);
-    }
-  }
-
-  String _capitalize(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
   }
 }
 
@@ -1063,11 +1071,11 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
     final green = SettingsToneColors.of(context, SettingsTone.green);
     final done = _model.completedCount;
     final total = widget.path.topics.length;
-    // Indigo while downloading, green once settled.
+    // Gold while downloading, green once settled.
     final Color progressInk =
         _isDownloading ? palette.accentIcon : green.foreground;
     final Color progressFill = _isDownloading
-        ? AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1)
+        ? palette.gold.withValues(alpha: palette.isDark ? 0.24 : 0.1)
         : green.fill;
 
     return DraggableScrollableSheet(
@@ -1329,8 +1337,7 @@ class _DownloadTopicCard extends StatelessWidget {
       indicatorChild =
           Icon(Icons.check_rounded, color: green.foreground, size: 18);
     } else if (isActivelyDownloading) {
-      indicatorBg =
-          AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.24 : 0.1);
+      indicatorBg = palette.gold.withValues(alpha: palette.isDark ? 0.24 : 0.1);
       indicatorChild = SizedBox(
         width: 18,
         height: 18,
@@ -1654,11 +1661,11 @@ class _TopicSelectionSheetState extends State<TopicSelectionSheet> {
                     ),
                     fillColor: WidgetStateProperty.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return ReaderPalette.selectedFill;
+                        return palette.selectedFill;
                       }
                       return Colors.transparent;
                     }),
-                    checkColor: Colors.white,
+                    checkColor: palette.onSelected,
                   );
                 },
               ),

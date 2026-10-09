@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { buildMarketingFeatures } from '@/lib/utils/plan-marketing-features'
+import { planMarketingUpdate } from '@/lib/utils/plan-marketing-features'
 
 /**
  * GET - Fetch all system configuration settings
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
       for (const update of updates) {
         const { data: plan } = await supabaseAdmin
           .from('subscription_plans')
-          .select('features')
+          .select('features, marketing_features_i18n')
           .eq('plan_code', update.plan_code)
           .single()
 
@@ -217,7 +217,12 @@ export async function POST(request: NextRequest) {
             .from('subscription_plans')
             .update({
               features: updatedFeatures,
-              marketing_features: buildMarketingFeatures(updatedFeatures),
+              ...((await planMarketingUpdate(
+                supabaseAdmin,
+                update.plan_code,
+                updatedFeatures,
+                plan.marketing_features_i18n
+              )) ?? {}),
               updated_at: new Date().toISOString()
             })
             .eq('plan_code', update.plan_code)
@@ -244,7 +249,7 @@ export async function POST(request: NextRequest) {
       for (const update of updates) {
         const { data: plan } = await supabaseAdmin
           .from('subscription_plans')
-          .select('features')
+          .select('features, marketing_features_i18n')
           .eq('plan_code', update.plan_code)
           .single()
 
@@ -258,7 +263,12 @@ export async function POST(request: NextRequest) {
             .from('subscription_plans')
             .update({
               features: updatedFeatures,
-              marketing_features: buildMarketingFeatures(updatedFeatures),
+              ...((await planMarketingUpdate(
+                supabaseAdmin,
+                update.plan_code,
+                updatedFeatures,
+                plan.marketing_features_i18n
+              )) ?? {}),
               updated_at: new Date().toISOString()
             })
             .eq('plan_code', update.plan_code)

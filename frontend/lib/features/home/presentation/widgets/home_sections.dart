@@ -40,7 +40,7 @@ class _HomeCardColors {
             textMuted: Color(0xFF9CA3AF),
             ringTrack: Color(0xFF26262F),
             chevron: Color(0xFF5A5A63),
-            link: Color(0xFF9CA3AF),
+            link: AppColors.brandGold,
           )
         : const _HomeCardColors(
             surface: Colors.white,
@@ -49,7 +49,7 @@ class _HomeCardColors {
             textMuted: Color(0xFF6F6B61),
             ringTrack: Color(0xFFEEEBE3),
             chevron: Color(0xFFB5B0A4),
-            link: AppColors.brandPrimary,
+            link: AppColors.brandGoldDeep,
           );
   }
 }
@@ -101,7 +101,7 @@ class HomeSectionHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: AppFonts.inter(fontSize: 11.5, color: c.textMuted),
+                  style: AppFonts.inter(fontSize: 12, color: c.textMuted),
                 ),
               ],
             ],
@@ -217,7 +217,7 @@ class HomeStatTile extends StatelessWidget {
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppFonts.inter(
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   color: c.textMuted,
                                   height: 1.3,
                                 ),
@@ -262,7 +262,6 @@ class HomeTodayTiles extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final gold = dark ? AppColors.brandGold : AppColors.brandGoldDeep;
-    final indigo = dark ? const Color(0xFFA9A6F5) : AppColors.brandPrimary;
 
     final streak = HomeStatTile(
       key: const Key('home_streak_tile'),
@@ -282,7 +281,7 @@ class HomeTodayTiles extends StatelessWidget {
     final review = HomeStatTile(
       key: const Key('home_review_tile'),
       icon: Icons.psychology_outlined,
-      accent: indigo,
+      accent: gold,
       title: dueCount > 0
           ? context.tr(TranslationKeys.homeToReview, {'count': dueCount})
           : context.tr(TranslationKeys.homeAllCaughtUp),
@@ -475,7 +474,7 @@ class HomePathRow extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.inter(
-                                  fontSize: 11, color: c.textMuted),
+                                  fontSize: 12, color: c.textMuted),
                             ),
                           ],
                         ),
@@ -602,7 +601,7 @@ class HomeLockedPathsCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       context.tr(TranslationKeys.learningPathsSubtitle),
-                      style: AppFonts.inter(fontSize: 11, color: palette.muted),
+                      style: AppFonts.inter(fontSize: 12, color: palette.muted),
                     ),
                   ],
                 ),

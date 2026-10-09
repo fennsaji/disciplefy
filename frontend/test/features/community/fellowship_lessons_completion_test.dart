@@ -27,7 +27,7 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/l
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/fellowship_lessons_tab_screen.dart';
-import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
@@ -149,7 +149,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brandGold),
         ),
         home: const Scaffold(
           body: FellowshipLessonsTabScreen(fellowshipId: 'f1'),
@@ -182,7 +182,7 @@ void main() {
       expect(
           find.descendant(
               of: find.byType(AlertDialog),
-              matching: find.text('Choose Next Path')),
+              matching: find.text('Choose next path')),
           findsOneWidget);
     });
 

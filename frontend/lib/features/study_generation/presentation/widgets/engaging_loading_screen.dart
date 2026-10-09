@@ -297,7 +297,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
                   margin: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.brandPrimary
+                    color: palette.gold
                         .withValues(alpha: palette.isDark ? 0.24 : 0.1),
                   ),
                   child: Icon(

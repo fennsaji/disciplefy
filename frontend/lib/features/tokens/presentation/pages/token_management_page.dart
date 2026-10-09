@@ -20,6 +20,8 @@ import 'package:disciplefy_bible_study/features/subscription/domain/entities/sub
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
 import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/subscription/presentation/widgets/plan_summary_card.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
@@ -31,7 +33,7 @@ import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
 /// Credits ("token management") in the quiet-ledger design.
 ///
 /// Shows today's balance as the hero, the purchase / upgrade actions, the
-/// current plan, daily credits per plan and links to both histories.
+/// current plan, what a study costs and links to both histories.
 class TokenManagementPage extends StatefulWidget {
   const TokenManagementPage({super.key});
 
@@ -44,9 +46,32 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   // Payment confirmation guard to prevent duplicate calls
   final Set<String> _processingPayments = <String>{};
 
+  // The bloc emits the subscription row and the status call as separate
+  // states; latch the row so the status call settling doesn't drop it.
+  Subscription? _subscription;
+
+  // Credit cost per study depth in the content language; empty until loaded
+  // (or when the cost table can't be reached).
+  Map<StudyMode, int> _costs = const {};
+
+  Future<void> _loadCosts() async {
+    final costs = await loadStudyCosts();
+    if (mounted) setState(() => _costs = costs);
+  }
+
+  void _latchSubscription(SubscriptionState state) {
+    if (state is SubscriptionLoaded) {
+      _subscription = state.activeSubscription;
+    } else if (state is SubscriptionError &&
+        state.previousSubscription != null) {
+      _subscription = state.previousSubscription;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _latchSubscription(context.read<SubscriptionBloc>().state);
     // Add lifecycle observer to detect when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Load token status when page opens
@@ -54,6 +79,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     // Load subscription status to check if user has active/cancelled subscription
     context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     context.read<SubscriptionBloc>().add(const LoadSubscriptionStatus());
+    _loadCosts();
   }
 
   @override
@@ -240,9 +266,15 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             }
           },
         ),
-        // Subscription BLoC listener
+        // Subscription BLoC listener. Page level, so the row is latched even
+        // while the token status is still loading.
         BlocListener<SubscriptionBloc, SubscriptionState>(
           listener: (context, state) {
+            if (state is SubscriptionLoaded ||
+                (state is SubscriptionError &&
+                    state.previousSubscription != null)) {
+              setState(() => _latchSubscription(state));
+            }
             if (state is SubscriptionResumed) {
               showAppSnackBar(
                 context,
@@ -350,37 +382,13 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   }
 
   Widget _buildTokenManagement(TokenStatus tokenStatus) {
+    // Rebuilds on subscription states; the row itself is latched by the
+    // page-level listener in build().
     return BlocBuilder<SubscriptionBloc, SubscriptionState>(
       builder: (context, subscriptionState) {
-        Subscription? subscription;
-        bool isCancelledButActive = false;
-        bool hasActiveSubscription = false;
-
-        if (subscriptionState is SubscriptionLoaded &&
-            subscriptionState.activeSubscription != null) {
-          final sub = subscriptionState.activeSubscription!;
-          subscription = sub;
-          isCancelledButActive =
-              sub.status == SubscriptionStatus.pending_cancellation;
-          hasActiveSubscription = sub.status == SubscriptionStatus.active ||
-              sub.status == SubscriptionStatus.authenticated ||
-              sub.status == SubscriptionStatus.created ||
-              sub.status == SubscriptionStatus.pending_cancellation;
-        }
-
-        // Trial end date for Standard plan — use backend value when available
-        final subscriptionStatus =
-            subscriptionState is UserSubscriptionStatusLoaded
-                ? subscriptionState.subscriptionStatus
-                : null;
-        final trialEndDate =
-            subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
-        final isTrialActive = DateTime.now().isBefore(trialEndDate);
-
-        // Standard user in trial (no subscription yet)
-        final isStandardTrialUser = tokenStatus.userPlan == UserPlan.standard &&
-            isTrialActive &&
-            !hasActiveSubscription;
+        final subscription = _subscription;
+        final isCancelledButActive =
+            subscription?.status == SubscriptionStatus.pending_cancellation;
 
         final purchaseEnabled =
             sl<SystemConfigService>().isTokenPurchaseEnabled;
@@ -446,16 +454,9 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                   tone: LedgerTone.warning,
                   text: context.tr(TranslationKeys.plansCancelledNotice),
                 ),
-              ] else if (isStandardTrialUser) ...[
-                const SizedBox(height: 10),
-                LedgerNotice(
-                  icon: Icons.auto_awesome_outlined,
-                  text:
-                      '${context.tr(TranslationKeys.myPlanFreeUntil)} ${DateFormat('MMMM d, y').format(trialEndDate)}',
-                ),
               ],
               const LedgerHairline(verticalMargin: 14),
-              _PlanAllowances(current: tokenStatus.userPlan),
+              _StudyCosts(costs: _costs),
               const LedgerHairline(verticalMargin: 14),
               LedgerSectionLabel(
                 context.tr(TranslationKeys.ledgerActivity),
@@ -526,8 +527,8 @@ class _BalanceHero extends StatelessWidget {
                         context.tr(
                             TranslationKeys.ledgerOfTotal, {'total': limit}),
                         maxLines: 1,
-                        style: AppFonts.inter(
-                            fontSize: 11.5, color: palette.muted),
+                        style:
+                            AppFonts.inter(fontSize: 12, color: palette.muted),
                       ),
                     ),
                   ],
@@ -668,6 +669,7 @@ class _ActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final buy = LedgerPrimaryButton(
       key: const Key('credits_get_credits'),
+      height: 40,
       label: context.tr(TranslationKeys.ledgerGetCredits),
       icon: Icons.add_rounded,
       onPressed: onBuy,
@@ -676,12 +678,14 @@ class _ActionsRow extends StatelessWidget {
     final upgrade = canBuy
         ? LedgerSecondaryButton(
             key: const Key('credits_upgrade'),
+            height: 40,
             label: upgradeLabel,
             icon: Icons.auto_awesome_outlined,
             onPressed: onUpgrade,
           )
         : LedgerPrimaryButton(
             key: const Key('credits_upgrade'),
+            height: 40,
             label: upgradeLabel,
             icon: Icons.auto_awesome_outlined,
             onPressed: onUpgrade,
@@ -715,8 +719,16 @@ class _PlanRow extends StatelessWidget {
     final plan = tokenStatus.userPlan;
     final sub = subscription;
     final renewal = sub?.nextBillingAt ?? sub?.currentPeriodEnd;
+    // Only the trial row itself makes this a trial, with its own end date —
+    // never the status call's trial date, which every user receives.
+    final isTrialRow = sub != null &&
+        (sub.status == SubscriptionStatus.trial || sub.provider == 'trial');
+    final trialUntil = isTrialRow ? sub.currentPeriodEnd : null;
     final String detail;
-    if (sub != null && sub.amountPaise > 0 && renewal != null) {
+    if (trialUntil != null) {
+      detail = context.tr(TranslationKeys.myPlanFreeTrialUntil,
+          {'date': DateFormat('MMM d, y').format(trialUntil)});
+    } else if (sub != null && sub.amountPaise > 0 && renewal != null) {
       detail = context.tr(TranslationKeys.ledgerPriceRenews, {
         'price': '₹${sub.amountRupees.toStringAsFixed(0)}',
         'date': DateFormat('MMM d').format(renewal),
@@ -725,92 +737,128 @@ class _PlanRow extends StatelessWidget {
       detail = context.tr('tokens.plans.${plan.name}_subtitle');
     }
 
-    return Row(
-      children: [
-        const LedgerIconTile(
-          icon: Icons.workspace_premium_outlined,
-          size: 40,
-          tone: LedgerTone.gold,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.tr(
-                    TranslationKeys.ledgerPlanName, {'plan': plan.displayName}),
-                style: AppFonts.inter(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w600,
-                  color: palette.text,
-                ),
+    // The trailing Manage link is capped at 35% of the row so the plan
+    // name never wraps letter by letter in hi/ml at narrow widths.
+    final manageLabel = context.tr('tokens.plans.manage');
+    Widget manage() => LedgerLink(
+          key: const Key('credits_manage_plan'),
+          label: manageLabel,
+          onTap: onManage,
+        );
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Manage sits at the right while the name column keeps 200px;
+        // otherwise (hi/ml at 320px, large text) it moves under the detail.
+        final painter = TextPainter(
+          text: TextSpan(
+            text: manageLabel,
+            style: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final manageWidth = painter.width;
+        painter.dispose();
+        final trailing = box.maxWidth - 60 - manageWidth >= 200;
+        return Row(
+          children: [
+            const LedgerIconTile(
+              icon: Icons.workspace_premium_outlined,
+              size: 40,
+              tone: LedgerTone.gold,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          context.tr(TranslationKeys.ledgerPlanName,
+                              {'plan': plan.displayName}),
+                          style: AppFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
+                        ),
+                      ),
+                      // The pill never shows without its "Free trial until" line.
+                      if (trialUntil != null) ...[
+                        const SizedBox(width: 8),
+                        LedgerStatusPill(
+                          key: const Key('credits_trial_pill'),
+                          label: context.tr(TranslationKeys.myPlanTrialPill),
+                          tone: LedgerTone.accent,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    detail,
+                    style: AppFonts.inter(
+                      fontSize: 12.5,
+                      color: palette.muted,
+                      fontFeatures: kLedgerTabular,
+                    ),
+                  ),
+                  if (!trailing) manage(),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                detail,
-                style: AppFonts.inter(
-                  fontSize: 12.5,
-                  color: palette.muted,
-                  fontFeatures: kLedgerTabular,
-                ),
+            ),
+            if (trailing) ...[
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: box.maxWidth * 0.35),
+                child: manage(),
               ),
             ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        LedgerLink(
-          key: const Key('credits_manage_plan'),
-          label: context.tr('tokens.plans.manage'),
-          onTap: onManage,
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
 
-/// Daily credits of every plan, the current one in gold.
-class _PlanAllowances extends StatelessWidget {
-  final UserPlan current;
+/// What a study costs, in one line built from the backend's cost table for
+/// the content language. Until (or unless) that loads, the general "from"
+/// line is shown instead.
+class _StudyCosts extends StatelessWidget {
+  final Map<StudyMode, int> costs;
 
-  const _PlanAllowances({required this.current});
+  const _StudyCosts({required this.costs});
 
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
+    final style = AppFonts.inter(
+      fontSize: 13,
+      color: palette.muted,
+      height: 1.45,
+      fontFeatures: kLedgerTabular,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         LedgerSectionLabel(
-          context.tr(TranslationKeys.ledgerDailyByPlan),
+          context.tr(TranslationKeys.creditsStudyCosts),
           padding: const EdgeInsets.only(top: 4, bottom: 6),
         ),
-        for (final plan in UserPlan.values)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                LedgerRow(
-                  label: plan == current
-                      ? '${context.tr('tokens.plans.${plan.name}')} · ${context.tr('tokens.plans.current')}'
-                      : context.tr('tokens.plans.${plan.name}'),
-                  emphasizeLabel: plan == current,
-                  value: context.tr('tokens.plans.${plan.name}_subtitle'),
-                  valueColor: plan == current ? palette.gold : palette.muted,
-                ),
-                // Who the plan is for ("Best for group leaders").
-                Text(
-                  context.tr('tokens.plans.${plan.name}_desc'),
-                  style: AppFonts.inter(
-                    fontSize: 12.5,
-                    color: palette.dim,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
+        if (costs.isEmpty)
+          Text(context.tr(TranslationKeys.ledgerStudyCostsLine), style: style)
+        else ...[
+          Text(
+            studyCostsLine(context, costs, followUp: kFollowUpCredits),
+            key: const Key('credits_cost_line'),
+            style: style.copyWith(color: palette.text),
           ),
+          const SizedBox(height: 2),
+          Text(context.tr(TranslationKeys.creditsExactCostNote), style: style),
+        ],
       ],
     );
   }

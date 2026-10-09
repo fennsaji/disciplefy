@@ -13,6 +13,16 @@ import { UserContext } from '../_shared/types/index.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { TtlCache } from '../_shared/utils/ttl-cache.ts'
 import { extractOAuthProfileData, createProfileUpdateData, logProfileExtraction } from '../_shared/utils/profile-extractor.ts'
+import { config } from '../_shared/core/config.ts'
+import { verifyUserToken } from '../_shared/auth/jwt-verifier.ts'
+import { assertFullAccount } from '../_shared/auth/user-context.ts'
+import {
+  GUEST_TOKEN_INVALID,
+  isGuestNotAnonymousError,
+  normalizeMergeCounts,
+  readGuestToken,
+  validateMergeRequest,
+} from './merge-guest.ts'
 
 interface UserProfile {
   id: string
@@ -528,6 +538,68 @@ async function handleSyncProfile(
 }
 
 // ============================================================================
+// Guest merge
+// ============================================================================
+
+const GUEST_TOKEN_INVALID_MESSAGE = 'The guest session is invalid or has expired.'
+
+/**
+ * POST ?action=merge_guest — merges the progress of the guest session whose
+ * access token is in `x-guest-token` into the caller's full account.
+ * Idempotent: a second call with the same token merges nothing.
+ * Logs carry counts only, never tokens or ids.
+ */
+async function handleMergeGuest(
+  req: Request,
+  services: ServiceContainer,
+  userContext: UserContext
+): Promise<Response> {
+  assertFullAccount(userContext)
+  const callerId = userContext.userId!
+
+  const token = readGuestToken(req)
+  if (!token) {
+    throw new AppError(GUEST_TOKEN_INVALID, GUEST_TOKEN_INVALID_MESSAGE, 400)
+  }
+
+  const guestUser = await verifyUserToken(token, config.supabaseUrl, async () => {
+    const { data, error } = await services.supabaseServiceClient.auth.getUser(token)
+    const user = data?.user
+    if (error || !user) return null
+    return { id: user.id, email: user.email ?? undefined, is_anonymous: user.is_anonymous === true }
+  })
+  const guest = guestUser ? { id: guestUser.id, isAnonymous: guestUser.is_anonymous } : null
+
+  const invalid = validateMergeRequest(callerId, guest)
+  if (invalid || !guest) {
+    throw new AppError(invalid ?? GUEST_TOKEN_INVALID, GUEST_TOKEN_INVALID_MESSAGE, 400)
+  }
+
+  // The RPC re-checks in auth.users that the guest is still anonymous (a
+  // token issued before the guest upgraded to a full account still carries
+  // is_anonymous=true) and that the caller is a full account.
+  const { data, error } = await services.supabaseServiceClient.rpc('merge_guest_progress', {
+    p_guest: guest.id,
+    p_user: callerId,
+  })
+  if (error) {
+    if (isGuestNotAnonymousError(error)) {
+      throw new AppError(GUEST_TOKEN_INVALID, GUEST_TOKEN_INVALID_MESSAGE, 400)
+    }
+    console.error('[USER_PROFILE] merge_guest failed', { code: error.code })
+    throw new AppError('DATABASE_ERROR', 'Could not merge guest progress', 500)
+  }
+
+  const counts = normalizeMergeCounts(data)
+  console.log('[USER_PROFILE] merge_guest done', counts)
+
+  return new Response(
+    JSON.stringify({ success: true, data: counts }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -548,6 +620,9 @@ async function handleUserProfile(
     case 'PUT':
       return handleUpdateProfile(req, services, userId)
     case 'POST':
+      if (new URL(req.url).searchParams.get('action') === 'merge_guest') {
+        return handleMergeGuest(req, services, userContext)
+      }
       return handleSyncProfile(services, userId)
     default:
       throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)

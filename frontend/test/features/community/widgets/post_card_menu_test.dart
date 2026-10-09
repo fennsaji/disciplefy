@@ -18,33 +18,33 @@ FellowshipPostEntity post(String author, {String type = 'general'}) =>
 
 void main() {
   test(
-      'Discipler content: mentors and admins edit and delete, nobody reports or blocks, everyone shares',
+      'Discipler content: mentors and admins edit and delete, nobody reports or blocks, everyone shares and copies',
       () {
     expect(
         postMenuItems(post(kDisciplerUserId),
             isMentor: true, isAdmin: false, currentUserId: 'u'),
-        ['share', 'edit', 'delete']);
+        ['share', 'copy', 'edit', 'delete']);
     expect(
         postMenuItems(post(kDisciplerUserId),
             isMentor: false, isAdmin: true, currentUserId: 'u'),
-        ['share', 'edit', 'delete']);
+        ['share', 'copy', 'edit', 'delete']);
     expect(
         postMenuItems(post(kDisciplerUserId),
             isMentor: false, isAdmin: false, currentUserId: 'u'),
-        ['share']);
+        ['share', 'copy']);
   });
-  test('member content keeps existing rules plus share', () {
+  test('member content keeps existing rules plus share and copy', () {
     expect(
         postMenuItems(post('a'),
             isMentor: false, isAdmin: false, currentUserId: 'a'),
-        ['share', 'delete']);
+        ['share', 'copy', 'delete']);
     expect(
         postMenuItems(post('a'),
             isMentor: false, isAdmin: false, currentUserId: 'b'),
-        ['share', 'report', 'block']);
+        ['share', 'copy', 'report', 'block']);
     expect(
         postMenuItems(post('a'),
             isMentor: true, isAdmin: false, currentUserId: 'b'),
-        ['share', 'delete', 'block']);
+        ['share', 'copy', 'delete', 'block']);
   });
 }

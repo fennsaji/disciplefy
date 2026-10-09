@@ -18,6 +18,31 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 /// blurs it for free, with no blur filter.
 const int photoWashDecodeWidth = 8;
 
+/// Lightest and darkest pixels the scenery photos can show, used to check
+/// text over the wash against the worst case.
+const Color photoLightestPixel = Color(0xFFF6DCCB);
+const Color photoDarkestPixel = Color(0xFF7A4A3A);
+
+/// Scrim over a photo under header text (study guide hero). Dark: black strong
+/// enough that gold and white text clear 4.5:1 over the lightest photo pixel;
+/// light: a page-colour veil that keeps ink readable over the darkest one.
+List<Color> photoHeaderScrim(ReaderPalette palette) => palette.isDark
+    ? [
+        Colors.black.withValues(alpha: 0.74),
+        Colors.black.withValues(alpha: 0.72),
+        palette.page.withValues(alpha: 0.7),
+        palette.page,
+      ]
+    : [
+        palette.page.withValues(alpha: 0.94),
+        palette.page.withValues(alpha: 0.9),
+        palette.page.withValues(alpha: 0.92),
+        palette.page,
+      ];
+
+/// Stops for [photoHeaderScrim].
+const List<double> photoHeaderScrimStops = [0, 0.5, 0.8, 1];
+
 class PhotoWash extends StatelessWidget {
   /// The photo used by the Community tab (My fellowships and Discover).
   static const String communityTabImage = 'assets/images/hero/valley_mist.webp';
@@ -65,14 +90,14 @@ class PhotoWash extends StatelessWidget {
     // colour by ~75%. Light: a page-colour veil so dark ink stays readable.
     final shade = palette.isDark
         ? [
-            Colors.black.withValues(alpha: 0.5),
-            page.withValues(alpha: 0.68),
+            Colors.black.withValues(alpha: 0.7),
+            Colors.black.withValues(alpha: 0.5).withValues(alpha: 0.6),
             page.withValues(alpha: 0.88),
             page,
           ]
         : [
-            page.withValues(alpha: 0.62),
-            page.withValues(alpha: 0.75),
+            page.withValues(alpha: 0.85),
+            page.withValues(alpha: 0.8),
             page.withValues(alpha: 0.93),
             page,
           ];

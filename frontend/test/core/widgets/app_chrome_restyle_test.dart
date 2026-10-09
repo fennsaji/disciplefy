@@ -84,7 +84,7 @@ void main() {
         expect(bar.persist, isFalse);
         expect(
           bar.backgroundColor,
-          dark ? const Color(0xFF1F1F27) : const Color(0xFF16161D),
+          dark ? const Color(0xFF1F1F27) : const Color(0xFF1A1917),
         );
         expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
       });
@@ -233,7 +233,7 @@ void main() {
               Scaffold(
                 body: AppUpdateDialog(
                   icon: Icons.system_update_alt_rounded,
-                  tone: force ? PopupTone.gold : PopupTone.indigo,
+                  tone: force ? PopupTone.gold : PopupTone.accent,
                   title: t(force ? 'required_title' : 'available_title'),
                   body: t(force ? 'required_body' : 'available_body'),
                   currentVersion: '1.2.3',

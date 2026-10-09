@@ -214,12 +214,12 @@ class _ActivityCard extends StatelessWidget {
       case 'reply':
         return (label: l10n.activityKindReplied, tone: SettingsTone.green);
       case 'react':
-        return (label: l10n.activityKindReacted, tone: SettingsTone.indigo);
+        return (label: l10n.activityKindReacted, tone: SettingsTone.gold);
       case 'daily_post':
       case 'daily':
         return (label: l10n.activityKindDaily, tone: SettingsTone.gold);
       default:
-        return (label: kind.toUpperCase(), tone: SettingsTone.indigo);
+        return (label: kind.toUpperCase(), tone: SettingsTone.gold);
     }
   }
 
@@ -427,7 +427,7 @@ class _Badge extends StatelessWidget {
       child: Text(
         label,
         style: AppFonts.inter(
-          fontSize: 11.5,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           color: ink,
           letterSpacing: 0.2,

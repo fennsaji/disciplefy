@@ -10,10 +10,10 @@ enum MemoryCardState {
   /// Card fill + hairline border.
   normal,
 
-  /// Lavender/indigo 1.5px border (focused text field, active drop target).
+  /// Gold 1.5px border (focused text field, active drop target).
   focused,
 
-  /// Indigo-tinted fill + border (flip card front/back).
+  /// Gold-tinted fill + border (flip card front/back).
   accent,
 
   /// Green border (checked correct).
@@ -66,11 +66,10 @@ class MemoryAnswerCard extends StatelessWidget {
         borderWidth = 1.5;
       case MemoryCardState.accent:
         fill = Color.alphaBlend(
-          AppColors.brandPrimary
-              .withValues(alpha: palette.isDark ? 0.16 : 0.06),
+          palette.gold.withValues(alpha: palette.isDark ? 0.16 : 0.06),
           palette.card,
         );
-        border = AppColors.brandPrimary.withValues(alpha: 0.35);
+        border = palette.gold.withValues(alpha: 0.35);
       case MemoryCardState.correct:
         border = context.appSuccess;
         borderWidth = 1.5;
@@ -159,7 +158,7 @@ class MemorySectionLabel extends StatelessWidget {
               child: Text(
                 text.toUpperCase(),
                 style: AppFonts.inter(
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
                   color: color ?? palette.gold,
@@ -209,10 +208,10 @@ class MemoryStatTile extends StatelessWidget {
       label: '$value $label',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         decoration: BoxDecoration(
           color: palette.card,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: palette.hairline),
         ),
         child: Column(
@@ -223,9 +222,9 @@ class MemoryStatTile extends StatelessWidget {
               child: Text(
                 value,
                 maxLines: 1,
-                style: AppFonts.poppins(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
+                style: AppFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                   color: valueColor ?? palette.text,
                   fontFeatures: kMemoryTabular,
                 ),

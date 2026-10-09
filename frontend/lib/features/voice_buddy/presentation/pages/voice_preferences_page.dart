@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/voice_buddy/domain/entities/voice_preferences_entity.dart';
@@ -389,7 +390,7 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
   }
 }
 
-/// Full-width indigo Save pill pinned under the list; a spinner while
+/// Full-width primary Save pill pinned under the list; a spinner while
 /// saving.
 class _SaveBar extends StatelessWidget {
   final bool saving;
@@ -571,12 +572,13 @@ class _SliderRow extends StatelessWidget {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,
-              activeTrackColor: settingsPrimaryFill,
+              activeTrackColor: settingsPrimaryFill(context),
               inactiveTrackColor:
-                  palette.isDark ? palette.raised : const Color(0xFFE2E2E8),
+                  palette.isDark ? palette.raised : AppColors.lightBorder,
               thumbColor: Colors.white,
-              overlayColor: settingsPrimaryFill.withValues(alpha: 0.12),
-              thumbShape: const _RingThumbShape(),
+              overlayColor:
+                  settingsPrimaryFill(context).withValues(alpha: 0.12),
+              thumbShape: _RingThumbShape(settingsPrimaryFill(context)),
               trackShape: const RoundedRectSliderTrackShape(),
             ),
             child: Slider(
@@ -596,11 +598,13 @@ class _SliderRow extends StatelessWidget {
   }
 }
 
-/// White slider thumb with an indigo ring.
+/// White slider thumb with a gold ring.
 class _RingThumbShape extends SliderComponentShape {
   static const double _radius = 10;
 
-  const _RingThumbShape();
+  final Color ring;
+
+  const _RingThumbShape(this.ring);
 
   @override
   Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
@@ -627,7 +631,7 @@ class _RingThumbShape extends SliderComponentShape {
       center,
       _radius - 1,
       Paint()
-        ..color = settingsPrimaryFill
+        ..color = ring
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );

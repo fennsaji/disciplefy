@@ -11,6 +11,11 @@ import 'package:disciplefy_bible_study/core/localization/app_localizations.dart'
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/auth_state_provider.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_entity.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/domain/entities/daily_verse_streak.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_event.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/bloc/daily_verse_state.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_level.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/user_stats.dart';
@@ -29,6 +34,9 @@ import 'text_fit.dart';
 class _MockGamificationBloc
     extends MockBloc<GamificationEvent, GamificationState>
     implements GamificationBloc {}
+
+class _MockDailyVerseBloc extends MockBloc<DailyVerseEvent, DailyVerseState>
+    implements DailyVerseBloc {}
 
 class _FakeReflections extends Fake implements ReflectionsRepository {
   final List<ReflectionSession> reflections;
@@ -111,6 +119,7 @@ void main() {
             studyCurrentStreak: 4,
             studyLongestStreak: 9,
             verseCurrentStreak: 2,
+            verseLongestStreak: 6,
             totalStudiesCompleted: 31,
             totalTimeSpentSeconds: 9000,
             totalMemoryVerses: 4,
@@ -155,7 +164,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final level = UserLevel.fromXp(1720, 'en');
-        expect(find.text('My Progress'), findsOneWidget);
+        expect(find.text('My progress'), findsOneWidget);
         expect(
             find.text('${level.title} · Level ${level.level}'), findsOneWidget);
         expect(find.text('1,720 XP'), findsOneWidget);
@@ -165,6 +174,89 @@ void main() {
         verify(() => bloc.add(const LoadGamificationStats())).called(1);
       });
     }
+
+    Future<Set<String>> allTexts(WidgetTester tester) async {
+      final seen = <String>{};
+      void collect() {
+        for (final e in find.byType(Text).evaluate()) {
+          final data = (e.widget as Text).data;
+          if (data != null) seen.add(data);
+        }
+      }
+
+      collect();
+      for (var i = 0; i < 8; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -300));
+        await tester.pumpAndSettle();
+        collect();
+      }
+      return seen;
+    }
+
+    testWidgets(
+        'one streak: no separate study or verse streak rows, personal best '
+        'is the daily streak\'s best', (tester) async {
+      whenListen(bloc, const Stream<GamificationState>.empty(),
+          initialState: loaded('en'));
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(page(false));
+      await tester.pumpAndSettle();
+
+      final seen = await allTexts(tester);
+      expect(seen, contains('Personal best'));
+      expect(seen, contains('6 days'));
+      expect(seen, isNot(contains('Study')));
+      expect(seen, isNot(contains('Verse')));
+      // The study-streak numbers (4 current, 9 best) are not shown as a streak.
+      expect(seen, isNot(contains('9 days')));
+      expect(seen, isNot(contains('4 days')));
+    });
+
+    testWidgets(
+        'the live daily streak from the verse bloc drives the tile and the '
+        'personal best', (tester) async {
+      whenListen(bloc, const Stream<GamificationState>.empty(),
+          initialState: loaded('en'));
+      final verseBloc = _MockDailyVerseBloc();
+      whenListen<DailyVerseState>(
+          verseBloc, const Stream<DailyVerseState>.empty(),
+          initialState: DailyVerseLoaded(
+            verse: DailyVerseEntity(
+              id: 'v',
+              reference: 'John 3:16',
+              referenceTranslations: const ReferenceTranslations(
+                  en: 'John 3:16', hi: 'John 3:16', ml: 'John 3:16'),
+              translations: const DailyVerseTranslations(
+                  esv: 'For God so loved', hindi: 'x', malayalam: 'y'),
+              date: DateTime(2026, 10, 6),
+            ),
+            currentLanguage: VerseLanguage.english,
+            preferredLanguage: VerseLanguage.english,
+            streak: DailyVerseStreak(
+              userId: 'u',
+              currentStreak: 8,
+              longestStreak: 7,
+              totalViews: 8,
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+          ));
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(
+        const StatsDashboardPage(),
+        dark: false,
+        wrap: (child) => MultiBlocProvider(providers: [
+          BlocProvider<GamificationBloc>.value(value: bloc),
+          BlocProvider<DailyVerseBloc>.value(value: verseBloc),
+        ], child: child),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('8'), findsOneWidget);
+      final seen = await allTexts(tester);
+      // Best is never below the current run.
+      expect(seen, contains('8 days'));
+    });
 
     testWidgets('restores profile header, XP %, categories and details',
         (tester) async {
@@ -298,7 +390,7 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        expect(find.text('Reflection Journal'), findsOneWidget);
+        expect(find.text('Reflection journal'), findsOneWidget);
         expect(find.text('2 reflections'), findsOneWidget);
         expect(find.text('YOUR JOURNEY'), findsOneWidget);
         // Day group headings, and the mode (with its icon) on each card.
@@ -325,7 +417,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.text('No reflections yet'), findsOneWidget);
-      expect(find.text('Start a Study'), findsOneWidget);
+      expect(find.text('Start a study'), findsOneWidget);
     });
 
     for (final language in AppLanguage.values) {

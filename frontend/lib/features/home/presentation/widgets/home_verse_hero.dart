@@ -11,10 +11,12 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/reader_palette.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_actions.dart';
+import '../../../daily_verse/presentation/widgets/daily_verse_read_timer.dart';
 
 /// Scenery behind the home hero. One is picked per calendar day so the page
 /// changes with the verse but stays put through the day.
@@ -28,6 +30,13 @@ String homeGreetingKeyFor(int hour) {
   if (hour >= 5 && hour < 12) return TranslationKeys.homeGoodMorning;
   if (hour >= 12 && hour < 17) return TranslationKeys.homeGoodAfternoon;
   return TranslationKeys.homeGoodEvening;
+}
+
+/// [greeting] ("Good evening, {name}" already filled in) without the
+/// separator a blank name leaves behind: a guest sees "Good evening".
+String homeGreetingText(String greeting, String name) {
+  if (name.trim().isNotEmpty) return greeting;
+  return greeting.trim().replaceFirst(RegExp(r'[,\s]+$'), '');
 }
 
 /// Verse size steps down with length so a long passage still fits the hero
@@ -64,14 +73,16 @@ const double _lightSceneBottomPadding = 22;
 /// the gold wordmark and header controls read on any photo.
 class HomeVerseHero extends StatelessWidget {
   final String greeting;
-  final String subtitle;
+
+  /// Line under the greeting; none on the Today layout.
+  final String? subtitle;
   final Widget verse;
   final String imageAsset;
 
   const HomeVerseHero({
     super.key,
     required this.greeting,
-    required this.subtitle,
+    this.subtitle,
     required this.verse,
     required this.imageAsset,
   });
@@ -181,15 +192,17 @@ class HomeVerseHero extends StatelessWidget {
                         height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: const Color(0xFFC9C9D2),
-                        height: 1.35,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        style: AppFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFFC9C9D2),
+                          height: 1.35,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -228,7 +241,16 @@ class HomeDailyVerse extends StatelessWidget {
   final VoidCallback? onStudy;
   final bool isDisabled;
 
-  const HomeDailyVerse({super.key, this.onStudy, this.isDisabled = false});
+  /// Home's Today layout: the study action is the quiet "Reflect on this
+  /// verse" link and the reference is plain text.
+  final bool todayLayout;
+
+  const HomeDailyVerse({
+    super.key,
+    this.onStudy,
+    this.isDisabled = false,
+    this.todayLayout = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -237,9 +259,14 @@ class HomeDailyVerse extends StatelessWidget {
         state: state,
         onStudy: onStudy,
         isDisabled: isDisabled,
+        todayLayout: todayLayout,
         onRetry: () => context.read<DailyVerseBloc>().add(const RefreshVerse()),
         onInitial: () =>
             context.read<DailyVerseBloc>().add(const LoadTodaysVerse()),
+        // Reading the verse counts toward the daily streak; the bloc sends
+        // it to the server once per day however often this fires.
+        onRead: () =>
+            context.read<DailyVerseBloc>().add(const MarkVerseAsViewed()),
       ),
     );
   }
@@ -252,7 +279,14 @@ class HomeDailyVerseView extends StatelessWidget {
   final VoidCallback? onStudy;
   final VoidCallback onRetry;
   final VoidCallback? onInitial;
+
+  /// The loaded verse was read: on screen for [dailyVerseReadDelay], or
+  /// copied, shared, added to memory or opened with "Study now".
+  final VoidCallback? onRead;
   final bool isDisabled;
+
+  /// See [HomeDailyVerse.todayLayout].
+  final bool todayLayout;
 
   const HomeDailyVerseView({
     super.key,
@@ -260,13 +294,21 @@ class HomeDailyVerseView extends StatelessWidget {
     required this.onRetry,
     this.onStudy,
     this.onInitial,
+    this.onRead,
     this.isDisabled = false,
+    this.todayLayout = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final s = state;
-    if (s is DailyVerseLoaded) return _loaded(context, s);
+    if (s is DailyVerseLoaded) {
+      final read = onRead;
+      final view = _loaded(context, s);
+      return read == null
+          ? view
+          : DailyVerseReadTimer(onRead: read, child: view);
+    }
     if (s is DailyVerseOffline) return _offline(context, s);
     if (s is DailyVerseError) return _error(context);
     if (s is! DailyVerseLoading && onInitial != null) {
@@ -276,10 +318,17 @@ class HomeDailyVerseView extends StatelessWidget {
     return _loading(context);
   }
 
-  Widget _eyebrow(BuildContext context, String date) {
+  String _appLanguage(BuildContext context) =>
+      Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+
+  /// "VERSE OF THE DAY", with the date after it unless [date] is null (the
+  /// Today layout: "of the day" already says when).
+  Widget _eyebrow(BuildContext context, String? date) {
+    final latin = _appLanguage(context) == 'en';
+    String caps(String text) => latin ? text.toUpperCase() : text;
     final label = context.tr(TranslationKeys.dailyVerseOfTheDay);
     final style = AppFonts.inter(
-      fontSize: 10.5,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.6,
       color: AppColors.brandGold,
@@ -290,20 +339,22 @@ class HomeDailyVerseView extends StatelessWidget {
       spacing: 6,
       runSpacing: 4,
       children: [
-        Text(label.toUpperCase(), style: style),
-        Text('· ${date.toUpperCase()}', style: style),
+        Text(caps(label), style: style),
+        if (date != null) Text('· ${caps(date)}', style: style),
       ],
     );
   }
 
   Widget _verseText(String text) {
+    // Today layout: the verse is quoted and never larger than the greeting.
+    final size = homeVerseFontSize(text);
     return Text(
-      text,
+      todayLayout ? '\u201C${text.trim()}\u201D' : text,
       key: const Key('home_verse_text'),
       maxLines: homeVerseMaxLines,
       overflow: TextOverflow.ellipsis,
       style: AppFonts.poppins(
-        fontSize: homeVerseFontSize(text),
+        fontSize: todayLayout && size > 22 ? 22 : size,
         fontWeight: FontWeight.w600,
         color: _onScene,
         height: 1.3,
@@ -313,6 +364,12 @@ class HomeDailyVerseView extends StatelessWidget {
 
   Widget _loaded(BuildContext context, DailyVerseLoaded s) {
     final enabled = onStudy != null && !isDisabled;
+    final study = enabled
+        ? () {
+            onRead?.call();
+            onStudy!();
+          }
+        : null;
     final reference =
         '${s.verse.getReferenceText(s.currentLanguage)} · ${dailyVerseTranslationAbbr(s.currentLanguage)}';
 
@@ -322,21 +379,28 @@ class HomeDailyVerseView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _eyebrow(context, s.formattedDate),
+          _eyebrow(context,
+              todayLayout ? null : s.formattedDateFor(_appLanguage(context))),
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: enabled ? onStudy : null,
+            onTap: study,
             child: _verseText(s.currentVerseText),
           ),
           const SizedBox(height: 10),
-          // Citation taps through to the translation's copyright page.
-          GestureDetector(
-            onTap: () => context.push(AppRoutes.bibleAttribution),
-            child: Text(
+          if (todayLayout)
+            Text(
               reference,
               style: AppFonts.inter(fontSize: 13, color: _onSceneMuted),
+            )
+          else
+            // Citation taps through to the translation's copyright page.
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.bibleAttribution),
+              child: Text(
+                reference,
+                style: AppFonts.inter(fontSize: 13, color: _onSceneMuted),
+              ),
             ),
-          ),
           const SizedBox(height: 18),
           // Wrap, not Row: the button keeps its full label and, when the
           // line is too narrow (small phone, long Malayalam label), the
@@ -349,8 +413,16 @@ class HomeDailyVerseView extends StatelessWidget {
               spacing: 12,
               runSpacing: 10,
               children: [
-                _StudyNowButton(onPressed: enabled ? onStudy : null),
-                DailyVerseActions(state: s, iconColor: _onScene, gap: 4),
+                if (todayLayout)
+                  _ReflectLink(onPressed: study)
+                else
+                  _StudyNowButton(onPressed: study),
+                DailyVerseActions(
+                  state: s,
+                  iconColor: _onScene,
+                  gap: 4,
+                  onUsed: onRead,
+                ),
               ],
             ),
           ),
@@ -465,7 +537,9 @@ class _StudyNowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Color(0xFF2E28A3);
+    // The pill sits on the photo in both themes, so it is always white with
+    // the design's ink label.
+    const ink = ReaderPalette.ink;
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
@@ -490,6 +564,38 @@ class _StudyNowButton extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           const Icon(Icons.arrow_forward, size: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Reflect on this verse →": the hero's quiet study action in the Today
+/// layout. Gold on the always-dark scene.
+class _ReflectLink extends StatelessWidget {
+  final VoidCallback? onPressed;
+
+  const _ReflectLink({this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      key: const Key('home_verse_reflect'),
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.brandGold,
+        disabledForegroundColor: AppColors.brandGold.withValues(alpha: 0.5),
+        minimumSize: const Size(0, 40),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: Text(context.tr(TranslationKeys.homeTodayReflect))),
+          const SizedBox(width: 6),
+          const Icon(Icons.arrow_forward_rounded, size: 16),
         ],
       ),
     );

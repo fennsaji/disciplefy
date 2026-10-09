@@ -29,7 +29,7 @@ class CommunityIconAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final ink = color ?? palette.text;
-    Widget glyph = Icon(icon, size: 24, color: ink);
+    Widget glyph = Icon(icon, size: 22, color: ink);
     if (badge != null) {
       glyph = Stack(
         clipBehavior: Clip.none,
@@ -59,7 +59,7 @@ class CommunityIconAction extends StatelessWidget {
   }
 }
 
-/// Large Poppins page title ("Community", 26/700) with icon actions on the
+/// Large Poppins page title ("Community", 22/700) with icon actions on the
 /// right. Transparent, so it sits on a [PhotoWash].
 class CommunityLargeTitleBar extends StatelessWidget {
   final String title;
@@ -75,7 +75,7 @@ class CommunityLargeTitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
+      padding: const EdgeInsets.fromLTRB(20, 6, 8, 2),
       child: Row(
         children: [
           Expanded(
@@ -85,7 +85,7 @@ class CommunityLargeTitleBar extends StatelessWidget {
                 title,
                 maxLines: 2,
                 style: AppFonts.poppins(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: palette.text,
                   height: 1.2,
@@ -131,7 +131,7 @@ class CommunityUnderlineTabs extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (var i = 0; i < labels.length; i++) ...[
-                if (i > 0) const SizedBox(width: 24),
+                if (i > 0) const SizedBox(width: 22),
                 _UnderlineTab(
                   label: labels[i],
                   selected: i == selected,
@@ -181,12 +181,12 @@ class _UnderlineTab extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   style: AppFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     color: selected ? palette.text : palette.muted,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Container(
                   width: 24,
                   height: 3,
@@ -224,7 +224,7 @@ class CommunityBackBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => const Size.fromHeight(52);
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +240,7 @@ class CommunityBackBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: 4),
               IconButton(
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                icon: Icon(Icons.arrow_back, color: palette.text, size: 24),
+                icon: Icon(Icons.arrow_back, color: palette.text, size: 22),
                 onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               ),
@@ -254,7 +254,7 @@ class CommunityBackBar extends StatelessWidget implements PreferredSizeWidget {
                           title!,
                           maxLines: 2,
                           style: AppFonts.poppins(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: palette.text,
                             height: 1.25,
@@ -334,7 +334,7 @@ class CommunitySectionHeader extends StatelessWidget {
             child: Text(
               title,
               style: AppFonts.poppins(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: palette.text,
                 height: 1.3,
@@ -349,10 +349,7 @@ class CommunitySectionHeader extends StatelessWidget {
               foregroundColor: palette.muted,
               minimumSize: const Size(44, 44),
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              textStyle: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              textStyle: AppFonts.inter(fontSize: 12.5),
             ),
             child: Text(actionLabel!),
           ),

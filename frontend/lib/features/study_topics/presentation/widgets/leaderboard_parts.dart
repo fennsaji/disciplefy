@@ -226,7 +226,7 @@ class LeaderboardRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final mine = entry.isCurrentUser;
-    const brand = ReaderPalette.selectedFill;
+    final brand = palette.selectedFill;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),

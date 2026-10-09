@@ -15,6 +15,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { normalizeShortTitle, SHORT_TITLE_MAX, shortTitleErrors } from './short-title.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +30,8 @@ interface LearningPath {
   id: string
   slug: string
   title: string
+  /** Optional display name (<= 28 chars) for headers and rows. */
+  short_title?: string | null
   description: string
   icon_name: string
   color: string
@@ -53,6 +56,15 @@ interface Translation {
   language: 'en' | 'hi' | 'ml'
   title: string
   description: string
+  short_title?: string | null
+}
+
+/** Per-language translation in create/update bodies. */
+interface TranslationInput {
+  title: string
+  description: string
+  /** Optional, <= 28 chars; null or blank clears it; omitted leaves it as is. */
+  short_title?: string | null
 }
 
 /**
@@ -61,6 +73,7 @@ interface Translation {
 interface CreateLearningPathRequest {
   slug: string
   title: string
+  short_title?: string | null
   description: string
   icon_name: string
   color: string
@@ -72,9 +85,9 @@ interface CreateLearningPathRequest {
   is_active?: boolean
   allow_non_sequential_access?: boolean
   translations?: {
-    en?: { title: string; description: string }
-    hi?: { title: string; description: string }
-    ml?: { title: string; description: string }
+    en?: TranslationInput
+    hi?: TranslationInput
+    ml?: TranslationInput
   }
 }
 
@@ -83,6 +96,7 @@ interface CreateLearningPathRequest {
  */
 interface UpdateLearningPathRequest {
   title?: string
+  short_title?: string | null
   description?: string
   icon_name?: string
   color?: string
@@ -94,9 +108,9 @@ interface UpdateLearningPathRequest {
   is_active?: boolean
   allow_non_sequential_access?: boolean
   translations?: {
-    en?: { title: string; description: string }
-    hi?: { title: string; description: string }
-    ml?: { title: string; description: string }
+    en?: TranslationInput
+    hi?: TranslationInput
+    ml?: TranslationInput
   }
 }
 
@@ -355,7 +369,7 @@ async function handleGetById(client: any, pathId: string): Promise<Response> {
   // Fetch translations
   const { data: translations, error: translationsError } = await client
     .from('learning_path_translations')
-    .select('lang_code, title, description')
+    .select('lang_code, title, description, short_title')
     .eq('learning_path_id', pathId)
 
   if (translationsError) {
@@ -378,7 +392,8 @@ async function handleGetById(client: any, pathId: string): Promise<Response> {
   translations?.forEach((t: any) => {
     translationsObj[t.lang_code] = {
       title: t.title,
-      description: t.description
+      description: t.description,
+      short_title: t.short_title ?? null
     }
   })
 
@@ -400,6 +415,19 @@ async function handleGetById(client: any, pathId: string): Promise<Response> {
   )
 }
 
+/** 400 response naming the short titles over the limit, or null when all fit. */
+function shortTitleValidationResponse(body: CreateLearningPathRequest | UpdateLearningPathRequest): Response | null {
+  const fields = shortTitleErrors(body)
+  if (fields.length === 0) return null
+  return new Response(
+    JSON.stringify({ error: `Short title must be at most ${SHORT_TITLE_MAX} characters: ${fields.join(', ')}` }),
+    {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    }
+  )
+}
+
 /**
  * Create new learning path with translations
  */
@@ -414,6 +442,8 @@ async function handleCreate(client: any, body: CreateLearningPathRequest): Promi
       }
     )
   }
+  const createInvalid = shortTitleValidationResponse(body)
+  if (createInvalid) return createInvalid
 
   // Check if slug already exists
   const { data: existing, error: existingError } = await client
@@ -448,6 +478,7 @@ async function handleCreate(client: any, body: CreateLearningPathRequest): Promi
     .insert({
       slug: body.slug,
       title: body.title,
+      short_title: normalizeShortTitle(body.short_title) ?? null,
       description: body.description,
       icon_name: body.icon_name,
       color: body.color,
@@ -483,7 +514,8 @@ async function handleCreate(client: any, body: CreateLearningPathRequest): Promi
         learning_path_id: newPath.id,
         lang_code: lang,
         title: trans.title,
-        description: trans.description
+        description: trans.description,
+        short_title: normalizeShortTitle(trans.short_title) ?? null
       })
     }
 
@@ -512,6 +544,9 @@ async function handleCreate(client: any, body: CreateLearningPathRequest): Promi
  * Update existing learning path
  */
 async function handleUpdate(client: any, pathId: string, body: UpdateLearningPathRequest): Promise<Response> {
+  const updateInvalid = shortTitleValidationResponse(body)
+  if (updateInvalid) return updateInvalid
+
   // Check if path exists
   const { data: existing, error: existingError } = await client
     .from('learning_paths')
@@ -532,6 +567,7 @@ async function handleUpdate(client: any, pathId: string, body: UpdateLearningPat
   // Build update object
   const updates: Record<string, any> = {}
   if (body.title !== undefined) updates.title = body.title
+  if (body.short_title !== undefined) updates.short_title = normalizeShortTitle(body.short_title)
   if (body.description !== undefined) updates.description = body.description
   if (body.icon_name !== undefined) updates.icon_name = body.icon_name
   if (body.color !== undefined) updates.color = body.color
@@ -566,15 +602,18 @@ async function handleUpdate(client: any, pathId: string, body: UpdateLearningPat
         continue
       }
 
-      // Upsert translation
+      // Upsert translation; short_title only when sent, so an older admin
+      // client that does not know it never clears it.
+      const translationRow: Record<string, unknown> = {
+        learning_path_id: pathId,
+        lang_code: lang,
+        title: trans.title,
+        description: trans.description
+      }
+      if (trans.short_title !== undefined) translationRow.short_title = normalizeShortTitle(trans.short_title)
       const { error: transError } = await client
         .from('learning_path_translations')
-        .upsert({
-          learning_path_id: pathId,
-          lang_code: lang,
-          title: trans.title,
-          description: trans.description
-        }, {
+        .upsert(translationRow, {
           onConflict: 'learning_path_id,lang_code'
         })
 

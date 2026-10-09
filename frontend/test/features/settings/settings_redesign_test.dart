@@ -29,7 +29,9 @@ import 'package:disciplefy_bible_study/features/settings/domain/entities/theme_m
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_event.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_more_page.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/pages/settings_screen.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_download_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_path_download_service.dart';
@@ -162,6 +164,9 @@ void main() {
       initialLocation: '/settings',
       routes: [
         GoRoute(path: '/settings', builder: (_, __) => screen),
+        GoRoute(
+            path: '/settings/more',
+            builder: (_, __) => const SettingsMorePage()),
         GoRoute(path: '/', builder: (_, __) => const Text('stub:/')),
       ],
     );
@@ -195,6 +200,15 @@ void main() {
 
   String tr(String key) => translations.getTranslation(key);
 
+  /// Opens the More page from the main list.
+  Future<void> openMore(WidgetTester tester) async {
+    await tester.scrollUntilVisible(find.byKey(const Key('settings_more')), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('settings_more')));
+    await tester.pumpAndSettle();
+  }
+
   group('SettingsScreen', () {
     for (final dark in [true, false]) {
       final theme = dark ? 'dark' : 'light';
@@ -209,18 +223,24 @@ void main() {
         expect(find.text('Fenn'), findsOneWidget);
         expect(find.text('gen.check@local.test'), findsOneWidget);
         expect(find.text('F'), findsOneWidget); // avatar initial
-        expect(find.text('Verify Your Email'), findsOneWidget);
-        expect(find.text(tr(TranslationKeys.emailVerificationDescription)),
+        // The design's one-line banner: short title and "Resend".
+        expect(find.text('Verify your email to secure your account'),
             findsOneWidget);
-        expect(find.text('Resend Verification Email'), findsOneWidget);
+        expect(find.text('Resend'), findsOneWidget);
         expect(find.text('YOU'), findsOneWidget);
         expect(find.text('PREFERENCES'), findsOneWidget);
         expect(find.text('System'), findsOneWidget); // theme value
 
         await scrollToEnd(tester);
         expect(find.text('ACCOUNT'), findsOneWidget);
-        expect(find.text('Sign Out'), findsOneWidget);
-        expect(find.text('Delete Account'), findsOneWidget);
+        expect(find.text('Sign out'), findsOneWidget);
+        expect(find.text('Delete account'), findsOneWidget);
+
+        await scrollToEnd(tester);
+        await tester.drag(find.byType(ListView).first, const Offset(0, 400));
+        await tester.pumpAndSettle();
+        await openMore(tester);
+        await scrollToEnd(tester);
         expect(find.text('2.4.0'), findsOneWidget);
       });
 
@@ -276,7 +296,10 @@ void main() {
       }
 
       await scrollToEnd(tester, check: collect);
+      await openMore(tester);
+      await scrollToEnd(tester, check: collect);
       for (final key in [
+        TranslationKeys.settingsMoreSubtitle,
         TranslationKeys.gamificationSubtitle,
         TranslationKeys.settingsReflectionJournalSubtitle,
         TranslationKeys.settingsMyPlanSubtitle,
@@ -318,7 +341,7 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.delete_outline_rounded));
         await tester.pumpAndSettle();
-        expectFullLabel(tester, tr(TranslationKeys.commonCancel));
+        expectFullLabel(tester, tr(TranslationKeys.settingsDeleteAccountKeep));
         expectFullLabel(
             tester, tr(TranslationKeys.settingsDeleteAccountConfirm));
         expectNoTruncatedText(tester);
@@ -331,6 +354,7 @@ void main() {
         useSurface(tester, const Size(320, 640));
         await tester.pumpWidget(app(const SettingsScreen(), dark: false));
         await tester.pumpAndSettle();
+        await openMore(tester);
         await tester.scrollUntilVisible(
             find.byIcon(Icons.favorite_outline), 300,
             scrollable: find.byType(Scrollable).first);
@@ -380,6 +404,92 @@ void main() {
       expect(find.byType(ThemePreviewOption), findsNWidgets(3));
       expectNoTruncatedText(tester);
       expect(tester.takeException(), isNull);
+    });
+
+    for (final language in AppLanguage.values) {
+      for (final width in [320.0, 360.0]) {
+        testWidgets(
+            '${language.code} at ${width.toInt()}: row titles keep at least '
+            'half the row and the banner fits', (tester) async {
+          translations.language = language;
+          useSurface(tester, Size(width, 900));
+          await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+          await tester.pumpAndSettle();
+          void check() {
+            for (final row in find.byType(SettingsRow).evaluate()) {
+              final rowBox = row.renderObject! as RenderBox;
+              final text = find
+                  .descendant(
+                      of: find.byWidget(row.widget),
+                      matching: find.byType(Expanded))
+                  .first;
+              expect(tester.getSize(text).width,
+                  greaterThanOrEqualTo((rowBox.size.width - 98) * 0.5),
+                  reason: (row.widget as SettingsRow).title);
+            }
+          }
+
+          final banner = find.byKey(const Key('email_verification_banner'));
+          final label = find.descendant(
+              of: banner,
+              matching:
+                  find.text(tr(TranslationKeys.emailVerificationShortTitle)));
+          expect(tester.getSize(label).width,
+              greaterThanOrEqualTo(tester.getSize(banner).width * 0.5));
+          await scrollToEnd(tester, check: check);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+
+    testWidgets('rows carry the design values: plan name and Same as app',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+      await tester.pumpAndSettle();
+      expect(
+          find.descendant(
+              of: find.byKey(const Key('settings_my_plan')),
+              matching: find.text(tr(TranslationKeys.plansFree))),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byKey(const Key('settings_content_language')),
+              matching: find.text('Same as app')),
+          findsOneWidget);
+      // The verify banner is the design's single 40px+ line.
+      expect(
+          tester
+              .getSize(find.byKey(const Key('email_verification_banner')))
+              .height,
+          greaterThanOrEqualTo(40));
+    });
+
+    testWidgets('delete account unlocks only after typing DELETE',
+        (tester) async {
+      useSurface(tester, const Size(390, 844));
+      await tester.pumpWidget(app(const SettingsScreen(), dark: true));
+      await tester.pumpAndSettle();
+      await scrollToEnd(tester);
+      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.pumpAndSettle();
+
+      TextButton confirm() => tester.widget<TextButton>(find.descendant(
+          of: find.byKey(const Key('delete_account_confirm')),
+          matching: find.byType(TextButton)));
+      expect(find.text('Type DELETE to confirm'), findsOneWidget);
+      expect(confirm().onPressed, isNull);
+
+      await tester.enterText(
+          find.byKey(const Key('delete_account_confirm_field')), 'DELE');
+      await tester.pump();
+      expect(confirm().onPressed, isNull);
+
+      await tester.enterText(
+          find.byKey(const Key('delete_account_confirm_field')), 'DELETE');
+      await tester.pump();
+      expect(confirm().onPressed, isNotNull);
+      expect(find.text('Keep my account'), findsOneWidget);
     });
   });
 

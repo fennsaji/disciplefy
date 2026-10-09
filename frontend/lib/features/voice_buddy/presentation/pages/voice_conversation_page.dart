@@ -47,12 +47,17 @@ class VoiceConversationPage extends StatelessWidget {
   /// full-screen page: no back arrow, and back is handled by the tab bar.
   final bool asTab;
 
+  /// A question put in the text box (never sent for the user), e.g. from the
+  /// Discipler introduction. It shows when they type.
+  final String? prefill;
+
   const VoiceConversationPage({
     super.key,
     this.studyGuideId,
     this.relatedScripture,
     this.conversationType = ConversationType.general,
     this.asTab = false,
+    this.prefill,
   });
 
   @override
@@ -64,6 +69,7 @@ class VoiceConversationPage extends StatelessWidget {
         relatedScripture: relatedScripture,
         conversationType: conversationType,
         asTab: asTab,
+        prefill: prefill,
       ),
     );
   }
@@ -74,12 +80,14 @@ class _VoiceConversationView extends StatefulWidget {
   final String? relatedScripture;
   final ConversationType conversationType;
   final bool asTab;
+  final String? prefill;
 
   const _VoiceConversationView({
     this.studyGuideId,
     this.relatedScripture,
     required this.conversationType,
     this.asTab = false,
+    this.prefill,
   });
 
   @override
@@ -121,6 +129,31 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     // Load preferences to get default language, then check quota
     context.read<VoiceConversationBloc>().add(const LoadPreferences());
     context.read<VoiceConversationBloc>().add(const CheckQuota());
+    _applyPrefill(widget.prefill);
+  }
+
+  @override
+  void didUpdateWidget(covariant _VoiceConversationView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // As a tab the page stays alive; a new `?prefill=` arrives here.
+    if (widget.prefill != oldWidget.prefill) _applyPrefill(widget.prefill);
+  }
+
+  /// Puts [text] in the text box without sending it. In a conversation the
+  /// chat view opens on it; on the start screen it waits for "Type".
+  void _applyPrefill(String? text) {
+    final question = text?.trim() ?? '';
+    if (question.isEmpty) return;
+    _textController.value = TextEditingValue(
+      text: question,
+      selection: TextSelection.collapsed(offset: question.length),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isTextInputMode) return;
+      if (context.read<VoiceConversationBloc>().state.hasActiveConversation) {
+        _switchToTyping();
+      }
+    });
   }
 
   /// As a tab, this page stays alive (offstage) while another tab is shown.
@@ -518,11 +551,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
       VoiceButtonState.processing || VoiceButtonState.speaking => palette.gold,
     };
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.page,
-        border: Border(bottom: BorderSide(color: palette.hairline)),
-      ),
+    return ColoredBox(
+      color: palette.page,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -536,7 +566,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   color: palette.text,
                   tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 ),
-              const DisciplerAvatar(radius: 18),
+              const DisciplerAvatar(radius: 17),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -546,7 +576,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                     Text(
                       context.tr('voice_buddy.title'),
                       style: AppFonts.poppins(
-                        fontSize: 17,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: palette.text,
                         height: 1.25,
@@ -556,20 +586,20 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                     Row(
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 7,
+                          height: 7,
                           decoration: BoxDecoration(
                             color: dotColor,
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Flexible(
                           child: Text(
                             '${sessionStatusLabel(context, buttonState)} · '
                             '${_languageName(state)}',
                             style: AppFonts.inter(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: palette.muted,
                               height: 1.3,
                             ),
@@ -695,11 +725,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     final isProcessing = state.status == VoiceConversationStatus.processing ||
         state.status == VoiceConversationStatus.streaming;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.page,
-        border: Border(top: BorderSide(color: palette.hairline)),
-      ),
+    return ColoredBox(
+      color: palette.page,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -715,30 +742,32 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   minLines: 1,
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
-                  style: AppFonts.inter(fontSize: 15, color: palette.text),
+                  style: AppFonts.inter(fontSize: 14, color: palette.text),
                   decoration: InputDecoration(
                     hintText: context.tr('voice_buddy.conversation.type_hint'),
-                    hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
+                    hintStyle:
+                        AppFonts.inter(fontSize: 14, color: palette.muted),
                     filled: true,
                     fillColor: palette.raised,
+                    isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
+                      horizontal: 16,
+                      vertical: 11,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide(color: palette.outline),
                     ),
                   ),
@@ -758,8 +787,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                 icon: Icons.arrow_upward_rounded,
                 tooltip: context.tr(TranslationKeys.voiceSessionSend),
                 onPressed: isProcessing ? null : _sendTextMessage,
-                fill: AppColors.brandPrimary,
-                ink: Colors.white,
+                fill: palette.selectedFill,
+                ink: palette.onSelected,
               ),
             ],
           ),

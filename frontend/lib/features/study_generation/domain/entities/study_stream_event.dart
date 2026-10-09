@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/expected_sections.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+
 /// Section types that can be streamed from the study guide generation
 enum StudyStreamSectionType {
   summary,
@@ -163,17 +166,38 @@ class StudyStreamErrorEvent extends StudyStreamEvent {
   final String message;
   final bool retryable;
 
+  /// `details.reason` of an `ACCOUNT_REQUIRED` error (`generate`,
+  /// `other_path`, ...); null otherwise.
+  final String? reason;
+
   const StudyStreamErrorEvent({
     required this.code,
     required this.message,
     required this.retryable,
+    this.reason,
   });
 
+  /// Reads the SSE error event `{code, message, retryable, details}`, the
+  /// standard envelope `{success: false, error: {code, message, details}}`
+  /// and the flat `{error: 'CODE', message}` shape.
   factory StudyStreamErrorEvent.fromJson(Map<String, dynamic> json) {
+    final nested = json['error'];
+    final body = nested is Map<String, dynamic> ? nested : json;
+    final code = body['code'] as String? ??
+        (nested is String ? nested : null) ??
+        'UNKNOWN';
+    final details = body['details'];
+    final reason = details is Map ? details['reason'] : json['reason'];
     return StudyStreamErrorEvent(
-      code: json['code'] as String? ?? 'UNKNOWN',
-      message: json['message'] as String? ?? 'An unknown error occurred',
-      retryable: json['retryable'] as bool? ?? true,
+      code: code,
+      message: body['message'] as String? ??
+          json['message'] as String? ??
+          'An unknown error occurred',
+      // An account is needed first: retrying as a guest cannot succeed.
+      retryable: code == 'ACCOUNT_REQUIRED'
+          ? false
+          : body['retryable'] as bool? ?? true,
+      reason: reason is String && reason.trim().isNotEmpty ? reason : null,
     );
   }
 }
@@ -201,19 +225,24 @@ class StreamingStudyGuideContent {
     this.reflectionQuestions,
     this.prayerPoints,
     this.sectionsLoaded = 0,
-    this.totalSections = 14,
+    // expectedSectionsFor(StudyMode.standard); a default must be const.
+    // Use [StreamingStudyGuideContent.empty] to default from a mode.
+    this.totalSections = 7,
     this.isFromCache = false,
     this.studyGuideId,
   });
 
-  /// Create an empty streaming content
-  factory StreamingStudyGuideContent.empty() {
-    return const StreamingStudyGuideContent();
+  /// Empty streaming content expecting the sections a [mode] stream sends,
+  /// until the backend's init and section events report the real total.
+  factory StreamingStudyGuideContent.empty(
+      {StudyMode mode = StudyMode.standard}) {
+    return StreamingStudyGuideContent(totalSections: expectedSectionsFor(mode));
   }
 
   /// Progress from 0.0 to 1.0
-  double get progress =>
-      totalSections > 0 ? sectionsLoaded / totalSections : 0.0;
+  double get progress => totalSections > 0
+      ? (sectionsLoaded / totalSections).clamp(0.0, 1.0)
+      : 0.0;
 
   /// Whether all required sections have been loaded
   /// Changed from hardcoded 6 to dynamic totalSections to support all study modes
@@ -238,9 +267,24 @@ class StreamingStudyGuideContent {
       prayerPoints != null &&
       prayerPoints!.isNotEmpty;
 
-  /// Create a copy with a new section added
+  /// How many distinct section types have arrived.
+  int get _distinctSectionsLoaded => [
+        summary,
+        interpretation,
+        context,
+        passage,
+        relatedVerses,
+        reflectionQuestions,
+        prayerPoints,
+      ].where((field) => field != null).length;
+
+  /// Create a copy with a new section added.
+  ///
+  /// Multi-pass streams re-send `interpretation` as each pass adds to it, so
+  /// [sectionsLoaded] counts distinct section types, not events: a re-sent
+  /// section neither advances progress nor completes the stream early.
   StreamingStudyGuideContent copyWithSection(StudyStreamSectionEvent section) {
-    return StreamingStudyGuideContent(
+    final updated = StreamingStudyGuideContent(
       summary: section.type == StudyStreamSectionType.summary
           ? section.contentAsString
           : summary,
@@ -263,10 +307,10 @@ class StreamingStudyGuideContent {
       prayerPoints: section.type == StudyStreamSectionType.prayerPoints
           ? section.contentAsList
           : prayerPoints,
-      sectionsLoaded: sectionsLoaded + 1,
       totalSections: section.total,
       isFromCache: isFromCache,
     );
+    return updated.copyWith(sectionsLoaded: updated._distinctSectionsLoaded);
   }
 
   /// Create initial state with cache flag

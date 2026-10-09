@@ -325,7 +325,7 @@ void main() {
         ),
       );
 
-      expect(find.text('5 tokens'), findsNWidgets(3));
+      expect(find.text('5 credits'), findsNWidgets(3));
       await tester.tap(find.text('Topic 2'));
       await tester.pump();
       await tester.tap(find.textContaining('Download 2'));

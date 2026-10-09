@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -40,9 +41,11 @@ import 'features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'features/gamification/presentation/bloc/gamification_event.dart';
 import 'features/gamification/presentation/bloc/gamification_state.dart';
 import 'features/gamification/presentation/widgets/achievement_unlock_dialog.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/locale_service.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import 'core/services/font_scale_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/system_config_service.dart';
@@ -62,6 +65,7 @@ import 'core/services/android_hybrid_storage.dart';
 import 'core/services/iap_service.dart';
 import 'core/services/apple_consumable_purchase_service.dart';
 import 'core/utils/isolate_error_reporter.dart';
+import 'package:disciplefy_bible_study/core/utils/app_scroll_behavior.dart';
 import 'core/utils/logger.dart';
 import 'core/connectivity/connectivity_bloc.dart';
 import 'core/services/connectivity_sync_service.dart';
@@ -158,6 +162,8 @@ void main() async {
     // Initialize connectivity sync service (flushes queues on reconnect)
     sl<ConnectivitySyncService>().initialize();
 
+    _trackFirstOpen();
+
     // Everything the first frame reads. Each step touches its own Hive box or
     // SharedPreferences key (and the remote configs serve their cache without
     // waiting for the network), so they run in parallel.
@@ -201,6 +207,7 @@ void main() async {
     // here delayed startup for every user on every launch.
 
     Logger.debug('🎉 [MAIN] All initialization completed, starting app...');
+    await initializeDateFormatting();
     runApp(const DisciplefyBibleStudyApp());
 
     // Work the first frame does not need runs once it has been drawn.
@@ -234,6 +241,19 @@ void main() async {
   }
 }
 
+/// Sends `nux.first_open` once per install with the device language. Never
+/// throws and never delays startup.
+void _trackFirstOpen() {
+  try {
+    final language =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    unawaited(
+        sl<ActivationAnalytics>().trackFirstOpenOnce({'language': language}));
+  } catch (e) {
+    Logger.warning('[MAIN] first open not tracked: ${e.runtimeType}');
+  }
+}
+
 /// Opens Hive and the box every feature reads settings from.
 Future<void> _initializeLocalStorage() async {
   await Hive.initFlutter();
@@ -244,6 +264,7 @@ Future<void> _initializeLocalStorage() async {
   }
 
   await Hive.openBox('app_settings');
+  await Hive.openBox<dynamic>('nux_events');
 }
 
 /// Initializes Firebase for push notifications and crash reporting.
@@ -413,9 +434,13 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
   NotificationService? _notificationService;
   NotificationServiceWeb? _notificationServiceWeb;
 
+  /// An achievement pop-up is open; the next one waits for it to close.
+  bool _achievementDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
+    AchievementPopupGate.flushRequests.addListener(_showNextAchievement);
 
     // Initialize auth components
     // Note: AuthBloc constructor already adds AuthInitializeRequested internally,
@@ -490,6 +515,34 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
     }
   }
 
+  /// Location of the top route, or '' before the router has one.
+  String _currentLocation() {
+    try {
+      return AppRouter.router.state.uri.path;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Shows the head of the achievement queue unless one is already open or
+  /// the current route holds pop-ups (a study guide, or Lesson complete
+  /// before it is shown; see [AchievementPopupGate]).
+  void _showNextAchievement() {
+    final next = sl<GamificationBloc>().state.nextNotification;
+    final location = _currentLocation();
+    if (!AchievementPopupGate.shouldShow(
+      location: location,
+      hasPending: next != null,
+      alreadyShowing: _achievementDialogOpen,
+    )) {
+      if (next != null && !_achievementDialogOpen) {
+        Logger.debug('[MAIN] Achievement pop-up waits on $location');
+      }
+      return;
+    }
+    _showAchievementUnlockDialog(next!);
+  }
+
   /// Show achievement unlock dialog globally
   /// This is placed at the app level to catch achievements from ANY route,
   /// including Memory Verses which is outside AppShell
@@ -506,18 +559,19 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
     Logger.debug(
         '🏆 [MAIN] Showing achievement unlock dialog: ${result.achievementName}');
 
-    showDialog(
+    _achievementDialogOpen = true;
+    showDialog<void>(
       context: navigatorContext,
-      barrierDismissible: false,
       builder: (dialogContext) => AchievementUnlockDialog(
         achievement: result,
-        onDismiss: () {
-          Navigator.of(dialogContext).pop();
-          // Dismiss this notification from the queue
-          sl<GamificationBloc>().add(const DismissAchievementNotification());
-        },
+        onDismiss: () => Navigator.of(dialogContext).pop(),
       ),
-    );
+    ).whenComplete(() {
+      // However it closed (button or outside tap), it is shown once: take
+      // it off the queue, which surfaces the next one.
+      _achievementDialogOpen = false;
+      sl<GamificationBloc>().add(const DismissAchievementNotification());
+    });
   }
 
   @override
@@ -530,6 +584,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
 
   @override
   void dispose() {
+    AchievementPopupGate.flushRequests.removeListener(_showNextAchievement);
     if (!kIsWeb) {
       WidgetsBinding.instance.removeObserver(this);
     }
@@ -601,19 +656,15 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
             return current.nextNotification != null &&
                 current.nextNotification != previous.nextNotification;
           },
-          listener: (context, state) {
-            // Show achievement unlock dialog when there are pending notifications
-            if (state.hasPendingNotifications &&
-                state.nextNotification != null) {
-              _showAchievementUnlockDialog(state.nextNotification!);
-            }
-          },
+          // Shows it now, or leaves it queued while a lesson is open.
+          listener: (context, state) => _showNextAchievement(),
           child: ListenableBuilder(
             listenable: Listenable.merge(
                 [themeService, localeService, fontScaleService]),
             builder: (context, child) => MaterialApp.router(
               title: 'Disciplefy | Bible Study App',
               debugShowCheckedModeBanner: false,
+              scrollBehavior: const AppScrollBehavior(),
 
               // Dynamic theming based on ThemeService
               themeMode: themeService.flutterThemeMode,

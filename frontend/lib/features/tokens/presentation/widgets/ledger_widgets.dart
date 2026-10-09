@@ -45,10 +45,8 @@ class LedgerToneColors {
         return LedgerToneColors(
             context.appError, AppColors.error.withValues(alpha: alpha));
       case LedgerTone.accent:
-        return LedgerToneColors(
-            palette.accentIcon,
-            AppColors.brandPrimary
-                .withValues(alpha: palette.isDark ? 0.2 : 0.08));
+        return LedgerToneColors(palette.accentIcon,
+            palette.gold.withValues(alpha: palette.isDark ? 0.2 : 0.08));
       case LedgerTone.gold:
         return LedgerToneColors(
             palette.gold, palette.gold.withValues(alpha: alpha));
@@ -199,7 +197,7 @@ class LedgerSectionLabel extends StatelessWidget {
               child: Text(
                 text.toUpperCase(),
                 style: AppFonts.inter(
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
                   color: color ?? palette.gold,
@@ -309,12 +307,16 @@ class LedgerStatTile extends StatelessWidget {
   final Color? valueColor;
   final bool centered;
 
+  /// Value and label on one line, for tiles stacked full width.
+  final bool inline;
+
   const LedgerStatTile({
     super.key,
     required this.value,
     required this.label,
     this.valueColor,
     this.centered = false,
+    this.inline = false,
   });
 
   @override
@@ -332,58 +334,136 @@ class LedgerStatTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: palette.hairline),
         ),
-        child: Column(
-          crossAxisAlignment: align,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: centered ? Alignment.center : Alignment.centerLeft,
-              child: Text(
-                value,
-                maxLines: 1,
-                style: AppFonts.poppins(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor ?? palette.text,
-                  fontFeatures: kLedgerTabular,
-                ),
+        child: inline
+            ? Row(
+                children: [
+                  Text(
+                    value,
+                    style: AppFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: valueColor ?? palette.text,
+                      fontFeatures: kLedgerTabular,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style:
+                          AppFonts.inter(fontSize: 12.5, color: palette.muted),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: align,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment:
+                        centered ? Alignment.center : Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      style: AppFonts.poppins(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                        color: valueColor ?? palette.text,
+                        fontFeatures: kLedgerTabular,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    textAlign: centered ? TextAlign.center : TextAlign.start,
+                    style: AppFonts.inter(fontSize: 12, color: palette.muted),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              textAlign: centered ? TextAlign.center : TextAlign.start,
-              style: AppFonts.inter(fontSize: 12, color: palette.muted),
-            ),
-          ],
-        ),
       ),
     );
   }
 }
 
-/// Up to three [LedgerStatTile]s side by side.
+/// Up to three [LedgerStatTile]s side by side. When a label word cannot
+/// fit a tile (long hi/ml words at 320px or large text) the tiles stack
+/// full width instead of breaking the word letter by letter.
 class LedgerStatRow extends StatelessWidget {
   final List<Widget> tiles;
 
   const LedgerStatRow({super.key, required this.tiles});
 
+  static const double _gap = 10;
+  // Tile padding (12 + 12) plus a hairline border on each side.
+  static const double _tileChrome = 26;
+
+  bool _fitsSideBySide(BuildContext context, double maxWidth) {
+    if (tiles.isEmpty || !maxWidth.isFinite) return true;
+    final tileWidth = (maxWidth - _gap * (tiles.length - 1)) / tiles.length;
+    final room = tileWidth - _tileChrome;
+    final scaler = MediaQuery.textScalerOf(context);
+    final style = AppFonts.inter(fontSize: 12);
+    for (final tile in tiles) {
+      if (tile is! LedgerStatTile) continue;
+      for (final word in tile.label.split(RegExp(r'\s+'))) {
+        if (word.isEmpty) continue;
+        final painter = TextPainter(
+          text: TextSpan(text: word, style: style),
+          textDirection: Directionality.of(context),
+          textScaler: scaler,
+          maxLines: 1,
+        )..layout();
+        final width = painter.width;
+        painter.dispose();
+        if (width > room) return false;
+      }
+    }
+    return true;
+  }
+
+  static Widget _inline(Widget tile) => tile is LedgerStatTile
+      ? LedgerStatTile(
+          key: tile.key,
+          value: tile.value,
+          label: tile.label,
+          valueColor: tile.valueColor,
+          inline: true,
+        )
+      : tile;
+
   @override
-  Widget build(BuildContext context) => IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < tiles.length; i++) ...[
-              if (i > 0) const SizedBox(width: 10),
-              Expanded(child: tiles[i]),
-            ],
-          ],
-        ),
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, box) {
+          if (!_fitsSideBySide(context, box.maxWidth)) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < tiles.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  _inline(tiles[i]),
+                ],
+              ],
+            );
+          }
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < tiles.length; i++) ...[
+                  if (i > 0) const SizedBox(width: _gap),
+                  Expanded(child: tiles[i]),
+                ],
+              ],
+            ),
+          );
+        },
       );
 }
 
-/// Full-width stadium pill: white with indigo ink on dark, indigo with white
+/// Full-width stadium pill: white with ink text on dark, ink with white
 /// ink on light.
 class LedgerPrimaryButton extends StatelessWidget {
   final String label;

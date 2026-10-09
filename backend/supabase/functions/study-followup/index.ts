@@ -13,7 +13,7 @@
 import { getPassageGroundingBlock } from '../_shared/services/passage-grounding.ts'
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
-import { AppError } from '../_shared/utils/error-handler.ts'
+import { AppError, ErrorHandler } from '../_shared/utils/error-handler.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
@@ -21,6 +21,7 @@ import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-servic
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { THEOLOGICAL_FOUNDATION } from '../_shared/services/llm-utils/prompt-builder.ts'
+import { getFollowUpLimit } from './follow-up-limits.ts'
 
 /** Verses of passage text given to follow-up answers as grounding. */
 const FOLLOWUP_GROUNDING_VERSES = 8
@@ -319,6 +320,16 @@ async function handleStudyFollowUp(
     )
   }
 
+  // Follow-ups are the Discipler and spend model tokens: guests need an
+  // account. The factory gate reads the header token first; this handler
+  // prefers the query token, so the identity it actually uses is checked here.
+  if (userContext.isGuest) {
+    throw ErrorHandler.createAccountRequiredError(
+      'Create an account to ask the Discipler.',
+      { reason: 'discipler' }
+    )
+  }
+
   // Determine user plan using AuthService (use authReq with proper headers)
   const userPlan = await authService.getUserPlan(authReq)
   console.log(`👤 [FOLLOW-UP] User plan: ${userPlan}`)
@@ -443,14 +454,7 @@ async function handleStudyFollowUp(
   })
   const followUpTokenCost = 5 // Fixed 5 tokens for follow-up questions
 
-  // Define follow-up limits per plan
-  const followUpLimits: Record<string, number> = {
-    'free': 3,
-    'standard': 10,
-    'premium': 20
-  }
-
-  const maxFollowUps = followUpLimits[userPlan] || followUpLimits['free']
+  const maxFollowUps = getFollowUpLimit(userPlan)
   console.log('📊 [FOLLOW-UP] Plan limits:', {
     userPlan,
     maxFollowUps
@@ -873,5 +877,8 @@ async function handleStudyFollowUp(
 // Wrap the handler in the simple function factory (bypasses Kong authentication)
 // Allow both GET (for EventSource) and POST (for regular requests)
 createSimpleFunction(handleStudyFollowUp, {
-  allowedMethods: ['GET', 'POST', 'OPTIONS']
+  allowedMethods: ['GET', 'POST', 'OPTIONS'],
+  // The Discipler needs an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'discipler'
 })

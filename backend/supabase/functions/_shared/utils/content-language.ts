@@ -29,3 +29,19 @@ export function resolveTopicLanguage(
   if (!topicId) return requested
   return detectScriptLanguage(inputValue) ?? requested
 }
+
+/** The languages a study can be generated in. */
+export type StudyLanguage = 'en' | 'hi' | 'ml'
+const STUDY_LANGUAGES: readonly StudyLanguage[] = ['en', 'hi', 'ml']
+
+/**
+ * The `language` query value as a supported study language.
+ *
+ * A missing value means English, as it always has. Anything else that is not
+ * exactly `en`, `hi` or `ml` returns null: the language is part of the cache
+ * key, so an unchecked value would let one lesson be generated again and again.
+ */
+export function parseStudyLanguage(raw: string | null): StudyLanguage | null {
+  if (raw === null) return 'en'
+  return (STUDY_LANGUAGES as readonly string[]).includes(raw) ? (raw as StudyLanguage) : null
+}

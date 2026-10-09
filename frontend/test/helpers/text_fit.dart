@@ -48,10 +48,9 @@ void expectNoTruncatedText(
   expect(cut, isEmpty, reason: 'Cut-off text: $cut');
 }
 
-/// Registers the bundled Inter and Poppins so text is measured with the real
-/// Latin metrics instead of the square test glyphs (~1.8x wider). Hindi and
-/// Malayalam glyphs are not in these fonts and still fall back to the square
-/// test font, which is wider than any real Indic font — a stress test.
+/// Registers the bundled Inter, Poppins and Noto Devanagari/Malayalam so text
+/// is measured with real metrics instead of the square test glyphs (~1.8x
+/// wider).
 ///
 /// Call from `setUpAll`.
 Future<void> loadAppFonts() async {
@@ -76,4 +75,12 @@ Future<void> loadAppFonts() async {
     'Poppins-SemiBold.ttf',
     'Poppins-Bold.ttf',
   ]);
+  for (final family in ['NotoSansDevanagari', 'NotoSansMalayalam']) {
+    await load(family, [
+      '$family-Regular.ttf',
+      '$family-Medium.ttf',
+      '$family-SemiBold.ttf',
+      '$family-Bold.ttf',
+    ]);
+  }
 }

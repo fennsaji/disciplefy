@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -224,14 +226,17 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
 
       if (!mounted) return;
 
-      await context.push(fellowshipStudyGuideLocation(
+      // Not awaited: go_router never completes a push whose route was
+      // replaced (switching the lesson mode), which would leave this button
+      // spinning for good.
+      unawaited(context.push(fellowshipStudyGuideLocation(
         topic: topic,
         language: language,
         studyMode: studyMode,
         pathTitle: widget.pathTitle,
         pathDescription: widget.pathDescription,
         pathDiscipleLevel: widget.pathDiscipleLevel,
-      ));
+      )));
     } finally {
       if (mounted) setState(() => _isOpeningStudyGuide = false);
     }
@@ -398,7 +403,7 @@ class _GuideInfoCard extends StatelessWidget {
                   style: AppFonts.poppins(
                     fontSize: 19,
                     fontWeight: FontWeight.w600,
-                    color: palette.gold,
+                    color: palette.goldOnTint,
                   ),
                 ),
               ),
@@ -408,7 +413,7 @@ class _GuideInfoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (pathTitle.isNotEmpty) ...[
-                      CommunitySectionLabel(pathTitle, fontSize: 11),
+                      CommunitySectionLabel(pathTitle),
                       const SizedBox(height: 4),
                     ],
                     Text(
@@ -763,10 +768,11 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
     return Tooltip(
       message: context.tr(TranslationKeys.communityPagesSend),
       child: Material(
-        color: ReaderPalette.selectedFill,
+        color: palette.selectedFill,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -775,7 +781,7 @@ class _SendButton extends StatelessWidget {
             width: size,
             height: size,
             child: Icon(Icons.send_rounded,
-                size: size * 0.42, color: Colors.white),
+                size: size * 0.42, color: palette.onSelected),
           ),
         ),
       ),

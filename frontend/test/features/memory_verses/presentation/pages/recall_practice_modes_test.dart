@@ -262,7 +262,7 @@ void main() {
       // 10 verse words + 2 reference words.
       expect(find.text('1 of 12 words'), findsOneWidget);
 
-      await tester.tap(find.text('Reveal Next'));
+      await tester.tap(find.text('Reveal next'));
       await tester.pump();
       expect(find.text('2 of 12 words'), findsOneWidget);
 
@@ -301,10 +301,10 @@ void main() {
 
     testWidgets('phrase mode resets progress', (tester) async {
       await pumpMode(tester, modes['progressive reveal']!());
-      await tester.tap(find.text('Reveal Next'));
+      await tester.tap(find.text('Reveal next'));
       await tester.pump();
 
-      await tester.tap(find.text('Phrase-by-Phrase'));
+      await tester.tap(find.text('Phrase by phrase'));
       await tester.pump();
       expect(find.textContaining('phrases'), findsOneWidget);
       expect(find.textContaining('1 of'), findsOneWidget);

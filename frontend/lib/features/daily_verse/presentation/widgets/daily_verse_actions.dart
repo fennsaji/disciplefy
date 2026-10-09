@@ -8,6 +8,8 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/error/account_required.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/share_links.dart';
@@ -60,12 +62,17 @@ class DailyVerseActions extends StatelessWidget {
   final double iconSize;
   final double gap;
 
+  /// Called when any action is used (copy, share, add to memory); the
+  /// caller counts it as reading the verse.
+  final VoidCallback? onUsed;
+
   const DailyVerseActions({
     super.key,
     required this.state,
     this.iconColor = Colors.white,
     this.iconSize = 20,
     this.gap = 6,
+    this.onUsed,
   });
 
   @override
@@ -81,7 +88,10 @@ class DailyVerseActions extends StatelessWidget {
         ),
         SizedBox(width: gap),
         IconButton(
-          onPressed: () => Share.share(dailyVerseShareMessage(state)),
+          onPressed: () {
+            onUsed?.call();
+            Share.share(dailyVerseShareMessage(state));
+          },
           icon: Icon(Icons.share_outlined, color: iconColor, size: iconSize),
           tooltip: context.tr(TranslationKeys.dailyVerseShare),
           style: dailyVerseActionButtonStyle,
@@ -91,12 +101,14 @@ class DailyVerseActions extends StatelessWidget {
           verseState: state,
           iconColor: iconColor,
           iconSize: iconSize,
+          onUsed: onUsed,
         ),
       ],
     );
   }
 
   void _copy(BuildContext context) {
+    onUsed?.call();
     Clipboard.setData(ClipboardData(text: dailyVerseShareMessage(state)));
 
     showAppSnackBar(
@@ -116,11 +128,15 @@ class AddToMemoryButton extends StatefulWidget {
   final Color iconColor;
   final double iconSize;
 
+  /// Called when the verse is added (the tap passed the plan check).
+  final VoidCallback? onUsed;
+
   const AddToMemoryButton({
     super.key,
     required this.verseState,
     this.iconColor = Colors.white,
     this.iconSize = 20,
+    this.onUsed,
   });
 
   @override
@@ -131,6 +147,12 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
   bool _isLoading = false;
 
   void _onTap() {
+    // Memory verses need an account; Home opens the account-needed sheet.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      _askForAccount();
+      return;
+    }
+
     final tokenState = sl<TokenBloc>().state;
     final userPlan = tokenState is TokenLoaded
         ? tokenState.tokenStatus.userPlan.name
@@ -152,6 +174,7 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
       return;
     }
 
+    widget.onUsed?.call();
     setState(() => _isLoading = true);
 
     // The screen's own bloc (home provides one). MemoryVerseBloc is a DI
@@ -177,7 +200,9 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
         memoryVerseBloc.add(const LoadDueVerses());
         if (mounted) {
           setState(() => _isLoading = false);
-          if (state.code == 'VERSE_ALREADY_EXISTS') {
+          if (state.code == accountRequiredCode) {
+            _askForAccount();
+          } else if (state.code == 'VERSE_ALREADY_EXISTS') {
             _showAlreadyExistsSnackBar();
           } else {
             _showErrorSnackBar();
@@ -197,6 +222,9 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
       if (mounted && _isLoading) setState(() => _isLoading = false);
     });
   }
+
+  void _askForAccount() => GoRouter.of(context)
+      .go(GuestRouteGate.homeWithReason(AccountReasons.memoryVerses));
 
   void _showAddedSnackBar() {
     showAppSnackBar(
@@ -276,19 +304,33 @@ class _AddToMemoryButtonState extends State<AddToMemoryButton> {
                       color: iconColor,
                       size: widget.iconSize,
                     ),
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Text(
-                        '+',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                    // A guest has no deck: a small lock instead of the
+                    // "+", and the tap opens the account sheet.
+                    if (GuestRouteGate.currentUserIsGuest())
+                      Positioned(
+                        right: -4,
+                        bottom: -3,
+                        child: Icon(
+                          Icons.lock_outline,
+                          key: const Key('daily_verse_memory_lock'),
+                          size: 11,
                           color: iconColor.withValues(alpha: 0.85),
-                          height: 1,
+                        ),
+                      )
+                    else
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Text(
+                          '+',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: iconColor.withValues(alpha: 0.85),
+                            height: 1,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
           tooltip: isAlreadyInMemory

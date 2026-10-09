@@ -27,6 +27,9 @@ class MemoryTopBar extends StatelessWidget implements PreferredSizeWidget {
   /// Subtitle colour; gold by default.
   final Color? subtitleColor;
 
+  /// Title size; 22 by default (the deck list uses 24).
+  final double titleFontSize;
+
   const MemoryTopBar({
     super.key,
     required this.title,
@@ -36,6 +39,7 @@ class MemoryTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.useCloseIcon = false,
     this.showLeading = true,
     this.subtitleColor,
+    this.titleFontSize = 22,
   });
 
   @override
@@ -74,7 +78,7 @@ class MemoryTopBar extends StatelessWidget implements PreferredSizeWidget {
                   title: title,
                   subtitle: subtitle,
                   titleStyle: AppFonts.poppins(
-                    fontSize: 22,
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w700,
                     color: palette.text,
                     height: 1.2,

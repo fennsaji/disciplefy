@@ -129,8 +129,9 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
         onBack: () => context.pop(),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: settingsPrimaryFill))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: settingsPrimaryFill(context)))
           : _paths.isEmpty
               ? _buildEmptyState()
               : _buildPathList(),

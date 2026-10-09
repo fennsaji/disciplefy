@@ -525,7 +525,7 @@ class _ChatInputState extends State<ChatInput>
     );
   }
 
-  /// Builds the round send button (white on dark, indigo on light).
+  /// Builds the round send button (white on dark, ink on light).
   Widget _buildSendButton(ThemeData theme) {
     final palette = ReaderPalette.of(context);
     final canSend = _controller.text.trim().isNotEmpty &&

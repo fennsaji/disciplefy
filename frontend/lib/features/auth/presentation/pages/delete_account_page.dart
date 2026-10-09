@@ -368,7 +368,7 @@ class _NumberedStep extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: palette.gold,
+                color: palette.goldOnTint,
               ),
             ),
           ),

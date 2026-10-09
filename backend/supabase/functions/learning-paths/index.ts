@@ -16,7 +16,25 @@ import { AppError } from '../_shared/utils/error-handler.ts';
 import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import { TtlCache } from '../_shared/utils/ttl-cache.ts';
-import { loadCompletedTopicCounts, loadEnrolledPathIds, loadPathTranslations, pathProgressPercentage } from './batch-loaders.ts';
+import { buildRecommendedExtras, type NextLessonJson } from './next-lesson.ts';
+import { flatListTotal, loadActivePathCount } from './list-total.ts';
+import {
+  assertGuestMayEnroll,
+  loadGuestAccessiblePathIds,
+  loadPathGuestAccessible,
+  loadUserEnrolledPathIds,
+  parseEnrollTarget,
+  resolvePathIdBySlug,
+} from './guest-rules.ts';
+import {
+  loadCompletedTopicCounts,
+  loadEnrolledPathIds,
+  loadNextLessonNumbers,
+  loadPathTranslations,
+  pathProgressPercentage,
+  resolveShortTitle,
+  type PathTranslation,
+} from './batch-loaders.ts';
 import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
   calculatePathScores,
@@ -64,14 +82,12 @@ interface LearningPathDetailRequest {
   language?: string;
 }
 
-interface EnrollRequest {
-  pathId: string;
-}
-
 interface LearningPath {
   id: string;
   slug: string;
   title: string;
+  /** Localized display name (<= 28 chars) for headers and rows; null = use title. */
+  short_title: string | null;
   description: string;
   icon_name: string;
   color: string;
@@ -80,6 +96,8 @@ interface LearningPath {
   disciple_level: string;
   recommended_mode?: string;
   is_featured: boolean;
+  /** True when a guest may enrol in and study this path. */
+  guest_accessible: boolean;
   topics_count: number;
   is_enrolled: boolean;
   progress_percentage: number;
@@ -89,6 +107,15 @@ interface LearningPath {
   display_order?: number;
   /** Localized title of the first unfinished topic; recommended path only. */
   next_topic_title?: string;
+  /** First incomplete lesson; null when finished. Recommended path only. */
+  next_lesson?: NextLessonJson | null;
+  /**
+   * 1-based number of the first unfinished lesson, from the lesson rows; null
+   * when finished. List endpoints, signed-in users only (absent otherwise).
+   */
+  next_lesson_number?: number | null;
+  /** 1-based lesson numbers of milestones. Recommended path only. */
+  milestone_positions?: number[];
 }
 
 interface LearningPathDetail extends LearningPath {
@@ -132,6 +159,7 @@ interface LearningPathRow {
   id: string;
   slug: string;
   title: string;
+  short_title?: string | null;
   description: string;
   icon_name: string;
   color: string;
@@ -140,6 +168,7 @@ interface LearningPathRow {
   disciple_level: string;
   is_featured: boolean;
   is_active: boolean;
+  guest_accessible?: boolean;
   recommended_mode?: string;
   display_order?: number;
 }
@@ -170,7 +199,7 @@ const topicCountCache = new TtlCache<number>(CATALOG_CACHE_TTL_MS, 2000);
  * Path translations keyed by `${pathId}:${lang}`; null records "no row", so a
  * missing translation is not re-queried on every request.
  */
-const translationCache = new TtlCache<{ title: string | null; description: string | null } | null>(
+const translationCache = new TtlCache<PathTranslation>(
   CATALOG_CACHE_TTL_MS,
   2000,
 );
@@ -265,18 +294,31 @@ async function getActualTopicsCompleted(
   return new Set((completed || []).map((r: { topic_id: string }) => r.topic_id)).size;
 }
 
+/** A path's title, description and short display title in one language. */
+interface LocalizedPathText {
+  title: string;
+  description: string;
+  shortTitle: string | null;
+}
+
 /**
- * Gets localized title and description for a learning path
+ * Gets localized title, description and short title for a learning path.
+ * [fallbackShortTitle] is the path's own (English) short_title.
  */
 async function getLocalizedTitleDescription(
   supabaseClient: ReturnType<ServiceContainer['supabaseServiceClient']['from']> extends (...args: any[]) => any ? any : any,
   learningPathId: string,
   language: string,
   fallbackTitle: string,
-  fallbackDescription: string
-): Promise<{ title: string; description: string }> {
+  fallbackDescription: string,
+  fallbackShortTitle?: string | null
+): Promise<LocalizedPathText> {
   if (language === 'en') {
-    return { title: fallbackTitle, description: fallbackDescription };
+    return {
+      title: fallbackTitle,
+      description: fallbackDescription,
+      shortTitle: resolveShortTitle(language, fallbackShortTitle, undefined),
+    };
   }
 
   const cacheKey = `${learningPathId}:${language}`;
@@ -284,12 +326,12 @@ async function getLocalizedTitleDescription(
   if (translation === undefined) {
     const { data, error } = await supabaseClient
       .from('learning_path_translations')
-      .select('title, description')
+      .select('title, description, short_title')
       .eq('learning_path_id', learningPathId)
       .eq('lang_code', language)
       .single();
 
-    const row = (data ?? null) as { title: string | null; description: string | null } | null;
+    const row = (data ?? null) as PathTranslation;
     translation = row;
     // Remember a found row, or a confirmed absence (PGRST116: no rows). Any
     // other error is transient and must not pin the English fallback.
@@ -298,14 +340,16 @@ async function getLocalizedTitleDescription(
     }
   }
 
+  const shortTitle = resolveShortTitle(language, fallbackShortTitle, translation);
   if (translation) {
     return {
       title: translation.title || fallbackTitle,
       description: translation.description || fallbackDescription,
+      shortTitle,
     };
   }
 
-  return { title: fallbackTitle, description: fallbackDescription };
+  return { title: fallbackTitle, description: fallbackDescription, shortTitle };
 }
 
 /**
@@ -325,6 +369,52 @@ async function preloadTranslations(
   // On error nothing is cached; getLocalizedTitleDescription queries per path.
   if (!rows) return;
   for (const [id, row] of rows) translationCache.set(`${id}:${language}`, row);
+}
+
+/**
+ * Each path's own (English) short_title, keyed by path id; catalogue data,
+ * cached like the rest. Null records "none set".
+ */
+const baseShortTitleCache = new TtlCache<string | null>(CATALOG_CACHE_TTL_MS, 2000);
+
+/**
+ * Localized short titles for paths that come from the RPCs (which return the
+ * localized title but not the short one): two batched reads at most, then
+ * memory. A failed read yields null short titles (the client shows the title)
+ * and is not cached.
+ */
+async function loadShortTitles(
+  // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
+  supabaseClient: any,
+  learningPathIds: string[],
+  language: string
+): Promise<Map<string, string | null>> {
+  const ids = [...new Set(learningPathIds.filter(Boolean))];
+  const missing = ids.filter((id) => !baseShortTitleCache.has(id));
+  await Promise.all([
+    (async () => {
+      if (missing.length === 0) return;
+      const { data, error } = await supabaseClient
+        .from('learning_paths')
+        .select('id, short_title')
+        .in('id', missing);
+      if (error) {
+        console.warn('[LearningPaths] short_title lookup failed; using titles');
+        return;
+      }
+      for (const id of missing) baseShortTitleCache.set(id, null);
+      for (const row of (data ?? []) as Array<{ id: string; short_title: string | null }>) {
+        baseShortTitleCache.set(row.id, row.short_title ?? null);
+      }
+    })(),
+    preloadTranslations(supabaseClient, ids, language),
+  ]);
+  const result = new Map<string, string | null>();
+  for (const id of ids) {
+    const translation = language === 'en' ? undefined : (translationCache.get(`${id}:${language}`) ?? null);
+    result.set(id, resolveShortTitle(language, baseShortTitleCache.get(id) ?? null, translation));
+  }
+  return result;
 }
 
 /**
@@ -373,21 +463,22 @@ function buildLearningPathResponse(
   topicsCount: number,
   isEnrolled: boolean,
   progressPercentage: number,
-  localizedTitle: string,
-  localizedDescription: string,
+  localized: LocalizedPathText,
   topicsCompleted?: number
 ): LearningPath {
   return {
     id: pathData.id,
     slug: pathData.slug,
-    title: localizedTitle,
-    description: localizedDescription,
+    title: localized.title,
+    short_title: localized.shortTitle,
+    description: localized.description,
     icon_name: pathData.icon_name,
     color: pathData.color,
     total_xp: pathData.total_xp,
     estimated_days: pathData.estimated_days,
     disciple_level: pathData.disciple_level,
     is_featured: pathData.is_featured,
+    guest_accessible: pathData.guest_accessible === true,
     topics_count: topicsCount,
     is_enrolled: isEnrolled,
     progress_percentage: progressPercentage,
@@ -397,9 +488,11 @@ function buildLearningPathResponse(
 }
 
 /**
- * Adds the localized title of the path's first unfinished topic to a started
- * recommended path, so Home can show "Next: …" without a second request.
- * Best effort: any failure returns the path unchanged (older apps ignore it).
+ * Adds next_lesson, topics_completed, milestone_positions (and the legacy
+ * next_topic_title) to the recommended path. Topics and localized titles come
+ * from get_learning_path_details, the same lookup the detail endpoint uses.
+ * Guests get the same shape with nothing completed. Best effort: any failure
+ * returns the path unchanged (older apps ignore the new fields).
  */
 async function withNextTopic(
   // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
@@ -408,24 +501,21 @@ async function withNextTopic(
   userId: string | null | undefined,
   language: string
 ): Promise<LearningPath | null> {
-  if (!path || !userId) return path;
-  const started = path.is_enrolled || path.topics_completed > 0 || path.progress_percentage > 0;
-  if (!started || path.topics_completed >= path.topics_count) return path;
+  if (!path) return path;
   try {
     const { data, error } = await supabaseClient.rpc('get_learning_path_details', {
       p_path_id: path.id,
-      p_user_id: userId,
+      p_user_id: userId ?? null,
       p_language: language,
     });
     if (error || !data || data.length === 0) return path;
-    const topics = ((data[0].topics || []) as Array<Record<string, unknown>>)
-      .slice()
-      .sort((a, b) => (a.position as number) - (b.position as number));
-    const next = topics.find((t) => !t.is_completed);
-    const title = typeof next?.title === 'string' ? next.title.trim() : '';
-    return title ? { ...path, next_topic_title: title } : path;
+    const extras = buildRecommendedExtras(data[0].topics, !!userId, path.title);
+    const enriched: LearningPath = { ...path, ...extras };
+    if (extras.next_lesson) enriched.next_topic_title = extras.next_lesson.title;
+    enriched.next_lesson_number = extras.next_lesson?.lesson_number ?? null;
+    return enriched;
   } catch (e) {
-    console.error('[RECOMMENDED_PATH] Next topic lookup failed:', e instanceof Error ? e.message : 'unknown');
+    console.error('[RECOMMENDED_PATH] Next lesson lookup failed:', e instanceof Error ? e.message : 'unknown');
     return path;
   }
 }
@@ -534,11 +624,52 @@ async function handleLearningPaths(
 // Shared helper
 // ============================================================================
 
-function mapPathRow(row: Record<string, unknown>): LearningPath {
+/**
+ * Ids of the guest-accessible paths, shared across requests in this worker for
+ * labelling responses only (catalogue data, same for every caller). Enrolment
+ * reads the flag fresh. A failed lookup is not cached and labels nothing.
+ */
+const guestAccessibleCache = new TtlCache<Set<string>>(CATALOG_CACHE_TTL_MS, 1);
+
+/** Number of active paths, cached like the rest of the catalogue. */
+const activePathCountCache = new TtlCache<number>(CATALOG_CACHE_TTL_MS, 1);
+
+// deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
+async function activePathCount(client: any): Promise<number | null> {
+  const cached = activePathCountCache.get('count');
+  if (cached !== undefined) return cached;
+  const count = await loadActivePathCount(client);
+  if (count === null) {
+    console.warn('[LearningPaths] active path count failed; list total unknown');
+    return null;
+  }
+  activePathCountCache.set('count', count);
+  return count;
+}
+
+// deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
+async function guestAccessiblePathIds(client: any): Promise<Set<string>> {
+  const cached = guestAccessibleCache.get('ids');
+  if (cached) return cached;
+  const ids = await loadGuestAccessiblePathIds(client);
+  if (!ids) {
+    console.warn('[LearningPaths] guest_accessible lookup failed; labelling no path');
+    return new Set();
+  }
+  guestAccessibleCache.set('ids', ids);
+  return ids;
+}
+
+function mapPathRow(
+  row: Record<string, unknown>,
+  guestAccessibleIds: Set<string>,
+  shortTitles: Map<string, string | null>,
+): LearningPath {
   return {
     id: row.path_id as string,
     slug: row.slug as string,
     title: row.title as string,
+    short_title: shortTitles.get(row.path_id as string) ?? null,
     description: row.description as string,
     icon_name: row.icon_name as string,
     color: row.color as string,
@@ -546,6 +677,7 @@ function mapPathRow(row: Record<string, unknown>): LearningPath {
     estimated_days: row.estimated_days as number,
     disciple_level: row.disciple_level as string,
     is_featured: row.is_featured as boolean,
+    guest_accessible: guestAccessibleIds.has(row.path_id as string),
     topics_count: row.total_topics as number,
     is_enrolled: row.is_enrolled as boolean,
     progress_percentage: row.progress_percentage as number,
@@ -556,6 +688,22 @@ function mapPathRow(row: Record<string, unknown>): LearningPath {
     category: row.category as string,
     display_order: row.display_order as number | undefined,
   };
+}
+
+/**
+ * Adds next_lesson_number to list rows for a signed-in user. Best effort: on
+ * a failed read the field is left out and the app falls back to its count.
+ */
+async function withNextLessonNumbers<T extends LearningPath>(
+  // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
+  supabaseClient: any,
+  paths: T[],
+  userId: string | null | undefined,
+): Promise<T[]> {
+  if (!userId || paths.length === 0) return paths;
+  const numbers = await loadNextLessonNumbers(supabaseClient, paths.map((p) => p.id), userId);
+  if (!numbers) return paths;
+  return paths.map((p) => (numbers.has(p.id) ? { ...p, next_lesson_number: numbers.get(p.id) ?? null } : p));
 }
 
 // ============================================================================
@@ -630,8 +778,9 @@ async function handleListPaths(
   }
 
   // Step 2: fetch paths for every category in parallel
-  const pathResults = await Promise.all(
-    pageCategories.map((cat: Record<string, unknown>) =>
+  const [guestIds, ...pathResults] = await Promise.all([
+    guestAccessiblePathIds(supabaseServiceClient),
+    ...pageCategories.map((cat: Record<string, unknown>) =>
       supabaseServiceClient.rpc('get_available_learning_paths', {
         p_user_id: userId,
         p_language: language,
@@ -640,19 +789,38 @@ async function handleListPaths(
         p_offset: 0,
         p_category: cat.category as string,
       })
-    )
+    ),
+  ]);
+
+  // Short titles for every path on the page, in one batch.
+  const pageRows = (pathResults as Array<{ data: Record<string, unknown>[] | null }>)
+    .flatMap((r) => r.data ?? []);
+  const shortTitles = await loadShortTitles(
+    supabaseServiceClient,
+    pageRows.map((r) => r.path_id as string),
+    language,
   );
+
+  // Next unfinished lesson per path on the page, in one batch.
+  const nextNumbers = userId
+    ? await loadNextLessonNumbers(supabaseServiceClient, pageRows.map((r) => r.path_id as string), userId)
+    : null;
 
   // Step 3: build response
   const categories: LearningPathCategoryResult[] = pageCategories.map(
     (cat: Record<string, unknown>, i: number) => {
-      const { data: pathRows, error: pathErr } = pathResults[i];
+      const { data: pathRows, error: pathErr } = pathResults[i] as {
+        data: Record<string, unknown>[] | null;
+        error: unknown;
+      };
       if (pathErr) {
         console.error(`Error fetching paths for category ${cat.category}:`, pathErr);
       }
       const rows: Record<string, unknown>[] = pathRows || [];
       const hasMoreInCategory = rows.length > PATHS_PER_CATEGORY;
-      const paths = (hasMoreInCategory ? rows.slice(0, PATHS_PER_CATEGORY) : rows).map(mapPathRow);
+      const paths = (hasMoreInCategory ? rows.slice(0, PATHS_PER_CATEGORY) : rows)
+        .map((row) => mapPathRow(row, guestIds, shortTitles))
+        .map((p) => (nextNumbers?.has(p.id) ? { ...p, next_lesson_number: nextNumbers.get(p.id) ?? null } : p));
 
       return {
         name: cat.category as string,
@@ -718,7 +886,12 @@ async function handleListPathsFlat(
   };
   if (search) rpcParams['p_search'] = search;
 
-  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', rpcParams);
+  const unfiltered = !search && includeEnrolled;
+  const [{ data, error }, guestIds, activeCount] = await Promise.all([
+    supabaseServiceClient.rpc('get_available_learning_paths', rpcParams),
+    guestAccessiblePathIds(supabaseServiceClient),
+    unfiltered ? activePathCount(supabaseServiceClient) : Promise.resolve(null),
+  ]);
 
   if (error) {
     console.error('Error fetching learning paths (flat):', error);
@@ -743,13 +916,28 @@ async function handleListPathsFlat(
 
   const rows = data || [];
   const hasMore = rows.length > limit;
-  const paths = (hasMore ? rows.slice(0, limit) : rows).map((row: Record<string, unknown>) => ({
-    ...mapPathRow(row),
+  const pageRows: Record<string, unknown>[] = hasMore ? rows.slice(0, limit) : rows;
+  const shortTitles = await loadShortTitles(
+    supabaseServiceClient,
+    pageRows.map((r) => r.path_id as string),
+    language,
+  );
+  const paths = await withNextLessonNumbers(supabaseServiceClient, pageRows.map((row: Record<string, unknown>) => ({
+    ...mapPathRow(row, guestIds, shortTitles),
     fellowship_completed: completedPathIds.has(row.path_id as string),
-  }));
+  })), userId);
 
   return new Response(
-    JSON.stringify({ success: true, data: { paths, total: paths.length, has_more: hasMore, offset } }),
+    JSON.stringify({
+      success: true,
+      data: {
+        paths,
+        // Matching paths in the whole list (null when unknown), not the page size.
+        total: flatListTotal({ offset, pageLength: paths.length, hasMore, activeCount, unfiltered }),
+        has_more: hasMore,
+        offset,
+      },
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
@@ -791,14 +979,17 @@ async function handleListPathsByCategory(
 
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
 
-  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', {
-    p_user_id: userId,
-    p_language: language,
-    p_include_enrolled: true,
-    p_limit: limit + 1,
-    p_offset: offset,
-    p_category: category,
-  });
+  const [{ data, error }, guestIds] = await Promise.all([
+    supabaseServiceClient.rpc('get_available_learning_paths', {
+      p_user_id: userId,
+      p_language: language,
+      p_include_enrolled: true,
+      p_limit: limit + 1,
+      p_offset: offset,
+      p_category: category,
+    }),
+    guestAccessiblePathIds(supabaseServiceClient),
+  ]);
 
   if (error) {
     console.error(`Error fetching paths for category ${category}:`, error);
@@ -807,7 +998,17 @@ async function handleListPathsByCategory(
 
   const rows = data || [];
   const hasMore = rows.length > limit;
-  const paths = (hasMore ? rows.slice(0, limit) : rows).map(mapPathRow);
+  const pageRows: Record<string, unknown>[] = hasMore ? rows.slice(0, limit) : rows;
+  const shortTitles = await loadShortTitles(
+    supabaseServiceClient,
+    pageRows.map((r) => r.path_id as string),
+    language,
+  );
+  const paths = await withNextLessonNumbers(
+    supabaseServiceClient,
+    pageRows.map((row) => mapPathRow(row, guestIds, shortTitles)),
+    userId,
+  );
 
   return new Response(
     JSON.stringify({ success: true, data: { paths, has_more: hasMore, category, offset } }),
@@ -845,11 +1046,15 @@ async function handleGetPathDetails(
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
 
   // Call the database function
-  const { data, error } = await supabaseServiceClient.rpc('get_learning_path_details', {
-    p_path_id: resolvedPathId,
-    p_user_id: userId,
-    p_language: language,
-  });
+  const [{ data, error }, guestIds, shortTitles] = await Promise.all([
+    supabaseServiceClient.rpc('get_learning_path_details', {
+      p_path_id: resolvedPathId,
+      p_user_id: userId,
+      p_language: language,
+    }),
+    guestAccessiblePathIds(supabaseServiceClient),
+    loadShortTitles(supabaseServiceClient, [resolvedPathId], language),
+  ]);
 
   if (error) {
     console.error('Error fetching learning path details:', error);
@@ -865,6 +1070,7 @@ async function handleGetPathDetails(
     id: row.path_id,
     slug: row.slug,
     title: row.title,
+    short_title: shortTitles.get(row.path_id) ?? null,
     description: row.description,
     icon_name: row.icon_name,
     color: row.color,
@@ -875,6 +1081,7 @@ async function handleGetPathDetails(
     allow_non_sequential_access: row.allow_non_sequential_access,
     category: (row.category as string) || '',
     is_featured: false,
+    guest_accessible: guestIds.has(row.path_id),
     topics_count: row.topics?.length || 0,
     is_enrolled: row.is_enrolled,
     progress_percentage: row.progress_percentage,
@@ -931,19 +1138,26 @@ async function handleEnroll(
 
   const { supabaseServiceClient } = services;
 
-  // Parse request
-  let pathId: string | null = null;
-
+  // Parse request: { pathId } or { slug }; a pathId query param still works.
+  let body: unknown = null;
   try {
-    const body: EnrollRequest = await req.json();
-    pathId = body.pathId;
+    body = await req.json();
   } catch {
-    const url = new URL(req.url);
-    pathId = url.searchParams.get('pathId');
+    // No JSON body: fall back to the query parameter below.
   }
+  const target = parseEnrollTarget(body, new URL(req.url).searchParams.get('pathId'));
+  const pathId = 'pathId' in target
+    ? target.pathId
+    : await resolvePathIdBySlug(supabaseServiceClient, target.slug);
 
-  if (!pathId) {
-    throw new AppError('VALIDATION_ERROR', 'pathId is required', 400);
+  // A guest holds one guest-accessible path: the first one, which they may
+  // re-enrol. Any other path needs an account.
+  if (userContext.isGuest) {
+    const [guestAccessible, enrolledPathIds] = await Promise.all([
+      loadPathGuestAccessible(supabaseServiceClient, pathId),
+      loadUserEnrolledPathIds(supabaseServiceClient, userContext.userId),
+    ]);
+    assertGuestMayEnroll(enrolledPathIds, pathId, guestAccessible);
   }
 
   // Call the database function (returns progress_id UUID)
@@ -1065,10 +1279,10 @@ async function handleGetRecommendedPaths(
       if (percentage >= 100) continue;
 
       const localized = await getLocalizedTitleDescription(
-        supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
+        supabaseServiceClient, pathData.id, language, pathData.title, pathData.description, pathData.short_title
       );
       inProgressFirst.push(buildLearningPathResponse(
-        pathData, topicsCountNum, true, percentage, localized.title, localized.description,
+        pathData, topicsCountNum, true, percentage, localized,
       ));
       if (inProgressFirst.length >= limit) break;
     }
@@ -1092,7 +1306,7 @@ async function handleGetRecommendedPaths(
     if (personalization?.questionnaire_completed && personalization?.faith_stage) {
       const { data: allPaths } = await supabaseServiceClient
         .from('learning_paths')
-        .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, display_order')
+        .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, guest_accessible, display_order')
         .eq('is_active', true);
 
       if (allPaths && allPaths.length > 0) {
@@ -1139,7 +1353,7 @@ async function handleGetRecommendedPaths(
 
             const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
             const localized = await getLocalizedTitleDescription(
-              supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
+              supabaseServiceClient, pathData.id, language, pathData.title, pathData.description, pathData.short_title
             );
 
             const isEnrolled = enrolledPathIds.has(pathData.id);
@@ -1156,7 +1370,7 @@ async function handleGetRecommendedPaths(
 
             pathObjects.push(buildLearningPathResponse(
               pathData, topicsCountNum, isEnrolled, progressPercentage,
-              localized.title, localized.description
+              localized
             ));
           }
 
@@ -1223,15 +1437,14 @@ async function handleGetRecommendedPaths(
     if (percentage >= 100) continue;
 
     const localized = await getLocalizedTitleDescription(
-      supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
+      supabaseServiceClient, pathData.id, language, pathData.title, pathData.description, pathData.short_title
     );
     fallbackObjects.push(buildLearningPathResponse(
       pathData,
       topicsCountNum,
       enrolledIds?.has(pathData.id) ?? false,
       percentage,
-      localized.title,
-      localized.description,
+      localized,
       topicsCompleted,
     ));
   }
@@ -1311,6 +1524,7 @@ async function handleGetRecommendedPath(
             id,
             slug,
             title,
+            short_title,
             description,
             icon_name,
             color,
@@ -1318,7 +1532,8 @@ async function handleGetRecommendedPath(
             estimated_days,
             disciple_level,
             is_featured,
-            is_active
+            is_active,
+            guest_accessible
           )
         `)
         .eq('user_id', userId)
@@ -1355,7 +1570,8 @@ async function handleGetRecommendedPath(
           activePath.learning_path_id,
           language,
           pathData.title,
-          pathData.description
+          pathData.description,
+          pathData.short_title
         );
         const actualCompleted = await completedFor(supabaseServiceClient, activePreload.completed, activePath.learning_path_id, userId);
         const progressPercentage = effectiveProgress(
@@ -1376,8 +1592,7 @@ async function handleGetRecommendedPath(
           topicsCountNum,
           true,
           progressPercentage,
-          localized.title,
-          localized.description
+          localized
         );
 
         return createRecommendedPathResponse(
@@ -1412,7 +1627,7 @@ async function handleGetRecommendedPath(
         ] = await Promise.all([
           supabaseServiceClient
             .from('learning_paths')
-            .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, display_order')
+            .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, guest_accessible, display_order')
             .eq('is_active', true),
           supabaseServiceClient
             .from('user_learning_path_progress')
@@ -1479,7 +1694,8 @@ async function handleGetRecommendedPath(
               pathData.id,
               language,
               pathData.title,
-              pathData.description
+              pathData.description,
+              pathData.short_title
             );
 
             // Check if user is enrolled
@@ -1511,8 +1727,7 @@ async function handleGetRecommendedPath(
               topicsCountNum,
               !!existingProgress,
               progressPercentage,
-              localized.title,
-              localized.description
+              localized
             );
 
             return createRecommendedPathResponse(
@@ -1561,7 +1776,8 @@ async function handleGetRecommendedPath(
         pathData.id,
         language,
         pathData.title,
-        pathData.description
+        pathData.description,
+        pathData.short_title
       );
 
       let isEnrolled = false;
@@ -1602,8 +1818,7 @@ async function handleGetRecommendedPath(
         topicsCountNum,
         isEnrolled,
         progressPercentage,
-        localized.title,
-        localized.description
+        localized
       );
 
       return createRecommendedPathResponse(
@@ -1617,7 +1832,7 @@ async function handleGetRecommendedPath(
     const fallbackPath = sortedFeatured[0];
     const fallbackTopicsCount = await getTopicsCount(supabaseServiceClient, fallbackPath.id);
     const fallbackLocalized = await getLocalizedTitleDescription(
-      supabaseServiceClient, fallbackPath.id, language, fallbackPath.title, fallbackPath.description
+      supabaseServiceClient, fallbackPath.id, language, fallbackPath.title, fallbackPath.description, fallbackPath.short_title
     );
     const fallbackActualCompleted = userId
       ? await completedFor(supabaseServiceClient, featuredPreload.completed, fallbackPath.id, userId)
@@ -1628,7 +1843,7 @@ async function handleGetRecommendedPath(
 
     const path = buildLearningPathResponse(
       fallbackPath, fallbackTopicsCount, false, fallbackProgress,
-      fallbackLocalized.title, fallbackLocalized.description
+      fallbackLocalized
     );
     return createRecommendedPathResponse(
           await withNextTopic(supabaseServiceClient, path, userId, language),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:disciplefy_bible_study/features/daily_verse/presentation/daily_streak_activity.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_fonts.dart';
@@ -21,6 +22,8 @@ import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../../../shared/widgets/scripture_verse_sheet.dart';
 import '../../../../shared/widgets/markdown_with_scripture.dart';
 import '../../../../core/error/failures.dart';
+import 'package:disciplefy_bible_study/core/error/account_required.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../data/datasources/study_local_data_source.dart';
@@ -50,6 +53,13 @@ import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
 import '../../../../shared/widgets/sign_in_required_dialog.dart';
 import '../widgets/study_reading_tracker.dart';
+import 'package:disciplefy_bible_study/core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_discipler_gate.dart';
+import '../../../study_topics/domain/entities/lesson_ref.dart';
+import '../../../study_topics/presentation/pages/lesson_complete_page.dart';
+import '../../../study_topics/presentation/widgets/lesson_mark_complete_bar.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/lesson_mode_switch.dart';
 import '../../data/services/reading_progress_store.dart';
 import '../../../../core/theme/reader_palette.dart';
 import '../../../../shared/widgets/numbered_section_header.dart';
@@ -63,6 +73,7 @@ import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart'
     deferred as pdf_export;
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../../gamification/presentation/bloc/gamification_state.dart';
 import '../../domain/entities/study_mode.dart';
@@ -82,6 +93,8 @@ import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/lesson_completion_refresh.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/lesson_events.dart';
 
 /// Lightens a color for better contrast in dark mode
 Color _lightenColor(Color color, [double amount = 0.2]) {
@@ -168,6 +181,12 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Existing guide data from saved/recent guides (skips generation if provided)
   final Map<String, dynamic>? existingGuideData;
 
+  /// Set when opened as a lesson of a learning path.
+  final LessonRef? lesson;
+
+  /// Lesson 1 opened from the first run (`first_run=1`).
+  final bool firstRun;
+
   const StudyGuideScreenV2({
     super.key,
     this.topicId,
@@ -181,6 +200,8 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.navigationSource = StudyNavigationSource.home,
     this.studyMode = StudyMode.standard,
     this.existingGuideData,
+    this.lesson,
+    this.firstRun = false,
   });
 
   @override
@@ -198,6 +219,8 @@ class StudyGuideScreenV2 extends StatelessWidget {
           navigationSource: navigationSource,
           studyMode: studyMode,
           existingGuideData: existingGuideData,
+          lesson: lesson,
+          firstRun: firstRun,
         ),
       );
 }
@@ -214,6 +237,8 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final StudyNavigationSource navigationSource;
   final StudyMode studyMode;
   final Map<String, dynamic>? existingGuideData;
+  final LessonRef? lesson;
+  final bool firstRun;
 
   const _StudyGuideScreenV2Content({
     this.topicId,
@@ -227,6 +252,8 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     required this.navigationSource,
     required this.studyMode,
     this.existingGuideData,
+    this.lesson,
+    this.firstRun = false,
   });
 
   @override
@@ -236,6 +263,15 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
 
 class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     with RouteAware {
+  /// Start and completion analytics of a path lesson; null for other guides.
+  late final LessonEventTracker? _lessonEvents = widget.lesson == null
+      ? null
+      : LessonEventTracker(
+          lesson: widget.lesson!,
+          mode: widget.studyMode,
+          firstRun: widget.firstRun,
+        );
+
   final TextEditingController _notesController = TextEditingController();
   final FocusNode _notesFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
@@ -357,7 +393,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   static const double _fontSizeMin = 14.0;
   static const double _fontSizeMax = 26.0;
   static const double _fontSizeStep = 2.0;
-  double _contentFontSize = 18.0;
+  static const double _fontSizeDefault = 16.0;
+  double _contentFontSize = _fontSizeDefault;
 
   // Fellowship data for optional "post to fellowship feed" toggle
   List<FellowshipEntity>? _userFellowships;
@@ -586,9 +623,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (saved != null) {
       if (mounted) setState(() => _contentFontSize = saved);
     } else {
-      // Default: base 18px scaled by the app-wide font scale setting
+      // Default: base 16px scaled by the app-wide font scale setting
       final scale = sl<FontScaleService>().scaleFactor;
-      final defaultSize = (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+      final defaultSize =
+          (_fontSizeDefault * scale).clamp(_fontSizeMin, _fontSizeMax);
       if (mounted) setState(() => _contentFontSize = defaultSize);
     }
   }
@@ -680,7 +718,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     Text(
                       context.tr(TranslationKeys.studyGuideTextSizeEyebrow),
                       style: AppFonts.inter(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.4,
                         color: palette.gold,
@@ -768,8 +806,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove(_fontSizePrefsKey);
                         final scale = sl<FontScaleService>().scaleFactor;
-                        final defaultSize =
-                            (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+                        final defaultSize = (_fontSizeDefault * scale)
+                            .clamp(_fontSizeMin, _fontSizeMax);
                         await step(defaultSize - _contentFontSize);
                       },
                       child: Text(
@@ -825,6 +863,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       sl<GamificationBloc>().add(const UpdateStudyStreak());
       sl<GamificationBloc>().add(const CheckStudyAchievements());
     }
+    // Pop-ups that waited while the guide was open show on the route the
+    // user lands on (Lesson complete still holds them until it is shown).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => AchievementPopupGate.flush());
     _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
@@ -1210,6 +1252,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// This is called at the beginning of study guide generation when a topicId
   /// is present (e.g., from recommended topics or notifications).
   Future<void> _startTopicProgress() async {
+    _lessonEvents?.started();
     final topicId = widget.topicId;
     if (topicId == null || topicId.isEmpty) {
       return;
@@ -1331,6 +1374,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Handle streaming failure with partial content
   void _handleStreamingFailure(StudyGenerationStreamingFailed state) {
     if (!mounted) return;
+    if (isAccountRequired(state.failure)) {
+      _offerAccount(state.failure);
+      return;
+    }
     setState(() {
       _isLoading = false;
       _hasError = true;
@@ -1341,6 +1388,25 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           state.failure.code == 'INSUFFICIENT_TOKENS' ||
           state.failure.code == 'TOKEN_LIMIT_EXCEEDED';
     });
+  }
+
+  /// A guest asked for a typed study or a paid mode (403 ACCOUNT_REQUIRED):
+  /// offer an account, never "generation failed". With one, generate again;
+  /// otherwise leave the page.
+  Future<void> _offerAccount(Failure failure) async {
+    final reason = (failure is AccountRequiredFailure
+            ? AccountReason.fromWire(failure.reason)
+            : null) ??
+        AccountReason.generate;
+    final linked = await AccountNeededSheet.show(context, reason);
+    if (!mounted) return;
+    if (linked) {
+      await _retryGeneration();
+    } else if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   /// Retry study guide generation
@@ -1564,6 +1630,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// show the completion sheet after [_inactivitySeconds] of silence at the
   /// absolute bottom.
   void _startInactivityCountdown() {
+    // Path lessons end with "Mark complete", not a timed sheet.
+    if (widget.lesson != null) return;
     if (_isTopicCompletedFromPath) return;
     if (_phase2WalkthroughStarted) return;
     if (!_completionMarked) return;
@@ -1728,6 +1796,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     return systemConfigService.isFeatureEnabled('study_chat', userPlan);
   }
 
+  /// Whether the Discipler follow-up panel is in the page. Never for a
+  /// guest: it needs an account, so no conversation-history call is made.
+  bool _showFollowUpChat() => lessonShowsFollowUpChat(
+        planShowsChat: _shouldShowStudyChat(),
+        isGuest: GuestRouteGate.currentUserIsGuest(),
+      );
+
   /// Checks if Study Chat feature should be visible (not hidden)
   bool _shouldShowStudyChat() {
     final tokenBloc = sl<TokenBloc>();
@@ -1811,6 +1886,92 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // the user reaches the absolute bottom — never mid-read.
   }
 
+  /// "Mark complete" on a path lesson: record completion, then open the
+  /// Lesson complete page in place of this guide.
+  Future<void> _completeLessonNow() async {
+    final lesson = widget.lesson;
+    if (lesson == null) return;
+    _markStudyGuideComplete(isManual: true);
+    await (_topicProgressFuture ??= _completeTopicProgress());
+    if (!mounted) return;
+    context.pushReplacement(
+      AppRoutes.lessonComplete,
+      extra: LessonCompleteArgs(
+        lesson: lesson,
+        lessonTitle: _getDisplayTitle(),
+        mode: widget.studyMode,
+        language: widget.language ?? _currentStudyGuide?.language ?? 'en',
+        firstRun: widget.firstRun,
+      ),
+    );
+  }
+
+  /// Share and follow-up buttons under "Mark complete".
+  Widget? _buildLessonSecondaryActions(BuildContext context) {
+    final guide = _currentStudyGuide;
+    final palette = ReaderPalette.of(context);
+    final canShare = guide != null && _userFellowships?.isNotEmpty == true;
+    final canChat = _shouldShowStudyChat();
+    if (!canShare && !canChat) return null;
+    ButtonStyle style() => OutlinedButton.styleFrom(
+          foregroundColor: palette.text,
+          side: BorderSide(color: palette.outline),
+          minimumSize: const Size(0, 32),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // Web and desktop default to a compact density (32 -> 24).
+          visualDensity: VisualDensity.standard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: AppFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+        );
+    // Shrinks rather than cutting a long hi/ml label.
+    // The button already wraps the label in a Flexible.
+    Widget label(String key) => FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(context.tr(key), maxLines: 1),
+        );
+    final buttons = <Widget>[
+      if (canShare)
+        OutlinedButton.icon(
+          style: style(),
+          icon: const Icon(Icons.share_outlined, size: 14),
+          label: label(TranslationKeys.popupShareFellowship),
+          onPressed: () => showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => ShareGuideSheet(
+              studyGuideId: guide.id,
+              guideTitle: _getDisplayTitle(),
+              guideInputType: guide.inputType,
+              guideLanguage: guide.language,
+              guideStudyMode: guide.studyMode ?? widget.studyMode.name,
+              guideSummary: guide.summary,
+              fellowships: _userFellowships!,
+            ),
+          ),
+        ),
+      if (canChat)
+        OutlinedButton.icon(
+          style: style(),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+          label: label(TranslationKeys.popupAskDiscipler),
+          onPressed: _openDisciplerChat,
+        ),
+    ];
+    // Two buttons share the row equally; a single one keeps its own width.
+    if (buttons.length == 1) return Center(child: buttons.single);
+    return Row(
+      children: [
+        Expanded(child: buttons[0]),
+        const SizedBox(width: 8),
+        Expanded(child: buttons[1]),
+      ],
+    );
+  }
+
   /// Complete topic progress tracking when study guide is finished.
   ///
   /// This is called after StudyCompletionSuccess to track the user's
@@ -1844,12 +2005,20 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               '❌ [TOPIC_PROGRESS] Failed to complete topic: ${ErrorMessageSanitizer.sanitize(failure)}');
         },
         (completionResult) {
-          // Completing a topic changes the progress of whatever path it
-          // belongs to, and both the learning path lists and the per-path
-          // detail are cached — the persisted copy outlives the process. Left
-          // alone, Topics kept showing the progress from before this
-          // completion: a path just advanced still read "0/4 Topics".
-          sl<LearningPathsRepository>().clearCache();
+          // Path progress and XP totals changed: drop the cached path
+          // progress (a path just advanced still read "0/4 Topics") and
+          // reload the gamification stats so XP agrees everywhere.
+          // GamificationBloc is a GetIt singleton, not provided on every
+          // route, so it is reached through sl rather than context.read.
+          refreshAfterLessonCompletion(
+            learningPaths: sl<LearningPathsRepository>(),
+            gamification: sl<GamificationBloc>(),
+          );
+
+          // A finished lesson counts toward the daily streak, like reading
+          // the verse of the day (once per day either way).
+          if (mounted) unawaited(countLessonTowardStreak(context));
+          _lessonEvents?.completed();
 
           if (kDebugMode) {
             Logger.debug('✅ [TOPIC_PROGRESS] Topic completed successfully:');
@@ -1858,26 +2027,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 '   First completion: ${completionResult.isFirstCompletion}');
           }
 
-          final earnedXp = completionResult.isFirstCompletion &&
-              completionResult.xpEarned > 0;
-
-          // One snackbar replaces the previous, so when the fellowship
-          // advanced and XP was earned too, both go in a single message.
+          // XP is not announced here (it lives in My progress and the
+          // Leaderboard); only a fellowship moving on is.
           if (completionResult.fellowshipAdvanced) {
             _whenAtBottom(() {
               if (!mounted) return;
-              final advanced = context.tr(completionResult.studyCompleted
-                  ? TranslationKeys.guideFeedbackFellowshipPathComplete
-                  : TranslationKeys.guideFeedbackFellowshipNextGuide);
-              final message = earnedXp
-                  ? '$advanced  ·  ${_xpEarnedText(completionResult.xpEarned)}'
-                  : advanced;
-              showAppSnackBar(context, message, tone: AppSnackTone.success);
+              showAppSnackBar(
+                context,
+                context.tr(completionResult.studyCompleted
+                    ? TranslationKeys.guideFeedbackFellowshipPathComplete
+                    : TranslationKeys.guideFeedbackFellowshipNextGuide),
+                tone: AppSnackTone.success,
+              );
             });
-          } else if (earnedXp) {
-            // Show XP earned feedback if this is the first completion
-            _whenAtBottom(
-                () => _showXpEarnedFeedback(completionResult.xpEarned));
           }
         },
       );
@@ -1885,16 +2047,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       Logger.error('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
     }
   }
-
-  /// Show feedback when user earns XP for completing a topic.
-  void _showXpEarnedFeedback(int xpEarned) {
-    if (!mounted) return;
-    _showSnackBar(_xpEarnedText(xpEarned), AppSnackTone.success);
-  }
-
-  String _xpEarnedText(int xpEarned) => context
-      .tr(TranslationKeys.guideFeedbackXpEarned)
-      .replaceAll('{xp}', '$xpEarned');
 
   // _maybeShowLearningPathSheet() has been replaced by _startInactivityCountdown()
   // and _cancelInactivityCountdown() above.  The new approach verifies both the
@@ -1907,6 +2059,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// follow-up actions (e.g. Phase 2 walkthrough) without visual overlap.
   void _showLearningPathCompletionSheet({VoidCallback? onDismissed}) {
     if (!mounted) return;
+    if (widget.lesson != null) return;
     // Guard: only show once
     if (_isTopicCompletedFromPath) return;
     setState(() => _isTopicCompletedFromPath = true);
@@ -1962,13 +2115,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           if (hasDiscipler)
             GuideCompleteAction(
               icon: Icons.psychology_rounded,
-              // The Discipler glyph on the soft indigo circle: white on
-              // dark, indigo on light — no gold disc.
+              // The Discipler glyph on the soft gold circle: white on
+              // dark, ink on light — no gold disc.
               leading: DisciplerGlyph(
                 size: 20,
                 variant: isDark
                     ? DisciplerGlyphVariant.white
-                    : DisciplerGlyphVariant.indigo,
+                    : DisciplerGlyphVariant.ink,
               ),
               label: context.tr(TranslationKeys.popupAskDiscipler),
               onTap: () {
@@ -2012,7 +2165,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   /// Scrolls to the Talk to Discipler / follow-up chat section and opens it.
-  void _openDisciplerChat() {
+  /// A guest gets the account-needed sheet instead.
+  Future<void> _openDisciplerChat() async {
+    if (!await _disciplerAllowed()) return;
     if (!mounted) return;
     setState(() => _isChatExpanded = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2146,7 +2301,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
                 // Track topic progress completion (XP, first-completion badge, etc.)
                 // Store the future so _handleBackNavigation can await it.
-                _topicProgressFuture = _completeTopicProgress();
+                _topicProgressFuture ??= _completeTopicProgress();
 
                 // Anything that pops up waits until the user has reached the
                 // bottom of the guide. That includes the streak update: it
@@ -2522,6 +2677,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               studyMode: widget.studyMode,
               contentFontSize: _contentFontSize,
               tracker: _readingTracker,
+              lesson: widget.lesson,
+              headerAccessory: _buildLessonModeSwitch(),
               onComplete:
                   state.content.isComplete && state.content.studyGuideId != null
                       ? () => _handleStreamingComplete(state)
@@ -2607,6 +2764,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             contentFontSize: _contentFontSize,
             isPartial: true,
             tracker: _readingTracker,
+            lesson: widget.lesson,
+            headerAccessory: _buildLessonModeSwitch(),
           ),
         ),
       ],
@@ -2663,6 +2822,30 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
+  /// Quick/Full switch under a lesson's title; null outside lessons.
+  Widget? _buildLessonModeSwitch() {
+    if (widget.lesson == null) return null;
+    return LessonModeSwitch(
+      current: widget.studyMode,
+      onChanged: _switchLessonMode,
+    );
+  }
+
+  /// Reopens this lesson in [mode], keeping its other query parameters.
+  /// Cancels a stream still in flight first.
+  void _switchLessonMode(StudyMode mode) {
+    if (mode == widget.studyMode) return;
+    final bloc = context.read<StudyBloc>();
+    if (bloc.state is StudyGenerationStreaming) {
+      bloc.add(const CancelStudyStreamingRequested());
+    }
+    final uri = Uri.parse(GoRouterState.of(context).uri.toString());
+    context.pushReplacement(uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      'mode': mode.name,
+    }).toString());
+  }
+
   Widget _buildErrorScreen() {
     final palette = ReaderPalette.of(context);
     final noTokens = _isInsufficientTokensError;
@@ -2679,7 +2862,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               children: [
                 PopupIconCircle(
                   icon: noTokens ? Icons.token_outlined : Icons.error_outline,
-                  tone: noTokens ? PopupTone.gold : PopupTone.indigo,
+                  tone: noTokens ? PopupTone.gold : PopupTone.accent,
                   size: 64,
                 ),
                 const SizedBox(height: 20),
@@ -2782,7 +2965,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         1;
     final showShare = _userFellowships?.isNotEmpty == true;
     final shareNumber = showShare ? nextNumber++ : null;
-    final chatNumber = _shouldShowStudyChat() ? nextNumber++ : null;
+    final chatNumber = _showFollowUpChat() ? nextNumber++ : null;
     final notesNumber = nextNumber;
 
     const blockTop = SizedBox(height: 26);
@@ -2808,8 +2991,43 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   : null,
               interpretationKey: _interpretationKey,
               tracker: _readingTracker,
+              lesson: widget.lesson,
+              headerAccessory: _buildLessonModeSwitch(),
             ),
           ),
+
+          if (widget.lesson != null && widget.studyMode == StudyMode.quick)
+            Padding(
+              padding: sidePadding.add(const EdgeInsets.only(top: 20)),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  key: const Key('lesson_read_full_guide'),
+                  onPressed: () => _switchLessonMode(StudyMode.standard),
+                  style: TextButton.styleFrom(
+                    foregroundColor: ReaderPalette.of(context).gold,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    minimumSize: const Size(0, 40),
+                    textStyle: AppFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  child: Text(
+                    '${context.tr(TranslationKeys.lessonFullGuideLink)} →',
+                  ),
+                ),
+              ),
+            ),
+
+          if (widget.lesson != null)
+            Padding(
+              padding: sidePadding.add(EdgeInsets.only(
+                  top: widget.studyMode == StudyMode.quick ? 4 : 20)),
+              child: LessonMarkCompleteBar(
+                lesson: widget.lesson!,
+                onComplete: _completeLessonNow,
+                secondary: _buildLessonSecondaryActions(context),
+              ),
+            ),
 
           // Share with fellowship — a reflection, question, or insight
           if (showShare)
@@ -2847,56 +3065,58 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             ),
 
           // Follow-up Chat Section, with lock support for study_chat feature.
-          LockedFeatureWrapper(
-            featureKey: 'study_chat',
-            child: Padding(
-              padding: sidePadding,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  blockTop,
-                  WalkthroughTooltip(
-                    showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
-                    title: context
-                        .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
-                    description: context
-                        .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
-                    screen: WalkthroughScreen.studyGuideCompletion,
-                    stepNumber: 2,
-                    totalSteps: 3,
-                    onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                    child: Container(
-                      key: _followUpChatKey,
-                      child: BlocProvider(
-                        create: (context) {
-                          final bloc = sl<FollowUpChatBloc>();
-                          bloc.add(StartConversationEvent(
+          // Not built for a guest (no panel, no history call).
+          if (chatNumber != null)
+            LockedFeatureWrapper(
+              featureKey: 'study_chat',
+              child: Padding(
+                padding: sidePadding,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    blockTop,
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
+                      title: context
+                          .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
+                      description: context
+                          .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
+                      screen: WalkthroughScreen.studyGuideCompletion,
+                      stepNumber: 2,
+                      totalSteps: 3,
+                      onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                      child: Container(
+                        key: _followUpChatKey,
+                        child: BlocProvider(
+                          create: (context) {
+                            final bloc = sl<FollowUpChatBloc>();
+                            bloc.add(StartConversationEvent(
+                              studyGuideId: guide.id,
+                              studyGuideTitle: _getDisplayTitle(),
+                            ));
+                            return bloc;
+                          },
+                          child: FollowUpChatWidget(
                             studyGuideId: guide.id,
                             studyGuideTitle: _getDisplayTitle(),
-                          ));
-                          return bloc;
-                        },
-                        child: FollowUpChatWidget(
-                          studyGuideId: guide.id,
-                          studyGuideTitle: _getDisplayTitle(),
-                          sectionNumber: chatNumber,
-                          isExpanded: _isChatExpanded,
-                          onToggleExpanded: () {
-                            setState(() {
-                              _isChatExpanded = !_isChatExpanded;
-                            });
-                          },
+                            sectionNumber: chatNumber,
+                            isExpanded: _isChatExpanded,
+                            onToggleExpanded: () {
+                              setState(() {
+                                _isChatExpanded = !_isChatExpanded;
+                              });
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ), // WalkthroughTooltip
-                  blockBottom,
-                  const ReaderHairline(),
-                ],
+                    ), // WalkthroughTooltip
+                    blockBottom,
+                    const ReaderHairline(),
+                  ],
+                ),
               ),
             ),
-          ),
 
           // Personal notes
           Padding(
@@ -3041,18 +3261,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final palette = ReaderPalette.of(context);
     final foreground = palette.text;
     final ttsService = sl<StudyGuideTTSService>();
-    const pillHeight = 52.0;
-    final pillBorder = BorderSide(color: palette.outline, width: 1.2);
+    const pillHeight = 40.0;
+    final pillBorder = BorderSide(color: palette.outline);
+    // A guest sees both actions as they are; each asks for an account
+    // (not a plan) when tapped.
+    final isGuest = GuestRouteGate.currentUserIsGuest();
 
     return Container(
-      decoration: BoxDecoration(
-        color: palette.page,
-        border: Border(top: BorderSide(color: palette.hairline)),
-      ),
+      color: palette.page,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: Row(
             children: [
               // Listen (left) - with lock support for voice_buddy feature
@@ -3068,7 +3288,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   totalSteps: 2,
                   highlightBorderRadius: pillHeight / 2,
                   onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                  child: LockedFeatureWrapper(
+                  child: _guestOrLocked(
+                    isGuest: isGuest,
                     featureKey: 'voice_buddy',
                     child: SizedBox(
                       height: pillHeight,
@@ -3109,7 +3330,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                                   ? Icons.pause_rounded
                                                   : Icons.play_arrow_rounded,
                                               color: foreground,
-                                              size: 22,
+                                              size: 20,
                                             ),
                                             const SizedBox(width: 8),
                                             Flexible(
@@ -3121,7 +3342,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                                       : 'Resume',
                                                   maxLines: 1,
                                                   style: AppFonts.inter(
-                                                    fontSize: 16,
+                                                    fontSize: 14,
                                                     fontWeight: FontWeight.w600,
                                                     color: foreground,
                                                   ),
@@ -3151,7 +3372,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                           child: Icon(
                                             Icons.tune,
                                             color: foreground,
-                                            size: 22,
+                                            size: 20,
                                           ),
                                         ),
                                       ),
@@ -3164,7 +3385,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
                           // At rest: outlined Listen pill.
                           return OutlinedButton.icon(
-                            onPressed: () {
+                            onPressed: () async {
+                              if (!await lessonListenGate(context,
+                                      isGuest: isGuest) ||
+                                  !mounted) {
+                                return;
+                              }
+                              if (isGuest) {
+                                // Just signed up: show Listen for their plan.
+                                setState(() {});
+                                return;
+                              }
                               if (_currentStudyGuide != null) {
                                 // Load and start reading the study guide if
                                 // not already playing
@@ -3189,7 +3420,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                     ),
                                   )
                                 : const Icon(Icons.headphones_rounded,
-                                    size: 22),
+                                    size: 18),
                             // Shrinks rather than cutting on narrow phones.
                             label: FittedBox(
                               fit: BoxFit.scaleDown,
@@ -3201,7 +3432,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                         .tr(TranslationKeys.studyGuideListen),
                                 maxLines: 1,
                                 style: AppFonts.inter(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -3210,6 +3441,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                               foregroundColor: foreground,
                               side: pillBorder,
                               shape: const StadiumBorder(),
+                              visualDensity: VisualDensity.standard,
+                              minimumSize: const Size(0, pillHeight),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12),
                             ),
@@ -3222,8 +3455,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               ),
               // Ask Discipler (right) - only if ai_discipler is enabled and
               // study_chat is not hidden
-              if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
-                const SizedBox(width: 12),
+              if (isGuest ||
+                  (_isAiDisciplerFeatureEnabled() &&
+                      _shouldShowStudyChat())) ...[
+                const SizedBox(width: 10),
                 Expanded(
                   child: WalkthroughTooltip(
                     showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
@@ -3238,8 +3473,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
                     child: SizedBox(
                       height: pillHeight,
+                      // White on dark; gold with ink on light, as the
+                      // design.
                       child: Material(
-                        color: palette.ctaFill,
+                        color: palette.isDark
+                            ? palette.ctaFill
+                            : palette.selectedFill,
                         shape: const StadiumBorder(),
                         child: InkWell(
                           customBorder: const StadiumBorder(),
@@ -3249,11 +3488,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Flat glyph, no disc: indigo on the white
-                                // dark-theme pill, white on the indigo one.
-                                DisciplerGlyph.onCta(
-                                  size: 24,
-                                  isDark: palette.isDark,
+                                // Flat ink glyph, no disc, on the white or
+                                // gold pill.
+                                const DisciplerGlyph(
+                                  size: 20,
+                                  variant: DisciplerGlyphVariant.ink,
                                 ),
                                 const SizedBox(width: 8),
                                 Flexible(
@@ -3264,9 +3503,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                           .tr(TranslationKeys.studyGuideAskAi),
                                       maxLines: 1,
                                       style: AppFonts.inter(
-                                        fontSize: 16,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: palette.ctaInk,
+                                        color: palette.isDark
+                                            ? palette.ctaInk
+                                            : palette.onSelected,
                                       ),
                                     ),
                                   ),
@@ -3287,8 +3528,30 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
+  /// [child] as it is for a guest (its tap asks for an account), otherwise
+  /// behind the plan lock for [featureKey].
+  Widget _guestOrLocked({
+    required bool isGuest,
+    required String featureKey,
+    required Widget child,
+  }) =>
+      isGuest
+          ? child
+          : LockedFeatureWrapper(featureKey: featureKey, child: child);
+
+  /// True when the Discipler may open: a full account, or a guest who has
+  /// just signed up from the account-needed sheet (reason `discipler`).
+  Future<bool> _disciplerAllowed() async {
+    final allowed = await lessonDisciplerGate(context);
+    // A guest who signed up now gets the follow-up panel.
+    if (allowed && mounted) setState(() {});
+    return allowed && mounted;
+  }
+
   /// Opens the follow-up chat (if collapsed) and scrolls it into view.
-  void _askDiscipler() {
+  /// A guest gets the account-needed sheet instead.
+  Future<void> _askDiscipler() async {
+    if (!await _disciplerAllowed()) return;
     if (!_isChatExpanded) {
       setState(() {
         _isChatExpanded = true;
@@ -3331,13 +3594,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     //    Await it so the DB write finishes before we leave.
     // 2. Guide is marked complete (_completionMarked=true) but
     //    mark-study-guide-complete is still in-flight, so StudyCompletionSuccess
-    //    hasn't fired yet → call _completeTopicProgress() directly and await it.
-    if (_topicProgressFuture != null) {
-      await _topicProgressFuture;
-    } else if (_completionMarked) {
-      await _completeTopicProgress();
+    //    hasn't fired yet → start _completeTopicProgress() and await it. It is
+    //    stored in _topicProgressFuture so a StudyCompletionSuccess arriving
+    //    meanwhile does not record (and refresh stats for) the lesson twice.
+    if (_topicProgressFuture != null || _completionMarked) {
+      await (_topicProgressFuture ??= _completeTopicProgress());
     }
-    _topicProgressFuture = null;
     if (!mounted) return;
     sl<StudyNavigator>().navigateBack(
       context,
@@ -3868,7 +4130,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
               currentLength > 400
                   ? Text(
                       '$currentLength/$maxLength',
-                      style: AppFonts.inter(fontSize: 11, color: palette.dim),
+                      style: AppFonts.inter(fontSize: 12, color: palette.dim),
                     )
                   : null,
           decoration: InputDecoration(

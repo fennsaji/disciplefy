@@ -215,6 +215,31 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
       ) as _i5.Future<void>);
 
   @override
+  _i5.Future<_i2.LearningPathCategoriesResponseModel?>
+      getCachedLearningPathCategories({String? language = 'en'}) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getCachedLearningPathCategories,
+              [],
+              {#language: language},
+            ),
+            returnValue:
+                _i5.Future<_i2.LearningPathCategoriesResponseModel?>.value(),
+          ) as _i5.Future<_i2.LearningPathCategoriesResponseModel?>);
+
+  @override
+  _i5.Future<_i2.RecommendedPathResponseModel?> getCachedRecommendedPath(
+          {String? language = 'en'}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getCachedRecommendedPath,
+          [],
+          {#language: language},
+        ),
+        returnValue: _i5.Future<_i2.RecommendedPathResponseModel?>.value(),
+      ) as _i5.Future<_i2.RecommendedPathResponseModel?>);
+
+  @override
   _i5.Future<_i2.LearningPathCategoryPathsResponseModel>
       getLearningPathsForCategory({
     required String? category,
@@ -279,13 +304,18 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
       ) as _i5.Future<_i2.LearningPathDetailModel>);
 
   @override
-  _i5.Future<_i2.EnrollmentResultModel> enrollInPath(
-          {required String? pathId}) =>
+  _i5.Future<_i2.EnrollmentResultModel> enrollInPath({
+    String? pathId,
+    String? slug,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #enrollInPath,
           [],
-          {#pathId: pathId},
+          {
+            #pathId: pathId,
+            #slug: slug,
+          },
         ),
         returnValue: _i5.Future<_i2.EnrollmentResultModel>.value(
             _FakeEnrollmentResultModel_4(
@@ -293,7 +323,10 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
           Invocation.method(
             #enrollInPath,
             [],
-            {#pathId: pathId},
+            {
+              #pathId: pathId,
+              #slug: slug,
+            },
           ),
         )),
       ) as _i5.Future<_i2.EnrollmentResultModel>);

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/services/activation_analytics.dart';
 import '../utils/logger.dart';
 
 /// Auth state notifier for GoRouter refresh
@@ -69,6 +71,8 @@ class AuthNotifier extends ChangeNotifier {
         }
 
         // Keep local session_expires_at in sync with Supabase token refreshes.
+        // userUpdated counts too: linking an identity to a guest replaces the
+        // access token without a signedIn or tokenRefreshed event.
         // Without this, the RouterGuard's _isSessionExpired() reads a stale
         // expiry from Hive and incorrectly treats the user as logged out,
         // causing a redirect bounce (home → login → home → error page).
@@ -83,8 +87,16 @@ class AuthNotifier extends ChangeNotifier {
         if (authState.session != null &&
             (authState.event == AuthChangeEvent.tokenRefreshed ||
                 authState.event == AuthChangeEvent.signedIn ||
+                authState.event == AuthChangeEvent.userUpdated ||
                 authState.event == AuthChangeEvent.initialSession)) {
           _syncSessionExpiry(authState.session!);
+        }
+
+        // Send activation events that waited for a user (guest or signed in).
+        if (authState.session != null &&
+            (authState.event == AuthChangeEvent.signedIn ||
+                authState.event == AuthChangeEvent.tokenRefreshed)) {
+          _flushActivationEvents();
         }
 
         // Notify if auth state changed, if this is the first initialization,
@@ -132,6 +144,16 @@ class AuthNotifier extends ChangeNotifier {
     });
 
     Logger.debug('⏳ [AUTH NOTIFIER] 5-second timeout timer started');
+  }
+
+  void _flushActivationEvents() {
+    try {
+      if (sl.isRegistered<ActivationAnalytics>()) {
+        unawaited(sl<ActivationAnalytics>().flush());
+      }
+    } catch (e) {
+      Logger.warning('[AUTH NOTIFIER] activation flush skipped: $e');
+    }
   }
 
   bool get isAuthenticated => _isAuthenticated;

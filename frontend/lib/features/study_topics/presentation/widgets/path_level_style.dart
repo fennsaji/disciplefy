@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class PathLevelStyle {
   PathLevelStyle._();
 
-  static const _seeker = [Color(0xFF4F46E5), Color(0xFF0EA5E9)];
+  static const _seeker = [Color(0xFF2563EB), Color(0xFF0EA5E9)];
   static const _follower = [Color(0xFF0F766E), Color(0xFF059669)];
   static const _disciple = [Color(0xFF6D28D9), Color(0xFFBE185D)];
   static const _leader = [Color(0xFFB45309), Color(0xFFEA580C)];

@@ -5,7 +5,7 @@ import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 
 /// Empty / signed-out / error state of the library, in the popup style: a soft
-/// indigo icon circle, Poppins title, muted message and an optional action.
+/// gold icon circle, Poppins title, muted message and an optional action.
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
   final String title;

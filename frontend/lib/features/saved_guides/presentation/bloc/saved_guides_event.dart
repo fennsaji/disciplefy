@@ -32,14 +32,19 @@ class LoadRecentGuidesFromApi extends SavedGuidesEvent {
   final int limit;
   final bool refresh;
 
+  /// Exclude guides generated from learning-path lessons (Generate tab
+  /// "Continue reading"). The Library keeps the default.
+  final bool ownOnly;
+
   const LoadRecentGuidesFromApi({
     this.offset = 0,
     this.limit = 20,
     this.refresh = false,
+    this.ownOnly = false,
   });
 
   @override
-  List<Object?> get props => [offset, limit, refresh];
+  List<Object?> get props => [offset, limit, refresh, ownOnly];
 }
 
 class ToggleGuideApiEvent extends SavedGuidesEvent {

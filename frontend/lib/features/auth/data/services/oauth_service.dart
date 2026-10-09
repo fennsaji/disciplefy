@@ -34,53 +34,63 @@ class OAuthService {
     }
   }
 
+  /// Runs the native Google account picker and returns the ID token that
+  /// Supabase accepts for `signInWithIdToken` / `linkIdentityWithIdToken`.
+  ///
+  /// Mobile only. Throws the raw plugin/config errors; callers map them.
+  /// Google Sign-In v7 `authentication` carries only the ID token, so
+  /// [accessToken] and [nonce] are always null here.
+  Future<({String idToken, String? accessToken, String? nonce})>
+      obtainGoogleIdToken() async {
+    // CRITICAL FIX: Configure GoogleSignIn with serverClientId for Supabase
+    // Supabase requires the Web OAuth Client ID to validate ID tokens
+    // Get from environment variable (configured at build time via --dart-define)
+    const webClientId = AppConfig.googleClientId;
+
+    if (webClientId.isEmpty) {
+      throw auth_exceptions.AuthConfigException(
+          'GOOGLE_CLIENT_ID not configured. Please set via --dart-define at build time.');
+    }
+
+    // Get GoogleSignIn singleton instance
+    final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+
+    // Initialize with serverClientId for Supabase authentication
+    Logger.debug('🔐 [OAUTH SERVICE] 🔧 Initializing Google Sign-In plugin...');
+    await googleSignIn.initialize(
+      serverClientId: webClientId,
+    );
+
+    // Trigger Google Sign-In flow
+    Logger.debug('🔐 [OAUTH SERVICE] 📱 Launching Google Sign-In UI...');
+    final GoogleIdentity googleUser = await googleSignIn.authenticate();
+
+    Logger.debug('🔐 [OAUTH SERVICE] ✅ Google account selected');
+
+    // Get authentication tokens
+    Logger.debug('🔐 [OAUTH SERVICE] 🔑 Retrieving authentication tokens...');
+    final GoogleSignInAuthentication googleAuth =
+        (googleUser as GoogleSignInAccount).authentication;
+
+    final String? idToken = googleAuth.idToken;
+
+    if (idToken == null) {
+      Logger.error('🔐 [OAUTH SERVICE] ❌ Failed to get ID token from Google');
+      throw auth_exceptions.AuthenticationFailedException(
+          'Failed to authenticate with Google');
+    }
+
+    Logger.debug('🔐 [OAUTH SERVICE] ✅ ID token received');
+    return (idToken: idToken, accessToken: null, nonce: null);
+  }
+
   /// Mobile Google Sign-In using native Google Sign-In SDK
   Future<bool> _signInWithGoogleMobile() async {
     try {
       Logger.debug('🔐 [OAUTH SERVICE] 🚀 Starting Mobile Google Sign-In...');
 
-      // CRITICAL FIX: Configure GoogleSignIn with serverClientId for Supabase
-      // Supabase requires the Web OAuth Client ID to validate ID tokens
-      // Get from environment variable (configured at build time via --dart-define)
-      const webClientId = AppConfig.googleClientId;
+      final google = await obtainGoogleIdToken();
 
-      if (webClientId.isEmpty) {
-        throw auth_exceptions.AuthConfigException(
-            'GOOGLE_CLIENT_ID not configured. Please set via --dart-define at build time.');
-      }
-
-      // Get GoogleSignIn singleton instance
-      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
-
-      // Initialize with serverClientId for Supabase authentication
-      Logger.debug(
-          '🔐 [OAUTH SERVICE] 🔧 Initializing Google Sign-In plugin...');
-      Logger.debug('🔐 [OAUTH SERVICE] - Using serverClientId: $webClientId');
-      await googleSignIn.initialize(
-        serverClientId: webClientId,
-      );
-
-      // Trigger Google Sign-In flow
-      Logger.debug('🔐 [OAUTH SERVICE] 📱 Launching Google Sign-In UI...');
-      final GoogleIdentity googleUser = await googleSignIn.authenticate();
-
-      Logger.debug(
-          '🔐 [OAUTH SERVICE] ✅ Google account selected: ${googleUser.email}');
-
-      // Get authentication tokens
-      Logger.debug('🔐 [OAUTH SERVICE] 🔑 Retrieving authentication tokens...');
-      final GoogleSignInAuthentication googleAuth =
-          (googleUser as GoogleSignInAccount).authentication;
-
-      final String? idToken = googleAuth.idToken;
-
-      if (idToken == null) {
-        Logger.error('🔐 [OAUTH SERVICE] ❌ Failed to get ID token from Google');
-        throw auth_exceptions.AuthenticationFailedException(
-            'Failed to authenticate with Google');
-      }
-
-      Logger.debug('🔐 [OAUTH SERVICE] ✅ ID token received');
       Logger.debug(
           '🔐 [OAUTH SERVICE] 🔄 Signing in to Supabase with Google credentials...');
 
@@ -88,7 +98,7 @@ class OAuthService {
       final AuthResponse response =
           await Supabase.instance.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
-        idToken: idToken,
+        idToken: google.idToken,
       );
 
       if (response.user == null) {
@@ -99,8 +109,8 @@ class OAuthService {
 
       Logger.debug(
           '🔐 [OAUTH SERVICE] ✅ Supabase session created successfully');
-      Logger.debug('🔐 [OAUTH SERVICE] - User: ${response.user!.email}');
-      Logger.debug('🔐 [OAUTH SERVICE] - User ID: ${response.user!.id}');
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] - Has email: ${response.user!.email != null}');
 
       return true;
     } on auth_exceptions.OAuthCancelledException {
@@ -288,25 +298,10 @@ class OAuthService {
     try {
       Logger.debug('🍎 [OAUTH SERVICE] 🚀 Starting native Apple Sign-In...');
 
-      // Nonce: Apple receives the SHA-256 hash, Supabase receives the raw value.
-      final rawNonce = _generateNonce();
-      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
-
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: hashedNonce,
-      );
-
-      final idToken = credential.identityToken;
-      if (idToken == null) {
-        throw auth_exceptions.AuthenticationFailedException(
-            'Apple Sign-In did not return an identity token');
-      }
-
-      Logger.debug('🍎 [OAUTH SERVICE] ✅ Apple credential received');
+      final apple = await _obtainAppleCredential();
+      final credential = apple.credential;
+      final rawNonce = apple.rawNonce;
+      final idToken = apple.idToken;
 
       final AuthResponse response =
           await Supabase.instance.client.auth.signInWithIdToken(
@@ -354,6 +349,45 @@ class OAuthService {
       throw auth_exceptions.AuthenticationFailedException(
           'Apple Sign-In failed. Please try again.');
     }
+  }
+
+  /// Runs the native Apple authorization sheet and returns the identity
+  /// token plus the RAW nonce Supabase needs to verify it.
+  ///
+  /// iOS only. Throws [SignInWithAppleAuthorizationException] (incl. cancel)
+  /// and [auth_exceptions.AuthenticationFailedException] unmapped; callers map them.
+  Future<({String idToken, String? accessToken, String? nonce})>
+      obtainAppleIdToken() async {
+    final apple = await _obtainAppleCredential();
+    return (idToken: apple.idToken, accessToken: null, nonce: apple.rawNonce);
+  }
+
+  Future<
+      ({
+        AuthorizationCredentialAppleID credential,
+        String idToken,
+        String rawNonce
+      })> _obtainAppleCredential() async {
+    // Nonce: Apple receives the SHA-256 hash, Supabase receives the raw value.
+    final rawNonce = _generateNonce();
+    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: hashedNonce,
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) {
+      throw auth_exceptions.AuthenticationFailedException(
+          'Apple Sign-In did not return an identity token');
+    }
+
+    Logger.debug('🍎 [OAUTH SERVICE] ✅ Apple credential received');
+    return (credential: credential, idToken: idToken, rawNonce: rawNonce);
   }
 
   /// Generates a cryptographically secure random nonce for Apple Sign-In.

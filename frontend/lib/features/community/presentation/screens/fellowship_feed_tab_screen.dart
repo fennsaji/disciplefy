@@ -6,7 +6,6 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
-import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/contrast.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
@@ -274,6 +273,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       isMentor: state.isMentor,
                       currentUserId: state.currentUserId,
                       isAdmin: isAdmin,
+                      maxContentLines: FellowshipPostCard.feedMaxContentLines,
                       onPostTap: () {
                         final bloc = context.read<FellowshipFeedBloc>();
                         Navigator.of(context).push(
@@ -477,13 +477,14 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
           IconData icon,
           Color accent,
         })> postTypes = [
+      // Same colour per type as the post chips in the feed.
       (
         value: 'general',
         label: l10n.postTypeGeneral,
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescGeneral),
         icon: Icons.chat_rounded,
-        accent: AppColors.brandPrimary,
+        accent: postTypeAccentColor('general', isDark: palette.isDark),
       ),
       (
         value: 'prayer',
@@ -491,7 +492,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescPrayer),
         icon: Icons.volunteer_activism_rounded,
-        accent: AppColors.info,
+        accent: postTypeAccentColor('prayer', isDark: palette.isDark),
       ),
       (
         value: 'praise',
@@ -499,7 +500,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescPraise),
         icon: Icons.emoji_events_rounded,
-        accent: AppColors.warning,
+        accent: postTypeAccentColor('praise', isDark: palette.isDark),
       ),
       (
         value: 'question',
@@ -507,7 +508,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         description:
             context.tr(TranslationKeys.communityFellowshipTypeDescQuestion),
         icon: Icons.help_outline_rounded,
-        accent: AppColors.success,
+        accent: postTypeAccentColor('question', isDark: palette.isDark),
       ),
     ];
 
@@ -521,7 +522,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
         }) t) {
       final isSelected = _selectedType == t.value;
       // The raw accent is tuned as a fill, not as text: on the dark card
-      // #4F46E5 measures 2.6:1, well under the 4.5:1 minimum. Lift it
+      // some accents fall well under the 4.5:1 minimum. Lift it
       // against the surface it is actually drawn on; fills and borders keep
       // the original.
       final accent = t.accent;
@@ -719,7 +720,6 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                         onChanged: (v) =>
                             setState(() => _letDisciplerAnswer = v),
                         contentPadding: EdgeInsets.zero,
-                        activeTrackColor: AppColors.brandPrimary,
                         title: Text(
                           context
                               .tr(TranslationKeys.fellowshipLetDisciplerAnswer),

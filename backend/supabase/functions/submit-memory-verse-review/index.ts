@@ -397,6 +397,9 @@ async function handleSubmitMemoryVerseReview(
 // Create the authenticated function
 createAuthenticatedFunction(handleSubmitMemoryVerseReview, {
   allowedMethods: ['POST'],
+  // Memory verses need an account: a guest gets 403 ACCOUNT_REQUIRED.
+  requireFullAccount: true,
+  accountRequiredReason: 'memory_verses',
   enableAnalytics: true,
   timeout: 10000 // 10 seconds
 })

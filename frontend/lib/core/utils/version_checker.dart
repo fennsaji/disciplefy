@@ -162,7 +162,7 @@ class VersionChecker {
       context: context,
       builder: (dialogContext) => AppUpdateDialog(
         icon: Icons.new_releases_outlined,
-        tone: PopupTone.indigo,
+        tone: PopupTone.accent,
         title: dialogContext.tr(TranslationKeys.appChromeUpdateAvailableTitle),
         body: dialogContext.tr(TranslationKeys.appChromeUpdateAvailableBody),
         currentVersion: currentVersion,

@@ -7,6 +7,7 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_stream_event.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_guide_body.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_reading_tracker.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lesson_ref.dart';
 
 /// Study guide content while it streams in: a thin progress line over the
 /// same [StudyGuideBody] (hero + numbered sections) the finished guide uses,
@@ -44,6 +45,12 @@ class StreamingStudyContent extends StatelessWidget {
   /// Drives the hero's segmented reading progress.
   final StudyReadingTracker? tracker;
 
+  /// Set when the guide is a lesson of a learning path.
+  final LessonRef? lesson;
+
+  /// Shown under the title (the lesson's Quick/Full switch).
+  final Widget? headerAccessory;
+
   const StreamingStudyContent({
     super.key,
     required this.content,
@@ -54,8 +61,10 @@ class StreamingStudyContent extends StatelessWidget {
     this.onComplete,
     this.isPartial = false,
     this.studyMode = StudyMode.standard,
-    this.contentFontSize = 18.0,
+    this.contentFontSize = 16.0,
     this.tracker,
+    this.lesson,
+    this.headerAccessory,
   });
 
   @override
@@ -84,6 +93,8 @@ class StreamingStudyContent extends StatelessWidget {
                 title: StudyGuideLayout.displayTitle(inputType, inputValue),
                 contentFontSize: contentFontSize,
                 tracker: tracker,
+                lesson: lesson,
+                headerAccessory: headerAccessory,
               ),
               SizedBox(height: StudyGuideLayout.endGap(context)),
             ],

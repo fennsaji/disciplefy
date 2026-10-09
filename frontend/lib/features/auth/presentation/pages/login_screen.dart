@@ -482,7 +482,7 @@ class _LoginScreenState extends State<LoginScreen> {
       BuildContext context, bool isDisabled, bool isLoading) {
     final palette = ReaderPalette.of(context);
     final textColor =
-        palette.isDark ? AppColors.brandPrimaryInk : const Color(0xFF1F1F1F);
+        palette.isDark ? ReaderPalette.ink : const Color(0xFF1F1F1F);
 
     return OutlinedButton(
       onPressed: isDisabled ? null : () => _handleGoogleSignIn(context),

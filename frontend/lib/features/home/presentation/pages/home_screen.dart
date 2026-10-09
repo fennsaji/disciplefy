@@ -20,6 +20,8 @@ import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/router/app_routes.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
@@ -69,10 +71,15 @@ import 'package:dartz/dartz.dart' show Either;
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
+import '../../../onboarding/domain/first_run_flags.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_today_layout.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/memory_pill_badge.dart';
+import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
 import '../../../../core/localization/app_localizations.dart';
 import 'package:showcaseview/showcaseview.dart';
 
@@ -112,7 +119,10 @@ class _HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<_HomeScreenContent> {
   // Track if we're currently navigating to prevent multiple navigations
-  bool _isNavigating = false;
+  /// Ignores a double tap on the verse Study and path rows. Never held
+  /// across an awaited push: go_router may never complete it (Lesson
+  /// complete → Back home), which would lock these taps for the session.
+  final TapGuard _navGuard = TapGuard();
 
   // Track if we've already triggered the notification prompts this session
   bool _hasTriggeredDailyVersePrompt = false;
@@ -129,12 +139,38 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// a descendant of [ShowCaseWidget], so [ShowCaseWidget.of()] resolves correctly.
   VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
 
+  /// Walkthrough targets, owned by this Home: two Homes can be mounted at
+  /// once (e.g. while a page pushed over the shell goes back to Home), and
+  /// shared keys would then collide.
+  final GlobalKey _dailyVerseTarget = GlobalKey(debugLabel: 'homeDailyVerse');
+  final GlobalKey _memoryVersesTarget =
+      GlobalKey(debugLabel: 'homeMemoryVerses');
+
+  /// The Today layout (rollout flag `home_today_layout`); off keeps the
+  /// shipped Home.
+  bool get _todayLayout {
+    try {
+      return sl.isRegistered<RolloutFlags>() &&
+          sl<RolloutFlags>().homeTodayLayout;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Whether the user was a guest when last checked, to load the memory
+  /// deck once they create an account (a guest's Home never asks for it).
+  bool _wasGuest = false;
+
   @override
   void initState() {
     super.initState();
+    final todayLayout = _todayLayout;
     // Sync walkthrough seen state from Supabase (no-op for anonymous users)
     sl<WalkthroughRepository>().syncFromRemote();
-    _triggerWalkthroughIfNeeded();
+    // The Today layout has no walkthrough targets of its own.
+    if (!todayLayout) _triggerWalkthroughIfNeeded();
+    _wasGuest = GuestRouteGate.currentUserIsGuest();
+    sl<AuthStateProvider>().addListener(_onAuthChanged);
     _usageStatsBloc = sl<UsageStatsBloc>();
     _usageThresholdService = sl<UsageThresholdService>();
     _loadDailyVerse();
@@ -142,13 +178,28 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     _loadUsageStats();
     // Language changes (app and study content) are handled by HomeBloc.
     final homeBloc = sl<HomeBloc>();
-    // HomeBloc is a DI singleton that outlives a sign-out, so both loads run
-    // on every mount: "For You" is served from its per-user cache (network
-    // only on a miss), and the active path shows the cached copy for this
+    // HomeBloc is a DI singleton that outlives a sign-out, so the path load
+    // runs on every mount: the active path shows the cached copy for this
     // user and language at once while a fresh one (progress) is fetched.
-    // Use LoadForYouTopics for authenticated users (bloc handles fallback)
-    homeBloc.add(const LoadForYouTopics());
+    // Neither layout shows a "For You" topic list, so none is fetched.
     homeBloc.add(const LoadActiveLearningPath());
+  }
+
+  /// A guest who just created an account gets their memory deck (and the
+  /// header's due count) without leaving Home.
+  void _onAuthChanged() {
+    if (!mounted) return;
+    final guest = GuestRouteGate.currentUserIsGuest();
+    if (_wasGuest && !guest) {
+      try {
+        context
+            .read<MemoryVerseBloc>()
+            .add(const LoadDueVerses(forceRefresh: true));
+      } catch (e) {
+        Logger.debug('[HOME] No memory deck to reload: $e');
+      }
+    }
+    _wasGuest = guest;
   }
 
   /// Triggers the home screen walkthrough the first time the user sees this screen.
@@ -212,8 +263,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // The dock-tab steps (Generate / Discipler / Topics / Community) run in
     // the AppShell's ShowCaseWidget, triggered via ShowcaseKeys.triggerNavTabsAndCommunity().
     return [
-      ShowcaseKeys.homeDailyVerse,
-      if (showMemoryVerses) ShowcaseKeys.homeMemoryVerses,
+      _dailyVerseTarget,
+      if (showMemoryVerses) _memoryVersesTarget,
     ];
   }
 
@@ -307,7 +358,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// opening over the walkthrough tooltips leaves two overlays fighting for
   /// the same tap. When the walkthrough is still due, the prompt is skipped
   /// for this session and offered on a later open.
+  ///
+  /// Also waits for lesson 1 on the quiet first run (see [FirstRunFlags]);
+  /// existing users are never held back by that.
   Future<bool> _homeWalkthroughDone() async {
+    if (!FirstRunFlags.notificationPromptsAllowed) return false;
     try {
       return await sl<WalkthroughRepository>().hasSeen(WalkthroughScreen.home);
     } catch (_) {
@@ -328,7 +383,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// Handle daily verse card tap to generate study guide
   Future<void> _onDailyVerseCardTap() async {
     // Prevent multiple clicks during navigation
-    if (_isNavigating) {
+    if (_navGuard.isLocked) {
       return;
     }
 
@@ -428,7 +483,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     bool rememberChoice, {
     StudyMode? recommendedMode,
   }) async {
-    _isNavigating = true;
+    _navGuard.tryAcquire();
 
     // Save user's mode preference if they chose to remember
     if (rememberChoice) {
@@ -455,7 +510,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       verseReference = currentState.verse.reference;
       languageCode = _getLanguageCode(currentState.currentLanguage);
     } else {
-      _isNavigating = false;
+      _navGuard.release();
       return;
     }
 
@@ -468,7 +523,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       if (requiredCost > 0 &&
           tokenState.tokenStatus.totalTokens < requiredCost &&
           mounted) {
-        setState(() => _isNavigating = false);
+        _navGuard.release();
         await InsufficientTokensDialog.show(
           context,
           tokenStatus: tokenState.tokenStatus,
@@ -486,15 +541,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Navigate directly to study guide V2 - it will handle generation
     context.go(
         '/study-guide-v2?input=$encodedReference&type=scripture&language=$languageCode&mode=${mode.name}&source=home');
-
-    // Reset navigation flag after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isNavigating = false;
-        });
-      }
-    });
   }
 
   /// Convert VerseLanguage enum to language code string
@@ -511,6 +557,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   @override
   void dispose() {
+    _navGuard.dispose();
+    sl<AuthStateProvider>().removeListener(_onAuthChanged);
     _usageStatsBloc.close();
     super.dispose();
   }
@@ -582,58 +630,56 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   child: HomeScrollView(
                     headerBuilder: (context, onGround) =>
                         _buildAppHeader(onGround: onGround),
-                    children: [
-                      HomeVerseHero(
-                        imageAsset: homeHeroImageFor(DateTime.now()),
-                        greeting: context.tr(
-                          homeGreetingKeyFor(DateTime.now().hour),
-                          {'name': currentUserName},
-                        ),
-                        subtitle:
-                            context.tr(TranslationKeys.homeContinueJourney),
-                        verse: _buildHeroVerse(),
-                      ),
+                    children: _todayLayout
+                        ? [
+                            HomeTodayLayout(
+                              hero: _buildHero(currentUserName,
+                                  todayLayout: true),
+                            ),
+                          ]
+                        : [
+                            _buildHero(currentUserName),
 
-                      // Upcoming meeting banner (today's meetings);
-                      // collapses to nothing when there is none.
-                      const Padding(
-                        padding: sectionPadding,
-                        child: _UpcomingMeetingBanner(),
-                      ),
+                            // Upcoming meeting banner (today's meetings);
+                            // collapses to nothing when there is none.
+                            const Padding(
+                              padding: sectionPadding,
+                              child: _UpcomingMeetingBanner(),
+                            ),
 
-                      HomeEntrance(
-                        index: 0,
-                        child: Padding(
-                          padding: sectionPadding,
-                          child: _buildTodayTiles(),
-                        ),
-                      ),
+                            HomeEntrance(
+                              index: 0,
+                              child: Padding(
+                                padding: sectionPadding,
+                                child: _buildTodayTiles(),
+                              ),
+                            ),
 
-                      const SizedBox(height: 26),
+                            const SizedBox(height: 26),
 
-                      HomeEntrance(
-                        index: 1,
-                        child: Padding(
-                          padding: sectionPadding,
-                          child: _buildContinueLearning(),
-                        ),
-                      ),
+                            HomeEntrance(
+                              index: 1,
+                              child: Padding(
+                                padding: sectionPadding,
+                                child: _buildContinueLearning(),
+                              ),
+                            ),
 
-                      const SizedBox(height: 26),
+                            const SizedBox(height: 26),
 
-                      // What's happening in the user's fellowships, or
-                      // an invitation to join one. Collapses to nothing
-                      // while loading or on error.
-                      const HomeEntrance(
-                        index: 2,
-                        child: Padding(
-                          padding: sectionPadding,
-                          child: HomeCommunitySection(),
-                        ),
-                      ),
+                            // What's happening in the user's fellowships, or
+                            // an invitation to join one. Collapses to nothing
+                            // while loading or on error.
+                            const HomeEntrance(
+                              index: 2,
+                              child: Padding(
+                                padding: sectionPadding,
+                                child: HomeCommunitySection(),
+                              ),
+                            ),
 
-                      SizedBox(height: isLargeScreen ? 32 : 24),
-                    ],
+                            SizedBox(height: isLargeScreen ? 32 : 24),
+                          ],
                   ),
                 ),
               ).withHomeProtection();
@@ -641,6 +687,22 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           ),
         ),
       ),
+    );
+  }
+
+  /// The verse-of-the-day hero. [todayLayout]: its study action is the
+  /// "Reflect on this verse" link.
+  Widget _buildHero(String userName, {bool todayLayout = false}) {
+    return HomeVerseHero(
+      imageAsset: homeHeroImageFor(DateTime.now()),
+      greeting: homeGreetingText(
+        context.tr(homeGreetingKeyFor(DateTime.now().hour), {'name': userName}),
+        userName,
+      ),
+      // The Today layout goes straight from the greeting to the verse.
+      subtitle:
+          todayLayout ? null : context.tr(TranslationKeys.homeContinueJourney),
+      verse: _buildHeroVerse(todayLayout: todayLayout),
     );
   }
 
@@ -664,8 +726,52 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     // The logo is Expanded so it fills all slack on the left, pushing the Memory
     // Verses pill + Settings to the right edge. The pill keeps its intrinsic
-    // width (full label, capped at 140 inside the button); the logo image is
-    // left-aligned and shrinks only when the header is genuinely tight.
+    // width (full label); the logo image is left-aligned and shrinks only when
+    // the header is genuinely tight. When the full label would squeeze the
+    // logo below [_minLogoWidth] (small phone, long Hindi/Malayalam label),
+    // the pill shows its icon alone, with the label as tooltip, rather than
+    // a cut-off label.
+    return LayoutBuilder(
+      builder: (context, box) => _buildHeaderRow(
+        onPhoto: onPhoto,
+        showMemoryVerses: showMemoryVerses,
+        compactPill: showMemoryVerses && !_memoryPillFits(box.maxWidth),
+      ),
+    );
+  }
+
+  static const double _minLogoWidth = 110;
+
+  /// Room the pill needs besides its label: padding, icon and gap.
+  static const double _memoryPillChrome = 8 + 18 + 6 + 12 + 2;
+
+  /// Settings button plus the gaps around the pill.
+  static const double _headerFixedWidth = 48 + 8 + 4;
+
+  bool _memoryPillFits(double headerWidth) {
+    if (!headerWidth.isFinite) return true;
+    final label = TextPainter(
+      text: TextSpan(
+        text: context.tr(TranslationKeys.homeMemoryVerses),
+        style: DefaultTextStyle.of(context)
+            .style
+            .merge(Theme.of(context).textTheme.labelLarge)
+            .copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      maxLines: 1,
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: Directionality.of(context),
+    )..layout();
+    final pill = _memoryPillChrome + label.width;
+    label.dispose();
+    return headerWidth - _headerFixedWidth - pill >= _minLogoWidth;
+  }
+
+  Widget _buildHeaderRow({
+    required bool onPhoto,
+    required bool showMemoryVerses,
+    required bool compactPill,
+  }) {
     return Row(
       children: [
         Expanded(
@@ -677,18 +783,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
         const SizedBox(width: 8),
         if (showMemoryVerses) ...[
-          WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.homeMemoryVerses,
+          _walkthroughStep(
+            showcaseKey: _memoryVersesTarget,
             title: AppLocalizations.of(context)!.walkthroughHomeMemoryTitle,
             description:
                 AppLocalizations.of(context)!.walkthroughHomeMemoryDesc,
-            screen: WalkthroughScreen.home,
             stepNumber: 2,
-            totalSteps: 6,
-            onNext: _onNext,
             // Header element — prefer below (flips automatically if needed)
             tooltipPosition: TooltipPosition.bottom,
-            child: _buildMemoryVersesIconButton(onPhoto: onPhoto),
+            child: _buildMemoryVersesIconButton(
+              onPhoto: onPhoto,
+              compact: compactPill,
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -697,54 +803,91 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  Widget _buildMemoryVersesIconButton({bool onPhoto = true}) {
+  Widget _buildMemoryVersesIconButton({
+    bool onPhoto = true,
+    bool compact = false,
+  }) {
     return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
       buildWhen: (_, current) => current is DueVersesLoaded,
       builder: (context, memState) {
-        final dueCount =
-            memState is DueVersesLoaded ? memState.verses.length : 0;
+        final isGuest = GuestRouteGate.currentUserIsGuest();
+        // A guest has no deck (memory verses need an account): neutral pill
+        // with a lock, never a badge.
+        final dueCount = !isGuest && memState is DueVersesLoaded
+            ? memState.verses.length
+            : 0;
+        // Today layout: a gold count, and only once a verse is saved.
+        final todayLayout = _todayLayout;
+        final goldCount = todayLayout
+            ? memoryBadgeCount(
+                savedCount: !isGuest && memState is DueVersesLoaded
+                    ? memState.statistics.totalVerses
+                    : 0,
+                dueCount: dueCount,
+              )
+            : null;
         // White on the (always dark-shaded) photo; dark once the header is
         // on the light page colour.
         final pillColor = onPhoto ? Colors.white : AppColors.lightTextSecondary;
         return ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 140),
+          constraints: const BoxConstraints(maxWidth: 200),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               // Plain OutlinedButton (not .icon) with a Flexible label so the
               // text ellipsizes when the header is tight — .icon leaves the
               // label unconstrained and it overflows instead.
-              OutlinedButton(
-                onPressed: _handleMemoryVersesTap,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: pillColor,
-                  side: BorderSide(
-                    color: pillColor.withValues(alpha: 0.5),
-                  ),
-                  backgroundColor: pillColor.withValues(alpha: 0.12),
-                  padding: const EdgeInsets.fromLTRB(8, 6, 12, 6),
-                  shape: const StadiumBorder(),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.psychology_outlined, size: 18),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        context.tr(TranslationKeys.homeMemoryVerses),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
+              _withTooltip(
+                compact ? context.tr(TranslationKeys.homeMemoryVerses) : null,
+                OutlinedButton(
+                  onPressed: _handleMemoryVersesTap,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: pillColor,
+                    side: BorderSide(
+                      color: pillColor.withValues(alpha: 0.5),
                     ),
-                  ],
+                    backgroundColor: pillColor.withValues(alpha: 0.12),
+                    padding: compact
+                        ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
+                        : const EdgeInsets.fromLTRB(8, 6, 12, 6),
+                    minimumSize: const Size(40, 36),
+                    shape: const StadiumBorder(),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // A guest's lock takes the place of the icon, so the
+                      // label keeps its room on a narrow phone.
+                      if (isGuest)
+                        const Icon(Icons.lock_outline,
+                            key: Key('home_memory_pill_lock'), size: 16)
+                      else
+                        const Icon(Icons.psychology_outlined, size: 18),
+                      if (!compact) ...[
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            context.tr(TranslationKeys.homeMemoryVerses),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              if (dueCount > 0)
+              if (goldCount != null)
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: MemoryPillBadge(count: goldCount),
+                )
+              else if (!todayLayout && dueCount > 0)
                 Positioned(
                   top: -4,
                   right: -4,
@@ -756,6 +899,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       },
     );
   }
+
+  Widget _withTooltip(String? message, Widget child) =>
+      message == null ? child : Tooltip(message: message, child: child);
 
   /// Checks if Generate Study Guide button should be hidden
   /// Returns true if ALL study modes AND Talk to Discipler are disabled
@@ -794,6 +940,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   /// Handles tap on Memory Verses button - checks feature flag and shows upgrade dialog if disabled
   void _handleMemoryVersesTap() {
+    // Memory verses need an account; Home opens the account-needed sheet.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      context.go(GuestRouteGate.homeWithReason(AccountReasons.memoryVerses));
+      return;
+    }
+
     // Check if user has access to Memory Verses feature
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
@@ -862,8 +1014,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withOpacity(0.8),
+            AppColors.brandGold,
+            AppColors.streakGlow,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -872,7 +1024,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       ),
       child: const Icon(
         Icons.menu_book_rounded,
-        color: Colors.white,
+        color: ReaderPalette.ink,
         size: 24,
       ),
     );
@@ -937,24 +1089,48 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     });
   }
 
+  /// Wraps [child] as a step of the home walkthrough. The Today layout runs
+  /// no walkthrough, so there it is [child] alone.
+  Widget _walkthroughStep({
+    required GlobalKey showcaseKey,
+    required String title,
+    required String description,
+    required int stepNumber,
+    TooltipPosition tooltipPosition = TooltipPosition.top,
+    required Widget child,
+  }) {
+    if (_todayLayout) return child;
+    return WalkthroughTooltip(
+      showcaseKey: showcaseKey,
+      title: title,
+      description: description,
+      screen: WalkthroughScreen.home,
+      stepNumber: stepNumber,
+      totalSteps: 6,
+      onNext: _onNext,
+      tooltipPosition: tooltipPosition,
+      child: child,
+    );
+  }
+
   /// Verse of the day inside the hero. Hidden entirely by the
   /// bible_content_enabled kill-switch; greyed and locked like every other
   /// gated feature when the plan does not include it.
-  Widget _buildHeroVerse() {
+  Widget _buildHeroVerse({bool todayLayout = false}) {
     if (!sl<SystemConfigService>().isBibleContentEnabled) {
       return const SizedBox.shrink();
     }
-    return WalkthroughTooltip(
-      showcaseKey: ShowcaseKeys.homeDailyVerse,
+    return _walkthroughStep(
+      showcaseKey: _dailyVerseTarget,
       title: AppLocalizations.of(context)!.walkthroughHomeDailyVerseTitle,
       description: AppLocalizations.of(context)!.walkthroughHomeDailyVerseDesc,
-      screen: WalkthroughScreen.home,
       stepNumber: 1,
-      totalSteps: 6,
-      onNext: _onNext,
       child: LockedFeatureWrapper(
         featureKey: 'daily_verse',
-        child: HomeDailyVerse(onStudy: _onDailyVerseCardTap),
+        child: HomeDailyVerse(
+          onStudy: _onDailyVerseCardTap,
+          todayLayout: todayLayout,
+        ),
       ),
     );
   }
@@ -1038,8 +1214,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            context.appBrandAccent),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(context.appAccent),
                       ),
                     )
                   : null,
@@ -1050,7 +1226,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 featureKey: 'learning_paths',
                 child: HomePathRow(
                   key: const Key('home_active_path_row'),
-                  title: path.title,
+                  title: path.displayTitle,
                   subtitle: homePathSubtitle(context, path),
                   progress: path.progressPercentage / 100,
                   accent: homePathAccent(context, path),
@@ -1100,8 +1276,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// scratch on the way back. `push` keeps it mounted (URL still updates on
   /// web), and the pop result says whether a refresh is actually needed.
   Future<void> _navigateToLearningPath(String pathId) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+    if (!_navGuard.tryAcquire()) return;
 
     Logger.debug('[HOME] Navigating to learning path: $pathId');
 
@@ -1109,8 +1284,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // back target.
     final progressChanged =
         await context.push<bool>('/learning-path/$pathId?source=home');
-
-    _isNavigating = false;
 
     if (!mounted || progressChanged != true) return;
     sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
@@ -1180,6 +1353,11 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
   }
 
   Future<void> _fetchUpcomingMeeting() async {
+    // Fellowships need an account: a guest has no meetings to show.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      if (mounted) setState(() => _loaded = true);
+      return;
+    }
     try {
       final repo = sl<CommunityRepository>();
       // Content language, matching every other getFellowships caller — the
@@ -1341,13 +1519,14 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.error,
+                                // White on the brighter red is 3.8:1.
+                                color: AppColors.errorDark,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 context.tr(TranslationKeys.homeMeetingLive),
                                 style: AppFonts.inter(
-                                  fontSize: 9.5,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.6,
                                   color: Colors.white,
@@ -1360,7 +1539,7 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                             child: Text(
                               timeLabel,
                               style: AppFonts.inter(
-                                fontSize: 11.5,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: accent,
                               ),
@@ -1384,7 +1563,7 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
                         data.fellowshipName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(fontSize: 11.5, color: textMuted),
+                        style: AppFonts.inter(fontSize: 12, color: textMuted),
                       ),
                     ],
                   ),
@@ -1411,7 +1590,8 @@ class _DueBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       decoration: BoxDecoration(
-        color: AppColors.error,
+        // White on Red-500 is 3.8:1; on Red-800 it is 8.3:1.
+        color: AppColors.errorDark,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Theme.of(context).scaffoldBackgroundColor,
@@ -1422,7 +1602,7 @@ class _DueBadge extends StatelessWidget {
         label,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: FontWeight.w700,
           height: 1.4,
         ),

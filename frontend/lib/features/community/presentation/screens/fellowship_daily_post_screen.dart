@@ -278,7 +278,7 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final colors = SettingsToneColors.of(
-        context, gold ? SettingsTone.gold : SettingsTone.indigo);
+        context, gold ? SettingsTone.gold : SettingsTone.gold);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

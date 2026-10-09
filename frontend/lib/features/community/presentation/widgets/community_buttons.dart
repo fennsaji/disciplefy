@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 
-/// Primary pill button of the community screens: white with indigo ink on
-/// dark, indigo with white ink on light ([ReaderPalette.ctaFill]/`ctaInk`).
+/// Primary pill button of the community screens: white with ink text on
+/// dark, ink with white text on light ([ReaderPalette.ctaFill]/`ctaInk`).
 ///
-/// Used for "Join", "Start study", "Join a fellowship". At least 44px tall;
-/// the label wraps instead of truncating.
+/// The design draws card actions ("Join", "Start study", "Post now") as
+/// 32px pills (13/700) and floating or full-width actions ("Join a
+/// fellowship", "New post", "Advance to next lesson") as 40px pills
+/// (14/600). Either way the tap area is at least 40px tall; the label wraps
+/// instead of truncating.
 class CommunityCtaPill extends StatelessWidget {
   final String label;
   final IconData? icon;
@@ -18,10 +21,13 @@ class CommunityCtaPill extends StatelessWidget {
   /// Shows a spinner in place of the icon and ignores taps.
   final bool loading;
 
-  /// Larger padding/text for a floating action ("Join a fellowship").
+  /// A floating 40px action with a drop shadow ("Join a fellowship").
   final bool large;
 
-  /// Tighter padding/text for a pill sharing a row with other actions.
+  /// A 40px pill without the shadow (full-width or standalone actions).
+  final bool tall;
+
+  /// Tighter padding for a pill sharing a row with other actions.
   final bool compact;
 
   const CommunityCtaPill({
@@ -31,8 +37,13 @@ class CommunityCtaPill extends StatelessWidget {
     this.onPressed,
     this.loading = false,
     this.large = false,
+    this.tall = false,
     this.compact = false,
   });
+
+  /// Visible height of a card-action pill and of a large/tall one.
+  static const double smallHeight = 32;
+  static const double largeHeight = 40;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +53,9 @@ class CommunityCtaPill extends StatelessWidget {
         ? palette.ctaFill
         : palette.ctaFill.withValues(alpha: 0.5);
     final ink = palette.ctaInk;
-    final radius = BorderRadius.circular(large ? 30 : 24);
+    final big = large || tall;
+    final height = big ? largeHeight : smallHeight;
+    final radius = BorderRadius.circular(height / 2);
 
     // Its own semantics node, so a screen reader reaches the pill on its own
     // instead of folding it into the surrounding card, and it carries the
@@ -55,52 +68,62 @@ class CommunityCtaPill extends StatelessWidget {
       label: label,
       onTap: enabled ? onPressed : null,
       excludeSemantics: true,
-      child: Material(
-        color: fill,
-        borderRadius: radius,
-        elevation: large ? 6 : 0,
-        shadowColor: Colors.black.withValues(alpha: 0.35),
-        child: InkWell(
-          onTap: enabled ? onPressed : null,
-          borderRadius: radius,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: large ? 56 : 44),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: large ? 24 : (compact ? 12 : 18),
-                vertical: 8,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                // Keeps the label centred when the pill is stretched full
-                // width (e.g. the mentor's advance button).
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (loading)
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(ink),
-                      ),
-                    )
-                  else if (icon != null)
-                    Icon(icon, size: large ? 22 : 18, color: ink),
-                  if (loading || icon != null) SizedBox(width: compact ? 4 : 8),
-                  Flexible(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: AppFonts.inter(
-                        fontSize: large ? 16 : (compact ? 14 : 15),
-                        fontWeight: FontWeight.w600,
-                        color: ink,
-                        height: 1.25,
-                      ),
-                    ),
+      // The small pill keeps a 40px tap area: the 4px above and below it
+      // still press it.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? onPressed : null,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+              vertical: big ? 0 : (largeHeight - smallHeight) / 2),
+          child: Material(
+            color: fill,
+            borderRadius: radius,
+            elevation: large ? 6 : 0,
+            shadowColor: Colors.black.withValues(alpha: 0.35),
+            child: InkWell(
+              onTap: enabled ? onPressed : null,
+              borderRadius: radius,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: height),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: big ? 18 : (compact ? 12 : 14),
+                    vertical: 6,
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    // Keeps the label centred when the pill is stretched full
+                    // width (e.g. the mentor's advance button).
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (loading)
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(ink),
+                          ),
+                        )
+                      else if (icon != null)
+                        Icon(icon, size: big ? 16 : 14, color: ink),
+                      if (loading || icon != null) SizedBox(width: big ? 8 : 6),
+                      Flexible(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: AppFonts.inter(
+                            fontSize: big ? 14 : 13,
+                            fontWeight: big ? FontWeight.w600 : FontWeight.w700,
+                            color: ink,
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -132,45 +155,61 @@ class CommunityRaisedPill extends StatelessWidget {
     final fill = selected
         ? palette.ctaFill
         : (palette.isDark
-            ? Colors.white.withValues(alpha: 0.10)
+            ? (icon != null
+                ? Colors.white.withValues(alpha: 0.12)
+                : palette.card)
             : palette.raised);
-    final ink = selected ? palette.ctaInk : palette.text;
-    final radius = BorderRadius.circular(24);
+    // Unselected labels are muted on dark (7:1 on the card); on light the
+    // muted tone would miss the 5.5:1 label floor on the raised fill, so
+    // they take the text colour there.
+    final ink = selected
+        ? palette.ctaInk
+        : (palette.isDark && icon == null ? palette.muted : palette.text);
+    final radius = BorderRadius.circular(16);
 
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       excludeSemantics: true,
-      child: Material(
-        color: fill,
-        borderRadius: radius,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: radius,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 18, color: ink),
-                    const SizedBox(width: 8),
-                  ],
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: ink,
-                        height: 1.25,
+      // A 32px pill with a 40px tap area (the 4px above and below count).
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Material(
+            color: fill,
+            borderRadius: radius,
+            child: InkWell(
+              onTap: onPressed,
+              borderRadius: radius,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 32),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: 14, color: ink),
+                        const SizedBox(width: 6),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          style: AppFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: ink,
+                            height: 1.25,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

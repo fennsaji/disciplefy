@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:disciplefy_bible_study/core/services/guest_marker.dart';
 import 'package:disciplefy_bible_study/features/auth/data/repositories/local_store_repository_impl.dart';
 
 void main() {
@@ -90,6 +91,42 @@ void main() {
           reason: 'terms acceptance is a per-device Guideline 1.2 flag and '
               'must not be wiped by sign-out');
       expect(restoredBox.get('user_id'), isNull);
+    });
+
+    group('the guest marker (was_guest)', () {
+      Future<Box> wipe({required bool fullAccountSignedIn}) async {
+        final box = await Hive.openBox('app_settings');
+        await box.put(GuestMarker.key, true);
+        await LocalStoreRepositoryImpl(
+            isFullAccountSignedIn: () => fullAccountSignedIn).clearAll();
+        return Hive.box('app_settings');
+      }
+
+      test(
+          'survives TokenRefreshFailed / ForceLogoutRequested (guest still '
+          'current while the wipe runs)', () async {
+        final box = await wipe(fullAccountSignedIn: false);
+        expect(box.get(GuestMarker.key), isTrue);
+        expect(GuestMarker.wasGuest, isTrue);
+      });
+
+      test('survives resume with no session (no user at all)', () async {
+        // Same predicate: no user is not a full account.
+        final box = await wipe(fullAccountSignedIn: false);
+        expect(box.get(GuestMarker.key), isTrue);
+      });
+
+      test('is dropped when a full account signs out', () async {
+        final box = await wipe(fullAccountSignedIn: true);
+        expect(box.containsKey(GuestMarker.key), isFalse);
+      });
+
+      test('is not invented when it was never set', () async {
+        await Hive.openBox('app_settings');
+        await LocalStoreRepositoryImpl(isFullAccountSignedIn: () => false)
+            .clearAll();
+        expect(Hive.box('app_settings').containsKey(GuestMarker.key), isFalse);
+      });
     });
 
     test('defaults terms_accepted to false when it was never set', () async {

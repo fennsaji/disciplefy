@@ -78,13 +78,14 @@ async function handleGetStudyGuides(req: Request, services: ServiceContainer, us
   }
 
   const savedOnly = url.searchParams.get('saved') === 'true'
+  const ownOnly = url.searchParams.get('own_only') === 'true'
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100)
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0)
 
   // Get user's study guides with total count using the service
   const result = await (await services.getStudyGuideService()).getUserStudyGuidesWithCount(
     userContext,
-    { savedOnly, limit, offset }
+    { savedOnly, limit, offset, ownOnly }
   )
 
   // Log analytics

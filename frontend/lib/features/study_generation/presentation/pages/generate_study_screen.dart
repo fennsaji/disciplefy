@@ -39,7 +39,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import '../../data/repositories/token_cost_repository.dart';
-import '../../data/datasources/study_local_data_source.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/services/study_launch_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/constants/bible_books.dart';
 import '../../../../core/constants/bible_book_transliterations.dart';
@@ -58,6 +58,8 @@ import 'package:disciplefy_bible_study/shared/widgets/popup.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/depth_mode_cards.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/generate_hero.dart';
 import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/study_mode_labels.dart';
+import 'package:disciplefy_bible_study/features/study_generation/presentation/widgets/simple/language_pill.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/utils/scripture_reference.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -427,7 +429,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         _isInputValid = false;
         _validationError = null;
       } else if (_selectedMode == StudyInputMode.scripture) {
-        _isInputValid = _validateScriptureReference(text);
+        _isInputValid = isScriptureReference(text);
         // Don't show error while user is still typing the book name (no digit yet)
         final hasDigit = text.runes.any((r) => r >= 48 && r <= 57);
         _validationError = (_isInputValid || !hasDigit)
@@ -458,18 +460,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         }
       }
     });
-  }
-
-  bool _validateScriptureReference(String text) {
-    // Unicode-aware regex pattern for scripture references
-    // Uses [\p{L}\p{M}]+ to match letters AND combining marks
-    // (required for Malayalam, Hindi, and other Indic scripts)
-    // Allows multi-word book names like "भजन संहिता" or "Song of Solomon"
-    final scripturePattern = RegExp(
-      r'^[1-3]?\s*[\p{L}\p{M}]+(?:\s+[\p{L}\p{M}]+)*\s+\d+(?::\d+(?:-\d+)?)?$',
-      unicode: true,
-    );
-    return scripturePattern.hasMatch(text);
   }
 
   /// Fetch the credit cost of every mode for the selected language (shown on
@@ -1029,7 +1019,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               child: Text(
                 context.tr(TranslationKeys.generateStudyEyebrow).toUpperCase(),
                 style: AppFonts.inter(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.6,
                   color: palette.gold,
@@ -1149,117 +1139,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Short code for a study language, as shown on the language pill.
-  static String _languageCode(StudyLanguage language) {
-    switch (language) {
-      case StudyLanguage.english:
-        return 'EN';
-      case StudyLanguage.hindi:
-        return 'हिं';
-      case StudyLanguage.malayalam:
-        return 'മ';
-    }
-  }
-
-  /// Language pill inside the search field (EN / हिं / മ). When the study
-  /// language follows the default, the pill shows the default's code so the
-  /// user can see which language the guide will be in.
-  Widget _buildCompactLanguageSelector() {
-    String getLanguageLabel() => _languageCode(_selectedLanguage);
-
-    return PopupMenuButton<StudyLanguage?>(
-      key: const Key('generate_language_pill'),
-      initialValue: _isLanguageDefault ? null : _selectedLanguage,
-      onSelected: _switchLanguage,
-      offset: const Offset(0, 44),
-      color: ReaderPalette.of(context).card,
-      surfaceTintColor: Colors.transparent,
-      elevation: 6,
-      tooltip: context.tr(TranslationKeys.generateStudyLanguage),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: ReaderPalette.of(context).hairline),
-      ),
-      itemBuilder: (context) => [
-        _buildLanguageMenuItem(null,
-            '${context.tr(TranslationKeys.generateStudyDefaultLanguage)} (${_languageCode(_selectedLanguage)})'),
-        PopupMenuDivider(color: ReaderPalette.of(context).hairline),
-        _buildLanguageMenuItem(StudyLanguage.english, 'English'),
-        _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
-        _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
-      ],
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 96),
-        padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
-        decoration: BoxDecoration(
-          color: _searchPillFill,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // "Default" in Hindi/Malayalam shrinks to fit the pill.
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  getLanguageLabel(),
-                  maxLines: 1,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _searchInk,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 2),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: _searchMuted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // The search field is white in both themes (design), so its contents use
   // fixed light-surface colours rather than the theme's.
-  static const Color _searchInk = Color(0xFF16161D);
-  static const Color _searchMuted = Color(0xFF5B6070);
-  static const Color _searchHint = Color(0xFF8A8F9C);
-  static const Color _searchPillFill = Color(0xFFF0EEEA);
-
-  PopupMenuItem<StudyLanguage?> _buildLanguageMenuItem(
-    StudyLanguage? language,
-    String label,
-  ) {
-    final isSelected = language == null
-        ? _isLanguageDefault
-        : (!_isLanguageDefault && _selectedLanguage == language);
-    final palette = ReaderPalette.of(context);
-    return PopupMenuItem<StudyLanguage?>(
-      value: language,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? palette.accentIcon : palette.text,
-              ),
-            ),
-          ),
-          if (isSelected)
-            Icon(Icons.check_rounded, color: palette.accentIcon, size: 18),
-        ],
-      ),
-    );
-  }
+  static const Color _searchInk = SearchFieldColors.ink;
+  static const Color _searchMuted = SearchFieldColors.muted;
+  static const Color _searchHint = SearchFieldColors.hint;
 
   /// Compact "Talk to Discipler" (voice) row. The dock's Discipler tab is
   /// the text chat; this keeps the voice conversation entry and its
@@ -1319,16 +1203,16 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: ReaderPalette.selectedFill,
+                            color: palette.selectedFill,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             context.tr(TranslationKeys
                                 .generateStudyAiDisciplerBadgeNew),
                             style: AppFonts.inter(
-                              fontSize: 9,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: palette.onSelected,
                             ),
                           ),
                         ),
@@ -1352,6 +1236,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 
   Widget _buildInputSection() {
+    final palette = ReaderPalette.of(context);
     final isQuestion = _selectedMode == StudyInputMode.question;
     final radius = BorderRadius.circular(isQuestion ? 22 : 30);
     final errorColor = Theme.of(context).colorScheme.error;
@@ -1369,7 +1254,9 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
               color: _validationError != null
                   ? errorColor
                   : _inputFocusNode.hasFocus
-                      ? ReaderPalette.selectedFill
+                      // Deep gold on light: the selected fill is 2.3:1 on
+                      // the white field, under the 3:1 focus minimum.
+                      ? palette.gold
                       : Colors.transparent,
               width: 1.5,
             ),
@@ -1404,7 +1291,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   textInputAction: isQuestion
                       ? TextInputAction.newline
                       : TextInputAction.done,
-                  cursorColor: ReaderPalette.selectedFill,
+                  cursorColor: ReaderPalette.ink,
                   style: AppFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w500,
@@ -1448,7 +1335,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                 ),
               Padding(
                 padding: EdgeInsets.only(top: isQuestion ? 4 : 0),
-                child: _buildCompactLanguageSelector(),
+                child: LanguagePill(
+                  selected: _selectedLanguage,
+                  isDefault: _isLanguageDefault,
+                  onSelected: _switchLanguage,
+                ),
               ),
             ],
           ),
@@ -1470,6 +1361,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   }
 
   Widget _buildSuggestions() {
+    final palette = ReaderPalette.of(context);
     if (_selectedMode == StudyInputMode.question) {
       return _buildQuestionDropdown();
     }
@@ -1492,16 +1384,16 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: ReaderPalette.selectedFill.withValues(alpha: 0.9),
+                    color: palette.selectedFill.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.touch_app_rounded,
                         size: 14,
-                        color: Colors.white,
+                        color: palette.onSelected,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
@@ -1510,7 +1402,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                           style: AppFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                            color: palette.onSelected,
                           ),
                         ),
                       ),
@@ -1945,38 +1837,35 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
             : 'question';
     final languageCode = _selectedLanguage.code;
 
-    // Check local cache first — cached guides bypass the token check entirely
-    final hasCached =
-        await _hasCachedStudyGuide(input, inputType, languageCode);
-    if (hasCached && mounted) {
-      Logger.info('📦 [GENERATE_STUDY] Cache hit — bypassing token check');
-      _hasNavigatedAway = true;
-      final encodedInput = Uri.encodeComponent(input);
-      context.go(
-        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate',
-      );
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) setState(() => _isNavigating = false);
-      });
-      return;
-    }
-
-    // Check if user has sufficient tokens for this mode
-    if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
+    // Cost comes from the same source as the mode cards; only needed when
+    // the plan is metered (a failed lookup counts as 0 — backend decides).
+    final status = _currentTokenStatus;
+    var requiredCost = 0;
+    if (status != null && !status.isPremium && !status.unlimitedUsage) {
       final costResult =
           await _tokenCostRepository.getTokenCost(languageCode, mode.value);
-      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
-      if (requiredCost > 0 &&
-          _currentTokenStatus!.totalTokens < requiredCost &&
-          mounted) {
-        setState(() => _isNavigating = false);
-        await InsufficientTokensDialog.show(
-          context,
-          tokenStatus: _currentTokenStatus!,
-          requiredTokens: requiredCost,
-        );
-        return;
-      }
+      requiredCost = costResult.fold((f) => 0, (cost) => cost);
+    }
+
+    // Cached guides bypass the token check entirely.
+    final launch = GetIt.instance<StudyLaunchService>();
+    final decision = await launch.decide(
+      input: input,
+      type: inputType,
+      language: languageCode,
+      mode: mode,
+      status: status,
+      cost: requiredCost,
+    );
+
+    if (decision == LaunchDecision.needCredits && mounted) {
+      setState(() => _isNavigating = false);
+      await InsufficientTokensDialog.show(
+        context,
+        tokenStatus: status!,
+        requiredTokens: requiredCost,
+      );
+      return;
     }
 
     // Backend will handle actual token consumption; token status is
@@ -1986,16 +1875,22 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       return;
     }
 
+    if (decision == LaunchDecision.openCached) {
+      Logger.info('📦 [GENERATE_STUDY] Cache hit — bypassing token check');
+    }
+
     // Set flag to indicate navigation away (will trigger token refresh on return)
     _hasNavigatedAway = true;
-
-    final encodedInput = Uri.encodeComponent(input);
 
     Logger.debug(
         '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType with mode: ${mode.name}');
 
-    context.go(
-        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate');
+    context.go(launch.location(
+      input: input,
+      type: inputType,
+      language: languageCode,
+      mode: mode,
+    ));
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -2005,28 +1900,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         });
       }
     });
-  }
-
-  /// Returns true if a study guide matching [input]/[inputType]/[language]
-  /// already exists in the local Hive cache.
-  Future<bool> _hasCachedStudyGuide(
-    String input,
-    String inputType,
-    String language,
-  ) async {
-    try {
-      final cached =
-          await GetIt.instance<StudyLocalDataSource>().getCachedStudyGuides();
-      final normalizedInput = input.trim().toLowerCase();
-      return cached.any(
-        (g) =>
-            g.input.trim().toLowerCase() == normalizedInput &&
-            g.inputType == inputType &&
-            g.language == language,
-      );
-    } catch (_) {
-      return false;
-    }
   }
 
   void _showErrorDialog(
@@ -2043,7 +1916,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                 icon: isRateLimited
                     ? Icons.hourglass_bottom_rounded
                     : Icons.error_outline_rounded,
-                tone: isRateLimited ? PopupTone.gold : PopupTone.indigo,
+                tone: isRateLimited ? PopupTone.gold : PopupTone.accent,
               ),
               title: dialogContext
                   .tr(TranslationKeys.generateStudyGenerationFailed),
@@ -2158,7 +2031,7 @@ class _SuggestionChip extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
-                    color: ReaderPalette.selectedFill,
+                    color: palette.selectedFill,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -2166,7 +2039,7 @@ class _SuggestionChip extends StatelessWidget {
                     style: AppFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: palette.onSelected,
                     ),
                   ),
                 ),

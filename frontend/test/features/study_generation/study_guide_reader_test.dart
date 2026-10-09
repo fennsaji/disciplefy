@@ -8,6 +8,7 @@ import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_guide.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
@@ -190,7 +191,7 @@ void main() {
     expect(tracker.readCount, 6);
   });
 
-  testWidgets('DisciplerGlyph.onCta picks indigo on dark, white on light',
+  testWidgets('DisciplerGlyph.onCta picks ink on dark, white on light',
       (tester) async {
     await tester.pumpWidget(const Directionality(
       textDirection: TextDirection.ltr,
@@ -200,9 +201,12 @@ void main() {
       ]),
     ));
     final images = tester.widgetList<Image>(find.byType(Image)).toList();
+    // One white asset; tinted to ink on the white dark-theme pill.
     expect((images[0].image as AssetImage).assetName,
-        'assets/brand/discipler-glyph-indigo.png');
+        'assets/brand/discipler-glyph-white.png');
+    expect(images[0].color, ReaderPalette.ink);
     expect((images[1].image as AssetImage).assetName,
         'assets/brand/discipler-glyph-white.png');
+    expect(images[1].color, isNull);
   });
 }

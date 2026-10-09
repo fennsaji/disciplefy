@@ -5,7 +5,9 @@ import {
   groupPathTranslations,
   loadCompletedTopicCounts,
   loadEnrolledPathIds,
+  nextLessonNumberPerPath,
   pathProgressPercentage,
+  resolveShortTitle,
 } from './batch-loaders.ts'
 
 /** Minimal chainable fake of a supabase-js query builder. */
@@ -44,7 +46,7 @@ Deno.test('groupPathTranslations maps single rows, null for missing or duplicate
     { learning_path_id: 'c', title: 'C1', description: 'x' },
     { learning_path_id: 'c', title: 'C2', description: 'y' },
   ])
-  assertEquals(map.get('a'), { title: 'A', description: null })
+  assertEquals(map.get('a'), { title: 'A', description: null, short_title: null })
   assertEquals(map.get('b'), null)
   assertEquals(map.get('c'), null) // .single() failed on duplicates
 })
@@ -83,4 +85,53 @@ Deno.test('pathProgressPercentage reads every topic done as 100 without an enrol
   assertEquals(pathProgressPercentage(4, 16, 'romans', new Set()), 25)
   assertEquals(pathProgressPercentage(0, 16, 'romans', new Set(['romans'])), 100)
   assertEquals(pathProgressPercentage(0, 0, 'empty', new Set()), 0)
+})
+
+Deno.test('groupPathTranslations keeps short_title', () => {
+  const grouped = groupPathTranslations(['p'], [
+    { learning_path_id: 'p', title: 'പുതിയ വിശ്വാസിയുടെ അടിസ്ഥാനങ്ങൾ', description: 'd', short_title: 'വിശ്വാസ അടിസ്ഥാനങ്ങൾ' },
+  ])
+  assertEquals(grouped.get('p')?.short_title, 'വിശ്വാസ അടിസ്ഥാനങ്ങൾ')
+})
+
+Deno.test('resolveShortTitle: English uses the base short title', () => {
+  assertEquals(resolveShortTitle('en', 'Sin, Repentance & Grace', undefined), 'Sin, Repentance & Grace')
+  assertEquals(resolveShortTitle('en', null, undefined), null)
+})
+
+Deno.test('resolveShortTitle: a translated title never borrows the English short title', () => {
+  const translated = { title: 'पाप, पश्चाताप और परमेश्वर का अनुग्रह', description: 'd', short_title: null }
+  assertEquals(resolveShortTitle('hi', 'Sin, Repentance & Grace', translated), null)
+  assertEquals(
+    resolveShortTitle('hi', 'Sin, Repentance & Grace', { ...translated, short_title: 'पाप, पश्चाताप और अनुग्रह' }),
+    'पाप, पश्चाताप और अनुग्रह',
+  )
+})
+
+Deno.test('resolveShortTitle: without a translated title the English short title goes with the English title', () => {
+  assertEquals(resolveShortTitle('ml', 'Short', null), 'Short')
+  assertEquals(resolveShortTitle('ml', 'Short', { title: null, description: 'd', short_title: null }), 'Short')
+})
+
+Deno.test('resolveShortTitle: blank short titles read as none', () => {
+  assertEquals(resolveShortTitle('en', '   ', undefined), null)
+  assertEquals(resolveShortTitle('hi', 'Short', { title: 'T', description: 'd', short_title: '  ' }), null)
+})
+
+/**
+ * All paths' "Lesson N of M" used completed + 1: with lessons 1 and 3 done it
+ * named lesson 3, which is finished. The next lesson comes from the rows.
+ */
+Deno.test('nextLessonNumberPerPath: first unfinished lesson by position, null when finished', () => {
+  const topics = [
+    { learning_path_id: 'p', topic_id: 'c', position: 2 },
+    { learning_path_id: 'p', topic_id: 'a', position: 0 },
+    { learning_path_id: 'p', topic_id: 'b', position: 1 },
+    { learning_path_id: 'p', topic_id: 'd', position: 3 },
+    { learning_path_id: 'q', topic_id: 'x', position: 0 },
+  ]
+  const out = nextLessonNumberPerPath(['p', 'q', 'empty'], topics, [{ topic_id: 'a' }, { topic_id: 'c' }, { topic_id: 'x' }])
+  assertEquals(out.get('p'), 2) // lesson 2 ('b'), not completed+1 = 3
+  assertEquals(out.get('q'), null)
+  assertEquals(out.get('empty'), null)
 })

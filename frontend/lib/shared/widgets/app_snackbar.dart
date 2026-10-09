@@ -81,7 +81,7 @@ void showAppSnackBar(
 (IconData, Color) _toneIcon(AppSnackTone tone) => switch (tone) {
       AppSnackTone.neutral => (
           Icons.info_outline_rounded,
-          const Color(0xFFA9A6F5),
+          AppColors.brandGold,
         ),
       AppSnackTone.success => (
           Icons.check_circle_rounded,

@@ -209,11 +209,11 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: context.appBrandAccent.withValues(alpha: 0.1),
+                        color: context.appAccent.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: CircularProgressIndicator(
-                        color: context.appBrandAccent,
+                        color: context.appAccent,
                         strokeWidth: 3,
                       ),
                     ),
@@ -287,7 +287,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
           color: AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: context.appBrandAccent.withValues(alpha: 0.2),
+            color: context.appAccent.withValues(alpha: 0.2),
           ),
         ),
         child: Column(

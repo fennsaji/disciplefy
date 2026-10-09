@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 import '../../../../core/services/language_preference_service.dart';
 import '../../domain/entities/user_level.dart';
 import '../../domain/repositories/gamification_repository.dart';
@@ -31,6 +32,34 @@ class GamificationBloc extends Bloc<GamificationEvent, GamificationState> {
     on<CheckSavedAchievements>(_onCheckSavedAchievements);
     on<DismissAchievementNotification>(_onDismissNotification);
     on<ClearAllAchievementNotifications>(_onClearAllNotifications);
+    _authStateProvider.addListener(_onAuthChanged);
+  }
+
+  /// A load was asked for while the signed-in session was still being
+  /// restored (cold start or page reload); it runs once auth settles.
+  bool _loadWaitingForAuth = false;
+
+  /// True while the auth state is still settling (session being restored or
+  /// profile being refreshed), so a missing user id is not yet final.
+  bool get _authSettling {
+    final state = _authStateProvider.currentState;
+    return state is auth_states.AuthInitialState ||
+        state is auth_states.AuthLoadingState ||
+        state is auth_states.AuthProfileUpdatingState;
+  }
+
+  void _onAuthChanged() {
+    if (!_loadWaitingForAuth || isClosed) return;
+    if (_userId == null && _authSettling) return;
+    _loadWaitingForAuth = false;
+    // Signed in: load now. Signed out or failed: the load reports the error.
+    add(const LoadGamificationStats(forceRefresh: true));
+  }
+
+  @override
+  Future<void> close() {
+    _authStateProvider.removeListener(_onAuthChanged);
+    return super.close();
   }
 
   /// Get current user ID from auth provider
@@ -48,6 +77,13 @@ class GamificationBloc extends Bloc<GamificationEvent, GamificationState> {
     Emitter<GamificationState> emit,
   ) async {
     final userId = _userId;
+    if (userId == null && _authSettling) {
+      // The session is still being restored: show loading, not an error,
+      // and load as soon as the user is known.
+      _loadWaitingForAuth = true;
+      emit(state.copyWith(status: GamificationStatus.loading));
+      return;
+    }
     if (userId == null) {
       emit(state.copyWith(
         status: GamificationStatus.error,

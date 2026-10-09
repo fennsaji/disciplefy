@@ -12,6 +12,7 @@
 import { createClient, SupabaseClient, User } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors } from '../_shared/utils/cors.ts'
 import { config } from '../_shared/core/config.ts'
+import { isAnonymousAuthUser, ACCOUNT_REQUIRED_CODE, ACCOUNT_REQUIRED_MESSAGE } from '../_shared/auth/user-context.ts'
 
 // ============================================================================
 // Types
@@ -420,6 +421,14 @@ async function authenticateRequest(
   if (userError || !user) {
     console.error('[REPORT ISSUE] Auth error:', userError)
     return createErrorResponse('Unauthorized', 401, corsHeaders)
+  }
+
+  // Guests (Supabase anonymous users) have no purchases to report.
+  if (isAnonymousAuthUser(user)) {
+    return new Response(
+      JSON.stringify({ success: false, error: ACCOUNT_REQUIRED_MESSAGE, code: ACCOUNT_REQUIRED_CODE }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 
   return { user, supabaseAdmin }

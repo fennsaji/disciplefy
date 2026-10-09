@@ -34,6 +34,8 @@ import 'package:disciplefy_bible_study/features/home/presentation/widgets/home_c
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
@@ -184,6 +186,7 @@ void main() {
   Widget hero(DailyVerseState state,
           {VoidCallback? onStudy,
           VoidCallback? onRetry,
+          VoidCallback? onRead,
           String name = 'Fenn'}) =>
       HomeVerseHero(
         imageAsset: homeHeroImages.first,
@@ -193,6 +196,7 @@ void main() {
           state: state,
           onStudy: onStudy,
           onRetry: onRetry ?? () {},
+          onRead: onRead,
         ),
       );
 
@@ -206,6 +210,12 @@ void main() {
       expect(homeGreetingKeyFor(16), TranslationKeys.homeGoodAfternoon);
       expect(homeGreetingKeyFor(17), TranslationKeys.homeGoodEvening);
       expect(homeGreetingKeyFor(23), TranslationKeys.homeGoodEvening);
+    });
+
+    test('a blank name leaves no trailing comma', () {
+      expect(homeGreetingText('Good evening, ', ''), 'Good evening');
+      expect(homeGreetingText('शुभ संध्या, ', ' '), 'शुभ संध्या');
+      expect(homeGreetingText('Good evening, Anu', 'Anu'), 'Good evening, Anu');
     });
 
     test('verse size steps down with length', () {
@@ -282,6 +292,53 @@ void main() {
       await tester.tap(find.text('Study now'));
       await tester.tap(find.text(_shortVerse));
       expect(studied, 2);
+    });
+
+    testWidgets(
+        'Today layout: no subtitle or date, the verse quoted at 22pt at most',
+        (tester) async {
+      await pump(
+          tester,
+          HomeVerseHero(
+            imageAsset: homeHeroImages.first,
+            greeting: _english(TranslationKeys.homeGoodEvening, {'name': 'F'}),
+            verse: HomeDailyVerseView(
+              state: _loaded(_shortVerse),
+              onStudy: () {},
+              onRetry: () {},
+              todayLayout: true,
+            ),
+          ));
+      expect(find.text(_english(TranslationKeys.homeContinueJourney, null)),
+          findsNothing);
+      expect(find.text('VERSE OF THE DAY'), findsOneWidget);
+      expect(find.textContaining('SEPTEMBER'), findsNothing);
+      final verse =
+          tester.widget<Text>(find.byKey(const Key('home_verse_text')));
+      expect(verse.data, '\u201C$_shortVerse\u201D');
+      expect(verse.style!.fontSize, 22);
+    });
+
+    testWidgets(
+        'the verse counts as read after five seconds on screen, or at once '
+        'when copied or studied', (tester) async {
+      var reads = 0;
+      await pump(tester,
+          hero(_loaded(_shortVerse), onStudy: () {}, onRead: () => reads++));
+      await tester.pump(const Duration(seconds: 4));
+      expect(reads, 0);
+      await tester.pump(const Duration(seconds: 1));
+      expect(reads, 1);
+
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null));
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      expect(reads, 2);
+      await tester.tap(find.text('Study now'));
+      expect(reads, 3);
+      await tester.pump(const Duration(seconds: 5));
     });
 
     testWidgets('error: offers a retry and nothing else', (tester) async {
@@ -667,7 +724,7 @@ void main() {
         tester,
         HomePathRow(
           title: 'The Attributes of God',
-          subtitle: '3 of 8 topics',
+          subtitle: '3 of 8 lessons',
           progress: 0.375,
           accent: Colors.amber,
           onTap: () => taps++,
@@ -675,7 +732,7 @@ void main() {
         theme: AppTheme.lightTheme,
       );
       expect(find.text('The Attributes of God'), findsOneWidget);
-      expect(find.text('3 of 8 topics'), findsOneWidget);
+      expect(find.text('3 of 8 lessons'), findsOneWidget);
       expect(find.byType(HomeProgressRing), findsOneWidget);
       await tester.tap(find.text('The Attributes of God'));
       expect(taps, 1);
@@ -712,11 +769,12 @@ void main() {
 
     testWidgets('subtitle falls back without a next topic or when done',
         (tester) async {
-      expect(await subtitleFor(tester, path(next: null)), '7 of 14 topics');
-      expect(await subtitleFor(tester, path(next: '  ')), '7 of 14 topics');
-      expect(await subtitleFor(tester, path(progress: 100)), '14 of 14 topics');
+      expect(await subtitleFor(tester, path(next: null)), '7 of 14 lessons');
+      expect(await subtitleFor(tester, path(next: '  ')), '7 of 14 lessons');
+      expect(
+          await subtitleFor(tester, path(progress: 100)), '14 of 14 lessons');
       expect(await subtitleFor(tester, path(progress: 0, enrolled: false)),
-          'Start here · 14 topics');
+          'Start here · 14 lessons');
     });
 
     test('next topic survives the cache round trip, not a progress change', () {
@@ -1081,8 +1139,14 @@ void main() {
           expect(chip, findsOneWidget, reason: type);
           final labelText = tester.widget<Text>(
               find.descendant(of: chip, matching: find.text(text)));
+          // The accent, deepened/lifted only as far as its own tint needs
+          // for a 5.5:1 chip label.
+          final palette = ReaderPalette.resolve(
+              isDark: isDark, page: theme.scaffoldBackgroundColor);
           expect(
-              labelText.style?.color, postTypeAccentColor(type, isDark: isDark),
+              labelText.style?.color,
+              palette.onTint(postTypeAccentColor(type, isDark: isDark),
+                  alpha: isDark ? 0.14 : 0.10),
               reason: type);
         }
       });
@@ -1101,7 +1165,7 @@ void main() {
           find.descendant(
               of: find.byWidgetPredicate(
                   (w) => w is PostTypeChip && w.postType == 'study_note'),
-              matching: find.text('Study Note')),
+              matching: find.text('Study note')),
           findsOneWidget);
       expect(
           find.descendant(
@@ -1116,6 +1180,37 @@ void main() {
               matching: find.byType(Text)),
           findsOneWidget);
       expect(find.text('Romans 8 — Worth reading together'), findsOneWidget);
+    });
+
+    testWidgets('a clamped member post says so with "Read more"',
+        (tester) async {
+      usePosts([
+        post('long', 'general',
+            content: 'Romans 12:2 has been on my mind for the last few days.'
+                '\n\nI keep asking what it means to be transformed by the '
+                'renewing of my mind in ordinary work and conversations.'
+                '\n\n@Discipler how do I start?'),
+        post('short', 'general', content: 'Amen!', minutesAgo: 8),
+      ]);
+      await pumpSection(tester);
+      expect(find.byKey(const Key('home_activity_read_more')), findsOneWidget);
+      expect(find.text('Read more'), findsOneWidget);
+      await tester.tap(find.text('Read more'));
+      await tester.pumpAndSettle();
+      expect(find.text('post f1/long'), findsOneWidget);
+    });
+
+    testWidgets('the daily study row keeps its summary without "Read more"',
+        (tester) async {
+      usePosts([
+        post('d', 'daily',
+            author: 'Discipler',
+            authorId: kDisciplerUserId,
+            content: '📖 A long lesson title that keeps going and going\n'
+                '✨ ${'An opening hook that runs on for a while. ' * 4}'),
+      ]);
+      await pumpSection(tester, width: 320);
+      expect(find.byKey(const Key('home_activity_read_more')), findsNothing);
     });
 
     for (final (lang, locale) in [

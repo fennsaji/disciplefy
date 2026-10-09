@@ -11,15 +11,13 @@ import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/logger.dart';
-import 'package:disciplefy_bible_study/core/utils/path_icon_utils.dart';
+import 'package:disciplefy_bible_study/core/utils/tap_guard.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_path_card.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_list_row.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/path_level_style.dart';
 
 /// Every learning path in one category, opened from "See all" on the
 /// Study Topics tab.
@@ -27,7 +25,8 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
 /// Reads the category from [LearningPathsBloc] (the tab's own instance when
 /// opened from the tab) and pages in the rest of it with
 /// [LoadMorePathsForCategory] as the list is scrolled. Paths can be narrowed
-/// by level and by a title search over the loaded paths.
+/// by a title search over the loaded paths. Rows show lessons and days, no
+/// level or XP.
 class LearningPathCategoryPage extends StatefulWidget {
   /// Category name as stored on the paths (untranslated).
   final String category;
@@ -50,9 +49,10 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String? _language;
-  String? _selectedLevel;
   bool _searchOpen = false;
-  bool _isNavigating = false;
+
+  /// Ignores a double tap; never held across the awaited push.
+  final TapGuard _navGuard = TapGuard();
 
   LearningPathsBloc get _bloc => context.read<LearningPathsBloc>();
 
@@ -67,6 +67,7 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
 
   @override
   void dispose() {
+    _navGuard.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -147,9 +148,6 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
   List<LearningPath> _filtered(List<LearningPath> paths) {
     final query = _searchController.text.trim().toLowerCase();
     return paths.where((p) {
-      if (_selectedLevel != null && p.discipleLevel != _selectedLevel) {
-        return false;
-      }
       if (query.isNotEmpty &&
           !p.title.toLowerCase().contains(query) &&
           !p.description.toLowerCase().contains(query)) {
@@ -161,13 +159,15 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
 
   /// Same navigation as the Topics tab: push the detail page and refetch
   /// only when it reports that progress changed.
-  Future<void> _openPath(LearningPath path) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+  Future<void> _openPath(LearningPath path) =>
+      guestPathGate(context, path, () => _pushPath(path));
+
+  Future<void> _pushPath(LearningPath path) async {
+    if (!_navGuard.tryAcquire()) return;
     final bloc = _bloc;
-    final progressChanged = await context
-        .push<bool>('/learning-path/${path.id}?source=studyTopics');
-    _isNavigating = false;
+    final progressChanged = await context.push<bool>(
+        '/learning-path/${path.id}?source=studyTopics',
+        extra: path);
     if (!mounted || progressChanged != true) return;
     final language = await _resolveLanguage();
     bloc
@@ -206,8 +206,6 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
               children: [
                 _buildHeader(context, category),
                 if (_searchOpen) _buildSearchField(context),
-                _buildLevelChips(context),
-                const SizedBox(height: 8),
                 Expanded(child: _buildBody(context, state, category)),
               ],
             );
@@ -280,35 +278,17 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
     );
   }
 
-  /// "7 paths · Seeker to Disciple".
+  /// "7 paths".
   String _subtitle(BuildContext context, LearningPathCategory category) {
     final count = category.totalInCategory > 0
         ? category.totalInCategory
         : category.paths.length;
-    final parts = <String>[
-      context.tr(
-        count == 1
-            ? TranslationKeys.topicsHubPathsCountOne
-            : TranslationKeys.topicsHubPathsCount,
-        {'count': count},
-      ),
-    ];
-    final levels = category.paths
-        .map((p) => p.discipleLevel.toLowerCase())
-        .where(kPathLevelOrder.contains)
-        .toSet()
-        .toList()
-      ..sort((a, b) =>
-          kPathLevelOrder.indexOf(a).compareTo(kPathLevelOrder.indexOf(b)));
-    if (levels.length == 1) {
-      parts.add(discipleLevelLabel(context, levels.first));
-    } else if (levels.length > 1) {
-      parts.add(context.tr(TranslationKeys.topicsHubLevelRange, {
-        'from': discipleLevelLabel(context, levels.first),
-        'to': discipleLevelLabel(context, levels.last),
-      }));
-    }
-    return parts.join(' · ');
+    return context.tr(
+      count == 1
+          ? TranslationKeys.topicsHubPathsCountOne
+          : TranslationKeys.topicsHubPathsCount,
+      {'count': count},
+    );
   }
 
   Widget _buildSearchField(BuildContext context) {
@@ -339,33 +319,6 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
             borderSide: BorderSide(color: palette.accentIcon),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLevelChips(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          PathFilterChip(
-            key: const Key('path_category_chip_all'),
-            label: context.tr(TranslationKeys.topicsHubAllLevels),
-            selected: _selectedLevel == null,
-            onSelected: (_) => setState(() => _selectedLevel = null),
-          ),
-          for (final level in kPathLevelOrder) ...[
-            const SizedBox(width: 8),
-            PathFilterChip(
-              key: Key('path_category_chip_$level'),
-              label: discipleLevelLabel(context, level),
-              selected: _selectedLevel == level,
-              onSelected: (v) =>
-                  setState(() => _selectedLevel = v ? level : null),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -422,8 +375,8 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 4, 16, bottom),
         itemCount: paths.isEmpty ? 1 : paths.length + (isLoadingMore ? 1 : 0),
-        separatorBuilder: (_, __) =>
-            Divider(height: 1, thickness: 1, color: palette.hairline),
+        // Rows are spaced, not ruled, as in the design.
+        separatorBuilder: (_, __) => const SizedBox(height: 4),
         itemBuilder: (context, index) {
           if (paths.isEmpty) {
             return Padding(

@@ -101,9 +101,7 @@ class SystemConfigService extends ChangeNotifier {
         if (event == AuthChangeEvent.signedOut) {
           Logger.debug(
               '🔄 [SystemConfigService] Auth change ($event) — clearing cache and refreshing config');
-          // Clear persisted + in-memory cache first so a failed refetch after
-          // logout can't leave the previous user's tester-resolved flags visible.
-          clearCache().then((_) => fetchSystemConfig(forceRefresh: true));
+          onSignedOut();
         } else if (event == AuthChangeEvent.signedIn ||
             event == AuthChangeEvent.userUpdated) {
           Logger.debug(
@@ -413,6 +411,30 @@ class SystemConfigService extends ChangeNotifier {
     }
 
     return 0;
+  }
+
+  /// Sign-out: drop the persisted (user-tagged) cache and refetch.
+  ///
+  /// The in-memory config is kept until the refetch replaces it. The router
+  /// redirect that follows a lost session reads the rollout flags right
+  /// away; clearing them first read `new_first_run` as off and sent a guest
+  /// whose session was lost to the login screen instead of a new first run.
+  @visibleForTesting
+  Future<void> onSignedOut() async {
+    await _clearPersistedCache();
+    _lastFetch = null;
+    await fetchSystemConfig(forceRefresh: true);
+  }
+
+  Future<void> _clearPersistedCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKey);
+      await prefs.remove(_cacheTimestampKey);
+      await prefs.remove(_cacheUserKey);
+    } catch (e) {
+      Logger.debug('⚠️ [SystemConfigService] Cache clear error: $e');
+    }
   }
 
   /// Clear cache (for testing or when logout)

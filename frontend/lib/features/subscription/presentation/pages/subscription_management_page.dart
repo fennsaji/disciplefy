@@ -281,8 +281,15 @@ class _SubscriptionManagementPageState
       children: [
         _PlanHeader(
           planName: _formattedPlanType(subscription),
-          status: subscription.status.displayName,
-          detail: subscription.status.description,
+          // The trial pill and dates are already shown in the app
+          // language; the English status sentence is only used for
+          // paid states that have no translation yet.
+          status: subscription.status == SubscriptionStatus.trial
+              ? context.tr(TranslationKeys.myPlanTrialPill)
+              : subscription.status.displayName,
+          detail: subscription.status == SubscriptionStatus.trial
+              ? null
+              : subscription.status.description,
           tone: isActive ? LedgerTone.success : LedgerTone.warning,
         ),
         if (subscription.isEndingSoon) ...[
@@ -362,12 +369,12 @@ class _SubscriptionManagementPageState
           ]
         : isPlusPlan
             ? [
-                '50 daily tokens (all study modes)',
-                '10 follow-ups per guide',
-                '10 Discipler conversations/month',
-                '10 active memory verses',
-                '3 practice sessions per verse per day',
-                'All 8 practice modes',
+                context.tr(TranslationKeys.pricingPlusFeature1),
+                context.tr(TranslationKeys.pricingPlusFeature2),
+                context.tr(TranslationKeys.pricingPlusFeature3),
+                context.tr(TranslationKeys.pricingPlusFeature4),
+                context.tr(TranslationKeys.pricingPlusFeature5),
+                context.tr(TranslationKeys.pricingPlusFeature6),
               ]
             : [
                 context.tr(TranslationKeys.pricingPremiumFeature1),
@@ -610,7 +617,7 @@ class _PlanHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   planName,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.poppins(
                     fontSize: 22,
@@ -620,7 +627,7 @@ class _PlanHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Flexible(child: LedgerStatusPill(label: status, tone: tone)),
+              LedgerStatusPill(label: status, tone: tone),
             ],
           ),
           if (detail != null && detail!.isNotEmpty) ...[

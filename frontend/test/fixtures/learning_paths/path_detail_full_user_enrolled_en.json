@@ -1,0 +1,122 @@
+{
+ "success": true,
+ "data": {
+  "id": "aaa00000-0000-0000-0000-000000000001",
+  "slug": "new-believer-essentials",
+  "title": "New Believer Essentials",
+  "description": "Begin your faith journey with these foundational topics. Learn about Jesus, the Gospel, and how to grow in your relationship with God.",
+  "icon_name": "auto_stories",
+  "color": "#4CAF50",
+  "total_xp": 400,
+  "estimated_days": 14,
+  "disciple_level": "seeker",
+  "recommended_mode": "standard",
+  "allow_non_sequential_access": true,
+  "category": "",
+  "is_featured": false,
+  "guest_accessible": true,
+  "topics_count": 8,
+  "is_enrolled": true,
+  "progress_percentage": 0,
+  "topics_completed": 0,
+  "enrolled_at": "2026-10-07T08:39:29.425831+00:00",
+  "topics": [
+   {
+    "position": 0,
+    "is_milestone": false,
+    "topic_id": "111e8400-e29b-41d4-a716-446655440001",
+    "title": "Who is Jesus Christ?",
+    "description": "Explore the biblical truth about Jesus Christ's identity as fully God and fully man—the eternal Son of God who became flesh to accomplish our salvation. Learn how Scripture reveals Jesus as the promised Messiah, the only Savior who died for sinners and rose from the dead, and the sovereign Lord over all creation. Understand why recognizing who Jesus truly is forms the foundation of genuine Christian faith and how His person and work are central to the gospel message. This study grounds believers in the historic, orthodox understanding of Christ's deity, humanity, and redemptive mission.",
+    "category": "Foundations of Faith",
+    "input_type": "question",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 1,
+    "is_milestone": false,
+    "topic_id": "111e8400-e29b-41d4-a716-4466554400f1",
+    "title": "One God, Three Persons",
+    "description": "Scripture teaches that God is one in essence and three in person: Father, Son, and Holy Spirit — not three gods, and not one God wearing three masks. This study traces the biblical foundation across the Old and New Testaments, from the Shema's declaration that the LORD is one (Deuteronomy 6:4) through the baptism of Jesus, where Father, Son, and Spirit are present together (Matthew 3:16-17), to Christ's command to baptise in the singular name of all three (Matthew 28:19). You will learn why the Trinity is not a puzzle to be solved but the God who has revealed Himself, how the doctrine safeguards the gospel — only a divine Son can save, only a divine Spirit can indwell — and how to answer the question a new believer is most often asked: \"so do Christians worship three gods?\" Your answer will affirm the Shema rather than work around it: the same Scripture that declares the LORD is one also names the Son and the Spirit as God, so you are not offering a third option beyond monotheism but confessing, with Israel, that the LORD is one.",
+    "category": "Foundations of Faith",
+    "input_type": "topic",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 2,
+    "is_milestone": false,
+    "topic_id": "111e8400-e29b-41d4-a716-446655440002",
+    "title": "What is the Gospel?",
+    "description": "Discover the heart of the Christian message: the gospel of Jesus Christ. Learn how the good news proclaims that sinful humanity, under God's righteous judgment, can be saved only through faith in Christ's substitutionary death and bodily resurrection. Understand the gospel as God's gracious provision of salvation—not earned by human works or merit, but received through repentance and faith alone in Christ alone. This study clarifies the essential elements of the gospel: human sinfulness, Christ's perfect life and atoning death, His victorious resurrection, and the call to respond in repentant faith. Grasp how the gospel transforms lives and establishes the foundation for all Christian living.",
+    "category": "Foundations of Faith",
+    "input_type": "question",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 3,
+    "is_milestone": true,
+    "topic_id": "111e8400-e29b-41d4-a716-446655440003",
+    "title": "Confidence in Your Salvation",
+    "description": "Learn how true believers can have certain assurance that they HAVE salvation, grounded in Christ's finished work and the unchanging promises of God's Word—not in their own performance, feelings, or fluctuating emotions. Understand how assurance comes from the objective truth of the gospel, the internal testimony of the Holy Spirit confirming you are God's child (Romans 8:16), and the evidence of genuine faith producing spiritual fruit in your life. This study distinguishes between saving faith and mere intellectual assent, addresses doubts biblically, and affirms that those truly born again are kept secure by God's power (1 Peter 1:5, John 10:28-29) and will persevere in faith to the end. Discover the threefold basis of assurance: God's promises in Scripture (1 John 5:13), the Spirit's witness within, and the transformed life that flows from genuine conversion (2 Corinthians 5:17, 1 John 3:14).",
+    "category": "Foundations of Faith",
+    "input_type": "topic",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 4,
+    "is_milestone": false,
+    "topic_id": "111e8400-e29b-41d4-a716-446655440004",
+    "title": "Why Read the Bible?",
+    "description": "Understand why the Bible is essential for the Christian life—not merely as helpful literature, but as God's inspired, inerrant, and authoritative Word. Learn how Scripture alone (Sola Scriptura) serves as the final authority for doctrine, reproof, correction, and training in righteousness (2 Timothy 3:16-17). Discover how God speaks through His Word to reveal Himself, convict of sin, point to Christ, and transform believers into His likeness. This study equips you to approach the Bible as living and active truth, essential for knowing God, discerning His will, and growing in holiness and obedience through the power of the Holy Spirit.",
+    "category": "Foundations of Faith",
+    "input_type": "question",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 5,
+    "is_milestone": false,
+    "topic_id": "111e8400-e29b-41d4-a716-446655440005",
+    "title": "Importance of Prayer",
+    "description": "Learn the biblical foundation and practice of prayer as vital communion with the living God. Discover how prayer is not a ritual to earn God's favor, but the privilege of approaching the throne of grace through Christ our mediator (Hebrews 4:16). Understand prayer as conversation with God—expressing adoration, confession, thanksgiving, and supplication—and as dependence on the Holy Spirit who intercedes for us (Romans 8:26). This study teaches how prayer strengthens faith, aligns our hearts with God's will, and demonstrates our trust in His sovereignty and goodness. Grow in confident, persistent, and God-centered prayer rooted in Scripture and faith in Christ.",
+    "category": "Foundations of Faith",
+    "input_type": "topic",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 6,
+    "is_milestone": true,
+    "topic_id": "111e8400-e29b-41d4-a716-446655440006",
+    "title": "The Role of the Holy Spirit",
+    "description": "Explore the biblical teaching on the Holy Spirit, the third person of the Trinity, who indwells all believers at conversion and empowers them for godly living. Learn how the Spirit convicts of sin, regenerates the heart, illuminates Scripture, sanctifies believers, and produces spiritual fruit (Galatians 5:22-23). Understand the Spirit's ministry as the One who glorifies Christ, assures believers of their adoption as children of God (Romans 8:16), and equips the church with spiritual gifts for service. This study guards against both neglecting the Spirit's work and embracing charismatic excess, grounding you in the biblical balance of the Spirit's indwelling presence and transforming power in every believer's life.",
+    "category": "Foundations of Faith",
+    "input_type": "topic",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   },
+   {
+    "position": 7,
+    "is_milestone": true,
+    "topic_id": "333e8400-e29b-41d4-a716-446655440006",
+    "title": "Baptism and Communion",
+    "description": "Understand the meaning and significance of the two ordinances (or sacraments) Jesus gave to the church: baptism and the Lord's Supper. Learn that baptism is the outward public declaration of an inward reality—identifying with Christ's death, burial, and resurrection (Romans 6:3-4) and marking entrance into the visible church community. Baptism is a symbolic act of obedience for those already saved by faith; it does NOT itself save or regenerate—salvation comes through faith in Christ alone, not through water baptism (Ephesians 2:8-9). Reject baptismal regeneration (the false teaching that baptism saves) while recognizing baptism as a crucial step of obedience that publicly identifies believers with Christ. Explore different views on baptism mode (immersion vs. sprinkling) and recipients (believers only vs. infant baptism), while maintaining unity on its symbolic, non-saving nature. Discover the Lord's Supper as a regular reminder of Christ's broken body and shed blood for our sins (1 Corinthians 11:23-26), a time of self-examination and confession (1 Corinthians 11:28), and a proclamation of His death until He returns—NOT a re-sacrifice of Christ or means of obtaining grace. Practice these ordinances not as rituals that earn God's favor or impart saving grace but as grateful responses to the finished work of Christ, strengthening faith and church unity.",
+    "category": "Church & Community",
+    "input_type": "topic",
+    "xp_value": 50,
+    "is_completed": false,
+    "is_in_progress": false
+   }
+  ]
+ }
+}

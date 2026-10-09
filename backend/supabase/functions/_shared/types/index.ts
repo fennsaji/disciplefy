@@ -20,6 +20,8 @@ export interface UserContext {
   readonly sessionId?: string
   readonly userType?: 'admin' | 'user' // Admin users get premium access temporarily
   readonly email?: string // Authenticated user's email (used for feature tester bypass)
+  /** Supabase anonymous user: `type` is 'authenticated' with a userId, but no full account yet. */
+  readonly isGuest?: boolean
 }
 
 /**

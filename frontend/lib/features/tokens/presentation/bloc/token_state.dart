@@ -658,3 +658,9 @@ extension TokenStatePlan on TokenState {
     return status?.userPlan.name;
   }
 }
+
+/// The user's plan code ('free', 'standard', 'plus', 'premium') — the one
+/// source of truth for which plan to show. Reads the token status, which the
+/// backend resolves from the live subscription (a Standard trial included),
+/// and falls back to 'free' until a status is known.
+String currentPlanCode(TokenState state) => state.knownPlanName ?? 'free';

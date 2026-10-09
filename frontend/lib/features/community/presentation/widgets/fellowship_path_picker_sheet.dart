@@ -618,7 +618,8 @@ class FellowshipPathPickerRow extends StatelessWidget {
                           if (isCurrent)
                             _Tag(
                               label: l10n.lessonsCurrentPathTag,
-                              ink: palette.accentIcon,
+                              ink: palette.goldOnTint,
+                              fill: palette.accentIcon,
                             ),
                           if (path.fellowshipCompleted)
                             _Tag(

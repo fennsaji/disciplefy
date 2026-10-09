@@ -10,6 +10,7 @@ import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 import 'package:disciplefy_bible_study/core/services/system_config_service.dart';
@@ -31,8 +32,8 @@ import 'package:disciplefy_bible_study/features/community/presentation/widgets/c
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/community_top_bars.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/fellowship_card_parts.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/presentation/showcase_keys.dart';
@@ -104,7 +105,7 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
       final repo = sl<WalkthroughRepository>();
       if (await repo.hasSeen(WalkthroughScreen.community)) return;
 
-      // Always show both steps: tabs (step 1) + FAB/join (step 2).
+      // Always show both steps: tabs (step 1) + join with a code (step 2).
       final keys = <GlobalKey>[
         ShowcaseKeys.communityTabs,
         ShowcaseKeys.communityFab,
@@ -191,7 +192,7 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
                   onChanged: (i) => setState(() => _selectedTab = i),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // ── Body ─────────────────────────────────────────────────────
               Expanded(
@@ -207,36 +208,14 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
           ),
         ),
       ),
-      floatingActionButton: _selectedTab == 0
-          ? WalkthroughTooltip(
-              showcaseKey: ShowcaseKeys.communityFab,
-              title: l10n.walkthroughCommunityFabTitle,
-              description: l10n.walkthroughCommunityFabDesc,
-              screen: WalkthroughScreen.community,
-              stepNumber: 2,
-              totalSteps: 2,
-              onNext: _onNext,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.sizeOf(context).width - 32,
-                ),
-                child: CommunityCtaPill(
-                  label: l10n.communityJoinFellowship,
-                  icon: Icons.vpn_key_outlined,
-                  large: true,
-                  onPressed: _onJoinPressed,
-                ),
-              ),
-            )
-          : null,
     );
   }
 
-  /// Join (key) and Create (+) actions. Create is hidden by the feature flag,
+  /// Join (key) — the one way in by code — and Create (+) actions. Create is hidden by the feature flag,
   /// or shown with a lock badge and an upsell when the plan lacks it.
   Widget _buildTopActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+    return BlocBuilder<TokenBloc, TokenState>(
       builder: (context, _) =>
           BlocBuilder<FellowshipListBloc, FellowshipListState>(
         buildWhen: (prev, curr) =>
@@ -246,11 +225,20 @@ class _CommunityTabContentState extends State<CommunityTabContent> {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CommunityIconAction(
-                icon: Icons.vpn_key_outlined,
-                tooltip:
-                    context.tr(TranslationKeys.communitySharedJoinWithCode),
-                onPressed: _onJoinPressed,
+              WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.communityFab,
+                title: l10n.walkthroughCommunityFabTitle,
+                description: l10n.walkthroughCommunityFabDesc,
+                screen: WalkthroughScreen.community,
+                stepNumber: 2,
+                totalSteps: 2,
+                onNext: _onNext,
+                child: CommunityIconAction(
+                  icon: Icons.key_outlined,
+                  tooltip:
+                      context.tr(TranslationKeys.communitySharedJoinWithCode),
+                  onPressed: _onJoinPressed,
+                ),
               ),
               if (!_hideCreateFellowship(context))
                 CommunityIconAction(
@@ -334,7 +322,7 @@ class _MyFellowshipsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+    return BlocBuilder<TokenBloc, TokenState>(
       builder: (context, _) =>
           BlocConsumer<FellowshipListBloc, FellowshipListState>(
         listenWhen: (previous, current) =>
@@ -371,7 +359,10 @@ class _MyFellowshipsTab extends StatelessWidget {
                   canCreate: _canCreateFellowship(context, state),
                 );
               }
-              return _FellowshipList(fellowships: state.fellowships);
+              return _FellowshipList(
+                fellowships: state.fellowships,
+                onJoinPressed: onJoinPressed,
+              );
           }
         },
       ),
@@ -381,12 +372,38 @@ class _MyFellowshipsTab extends StatelessWidget {
 
 class _FellowshipList extends StatelessWidget {
   final List<FellowshipEntity> fellowships;
+  final Future<void> Function() onJoinPressed;
 
-  const _FellowshipList({required this.fellowships});
+  const _FellowshipList({
+    required this.fellowships,
+    required this.onJoinPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     final currentUserId = _currentUserId(context);
+    // "Join a fellowship" floats above the dock, as in the design; the key
+    // icon in the header stays as the second way in.
+    return Stack(
+      children: [
+        Positioned.fill(child: _list(context, currentUserId)),
+        PositionedDirectional(
+          end: 20,
+          // The shell reports the dock as bottom padding.
+          bottom: 24 + MediaQuery.paddingOf(context).bottom,
+          child: CommunityCtaPill(
+            key: const Key('community_join_fab'),
+            large: true,
+            icon: Icons.key_outlined,
+            label: context.tr(TranslationKeys.communitySharedJoinFellowship),
+            onPressed: onJoinPressed,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _list(BuildContext context, String? currentUserId) {
     return RefreshIndicator(
       color: ReaderPalette.of(context).accentIcon,
       onRefresh: () async => context
@@ -394,15 +411,14 @@ class _FellowshipList extends StatelessWidget {
           .add(const FellowshipListLoadRequested()),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        // 100 clears the floating join button; the bottom inset adds the
-        // floating dock the page runs under.
+        // Clears the dock (the bottom padding) and the join pill above it.
         padding: EdgeInsets.fromLTRB(
-            16, 0, 16, 110 + MediaQuery.paddingOf(context).bottom),
+            16, 0, 16, 80 + MediaQuery.paddingOf(context).bottom),
         itemCount: fellowships.length,
         itemBuilder: (context, index) {
           final fellowship = fellowships[index];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.only(bottom: 12),
             child: MyFellowshipCard(
               fellowship: fellowship,
               currentUserId: currentUserId,
@@ -452,7 +468,7 @@ class MyFellowshipCard extends StatelessWidget {
             memberCount: fellowship.memberCount,
           ),
           if (fellowship.currentStudy != null) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             FellowshipCurrentStudyRow(study: fellowship.currentStudy!),
           ],
         ],
@@ -485,9 +501,9 @@ class _DiscoverTabState extends State<_DiscoverTab> {
       if (!mounted) return;
       final bloc = context.read<DiscoverBloc>();
       if (bloc.state.status != DiscoverStatus.initial) return;
-      // Default to "All" languages so Discover always shows the full set of
-      // publicly discoverable fellowships on first open.
-      bloc.add(const DiscoverLoadRequested());
+      // Open on the app language so the first groups shown are ones the
+      // user can read; the "All" chip still shows every language.
+      bloc.add(DiscoverLoadRequested(language: _appLanguageCode()));
     });
   }
 
@@ -519,17 +535,20 @@ class _DiscoverTabState extends State<_DiscoverTab> {
               prev.justJoinedName != curr.justJoinedName) ||
           (curr.errorMessage != null && prev.errorMessage != curr.errorMessage),
       listener: (context, state) {
-        final l10n = AppLocalizations.of(context)!;
         if (state.justJoinedName != null) {
           showAppSnackBar(
             context,
-            l10n.discoverJoinedSnackbar(state.justJoinedName!),
+            context.tr(TranslationKeys.communityJoined,
+                {'name': state.justJoinedName!}),
             tone: AppSnackTone.success,
           );
+          final joinedId = state.justJoinedId;
           context.read<DiscoverBloc>().add(const DiscoverJoinAcknowledged());
           context
               .read<FellowshipListBloc>()
               .add(const FellowshipListLoadRequested());
+          // Take the new member straight into the group they joined.
+          if (joinedId != null) context.push('/community/$joinedId');
         } else if (state.errorMessage != null) {
           showAppSnackBar(context, state.errorMessage!,
               tone: AppSnackTone.error);
@@ -541,18 +560,21 @@ class _DiscoverTabState extends State<_DiscoverTab> {
           children: [
             // Search bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
-                style: AppFonts.inter(fontSize: 16, color: palette.text),
+                style: AppFonts.inter(fontSize: 14, color: palette.text),
                 decoration: InputDecoration(
+                  isDense: true,
                   hintText:
                       context.tr(TranslationKeys.communitySharedSearchHint),
-                  hintStyle: AppFonts.inter(fontSize: 16, color: palette.muted),
+                  hintStyle: AppFonts.inter(fontSize: 14, color: palette.muted),
                   hintMaxLines: 2,
-                  prefixIcon: Icon(Icons.search_rounded,
-                      size: 22, color: palette.muted),
+                  prefixIcon:
+                      Icon(Icons.search_rounded, size: 16, color: palette.dim),
+                  prefixIconConstraints:
+                      const BoxConstraints(minWidth: 40, minHeight: 40),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
                           tooltip: MaterialLocalizations.of(context)
@@ -567,18 +589,17 @@ class _DiscoverTabState extends State<_DiscoverTab> {
                       : null,
                   filled: true,
                   fillColor: palette.card,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 11),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide(color: palette.hairline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide(color: palette.hairline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide(color: palette.accentIcon),
                   ),
                 ),
@@ -593,7 +614,7 @@ class _DiscoverTabState extends State<_DiscoverTab> {
                     ),
                   ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Expanded(child: _DiscoverBody(state: state)),
           ],
         );
@@ -661,8 +682,8 @@ class _EmptyState extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              // Joining by code is the floating button below, so it is not
-              // repeated here.
+              // Joining by code is the key icon in the title bar, so it is
+              // not repeated here.
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
@@ -890,7 +911,7 @@ class _DiscoverBodyState extends State<_DiscoverBody> {
               }
               final f = state.fellowships[index];
               return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: DiscoverFellowshipCard(
                   fellowship: f,
                   isJoining: state.joiningIds.contains(f.id),
@@ -984,12 +1005,13 @@ class DiscoverFellowshipCard extends StatelessWidget {
     final description = fellowship.description?.trim();
     final study = fellowship.currentStudyTitle?.trim();
     final muted =
-        AppFonts.inter(fontSize: 14, color: palette.muted, height: 1.4);
+        AppFonts.inter(fontSize: 12.5, color: palette.muted, height: 1.4);
 
     final mentorRow = FellowshipMentorRow(
       leading: FellowshipLanguageChip(language: fellowship.language),
       mentor: FellowshipMentorInfo.forPublicFellowship(fellowship),
       memberCount: fellowship.memberCount,
+      avatarRadius: 11,
     );
     final action = _JoinButton(
       isFull: isFull,
@@ -1012,9 +1034,9 @@ class DiscoverFellowshipCard extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(
-                fontSize: 15,
+                fontSize: 13,
                 color: palette.muted,
-                height: 1.5,
+                height: 1.45,
               ),
             ),
           ],
@@ -1047,7 +1069,7 @@ class DiscoverFellowshipCard extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, box) {
               // Narrow cards: the action drops under the mentor line so
@@ -1101,17 +1123,17 @@ class _JoinButton extends StatelessWidget {
 
     if (isFull) {
       return Container(
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: 32),
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: palette.outline),
         ),
         child: Text(
           l10n.discoverFull,
           style: AppFonts.inter(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: palette.muted,
           ),
@@ -1131,13 +1153,15 @@ class _JoinButton extends StatelessWidget {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Current plan code, defaulting to free when the subscription is unknown.
+/// Current plan code from the one plan source (TokenBloc), defaulting to free
+/// while it is unknown. The subscription bloc only carries the plan in one of
+/// its many states, which made the paywall read "Free" for a Standard user.
 String _currentPlan(BuildContext context) {
   try {
-    final subState = context.read<SubscriptionBloc>().state;
-    if (subState is UserSubscriptionStatusLoaded) return subState.currentPlan;
-  } catch (_) {}
-  return 'free';
+    return currentPlanCode(context.read<TokenBloc>().state);
+  } catch (_) {
+    return 'free';
+  }
 }
 
 /// Whether the flag says to hide Create Fellowship entirely.
@@ -1170,6 +1194,13 @@ void _showCreateFellowshipUpsell(BuildContext context) {
   );
 }
 
+/// The app language code ('en', 'hi', 'ml'), or null (all languages) when
+/// the translation service is not available.
+String? _appLanguageCode() {
+  if (!sl.isRegistered<TranslationService>()) return null;
+  return sl<TranslationService>().currentLanguage.code;
+}
+
 bool _canCreateFellowship(BuildContext context, FellowshipListState listState) {
   try {
     final authState = context.read<AuthBloc>().state;
@@ -1178,14 +1209,6 @@ bool _canCreateFellowship(BuildContext context, FellowshipListState listState) {
     }
   } catch (_) {}
   if (listState.fellowships.any((f) => f.userRole == 'mentor')) return true;
-  try {
-    final subState = context.read<SubscriptionBloc>().state;
-    if (subState is UserSubscriptionStatusLoaded) {
-      final plan = subState.currentPlan;
-      if (plan == 'plus' || plan == 'premium') {
-        return true;
-      }
-    }
-  } catch (_) {}
-  return false;
+  final plan = _currentPlan(context);
+  return plan == 'plus' || plan == 'premium';
 }

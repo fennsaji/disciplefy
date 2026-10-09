@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 
 /// Domain entity for daily Bible verse
 class DailyVerseEntity extends Equatable {
@@ -60,24 +61,23 @@ class DailyVerseEntity extends Equatable {
         date.day == today.day;
   }
 
-  /// Get formatted date string
-  String get formattedDate {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
+  /// Get formatted date string (English).
+  String get formattedDate => formattedDateFor('en');
 
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  /// Date formatted for [languageCode] ('hi' and 'ml' are localized; anything
+  /// else is English). Needs `initializeDateFormatting()` to have run.
+  String formattedDateFor(String languageCode) {
+    final locale = switch (languageCode) {
+      'hi' => 'hi_IN',
+      'ml' => 'ml_IN',
+      _ => 'en_US',
+    };
+    // Hindi reads day-first; Malayalam and English month-first.
+    final pattern = languageCode == 'hi' ? 'd MMMM y' : 'MMMM d, y';
+    final formatted = DateFormat(pattern, locale).format(date);
+    // intl's Malayalam month names carry a zero-width non-joiner that breaks
+    // the conjunct in "ഒക്ടോബർ".
+    return formatted.replaceAll('\u200c', '');
   }
 
   @override

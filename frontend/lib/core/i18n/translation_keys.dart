@@ -246,6 +246,58 @@ class TranslationKeys {
   static const followUpChatSpeechNotAvailable =
       'follow_up_chat.speech_not_available';
 
+  // Home Today
+  static const homeTodayLabel = 'home_today.today_label';
+  static const homeTodayLessonEyebrow = 'home_today.lesson_eyebrow';
+  static const homeTodayStartLesson = 'home_today.start_lesson';
+  static const homeTodayModeQuick = 'home_today.mode_quick';
+  static const homeTodayModeStandard = 'home_today.mode_standard';
+  static const homeTodayPathFinished = 'home_today.path_finished';
+  static const homeTodayChooseNextPath = 'home_today.choose_next_path';
+  static const homeTodaySeePath = 'home_today.see_path';
+  static const homeTodayLessonOf = 'home_today.lesson_of';
+  static const homeTodayToGo = 'home_today.to_go';
+  static const homeTodayChooseFirstPath = 'home_today.choose_first_path';
+  static const homeTodayChooseFirstPathSub = 'home_today.choose_first_path_sub';
+  static const homeTodayLessonsDays = 'home_today.lessons_days';
+  static const homeTodaySeeAllPaths = 'home_today.see_all_paths';
+  static const homeTodaySaveProgress = 'home_today.save_progress';
+  static const homeTodayReflect = 'home_today.reflect';
+  static const homeTodayLoadingPath = 'home_today.loading_path';
+  static const homeTodayStripSemantics = 'home_today.strip_semantics';
+  static const homeTodayPathsUnavailable = 'home_today.paths_unavailable';
+
+  // New for you banners and feature introductions. Per-kind keys are built
+  // from the kind's name (NewForYouKind.name) by the helpers below.
+  static const nfyEyebrow = 'nfy.eyebrow';
+  static const nfyDismiss = 'nfy.dismiss';
+  static String nfyBannerTitle(String kind) => 'nfy.$kind.banner_title';
+  static String nfyBannerSub(String kind) => 'nfy.$kind.banner_sub';
+  static String nfyBannerSubAny(String kind) => 'nfy.$kind.banner_sub_any';
+  static String nfyBannerCta(String kind) => 'nfy.$kind.banner_cta';
+  static const introStartWith = 'intro.start_with';
+  static const introClose = 'intro.close';
+  static String introEyebrow(String kind) => 'intro.$kind.eyebrow';
+  static String introTitle(String kind) => 'intro.$kind.title';
+  static String introStepTitle(String kind, int step) =>
+      'intro.$kind.step${step}_title';
+  static String introStepBody(String kind, int step) =>
+      'intro.$kind.step${step}_body';
+  static String introPrimary(String kind) => 'intro.$kind.primary';
+  static String introSecondary(String kind) => 'intro.$kind.secondary';
+  static const introMemorySaved = 'intro.memory.saved';
+  static const introGenerateChip1 = 'intro.generate.chip1';
+  static const introGenerateChip2 = 'intro.generate.chip2';
+  static const introGenerateChip3 = 'intro.generate.chip3';
+  static const introDisciplerQuestion = 'intro.discipler.question';
+  static const introFellowshipsJoin = 'intro.fellowships.join';
+  static const introFellowshipsMembers = 'intro.fellowships.members';
+  static const introFellowshipsMemberOne = 'intro.fellowships.member_one';
+  static const introFellowshipsMembersOpen = 'intro.fellowships.members_open';
+  static const introFellowshipsOfficial = 'intro.fellowships.official';
+  static const introFellowshipsStudying = 'intro.fellowships.studying';
+  static const introFellowshipsJoinFailed = 'intro.fellowships.join_failed';
+
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
   static const homeGoodMorning = 'home.good_morning';
@@ -277,12 +329,9 @@ class TranslationKeys {
   static const homeExploreLearningPaths = 'home.explore_learning_paths';
   static const homeResumeLastStudy = 'home.resume_last_study';
   static const homeContinueStudying = 'home.continue_studying';
-  static const homeRecommendedTopics = 'home.recommended_topics';
   static const homeViewAll = 'home.view_all';
-  static const homeFailedToLoadTopics = 'home.failed_to_load_topics';
   static const homeSomethingWentWrong = 'home.something_went_wrong';
   static const homeTryAgain = 'home.try_again';
-  static const homeNoTopicsAvailable = 'home.no_topics_available';
   static const homeCheckConnection = 'home.check_connection';
   static const homeGenerationInProgress = 'home.generation_in_progress';
   static const homeGeneratingStudyGuide = 'home.generating_study_guide';
@@ -290,13 +339,11 @@ class TranslationKeys {
   static const homeDismiss = 'home.dismiss';
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
   static const homeForYou = 'home.for_you';
-  static const homeForYouSubtitle = 'home.for_you_subtitle';
   static const communityVerseStudyLabel = 'community.verse_study_label';
   static const communityTopicStudyLabel = 'community.topic_study_label';
   static const communityStudyGuideLabel = 'community.study_guide_label';
   static const homeReadyForNextStep = 'home.ready_for_next_step';
   static const homeAvailableOffline = 'home.available_offline';
-  static const homeExploreTopics = 'home.explore_topics';
   static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
   static const homePersonalizePromptSubtitle =
       'home.personalize_prompt_subtitle';
@@ -547,6 +594,7 @@ class TranslationKeys {
   static const emailVerificationDescription = 'email_verification.description';
   static const emailVerificationResend = 'email_verification.resend';
   static const emailVerificationResendShort = 'email_verification.resend_short';
+  static const emailVerificationShortTitle = 'email_verification.short_title';
   static const emailVerificationSent = 'email_verification.sent';
 
   // Onboarding
@@ -626,6 +674,7 @@ class TranslationKeys {
   static const settingsBlockedUsersSubtitle = 'settings.blocked_users_subtitle';
   static const settingsTheme = 'settings.theme';
   static const settingsContentLanguage = 'settings.content_language';
+  static const settingsContentLanguageSame = 'settings.content_language_same';
   static const settingsContentLanguageFollowsApp =
       'settings.content_language_follows_app';
   static const settingsAppLanguage = 'settings.app_language';
@@ -633,12 +682,18 @@ class TranslationKeys {
       'settings.app_language_description';
   static const settingsAccountActions = 'settings.account_actions';
   static const settingsSignOut = 'settings.sign_out';
+  static const settingsSaveProgress = 'settings.save_progress';
+  static const settingsSaveProgressSubtitle = 'settings.save_progress_subtitle';
+  static const settingsGuestNote = 'settings.guest_note';
   static const settingsDeleteAccount = 'settings.delete_account';
   static const settingsDeleteAccountSubtitle =
       'settings.delete_account_subtitle';
   static const settingsDeleteAccountTitle = 'settings.delete_account_title';
   static const settingsDeleteAccountMessage = 'settings.delete_account_message';
   static const settingsDeleteAccountConfirm = 'settings.delete_account_confirm';
+  static const settingsDeleteAccountTypeToConfirm =
+      'settings.delete_account_type_to_confirm';
+  static const settingsDeleteAccountKeep = 'settings.delete_account_keep';
 
   static const settingsSignOutOfAccount = 'settings.sign_out_of_account';
   static const settingsAbout = 'settings.about';
@@ -682,8 +737,6 @@ class TranslationKeys {
   static const settingsRetakeQuestionnaireSubtitle =
       'settings.retake_questionnaire_subtitle';
   static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
-  static const settingsTakeQuestionnaireSubtitle =
-      'settings.take_questionnaire_subtitle';
 
   // Settings - Text Size
   static const settingsTextSize = 'settings.text_size';
@@ -698,6 +751,8 @@ class TranslationKeys {
   static const settingsSectionYou = 'settings.section_you';
   static const settingsSectionPreferences = 'settings.section_preferences';
   static const settingsSectionStudy = 'settings.section_study';
+  static const settingsMore = 'settings.more';
+  static const settingsMoreSubtitle = 'settings.more_subtitle';
   static const settingsOfflineGuides = 'settings.offline_guides';
   static const settingsOfflineGuidesSubtitle =
       'settings.offline_guides_subtitle';
@@ -961,22 +1016,15 @@ class TranslationKeys {
   static const bugReportSubmitError = 'bug_report.submit_error';
 
   // Study Topics Screen
-  static const studyTopicsTitle = 'study_topics.title';
-  static const studyTopicsSearchHint = 'study_topics.search_hint';
   static const studyTopicsGenerationError = 'study_topics.generation_error';
   static const studyTopicsGenerationInProgress =
       'study_topics.generation_in_progress';
   static const studyTopicsGenerating = 'study_topics.generating';
-  static const studyTopicsFailedToLoad = 'study_topics.failed_to_load';
   static const studyTopicsSomethingWentWrong =
       'study_topics.something_went_wrong';
   static const studyTopicsTryAgain = 'study_topics.try_again';
-  static const studyTopicsNoTopicsFound = 'study_topics.no_topics_found';
   static const studyTopicsAdjustFilters = 'study_topics.adjust_filters';
-  static const studyTopicsNoTopicsAvailable =
-      'study_topics.no_topics_available';
   static const studyTopicsClearFilters = 'study_topics.clear_filters';
-  static const studyTopicsTopicsFound = 'study_topics.topics_found';
   static const studyTopicsContentLanguage = 'study_topics.content_language';
   static const studyTopicsContentLanguageDescription =
       'study_topics.content_language_description';
@@ -1057,6 +1105,7 @@ class TranslationKeys {
   static const plansFree = 'tokens.plans.free';
   static const plansStandard = 'tokens.plans.standard';
   static const plansPremium = 'tokens.plans.premium';
+  static const plansPlus = 'tokens.plans.plus';
   static const plansFreeDesc = 'tokens.plans.free_description';
   static const plansStandardDesc = 'tokens.plans.standard_description';
   static const plansPremiumDesc = 'tokens.plans.premium_description';
@@ -1463,6 +1512,14 @@ class TranslationKeys {
       'notifications.settings.mentor_promoted_description';
 
   // Memory Verses
+  static const memorySaveTodaysVerse = 'memory.save_todays_verse';
+  static const memoryAddVerse = 'memory.add_verse';
+  static const memoryHeaderLine = 'memory.header_line';
+  static const memoryHeaderLineOne = 'memory.header_line_one';
+  static const memoryFootnote = 'memory.footnote';
+  static const memoryMenuStatistics = 'memory.statistics';
+  static const memoryMenuChampions = 'memory.champions';
+  static const memoryDue = 'memory.due';
   static const memoryFilterByLanguage = 'memory.filterByLanguage';
   static const memoryAll = 'memory.all';
   static const memoryTitle = 'memory.title';
@@ -1630,6 +1687,9 @@ class TranslationKeys {
   static const learningPathsProgress = 'learning_paths.progress';
   static const learningPathsTopicsCompleted = 'learning_paths.topics_completed';
   static const learningPathsStartPath = 'learning_paths.start_path';
+  static const learningPathsStartLesson = 'learning_paths.start_lesson';
+  static const learningPathsContinueLesson = 'learning_paths.continue_lesson';
+  static const learningPathsReviewLesson = 'learning_paths.review_lesson';
   static const learningPathsResumePath = 'learning_paths.resume_path';
   static const learningPathsPathCompleted = 'learning_paths.path_completed';
   static const learningPathsEnrolledSuccess = 'learning_paths.enrolled_success';
@@ -1644,6 +1704,7 @@ class TranslationKeys {
   static const learningPathsOfflineTitle = 'learning_paths.offline_title';
   static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
   static const learningPathsPercentComplete = 'learning_paths.percent_complete';
+  static const learningPathsLessonsDays = 'learning_paths.lessons_days';
 
   // Disciple Levels
   static const discipleLevelSeeker = 'disciple_level.seeker';
@@ -1686,6 +1747,20 @@ class TranslationKeys {
 
   static const discipleLevelFollower = 'disciple_level.follower';
 
+  // Topics tab: current path card, category "See all", "Browse all paths"
+  static const topicsTitle = 'topics.title';
+  static const topicsBrowseAll = 'topics.browse_all';
+  static const topicsContinue = 'topics.continue';
+  static const topicsStartAPath = 'topics.start_a_path';
+  static const topicsSeeAll = 'topics.see_all';
+
+  // All paths screen (category chips, current path pinned)
+  static const allPathsTitle = 'all_paths.title';
+  static const allPathsCount = 'all_paths.count';
+  static const allPathsAll = 'all_paths.all';
+  static const allPathsCurrent = 'all_paths.current';
+  static const allPathsLessonOf = 'all_paths.lesson_of';
+
   // Study Topics tab (header cards, For you, Learning paths, category page)
   static const topicsHubContinueEyebrow = 'topics_hub.continue_eyebrow';
   static const topicsHubNextTopic = 'topics_hub.next_topic';
@@ -1708,7 +1783,6 @@ class TranslationKeys {
 
   // Continue Learning
   static const continueLearningTitle = 'continue_learning.title';
-  static const continueLearningEmpty = 'continue_learning.empty';
   static const continueLearningEmptyMessage = 'continue_learning.empty_message';
   static const continueLearningDone = 'continue_learning.done';
   static const continueLearningInProgress = 'continue_learning.in_progress';
@@ -1754,6 +1828,12 @@ class TranslationKeys {
   static const pricingStandardFeature4 = 'pricing.standard.feature4';
   static const pricingStandardFeature5 = 'pricing.standard.feature5';
   // Premium Plan Features
+  static const pricingPlusFeature1 = 'pricing.plus.feature1';
+  static const pricingPlusFeature2 = 'pricing.plus.feature2';
+  static const pricingPlusFeature3 = 'pricing.plus.feature3';
+  static const pricingPlusFeature4 = 'pricing.plus.feature4';
+  static const pricingPlusFeature5 = 'pricing.plus.feature5';
+  static const pricingPlusFeature6 = 'pricing.plus.feature6';
   static const pricingPremiumFeature1 = 'pricing.premium.feature1';
   static const pricingPremiumFeature2 = 'pricing.premium.feature2';
   static const pricingPremiumFeature3 = 'pricing.premium.feature3';
@@ -1819,6 +1899,11 @@ class TranslationKeys {
   static const myPlanCancelAtPeriodEnd = 'my_plan.cancel_at_period_end';
   static const myPlanResubscribe = 'my_plan.resubscribe';
   static const myPlanRenewSubscription = 'my_plan.renew_subscription';
+  static const myPlanViewPlans = 'my_plan.view_plans';
+  static const myPlanTrialPill = 'my_plan.trial_pill';
+  static const myPlanFreeTrialUntil = 'my_plan.free_trial_until';
+  static const myPlanTrialNoPayment = 'my_plan.trial_no_payment';
+  static const myPlanNoFeatures = 'my_plan.no_features';
 
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
@@ -2811,9 +2896,6 @@ class TranslationKeys {
   /// Text showing best study mode for path
   static const learningPathBestStudiedIn = 'learning_path.best_studied_in';
 
-  /// Bonus XP awarded message
-  static const learningPathBonusXpAwarded = 'learning_path.bonus_xp_awarded';
-
   /// Completed in recommended mode message
   static const learningPathCompletedInRecommended =
       'learning_path.completed_in_recommended';
@@ -2848,6 +2930,12 @@ class TranslationKeys {
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
 
+  /// Short tile labels for the four-across stats row.
+  static const memoryStatsShortVerses = 'memory_stats_page.short_verses';
+  static const memoryStatsShortReviews = 'memory_stats_page.short_reviews';
+  static const memoryStatsShortPerfect = 'memory_stats_page.short_perfect';
+  static const memoryStatsShortDays = 'memory_stats_page.short_days';
+
   /// Shared-link outcomes for someone who is not in the fellowship.
   static const fellowshipLinkUnavailable = 'community.link_unavailable';
   static const fellowshipLinkNotAMember = 'community.link_not_a_member';
@@ -2872,6 +2960,10 @@ class TranslationKeys {
   static const fellowshipLetDisciplerAnswer = 'community.let_discipler_answer';
   static const fellowshipLetDisciplerAnswerHint =
       'community.let_discipler_answer_hint';
+
+  // Community — Discover join confirmation and the Discipler guide label
+  static const communityJoined = 'community.joined';
+  static const communityGuidedByDiscipler = 'community.guided_by_discipler';
 
   // Fellowship share section (study guide screen)
   static const studyGuideFellowshipShareTitle =
@@ -3250,6 +3342,8 @@ class TranslationKeys {
   static const ledgerCancelPlan = 'ledger.cancel_plan';
   static const ledgerDowngrade = 'ledger.downgrade';
   static const ledgerStatusActive = 'ledger.status_active';
+  static const ledgerStudyCostsTitle = 'ledger.study_costs_title';
+  static const ledgerStudyCostsLine = 'ledger.study_costs_line';
   static const ledgerCancelEyebrow = 'ledger.cancel_eyebrow';
   static const ledgerCancelTitle = 'ledger.cancel_title';
   static const ledgerCancelBody = 'ledger.cancel_body';
@@ -3314,6 +3408,8 @@ class TranslationKeys {
   static const communitySharedDiscoverTab = 'community_shared.discover_tab';
   static const communitySharedSearchHint = 'community_shared.search_hint';
   static const communitySharedJoinWithCode = 'community_shared.join_with_code';
+  static const communitySharedJoinFellowship =
+      'community_shared.join_fellowship';
   static const communitySharedCreateLocked = 'community_shared.create_locked';
   static const communitySharedOfflineTitle = 'community_shared.offline_title';
   static const communitySharedOfflineBody = 'community_shared.offline_body';
@@ -3346,6 +3442,9 @@ class TranslationKeys {
   // Community post cards (shared-guide card, study-note chip).
   /// "Open study guide".
   static const communityPostOpenGuide = 'community_post.open_guide';
+
+  /// "Copy text" (post and reply menus).
+  static const communityPostCopyText = 'community_post.copy_text';
 
   /// "On: {title}".
   static const communityPostOnTopic = 'community_post.on_topic';
@@ -3509,7 +3608,6 @@ class TranslationKeys {
       'guide_feedback.fellowship_path_complete';
   static const guideFeedbackFellowshipNextGuide =
       'guide_feedback.fellowship_next_guide';
-  static const guideFeedbackXpEarned = 'guide_feedback.xp_earned';
   static const guideFeedbackNotesSaved = 'guide_feedback.notes_saved';
   static const guideFeedbackReflectionNotLoaded =
       'guide_feedback.reflection_not_loaded';
@@ -3543,4 +3641,124 @@ class TranslationKeys {
   static const studyUiGenerationTimeout = 'study_ui.generation_timeout';
   static const studyUiOfflineGenerate = 'study_ui.offline_generate';
   static const studyUiTokensPerGuide = 'study_ui.tokens_per_guide';
+
+  // Path lesson eyebrow on the study guide header.
+  static const lessonEyebrow = 'lesson.eyebrow';
+  static const lessonMarkComplete = 'lesson.mark_complete';
+  static const lessonCompleteTitle = 'lesson.complete_title';
+  static const lessonUpNext = 'lesson.up_next';
+  static const lessonContinueTo = 'lesson.continue_to';
+  static const lessonBackHome = 'lesson.back_home';
+  static const lessonPathFinished = 'lesson.path_finished';
+  static const lessonFullGuideLink = 'lesson.full_guide_link';
+  static const lessonQuickRead = 'lesson.quick_read';
+  static const lessonFullGuide = 'lesson.full_guide';
+
+  // Out-of-credits sheet.
+  static const creditsOutEyebrow = 'credits.out_eyebrow';
+  static const creditsOutTitle = 'credits.out_title';
+  static const creditsOutBody = 'credits.out_body';
+  static const creditsOutNeed = 'credits.out_need';
+  static const creditsGet = 'credits.get';
+  static const creditsViewSaved = 'credits.view_saved';
+  static const creditsMaybeLater = 'credits.maybe_later';
+  static const creditsStudyCosts = 'credits.study_costs';
+  static const creditsFollowUp = 'credits.follow_up';
+  static const creditsExactCostNote = 'credits.exact_cost_note';
+
+  // My Plan summary card
+  static const planTrialUntil = 'plan.trial_until';
+  static const planLeftToday = 'plan.left_today';
+  static const planResetsAt = 'plan.resets_at';
+  static const planBilledVia = 'plan.billed_via';
+  static const planRenewsOn = 'plan.renews_on';
+  static const planViewPlans = 'plan.view_plans';
+
+  // Single-input Generate screen.
+  static const generateSimpleEyebrow = 'generate_simple.eyebrow';
+  static const generateSimpleTitle = 'generate_simple.title';
+  static const generateSimpleHint = 'generate_simple.hint';
+  static const generateSimpleTypeScripture = 'generate_simple.type_scripture';
+  static const generateSimpleTypeTopic = 'generate_simple.type_topic';
+  static const generateSimpleTypeQuestion = 'generate_simple.type_question';
+  static const generateSimpleChooseDepth = 'generate_simple.choose_depth';
+  static const generateSimpleAllDepths = 'generate_simple.all_depths';
+  static const generateSimpleGenerate = 'generate_simple.generate';
+
+  /// "Using {n} credits" under the Generate button.
+  static const generateSimpleUsingCredits = 'generate_simple.using_credits';
+  static const generateSimpleVerseOfDay = 'generate_simple.verse_of_day';
+
+  // New first run: language and goal screens.
+  static const firstRunWelcomeEyebrow = 'first_run.welcome_eyebrow';
+  static const firstRunWelcomeTitle = 'first_run.welcome_title';
+  static const firstRunWelcomeSubtitle = 'first_run.welcome_subtitle';
+
+  /// Under English on the language screen: the English Bible version.
+  static const firstRunEnglishBible = 'first_run.english_bible';
+  static const firstRunContinue = 'first_run.continue';
+  static const firstRunLogIn = 'first_run.log_in';
+  static const firstRunHaveAccount = 'first_run.have_account';
+  static const firstRunGoalTitle = 'first_run.goal_title';
+  static const firstRunSkip = 'first_run.skip';
+  static const firstRunStartLessonOne = 'first_run.start_lesson_one';
+  static const firstRunTerms = 'first_run.terms';
+
+  /// "{title} · {n} lessons" under a goal.
+  static const firstRunPathMeta = 'first_run.path_meta';
+
+  /// Helper under the goal title for a signed-in person.
+  static const firstRunPickOne = 'first_run.pick_one';
+
+  /// Helper for a guest: "…unlock all {n} paths".
+  static const firstRunPickOneGuest = 'first_run.pick_one_guest';
+
+  /// Guest helper without a number, when the path count is unknown.
+  static const firstRunPickOneGuestPlain = 'first_run.pick_one_guest_plain';
+  static const firstRunError = 'first_run.error';
+  static const firstRunErrorHasPath = 'first_run.error_has_path';
+  static const firstRunRetry = 'first_run.retry';
+  static const firstRunGoHome = 'first_run.go_home';
+  static const firstRunBack = 'first_run.back';
+
+  /// "Step {n} of {total}" for the progress dashes.
+  static const firstRunStep = 'first_run.step';
+
+  // Growth goals on the first-run goal screen.
+  static const goalNewToFaith = 'goal.new_to_faith';
+  static const goalFreshStart = 'goal.fresh_start';
+  static const goalWalkWithGod = 'goal.walk_with_god';
+  static const goalHopeHardTimes = 'goal.hope_hard_times';
+  static const goalReadGospel = 'goal.read_gospel';
+  static const goalUnderstandGospel = 'goal.understand_gospel';
+
+  // Guest "account needed" sheet and sign-up nudges.
+  static const accountSaveProgressTitle = 'account.save_progress_title';
+  static const accountPathFinishedTitle = 'account.path_finished_title';
+  static const accountContinueGoogle = 'account.continue_google';
+  static const accountContinueApple = 'account.continue_apple';
+  static const accountContinueEmail = 'account.continue_email';
+  static const accountNotNow = 'account.not_now';
+  static const accountContinueGuest = 'account.continue_guest';
+  static const accountGroupsTitle = 'account.groups_title';
+  static const accountDisciplerTitle = 'account.discipler_title';
+  static const accountSecondPathTitle = 'account.second_path_title';
+  static const accountGenerateTitle = 'account.generate_title';
+  static const accountMemoryVersesTitle = 'account.memory_verses_title';
+  static const accountGenericTitle = 'account.generic_title';
+  static const accountListenTitle = 'account.listen_title';
+  static const accountBody = 'account.body';
+  static const accountBenefitMoves = 'account.benefit_moves';
+  static const accountBenefitPaths = 'account.benefit_paths';
+  static const accountBenefitGroups = 'account.benefit_groups';
+  static const accountCheckEmail = 'account.check_email';
+  static const accountKeepDaysSafe = 'account.keep_days_safe';
+  static const accountKeepCta = 'account.keep_cta';
+  static const accountNextPaths = 'account.next_paths';
+  static const accountSignUpToStart = 'account.sign_up_to_start';
+  static const accountLessonsCount = 'account.lessons_count';
+  static const accountMergePending = 'account.merge_pending';
+  static const accountLinkFailed = 'account.link_failed';
+  static const accountEmailExists = 'account.email_exists';
+  static const accountDismiss = 'account.dismiss';
 }

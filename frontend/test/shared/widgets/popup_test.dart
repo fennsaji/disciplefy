@@ -9,6 +9,7 @@ import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/widgets/upgrade_dialog.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
 import 'package:disciplefy_bible_study/features/gamification/domain/entities/achievement.dart';
@@ -102,7 +103,7 @@ void main() {
   for (final dark in [true, false]) {
     final theme = dark ? 'dark' : 'light';
     final gold = dark ? AppColors.brandGold : AppColors.brandGoldDeep;
-    final ctaFill = dark ? Colors.white : AppColors.brandPrimary;
+    final ctaFill = dark ? Colors.white : ReaderPalette.ink;
 
     Color? pillFill(WidgetTester tester, Finder button) => tester
         .widget<FilledButton>(
@@ -355,7 +356,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('YOUR ACCOUNT'), findsOneWidget);
       final (fill, _) = PopupIconCircle.colorsFor(
-          tester.element(find.byType(PopupIconCircle)), PopupTone.indigo);
+          tester.element(find.byType(PopupIconCircle)), PopupTone.accent);
       expect(fill.a, greaterThan(0));
 
       await tester.tap(find.byKey(const Key('sign_in_required_cancel')));

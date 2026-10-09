@@ -5,6 +5,7 @@
 // Avoids recently sent topics and considers user study history
 // Supports questionnaire-based personalization scoring
 
+import { ACTIVE_PATH_CANDIDATES, getCompletedPathIds } from './utils/path-progress.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceRoleClient } from './core/service-client.ts';
 import { formatError } from './utils/error-formatter.ts';
@@ -824,7 +825,7 @@ export async function selectTopicsForYouWithLearningPath(
       .is('completed_at', null)
       .not('enrolled_at', 'is', null)
       .order('last_activity_at', { ascending: false })
-      .limit(1);
+      .limit(ACTIVE_PATH_CANDIDATES);
 
     if (progressError) {
       console.error('[TOPICS_FOR_YOU] Error fetching active learning path:', progressError);
@@ -845,27 +846,30 @@ export async function selectTopicsForYouWithLearningPath(
     let suggestedPath: { id: string; name: string; reason: 'active' | 'personalized' | 'default' } | undefined;
     let learningPathTopics: LearningPathTopic[] = [];
 
-    // Priority 1: Active learning path
-    if (activePathProgress && activePathProgress.length > 0) {
-      const activePath = activePathProgress[0];
+    // Priority 1: Active learning path — the most recent one that still has
+    // an unfinished lesson. The newest row is often a path the user just
+    // finished (or re-opened to review) whose stored completed_at never caught
+    // up; it has no lessons left, so the next active path is used instead.
+    for (const activePath of activePathProgress ?? []) {
       const pathData = activePath.learning_paths as any;
-      
-      if (pathData?.is_active) {
-        suggestedPath = {
-          id: activePath.learning_path_id,
-          name: pathData.title,
-          reason: 'active',
-        };
+      if (!pathData?.is_active) continue;
 
-        // Get next uncompleted topics from this path
-        learningPathTopics = await getNextTopicsFromLearningPath(
-          supabase,
-          userId,
-          activePath.learning_path_id,
-          pathData.title,
-          limit
-        );
-      }
+      const nextTopics = await getNextTopicsFromLearningPath(
+        supabase,
+        userId,
+        activePath.learning_path_id,
+        pathData.title,
+        limit
+      );
+      if (nextTopics.length === 0) continue;
+
+      suggestedPath = {
+        id: activePath.learning_path_id,
+        name: pathData.title,
+        reason: 'active',
+      };
+      learningPathTopics = nextTopics;
+      break;
     }
 
     // Priority 2: Personalization-based path suggestion (GAP-05 fix)
@@ -897,15 +901,15 @@ export async function selectTopicsForYouWithLearningPath(
       }
 
       if (candidateSlugs.length > 0) {
-        // Fetch completed path slugs in one query to avoid N DB round-trips
-        const { data: completedPaths } = await supabase
-          .from('user_learning_path_progress')
-          .select('learning_path_id, learning_paths!inner(slug)')
-          .eq('user_id', userId)
-          .not('completed_at', 'is', null);
+        // Finished paths (stored completion or every visible lesson done),
+        // mapped to slugs in one query to avoid N DB round-trips.
+        const finishedIds = await getCompletedPathIds(supabase, userId);
+        const { data: finishedPaths } = finishedIds.size > 0
+          ? await supabase.from('learning_paths').select('slug').in('id', [...finishedIds])
+          : { data: [] as { slug: string }[] };
 
         const completedSlugs = new Set<string>(
-          (completedPaths || []).map((p: any) => p.learning_paths?.slug).filter(Boolean)
+          (finishedPaths || []).map((p: any) => p.slug).filter(Boolean)
         );
 
         // Pick the top-scored slug not yet completed
@@ -949,15 +953,11 @@ export async function selectTopicsForYouWithLearningPath(
         .single();
 
       if (defaultPath) {
-        // Check if user hasn't completed this path
-        const { data: existingProgress } = await supabase
-          .from('user_learning_path_progress')
-          .select('completed_at')
-          .eq('user_id', userId)
-          .eq('learning_path_id', defaultPath.id)
-          .single();
+        // Only when the user hasn't finished this path (stored completion or
+        // every visible lesson done).
+        const finishedIds = await getCompletedPathIds(supabase, userId);
 
-        if (!existingProgress?.completed_at) {
+        if (!finishedIds.has(defaultPath.id)) {
           suggestedPath = {
             id: defaultPath.id,
             name: defaultPath.title,

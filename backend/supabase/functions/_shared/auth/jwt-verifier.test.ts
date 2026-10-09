@@ -185,10 +185,23 @@ Deno.test('getUserContext uses primed identity and memoises the profile read', a
   const a = await service.getUserContext(req)
   const b = await service.getUserContext(req)
   assertEquals(a, {
-    type: 'authenticated', userId: USER_ID, sessionId: undefined, userType: 'user', email: 'gen.check@local.test',
+    type: 'authenticated', userId: USER_ID, isGuest: false, email: 'gen.check@local.test', userType: 'user',
   })
   assert(a === b)
   assertEquals(counts, { profile: 1 })
+})
+
+Deno.test('anonymous user: authenticated guest, free plan, no profile or plan lookup', async () => {
+  const counts: Record<string, number> = {}
+  const service = new AuthService('http://x', 'anon', fakeServiceClient(counts) as never)
+  const req = new Request('http://localhost/fn', { headers: { Authorization: 'Bearer guest' } })
+  service.primeVerifiedIdentity(req, { id: USER_ID, isAnonymous: true, token: 'guest', source: 'local' })
+  assertEquals(await service.getUserContext(req), {
+    type: 'authenticated', userId: USER_ID, isGuest: true, email: undefined, userType: undefined,
+  })
+  assertEquals(await service.getUserPlan(req), 'free')
+  assertEquals(await service.isAnonymous(req), true)
+  assertEquals(counts, {})
 })
 
 Deno.test('getUserFromToken reuses primed identity only for the same token', async () => {

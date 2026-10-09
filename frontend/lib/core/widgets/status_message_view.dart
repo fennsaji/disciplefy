@@ -25,7 +25,7 @@ class StatusMessageView extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    this.tone = PopupTone.indigo,
+    this.tone = PopupTone.accent,
     this.eyebrow,
     this.message,
     this.detail,

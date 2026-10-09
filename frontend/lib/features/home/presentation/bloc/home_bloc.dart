@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:disciplefy_bible_study/core/services/guest_path_enrollment.dart';
+
 import 'home_event.dart';
 import 'home_state.dart';
 import 'recommended_topics_bloc.dart';
@@ -163,6 +165,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             activeLearningPath: currentState.activeLearningPath,
             learningPathReason: currentState.learningPathReason,
             isLoadingActivePath: currentState.isLoadingActivePath,
+            activePathSummary: currentState.activePathSummary,
           ));
           break;
         case final generation_states.HomeStudyGenerationError error:
@@ -359,6 +362,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           tag: 'HOME_BLOC',
         );
 
+        // A path already shown for this user and language (the one on
+        // screen, or the persisted copy) stays: a failed refresh never
+        // blanks the enrolled path. Only sign-out / a scope change clears it.
+        final shown = state;
+        if (shown is HomeCombinedState &&
+            shown.activeLearningPath != null &&
+            _activePathScope == LearningCacheScope.scopeFor(languageCode)) {
+          emit(shown.copyWith(isLoadingActivePath: false));
+          return;
+        }
+
         // Offline fallback: try to find any learning path that has downloaded
         // content from the Hive-persisted categories cache.
         final offlinePath = await _findOfflineAvailablePath(languageCode);
@@ -372,6 +386,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
               activeLearningPath: offlinePath,
               learningPathReason:
                   LearningPathRecommendationReason.offlineAvailable,
+              clearActivePathSummary: true,
             ));
           } else {
             _activePathScope = null;
@@ -412,6 +427,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           });
         }
 
+        // Home's active path is the user's enrolled path, if any: a guest
+        // keeps that one and every other path locks. Never cleared here: a
+        // guest cannot leave a path, and the record is per user.
+        if (path.isEnrolled) GuestPathEnrollment.record(path.id);
+
         Logger.info(
           'Loaded recommended learning path: ${path.title} (reason: ${reason.name}, progress: ${path.progressPercentage}%)',
           tag: 'HOME_BLOC',
@@ -424,6 +444,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             isLoadingActivePath: false,
             activeLearningPath: path,
             learningPathReason: reason,
+            activePathSummary: recommended.summary,
+            clearActivePathSummary: recommended.summary == null,
           ));
         }
       }
@@ -463,6 +485,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isLoadingActivePath: true,
         activeLearningPath: cached.path,
         learningPathReason: cached.reason,
+        activePathSummary: cached.summary,
+        clearActivePathSummary: cached.summary == null,
       ));
     } else {
       _activePathScope = null;

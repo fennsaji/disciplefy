@@ -37,7 +37,7 @@ class MemoryToneColors {
       case MemoryTone.accent:
         return MemoryToneColors(
           palette.accentIcon,
-          AppColors.brandPrimary.withValues(alpha: palette.isDark ? 0.2 : 0.08),
+          palette.gold.withValues(alpha: palette.isDark ? 0.2 : 0.08),
           palette.accentIcon.withValues(alpha: 0.35),
         );
       case MemoryTone.success:

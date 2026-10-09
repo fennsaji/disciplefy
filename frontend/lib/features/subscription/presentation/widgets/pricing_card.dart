@@ -212,7 +212,7 @@ class PricingCard extends StatelessWidget {
                   child: Text(
                     badge!,
                     style: AppFonts.inter(
-                      fontSize: 11.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: badgeInk,
                     ),

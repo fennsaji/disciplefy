@@ -26,13 +26,16 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_list/fellowship_list_state.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/screens/community_tab_screen.dart';
 import 'package:disciplefy_bible_study/features/community/presentation/widgets/discipler_badges.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_event.dart';
-import 'package:disciplefy_bible_study/features/subscription/presentation/bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/features/tokens/domain/entities/token_status.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_bloc.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
+import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_screen.dart';
 
+import '../../helpers/fit_matrix.dart';
 import '../../helpers/welcome_test_harness.dart';
+import '../../helpers/text_fit.dart' show loadAppFonts;
 import '../settings/text_fit.dart';
 
 class _MockListBloc extends MockBloc<FellowshipListEvent, FellowshipListState>
@@ -41,9 +44,8 @@ class _MockListBloc extends MockBloc<FellowshipListEvent, FellowshipListState>
 class _MockDiscoverBloc extends MockBloc<DiscoverEvent, DiscoverState>
     implements DiscoverBloc {}
 
-class _MockSubscriptionBloc
-    extends MockBloc<SubscriptionEvent, SubscriptionState>
-    implements SubscriptionBloc {}
+class _MockTokenBloc extends MockBloc<TokenEvent, TokenState>
+    implements TokenBloc {}
 
 class _MockConnectivityBloc
     extends MockBloc<ConnectivityEvent, ConnectivityState>
@@ -120,7 +122,7 @@ const _publicFellowships = [
 void main() {
   late _MockListBloc listBloc;
   late _MockDiscoverBloc discoverBloc;
-  late _MockSubscriptionBloc subscriptionBloc;
+  late _MockTokenBloc tokenBloc;
   late _MockConnectivityBloc connectivityBloc;
   late MockAuthBloc authBloc;
   late FakeTranslationService translations;
@@ -138,7 +140,7 @@ void main() {
 
     listBloc = _MockListBloc();
     discoverBloc = _MockDiscoverBloc();
-    subscriptionBloc = _MockSubscriptionBloc();
+    tokenBloc = _MockTokenBloc();
     connectivityBloc = _MockConnectivityBloc();
     authBloc = MockAuthBloc();
     visited = [];
@@ -151,7 +153,7 @@ void main() {
       status: DiscoverStatus.success,
       fellowships: _publicFellowships,
     ));
-    when(() => subscriptionBloc.state).thenReturn(const SubscriptionInitial());
+    when(() => tokenBloc.state).thenReturn(const TokenInitial());
     when(() => connectivityBloc.state).thenReturn(ConnectivityOnline());
     when(() => authBloc.state).thenReturn(AuthenticatedState(
       user: User(
@@ -210,7 +212,7 @@ void main() {
     );
     return MultiBlocProvider(
       providers: [
-        BlocProvider<SubscriptionBloc>.value(value: subscriptionBloc),
+        BlocProvider<TokenBloc>.value(value: tokenBloc),
         BlocProvider<ConnectivityBloc>.value(value: connectivityBloc),
         BlocProvider<AuthBloc>.value(value: authBloc),
       ],
@@ -239,23 +241,28 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('fits 320x640 without overflow or truncated labels', () {
-    for (final language in AppLanguage.values) {
-      for (final dark in [true, false]) {
-        testWidgets('${language.code} ${dark ? 'dark' : 'light'}',
-            (tester) async {
-          useSurface(tester, const Size(320, 640));
-          await pump(tester, dark: dark, language: language);
-          expectNoTruncatedText(tester);
-          expect(tester.takeException(), isNull);
+  group('fits 360 and 320 wide (640 tall) without cut labels', () {
+    setUpAll(loadAppFonts);
 
-          await openDiscover(tester);
-          // Descriptions are user content and may clamp at three lines.
-          expectNoTruncatedText(tester, allowed: {
-            for (final f in _publicFellowships) f.description!,
+    for (final width in fitWidths) {
+      for (final language in AppLanguage.values) {
+        for (final dark in [true, false]) {
+          testWidgets(
+              '${width.toInt()}px ${language.code} ${dark ? 'dark' : 'light'}',
+              (tester) async {
+            useSurface(tester, Size(width, 640));
+            await pump(tester, dark: dark, language: language);
+            expectNoTruncatedText(tester);
+            expect(tester.takeException(), isNull);
+
+            await openDiscover(tester);
+            // Descriptions are user content and may clamp at three lines.
+            expectNoTruncatedText(tester, allowed: {
+              for (final f in _publicFellowships) f.description!,
+            });
+            expect(tester.takeException(), isNull);
           });
-          expect(tester.takeException(), isNull);
-        });
+        }
       }
     }
   });
@@ -266,7 +273,7 @@ void main() {
     await pump(tester);
 
     expect(find.text('Community'), findsOneWidget);
-    expect(find.text('Mentor: Discipler · 3 members'), findsOneWidget);
+    expect(find.text('Guided by Discipler · 3 members'), findsOneWidget);
     expect(find.text('Mentor: Fenn (you) · 1 member'), findsOneWidget);
     expect(find.text('New Believer Essentials · Lesson 1'), findsOneWidget);
     expect(find.text('0 of 8 done'), findsOneWidget);
@@ -276,19 +283,20 @@ void main() {
     expect(find.byType(DisciplerAvatar), findsOneWidget);
     // The role pill ("Member"/"Mentor") is gone in the redesign.
     expect(find.text('Member'), findsNothing);
-    expect(find.text('Join a Fellowship'), findsOneWidget);
+    // Joining by code is the key icon only; the floating pill is gone.
+    expect(find.text('Join a Fellowship'), findsNothing);
   });
 
   testWidgets('tapping a fellowship opens its page', (tester) async {
     useSurface(tester, const Size(390, 1200));
     await pump(tester);
 
-    await tester.tap(find.text('Mentor: Discipler · 3 members'));
+    await tester.tap(find.text('Guided by Discipler · 3 members'));
     await tester.pumpAndSettle();
     expect(visited, ['/community/f-official']);
   });
 
-  testWidgets('the key action and the floating pill open Join', (tester) async {
+  testWidgets('the key action opens Join', (tester) async {
     useSurface(tester, const Size(390, 900));
     await pump(tester);
 
@@ -297,11 +305,12 @@ void main() {
     expect(visited, ['/community/join']);
   });
 
-  testWidgets('floating Join a fellowship opens Join', (tester) async {
+  testWidgets('the floating Join a fellowship pill opens Join', (tester) async {
     useSurface(tester, const Size(390, 900));
     await pump(tester);
 
-    await tester.tap(find.text('Join a Fellowship'));
+    expect(find.text('Join a fellowship'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('community_join_fab')));
     await tester.pumpAndSettle();
     expect(visited, ['/community/join']);
   });
@@ -318,11 +327,45 @@ void main() {
     expect(find.byTooltip('Create a fellowship (upgrade)'), findsOneWidget);
   });
 
+  testWidgets('the create upsell names the plan from TokenBloc (Standard)',
+      (tester) async {
+    when(() => listBloc.state).thenReturn(FellowshipListState(
+      status: FellowshipListStatus.success,
+      fellowships: [_fellowships.first],
+    ));
+    when(() => tokenBloc.state).thenReturn(TokenLoaded(
+      tokenStatus: TokenStatus(
+        availableTokens: 30,
+        purchasedTokens: 0,
+        totalTokens: 30,
+        dailyLimit: 40,
+        totalConsumedToday: 10,
+        userPlan: UserPlan.standard,
+        lastReset: DateTime(2026, 10, 6),
+        nextResetTime: DateTime(2026, 10, 7),
+        authenticationType: AuthenticationType.authenticated,
+        isPremium: false,
+        unlimitedUsage: false,
+        canPurchaseTokens: true,
+        planDescription: '',
+      ),
+      lastUpdated: DateTime(2026, 10, 6),
+    ));
+    useSurface(tester, const Size(390, 900));
+    await pump(tester);
+
+    await tester.tap(find.byTooltip('Create a fellowship (upgrade)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your plan: Standard'), findsOneWidget);
+    expect(find.text('Your plan: Free'), findsNothing);
+    expect(visited, isEmpty);
+  });
+
   testWidgets('a mentor can create a fellowship', (tester) async {
     useSurface(tester, const Size(390, 900));
     await pump(tester);
 
-    await tester.tap(find.byTooltip('Create Fellowship'));
+    await tester.tap(find.byTooltip('Create fellowship'));
     await tester.pumpAndSettle();
     expect(visited, ['/community/create']);
   });
@@ -334,7 +377,7 @@ void main() {
     await openDiscover(tester);
 
     expect(find.text('HI'), findsOneWidget);
-    expect(find.text('Mentor: Discipler · 1 member'), findsOneWidget);
+    expect(find.text('Guided by Discipler · 1 member'), findsOneWidget);
     expect(find.text('Mentor: Anna George · 20 members'), findsOneWidget);
     expect(find.text('Full'), findsOneWidget);
     expect(find.text('Romans'), findsOneWidget);
@@ -368,16 +411,16 @@ void main() {
       ),
       profile: const {'is_admin': true},
     ));
-    // Tall enough that the floating Join pill does not cover the buttons.
+    // Tall enough to show both buttons without scrolling.
     useSurface(tester, const Size(320, 1000));
     await pump(tester);
 
-    expect(find.text('Explore Public Fellowships'), findsOneWidget);
-    expect(find.text('Create Fellowship'), findsOneWidget,
+    expect(find.text('Explore public fellowships'), findsOneWidget);
+    expect(find.text('Create fellowship'), findsOneWidget,
         reason: 'admins can create');
     expectNoTruncatedText(tester);
 
-    await tester.tap(find.text('Explore Public Fellowships'));
+    await tester.tap(find.text('Explore public fellowships'));
     await tester.pumpAndSettle();
     expect(find.text('HI'), findsOneWidget, reason: 'switched to Discover');
   });

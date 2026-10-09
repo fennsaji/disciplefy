@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_fonts.dart';
 import 'app_colors.dart';
 import 'reader_palette.dart';
 // Note: Using bundled fonts directly from pubspec.yaml instead of GoogleFonts
@@ -11,9 +12,6 @@ import 'reader_palette.dart';
 class AppTheme {
   // ── Legacy aliases (kept for backward compatibility during migration) ──────
   // New code should reference AppColors directly.
-  static const Color primaryColor = AppColors.brandPrimary;
-  static const Color primaryLightColor = AppColors.brandPrimaryLight;
-  static const Color secondaryPurple = AppColors.brandSecondary;
   static const Color secondaryColor = AppColors.brandHighlight;
   static const Color accentColor = AppColors.brandAccent;
   static const Color backgroundColor = AppColors.lightBackground;
@@ -28,26 +26,31 @@ class AppTheme {
   static const Color textSecondaryDark = AppColors.darkTextSecondary;
   static const Color usageHistoryColor = Color(0xFF14B8A6); // Teal-500
 
-  /// Primary gradient — references AppColors so it stays in sync.
-  static LinearGradient get primaryGradient => AppColors.primaryGradient;
-
   // ── Light Theme ──────────────────────────────────────────────────────────
 
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
+        // The phone density everywhere: web and desktop default to a
+        // compact one that shaves 8px off every 40px button and chip.
+        visualDensity: VisualDensity.standard,
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.brandPrimary,
-          primary: AppColors.brandPrimary,
+          seedColor: AppColors.brandHighlightDark,
+          // Deep gold: links and accents read at 4.5:1 on the page, and white
+          // on it as a fill measures 4.8:1.
+          primary: AppColors.brandGoldDeep,
           onPrimary: AppColors.onGradient,
           error: AppColors.error,
           secondary: AppColors.brandHighlight,
           onSecondary: AppColors.lightTextPrimary,
-          tertiary: AppColors.brandSecondary,
+          tertiary: AppColors.brandGoldDeep,
           onTertiary: AppColors.onGradient,
           surface: AppColors.lightSurface,
           onSurface: AppColors.lightTextPrimary,
           onSurfaceVariant: AppColors.lightTextSecondary,
+          surfaceContainerHighest: AppColors.lightSurfaceVariant,
+          outline: AppColors.lightBorderStrong,
+          outlineVariant: AppColors.lightBorder,
         ),
         scaffoldBackgroundColor: AppColors.lightScaffold,
         textTheme: TextTheme(
@@ -56,28 +59,28 @@ class AppTheme {
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: AppColors.brandPrimary,
+            color: AppColors.lightTextPrimary,
           ),
           displayMedium: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: AppColors.brandPrimary,
+            color: AppColors.lightTextPrimary,
           ),
           headlineLarge: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: AppColors.brandPrimary,
+            color: AppColors.lightTextPrimary,
           ),
           headlineMedium: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: AppColors.brandPrimary,
+            color: AppColors.lightTextPrimary,
           ),
           titleLarge: const TextStyle(
             fontFamily: 'Inter',
@@ -124,16 +127,18 @@ class AppTheme {
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: const StadiumBorder(),
-            minimumSize: const Size(120, 48),
-            textStyle: _buttonLabel,
-          ),
-        ),
-        filledButtonTheme: _filledButtonTheme,
+        ).apply(fontFamilyFallback: AppFonts.indicFallback),
+        elevatedButtonTheme: _elevatedButtonTheme(_lightPalette),
+        filledButtonTheme: _filledButtonTheme(_lightPalette),
+        floatingActionButtonTheme: _fabTheme(_lightPalette),
+        switchTheme: _switchTheme(_lightPalette),
+        checkboxTheme: _checkboxTheme(_lightPalette),
+        radioTheme: _radioTheme(_lightPalette),
+        sliderTheme: _sliderTheme(_lightPalette),
+        progressIndicatorTheme: _progressTheme(_lightPalette),
+        chipTheme: _chipTheme(_lightPalette),
+        tabBarTheme: _tabBarTheme(_lightPalette),
+        textSelectionTheme: _selectionTheme(_lightPalette),
         outlinedButtonTheme: _outlinedButtonTheme(isDark: false),
         textButtonTheme: _textButtonTheme(isDark: false),
         snackBarTheme: _snackBarTheme(isDark: false),
@@ -152,7 +157,8 @@ class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(_inputRadius),
-            borderSide: BorderSide(color: AppColors.brandPrimary, width: 1.5),
+            // Gold mark: 3.2:1 on the white field, the focus-ring minimum.
+            borderSide: BorderSide(color: AppColors.brandGoldMark, width: 1.5),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -177,22 +183,26 @@ class AppTheme {
 
   static ThemeData get darkTheme => ThemeData(
         useMaterial3: true,
+        // The phone density everywhere: web and desktop default to a
+        // compact one that shaves 8px off every 40px button and chip.
+        visualDensity: VisualDensity.standard,
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.brandSecondary,
+          seedColor: AppColors.brandGold,
           brightness: Brightness.dark,
-          primary: AppColors
-              .brandPrimaryLight, // #A78BFA — 6.5:1 on dark (was #6A4FB6, 2.7:1)
-          onPrimary: AppColors.onGradient,
+          primary: AppColors.brandGold,
+          onPrimary: ReaderPalette.ink,
           secondary: AppColors.brandHighlight,
           onSecondary: AppColors.lightTextPrimary,
-          tertiary: AppColors
-              .brandPrimaryLight, // lighter purple for gradient pairs in dark
-          onTertiary: AppColors.onGradient,
+          tertiary: AppColors.brandGold,
+          onTertiary: ReaderPalette.ink,
           surface: AppColors.darkSurface,
           onSurface: AppColors.darkTextPrimary,
           onSurfaceVariant: AppColors.darkTextSecondary,
-          error: AppColors.error,
+          surfaceContainerHighest: AppColors.darkSurfaceVariant,
+          outline: AppColors.darkBorderStrong,
+          outlineVariant: AppColors.darkBorder,
+          error: AppColors.errorLighter,
         ),
         scaffoldBackgroundColor: AppColors.darkScaffold,
         textTheme: TextTheme(
@@ -201,28 +211,28 @@ class AppTheme {
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: AppColors.brandPrimaryLight,
+            color: AppColors.darkTextPrimary,
           ),
           displayMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: AppColors.brandPrimaryLight,
+            color: AppColors.darkTextPrimary,
           ),
           headlineLarge: TextStyle(
             fontFamily: 'Inter',
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: AppColors.brandPrimaryLight,
+            color: AppColors.darkTextPrimary,
           ),
           headlineMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: AppColors.brandPrimaryLight,
+            color: AppColors.darkTextPrimary,
           ),
           titleLarge: TextStyle(
             fontFamily: 'Inter',
@@ -277,18 +287,18 @@ class AppTheme {
             letterSpacing: 0.5,
             color: AppColors.darkTextSecondary,
           ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: const StadiumBorder(),
-            minimumSize: const Size(120, 48),
-            backgroundColor: AppColors.brandSecondary,
-            foregroundColor: AppColors.onGradient,
-            textStyle: _buttonLabel,
-          ),
-        ),
-        filledButtonTheme: _filledButtonTheme,
+        ).apply(fontFamilyFallback: AppFonts.indicFallback),
+        elevatedButtonTheme: _elevatedButtonTheme(_darkPalette),
+        filledButtonTheme: _filledButtonTheme(_darkPalette),
+        floatingActionButtonTheme: _fabTheme(_darkPalette),
+        switchTheme: _switchTheme(_darkPalette),
+        checkboxTheme: _checkboxTheme(_darkPalette),
+        radioTheme: _radioTheme(_darkPalette),
+        sliderTheme: _sliderTheme(_darkPalette),
+        progressIndicatorTheme: _progressTheme(_darkPalette),
+        chipTheme: _chipTheme(_darkPalette),
+        tabBarTheme: _tabBarTheme(_darkPalette),
+        textSelectionTheme: _selectionTheme(_darkPalette),
         outlinedButtonTheme: _outlinedButtonTheme(isDark: true),
         textButtonTheme: _textButtonTheme(isDark: true),
         snackBarTheme: _snackBarTheme(isDark: true),
@@ -307,7 +317,7 @@ class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(_inputRadius),
-            borderSide: BorderSide(color: AppColors.brandSecondary),
+            borderSide: BorderSide(color: AppColors.brandGold, width: 1.5),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -347,13 +357,132 @@ class AppTheme {
     fontWeight: FontWeight.w600,
   );
 
-  static FilledButtonThemeData get _filledButtonTheme => FilledButtonThemeData(
+  /// Primary action: white pill with ink text on dark, ink pill with white
+  /// text on light.
+  static FilledButtonThemeData _filledButtonTheme(ReaderPalette p) =>
+      FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: const StadiumBorder(),
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           textStyle: _buttonLabel,
+          backgroundColor: p.ctaFill,
+          foregroundColor: p.ctaInk,
+          disabledBackgroundColor: p.disabledFill,
+          disabledForegroundColor: p.disabledInk,
         ),
+      );
+
+  static ElevatedButtonThemeData _elevatedButtonTheme(ReaderPalette p) =>
+      ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: const StadiumBorder(),
+          minimumSize: const Size(120, 48),
+          textStyle: _buttonLabel,
+          elevation: 0,
+          backgroundColor: p.ctaFill,
+          foregroundColor: p.ctaInk,
+          disabledBackgroundColor: p.disabledFill,
+          disabledForegroundColor: p.disabledInk,
+        ),
+      );
+
+  static FloatingActionButtonThemeData _fabTheme(ReaderPalette p) =>
+      FloatingActionButtonThemeData(
+        backgroundColor: p.ctaFill,
+        foregroundColor: p.ctaInk,
+        elevation: 0,
+        shape: const StadiumBorder(),
+      );
+
+  /// Gold track when on, as the design's toggles. The track is the accent
+  /// gold (deep on light: 4.5:1 on the page) so the on state reads at 3:1,
+  /// and the thumb keeps 3:1 on it: white on the deep gold (4.8:1), ink on
+  /// the bright dark-theme gold (8.9:1; white there was 1.9:1).
+  static SwitchThemeData _switchTheme(ReaderPalette p) => SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return p.disabledInk;
+          if (states.contains(WidgetState.selected) && p.isDark) {
+            return p.onSelected;
+          }
+          return Colors.white;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return p.disabledFill;
+          return states.contains(WidgetState.selected)
+              ? p.accentIcon
+              : p.raised;
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? Colors.transparent
+                : p.outline),
+      );
+
+  static CheckboxThemeData _checkboxTheme(ReaderPalette p) => CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? p.selectedFill
+                : Colors.transparent),
+        checkColor: WidgetStatePropertyAll(p.onSelected),
+        side: WidgetStateBorderSide.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? BorderSide.none
+                : BorderSide(color: p.dim, width: 1.5)),
+      );
+
+  /// Radio dots, slider tracks and progress bars are graphics that carry
+  /// state, so they take the accent gold (3:1 or more on the page in both
+  /// themes) rather than the light selected fill (2.2:1 on the light page).
+  static RadioThemeData _radioTheme(ReaderPalette p) => RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? p.accentIcon : p.dim),
+      );
+
+  static SliderThemeData _sliderTheme(ReaderPalette p) => SliderThemeData(
+        activeTrackColor: p.accentIcon,
+        inactiveTrackColor: p.raised,
+        thumbColor: p.accentIcon,
+        overlayColor: p.accentIcon.withValues(alpha: 0.14),
+        valueIndicatorColor: p.selectedFill,
+        valueIndicatorTextStyle: TextStyle(color: p.onSelected),
+      );
+
+  static ProgressIndicatorThemeData _progressTheme(ReaderPalette p) =>
+      ProgressIndicatorThemeData(
+        color: p.accentIcon,
+        linearTrackColor: p.raised,
+        circularTrackColor: Colors.transparent,
+      );
+
+  /// Selected chips take the gold fill with ink, as the depth chips.
+  static ChipThemeData _chipTheme(ReaderPalette p) => ChipThemeData(
+        selectedColor: p.selectedFill,
+        secondarySelectedColor: p.selectedFill,
+        checkmarkColor: p.onSelected,
+        labelStyle: TextStyle(
+          color: WidgetStateColor.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? p.onSelected : p.text),
+        ),
+        side: WidgetStateBorderSide.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? BorderSide(color: p.selectedFill)
+                : BorderSide(color: p.outline)),
+      );
+
+  static TabBarThemeData _tabBarTheme(ReaderPalette p) => TabBarThemeData(
+        indicatorColor: p.gold,
+        labelColor: p.text,
+        unselectedLabelColor: p.muted,
+        dividerColor: p.hairline,
+      );
+
+  static TextSelectionThemeData _selectionTheme(ReaderPalette p) =>
+      TextSelectionThemeData(
+        cursorColor: p.gold,
+        selectionColor: p.gold.withValues(alpha: 0.32),
+        selectionHandleColor: p.gold,
       );
 
   static OutlinedButtonThemeData _outlinedButtonTheme({required bool isDark}) =>
@@ -379,8 +508,9 @@ class AppTheme {
           shape: const StadiumBorder(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           textStyle: _buttonLabel.copyWith(fontSize: 14),
+          // Links and text actions are gold.
           foregroundColor:
-              isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary,
+              isDark ? AppColors.brandGold : AppColors.brandGoldDeep,
         ),
       );
 

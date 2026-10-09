@@ -287,7 +287,7 @@ async function handleAdminStudyGenerator(
         // NEW GENERATION - No token consumption for admin
         console.log('🪄 [ADMIN-STUDY] Starting new generation (admin privilege - no tokens consumed)')
 
-        const parser = new StreamingJsonParser()
+        const parser = new StreamingJsonParser(study_mode)
         emit(createInitEvent('started', parser.getTotalSections()))
 
         // Stream from LLM

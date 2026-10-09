@@ -69,6 +69,9 @@ class AuthenticatedState extends AuthState {
   /// Returns true for email/password users who haven't verified their email yet
   /// Uses the email_verified field from user_profiles table
   bool get needsEmailVerification {
+    // A guest has no email to verify.
+    if (user.isAnonymous) return false;
+
     // Check provider - Google and Apple users are pre-verified
     final provider = user.appMetadata['provider'] as String?;
     if (provider == 'google' || provider == 'apple') return false;

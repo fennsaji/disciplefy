@@ -51,6 +51,18 @@ class LearningPathsSection extends StatefulWidget {
   /// for the first path card. Pass null to skip the walkthrough step entirely.
   final VoidCallback? onNext;
 
+  /// Whether the level / featured filter chips show under the search bar.
+  /// The Topics tab hides them (no level jargon there).
+  final bool showFilters;
+
+  /// The Topics tab's form: no "Learning paths" heading, search or filters
+  /// (search lives on All paths), at most [compactRowsPerCategory] rows per
+  /// category and no dividers between rows.
+  final bool compact;
+
+  /// Rows each category shows in [compact] form; "See all" has the rest.
+  static const int compactRowsPerCategory = 2;
+
   const LearningPathsSection({
     super.key,
     required this.onPathTap,
@@ -59,6 +71,8 @@ class LearningPathsSection extends StatefulWidget {
     this.onCategorySeeAll,
     this.language = 'en',
     this.onNext,
+    this.showFilters = true,
+    this.compact = false,
   });
 
   @override
@@ -204,6 +218,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   // -------------------------------------------------------------------------
 
   Widget _buildSection(BuildContext context, {required Widget child}) {
+    if (widget.compact) return child;
     final palette = ReaderPalette.of(context);
 
     final headerRow = Padding(
@@ -432,10 +447,12 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Search bar ──────────────────────────────────────────────────
-          _buildSearchBar(context, state),
-          // ── Filter chips ────────────────────────────────────────────────
-          _buildFilterChips(context, availableLevels),
-          const SizedBox(height: 18),
+          if (!widget.compact) ...[
+            _buildSearchBar(context, state),
+            // ── Filter chips ──────────────────────────────────────────────
+            if (widget.showFilters) _buildFilterChips(context, availableLevels),
+            const SizedBox(height: 18),
+          ],
 
           // ── Content ─────────────────────────────────────────────────────
           if (state.isSearching)
@@ -603,10 +620,19 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     bool showSeeAll = true,
   }) {
     final palette = ReaderPalette.of(context);
-    final hasActive = category.paths.any((p) => p.isInProgress || p.isEnrolled);
+    final compact = widget.compact;
+    // Topics marks the user's path on its row ("Lesson N of M"), so the
+    // compact form drops the dot by the category name.
+    final hasActive =
+        !compact && category.paths.any((p) => p.isInProgress || p.isEnrolled);
+    final paths = compact
+        ? category.paths
+            .take(LearningPathsSection.compactRowsPerCategory)
+            .toList()
+        : category.paths;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: EdgeInsets.only(bottom: compact ? 16 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -631,13 +657,11 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                     header: true,
                     child: Text(
                       AppLocalizations.of(context)!
-                          .translateLearningPathCategory(category.name)
-                          .toUpperCase(),
-                      style: AppFonts.inter(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.6,
-                        color: palette.gold,
+                          .translateLearningPathCategory(category.name),
+                      style: AppFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: palette.text,
                       ),
                     ),
                   ),
@@ -646,13 +670,25 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                   TextButton(
                     key: Key('learning_paths_see_all_${category.name}'),
                     onPressed: () => widget.onCategorySeeAll!(category.name),
-                    child: Text(
-                      context.tr(TranslationKeys.topicsHubSeeAll),
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: palette.accentIcon,
-                      ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.gold,
+                      minimumSize: const Size(0, 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.topicsSeeAll),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: palette.gold,
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded,
+                            size: 16, color: palette.gold),
+                      ],
                     ),
                   )
                 else
@@ -664,8 +700,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
-                for (int i = 0; i < category.paths.length; i++) ...[
-                  if (i > 0)
+                for (int i = 0; i < paths.length; i++) ...[
+                  if (i > 0 && !compact)
                     Divider(height: 1, thickness: 1, color: palette.hairline),
                   if (isFirstCategory && i == 0 && widget.onNext != null)
                     WalkthroughTooltip(
@@ -675,18 +711,18 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                       description: AppLocalizations.of(context)!
                           .walkthroughLearningPathsDesc,
                       screen: WalkthroughScreen.learningPaths,
-                      stepNumber: 2,
-                      totalSteps: 2,
+                      stepNumber: 1,
+                      totalSteps: 1,
                       onNext: widget.onNext!,
                       child: PathListRow(
-                        path: category.paths[i],
-                        onTap: () => widget.onPathTap(category.paths[i]),
+                        path: paths[i],
+                        onTap: () => widget.onPathTap(paths[i]),
                       ),
                     )
                   else
                     PathListRow(
-                      path: category.paths[i],
-                      onTap: () => widget.onPathTap(category.paths[i]),
+                      path: paths[i],
+                      onTap: () => widget.onPathTap(paths[i]),
                     ),
                 ],
               ],

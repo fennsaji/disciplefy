@@ -496,7 +496,7 @@ class _TooltipBubble extends StatelessWidget {
             Text(
               '$stepNumber / $totalSteps',
               style: AppFonts.inter(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.5,
                 color: palette.gold,

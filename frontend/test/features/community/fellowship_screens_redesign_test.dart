@@ -540,7 +540,7 @@ void main() {
       // Joel's menu (the last member card).
       await tester.tap(find.byIcon(Icons.more_vert).last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Remove Member').last);
+      await tester.tap(find.text('Remove member').last);
       await tester.pumpAndSettle();
       expect(find.byType(Dialog), findsOneWidget);
       await tester.tap(find.text('Remove').last);
@@ -681,16 +681,85 @@ void main() {
         (tester) async {
       await _pump(tester, home,
           size: const Size(390, 2400), provideBlocs: false);
-      expect(find.text('OFFICIAL · 3 MEMBERS · MENTOR: FENN SAJI'),
+      // An official group is guided by the Discipler, as on its card.
+      expect(find.text('OFFICIAL · 3 MEMBERS · GUIDED BY DISCIPLER'),
           findsOneWidget);
+      expect(find.textContaining('MENTOR:'), findsNothing);
       expect(find.text('Disciplefy'), findsOneWidget);
       expect(find.text('Message mentor'), findsOneWidget);
       expect(find.text('STUDYING TOGETHER'), findsOneWidget);
       expect(find.text('New Believer Essentials · Lesson 1'), findsOneWidget);
       expect(find.text('Group progress · 0 of 8 done'), findsOneWidget);
       expect(find.text('Next: Sunday Bible Study'), findsOneWidget);
-      expect(find.text('Recent Activity'), findsOneWidget);
+      expect(find.text('Recent activity'), findsOneWidget);
       expect(find.text('Start study'), findsOneWidget);
+    });
+
+    testWidgets('a group led by a person names its mentor', (tester) async {
+      const personal = FellowshipHomeScreen(
+        fellowshipId: 'f1',
+        fellowshipName: 'Disciplefy',
+        fellowship: FellowshipEntity(
+          id: 'f1',
+          name: 'Disciplefy',
+          memberCount: 3,
+          userRole: 'mentor',
+          joinedAt: '2025-03-01T00:00:00Z',
+          createdAt: '2025-03-01T00:00:00Z',
+          mentors: [
+            FellowshipMentorEntity(userId: 'u-fenn', displayName: 'Fenn Saji'),
+          ],
+        ),
+      );
+      await _pump(tester, personal,
+          size: const Size(390, 2400), provideBlocs: false);
+      expect(find.text('3 MEMBERS · MENTOR: FENN SAJI'), findsOneWidget);
+    });
+
+    testWidgets('no meetings: hidden for a member, a prompt for the mentor',
+        (tester) async {
+      when(() => _meetings.state).thenReturn(const FellowshipMeetingsState(
+        status: FellowshipMeetingsStatus.success,
+      ));
+      await _pump(tester, home,
+          size: const Size(390, 2400), provideBlocs: false);
+      expect(find.text('Meetings'), findsOneWidget);
+      expect(find.text('Tap + to schedule a meeting'), findsOneWidget);
+
+      when(() => _feed.state).thenReturn(const FellowshipFeedState(
+        status: FellowshipFeedStatus.success,
+        posts: [_daily, _prayer],
+        hasMore: false,
+        postingContextResolved: true,
+      ));
+      when(() => _membersBloc.state).thenReturn(const FellowshipMembersState(
+        status: FellowshipMembersStatus.success,
+        members: _members,
+      ));
+      await _pump(
+          tester,
+          const FellowshipHomeScreen(
+            key: ValueKey('member'),
+            fellowshipId: 'f1',
+            fellowshipName: 'Disciplefy',
+          ),
+          size: const Size(390, 2400),
+          provideBlocs: false);
+      expect(find.text('Meetings'), findsNothing);
+      expect(find.text('No upcoming meetings'), findsNothing);
+    });
+
+    testWidgets('an empty feed has one post button (New Post)', (tester) async {
+      when(() => _feed.state).thenReturn(const FellowshipFeedState(
+        status: FellowshipFeedStatus.success,
+        hasMore: false,
+        postingContextResolved: true,
+        isMentor: true,
+      ));
+      await _pump(tester, home,
+          size: const Size(390, 2400), provideBlocs: false);
+      expect(find.text('New post'), findsOneWidget);
+      expect(find.text('Post something'), findsNothing);
     });
 
     testWidgets('overflow menu keeps every mentor item', (tester) async {
@@ -698,8 +767,8 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsOneWidget);
-      expect(find.text('Delete Fellowship'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsOneWidget);
+      expect(find.text('Delete fellowship'), findsOneWidget);
       expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
     });
 
@@ -708,7 +777,7 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete Fellowship'));
+      await tester.tap(find.text('Delete fellowship'));
       await tester.pumpAndSettle();
       expect(find.byType(Dialog), findsOneWidget);
       await tester.tap(find.byType(FilledButton).last);
@@ -750,8 +819,8 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsOneWidget);
-      expect(find.text('Delete Fellowship'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsOneWidget);
+      expect(find.text('Delete fellowship'), findsOneWidget);
       verify(() =>
               _study.add(const FellowshipStudyRoleResolved(isMentor: true)))
           .called(1);
@@ -793,7 +862,7 @@ void main() {
       expect(find.text('Loaded Group'), findsWidgets);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsOneWidget);
       expect(find.text('Daily post'), findsOneWidget);
       expect(find.text('Discipler activity'), findsOneWidget);
       verify(() => repo.getFellowships(any())).called(1);
@@ -805,9 +874,9 @@ void main() {
           size: const Size(390, 1200), provideBlocs: false);
       await tester.tap(find.byTooltip('More options').first);
       await tester.pumpAndSettle();
-      expect(find.text('Fellowship Settings'), findsNothing);
-      expect(find.text('Delete Fellowship'), findsNothing);
-      expect(find.text('Leave Fellowship'), findsOneWidget);
+      expect(find.text('Fellowship settings'), findsNothing);
+      expect(find.text('Delete fellowship'), findsNothing);
+      expect(find.text('Leave fellowship'), findsOneWidget);
       verifyNever(
           () => _study.add(any(that: isA<FellowshipStudyRoleResolved>())));
     });
@@ -916,7 +985,7 @@ void main() {
         size: const Size(390, 800),
       );
       await tester.enterText(find.byType(TextFormField), 'bad');
-      await tester.tap(find.text('Submit Report'));
+      await tester.tap(find.text('Submit report'));
       await tester.pump();
       expect(find.text('Please write at least 5 characters.'), findsOneWidget);
       verifyNever(() => _feed.add(any()));

@@ -48,8 +48,9 @@ export function startOfDay(now: Date = new Date()): Date {
 /**
  * Whether [userId] may generate another fresh study.
  *
- * Callers skip this for a learning-path study in its recommended mode and for
- * anything answered from cache: neither costs a model call.
+ * Callers skip this for a free learning-path lesson (Quick Read or its
+ * recommended mode) and for anything answered from cache: neither costs a
+ * repeat model call.
  */
 export async function checkFreshStudyLimits(
   db: SupabaseClient,

@@ -563,7 +563,7 @@ class _AllowedByAdminChip extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: AppFonts.inter(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: tone.foreground,
           ),

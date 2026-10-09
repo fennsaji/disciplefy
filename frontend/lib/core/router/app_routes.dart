@@ -7,13 +7,26 @@ class AppRoutes {
   static const String maintenance = '/maintenance';
 
   static const String onboarding = '/onboarding';
+
+  /// New first run (behind the `new_first_run` flag): language, then goal.
+  static const String welcome = '/welcome';
+  static const String welcomeGoal = '/welcome/goal';
   static const String languageSelection = '/language-selection';
   static const String home = '/';
   static const String generateStudy = '/generate-study';
   static const String studyGuide = '/study-guide';
   static const String studyGuideV2 = '/study-guide-v2';
+  static const String lessonComplete = '/lesson-complete';
+
+  /// Feature introduction opened from a "New for you" banner; `kind` is a
+  /// NewForYouKind name.
+  static const String featureIntro = '/intro/:kind';
+
+  /// Introduction location for the kind called [kind].
+  static String featureIntroFor(String kind) => '/intro/$kind';
   static const String settings = '/settings';
   static const String bibleAttribution = '/settings/bible-attribution';
+  static const String settingsMore = '/settings/more';
   static const String notificationSettings = '/notification-settings';
   static const String blockedUsers = '/blocked-users';
   static const String saved = '/saved';
@@ -73,6 +86,9 @@ class AppRoutes {
 
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';
+
+  /// Every path, with category chips ("Browse all paths" on Topics).
+  static const String allPaths = '/paths';
 
   /// Every path in one category ("See all" on the Study Topics tab).
   static const String learningPathCategory =

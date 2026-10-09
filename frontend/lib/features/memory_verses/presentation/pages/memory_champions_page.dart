@@ -181,7 +181,7 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage> {
   }
 }
 
-/// Indigo card with the user's rank, mastered verses and longest streak.
+/// Gold card with the user's rank, mastered verses and longest streak.
 class _YourRankCard extends StatelessWidget {
   final UserMemoryStats userStats;
 
@@ -189,12 +189,18 @@ class _YourRankCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Colors.white;
+    const ink = ReaderPalette.ink;
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: ReaderPalette.selectedFill,
-        borderRadius: BorderRadius.circular(22),
+        // The design's soft gold wash; both stops keep 5.5:1 or more for
+        // the dark ink on top.
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF6D88A), Color(0xFFE3B154)],
+        ),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -208,20 +214,19 @@ class _YourRankCard extends StatelessWidget {
                       .tr(TranslationKeys.memoryScreensYourRank)
                       .toUpperCase(),
                   style: AppFonts.inter(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 1.4,
-                    color: ink.withValues(alpha: 0.8),
+                    color: ReaderPalette.ink,
                   ),
                 ),
-                const SizedBox(height: 4),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     userStats.rank > 0 ? '#${userStats.rank}' : '—',
                     style: AppFonts.poppins(
-                      fontSize: 34,
+                      fontSize: 30,
                       fontWeight: FontWeight.w700,
                       color: ink,
                       fontFeatures: kMemoryTabular,
@@ -254,6 +259,7 @@ class _RankStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const ink = ReaderPalette.ink;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 90),
       child: Column(
@@ -261,10 +267,10 @@ class _RankStat extends StatelessWidget {
         children: [
           Text(
             value,
-            style: AppFonts.poppins(
-              fontSize: 20,
+            style: AppFonts.inter(
+              fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: ink,
               fontFeatures: kMemoryTabular,
             ),
           ),
@@ -273,7 +279,8 @@ class _RankStat extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppFonts.inter(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w500,
+              color: ink,
             ),
           ),
         ],
@@ -282,118 +289,114 @@ class _RankStat extends StatelessWidget {
   }
 }
 
-/// A leaderboard line: medal (top 3) or rank number, name, gold
-/// "N mastered" and the longest streak, plus a marker for ranks 4-10.
+/// A leaderboard line: a 28px rank disc (gold for first place), the name
+/// with the longest streak under it, a top-ten marker for ranks 4-10 and
+/// gold "N mastered" on the right.
 /// The current user's row is tinted.
 class _ChampionRow extends StatelessWidget {
   final MemoryChampionEntry entry;
 
   const _ChampionRow({required this.entry});
 
-  static const _silver = Color(0xFFB8BCC6);
-  static const _bronze = Color(0xFFD08A4A);
-
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final medal = switch (entry.rank) {
-      1 => palette.gold,
-      2 => palette.isDark ? _silver : const Color(0xFF7C818C),
-      3 => palette.isDark ? _bronze : const Color(0xFFA0602A),
-      _ => null,
-    };
+    final first = entry.rank == 1;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: entry.isCurrentUser
-            ? ReaderPalette.selectedFill
-                .withValues(alpha: palette.isDark ? 0.14 : 0.06)
+            ? palette.selectedFill
+                .withValues(alpha: palette.isDark ? 0.08 : 0.06)
             : null,
         border: Border(bottom: BorderSide(color: palette.hairline)),
       ),
       child: Row(
         children: [
-          SizedBox(
-            width: 34,
-            child: medal != null
-                ? Semantics(
-                    label: '#${entry.rank}',
-                    child: Icon(Icons.workspace_premium_outlined,
-                        size: 24, color: medal),
-                  )
-                : Text(
-                    '${entry.rank}',
-                    style: AppFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: palette.muted,
-                      fontFeatures: kMemoryTabular,
-                    ),
+          Semantics(
+            label: '#${entry.rank}',
+            excludeSemantics: true,
+            child: Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: first ? palette.selectedFill : palette.raised,
+                shape: BoxShape.circle,
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '${entry.rank}',
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: first ? palette.onSelected : palette.text,
+                    fontFeatures: kMemoryTabular,
                   ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // User names may ellipsize; the stats below never do.
+                // User names may ellipsize; the stats never do.
                 Text(
                   entry.displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.inter(
-                    fontSize: 16,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w600,
-                    color:
-                        entry.isCurrentUser ? palette.accentIcon : palette.text,
+                    color: palette.text,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 2,
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.memoryScreensMasteredCount,
-                          {'count': entry.masterVerses.toString()}),
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: palette.gold,
-                      ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.local_fire_department_outlined,
-                            size: 14, color: palette.muted),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            context.tr(TranslationKeys.heatMapDayStreak,
-                                {'count': entry.longestStreak.toString()}),
-                            style: AppFonts.inter(
-                              fontSize: 13,
-                              color: palette.muted,
-                            ),
+                if (entry.longestStreak > 0) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department_outlined,
+                          size: 13, color: palette.muted),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          context.tr(TranslationKeys.heatMapDayStreak,
+                              {'count': entry.longestStreak.toString()}),
+                          style: AppFonts.inter(
+                            fontSize: 12,
+                            color: palette.muted,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-          // Top-ten marker (the top three already carry medals).
+          // Top-ten marker for ranks 4-10.
           if (entry.rank > 3 && entry.rank <= 10) ...[
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Tooltip(
               message: context.tr(TranslationKeys.memoryScreensTopTen),
               child: Icon(Icons.military_tech_outlined,
-                  size: 22, color: palette.accentIcon),
+                  size: 18, color: palette.accentIcon),
             ),
           ],
+          const SizedBox(width: 12),
+          Text(
+            context.tr(TranslationKeys.memoryScreensMasteredCount,
+                {'count': entry.masterVerses.toString()}),
+            style: AppFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: palette.isDark ? palette.gold : palette.goldOnTint,
+            ),
+          ),
         ],
       ),
     );

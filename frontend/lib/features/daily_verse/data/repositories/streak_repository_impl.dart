@@ -4,6 +4,13 @@ import '../../domain/repositories/streak_repository.dart';
 import '../models/daily_verse_streak_model.dart';
 import '../../../../core/utils/logger.dart';
 
+/// `p_local_date` for `touch_daily_streak`: the local calendar day of [now]
+/// as yyyy-MM-dd, always in ASCII digits whatever the app locale.
+String streakLocalDate(DateTime now) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${now.year.toString().padLeft(4, '0')}-${two(now.month)}-${two(now.day)}';
+}
+
 /// Implementation of StreakRepository using Supabase
 class StreakRepositoryImpl implements StreakRepository {
   final SupabaseClient _supabaseClient;
@@ -45,70 +52,28 @@ class StreakRepositoryImpl implements StreakRepository {
   }
 
   @override
-  Future<DailyVerseStreak> markVerseAsViewed() async {
+  Future<DailyVerseStreak> markVerseAsViewed() => markActivityToday();
+
+  @override
+  Future<DailyVerseStreak> markActivityToday() async {
     try {
-      final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null) {
+      if (_supabaseClient.auth.currentUser == null) {
         throw Exception('User not authenticated');
       }
 
-      // Get current streak or create if doesn't exist
-      final currentStreak = await getStreakForUser(userId);
-      if (currentStreak == null) {
-        throw Exception('Failed to get or create streak');
-      }
+      // The day is decided by the device's clock, the same calendar the
+      // streak is shown in; the server only compares it with the last one
+      // it stored (same day: no change, the day after: +1, later: reset).
+      final response = await _supabaseClient.rpc(
+        'touch_daily_streak',
+        params: {'p_local_date': streakLocalDate(DateTime.now())},
+      );
 
-      // If already viewed today, return current streak unchanged
-      if (currentStreak.hasViewedToday) {
-        return currentStreak;
-      }
-
-      // Calculate new streak values. Timestamps are written as UTC: a local
-      // ISO string has no offset, so Postgres would store local wall time as
-      // UTC, and the server-side streak jobs (which add the user's offset)
-      // would date a late-evening view to the next day.
-      final now = DateTime.now();
-      int newCurrentStreak;
-      int newLongestStreak = currentStreak.longestStreak;
-
-      if (currentStreak.lastViewedAt == null ||
-          currentStreak.currentStreak == 0) {
-        // First time viewing
-        newCurrentStreak = 1;
-      } else if (currentStreak.canContinueStreak) {
-        // Viewed yesterday, continue streak
-        newCurrentStreak = currentStreak.currentStreak + 1;
-      } else if (currentStreak.shouldResetStreak) {
-        // Missed a day, reset streak
-        newCurrentStreak = 1;
-      } else {
-        // Shouldn't happen, but handle gracefully
-        newCurrentStreak = currentStreak.currentStreak;
-      }
-
-      // Update longest streak if current streak is higher
-      if (newCurrentStreak > newLongestStreak) {
-        newLongestStreak = newCurrentStreak;
-      }
-
-      // Update in database
-      final response = await _supabaseClient
-          .from('daily_verse_streaks')
-          .update({
-            'current_streak': newCurrentStreak,
-            'longest_streak': newLongestStreak,
-            'last_viewed_at': now.toUtc().toIso8601String(),
-            'total_views': currentStreak.totalViews + 1,
-            'updated_at': now.toUtc().toIso8601String(),
-          })
-          .eq('user_id', userId)
-          .select()
-          .single();
-
-      final model = DailyVerseStreakModel.fromJson(response);
+      final model = DailyVerseStreakModel.fromJson(
+          Map<String, dynamic>.from(response as Map));
       return model.toEntity();
     } catch (e) {
-      throw Exception('Failed to mark verse as viewed: $e');
+      throw Exception('Failed to mark streak activity: $e');
     }
   }
 
