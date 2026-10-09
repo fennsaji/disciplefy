@@ -50,8 +50,11 @@ class DisciplerStartView extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
+    // Inside the tab shell this already includes the floating dock's height.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Stack(
         children: [
           Positioned(
@@ -66,7 +69,8 @@ class DisciplerStartView extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, 24),
+            padding:
+                EdgeInsets.fromLTRB(16, topInset + 8, 16, bottomInset + 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
