@@ -2443,6 +2443,9 @@ class TranslationKeys {
   /// "{count} min" duration label.
   static const studyModeMinutes = 'study_mode.minutes';
 
+  /// Compact "{count} min" for one-line depth controls ("3 മി", "3 मि").
+  static const studyModeMinutesShort = 'study_mode.minutes_short';
+
   /// Headline of the full-height depth chooser.
   static const modeSelectionTimeQuestion = 'mode_selection.time_question';
 

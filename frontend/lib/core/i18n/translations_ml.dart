@@ -3146,6 +3146,7 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   'study_mode': {
     'minutes': '{count} മിനിറ്റ്',
+    'minutes_short': '{count} മി',
     'quick': {
       'short_name': 'വേഗ വായന',
       'name': 'വേഗ വായന',

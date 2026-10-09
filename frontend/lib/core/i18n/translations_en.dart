@@ -3037,6 +3037,7 @@ const Map<String, dynamic> englishTranslations = {
   },
   'study_mode': {
     'minutes': '{count} min',
+    'minutes_short': '{count} min',
     'quick': {
       'short_name': 'Quick Read',
       'name': 'Quick Read',

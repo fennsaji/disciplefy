@@ -44,6 +44,14 @@ extension StudyModePresentation on StudyMode {
         },
       );
 
+  /// Compact duration for one-line controls, e.g. "8 min" / "8 മി".
+  String localizedShortDuration(BuildContext context) => context.tr(
+        TranslationKeys.studyModeMinutesShort,
+        {
+          'count': this == StudyMode.sermon ? '50–60' : '$durationMinutes',
+        },
+      );
+
   /// Outline icon used by the depth cards and rows.
   IconData get outlineIcon => switch (this) {
         StudyMode.quick => Icons.bolt_outlined,

@@ -3041,6 +3041,7 @@ const Map<String, dynamic> hindiTranslations = {
   },
   'study_mode': {
     'minutes': '{count} मिनट',
+    'minutes_short': '{count} मि',
     'quick': {
       'short_name': 'छोटी पढ़ाई',
       'name': 'छोटी पढ़ाई',

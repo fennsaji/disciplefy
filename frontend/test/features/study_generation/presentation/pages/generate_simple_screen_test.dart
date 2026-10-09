@@ -683,6 +683,38 @@ void main() {
       }
     }
 
+    for (final width in [320.0, 360.0]) {
+      for (final language in AppLanguage.values) {
+        for (final scale in [1.0, 1.3]) {
+          testWidgets(
+              'depth switch stays one line: ${width.toInt()}px '
+              '${language.code} ${scale}x', (tester) async {
+            await pumpSimple(tester,
+                language: language, size: Size(width, 1400), textScale: scale);
+            for (final mode in ['quick', 'standard']) {
+              final segment = find.byKey(ValueKey('depth_switch_$mode'));
+              // 40 is the segment's minimum: taller means it wrapped.
+              expect(tester.getSize(segment).height, 40,
+                  reason: '$mode wrapped');
+            }
+            expect(tester.takeException(), isNull);
+            // At normal size nothing in the switch is cut off.
+            if (scale == 1.0) {
+              // The verse row ellipsizes by design.
+              expectNoTruncatedText(tester,
+                  ignoreUnder: [find.byType(VerseOfDayRow)]);
+            }
+          });
+        }
+      }
+    }
+
+    testWidgets('the depth switch uses the short minute form', (tester) async {
+      await pumpSimple(tester, language: AppLanguage.malayalam);
+      expect(find.text('3 മി'), findsOneWidget);
+      expect(find.text('8 മി'), findsOneWidget);
+    });
+
     testWidgets('a subtitle under the title says what to type', (tester) async {
       await pumpSimple(tester);
       expect(find.byKey(const Key('generate_simple_subtitle')), findsOneWidget);
