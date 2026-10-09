@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
+import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
@@ -23,6 +24,8 @@ import '../../../../helpers/welcome_test_harness.dart';
 class _MockGuest extends Mock implements GuestSessionService {}
 
 class _MockFlags extends Mock implements RolloutFlags {}
+
+class _MockLanguagePrefs extends Mock implements LanguagePreferenceService {}
 
 LearningPath _path(String slug, String title) => LearningPath(
       id: 'id-$slug',
@@ -293,6 +296,29 @@ void main() {
           find.text('stub:/study-guide-v2?input=Romans+8&type=scripture'
               '&language=en&mode=quick&source=home'),
           findsOneWidget);
+    });
+
+    testWidgets('See an example follows a saved default study mode',
+        (tester) async {
+      final prefs = _MockLanguagePrefs();
+      when(prefs.peekStudyModePreferenceRaw).thenReturn('deep');
+      sl.registerSingleton<LanguagePreferenceService>(prefs);
+      await open(tester, NewForYouKind.generate);
+      await tapKey(tester, 'intro_secondary');
+      expect(
+          find.text('stub:/study-guide-v2?input=Romans+8&type=scripture'
+              '&language=en&mode=deep&source=home'),
+          findsOneWidget);
+    });
+
+    testWidgets('See an example stays Quick Read for "recommended"',
+        (tester) async {
+      final prefs = _MockLanguagePrefs();
+      when(prefs.peekStudyModePreferenceRaw).thenReturn('recommended');
+      sl.registerSingleton<LanguagePreferenceService>(prefs);
+      await open(tester, NewForYouKind.generate);
+      await tapKey(tester, 'intro_secondary');
+      expect(find.textContaining('mode=quick'), findsOneWidget);
     });
 
     testWidgets('an example chip prefills Generate', (tester) async {

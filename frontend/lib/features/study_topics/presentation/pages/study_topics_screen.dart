@@ -385,7 +385,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   RecommendedPathResult? _fallbackPath;
   bool _fallbackLoaded = false;
 
-  /// The learning-path lesson mode; [StudyMode.standard] until it is read.
+  /// The learning-path lesson mode; [StudyMode.standard] if it cannot be read.
   StudyMode _savedMode = StudyMode.standard;
 
   /// The mode picked on the lesson card in this session; wins over defaults.
@@ -425,10 +425,11 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
   }
 
-  Future<void> _readSavedMode() async {
+  /// Read synchronously in initState so the card's first frame already
+  /// shows the saved mode (no Standard → saved jump).
+  void _readSavedMode() {
     try {
-      final mode = await resolveNextLessonMode();
-      if (mounted) setState(() => _savedMode = mode);
+      _savedMode = nextLessonModeNow();
     } catch (e) {
       Logger.warning('[STUDY_TOPICS] Lesson mode preference unavailable',
           context: {'error': e.runtimeType.toString()});

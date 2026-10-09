@@ -76,7 +76,9 @@ class _MockTokenCosts extends Mock implements TokenCostRepository {}
 
 class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   final AppLanguage language;
-  _FakeLanguageService(this.language);
+  final String? savedMode;
+  final bool cached;
+  _FakeLanguageService(this.language, {this.savedMode, this.cached = true});
 
   @override
   Stream<AppLanguage> get languageChanges => const Stream.empty();
@@ -91,7 +93,11 @@ class _FakeLanguageService extends Fake implements LanguagePreferenceService {
   Future<bool> isStudyContentLanguageDefault() async => true;
 
   @override
-  Future<String?> getStudyModePreferenceRaw() async => null;
+  Future<String?> getStudyModePreferenceRaw() async => savedMode;
+
+  @override
+  String? peekStudyModePreferenceRaw() =>
+      cached ? savedMode : throw StateError('not cached');
 
   @override
   Future<void> saveStudyContentLanguage(AppLanguage? language) async {}
@@ -178,11 +184,14 @@ late _MockTokenCosts _costRepo;
 Future<void> _register({
   AppLanguage language = AppLanguage.english,
   bool singleInput = true,
+  String? savedMode,
+  bool cached = true,
 }) async {
   SharedPreferences.setMockInitialValues(
       {'user_language_preference': language.code});
   final prefs = await SharedPreferences.getInstance();
-  final languageService = _FakeLanguageService(language);
+  final languageService =
+      _FakeLanguageService(language, savedMode: savedMode, cached: cached);
   final savedGuides = _MockSavedGuidesBloc();
   when(() => savedGuides.state).thenReturn(SavedGuidesInitial());
   _costRepo = _MockTokenCosts();
@@ -268,8 +277,9 @@ Future<void> pumpSimple(
   int credits = 50,
   Size size = const Size(390, 1400),
   bool premium = false,
+  String? savedMode,
 }) async {
-  await _register(language: language);
+  await _register(language: language, savedMode: savedMode);
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -302,7 +312,7 @@ void main() {
 
     await _type(tester, 'What is the purpose of prayer?');
     expect(find.text('Question'), findsOneWidget);
-    expect(find.text('Using 10 credits'), findsOneWidget);
+    expect(find.text('Using 20 credits'), findsOneWidget);
     expect(find.text('Scripture'), findsNothing); // no type tabs
   });
 
@@ -399,20 +409,90 @@ void main() {
     expect(guide, findsOneWidget);
     final text = tester.widget<Text>(guide).data!;
     expect(text, contains('type=scripture'));
-    expect(text, contains('mode=quick'));
+    expect(text, contains('mode=standard'));
     expect(text, contains('input=Romans%208'));
   });
 
-  testWidgets('Standard depth is passed through', (tester) async {
+  testWidgets('Quick depth picked on the switch is passed through',
+      (tester) async {
     await pumpSimple(tester);
-    await tester.tap(find.byKey(const ValueKey('depth_switch_standard')));
+    await tester.tap(find.byKey(const ValueKey('depth_switch_quick')));
     await tester.pump();
     await _type(tester, 'Forgiveness');
     await _tapGenerate(tester);
 
     final text = tester.widget<Text>(find.textContaining('guide:')).data!;
     expect(text, contains('type=topic'));
-    expect(text, contains('mode=standard'));
+    expect(text, contains('mode=quick'));
+  });
+
+  group('initial depth follows the saved default study mode', () {
+    bool selected(WidgetTester tester, String mode) => tester
+        .widgetList<Semantics>(find.ancestor(
+            of: find.byKey(ValueKey('depth_switch_$mode')),
+            matching: find.byType(Semantics)))
+        .any((s) => s.properties.selected == true);
+
+    Future<String> generated(WidgetTester tester) async {
+      await _type(tester, 'Grace');
+      await _tapGenerate(tester);
+      return tester.widget<Text>(find.textContaining('guide:')).data!;
+    }
+
+    for (final unset in [null, 'recommended', 'ask']) {
+      testWidgets('"$unset" falls back to Standard', (tester) async {
+        await pumpSimple(tester, savedMode: unset);
+        expect(selected(tester, 'standard'), isTrue);
+        expect(selected(tester, 'quick'), isFalse);
+        expect(await generated(tester), contains('mode=standard'));
+      });
+    }
+
+    testWidgets('saved quick selects Quick', (tester) async {
+      await pumpSimple(tester, savedMode: 'quick');
+      expect(selected(tester, 'quick'), isTrue);
+      expect(await generated(tester), contains('mode=quick'));
+    });
+
+    testWidgets('saved standard selects Standard', (tester) async {
+      await pumpSimple(tester, savedMode: 'standard');
+      expect(selected(tester, 'standard'), isTrue);
+      expect(await generated(tester), contains('mode=standard'));
+    });
+
+    testWidgets('saved deep is named below the switch with its cost',
+        (tester) async {
+      await pumpSimple(tester, savedMode: 'deep');
+      expect(selected(tester, 'quick'), isFalse);
+      expect(selected(tester, 'standard'), isFalse);
+      expect(find.text('Deep Dive · 12 min'), findsOneWidget);
+      expect(find.text('Using 30 credits'), findsOneWidget);
+      expect(await generated(tester), contains('mode=deep'));
+    });
+
+    testWidgets('without a cached value the saved mode is read before showing',
+        (tester) async {
+      await _register(savedMode: 'quick', cached: false);
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+      expect(
+          tester
+              .widget<Visibility>(find.ancestor(
+                  of: find.byType(DepthSwitch),
+                  matching: find.byType(Visibility)))
+              .visible,
+          isTrue);
+      expect(selected(tester, 'quick'), isTrue);
+    });
+
+    testWidgets('the cost line follows the saved mode', (tester) async {
+      await pumpSimple(tester, savedMode: 'quick');
+      await _type(tester, 'Grace');
+      expect(find.text('Using 10 credits'), findsOneWidget);
+    });
   });
 
   testWidgets('typed text keeps the field one line; the tag is solid gold',
@@ -508,7 +588,7 @@ void main() {
     final text = tester.widget<Text>(find.textContaining('guide:')).data!;
     expect(text, contains('input=Psalm%2023%3A1'));
     expect(text, contains('type=scripture'));
-    expect(text, contains('mode=quick'));
+    expect(text, contains('mode=standard'));
   });
 
   testWidgets('a suggestion chip fills the input', (tester) async {

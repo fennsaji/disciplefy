@@ -600,6 +600,17 @@ void main() {
       expect(find.text('Quick read · 3 min'), findsOneWidget);
     });
 
+    testWidgets('a saved Quick path mode shows and opens Quick read',
+        (tester) async {
+      when(() => languagePrefs.getLearningPathStudyModePreferenceRaw())
+          .thenReturn('quick');
+      await pumpHome(tester, summary: _summary4of8);
+      expect(find.text('Quick read · 3 min'), findsOneWidget);
+      await tester.tap(find.text('Start lesson 4'));
+      await tester.pumpAndSettle();
+      expect(find.text('stub:lesson:quick'), findsOneWidget);
+    });
+
     testWidgets('lesson 1 without a first-run goal uses the saved mode',
         (tester) async {
       await pumpHome(tester, summary: _summaryLesson1);

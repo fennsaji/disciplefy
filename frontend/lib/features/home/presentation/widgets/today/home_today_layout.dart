@@ -110,12 +110,11 @@ class HomeTodayLayout extends StatefulWidget {
 
 class _HomeTodayLayoutState extends State<HomeTodayLayout> {
   static const _sectionPadding = EdgeInsets.symmetric(horizontal: 20);
-  static const _memoryWait = Duration(seconds: 4);
 
   late final NewForYouCubit _newForYou = sl<NewForYouCubit>();
   bool _newForYouRequested = false;
 
-  /// The learning-path preference; [StudyMode.standard] until it is read.
+  /// The learning-path preference; [StudyMode.standard] if it cannot be read.
   StudyMode _savedMode = StudyMode.standard;
 
   /// The mode picked on the card in this session, which wins over defaults.
@@ -139,10 +138,11 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
     super.dispose();
   }
 
-  Future<void> _readSavedMode() async {
+  /// Read synchronously in initState so the card's first frame already
+  /// shows the saved mode (no Standard → saved jump).
+  void _readSavedMode() {
     try {
-      final mode = await resolveNextLessonMode();
-      if (mounted) setState(() => _savedMode = mode);
+      _savedMode = nextLessonModeNow();
     } catch (e) {
       Logger.warning('Today: lesson mode preference unavailable',
           tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});

@@ -81,8 +81,31 @@ class StudyModePreferences {
 
 /// Mode for lessons 2+ of a path: the user's concrete learning-path mode, or
 /// Standard when they chose 'recommended', 'ask' or nothing.
-Future<StudyMode> resolveNextLessonMode() async {
+Future<StudyMode> resolveNextLessonMode() async => nextLessonModeNow();
+
+/// [resolveNextLessonMode], read synchronously (the preference is cached on
+/// the profile or the device), so a lesson card starts on the saved mode.
+StudyMode nextLessonModeNow() {
   final raw =
       sl<LanguagePreferenceService>().getLearningPathStudyModePreferenceRaw();
   return studyModeFromString(raw) ?? StudyMode.standard;
 }
+
+/// The general "Default study mode" for a new study that names no mode
+/// (a notification, a tapped verse, a link): the saved concrete mode, else
+/// [fallback] for 'recommended', 'ask', nothing or an unreadable preference.
+StudyMode savedStudyModeOr(StudyMode fallback) {
+  try {
+    final raw = sl<LanguagePreferenceService>().peekStudyModePreferenceRaw();
+    return studyModeFromString(raw) ?? fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+/// Mode for a `/study-guide-v2` link: the mode it names, else — for a new
+/// study that names none (a notification, a tapped verse) — the saved default
+/// study mode, else Standard. Path lessons always name their mode.
+StudyMode studyModeForLink(String? mode, {required bool isLesson}) =>
+    studyModeFromString(mode) ??
+    (isLesson ? StudyMode.standard : savedStudyModeOr(StudyMode.standard));

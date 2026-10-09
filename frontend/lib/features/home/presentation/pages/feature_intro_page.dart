@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:disciplefy_bible_study/core/constants/study_mode_preferences.dart';
 import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
@@ -16,6 +17,7 @@ import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_source.dart';
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_you_scheduler.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/choose_first_path_card.dart';
+import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
@@ -147,7 +149,9 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
               'input': featureIntroExamplePassage,
               'type': 'scripture',
               'language': _language,
-              'mode': 'quick',
+              // The user's default study mode; a short Quick Read when
+              // they have none.
+              'mode': savedStudyModeOr(StudyMode.quick).name,
               'source': 'home',
             }).toString());
           case NewForYouKind.fellowships:

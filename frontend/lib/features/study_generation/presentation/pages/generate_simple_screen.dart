@@ -65,7 +65,18 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   DetectedInputType? _override;
   String _lastText = '';
   String? _error;
-  StudyMode _mode = StudyMode.quick;
+
+  /// Depth for the next study. Starts as the fallback and becomes the saved
+  /// "default study mode" once [_loadModePreference] has read it; the depth
+  /// controls stay hidden until then so the selection never jumps.
+  StudyMode _mode = recommendedStudyMode;
+  String? _savedModeRaw;
+  bool _modeLoaded = false;
+
+  /// Set once the user picks a depth here, so a late preference or plan load
+  /// never overrides their choice.
+  bool _userPickedMode = false;
+  Future<void>? _modeLoad;
   final Map<StudyMode, int> _costs = {};
 
   StudyLanguage _language = StudyLanguage.english;
@@ -108,6 +119,16 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
       if (mounted) await _loadLanguage();
     });
     _loadLanguage();
+    // Start on the saved depth when it is cached (no Standard → saved jump);
+    // the full read below confirms it.
+    try {
+      _savedModeRaw = _languages.peekStudyModePreferenceRaw();
+      _modeLoaded = true;
+      _applySavedMode();
+    } catch (e) {
+      Logger.warning('Generate: no cached study mode preference: $e');
+    }
+    _modeLoad = _loadModePreference(onlyIfChanged: _modeLoaded);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (context.read<TokenBloc>().state is! TokenLoaded) {
@@ -164,6 +185,8 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
     _lastPath = path;
     if (cameBack && mounted) {
       context.read<TokenBloc>().add(const RefreshTokenStatus());
+      // The default may have changed in Settings meanwhile.
+      _modeLoad = _loadModePreference(onlyIfChanged: true);
     }
   }
 
@@ -300,6 +323,49 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
   // Depth
   // ---------------------------------------------------------------------------
 
+  /// Reads the saved default study mode ("Default study mode" in Settings).
+  /// With [onlyIfChanged], a preference equal to the one already applied
+  /// keeps the depth the user picked here.
+  Future<void> _loadModePreference({bool onlyIfChanged = false}) async {
+    String? raw;
+    try {
+      raw = await _languages.getStudyModePreferenceRaw();
+    } catch (e) {
+      Logger.error('Generate: could not load the study mode preference: $e');
+      raw = _savedModeRaw;
+    }
+    if (!mounted) return;
+    if (onlyIfChanged && raw == _savedModeRaw) return;
+    setState(() {
+      _savedModeRaw = raw;
+      _userPickedMode = false;
+      _modeLoaded = true;
+      _applySavedMode();
+    });
+  }
+
+  /// The saved mode, or Standard for "recommended"/"ask"/none. Locks are only
+  /// applied once the plan is known, so a paid user's saved Deep Dive is not
+  /// dropped while the balance is still loading.
+  void _applySavedMode() {
+    if (_userPickedMode || !_modeLoaded) return;
+    final known = _tokenStatus() != null;
+    _mode = resolveInitialStudyMode(
+      _savedModeRaw,
+      available: StudyMode.values
+          .where((m) => !_config.shouldHideFeature(m.featureKey, _plan))
+          .toList(),
+      locked: known ? StudyMode.values.where(_isLocked).toSet() : const {},
+    );
+  }
+
+  void _pickMode(StudyMode mode) {
+    setState(() {
+      _mode = mode;
+      _userPickedMode = true;
+    });
+  }
+
   TokenStatus? _tokenStatus() {
     final state = context.read<TokenBloc>().state;
     if (state is TokenLoaded) return state.tokenStatus;
@@ -357,7 +423,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
       ),
     );
     if (chosen == null || !mounted) return;
-    setState(() => _mode = chosen);
+    _pickMode(chosen);
     if (input.isValid) await _generate();
   }
 
@@ -394,6 +460,8 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
       );
       return;
     }
+    await _modeLoad;
+    if (!mounted) return;
     final mode = _mode;
     if (_isLocked(mode)) {
       _showUpgrade(mode);
@@ -495,14 +563,21 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 const SizedBox(height: 14),
                 _depthHeader(),
                 const SizedBox(height: 8),
-                DepthSwitch(
-                  modes: _visibleInlineModes,
-                  selected: _mode,
-                  locked: _inlineModes.where(_isLocked).toSet(),
-                  onSelected: (mode) => setState(() => _mode = mode),
-                  onLockedTap: _showUpgrade,
+                // Hidden (space kept) until the saved depth is known.
+                Visibility(
+                  visible: _modeLoaded,
+                  maintainSize: true,
+                  maintainAnimation: true,
+                  maintainState: true,
+                  child: DepthSwitch(
+                    modes: _visibleInlineModes,
+                    selected: _mode,
+                    locked: _inlineModes.where(_isLocked).toSet(),
+                    onSelected: _pickMode,
+                    onLockedTap: _showUpgrade,
+                  ),
                 ),
-                if (!_inlineModes.contains(_mode)) ...[
+                if (_modeLoaded && !_inlineModes.contains(_mode)) ...[
                   const SizedBox(height: 8),
                   Text(
                     '${_mode.localizedName(context)} · ${_mode.localizedDuration(context)}',
@@ -517,7 +592,7 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
                 ],
                 const SizedBox(height: 14),
                 _generateButton(input.isValid),
-                if (_costs[_mode] != null)
+                if (_modeLoaded && _costs[_mode] != null)
                   // An unlimited plan spends no credits: no cost line.
                   BlocBuilder<TokenBloc, TokenState>(
                     builder: (context, _) {
@@ -555,10 +630,18 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
       value: palette.isDark
           ? SystemUiOverlayStyle.light
           : SystemUiOverlayStyle.dark,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        resizeToAvoidBottomInset: true,
-        body: body,
+      child: BlocListener<TokenBloc, TokenState>(
+        // The plan decides which saved depths are usable.
+        listenWhen: (prev, next) => prev.runtimeType != next.runtimeType,
+        listener: (_, __) {
+          if (_userPickedMode || !_modeLoaded) return;
+          setState(_applySavedMode);
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          resizeToAvoidBottomInset: true,
+          body: body,
+        ),
       ),
     );
   }
