@@ -5,6 +5,7 @@
  * Part of the "For You" personalization feature
  */
 
+import { getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
@@ -176,19 +177,8 @@ async function savePersonalization(
     throw new AppError('DATABASE_ERROR', 'Failed to fetch learning paths', 500);
   }
 
-  // Fetch user's completed paths
-  const { data: completedPaths, error: completedError } = await services.supabaseServiceClient
-    .from('user_learning_path_progress')
-    .select('learning_path_id')
-    .eq('user_id', userId)
-    .not('completed_at', 'is', null);
-
-  if (completedError && completedError.code !== 'PGRST116') {
-    console.error('Failed to fetch completed paths:', completedError);
-    throw new AppError('DATABASE_ERROR', 'Failed to fetch completed paths', 500);
-  }
-
-  const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
+  // Finished paths: stored completion or every visible lesson done.
+  const completedPathIds = [...await getCompletedPathIds(services.supabaseServiceClient, userId)];
 
   // Calculate path scores using scoring algorithm
   const scoredPaths = calculatePathScores(

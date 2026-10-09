@@ -14,6 +14,7 @@
  *     every member done and updates with an optimistic lock on the index).
  */
 
+import { getCompletedPathIds } from '../utils/path-progress.ts'
 import {
   calculatePathScores,
   getScoringResultsSummary,
@@ -269,15 +270,8 @@ export async function maybeTriggerScoreRecalculation(db: Client, userId: string)
 
     if (!allPaths || allPaths.length === 0) return
 
-    const { data: completedPaths } = await db
-      .from('user_learning_path_progress')
-      .select('learning_path_id')
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null)
-
-    const completedPathIds = ((completedPaths || []) as Array<{ learning_path_id: string }>).map(
-      (p) => p.learning_path_id,
-    )
+    // Finished paths: stored completion or every visible lesson done.
+    const completedPathIds = [...await getCompletedPathIds(db, userId)]
 
     const responses: QuestionnaireResponses = {
       faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
