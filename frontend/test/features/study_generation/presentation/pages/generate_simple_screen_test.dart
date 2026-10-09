@@ -109,9 +109,28 @@ class _FakeDefaultLanguage extends Fake implements GetDefaultStudyLanguage {
       const Right(StudyLanguage.english);
 }
 
-class _FakeSystemConfig extends Fake implements SystemConfigService {
-  final bool singleInput;
+class _FakeSystemConfig extends Fake
+    with ChangeNotifier
+    implements SystemConfigService {
+  bool singleInput;
   _FakeSystemConfig({this.singleInput = true});
+
+  /// An admin toggle arriving with a config refresh.
+  void toggle(bool on) {
+    singleInput = on;
+    notifyListeners();
+  }
+
+  @override
+  SystemConfig? get config => SystemConfig.fromJson({
+        'featureFlags': {
+          RolloutFlags.generateSingleInputKey: {
+            'enabled': singleInput,
+            'plans': <String>[],
+            'displayMode': 'hide',
+          },
+        },
+      });
 
   @override
   bool isFeatureEnabled(String featureKey, String planType) =>
@@ -620,6 +639,25 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         'Hope');
     expect(find.text('Topic'), findsOneWidget);
+  });
+
+  testWidgets('Generate tab follows an admin toggle without a restart',
+      (tester) async {
+    await _register();
+    final config = _FakeSystemConfig(singleInput: false);
+    await GetIt.instance.unregister<RolloutFlags>();
+    GetIt.instance.registerSingleton<RolloutFlags>(RolloutFlags(config));
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(home: const GenerateTabPage()));
+    await tester.pumpAndSettle();
+    expect(find.byType(GenerateStudyScreen), findsOneWidget);
+
+    config.toggle(true);
+    await tester.pumpAndSettle();
+    expect(find.byType(GenerateSimpleScreen), findsOneWidget);
+    expect(find.byType(GenerateStudyScreen), findsNothing);
   });
 
   group('Generate tab picks the screen by flag', () {

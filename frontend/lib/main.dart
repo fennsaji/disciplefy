@@ -612,6 +612,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
     if (state == AppLifecycleState.resumed) {
       Logger.debug('[MAIN] App resumed — refreshing subscription status');
       sl<SubscriptionBloc>().add(const RefreshSubscription());
+      // Pick up admin feature-flag changes (no-op while the config is fresh).
+      sl<SystemConfigService>().refreshIfStale();
     }
   }
 
