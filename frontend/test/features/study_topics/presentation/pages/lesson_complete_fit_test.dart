@@ -7,6 +7,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/guest_lesson_nudge.dart';
 import 'package:disciplefy_bible_study/features/gamification/presentation/utils/achievement_popup_gate.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
@@ -19,6 +21,8 @@ import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 
 class _MockRepo extends Mock implements LearningPathsRepository {}
+
+class _MockGuest extends Mock implements GuestSessionService {}
 
 class _FakePrefs extends Fake implements LanguagePreferenceService {
   @override
@@ -96,7 +100,8 @@ void main() {
     return sl.reset();
   });
 
-  Future<void> pumpPage(WidgetTester tester, FitCase c, int n) async {
+  Future<void> pumpPage(WidgetTester tester, FitCase c, int n,
+      {bool guest = false, double height = 780, double textScale = 1}) async {
     final repo = _MockRepo();
     when(() => repo.getLearningPathDetails(
           pathId: any(named: 'pathId'),
@@ -104,22 +109,42 @@ void main() {
           forceRefresh: any(named: 'forceRefresh'),
         )).thenAnswer((_) async => Right(_path(c.lang)));
     sl.registerSingleton<LearningPathsRepository>(repo);
-    useFitSurface(tester, c);
+    if (guest) {
+      final session = _MockGuest();
+      when(() => session.isGuest).thenReturn(true);
+      sl.registerSingleton<GuestSessionService>(session);
+    }
+    useFitSurface(tester, c, height: height);
     await tester.pumpWidget(welcomeApp(
       language: c.lang,
       dark: c.dark,
       path: '/lesson-complete',
-      screen: LessonCompletePage(
-        args: LessonCompleteArgs(
-          lesson: LessonRef(
-            pathId: 'p',
-            pathTitle: _pathTitle[c.lang]!,
-            lessonNumber: n,
-            lessonTotal: 8,
+      screen: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: LessonCompletePage(
+            args: LessonCompleteArgs(
+              lesson: LessonRef(
+                pathId: 'p',
+                pathTitle: _pathTitle[c.lang]!,
+                lessonNumber: n,
+                lessonTotal: 8,
+              ),
+              lessonTitle: _titles[c.lang]![n - 1],
+              mode: StudyMode.quick,
+              language: c.lang,
+            ),
+            extraSections: [
+              GuestLessonNudge(
+                pathId: 'p',
+                lessonNumber: n,
+                isLastLesson: n == 8,
+                firstRun: false,
+                language: c.lang,
+              ),
+            ],
           ),
-          lessonTitle: _titles[c.lang]![n - 1],
-          mode: StudyMode.quick,
-          language: c.lang,
         ),
       ),
     ));
@@ -139,6 +164,29 @@ void main() {
       expect(tester.takeException(), isNull);
       // Lesson titles may clamp at two lines by design.
       expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
+    });
+
+    testWidgets('${c.name}: guest lesson 2 card fits at 640 and 1.3x',
+        (tester) async {
+      await pumpPage(tester, c, 2, guest: true, height: 640, textScale: 1.3);
+      final card = find.byKey(const Key('keep_progress_card'));
+      expect(card, findsOneWidget);
+      await tester.ensureVisible(card);
+      await tester.pumpAndSettle();
+      // Continue / Back home stay on screen below the scrolling content.
+      final screen = tester.view.physicalSize.height;
+      expect(tester.getRect(find.byType(FilledButton)).bottom,
+          lessThanOrEqualTo(screen));
+      expect(tester.getRect(find.byType(OutlinedButton)).bottom,
+          lessThanOrEqualTo(screen));
+      expect(tester.takeException(), isNull);
+      // The card's copy must not be cut. The fixed 40px page buttons are
+      // checked at 1x by the tests above.
+      expectNoTruncatedText(tester, allow: {
+        ..._titles[c.lang]!,
+        translations.getTranslation('lesson.continue_to', {'n': 3}),
+        translations.getTranslation('lesson.back_home'),
+      });
     });
 
     testWidgets('${c.name}: last lesson fits', (tester) async {

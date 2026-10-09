@@ -101,14 +101,12 @@ void main() {
 
     test('lesson 1 of the first run gets the sign-up block', () {
       expect(pick(1, firstRun: true), GuestNudge.signUpBlock);
-      expect(pick(1), GuestNudge.none);
+      expect(pick(1), GuestNudge.keepProgressCard);
     });
 
-    test('lessons 3 and 6 get the keep-progress card', () {
-      expect(pick(3), GuestNudge.keepProgressCard);
-      expect(pick(6), GuestNudge.keepProgressCard);
-      for (final n in [2, 4, 5, 7]) {
-        expect(pick(n), GuestNudge.none, reason: 'lesson $n');
+    test('every other lesson gets the keep-progress card', () {
+      for (final n in [2, 3, 4, 5, 6, 7]) {
+        expect(pick(n), GuestNudge.keepProgressCard, reason: 'lesson $n');
       }
     });
 
@@ -326,11 +324,48 @@ void main() {
       expect(find.byKey(const Key('keep_progress_card')), findsOneWidget);
     });
 
-    testWidgets('lesson 4 has no nudge', (tester) async {
-      await tester.pumpWidget(nudge(lesson: 4));
+    testWidgets('lesson 2 shows the card, not the block', (tester) async {
+      await tester.pumpWidget(nudge(lesson: 2));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('keep_progress_card')), findsNothing);
+      expect(find.text('Keep these 2 days safe'), findsOneWidget);
+      expect(find.text('Sign up to keep them →'), findsOneWidget);
       expect(find.byKey(const Key('save_progress_block')), findsNothing);
+    });
+
+    testWidgets('lessons 4 and 7 show the card too', (tester) async {
+      for (final n in [4, 7]) {
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(nudge(lesson: n));
+        await tester.pumpAndSettle();
+        expect(find.text('Keep these $n days safe'), findsOneWidget);
+      }
+    });
+
+    testWidgets('lesson 1 outside the first run: card in the singular',
+        (tester) async {
+      await tester.pumpWidget(nudge(lesson: 1));
+      await tester.pumpAndSettle();
+      expect(find.text('Keep this day safe'), findsOneWidget);
+      expect(find.textContaining('1 days'), findsNothing);
+    });
+
+    testWidgets('lesson 1 of the first run: block only, no card',
+        (tester) async {
+      await tester.pumpWidget(nudge(lesson: 1, firstRun: true));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('save_progress_block')), findsOneWidget);
+      expect(find.byKey(const Key('keep_progress_card')), findsNothing);
+    });
+
+    testWidgets('a full account sees no card on any lesson', (tester) async {
+      when(() => guest.isGuest).thenReturn(false);
+      for (final n in [1, 2, 3, 5]) {
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(nudge(lesson: n));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('keep_progress_card')), findsNothing);
+        expect(find.byKey(const Key('save_progress_block')), findsNothing);
+      }
     });
   });
 
@@ -368,14 +403,19 @@ void main() {
           expectNoTruncatedText(tester);
         });
 
-        testWidgets('keep card ${language.code} $theme', (tester) async {
-          useSurface(tester, const Size(320, 600));
-          translations.language = language;
-          await tester.pumpWidget(nudge(lesson: 3, dark: dark));
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expectNoTruncatedText(tester);
-        });
+        for (final n in [1, 2, 3]) {
+          testWidgets('keep card lesson $n ${language.code} $theme',
+              (tester) async {
+            useSurface(tester, const Size(320, 600));
+            translations.language = language;
+            await tester.pumpWidget(nudge(lesson: n, dark: dark));
+            await tester.pumpAndSettle();
+            expect(find.byKey(const Key('keep_progress_card')), findsOneWidget);
+            expect(find.textContaining('account.'), findsNothing);
+            expect(tester.takeException(), isNull);
+            expectNoTruncatedText(tester);
+          });
+        }
       }
     }
   });

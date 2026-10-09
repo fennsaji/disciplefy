@@ -204,7 +204,8 @@ class _NextPathRow extends StatelessWidget {
   }
 }
 
-/// One-line dismissible card after lessons 3 and 6: "Keep these {n} days
+/// One-line dismissible card after every lesson that has no sign-up block:
+/// "Keep these {n} days
 /// safe · Sign up to keep them →".
 class KeepProgressCard extends StatelessWidget {
   final int days;
@@ -249,8 +250,10 @@ class KeepProgressCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.tr(
-                            TranslationKeys.accountKeepDaysSafe, {'n': days}),
+                        days == 1
+                            ? context.tr(TranslationKeys.accountKeepDaySafe)
+                            : context.tr(TranslationKeys.accountKeepDaysSafe,
+                                {'n': days}),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

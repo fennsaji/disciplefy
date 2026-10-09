@@ -3331,6 +3331,7 @@ const Map<String, dynamic> hindiTranslations = {
     'benefit_groups': 'समूह से जुड़ें, प्रगति रखें',
     'check_email': 'पुष्टि के लिए ईमेल देखें: {email}',
     'keep_days_safe': 'अपनी {n} दिन की स्ट्रीक बचाएँ',
+    'keep_day_safe': 'अपनी 1 दिन की स्ट्रीक बचाएँ',
     'keep_cta': 'रखने के लिए साइन अप करें',
     'next_paths': 'आपके अगले रास्ते',
     'sign_up_to_start': 'साइन अप करें',

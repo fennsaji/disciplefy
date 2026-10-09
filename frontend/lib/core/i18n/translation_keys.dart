@@ -3753,6 +3753,7 @@ class TranslationKeys {
   static const accountBenefitGroups = 'account.benefit_groups';
   static const accountCheckEmail = 'account.check_email';
   static const accountKeepDaysSafe = 'account.keep_days_safe';
+  static const accountKeepDaySafe = 'account.keep_day_safe';
   static const accountKeepCta = 'account.keep_cta';
   static const accountNextPaths = 'account.next_paths';
   static const accountSignUpToStart = 'account.sign_up_to_start';
