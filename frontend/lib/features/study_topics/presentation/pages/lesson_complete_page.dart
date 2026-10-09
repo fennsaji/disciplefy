@@ -185,7 +185,7 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 16),
-                      const _CheckWithConfetti(),
+                      const LessonCompleteCelebration(),
                       const SizedBox(height: 10),
                       Text(
                         title,
@@ -276,9 +276,24 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
       );
 }
 
-/// The gold check in a scatter of confetti, as drawn in the design.
-class _CheckWithConfetti extends StatelessWidget {
-  const _CheckWithConfetti();
+/// The gold check in a scatter of confetti. On open the check pops, then the
+/// confetti bursts outward from it once and rests. Reduced motion shows the
+/// final state at once.
+class LessonCompleteCelebration extends StatefulWidget {
+  const LessonCompleteCelebration({super.key});
+
+  @override
+  State<LessonCompleteCelebration> createState() =>
+      _LessonCompleteCelebrationState();
+}
+
+class _LessonCompleteCelebrationState extends State<LessonCompleteCelebration>
+    with SingleTickerProviderStateMixin {
+  static const _totalMs = 1250.0;
+  static const _checkMs = 500.0;
+  static const _burstStartMs = 300.0;
+  static const _burstMs = 700.0;
+  static const _centre = Offset(175, 60);
 
   /// x, y (in a 350 x 120 band), width, height, rotation in degrees, tone.
   static const _pieces = <(double, double, double, double, double, int)>[
@@ -306,6 +321,52 @@ class _CheckWithConfetti extends StatelessWidget {
     Color(0xFFB8860B),
   ];
 
+  // Per piece, computed once: rest centre offset from the check centre and the
+  // stagger interval within the controller's 0..1 range.
+  static final _offsets = <Offset>[
+    for (final p in _pieces)
+      Offset(p.$1 + 20 + p.$3 / 2, p.$2 + p.$4 / 2) - _centre,
+  ];
+  static final _intervals = <Interval>[
+    for (var i = 0; i < _pieces.length; i++)
+      () {
+        final delay = (i * 250 / (_pieces.length - 1));
+        final begin = _burstStartMs + delay;
+        return Interval(begin / _totalMs, (begin + _burstMs) / _totalMs,
+            curve: Curves.easeOutCubic);
+      }(),
+  ];
+  static const _checkInterval =
+      Interval(0, _checkMs / _totalMs, curve: Curves.easeOutBack);
+  static const _fadeInterval = Interval(0, 0.2, curve: Curves.easeOut);
+  static const _ringInterval = Interval(0.15, 0.6, curve: Curves.easeOut);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1250),
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    final reduce = MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.maybeOf(context)?.accessibleNavigation == true;
+    if (reduce) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
@@ -314,42 +375,89 @@ class _CheckWithConfetti extends StatelessWidget {
         child: SizedBox(
           width: 350,
           height: 120,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              for (final (x, y, w, h, deg, tone) in _pieces)
-                Positioned(
-                  // The design's band starts 20px in; centre it on 350.
-                  left: x + 20,
-                  top: y,
-                  child: Transform.rotate(
-                    angle: deg * math.pi / 180,
-                    child: Container(
-                      width: w,
-                      height: h,
-                      decoration: BoxDecoration(
-                        color: _tones[tone],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final v = _controller.value;
+              final checkScale = _checkInterval.transform(v) * 1.0;
+              final ring = _ringInterval.transform(v);
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  for (var i = 0; i < _pieces.length; i++)
+                    _piece(i, _intervals[i].transform(v)),
+                  Positioned(
+                    left: 143,
+                    top: 28,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        if (v > 0 && v < 1)
+                          Positioned.fill(
+                            child: Transform.scale(
+                              scale: 1 + 0.6 * ring,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: palette.selectedFill
+                                        .withValues(alpha: 0.4 * (1 - ring)),
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        Opacity(
+                          opacity: _fadeInterval.transform(v).clamp(0.0, 1.0),
+                          child: Transform.scale(
+                            key: const Key('lesson_complete_check_scale'),
+                            scale: checkScale,
+                            child: Container(
+                              key: const Key('lesson_complete_check'),
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: palette.selectedFill,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.check_rounded,
+                                  size: 30, color: palette.onSelected),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              Positioned(
-                left: 143,
-                top: 28,
-                child: Container(
-                  key: const Key('lesson_complete_check'),
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: palette.selectedFill,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.check_rounded,
-                      size: 30, color: palette.onSelected),
-                ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _piece(int i, double t) {
+    final (x, y, w, h, deg, tone) = _pieces[i];
+    return Positioned(
+      left: x + 20,
+      top: y,
+      child: Transform.translate(
+        offset: _offsets[i] * -(1 - t),
+        child: Transform.scale(
+          scale: t,
+          child: Transform.rotate(
+            angle: (deg + (1 - t) * -90) * math.pi / 180,
+            child: Container(
+              key: Key('lesson_complete_confetti_$i'),
+              width: w,
+              height: h,
+              decoration: BoxDecoration(
+                color: _tones[tone],
+                borderRadius: BorderRadius.circular(2),
               ),
-            ],
+            ),
           ),
         ),
       ),
