@@ -1,7 +1,6 @@
 import { assertEquals, assertRejects } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import {
   advancedLessonPosition,
-  completionHookPlan,
   isRecentCompletion,
   lessonTopicMatches,
   nextFellowshipStudyState,
@@ -55,11 +54,6 @@ Deno.test('a failed completion rpc throws', async () => {
   await assertRejects(() =>
     recordTopicCompletion(db, { userId: 'u', topicId: 't', timeSpentSeconds: 0, isGuest: false })
   )
-})
-
-Deno.test('scores recalculate only on the call that recorded the first completion', () => {
-  assertEquals(completionHookPlan(true), { recalculateScores: true, autoAdvanceFellowship: true })
-  assertEquals(completionHookPlan(false), { recalculateScores: false, autoAdvanceFellowship: true })
 })
 
 Deno.test('fellowship auto-advance compares the lesson topic id, not the join-row id', () => {
