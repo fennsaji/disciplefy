@@ -521,27 +521,31 @@ void main() {
           find.byType(WalkthroughTooltip, skipOffstage: false), findsNothing);
     });
 
-    testWidgets('sections in order: hero, path, New for you, Save progress',
-        (tester) async {
-      asGuest();
+    testWidgets('signed in: hero, path, then New for you', (tester) async {
       await pumpHome(tester, summary: _summary4of8);
       final hero = find.text('Reflect on this verse');
       final path = find.byType(HomePathSection);
       final banner = find.byType(NewForYouBanner);
-      final save = find.byType(SaveProgressRow);
       expect(banner, findsOneWidget);
-      expect(save, findsOneWidget);
+      expect(find.byType(SaveProgressRow), findsNothing);
       expect(topOf(tester, hero), lessThan(topOf(tester, path)));
       expect(topOf(tester, path), lessThan(topOf(tester, banner)));
-      expect(topOf(tester, banner), lessThan(topOf(tester, save)));
-      // A guest is offered paths only.
-      expect(find.text('Explore more learning paths'), findsOneWidget);
+    });
+
+    testWidgets('guest: hero, path, Save progress; no New for you',
+        (tester) async {
+      asGuest();
+      await pumpHome(tester, summary: _summary4of8);
+      final path = find.byType(HomePathSection);
+      final save = find.byType(SaveProgressRow);
+      expect(find.byType(NewForYouBanner), findsNothing);
+      expect(save, findsOneWidget);
+      expect(topOf(tester, path), lessThan(topOf(tester, save)));
     });
 
     testWidgets(
         'New for you is worked out again once the user id is known '
         '(not given up after a load with no user)', (tester) async {
-      asGuest();
       String? uid;
       when(() => auth.userId).thenAnswer((_) => uid);
       final states = StreamController<HomeState>();
@@ -810,7 +814,7 @@ void main() {
   group('fits at 360px and 320px', () {
     for (final c in fitCases()) {
       final language = c.lang;
-      testWidgets('${c.name}, guest with banner', (tester) async {
+      testWidgets('${c.name}, guest (no banner)', (tester) async {
         asGuest();
         final summary = _localSummary(language);
         await pumpHome(
@@ -820,7 +824,7 @@ void main() {
           language: language,
           size: c.size(1600),
         );
-        expect(find.byType(NewForYouBanner), findsOneWidget);
+        expect(find.byType(NewForYouBanner), findsNothing);
         expect(find.byType(SaveProgressRow), findsOneWidget);
         expect(tester.takeException(), isNull);
         expectNoTruncatedText(tester, allow: {

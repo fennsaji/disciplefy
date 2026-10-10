@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -311,6 +313,32 @@ void main() {
               .height,
           40);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('rows keep a placeholder line until the paths load',
+        (tester) async {
+      final gate = Completer<void>();
+      final answer = paths.getLearningPaths();
+      when(() => paths.getLearningPaths(
+            language: any(named: 'language'),
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async {
+        await gate.future;
+        return answer;
+      });
+      useSurface(tester, const Size(390, 900));
+      await tester.pumpWidget(app(initial: AppRoutes.welcomeGoal));
+      await tester.pump();
+
+      expect(find.byKey(const Key('first_run_row_subtitle_loading')),
+          findsNWidgets(6));
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('first_run_row_subtitle_loading')),
+          findsNothing);
+      expect(find.textContaining('New Believer Essentials'), findsOneWidget);
     });
 
     testWidgets('path list unavailable: no sub-label, plain guest helper',

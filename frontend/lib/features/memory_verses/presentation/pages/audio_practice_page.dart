@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:disciplefy_bible_study/features/voice_buddy/data/services/tts_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
@@ -102,6 +103,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
   @override
   void dispose() {
+    _ttsService.stop();
     _practiceTimer?.cancel();
     _speechService.stopListening();
     _speechService.dispose();
@@ -177,7 +179,41 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     return 'en-US';
   }
 
+  /// Reads the verse aloud on the Read step (the text is self-hosted
+  /// Public Domain Bible text, so it may be spoken).
+  final TTSService _ttsService = TTSService();
+  bool _isListening = false;
+
+  Future<void> _toggleListen() async {
+    if (_isListening) {
+      await _ttsService.stop();
+      if (mounted) setState(() => _isListening = false);
+      return;
+    }
+    final verse = currentVerse;
+    if (verse == null) return;
+    setState(() => _isListening = true);
+    try {
+      await _ttsService.speakWithSettings(
+        text: '${verse.verseText}. ${verse.verseReference}',
+        languageCode: _getLanguageCode(),
+        speakingRate: 0.9,
+        onComplete: () {
+          if (mounted) setState(() => _isListening = false);
+        },
+      );
+    } catch (e) {
+      Logger.warning('[AUDIO_PRACTICE] Listen failed',
+          context: {'error': e.runtimeType.toString()});
+      if (mounted) setState(() => _isListening = false);
+    }
+  }
+
   void _proceedToSpeaking() {
+    if (_isListening) {
+      _ttsService.stop();
+      _isListening = false;
+    }
     setState(() {
       _currentPhase = AudioPhase.speaking;
     });
@@ -634,6 +670,27 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 height: 1.55,
                 color: palette.text,
               ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: OutlinedButton.icon(
+            key: const Key('audio_practice_listen'),
+            onPressed: _toggleListen,
+            icon: Icon(
+              _isListening ? Icons.stop_rounded : Icons.headphones_rounded,
+              size: 18,
+            ),
+            label: Text(context.tr(_isListening
+                ? TranslationKeys.prayerModeStop
+                : TranslationKeys.audioPracticeListen)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: palette.text,
+              side: BorderSide(color: palette.outline),
+              shape: const StadiumBorder(),
+              minimumSize: const Size(0, 40),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
             ),
           ),
         ),

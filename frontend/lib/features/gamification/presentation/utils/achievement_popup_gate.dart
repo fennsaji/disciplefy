@@ -26,6 +26,22 @@ class AchievementPopupGate {
         path.startsWith('${AppRoutes.studyGuideV2}/');
   }
 
+  /// Days after signing up during which no achievement pop-up shows.
+  static const int newUserQuietDays = 7;
+
+  /// Owner rule: no achievement pop-ups for a guest or for a new account
+  /// (created less than [newUserQuietDays] ago, or of unknown age). Their
+  /// achievements are still earned; only the pop-up is skipped.
+  static bool suppressedFor({
+    required bool isGuest,
+    required DateTime? accountCreatedAt,
+    required DateTime now,
+  }) {
+    if (isGuest || accountCreatedAt == null) return true;
+    return now.difference(accountCreatedAt) <
+        const Duration(days: newUserQuietDays);
+  }
+
   /// Whether to open the pop-up for the head of the queue now.
   static bool shouldShow({
     required String location,
