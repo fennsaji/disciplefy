@@ -2,6 +2,7 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import {
   GUEST_TOKEN_HEADER,
   isGuestNotAnonymousError,
+  mergeGuestGrowthGoal,
   mergeGuestNewForYou,
   normalizeMergeCounts,
   readGuestToken,
@@ -72,4 +73,16 @@ Deno.test('mergeGuestNewForYou calls the merge function with guest and user', as
 Deno.test('mergeGuestNewForYou never fails the merge', async () => {
   assertEquals(await mergeGuestNewForYou(async () => ({ error: { code: '42883' } }), 'g', 'u'), false)
   assertEquals(await mergeGuestNewForYou(() => Promise.reject(new Error('down')), 'g', 'u'), false)
+})
+
+Deno.test('mergeGuestGrowthGoal carries the guest goal and never fails the merge', async () => {
+  const calls: Array<[string, Record<string, unknown>]> = []
+  const ok = await mergeGuestGrowthGoal(async (fn, args) => {
+    calls.push([fn, args])
+    return { error: null }
+  }, 'g', 'u')
+  assertEquals(ok, true)
+  assertEquals(calls, [['merge_guest_growth_goal', { p_guest: 'g', p_user: 'u' }]])
+  assertEquals(await mergeGuestGrowthGoal(async () => ({ error: { code: '42883' } }), 'g', 'u'), false)
+  assertEquals(await mergeGuestGrowthGoal(() => Promise.reject(new Error('down')), 'g', 'u'), false)
 })

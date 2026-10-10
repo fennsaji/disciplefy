@@ -76,27 +76,44 @@ export type RpcCaller = (
 ) => PromiseLike<{ error: { code?: string } | null }>
 
 /**
- * Carries the guest's Home "New for you" history into the account through
- * `public.merge_guest_new_for_you`. Best effort: returns false (never throws)
- * when it could not; features tried as a guest are still found from the
- * merged data on the account's next sync.
+ * Calls one best-effort guest -> account merge function [fn]. Returns false
+ * (never throws) when it could not run; the main merge has already succeeded.
  */
-export async function mergeGuestNewForYou(
+async function mergeGuestExtra(
   rpc: RpcCaller,
+  fn: string,
   guestId: string,
   userId: string
 ): Promise<boolean> {
   try {
-    const { error } = await rpc('merge_guest_new_for_you', { p_guest: guestId, p_user: userId })
+    const { error } = await rpc(fn, { p_guest: guestId, p_user: userId })
     if (error) {
-      console.warn('[USER_PROFILE] merge_guest new-for-you skipped', { code: error.code })
+      console.warn(`[USER_PROFILE] merge_guest ${fn} skipped`, { code: error.code })
       return false
     }
     return true
   } catch (e) {
-    console.warn('[USER_PROFILE] merge_guest new-for-you skipped', {
+    console.warn(`[USER_PROFILE] merge_guest ${fn} skipped`, {
       reason: e instanceof Error ? e.name : 'unknown',
     })
     return false
   }
+}
+
+/**
+ * Carries the guest's Home "New for you" history into the account through
+ * `public.merge_guest_new_for_you`. Best effort: features tried as a guest are
+ * still found from the merged data on the account's next sync.
+ */
+export function mergeGuestNewForYou(rpc: RpcCaller, guestId: string, userId: string): Promise<boolean> {
+  return mergeGuestExtra(rpc, 'merge_guest_new_for_you', guestId, userId)
+}
+
+/**
+ * Carries the guest's growth goal into the account through
+ * `public.merge_guest_growth_goal` (the latest goal wins). Best effort: the
+ * app uploads its cached goal again when the account has none.
+ */
+export function mergeGuestGrowthGoal(rpc: RpcCaller, guestId: string, userId: string): Promise<boolean> {
+  return mergeGuestExtra(rpc, 'merge_guest_growth_goal', guestId, userId)
 }
