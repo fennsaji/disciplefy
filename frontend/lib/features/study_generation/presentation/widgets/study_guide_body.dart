@@ -13,6 +13,8 @@ import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/core/utils/lru_memo.dart';
+import 'package:disciplefy_bible_study/features/study_generation/data/services/study_guide_tts_service.dart'
+    show StudyGuideSection;
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/expected_sections.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_guide.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
@@ -172,6 +174,21 @@ class StudyGuideBody extends StatelessWidget {
   /// Counted in debug builds only.
   @visibleForTesting
   static int debugBlockBuilds = 0;
+
+  /// The section index ([readingSectionIndex]) of [section], the part of the
+  /// guide text-to-speech is reading. Text-to-speech numbers only the
+  /// sections it reads, so its own index does not match once a guide has no
+  /// passage.
+  static int? sectionIndexFor(StudyGuideSection? section) => switch (section) {
+        StudyGuideSection.summary => 0,
+        StudyGuideSection.context => 1,
+        StudyGuideSection.passageReading => 2,
+        StudyGuideSection.interpretation => 3,
+        StudyGuideSection.relatedVerses => 4,
+        StudyGuideSection.discussionQuestions => 5,
+        StudyGuideSection.prayerPoints => 6,
+        null => null,
+      };
 
   /// How many numbered sections [StudyGuideBody] renders for [sections] —
   /// the count the end-of-guide blocks continue numbering from.

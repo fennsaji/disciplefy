@@ -428,65 +428,52 @@ class StudyGuideTTSService {
 
   /// Prepare sections from a study guide with mode-specific titles.
   ///
-  /// Passage Reading is prepended as the first section when [guide.passage]
-  /// is non-null and non-empty.
+  /// Passage Reading follows the context when [guide.passage] is non-null and
+  /// non-empty (see [readingOrder]).
   List<TtsSection> _prepareSections(StudyGuide guide, StudyMode mode) {
     final titles = _getLocalizedSectionTitles(guide.language, mode);
     final language = guide.language;
-    final sections = <TtsSection>[];
-
-    sections.addAll([
-      TtsSection(
-        title: titles[StudyGuideSection.summary]!,
-        content: guide.summary,
-        section: StudyGuideSection.summary,
-      ),
-      TtsSection(
-        title: titles[StudyGuideSection.context]!,
-        content: guide.context,
-        section: StudyGuideSection.context,
-      ),
-    ]);
-
-    // Passage reading comes after context, matching the study guide page order
-    if (guide.passage != null && guide.passage!.isNotEmpty) {
-      sections.add(TtsSection(
-        title: titles[StudyGuideSection.passageReading]!,
-        content: guide.passage!,
-        section: StudyGuideSection.passageReading,
-      ));
-    }
-
-    sections.addAll([
-      TtsSection(
-        title: titles[StudyGuideSection.interpretation]!,
-        content: guide.interpretation,
-        section: StudyGuideSection.interpretation,
-      ),
-      TtsSection(
-        title: titles[StudyGuideSection.relatedVerses]!,
-        content: guide.relatedVerses.join('. '),
-        section: StudyGuideSection.relatedVerses,
-      ),
-      TtsSection(
-        title: titles[StudyGuideSection.discussionQuestions]!,
-        content: guide.reflectionQuestions
-            .asMap()
-            .entries
-            .map((e) =>
-                '${_getLocalizedQuestionLabel(language, e.key + 1)}. ${e.value}')
-            .join('. '),
-        section: StudyGuideSection.discussionQuestions,
-      ),
-      TtsSection(
-        title: titles[StudyGuideSection.prayerPoints]!,
-        content: guide.prayerPoints.join('. '),
-        section: StudyGuideSection.prayerPoints,
-      ),
-    ]);
-
-    return sections;
+    String content(StudyGuideSection section) => switch (section) {
+          StudyGuideSection.summary => guide.summary,
+          StudyGuideSection.context => guide.context,
+          StudyGuideSection.passageReading => guide.passage ?? '',
+          StudyGuideSection.interpretation => guide.interpretation,
+          StudyGuideSection.relatedVerses => guide.relatedVerses.join('. '),
+          StudyGuideSection.discussionQuestions => guide.reflectionQuestions
+              .asMap()
+              .entries
+              .map((e) =>
+                  '${_getLocalizedQuestionLabel(language, e.key + 1)}. ${e.value}')
+              .join('. '),
+          StudyGuideSection.prayerPoints => guide.prayerPoints.join('. '),
+        };
+    return [
+      for (final section in readingOrder(guide))
+        TtsSection(
+          title: titles[section]!,
+          content: content(section),
+          section: section,
+        ),
+    ];
   }
+
+  /// The parts of [guide] read aloud, in reading order: the order of the
+  /// study guide page, with the passage after the context when there is one.
+  static List<StudyGuideSection> readingOrder(StudyGuide guide) => [
+        StudyGuideSection.summary,
+        StudyGuideSection.context,
+        if (guide.passage != null && guide.passage!.isNotEmpty)
+          StudyGuideSection.passageReading,
+        StudyGuideSection.interpretation,
+        StudyGuideSection.relatedVerses,
+        StudyGuideSection.discussionQuestions,
+        StudyGuideSection.prayerPoints,
+      ];
+
+  /// The part of the guide that section [index] of the playback reads, or
+  /// null when there is no such section.
+  StudyGuideSection? sectionAt(int index) =>
+      index >= 0 && index < _sections.length ? _sections[index].section : null;
 
   /// Start reading a study guide from the beginning with mode-specific section names.
   Future<void> startReading(

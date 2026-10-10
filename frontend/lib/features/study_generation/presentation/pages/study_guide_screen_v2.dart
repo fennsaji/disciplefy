@@ -479,20 +479,24 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     // Listen for TTS section completions to auto-mark the guide as completed
     // once the user has listened through the interpretation section.
-    final tts = sl<StudyGuideTTSService>().state;
-    tts.addListener(_onTtsStateChanged);
-    _ttsReadingSection.value = tts.value.status == TtsStatus.playing
-        ? tts.value.currentSectionIndex
-        : null;
+    sl<StudyGuideTTSService>().state.addListener(_onTtsStateChanged);
+    _ttsReadingSection.value = _readingSectionFromTts();
+  }
+
+  /// The reader section text-to-speech is reading aloud, or null.
+  int? _readingSectionFromTts() {
+    final tts = sl<StudyGuideTTSService>();
+    final state = tts.state.value;
+    if (state.status != TtsStatus.playing) return null;
+    return StudyGuideBody.sectionIndexFor(
+        tts.sectionAt(state.currentSectionIndex));
   }
 
   /// Marks the study guide as completed when TTS finishes the interpretation
   /// section (or beyond).
   void _onTtsStateChanged() {
     final ttsState = sl<StudyGuideTTSService>().state.value;
-    _ttsReadingSection.value = ttsState.status == TtsStatus.playing
-        ? ttsState.currentSectionIndex
-        : null;
+    _ttsReadingSection.value = _readingSectionFromTts();
     final completed = ttsState.lastCompletedSection;
     if (completed == null || _completionMarked) return;
 
