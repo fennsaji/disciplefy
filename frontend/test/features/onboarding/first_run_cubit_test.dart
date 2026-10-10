@@ -225,6 +225,7 @@ void main() {
         final goals = _MockGoals();
         when(() => goals.saveGoal(any(), source: any(named: 'source')))
             .thenAnswer((_) async => const Right(GrowthGoal.readGospel));
+        when(() => goals.rememberChoice(any())).thenAnswer((_) async {});
         _goalsMock = goals;
         return FirstRunCubit(
           guest: guest,
@@ -239,6 +240,8 @@ void main() {
       act: (c) => c.startLessonOne(GrowthGoal.readGospel, 'en'),
       expect: () => [isA<FirstRunStarting>(), isA<FirstRunReady>()],
       verify: (_) {
+        verify(() => _goalsMock!.rememberChoice(GrowthGoal.readGospel))
+            .called(1);
         verify(() => _goalsMock!.saveGoal(GrowthGoal.readGospel,
             source: GrowthGoalSource.firstRun)).called(1);
       },

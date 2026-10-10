@@ -125,6 +125,8 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     if (!_guest.hasSession) {
       if (!_flags.guestMode) {
         await _settings.put(goalKey, goal.name);
+        // Nobody signed in yet: the account that signs in next owns it.
+        await _goals?.rememberChoice(goal);
         Logger.info('First run needs login before lesson 1',
             tag: 'FIRST_RUN', context: {'goal': goal.name});
         _emit(const FirstRunNeedsLogin());
@@ -152,6 +154,7 @@ class FirstRunCubit extends Cubit<FirstRunState> {
 
     _step = _Step.saveGoal;
     await _settings.put(goalKey, goal.name);
+    await _goals?.rememberChoice(goal);
     // On the server too (it picks what comes next). Never holds up lesson 1:
     // a failed save is retried by the goal sync on Home.
     final goals = _goals;

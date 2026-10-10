@@ -29,6 +29,11 @@ abstract class GrowthGoalRepository {
     GrowthGoalSource source = GrowthGoalSource.app,
   });
 
+  /// Records on this device who picked [goal] in the first run: the
+  /// signed-in user (a guest too), or, before anyone is signed in, the next
+  /// account that signs in. Only that account ever uploads the goal.
+  Future<void> rememberChoice(GrowthGoal goal);
+
   /// Once per signed-in user and app session: takes the server goal, or
   /// uploads a goal that so far only lives on this device (picked in a first
   /// run before goals were saved on the server). True when it uploaded one,

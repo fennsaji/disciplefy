@@ -23,6 +23,12 @@ class GrowthGoalRepositoryImpl implements GrowthGoalRepository {
   /// The goal the first run stored on this device.
   static const String firstRunGoalKey = 'first_run_goal';
 
+  /// Who picked [firstRunGoalKey]: a user id, or [pendingChooser] when it was
+  /// picked before signing in. A goal from before this key existed has no
+  /// chooser and is never uploaded (another account may have picked it).
+  static const String firstRunGoalUserKey = 'first_run_goal_user';
+  static const String pendingChooser = 'pending_sign_in';
+
   final GrowthGoalRemote _remote;
   final Box _settings;
   final String? Function() _currentUserId;
@@ -46,6 +52,8 @@ class GrowthGoalRepositoryImpl implements GrowthGoalRepository {
       if (_settings.get(cacheUserKey) == userId) {
         return GrowthGoal.fromName(_settings.get(cacheKey));
       }
+      final chooser = _settings.get(firstRunGoalUserKey);
+      if (chooser != userId && chooser != pendingChooser) return null;
       return GrowthGoal.fromName(_settings.get(firstRunGoalKey));
     } catch (_) {
       return null;
@@ -58,6 +66,25 @@ class GrowthGoalRepositoryImpl implements GrowthGoalRepository {
     } catch (e) {
       Logger.warning('Growth goal cache write failed',
           tag: 'GROWTH_GOAL', context: {'error': e.runtimeType.toString()});
+    }
+  }
+
+  @override
+  Future<void> rememberChoice(GrowthGoal goal) async {
+    try {
+      await _settings.put(
+          firstRunGoalUserKey, _currentUserId() ?? pendingChooser);
+    } catch (e) {
+      Logger.warning('Growth goal chooser write failed',
+          tag: 'GROWTH_GOAL', context: {'error': e.runtimeType.toString()});
+    }
+  }
+
+  /// The signed-in user takes a goal picked before anyone signed in, so no
+  /// later account on this device can.
+  Future<void> _claimPending(String userId) async {
+    if (_settings.get(firstRunGoalUserKey) == pendingChooser) {
+      await _settings.put(firstRunGoalUserKey, userId);
     }
   }
 
@@ -109,12 +136,14 @@ class GrowthGoalRepositoryImpl implements GrowthGoalRepository {
       final server = GrowthGoal.fromServerKey(await _remote.fetchGoal());
       if (server != null) {
         await _cache(userId, server);
+        await _claimPending(userId);
       } else {
         final local = cachedGoal;
         if (local != null) {
           await _remote.saveGoal(
               local.serverKey, GrowthGoalSource.firstRun.value);
           await _cache(userId, local);
+          await _claimPending(userId);
           uploaded = true;
         }
       }

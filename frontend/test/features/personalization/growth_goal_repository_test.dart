@@ -100,8 +100,9 @@ void main() {
 
   test('sync uploads a goal that was only on this device (first run)',
       () async {
-    await settings.put('first_run_goal', 'hopeHardTimes');
     final r = repo();
+    await settings.put('first_run_goal', 'hopeHardTimes');
+    await r.rememberChoice(GrowthGoal.hopeHardTimes);
 
     expect(await r.syncOnce(), isTrue);
 
@@ -112,6 +113,7 @@ void main() {
   test('sync keeps the server goal over the device one, once per user',
       () async {
     await settings.put('first_run_goal', 'hopeHardTimes');
+    await settings.put(GrowthGoalRepositoryImpl.firstRunGoalUserKey, 'u1');
     remote.goals['u1'] = 'read_gospel';
     final r = repo();
 
@@ -133,6 +135,48 @@ void main() {
     expect(r.cachedGoal, isNull);
     await r.syncOnce();
     expect(remote.fetches, 1);
+  });
+
+  test('shared device: a goal another account chose is never uploaded',
+      () async {
+    final r = repo();
+    await settings.put('first_run_goal', 'readGospel');
+    await r.rememberChoice(GrowthGoal.readGospel); // chosen by u1
+
+    userId = 'u2';
+    remote.userId = 'u2';
+
+    expect(r.cachedGoal, isNull);
+    expect(await r.syncOnce(), isFalse);
+    expect(remote.saves, isEmpty);
+  });
+
+  test('a first-run goal with no recorded chooser is never uploaded', () async {
+    await settings.put('first_run_goal', 'readGospel');
+    final r = repo();
+
+    expect(r.cachedGoal, isNull);
+    expect(await r.syncOnce(), isFalse);
+    expect(remote.saves, isEmpty);
+  });
+
+  test('picked before signing in: the account that signs in next claims it',
+      () async {
+    userId = null;
+    final r = repo();
+    await settings.put('first_run_goal', 'freshStart');
+    await r.rememberChoice(GrowthGoal.freshStart); // no session yet
+
+    userId = 'u1';
+    expect(await r.syncOnce(), isTrue);
+    expect(remote.saves, [('fresh_start', 'first_run')]);
+
+    // Claimed: a later account on this device does not get it.
+    userId = 'u2';
+    remote.userId = 'u2';
+    expect(r.cachedGoal, isNull);
+    expect(await r.syncOnce(), isFalse);
+    expect(remote.saves, hasLength(1));
   });
 
   test('signed out: nothing is read or written', () async {
