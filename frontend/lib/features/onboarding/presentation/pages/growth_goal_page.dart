@@ -33,6 +33,9 @@ class GrowthGoalPage extends StatefulWidget {
 class _GrowthGoalPageState extends State<GrowthGoalPage> {
   GrowthGoal _selected = GrowthGoal.values.first;
   StarterPaths _starter = StarterPaths.empty;
+
+  /// False until the starter paths have loaded (or failed).
+  bool _starterLoaded = false;
   late final bool _guestHelper;
 
   String get _language => sl<TranslationService>().currentLanguage.code;
@@ -43,7 +46,12 @@ class _GrowthGoalPageState extends State<GrowthGoalPage> {
     final cubit = context.read<FirstRunCubit>();
     _guestHelper = cubit.showsGuestHelper;
     cubit.loadStarterPaths(_language).then((starter) {
-      if (mounted) setState(() => _starter = starter);
+      if (mounted) {
+        setState(() {
+          _starter = starter;
+          _starterLoaded = true;
+        });
+      }
     });
   }
 
@@ -149,6 +157,7 @@ class _GrowthGoalPageState extends State<GrowthGoalPage> {
                                     size: 20, color: color),
                                 title: context.tr(goal.labelKey),
                                 subtitle: _meta(context, goal),
+                                subtitleLoading: !_starterLoaded,
                                 isSelected: _selected == goal,
                                 onTap: busy
                                     ? null

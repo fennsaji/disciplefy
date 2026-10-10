@@ -12,6 +12,10 @@ class FirstRunChoiceRow extends StatelessWidget {
   final Widget Function(Color color) leading;
   final String title;
   final String? subtitle;
+
+  /// Shows a placeholder line where [subtitle] will go, so the row keeps
+  /// its height while the subtitle loads.
+  final bool subtitleLoading;
   final bool isSelected;
   final VoidCallback? onTap;
 
@@ -28,6 +32,7 @@ class FirstRunChoiceRow extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.subtitle,
+    this.subtitleLoading = false,
     this.minHeight = 60,
     this.gap = 8,
   });
@@ -92,6 +97,23 @@ class FirstRunChoiceRow extends StatelessWidget {
                               color: palette.text,
                             ),
                           ),
+                          if (subtitle == null && subtitleLoading) ...[
+                            const SizedBox(height: 2),
+                            // One subtitle line tall (12.5 x 1.3).
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Container(
+                                key:
+                                    const Key('first_run_row_subtitle_loading'),
+                                width: 150,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: palette.hairline,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                            ),
+                          ],
                           if (subtitle != null) ...[
                             const SizedBox(height: 2),
                             Text(
