@@ -20,7 +20,7 @@ import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
 
 /// Second screen of the new first run: "What would you like to grow in?"
 /// with six goals, each opening a learning path. "Start lesson 1" starts the
-/// path (as a guest when signed out) and opens lesson 1 in Quick Read.
+/// path (as a guest when signed out) and opens lesson 1 in Standard.
 ///
 /// Needs a [FirstRunCubit] above it.
 class GrowthGoalPage extends StatefulWidget {

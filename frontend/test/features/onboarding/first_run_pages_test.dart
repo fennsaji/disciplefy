@@ -361,7 +361,7 @@ void main() {
       expect(stub, findsOneWidget);
       final location = tester.widget<Text>(stub).data!.substring(5);
       final query = Uri.parse(location).queryParameters;
-      expect(query['mode'], 'quick');
+      expect(query['mode'], 'standard');
       expect(query['lesson_number'], '1');
       expect(query['first_run'], '1');
       verify(() =>

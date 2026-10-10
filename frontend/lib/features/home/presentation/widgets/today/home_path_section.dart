@@ -27,7 +27,6 @@ class HomePathSection extends StatelessWidget {
   final ActivePathSummary? summary;
   final bool loading;
   final StudyMode mode;
-  final ValueChanged<StudyMode> onModeChanged;
 
   /// Called on return from a lesson, or from the path page when it reports
   /// a change, so Home can refresh the path's progress.
@@ -38,7 +37,6 @@ class HomePathSection extends StatelessWidget {
     required this.summary,
     required this.loading,
     required this.mode,
-    required this.onModeChanged,
     this.onProgressMayHaveChanged,
   });
 
@@ -53,7 +51,6 @@ class HomePathSection extends StatelessWidget {
     return _ActivePath(
       summary: summary,
       mode: mode,
-      onModeChanged: onModeChanged,
       onProgressMayHaveChanged: onProgressMayHaveChanged,
     );
   }
@@ -62,13 +59,11 @@ class HomePathSection extends StatelessWidget {
 class _ActivePath extends StatefulWidget {
   final ActivePathSummary summary;
   final StudyMode mode;
-  final ValueChanged<StudyMode> onModeChanged;
   final VoidCallback? onProgressMayHaveChanged;
 
   const _ActivePath({
     required this.summary,
     required this.mode,
-    required this.onModeChanged,
     this.onProgressMayHaveChanged,
   });
 
@@ -156,7 +151,6 @@ class _ActivePathState extends State<_ActivePath> {
         TodayLessonCard(
           summary: summary,
           mode: widget.mode,
-          onModeChanged: widget.onModeChanged,
           onStart: () => _start(context),
           onChooseNextPath: () => _chooseNextPath(context),
           onSeePath: () => _openPath(context),

@@ -259,6 +259,8 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
           },
         );
       }
+      // A path lesson is free in Standard; every other mode costs credits.
+      if (widget.isFromLearningPath) _tokenCosts[StudyMode.standard] = 0;
 
       if (mounted) {
         setState(() {

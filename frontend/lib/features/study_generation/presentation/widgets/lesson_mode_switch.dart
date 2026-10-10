@@ -11,10 +11,10 @@ import 'package:disciplefy_bible_study/features/study_generation/domain/entities
 /// gold; tapping the other reports it through [onChanged].
 class LessonModeSwitch extends StatelessWidget {
   /// Owner rule: the switch is offered on a Quick Read lesson (to move up
-  /// to Standard) and to a guest; a signed-in reader of a Standard or deeper
-  /// lesson does not see it at all.
+  /// to Standard, free on a path lesson). A guest studies in Standard only
+  /// and never sees it; nor does a reader of a Standard or deeper lesson.
   static bool shownFor({required StudyMode mode, required bool isGuest}) =>
-      isGuest || mode == StudyMode.quick;
+      !isGuest && mode == StudyMode.quick;
 
   final StudyMode current;
   final ValueChanged<StudyMode> onChanged;

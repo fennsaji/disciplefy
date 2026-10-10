@@ -17,12 +17,11 @@ import 'package:disciplefy_bible_study/features/study_generation/presentation/wi
 /// the next lesson is missing but the path is not finished (partial data),
 /// it shows the path title and a "See path" button.
 ///
-/// The card owns no state: [mode] is chosen (and persisted) by the caller,
-/// which [onModeChanged] notifies when the user picks another mode.
+/// The card owns no state: [mode] is worked out by the caller and shown as
+/// a label; it is changed in the study mode setting, not on the card.
 class TodayLessonCard extends StatelessWidget {
   final ActivePathSummary summary;
   final StudyMode mode;
-  final ValueChanged<StudyMode> onModeChanged;
   final VoidCallback onStart;
   final VoidCallback? onChooseNextPath;
 
@@ -34,7 +33,6 @@ class TodayLessonCard extends StatelessWidget {
     super.key,
     required this.summary,
     required this.mode,
-    required this.onModeChanged,
     required this.onStart,
     this.onChooseNextPath,
     this.onSeePath,
@@ -119,7 +117,7 @@ class TodayLessonCard extends StatelessWidget {
             color: palette.gold,
           ),
           chipWidth: _ModeChip.widthFor(context, mode),
-          chip: _ModeChip(mode: mode, onChanged: onModeChanged),
+          chip: _ModeChip(mode: mode),
         ),
         const SizedBox(height: 10 - _ModeChip.slack),
         Text(
@@ -290,16 +288,15 @@ double _textWidth(BuildContext context, String text, TextStyle? style) {
 /// a Quick/Full menu.
 class _ModeChip extends StatefulWidget {
   final StudyMode mode;
-  final ValueChanged<StudyMode> onChanged;
 
-  const _ModeChip({required this.mode, required this.onChanged});
+  const _ModeChip({required this.mode});
 
   /// Drawn height and the transparent tap margin above and below it.
   static const double height = 26;
   static const double slack = 7;
 
-  /// Horizontal padding, border and the two icons with their gaps.
-  static const double _chrome = 9 * 2 + 1 * 2 + 12 + 4 + 4 + 14;
+  /// Horizontal padding, border and the icon with its gap.
+  static const double _chrome = 9 * 2 + 1 * 2 + 12 + 4;
 
   static TextStyle? labelStyle(BuildContext context, Color ink) =>
       Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -319,8 +316,6 @@ class _ModeChip extends StatefulWidget {
 }
 
 class _ModeChipState extends State<_ModeChip> {
-  final _menuKey = GlobalKey<PopupMenuButtonState<StudyMode>>();
-
   @override
   Widget build(BuildContext context) {
     final mode = widget.mode;
@@ -331,52 +326,25 @@ class _ModeChipState extends State<_ModeChip> {
         ? palette.muted
         : ReaderPalette.ink.withValues(alpha: 0.68);
     final labelStyle = _ModeChip.labelStyle(context, ink);
-    return PopupMenuButton<StudyMode>(
-      key: _menuKey,
-      initialValue: mode,
-      // The chip shows its own label; no "Show menu" hover tip over it.
-      tooltip: '',
-      onSelected: (selected) {
-        if (selected != widget.mode) widget.onChanged(selected);
-      },
-      color: palette.raised,
-      itemBuilder: (context) => [
-        for (final m in [
-          StudyMode.quick,
-          StudyMode.standard,
-          if (mode != StudyMode.quick && mode != StudyMode.standard) mode,
-        ])
-          PopupMenuItem<StudyMode>(
-            value: m,
-            height: 40,
-            child: Text(_modeLabel(context, m),
-                style: labelStyle?.copyWith(
-                  fontSize: 14,
-                  color: palette.text,
-                  fontWeight: m == mode ? FontWeight.w700 : FontWeight.w500,
-                )),
-          ),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: _ModeChip.slack),
-        child: Container(
-          key: const Key('today_mode_chip'),
-          height: _ModeChip.height,
-          padding: const EdgeInsets.symmetric(horizontal: 9),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_ModeChip.height / 2),
-            border: Border.all(color: palette.outline),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.menu_book_outlined, size: 12, color: ink),
-              const SizedBox(width: 4),
-              Text(_modeLabel(context, mode), style: labelStyle),
-              const SizedBox(width: 4),
-              Icon(Icons.expand_more_rounded, size: 14, color: ink),
-            ],
-          ),
+    // A label, not a picker: only Standard is free on a path lesson, so the
+    // mode is changed in the study mode setting, not with one tap here.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: _ModeChip.slack),
+      child: Container(
+        key: const Key('today_mode_chip'),
+        height: _ModeChip.height,
+        padding: const EdgeInsets.symmetric(horizontal: 9),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_ModeChip.height / 2),
+          border: Border.all(color: palette.outline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.menu_book_outlined, size: 12, color: ink),
+            const SizedBox(width: 4),
+            Text(_modeLabel(context, mode), style: labelStyle),
+          ],
         ),
       ),
     );

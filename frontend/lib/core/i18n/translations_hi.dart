@@ -1199,6 +1199,7 @@ const Map<String, dynamic> hindiTranslations = {
     'learning_path_study_mode_description': 'चुनें कि रास्ते के पाठ कैसे पढ़ें',
     'use_recommended': 'अनुशंसित का उपयोग करें',
     'use_recommended_subtitle': 'हर रास्ता सबसे अच्छा अध्ययन मोड सुझाता है',
+    'use_recommended_path_subtitle': 'स्टैंडर्ड, हर पाठ में मुफ़्त',
     'error_updating_preference': 'प्राथमिकता अपडेट करने में विफल',
     'preference_updated_successfully': 'प्राथमिकता सफलतापूर्वक अपडेट की गई',
     'reflection_journal': 'चिंतन डायरी',
@@ -2989,7 +2990,7 @@ const Map<String, dynamic> hindiTranslations = {
     'sermon': {
       'short_name': 'उपदेश',
       'name': 'उपदेश रूपरेखा',
-      'description': 'समय और उदाहरणों के साथ पूर्ण उपदेश (2x क्रेडिट)',
+      'description': 'समय और उदाहरणों के साथ पूर्ण उपदेश',
       'duration_label': 'उपदेश रूपरेखा • 50-60 मिनट',
     },
   },

@@ -103,7 +103,6 @@ Widget _card(ActivePathSummary summary,
     TodayLessonCard(
         summary: summary,
         mode: StudyMode.standard,
-        onModeChanged: (_) {},
         onStart: onStart ?? () {},
         onChooseNextPath: () {},
         onSeePath: onSeePath ?? () {});
@@ -166,16 +165,14 @@ void main() {
         throwsArgumentError);
   });
 
-  testWidgets('one primary button, no Next: line, chip toggles mode',
+  testWidgets('one primary button, no Next: line, chip is a label',
       (tester) async {
-    StudyMode? changed;
     var started = 0;
     await tester.pumpWidget(welcomeApp(
         screen: Scaffold(
       body: TodayLessonCard(
           summary: summary4of8,
           mode: StudyMode.standard,
-          onModeChanged: (m) => changed = m,
           onStart: () => started++),
     )));
     expect(find.text('TODAY · LESSON 4'), findsOneWidget);
@@ -199,12 +196,11 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     expect(started, 1);
 
+    // No picker: tapping the label opens no menu.
     await tester.tap(find.textContaining('Standard'));
     await tester.pumpAndSettle();
-    expect(find.text('Quick Read · 3 min'), findsOneWidget);
-    await tester.tap(find.textContaining('Quick Read ·').last);
-    await tester.pumpAndSettle();
-    expect(changed, StudyMode.quick);
+    expect(find.text('Quick Read · 3 min'), findsNothing);
+    expect(find.byType(PopupMenuButton<StudyMode>), findsNothing);
   });
 
   testWidgets('chip shows the quick label in quick mode', (tester) async {
@@ -212,10 +208,7 @@ void main() {
         dark: true,
         screen: Scaffold(
           body: TodayLessonCard(
-              summary: summary4of8,
-              mode: StudyMode.quick,
-              onModeChanged: (_) {},
-              onStart: () {}),
+              summary: summary4of8, mode: StudyMode.quick, onStart: () {}),
         )));
     expect(find.text('Quick Read · 3 min'), findsOneWidget);
     expect(find.textContaining('Standard'), findsNothing);
@@ -223,26 +216,14 @@ void main() {
 
   testWidgets('a saved Deep Dive is named on the chip, not as Standard',
       (tester) async {
-    StudyMode? changed;
     await tester.pumpWidget(welcomeApp(
         dark: true,
         screen: Scaffold(
           body: TodayLessonCard(
-              summary: summary4of8,
-              mode: StudyMode.deep,
-              onModeChanged: (m) => changed = m,
-              onStart: () {}),
+              summary: summary4of8, mode: StudyMode.deep, onStart: () {}),
         )));
     expect(find.text('Deep Dive · 12 min'), findsOneWidget);
     expect(find.textContaining('Standard'), findsNothing);
-    await tester.tap(find.text('Deep Dive · 12 min'));
-    await tester.pumpAndSettle();
-    // The menu keeps the saved depth next to Quick Read and Standard.
-    expect(find.text('Quick Read · 3 min'), findsOneWidget);
-    expect(find.text('Standard · 8 min'), findsOneWidget);
-    await tester.tap(find.text('Standard · 8 min'));
-    await tester.pumpAndSettle();
-    expect(changed, StudyMode.standard);
   });
 
   for (final dark in [false, true]) {
@@ -252,10 +233,7 @@ void main() {
           dark: dark,
           screen: Scaffold(
             body: TodayLessonCard(
-                summary: summary4of8,
-                mode: StudyMode.standard,
-                onModeChanged: (_) {},
-                onStart: () {}),
+                summary: summary4of8, mode: StudyMode.standard, onStart: () {}),
           )));
       final context = tester.element(find.byType(TodayLessonCard));
       final palette = ReaderPalette.of(context);
@@ -281,7 +259,6 @@ void main() {
       body: TodayLessonCard(
           summary: finishedSummary,
           mode: StudyMode.standard,
-          onModeChanged: (_) {},
           onStart: () {},
           onChooseNextPath: () => chose++),
     )));
@@ -311,7 +288,6 @@ void main() {
       body: TodayLessonCard(
           summary: missingNext,
           mode: StudyMode.standard,
-          onModeChanged: (_) {},
           onStart: () {},
           onChooseNextPath: () {},
           onSeePath: () => seen++),
@@ -337,10 +313,7 @@ void main() {
             body: Padding(
               padding: const EdgeInsets.all(16),
               child: TodayLessonCard(
-                  summary: summary,
-                  mode: StudyMode.standard,
-                  onModeChanged: (_) {},
-                  onStart: () {}),
+                  summary: summary, mode: StudyMode.standard, onStart: () {}),
             ),
           )));
       expectNoTruncatedText(tester, allow: {summary.next!.title});
@@ -366,7 +339,6 @@ void main() {
                       lessonTotal: 8,
                       lessonsCompleted: 8),
                   mode: StudyMode.standard,
-                  onModeChanged: (_) {},
                   onStart: () {},
                   onChooseNextPath: () {}),
             ),
@@ -527,10 +499,7 @@ void main() {
                         body: Padding(
                           padding: const EdgeInsets.all(16),
                           child: TodayLessonCard(
-                              summary: summary,
-                              mode: mode,
-                              onModeChanged: (_) {},
-                              onStart: () {}),
+                              summary: summary, mode: mode, onStart: () {}),
                         ),
                       ),
                     ),

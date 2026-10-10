@@ -173,6 +173,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     StudyMode? selectedMode;
 
+    // A guest always studies a path lesson in Standard, its only free mode.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      await _navigateToTopicWithMode(topic, path, StudyMode.standard, false);
+      return;
+    }
+
     // 'recommended' or a concrete mode: the same rule as the Home and Topics
     // lesson cards ('recommended' → Standard).
     if (StudyModePreferences.isRecommended(learningPathModePreference) ||

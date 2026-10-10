@@ -9,6 +9,7 @@
 library;
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
@@ -97,10 +98,14 @@ Future<StudyMode> resolveNextLessonMode() async => nextLessonModeNow();
 
 /// [resolveNextLessonMode], read synchronously (the preference is cached on
 /// the profile or the device), so a lesson card starts on the saved mode.
-StudyMode nextLessonModeNow() => pathLessonMode(
-      savedRaw: sl<LanguagePreferenceService>()
-          .getLearningPathStudyModePreferenceRaw(),
-    );
+/// A guest always gets Standard: it is the only free mode on a path lesson
+/// and a guest cannot pay for another.
+StudyMode nextLessonModeNow() => GuestRouteGate.currentUserIsGuest()
+    ? StudyMode.standard
+    : pathLessonMode(
+        savedRaw: sl<LanguagePreferenceService>()
+            .getLearningPathStudyModePreferenceRaw(),
+      );
 
 /// The general "Default study mode" for a new study that names no mode
 /// (a notification, a tapped verse, a link): the saved concrete mode, else

@@ -170,7 +170,7 @@ void main() {
 
   group('startLessonOne', () {
     blocTest<FirstRunCubit, FirstRunState>(
-      'guest mode: starts a guest, enrols by slug, opens lesson 1 in Quick Read',
+      'guest mode: starts a guest, enrols by slug, opens lesson 1 in Standard',
       build: cubit,
       act: (c) => c.startLessonOne(GrowthGoal.newToFaith, 'hi'),
       expect: () => [
@@ -179,7 +179,7 @@ void main() {
             .having((s) => Uri.parse(s.location).path, 'path',
                 AppRoutes.studyGuideV2)
             .having((s) => Uri.parse(s.location).queryParameters['mode'],
-                'mode', 'quick')
+                'mode', 'standard')
             .having(
                 (s) => Uri.parse(s.location).queryParameters['lesson_number'],
                 'n',

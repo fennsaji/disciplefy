@@ -138,7 +138,6 @@ void main() {
     void Function(String)? onTap,
     void Function(LearningPath)? onPathTap,
     VoidCallback? onNearEnd,
-    ValueChanged<StudyMode>? onModeChanged,
     double textScale = 1,
     double dockInset = 0,
   }) async {
@@ -172,7 +171,6 @@ void main() {
               onNearEnd: onNearEnd,
               currentPath: TopicsCurrentPathCard(
                 summary: summary,
-                onModeChanged: onModeChanged ?? (_) {},
                 onContinue: () => onTap?.call('continue'),
                 onSeePath: () => onTap?.call('see_path'),
                 onBrowse: () => onTap?.call('browse'),
@@ -289,19 +287,6 @@ void main() {
     expect(find.text('Gospels path 0'), findsOneWidget);
     expect(find.byKey(const Key('learning_paths_see_all_Foundations')),
         findsOneWidget);
-  });
-
-  testWidgets('lesson card mode chip reports the picked mode', (tester) async {
-    final modes = <StudyMode>[];
-    await pumpTopics(tester,
-        summary: summary4of8,
-        categories: [cat('Foundations', 1)],
-        onModeChanged: modes.add);
-    await tester.tap(find.byKey(const Key('today_mode_chip')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('Quick').last);
-    await tester.pumpAndSettle();
-    expect(modes, [StudyMode.quick]);
   });
 
   testWidgets('a finished path offers Choose your next path', (tester) async {
