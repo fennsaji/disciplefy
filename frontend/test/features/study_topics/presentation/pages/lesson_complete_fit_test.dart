@@ -63,6 +63,30 @@ const _titles = {
   ],
 };
 
+/// Real next-path titles (Hindi and Malayalam are the long ones).
+const _nextTitles = {
+  'en': ['Rooted in Christ', 'Understanding the Bible', 'Gospel of Mark'],
+  'hi': ['मसीह में जड़ पकड़ना', 'बाइबल को समझना', 'मरकुस का सुसमाचार'],
+  'ml': [
+    'ക്രിസ്തുവിൽ വേരൂന്നിയവർ',
+    'ബൈബിൾ മനസ്സിലാക്കുക',
+    'മർക്കൊസിന്റെ സുവിശേഷം'
+  ],
+};
+
+LearningPath _next(String lang, int i) => LearningPath(
+      id: 'n$i',
+      slug: 'next-$i',
+      title: _nextTitles[lang]![i],
+      description: '',
+      iconName: 'menu_book',
+      color: '',
+      totalXp: 0,
+      estimatedDays: 14,
+      discipleLevel: 'seeker',
+      topicsCount: 8,
+    );
+
 const _pathTitle = {
   'en': 'New Believer Essentials',
   'hi': 'विश्वास की नींव',
@@ -119,6 +143,12 @@ void main() {
           language: any(named: 'language'),
           forceRefresh: any(named: 'forceRefresh'),
         )).thenAnswer((_) async => Right(_path(c.lang)));
+    when(() => repo.getNextPaths(
+              language: any(named: 'language'),
+              limit: any(named: 'limit'),
+            ))
+        .thenAnswer((_) async => Right(NextPathsResult(
+            paths: [for (var i = 0; i < 3; i++) _next(c.lang, i)])));
     sl.registerSingleton<LearningPathsRepository>(repo);
     if (guest) {
       final session = _MockGuest();
@@ -219,6 +249,19 @@ void main() {
     testWidgets('${c.name}: last lesson fits', (tester) async {
       await pumpPage(tester, c, 8);
       expect(find.byType(OutlinedButton), findsNothing);
+      // What next? with the three next paths.
+      final card = find.byKey(const Key('lesson_complete_what_next'));
+      await tester.ensureVisible(card);
+      await tester.pumpAndSettle();
+      expect(
+          find.descendant(
+              of: card,
+              matching:
+                  find.text(translations.getTranslation('goal.what_next'))),
+          findsOneWidget);
+      for (final title in _nextTitles[c.lang]!) {
+        expect(find.text(title), findsOneWidget);
+      }
       expect(tester.takeException(), isNull);
       expectNoTruncatedText(tester, allow: {..._titles[c.lang]!});
     });

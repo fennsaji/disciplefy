@@ -473,9 +473,6 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     _cachedRecommendedPath = null;
     _recommendedPathCacheTimestamp = null;
     _recommendedPathCacheScope = null;
-    _cachedPersonalizedPaths = null;
-    _personalizedPathsCacheTimestamp = null;
-    _personalizedPathsCacheScope = null;
     // Also clear the persistent Hive cache so stale data is not served after
     // events like enrollment, language change, or DB migrations.
     _remoteDataSource.clearCache();
@@ -509,11 +506,6 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         _cacheDuration;
   }
 
-  // Cache for personalized paths (keyed by user + language)
-  String? _personalizedPathsCacheScope;
-  List<LearningPath>? _cachedPersonalizedPaths;
-  DateTime? _personalizedPathsCacheTimestamp;
-
   bool _isRecommendedPathCacheValid(String language) {
     if (_cachedRecommendedPath == null ||
         _recommendedPathCacheTimestamp == null ||
@@ -524,50 +516,24 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         _cacheDuration;
   }
 
-  bool _isPersonalizedPathsCacheValid(String language) {
-    if (_cachedPersonalizedPaths == null ||
-        _personalizedPathsCacheTimestamp == null ||
-        _personalizedPathsCacheScope != LearningCacheScope.scopeFor(language)) {
-      return false;
-    }
-    return DateTime.now().difference(_personalizedPathsCacheTimestamp!) <
-        _cacheDuration;
-  }
-
   @override
-  Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
+  Future<Either<Failure, NextPathsResult>> getNextPaths({
     String language = 'en',
-    int limit = 5,
-    bool forceRefresh = false,
+    int limit = 3,
   }) async {
-    if (!forceRefresh && _isPersonalizedPathsCacheValid(language)) {
-      return Right(_cachedPersonalizedPaths!);
-    }
-
     try {
-      final response = await _remoteDataSource.getPersonalizedPaths(
+      final response = await _remoteDataSource.getNextPaths(
         language: language,
         limit: limit,
       );
-      final paths = response.toEntity();
-      _cachedPersonalizedPaths = paths;
-      _personalizedPathsCacheTimestamp = DateTime.now();
-      _personalizedPathsCacheScope = LearningCacheScope.scopeFor(language);
-      return Right(paths);
+      return Right(response.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      if (_cachedPersonalizedPaths != null &&
-          _personalizedPathsCacheScope ==
-              LearningCacheScope.scopeFor(language)) {
-        return Right(_cachedPersonalizedPaths!);
-      }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      Logger.error('[LearningPathsRepo] Failed to load personalized paths',
-          error: e);
-      return const Left(
-          ClientFailure(message: 'Failed to load personalized paths.'));
+      Logger.error('[LearningPathsRepo] Failed to load next paths', error: e);
+      return const Left(ClientFailure(message: 'Failed to load next paths.'));
     }
   }
 

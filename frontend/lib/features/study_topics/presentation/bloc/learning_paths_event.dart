@@ -133,27 +133,6 @@ class SearchLearningPaths extends LearningPathsEvent {
   List<Object?> get props => [query, language];
 }
 
-/// Load personalized learning paths for the "For You" section.
-///
-/// Fetches top N paths scored by the questionnaire algorithm.
-/// Stores results in [LearningPathsLoaded.personalizedPaths].
-class LoadPersonalizedPaths extends LearningPathsEvent {
-  final String language;
-  final int limit;
-
-  /// Bypass the repository's in-memory copy (it holds per-user progress).
-  final bool forceRefresh;
-
-  const LoadPersonalizedPaths({
-    this.language = 'en',
-    this.limit = 5,
-    this.forceRefresh = false,
-  });
-
-  @override
-  List<Object?> get props => [language, limit, forceRefresh];
-}
-
 /// Reset all of the user's learning path progress.
 ///
 /// Irreversible. The UI must confirm with the user before dispatching this.

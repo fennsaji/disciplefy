@@ -555,6 +555,16 @@ class MockLearningPathsBloc extends _i1.Mock implements _i15.LearningPathsBloc {
       ) as bool);
 
   @override
+  void onChange(_i10.Change<_i5.LearningPathsState>? change) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #onChange,
+          [change],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void add(_i16.LearningPathsEvent? event) => super.noSuchMethod(
         Invocation.method(
           #add,
@@ -616,16 +626,6 @@ class MockLearningPathsBloc extends _i1.Mock implements _i15.LearningPathsBloc {
         returnValue: _i8.Future<void>.value(),
         returnValueForMissingStub: _i8.Future<void>.value(),
       ) as _i8.Future<void>);
-
-  @override
-  void onChange(_i10.Change<_i5.LearningPathsState>? change) =>
-      super.noSuchMethod(
-        Invocation.method(
-          #onChange,
-          [change],
-        ),
-        returnValueForMissingStub: null,
-      );
 
   @override
   void addError(
@@ -971,6 +971,31 @@ class MockLearningPathsRepository extends _i1.Mock
               _i6.Either<_i21.Failure, _i22.LearningPathCategoriesResult>>);
 
   @override
+  _i8.Future<_i6.Either<_i21.Failure, List<_i22.LearningPathCategorySummary>>>
+      getLearningPathCategorySummaries({String? language = 'en'}) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getLearningPathCategorySummaries,
+              [],
+              {#language: language},
+            ),
+            returnValue: _i8.Future<
+                    _i6.Either<_i21.Failure,
+                        List<_i22.LearningPathCategorySummary>>>.value(
+                _FakeEither_4<_i21.Failure,
+                    List<_i22.LearningPathCategorySummary>>(
+              this,
+              Invocation.method(
+                #getLearningPathCategorySummaries,
+                [],
+                {#language: language},
+              ),
+            )),
+          ) as _i8.Future<
+              _i6
+              .Either<_i21.Failure, List<_i22.LearningPathCategorySummary>>>);
+
+  @override
   _i8.Future<_i6.Either<_i21.Failure, _i22.LearningPathCategory>>
       getLearningPathsForCategory({
     required String? category,
@@ -1060,6 +1085,24 @@ class MockLearningPathsRepository extends _i1.Mock
           ),
         )),
       ) as _i8.Future<_i6.Either<_i21.Failure, _i22.EnrollmentResult>>);
+
+  @override
+  _i8.Future<_i6.Either<_i21.Failure, _i22.EnrollmentResult>>
+      enrollInPathBySlug(String? slug) => (super.noSuchMethod(
+            Invocation.method(
+              #enrollInPathBySlug,
+              [slug],
+            ),
+            returnValue: _i8
+                .Future<_i6.Either<_i21.Failure, _i22.EnrollmentResult>>.value(
+                _FakeEither_4<_i21.Failure, _i22.EnrollmentResult>(
+              this,
+              Invocation.method(
+                #enrollInPathBySlug,
+                [slug],
+              ),
+            )),
+          ) as _i8.Future<_i6.Either<_i21.Failure, _i22.EnrollmentResult>>);
 
   @override
   _i8.Future<_i6.Either<_i21.Failure, _i23.ResetProgressResult>>
@@ -1165,37 +1208,33 @@ class MockLearningPathsRepository extends _i1.Mock
       ) as _i8.Future<_i6.Either<_i21.Failure, _i22.RecommendedPathResult>>);
 
   @override
-  _i8.Future<
-      _i6.Either<_i21.Failure, List<_i22.LearningPath>>> getPersonalizedPaths({
+  _i8.Future<_i6.Either<_i21.Failure, _i22.NextPathsResult>> getNextPaths({
     String? language = 'en',
-    int? limit = 5,
-    bool? forceRefresh = false,
+    int? limit = 3,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
-          #getPersonalizedPaths,
+          #getNextPaths,
           [],
           {
             #language: language,
             #limit: limit,
-            #forceRefresh: forceRefresh,
           },
         ),
         returnValue:
-            _i8.Future<_i6.Either<_i21.Failure, List<_i22.LearningPath>>>.value(
-                _FakeEither_4<_i21.Failure, List<_i22.LearningPath>>(
+            _i8.Future<_i6.Either<_i21.Failure, _i22.NextPathsResult>>.value(
+                _FakeEither_4<_i21.Failure, _i22.NextPathsResult>(
           this,
           Invocation.method(
-            #getPersonalizedPaths,
+            #getNextPaths,
             [],
             {
               #language: language,
               #limit: limit,
-              #forceRefresh: forceRefresh,
             },
           ),
         )),
-      ) as _i8.Future<_i6.Either<_i21.Failure, List<_i22.LearningPath>>>);
+      ) as _i8.Future<_i6.Either<_i21.Failure, _i22.NextPathsResult>>);
 }
 
 /// A class which mocks [LearningPathsCacheService].
