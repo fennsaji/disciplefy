@@ -6,6 +6,7 @@ import '../../core/constants/app_fonts.dart';
 import '../../core/constants/bible_books.dart';
 import '../../core/theme/reader_palette.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/lru_memo.dart';
 
 /// A widget that renders markdown content with clickable scripture references
 /// Supports both block-level markdown (headings, lists) and inline markdown
@@ -13,6 +14,10 @@ import '../../core/utils/logger.dart';
 class MarkdownWithScripture extends StatelessWidget {
   final String data;
   final TextStyle? textStyle;
+
+  /// Space between paragraphs, lists and other blocks. Text split across
+  /// several of these widgets leaves this gap between them to read as one.
+  static const double blockSpacing = 8;
 
   /// Creates a markdown renderer with clickable scripture references.
   ///
@@ -45,8 +50,31 @@ class MarkdownWithScripture extends StatelessWidget {
   /// Requires chapter number to avoid false matches (e.g., "Point 1")
   static final RegExp scripturePattern = BibleBooks.createScriptureRegex();
 
+  /// Number of times markdown text was preprocessed (bullets + scripture
+  /// links) rather than served from the memo. Counted in debug builds only.
+  @visibleForTesting
+  static int debugPreprocessCount = 0;
+
+  /// Preprocessed markdown per source text. The scripture pattern is a large
+  /// alternation over every book name in three languages, so running it over
+  /// a long section on every rebuild (and every time a lazily built item
+  /// scrolls back on screen) is the costly part of this widget.
+  static final LruMemo<String, String> _preprocessed = LruMemo(
+    capacity: 256,
+    compute: (text) {
+      assert(() {
+        debugPreprocessCount++;
+        return true;
+      }());
+      return _convertScriptureReferencesToLinks(
+          _convertBulletsToMarkdown(text));
+    },
+  );
+
+  static final RegExp _bulletLine = RegExp(r'^(\s*)•\s+(.+)$');
+
   /// Converts scripture references to markdown links
-  String _convertScriptureReferencesToLinks(String text) {
+  static String _convertScriptureReferencesToLinks(String text) {
     return text.replaceAllMapped(scripturePattern, (match) {
       final reference = match.group(0)!;
       // Use anchor link format which flutter_markdown handles better
@@ -57,12 +85,12 @@ class MarkdownWithScripture extends StatelessWidget {
 
   /// Converts bullet character (•) to markdown bullet syntax (-)
   /// flutter_markdown only recognizes -, *, or + as bullet markers
-  String _convertBulletsToMarkdown(String text) {
+  static String _convertBulletsToMarkdown(String text) {
     // Split by lines to process each line
     final lines = text.split('\n');
     final convertedLines = lines.map((line) {
       // Match lines starting with • (with optional whitespace before)
-      final bulletMatch = RegExp(r'^(\s*)•\s+(.+)$').firstMatch(line);
+      final bulletMatch = _bulletLine.firstMatch(line);
       if (bulletMatch != null) {
         final indent = bulletMatch.group(1) ?? '';
         final content = bulletMatch.group(2) ?? '';
@@ -78,9 +106,7 @@ class MarkdownWithScripture extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Process the data: convert bullets to markdown format, then convert scripture references to links
-    final withMarkdownBullets = _convertBulletsToMarkdown(data);
-    final processedData =
-        _convertScriptureReferencesToLinks(withMarkdownBullets);
+    final processedData = _preprocessed(data);
 
     // Create a unique key based on content and theme to force rebuilds when colors change
     final linkColor = ReaderPalette.of(context).accentIcon;
@@ -121,6 +147,7 @@ class MarkdownWithScripture extends StatelessWidget {
         );
 
     return MarkdownStyleSheet(
+      blockSpacing: blockSpacing,
       p: baseStyle?.copyWith(
         color: palette.text,
         height: 1.6,

@@ -1073,8 +1073,21 @@ export class BibleBookNormalizer {
     // - Book Chapter: "Psalm 23"
     // - Book Chapter:Verse: "John 3:16"
     // - Book Chapter:Verse-Verse: "John 3:16-17"
-    const booksPattern = sortedBooks.map(book => this.escapeRegex(book)).join('|')
-    const pattern = new RegExp(`(${booksPattern})\\s+(\\d+)(?::(\\d+)(?:-(\\d+))?)?`, 'gi')
+    // Two-letter Latin abbreviations ("Is", "Am", "He") are everyday words, so
+    // they only count with a verse ("Is 53:5"); "This is 3 times" is not one.
+    const isWordLike = (book: string) => /^[A-Za-z]{1,2}$/.test(book)
+    const chapterOnly = sortedBooks.filter(book => !isWordLike(book)).map(book => this.escapeRegex(book))
+    const verseRequired = sortedBooks.filter(isWordLike).map(book => this.escapeRegex(book))
+    const booksPattern = [
+      ...chapterOnly,
+      ...(verseRequired.length ? [`(?:${verseRequired.join('|')})(?=\\s+[1-9]\\d*:[1-9])`] : []),
+    ].join('|')
+    // The book must not continue a word in any script ("Thesis 1" is not
+    // "Is 1"), and chapters and verses start at 1.
+    const pattern = new RegExp(
+      `(?<![\\p{L}\\p{M}])(${booksPattern})\\s+([1-9]\\d*)(?::([1-9]\\d*)(?:-([1-9]\\d*))?)?`,
+      'giu'
+    )
 
     let match
     while ((match = pattern.exec(text)) !== null) {

@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/extensions/translation_extension.dar
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/discipler_session_widgets.dart';
+import 'package:disciplefy_bible_study/shared/widgets/status_bar_scrim.dart';
 import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
 
 /// Suggested first questions, as keys; tapping one sends its text.
@@ -53,93 +54,100 @@ class DisciplerStartView extends StatelessWidget {
     // Inside the tab shell this already includes the floating dock's height.
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: _photoHeight + topInset,
-            child: const WelcomePhotoBackdrop(
-              asset: disciplerHeaderPhoto,
-              blurred: true,
-              headerScrim: true,
-            ),
-          ),
-          Padding(
-            padding:
-                EdgeInsets.fromLTRB(16, topInset + 8, 16, bottomInset + 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTopRow(context, palette),
-                const SizedBox(height: 76),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Deep gold on light: the brighter label gold drops
-                      // under 4.5:1 over the scrim on the photo's darkest
-                      // pixel.
-                      WelcomeEyebrow(
-                        context.tr('voice_buddy.title'),
-                        color: palette.isDark ? null : palette.goldOnTint,
+    // The photo runs under the status bar; once the page scrolls, the scrim
+    // keeps the header text from being drawn over the clock.
+    return StatusBarScrim(
+        color: palette.page,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: _photoHeight + topInset,
+                child: const WelcomePhotoBackdrop(
+                  asset: disciplerHeaderPhoto,
+                  blurred: true,
+                  headerScrim: true,
+                ),
+              ),
+              Padding(
+                padding:
+                    EdgeInsets.fromLTRB(16, topInset + 8, 16, bottomInset + 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTopRow(context, palette),
+                    const SizedBox(height: 76),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Deep gold on light: the brighter label gold drops
+                          // under 4.5:1 over the scrim on the photo's darkest
+                          // pixel.
+                          WelcomeEyebrow(
+                            context.tr('voice_buddy.title'),
+                            color: palette.isDark ? null : palette.goldOnTint,
+                          ),
+                          const SizedBox(height: 4),
+                          Semantics(
+                            header: true,
+                            child: WelcomeTitle(
+                              context.tr(TranslationKeys.voiceSessionHeadline),
+                              fontSize: 28,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            context.tr('voice_buddy.description'),
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              height: 1.3,
+                              // Over the photo: the design's #DADAE0 on dark;
+                              // ink on light, where muted drops under 4.5:1 on
+                              // the scrim over the photo's darkest pixel.
+                              color: palette.isDark
+                                  ? const Color(0xFFDADAE0)
+                                  : palette.text,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Semantics(
-                        header: true,
-                        child: WelcomeTitle(
-                          context.tr(TranslationKeys.voiceSessionHeadline),
-                          fontSize: 28,
-                        ),
+                    ),
+                    const SizedBox(height: 20),
+                    _LanguageChip(
+                        languageName: languageName, onTap: onLanguageTap),
+                    const SizedBox(height: 14),
+                    _buildActions(context, palette),
+                    const SizedBox(height: 14),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: SessionLabel(
+                        context.tr(TranslationKeys.voiceSessionTryAsking),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.tr('voice_buddy.description'),
-                        style: AppFonts.inter(
-                          fontSize: 13,
-                          height: 1.3,
-                          // Over the photo: the design's #DADAE0 on dark;
-                          // ink on light, where muted drops under 4.5:1 on
-                          // the scrim over the photo's darkest pixel.
-                          color: palette.isDark
-                              ? const Color(0xFFDADAE0)
-                              : palette.text,
-                        ),
+                    ),
+                    const SizedBox(height: 14),
+                    for (var i = 0;
+                        i < disciplerSuggestionKeys.length;
+                        i++) ...[
+                      _SuggestionCard(
+                        text: context.tr(disciplerSuggestionKeys[i]),
+                        highlighted: i == 0,
+                        onTap: () => onSuggestion(
+                            context.tr(disciplerSuggestionKeys[i])),
                       ),
+                      const SizedBox(height: 8),
                     ],
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                _LanguageChip(languageName: languageName, onTap: onLanguageTap),
-                const SizedBox(height: 14),
-                _buildActions(context, palette),
-                const SizedBox(height: 14),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: SessionLabel(
-                    context.tr(TranslationKeys.voiceSessionTryAsking),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                for (var i = 0; i < disciplerSuggestionKeys.length; i++) ...[
-                  _SuggestionCard(
-                    text: context.tr(disciplerSuggestionKeys[i]),
-                    highlighted: i == 0,
-                    onTap: () =>
-                        onSuggestion(context.tr(disciplerSuggestionKeys[i])),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 
   Widget _buildTopRow(BuildContext context, ReaderPalette palette) {

@@ -341,29 +341,61 @@ class BibleBooks {
     ];
   }
 
+  /// English abbreviations that are also everyday words ("is", "am", "he",
+  /// "joe", ...). They only count as a reference with a verse ("Is 53:5"), so
+  /// "This is 3 times" never links.
+  static const Set<String> _wordLikeAbbreviations = {
+    'joe',
+    'jon',
+    'pro',
+    'song'
+  };
+
+  static bool _needsVerse(String book) {
+    final lower = book.toLowerCase();
+    if (_wordLikeAbbreviations.contains(lower)) return true;
+    final isEnglishAbbreviation =
+        (_remote?.englishAbbreviations ?? englishAbbreviations)
+            .any((a) => a.toLowerCase() == lower);
+    // Two letters or fewer ("Is", "Am", "He", "Ex", "Ac", ...).
+    return isEnglishAbbreviation && RegExp(r'^[A-Za-z]{1,2}$').hasMatch(book);
+  }
+
   /// Generate regex pattern for scripture reference detection
   /// Requires chapter number to avoid false matches
   static String getScripturePattern() {
-    // Escape special regex characters in book names
-    final escapedBooks = all.map(_escapeRegex).toList();
-
     // Sort by length descending to match longer names first
     // (e.g., "भजन संहिता" before single words)
-    escapedBooks.sort((a, b) => b.length.compareTo(a.length));
+    final books = all.toSet().toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
 
-    final booksPattern = escapedBooks.join('|');
+    final chapterOnly = <String>[];
+    final verseRequired = <String>[];
+    for (final book in books) {
+      (_needsVerse(book) ? verseRequired : chapterOnly).add(_escapeRegex(book));
+    }
+
+    // Word-like abbreviations only match when followed by chapter:verse.
+    final booksPattern = [
+      ...chapterOnly,
+      if (verseRequired.isNotEmpty)
+        '(?:${verseRequired.join('|')})(?=\\s+[1-9]\\d*:[1-9])',
+    ].join('|');
 
     // Pattern: (BookName) Chapter, Chapter:Verse, Chapter:Verse-Verse or
     // Chapter:Verse-Chapter:Verse (cross-chapter, e.g. "10:23-11:1").
     // Requires chapter number to prevent false matches like "Point 1".
+    // The book must not continue a word (any script), so "Thesis 1" is not
+    // "Is 1"; chapters and verses start at 1, so "Thesis 0" never links.
     // Groups (stable for existing consumers):
     //   1 book, 2 chapter, 3 start verse, 4 same-chapter end verse,
     //   5 cross-chapter end chapter, 6 cross-chapter end verse.
     // The lookahead stops group 4 from swallowing "11" of "11:1".
-    return r'(' +
+    const n = r'([1-9]\d*)';
+    return r'(?<![\p{L}\p{M}])(' +
         booksPattern +
         r')' +
-        r'\s+(\d+)(?::(\d+)(?:-(\d+)(?!\d|:\d)|-(\d+):(\d+))?)?';
+        '\\s+$n(?::$n(?:-$n(?!\\d|:\\d)|-$n:$n)?)?';
   }
 
   /// Escape special regex characters

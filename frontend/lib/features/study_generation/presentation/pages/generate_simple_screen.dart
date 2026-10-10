@@ -42,6 +42,7 @@ import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_b
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_event.dart';
 import 'package:disciplefy_bible_study/features/tokens/presentation/bloc/token_state.dart';
 import 'package:disciplefy_bible_study/shared/widgets/app_snackbar.dart';
+import 'package:disciplefy_bible_study/shared/widgets/status_bar_scrim.dart';
 
 /// Generate tab with one input: the text is read as a verse, a topic or a
 /// question, the user picks Quick Read or Standard (or any depth via
@@ -641,7 +642,10 @@ class _GenerateSimpleScreenState extends State<GenerateSimpleScreen>
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           resizeToAvoidBottomInset: true,
-          body: body,
+          // The page runs under the status bar so the hero photo can reach
+          // the top; once it scrolls, the scrim keeps the header text from
+          // being drawn over the clock.
+          body: StatusBarScrim(child: body),
         ),
       ),
     );

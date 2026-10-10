@@ -286,6 +286,20 @@ class LearningPathsResult {
   });
 }
 
+/// A category and how many active paths it holds, without its paths.
+class LearningPathCategorySummary extends Equatable {
+  final String name;
+  final int totalPaths;
+
+  const LearningPathCategorySummary({
+    required this.name,
+    required this.totalPaths,
+  });
+
+  @override
+  List<Object?> get props => [name, totalPaths];
+}
+
 /// A named category grouping of learning paths.
 class LearningPathCategory extends Equatable {
   final String name;

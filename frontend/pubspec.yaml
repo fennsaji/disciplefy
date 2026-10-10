@@ -127,6 +127,8 @@ dev_dependencies:
   mocktail: ^1.0.4
   integration_test:
     sdk: flutter
+  flutter_driver:
+    sdk: flutter
 
   # App Icon Generation
   flutter_launcher_icons: ^0.14.3

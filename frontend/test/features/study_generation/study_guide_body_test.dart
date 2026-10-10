@@ -33,13 +33,15 @@ void _usePhoneSize(WidgetTester tester) {
 
 /// What the finished screen renders above the end-of-guide blocks. The body
 /// is full-bleed (hero photo) and pads its own sections.
-Widget _finishedBody(StudyGuide guide, StudyMode mode) => SingleChildScrollView(
-      child: StudyGuideBody(
-        studyMode: mode,
-        sections: StudyGuideSections.fromStudyGuide(guide),
-        inputType: guide.inputType,
-        title: StudyGuideLayout.displayTitle(guide.inputType, guide.input),
-      ),
+Widget _finishedBody(StudyGuide guide, StudyMode mode) => CustomScrollView(
+      slivers: [
+        StudyGuideBody(
+          studyMode: mode,
+          sections: StudyGuideSections.fromStudyGuide(guide),
+          inputType: guide.inputType,
+          title: StudyGuideLayout.displayTitle(guide.inputType, guide.input),
+        ),
+      ],
     );
 
 void main() {
@@ -140,6 +142,10 @@ void main() {
   });
 
   testWidgets('a finished guide never shows a shimmer', (tester) async {
+    // Tall enough that the lazily built list builds every section.
+    tester.view.physicalSize = const Size(_screenWidth, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(_app(_finishedBody(guide, StudyMode.standard)));
     await tester.pump(const Duration(milliseconds: 500));
 

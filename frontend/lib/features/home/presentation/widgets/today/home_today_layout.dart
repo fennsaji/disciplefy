@@ -39,15 +39,18 @@ ActivePathSummary? enrolledPathSummary(HomeCombinedState state) =>
 
 /// Lesson mode shown on today's lesson card before the person picks one:
 /// Quick for lesson 1 after the first-run goal, else [saved] (the
-/// learning-path preference, see [resolveNextLessonMode]).
+/// learning-path preference, see [nextLessonModeNow]). Same rule as
+/// [pathLessonMode], which the path detail page uses.
 StudyMode defaultTodayLessonMode({
   required ActivePathSummary? summary,
   required bool hasFirstRunGoal,
   required StudyMode saved,
-}) {
-  if (summary?.next?.number == 1 && hasFirstRunGoal) return StudyMode.quick;
-  return saved;
-}
+}) =>
+    pathLessonMode(
+      lessonNumber: summary?.next?.number,
+      hasFirstRunGoal: hasFirstRunGoal,
+      savedRaw: saved.name,
+    );
 
 /// Saves the learning-path lesson mode [value] (a [StudyMode] name) on the
 /// profile and on this device, as the lesson card's mode chip does on Home

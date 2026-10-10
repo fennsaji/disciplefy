@@ -96,6 +96,7 @@ import '../../features/study_topics/presentation/pages/learning_path_detail_page
 import '../../features/study_topics/presentation/pages/learning_path_category_page.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/all_paths_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
+import '../../features/study_topics/presentation/bloc/all_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../widgets/locked_feature_wrapper.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
@@ -274,7 +275,7 @@ class AppRouter {
                   child: LockedFeatureWrapper(
                     featureKey: 'learning_paths',
                     child: BlocProvider(
-                      create: (context) => sl<LearningPathsBloc>(),
+                      create: (context) => sl<AllPathsBloc>(),
                       child: AllPathsPage(
                         initialCategory: state.uri.queryParameters['category'],
                         language: state.uri.queryParameters['language'],

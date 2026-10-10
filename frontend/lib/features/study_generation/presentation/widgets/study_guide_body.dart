@@ -12,6 +12,9 @@ import 'package:disciplefy_bible_study/core/extensions/translation_extension.dar
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:disciplefy_bible_study/core/theme/reader_palette.dart';
+import 'package:disciplefy_bible_study/core/utils/lru_memo.dart';
+import 'package:disciplefy_bible_study/features/study_generation/data/services/study_guide_tts_service.dart'
+    show StudyGuideSection;
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/expected_sections.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_guide.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
@@ -167,6 +170,26 @@ class StudyGuideBody extends StatelessWidget {
     this.headerAccessory,
   });
 
+  /// Section blocks built by the lazy list since the counter was last reset.
+  /// Counted in debug builds only.
+  @visibleForTesting
+  static int debugBlockBuilds = 0;
+
+  /// The section index ([readingSectionIndex]) of [section], the part of the
+  /// guide text-to-speech is reading. Text-to-speech numbers only the
+  /// sections it reads, so its own index does not match once a guide has no
+  /// passage.
+  static int? sectionIndexFor(StudyGuideSection? section) => switch (section) {
+        StudyGuideSection.summary => 0,
+        StudyGuideSection.context => 1,
+        StudyGuideSection.passageReading => 2,
+        StudyGuideSection.interpretation => 3,
+        StudyGuideSection.relatedVerses => 4,
+        StudyGuideSection.discussionQuestions => 5,
+        StudyGuideSection.prayerPoints => 6,
+        null => null,
+      };
+
   /// How many numbered sections [StudyGuideBody] renders for [sections] —
   /// the count the end-of-guide blocks continue numbering from.
   static int visibleSectionCount(
@@ -194,33 +217,59 @@ class StudyGuideBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sectionWidgets = _buildSections(context);
-    tracker?.total = sectionWidgets.length;
+    final blocks = _buildBlocks(context);
+    final sectionCount = blocks.where((b) => b.startsSection).length;
+    tracker?.total = sectionCount;
+    tracker?.sectionOrder = [
+      for (final b in blocks)
+        if (b.startsSection) b.sectionIndex,
+    ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        StudyGuideHero(
-          inputType: inputType,
-          title: title,
-          studyMode: studyMode,
-          sectionCount: sectionWidgets.length,
-          tracker: tracker,
-          lesson: lesson,
-          accessory: headerAccessory,
+    // A sliver, so the caller's CustomScrollView lays out and builds only
+    // the blocks near the viewport. Long sections are split into several
+    // blocks, so a Deep Dive interpretation is not laid out in one piece.
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: StudyGuideHero(
+            inputType: inputType,
+            title: title,
+            studyMode: studyMode,
+            sectionCount: sectionCount,
+            tracker: tracker,
+            lesson: lesson,
+            accessory: headerAccessory,
+          ),
         ),
-        Padding(
+        SliverPadding(
           padding: StudyGuideLayout.sidePadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: sectionWidgets,
+          sliver: SliverList.builder(
+            itemCount: blocks.length,
+            // Streaming inserts blocks as sections arrive; find each block's
+            // element again by key so its state (the appear animation)
+            // follows it instead of its old position.
+            findChildIndexCallback: (key) {
+              if (key is! ValueKey<String>) return null;
+              final i = blocks.indexWhere((b) => b.id == key.value);
+              return i < 0 ? null : i;
+            },
+            itemBuilder: (context, i) {
+              assert(() {
+                debugBlockBuilds++;
+                return true;
+              }());
+              return KeyedSubtree(
+                key: ValueKey<String>(blocks[i].id),
+                child: blocks[i].build(context),
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  List<Widget> _buildSections(BuildContext context) {
+  List<_Block> _buildBlocks(BuildContext context) {
     final specs = _specsFor(context, studyMode, sections);
     final style = switch (studyMode) {
       StudyMode.quick => StudySectionStyle.quick,
@@ -231,45 +280,105 @@ class StudyGuideBody extends StatelessWidget {
         studyMode == StudyMode.deep ||
         studyMode == StudyMode.sermon;
 
-    final children = <Widget>[];
+    final blocks = <_Block>[];
+    var number = 0;
     for (final spec in specs) {
       if (!_isVisible(spec, sections, studyMode)) continue;
-      final number = children.length + 1;
+      number++;
+      final n = number;
       final text = spec.content;
-      Widget child;
+      final isInterpretation = spec.index == 3 && interpretationKey != null;
+
+      // Keys the screen measures: the tracker's on the section's first
+      // block (its top), the interpretation key on its last (its bottom).
+      Widget keyed(Widget child, {required bool first, required bool last}) {
+        if (last && isInterpretation) {
+          child = KeyedSubtree(key: interpretationKey, child: child);
+        }
+        if (first && tracker != null) {
+          child = KeyedSubtree(key: tracker!.keyFor(spec.index), child: child);
+        }
+        return child;
+      }
+
       if (text == null || text.isEmpty) {
-        child = StudySectionShimmer(
-            title: spec.title, icon: spec.icon, style: style, number: number);
-      } else if (spec.isAltarCall) {
-        child = AltarCallCard(
-          content: text,
-          contentFontSize: contentFontSize,
-          isNew: sections.isNew(spec.index),
-          number: number,
-        );
-      } else {
-        child = StudySectionCard(
-          title: spec.title,
-          subtitle: spec.subtitle,
-          icon: spec.icon,
-          content: text,
-          style: style,
-          number: number,
-          isHighlight: spec.isHighlight,
-          isBeingRead: tracksReading && readingSectionIndex == spec.index,
-          isNew: sections.isNew(spec.index),
-          contentFontSize: contentFontSize,
-        );
+        blocks.add(_Block(
+          id: '${spec.index}:shimmer',
+          sectionIndex: spec.index,
+          startsSection: true,
+          build: (_) => keyed(
+            StudySectionShimmer(
+                title: spec.title, icon: spec.icon, style: style, number: n),
+            first: true,
+            last: true,
+          ),
+        ));
+        continue;
       }
-      if (spec.index == 3 && interpretationKey != null) {
-        child = KeyedSubtree(key: interpretationKey, child: child);
+
+      final isNew = sections.isNew(spec.index);
+      if (spec.isAltarCall) {
+        // A bordered card: kept whole, and short in practice.
+        blocks.add(_Block(
+          id: '${spec.index}:0',
+          sectionIndex: spec.index,
+          startsSection: true,
+          build: (_) => keyed(
+            AltarCallCard(
+              content: text,
+              contentFontSize: contentFontSize,
+              isNew: isNew,
+              number: n,
+            ),
+            first: true,
+            last: true,
+          ),
+        ));
+        continue;
       }
-      if (tracker != null) {
-        child = KeyedSubtree(key: tracker!.keyFor(spec.index), child: child);
+
+      final chunks =
+          chunkSectionMarkdown(cleanDuplicateSectionTitle(text, spec.title));
+      final isBeingRead = tracksReading && readingSectionIndex == spec.index;
+      for (var c = 0; c < chunks.length; c++) {
+        final chunk = chunks[c];
+        final first = c == 0;
+        final last = c == chunks.length - 1;
+        blocks.add(_Block(
+          id: '${spec.index}:$c',
+          sectionIndex: spec.index,
+          startsSection: first,
+          build: (_) => keyed(
+            first
+                ? StudySectionCard(
+                    title: spec.title,
+                    subtitle: spec.subtitle,
+                    icon: spec.icon,
+                    content: text,
+                    body: chunk,
+                    isClosed: last,
+                    style: style,
+                    number: n,
+                    isHighlight: spec.isHighlight,
+                    isBeingRead: isBeingRead,
+                    isNew: isNew,
+                    contentFontSize: contentFontSize,
+                  )
+                : StudySectionContinuation(
+                    body: chunk,
+                    isClosed: last,
+                    style: style,
+                    isHighlight: spec.isHighlight,
+                    isNew: isNew,
+                    contentFontSize: contentFontSize,
+                  ),
+            first: first,
+            last: last,
+          ),
+        ));
       }
-      children.add(child);
     }
-    return children;
+    return blocks;
   }
 
   static List<_SectionSpec> _specsFor(
@@ -505,6 +614,83 @@ class StudyGuideBody extends StatelessWidget {
         ],
     };
   }
+}
+
+/// One lazily built item of the section list: a whole short section, or the
+/// opening / a continuation part of a long one.
+class _Block {
+  /// Stable across rebuilds and streaming inserts: `<section>:<part>`.
+  final String id;
+  final int sectionIndex;
+  final bool startsSection;
+  final WidgetBuilder build;
+
+  const _Block({
+    required this.id,
+    required this.sectionIndex,
+    required this.startsSection,
+    required this.build,
+  });
+}
+
+/// Section text longer than this is split into parts of about this size.
+const int _chunkTargetLength = 1200;
+
+final LruMemo<String, List<String>> _chunks =
+    LruMemo(capacity: 64, compute: _splitMarkdown);
+
+/// [markdown] split at paragraph breaks into parts of roughly
+/// [_chunkTargetLength] characters, so a long section becomes several list
+/// items that are laid out only near the viewport. Short text stays whole.
+///
+/// Never splits inside a fenced code block, before a list item, quote,
+/// table row or indented continuation, or right after a heading, so each
+/// part renders as it would inside the whole. Memoised per text.
+List<String> chunkSectionMarkdown(String markdown) =>
+    markdown.length <= _chunkTargetLength * 3 ~/ 2
+        ? [markdown]
+        : _chunks(markdown);
+
+final RegExp _continuesBlock = RegExp(r'^(\s|[-*+•]\s|\d+[.)]\s|>|\|)');
+final RegExp _headingLine = RegExp(r'^\s{0,3}#{1,6}\s');
+
+List<String> _splitMarkdown(String markdown) {
+  final blocks = <String>[];
+  final current = <String>[];
+  var inFence = false;
+  for (final line in markdown.split('\n')) {
+    final trimmed = line.trimLeft();
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+      inFence = !inFence;
+    }
+    if (!inFence && trimmed.isEmpty) {
+      if (current.isNotEmpty) {
+        blocks.add(current.join('\n'));
+        current.clear();
+      }
+      continue;
+    }
+    current.add(line);
+  }
+  if (current.isNotEmpty) blocks.add(current.join('\n'));
+
+  final parts = <String>[];
+  final buffer = StringBuffer();
+  var lastWasHeading = false;
+  for (final block in blocks) {
+    final canBreak = buffer.length >= _chunkTargetLength &&
+        !lastWasHeading &&
+        !_continuesBlock.hasMatch(block);
+    if (canBreak) {
+      parts.add(buffer.toString());
+      buffer.clear();
+    }
+    if (buffer.isNotEmpty) buffer.write('\n\n');
+    buffer.write(block);
+    lastWasHeading = !block.contains('\n') && _headingLine.hasMatch(block);
+  }
+  if (buffer.isNotEmpty) parts.add(buffer.toString());
+  return parts.isEmpty ? [markdown] : parts;
 }
 
 class _SectionSpec {
@@ -895,7 +1081,18 @@ class StudySectionCard extends StatelessWidget {
 
   /// Kept for callers; the numbered layout shows no section icon.
   final IconData icon;
+
+  /// The whole section text; the copy button copies it.
   final String content;
+
+  /// Markdown shown under the header. Defaults to [content] without a
+  /// repeated title; a long section shows only its first part here and the
+  /// rest in [StudySectionContinuation]s.
+  final String? body;
+
+  /// Closes the section with its bottom gap and hairline. False when
+  /// continuation parts follow.
+  final bool isClosed;
   final StudySectionStyle style;
 
   /// 1-based position in the guide, shown as `01`.
@@ -910,6 +1107,8 @@ class StudySectionCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.content,
+    this.body,
+    this.isClosed = true,
     this.subtitle,
     this.style = StudySectionStyle.standard,
     this.number,
@@ -960,16 +1159,73 @@ class StudySectionCard extends StatelessWidget {
             ),
           const SizedBox(height: _sectionHeaderGap),
           MarkdownWithScripture(
-            data: cleanDuplicateSectionTitle(content, title),
-            textStyle: AppFonts.inter(
-              fontSize: contentFontSize,
-              fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
-              height: _lineHeightFor(style),
-              color: palette.text.withValues(alpha: 0.86),
-            ),
+            data: body ?? cleanDuplicateSectionTitle(content, title),
+            textStyle:
+                _sectionTextStyle(palette, style, isHighlight, contentFontSize),
           ),
-          const SizedBox(height: _sectionBottomGap),
-          const ReaderHairline(),
+          if (isClosed) ...const [
+            SizedBox(height: _sectionBottomGap),
+            ReaderHairline(),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+TextStyle _sectionTextStyle(
+  ReaderPalette palette,
+  StudySectionStyle style,
+  bool isHighlight,
+  double fontSize,
+) =>
+    AppFonts.inter(
+      fontSize: fontSize,
+      fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
+      height: _lineHeightFor(style),
+      color: palette.text.withValues(alpha: 0.86),
+    );
+
+/// A later part of a long [StudySectionCard]: more of its markdown, and the
+/// section's closing hairline after the last part. Built as its own list
+/// item, so parts far from the viewport are not laid out.
+class StudySectionContinuation extends StatelessWidget {
+  final String body;
+  final bool isClosed;
+  final StudySectionStyle style;
+  final bool isHighlight;
+  final bool isNew;
+  final double contentFontSize;
+
+  const StudySectionContinuation({
+    super.key,
+    required this.body,
+    this.isClosed = true,
+    this.style = StudySectionStyle.standard,
+    this.isHighlight = false,
+    this.isNew = false,
+    this.contentFontSize = 16.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ReaderPalette.of(context);
+    return _Appear(
+      animate: isNew,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // The gap between paragraphs: this continues the block above.
+          const SizedBox(height: MarkdownWithScripture.blockSpacing),
+          MarkdownWithScripture(
+            data: body,
+            textStyle:
+                _sectionTextStyle(palette, style, isHighlight, contentFontSize),
+          ),
+          if (isClosed) ...const [
+            SizedBox(height: _sectionBottomGap),
+            ReaderHairline(),
+          ],
         ],
       ),
     );

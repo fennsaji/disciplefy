@@ -5,6 +5,7 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/features/voice_buddy/presentation/widgets/discipler_start_view.dart';
+import 'package:disciplefy_bible_study/shared/widgets/status_bar_scrim.dart';
 
 import '../../../helpers/welcome_test_harness.dart';
 
@@ -90,5 +91,49 @@ void main() {
         }
       }
     }
+  }
+
+  for (final dark in [true, false]) {
+    testWidgets(
+        'scrolled content is covered by an opaque status-bar scrim '
+        '(dark=$dark)', (tester) async {
+      sl.registerSingleton<TranslationService>(FakeTranslationService());
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.view.padding = const FakeViewPadding(top: 40);
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(welcomeApp(
+        dark: dark,
+        screen: Scaffold(
+          body: DisciplerStartView(
+            quota: null,
+            languageName: 'English',
+            onSettings: () {},
+            onLanguageTap: () {},
+            onStartTalking: () {},
+            onType: () {},
+            onSuggestion: (_) {},
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      final scrim = find.byKey(StatusBarScrim.scrimKey);
+      expect(tester.getRect(scrim), const Rect.fromLTWH(0, 0, 360, 40));
+      double opacity() => tester
+          .widget<Opacity>(
+              find.ancestor(of: scrim, matching: find.byType(Opacity)).first)
+          .opacity;
+      expect(opacity(), 0);
+
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+      await tester.pump();
+      expect(opacity(), 1);
+      final color =
+          (tester.widget<DecoratedBox>(scrim).decoration as BoxDecoration)
+              .color!;
+      expect(color.a, 1);
+    });
   }
 }

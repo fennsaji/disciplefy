@@ -1,4 +1,3 @@
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,18 +15,13 @@ import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/all_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/all_paths_page.dart';
 
 import '../../../../helpers/fit_matrix.dart';
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
-
-class _MockLearningPathsBloc
-    extends MockBloc<LearningPathsEvent, LearningPathsState>
-    implements LearningPathsBloc {}
+import '../../helpers/paged_paths_repository.dart';
 
 class _MockGuest extends Mock implements GuestSessionService {}
 
@@ -66,22 +60,21 @@ final pathC = _path('c', 'Rooted in Christ', category: 'Foundations');
 
 void main() {
   late FakeTranslationService translations;
-  late _MockLearningPathsBloc bloc;
+  late PagedPathsRepository repository;
+  AllPathsBloc? bloc;
 
-  setUpAll(() {
-    registerFallbackValue(const LoadFlatLearningPaths());
-    return loadAppFonts();
-  });
+  setUpAll(loadAppFonts);
 
   setUp(() {
     translations = FakeTranslationService();
     sl.registerSingleton<TranslationService>(translations);
-    bloc = _MockLearningPathsBloc();
+    repository = PagedPathsRepository([]);
+    bloc = null;
   });
 
   tearDown(() async {
     GuestPathEnrollment.reset();
-    await bloc.close();
+    await bloc?.close();
     await sl.reset();
   });
 
@@ -94,12 +87,11 @@ void main() {
   }) async {
     translations.language = lang;
     useSurface(tester, size);
-    whenListen(bloc, const Stream<LearningPathsState>.empty(),
-        initialState: LearningPathsLoaded(
-          categories: const [],
-          searchResults: paths,
-          searchQuery: '',
-        ));
+    repository.paths
+      ..clear()
+      ..addAll(paths);
+    // Created in the test's zone so its requests run under the fake clock.
+    bloc = AllPathsBloc(repository: repository);
     await tester.pumpWidget(MaterialApp(
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -107,8 +99,8 @@ void main() {
       locale: Locale(lang.code),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: BlocProvider<LearningPathsBloc>.value(
-        value: bloc,
+      home: BlocProvider<AllPathsBloc>.value(
+        value: bloc!,
         child: const AllPathsPage(language: 'en'),
       ),
     ));
@@ -149,33 +141,32 @@ void main() {
     expect(all < foundations && foundations < gospels, isTrue);
   });
 
-  testWidgets('opens with the flat list and searches with the existing event',
+  testWidgets('opens with the first page and searches on the server',
       (tester) async {
     await pumpAllPaths(tester, paths: [pathA, pathB]);
-    verify(() => bloc.add(const LoadFlatLearningPaths())).called(1);
+    expect(repository.flatOffsets, [0]);
     await tester.tap(find.byKey(const Key('all_paths_search_toggle')));
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byKey(const Key('all_paths_search_field')), 'mark');
     await tester.pump(const Duration(milliseconds: 500));
-    verify(() => bloc.add(const SearchLearningPaths(query: 'mark'))).called(1);
+    await tester.pumpAndSettle();
+    expect(repository.searches.last, 'mark');
+    expect(find.text(pathB.title), findsOneWidget);
+    expect(find.text(pathC.title), findsNothing);
   });
 
   testWidgets(
       'a path row still opens after a pushed path page was dropped by go '
       '(its push future never completes)', (tester) async {
     useSurface(tester, const Size(390, 900));
-    whenListen(bloc, const Stream<LearningPathsState>.empty(),
-        initialState: LearningPathsLoaded(
-          categories: const [],
-          searchResults: [pathB],
-          searchQuery: '',
-        ));
+    repository.paths.add(pathB);
+    bloc = AllPathsBloc(repository: repository);
     final router = GoRouter(routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) => BlocProvider<LearningPathsBloc>.value(
-          value: bloc,
+        builder: (_, __) => BlocProvider<AllPathsBloc>.value(
+          value: bloc!,
           child: const AllPathsPage(language: 'en'),
         ),
       ),

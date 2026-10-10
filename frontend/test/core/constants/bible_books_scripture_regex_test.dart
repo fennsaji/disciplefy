@@ -51,4 +51,42 @@ void main() {
         match('1 കൊരിന്ത്യർ 10:23-11:1').group(0), '1 കൊരിന്ത്യർ 10:23-11:1');
     expect(match('യോഹന്നാൻ 3:16').group(0), 'യോഹന്നാൻ 3:16');
   });
+
+  group('false positives inside words and chapter 0', () {
+    bool links(String text) => regex.hasMatch(text);
+    String? first(String text) => regex.firstMatch(text)?.group(0);
+
+    test('"Thesis 0." and "Thesis 1." do not link', () {
+      expect(links('Thesis 0. God is holy'), isFalse);
+      expect(links('Thesis 1. Christ died for sinners'), isFalse);
+    });
+
+    test('a short abbreviation without a verse does not link', () {
+      expect(links('This is 3 times more'), isFalse);
+      expect(links('He 3 times denied'), isFalse);
+      expect(links('I am 5 years old'), isFalse);
+    });
+
+    test('chapter 0 and verse 0 never link', () {
+      expect(links('Isaiah 0'), isFalse);
+      expect(links('John 0:16'), isFalse);
+      expect(first('John 3:0'), 'John 3');
+    });
+
+    test('a book name must start at a word boundary in any script', () {
+      expect(links('xJohn 3:16'), isFalse);
+      expect(links('Thesis 53:5'), isFalse);
+    });
+
+    test('real references still link', () {
+      expect(first('Read Isaiah 53 today'), 'Isaiah 53');
+      expect(first('see Is 53:5.'), 'Is 53:5');
+      expect(first('1 Corinthians 15:3-4'), '1 Corinthians 15:3-4');
+      expect(first('(Hebrews 7:25)'), 'Hebrews 7:25');
+      expect(first('यूहन्ना 3:16'), 'यूहन्ना 3:16');
+      expect(first('വായിക്കുക യോഹന്നാൻ 3:16'), 'യോഹന്നാൻ 3:16');
+      expect(first('Gen 1'), 'Gen 1');
+      expect(first('Job 38'), 'Job 38');
+    });
+  });
 }

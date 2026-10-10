@@ -268,3 +268,17 @@ Deno.test('BibleBookNormalizer - should log warnings for invalid books', () => {
 })
 
 console.log('✅ All Bible Book Normalizer tests passed!')
+
+Deno.test('BibleBookNormalizer - extractScriptureReferences ignores words that end in a book abbreviation', () => {
+  const normalizer = new BibleBookNormalizer('en-US')
+  assertEquals(normalizer.extractScriptureReferences('Thesis 0. Thesis 1. This is 3 times.'), [])
+  assertEquals(normalizer.extractScriptureReferences('Isaiah 0 and John 0:16'), [])
+})
+
+Deno.test('BibleBookNormalizer - extractScriptureReferences keeps real references', () => {
+  const normalizer = new BibleBookNormalizer('en-US')
+  assertEquals(
+    normalizer.extractScriptureReferences('Isaiah 53, Is 53:5 and Hebrews 7:25'),
+    ['Isaiah 53', 'Isaiah 53:5', 'Hebrews 7:25'],
+  )
+})

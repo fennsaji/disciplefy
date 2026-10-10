@@ -8,15 +8,15 @@ import 'package:disciplefy_bible_study/core/localization/app_localizations.dart'
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/usecases/reset_learning_progress.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/all_paths_page.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/pages/learning_path_category_page.dart';
 
 import '../../../../helpers/text_fit.dart';
 import '../../../../helpers/welcome_test_harness.dart';
 import '../../helpers/paged_paths_repository.dart';
 
-/// All paths and a category's "See all" with the real bloc over a server
-/// that pages: every path must be reachable, not only the first page.
+/// A category's "See all" with the real bloc over a server that pages:
+/// every path must be reachable, not only the first page. (All paths is
+/// covered by all_paths_paging_test.dart.)
 void main() {
   late PagedPathsRepository repository;
   late LearningPathsBloc bloc;
@@ -46,70 +46,6 @@ void main() {
     ));
     await tester.pumpAndSettle();
   }
-
-  group('All paths', () {
-    setUp(() {
-      repository = PagedPathsRepository([
-        for (var i = 1; i <= 120; i++)
-          pagedPath(i, category: i > 100 ? 'Prophets' : 'Foundations'),
-      ]);
-    });
-
-    testWidgets('lists every path across three pages and counts them all',
-        (tester) async {
-      await pump(tester, const AllPathsPage(language: 'en'));
-
-      expect(find.text('120 paths'), findsOneWidget);
-      await tester.scrollUntilVisible(
-          find.byKey(const Key('all_paths_row_p120')), 400,
-          scrollable: find.descendant(
-              of: find.byKey(const Key('all_paths_list')),
-              matching: find.byType(Scrollable)));
-      expect(find.text('Path 120'), findsOneWidget);
-    });
-
-    testWidgets('a category only on the last page has its chip and paths',
-        (tester) async {
-      await pump(tester, const AllPathsPage(language: 'en'));
-
-      await tester.tap(find.byKey(const Key('all_paths_chip_Prophets')));
-      await tester.pumpAndSettle();
-      expect(find.text('Path 101'), findsOneWidget);
-      expect(find.text('Path 1'), findsNothing);
-    });
-
-    testWidgets('search finds a path from the third page', (tester) async {
-      await pump(tester, const AllPathsPage(language: 'en'));
-
-      await tester.tap(find.byKey(const Key('all_paths_search_toggle')));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-          find.byKey(const Key('all_paths_search_field')), 'path 115');
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
-      expect(find.text('Path 115'), findsOneWidget);
-      expect(find.text('Path 1'), findsNothing);
-    });
-
-    testWidgets('a failed search offers a retry instead of "no match"',
-        (tester) async {
-      await pump(tester, const AllPathsPage(language: 'en'));
-      repository.failFlatAt = 0;
-
-      await tester.tap(find.byKey(const Key('all_paths_search_toggle')));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-          find.byKey(const Key('all_paths_search_field')), 'path 115');
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
-
-      repository.failFlatAt = null;
-      await tester.tap(find.byType(TextButton));
-      await tester.pumpAndSettle();
-      expect(find.text('Path 115'), findsOneWidget);
-    });
-  });
 
   group('category See all', () {
     setUp(() {

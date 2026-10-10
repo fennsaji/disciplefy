@@ -51,6 +51,7 @@ import '../widgets/guide_share_prompts.dart';
 import '../widgets/streaming_study_content.dart';
 import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
+import '../../../../shared/widgets/keep_alive_block.dart';
 import '../../../../shared/widgets/sign_in_required_dialog.dart';
 import '../widgets/study_reading_tracker.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
@@ -453,6 +454,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   // the title). Notifiers, so scrolling rebuilds only what they drive.
   final StudyReadingTracker _readingTracker = StudyReadingTracker();
   final ValueNotifier<bool> _topBarCollapsed = ValueNotifier<bool>(false);
+
+  /// Section text-to-speech is reading aloud, or null; derived from the TTS
+  /// state so the body rebuilds only when it changes.
+  final ValueNotifier<int?> _ttsReadingSection = ValueNotifier<int?>(null);
   final ReadingProgressStore _readingProgressStore = ReadingProgressStore();
   int _lastSavedReadCount = 0;
   String? _readingProgressSeededFor;
@@ -476,12 +481,23 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Listen for TTS section completions to auto-mark the guide as completed
     // once the user has listened through the interpretation section.
     sl<StudyGuideTTSService>().state.addListener(_onTtsStateChanged);
+    _ttsReadingSection.value = _readingSectionFromTts();
+  }
+
+  /// The reader section text-to-speech is reading aloud, or null.
+  int? _readingSectionFromTts() {
+    final tts = sl<StudyGuideTTSService>();
+    final state = tts.state.value;
+    if (state.status != TtsStatus.playing) return null;
+    return StudyGuideBody.sectionIndexFor(
+        tts.sectionAt(state.currentSectionIndex));
   }
 
   /// Marks the study guide as completed when TTS finishes the interpretation
   /// section (or beyond).
   void _onTtsStateChanged() {
     final ttsState = sl<StudyGuideTTSService>().state.value;
+    _ttsReadingSection.value = _readingSectionFromTts();
     final completed = ttsState.lastCompletedSection;
     if (completed == null || _completionMarked) return;
 
@@ -925,6 +941,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _readingTracker.removeListener(_persistReadingProgress);
     _readingTracker.dispose();
     _topBarCollapsed.dispose();
+    _ttsReadingSection.dispose();
     super.dispose();
   }
 
@@ -1211,6 +1228,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         }
       });
 
+      // Like the other load paths: without these, notes typed in a guide
+      // opened from Saved, Recent or a shared link were never saved, and
+      // notes saved earlier were not shown when the list had none.
+      _setupAutoSave();
+      if (!_notesLoaded) {
+        this
+            .context
+            .read<StudyBloc>()
+            .add(LoadPersonalNotesRequested(guideId: studyGuide.id));
+      }
       // Like the other load paths: without this, guides opened from Saved,
       // Recent or a shared link could never complete by reading.
       _startCompletionTracking();
@@ -1619,9 +1646,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _startTimeTrackingTimer() {
     _timeTrackingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted && !_completionMarked) {
-        setState(() {
-          _timeSpentSeconds++;
-        });
+        // Not shown on screen: a setState here rebuilt the whole guide every
+        // second.
+        _timeSpentSeconds++;
         _checkCompletionConditions();
       }
     });
@@ -1638,9 +1665,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       if (!_completionMarked &&
           !_reachedInterpretation &&
           _hasReachedInterpretationEnd()) {
-        setState(() {
-          _reachedInterpretation = true;
-        });
+        // Completion bookkeeping only; nothing on screen depends on it.
+        _reachedInterpretation = true;
         _checkCompletionConditions();
       }
 
@@ -1763,11 +1789,32 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   bool _hasReachedInterpretationEnd() {
     if (!_scrollController.hasClients) return false;
     final box = _interpretationKey.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.attached) return false;
+    if (box is! RenderBox || !box.attached) {
+      // Sections are built lazily: after a jump the interpretation may never
+      // have been laid out. Count it once a later section is on screen.
+      return _isScrolledToAbsoluteBottom() || _laterSectionOnScreen();
+    }
     final viewport = RenderAbstractViewport.maybeOf(box);
     if (viewport == null) return false;
     final bottomAtScreenBottom = viewport.getOffsetToReveal(box, 1.0).offset;
     return _scrollController.position.pixels >= bottomAtScreenBottom - 1;
+  }
+
+  /// Whether a section after the interpretation (related verses onwards) is
+  /// laid out with its top above the bottom of the screen.
+  bool _laterSectionOnScreen() {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    for (final index in const [4, 5, 6]) {
+      final box =
+          _readingTracker.keyFor(index).currentContext?.findRenderObject();
+      if (box is RenderBox &&
+          box.attached &&
+          box.hasSize &&
+          box.localToGlobal(Offset.zero).dy < screenHeight) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Runs [show] now if the user is at the bottom of the guide, otherwise
@@ -2204,20 +2251,29 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
   /// Scrolls to the personal notes section and focuses the text field.
   void _scrollToNotesAndFocus() {
-    // The notes field is near the bottom of the page. Animate to the end and
-    // then request focus so the keyboard opens and positions the view correctly.
-    if (_scrollController.hasClients) {
-      _scrollController
-          .animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOut,
-      )
-          .then((_) {
-        if (mounted) _notesFocusNode.requestFocus();
-      });
-    } else {
-      _notesFocusNode.requestFocus();
+    // The notes field is the last block. Animate to the end and then request
+    // focus so the keyboard opens and positions the view correctly.
+    _scrollToEnd(const Duration(milliseconds: 400)).then((_) {
+      if (mounted) _notesFocusNode.requestFocus();
+    });
+  }
+
+  /// Animates to the bottom of the guide. The guide is built lazily, so the
+  /// scroll extent is an estimate until the last blocks are laid out; settle
+  /// on the real end once they are.
+  Future<void> _scrollToEnd(Duration duration) async {
+    if (!_scrollController.hasClients) return;
+    await _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: duration,
+      curve: Curves.easeOut,
+    );
+    for (var i = 0; i < 5; i++) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (position.pixels >= position.maxScrollExtent) return;
+      position.jumpTo(position.maxScrollExtent);
     }
   }
 
@@ -2228,13 +2284,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (!mounted) return;
     setState(() => _isChatExpanded = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
+      if (!mounted) return;
       // Scroll the chat section into view by scrolling to bottom.
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeOut,
-      );
+      _scrollToEnd(const Duration(milliseconds: 450));
     });
   }
 
@@ -3043,7 +3095,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// from the last section.
   Widget _buildReadModeContent(bool isLargeScreen) {
     const sidePadding = StudyGuideLayout.sidePadding;
-    final ttsService = sl<StudyGuideTTSService>();
     final guide = _currentStudyGuide!;
     final sections = StudyGuideSections.fromStudyGuide(guide);
 
@@ -3062,66 +3113,165 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     const blockTop = SizedBox(height: 26);
     const blockBottom = SizedBox(height: 26);
 
-    return SingleChildScrollView(
+    // Slivers, so only the blocks near the viewport are built and laid out:
+    // a long Deep Dive or Sermon no longer lays out every paragraph up front.
+    return CustomScrollView(
       controller: _scrollController,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Hero, title and sections: the same widget the streaming view
-          // renders while the guide loads.
-          ValueListenableBuilder<StudyGuideTtsState>(
-            valueListenable: ttsService.state,
-            builder: (context, ttsState, _) => StudyGuideBody(
-              studyMode: widget.studyMode,
-              sections: sections,
-              inputType: guide.inputType,
-              title: _getDisplayTitle(),
-              contentFontSize: _contentFontSize,
-              readingSectionIndex: ttsState.status == TtsStatus.playing
-                  ? ttsState.currentSectionIndex
-                  : null,
-              interpretationKey: _interpretationKey,
-              tracker: _readingTracker,
-              lesson: widget.lesson,
-              headerAccessory: _buildLessonModeSwitch(),
-            ),
+      slivers: [
+        // Hero, title and sections: the same widget the streaming view
+        // renders while the guide loads. Rebuilt only when the section being
+        // read aloud changes, not on every speech progress update.
+        ValueListenableBuilder<int?>(
+          valueListenable: _ttsReadingSection,
+          builder: (context, readingSection, _) => StudyGuideBody(
+            studyMode: widget.studyMode,
+            sections: sections,
+            inputType: guide.inputType,
+            title: _getDisplayTitle(),
+            contentFontSize: _contentFontSize,
+            readingSectionIndex: readingSection,
+            interpretationKey: _interpretationKey,
+            tracker: _readingTracker,
+            lesson: widget.lesson,
+            headerAccessory: _buildLessonModeSwitch(),
           ),
-
-          if (widget.lesson != null && widget.studyMode == StudyMode.quick)
-            Padding(
-              padding: sidePadding.add(const EdgeInsets.only(top: 20)),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton(
-                  key: const Key('lesson_read_full_guide'),
-                  onPressed: () => _switchLessonMode(StudyMode.standard),
-                  style: TextButton.styleFrom(
-                    foregroundColor: ReaderPalette.of(context).gold,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    minimumSize: const Size(0, 40),
-                    textStyle: AppFonts.inter(
-                        fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  child: Text(
-                    '${context.tr(TranslationKeys.lessonFullGuideLink)} →',
+        ),
+        SliverList.list(
+          children: [
+            if (widget.lesson != null && widget.studyMode == StudyMode.quick)
+              Padding(
+                padding: sidePadding.add(const EdgeInsets.only(top: 20)),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton(
+                    key: const Key('lesson_read_full_guide'),
+                    onPressed: () => _switchLessonMode(StudyMode.standard),
+                    style: TextButton.styleFrom(
+                      foregroundColor: ReaderPalette.of(context).gold,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      minimumSize: const Size(0, 40),
+                      textStyle: AppFonts.inter(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    child: Text(
+                      '${context.tr(TranslationKeys.lessonFullGuideLink)} →',
+                    ),
                   ),
                 ),
               ),
-            ),
 
-          if (widget.lesson != null)
-            Padding(
-              padding: sidePadding.add(EdgeInsets.only(
-                  top: widget.studyMode == StudyMode.quick ? 4 : 20)),
-              child: LessonMarkCompleteBar(
-                lesson: widget.lesson!,
-                onComplete: _completeLessonNow,
-                secondary: _buildLessonSecondaryActions(context),
+            if (widget.lesson != null)
+              Padding(
+                padding: sidePadding.add(EdgeInsets.only(
+                    top: widget.studyMode == StudyMode.quick ? 4 : 20)),
+                child: LessonMarkCompleteBar(
+                  lesson: widget.lesson!,
+                  onComplete: _completeLessonNow,
+                  secondary: _buildLessonSecondaryActions(context),
+                ),
               ),
-            ),
 
-          // Share with fellowship — a reflection, question, or insight
-          if (showShare)
+            // Share with fellowship — a reflection, question, or insight.
+            // Kept alive once built: the list is lazy, and scrolling away
+            // must not drop a half-written post.
+            if (showShare)
+              KeepAliveBlock(
+                child: Padding(
+                  padding: sidePadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      blockTop,
+                      WalkthroughTooltip(
+                        showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
+                        title: context
+                            .tr(TranslationKeys.studyGuideFellowshipShareTitle),
+                        description: context.tr(TranslationKeys
+                            .studyGuideFellowshipWalkthroughDesc),
+                        screen: WalkthroughScreen.studyGuideCompletion,
+                        stepNumber: 1,
+                        totalSteps: 3,
+                        onNext: () =>
+                            ShowCaseWidget.of(_showcaseContext!).next(),
+                        child: _FellowshipShareSection(
+                          number: shareNumber,
+                          studyGuideId: guide.id,
+                          guideTitle: _getDisplayTitle(),
+                          guideInputType: guide.inputType,
+                          guideLanguage: guide.language,
+                          guideStudyMode:
+                              guide.studyMode ?? widget.studyMode.name,
+                          guideSummary: guide.summary,
+                          userFellowships: _userFellowships!,
+                        ),
+                      ),
+                      blockBottom,
+                      const ReaderHairline(),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Follow-up Chat Section, with lock support for study_chat feature.
+            // Not built for a guest (no panel, no history call).
+            // Kept alive once built, so scrolling away keeps the loaded
+            // conversation and an unsent question.
+            if (chatNumber != null)
+              KeepAliveBlock(
+                child: LockedFeatureWrapper(
+                  featureKey: 'study_chat',
+                  child: Padding(
+                    padding: sidePadding,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        blockTop,
+                        WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
+                          title: context.tr(
+                              TranslationKeys.studyGuideWalkthroughChatTitle),
+                          description: context.tr(
+                              TranslationKeys.studyGuideWalkthroughChatDesc),
+                          screen: WalkthroughScreen.studyGuideCompletion,
+                          stepNumber: 2,
+                          totalSteps: 3,
+                          onNext: () =>
+                              ShowCaseWidget.of(_showcaseContext!).next(),
+                          child: Container(
+                            key: _followUpChatKey,
+                            child: BlocProvider(
+                              create: (context) {
+                                final bloc = sl<FollowUpChatBloc>();
+                                bloc.add(StartConversationEvent(
+                                  studyGuideId: guide.id,
+                                  studyGuideTitle: _getDisplayTitle(),
+                                ));
+                                return bloc;
+                              },
+                              child: FollowUpChatWidget(
+                                studyGuideId: guide.id,
+                                studyGuideTitle: _getDisplayTitle(),
+                                sectionNumber: chatNumber,
+                                isExpanded: _isChatExpanded,
+                                onToggleExpanded: () {
+                                  setState(() {
+                                    _isChatExpanded = !_isChatExpanded;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ), // WalkthroughTooltip
+                        blockBottom,
+                        const ReaderHairline(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Personal notes
             Padding(
               padding: sidePadding,
               child: Column(
@@ -3129,111 +3279,24 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 children: [
                   blockTop,
                   WalkthroughTooltip(
-                    showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
+                    showcaseKey: ShowcaseKeys.studyGuideNotes,
                     title: context
-                        .tr(TranslationKeys.studyGuideFellowshipShareTitle),
-                    description: context.tr(
-                        TranslationKeys.studyGuideFellowshipWalkthroughDesc),
+                        .tr(TranslationKeys.studyGuideWalkthroughNotesTitle),
+                    description: context
+                        .tr(TranslationKeys.studyGuideWalkthroughNotesDesc),
                     screen: WalkthroughScreen.studyGuideCompletion,
-                    stepNumber: 1,
+                    stepNumber: 3,
                     totalSteps: 3,
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                    child: _FellowshipShareSection(
-                      number: shareNumber,
-                      studyGuideId: guide.id,
-                      guideTitle: _getDisplayTitle(),
-                      guideInputType: guide.inputType,
-                      guideLanguage: guide.language,
-                      guideStudyMode: guide.studyMode ?? widget.studyMode.name,
-                      guideSummary: guide.summary,
-                      userFellowships: _userFellowships!,
-                    ),
+                    child: _buildNotesSection(notesNumber),
                   ),
-                  blockBottom,
-                  const ReaderHairline(),
+                  SizedBox(height: isLargeScreen ? 32 : 24),
                 ],
               ),
             ),
-
-          // Follow-up Chat Section, with lock support for study_chat feature.
-          // Not built for a guest (no panel, no history call).
-          if (chatNumber != null)
-            LockedFeatureWrapper(
-              featureKey: 'study_chat',
-              child: Padding(
-                padding: sidePadding,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    blockTop,
-                    WalkthroughTooltip(
-                      showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
-                      title: context
-                          .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
-                      description: context
-                          .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
-                      screen: WalkthroughScreen.studyGuideCompletion,
-                      stepNumber: 2,
-                      totalSteps: 3,
-                      onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                      child: Container(
-                        key: _followUpChatKey,
-                        child: BlocProvider(
-                          create: (context) {
-                            final bloc = sl<FollowUpChatBloc>();
-                            bloc.add(StartConversationEvent(
-                              studyGuideId: guide.id,
-                              studyGuideTitle: _getDisplayTitle(),
-                            ));
-                            return bloc;
-                          },
-                          child: FollowUpChatWidget(
-                            studyGuideId: guide.id,
-                            studyGuideTitle: _getDisplayTitle(),
-                            sectionNumber: chatNumber,
-                            isExpanded: _isChatExpanded,
-                            onToggleExpanded: () {
-                              setState(() {
-                                _isChatExpanded = !_isChatExpanded;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ), // WalkthroughTooltip
-                    blockBottom,
-                    const ReaderHairline(),
-                  ],
-                ),
-              ),
-            ),
-
-          // Personal notes
-          Padding(
-            padding: sidePadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                blockTop,
-                WalkthroughTooltip(
-                  showcaseKey: ShowcaseKeys.studyGuideNotes,
-                  title: context
-                      .tr(TranslationKeys.studyGuideWalkthroughNotesTitle),
-                  description: context
-                      .tr(TranslationKeys.studyGuideWalkthroughNotesDesc),
-                  screen: WalkthroughScreen.studyGuideCompletion,
-                  stepNumber: 3,
-                  totalSteps: 3,
-                  onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                  child: _buildNotesSection(notesNumber),
-                ),
-                SizedBox(height: isLargeScreen ? 32 : 24),
-              ],
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -3626,7 +3689,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
 
     // Scroll after a brief delay so the expand animation has started.
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () async {
+      if (!mounted) return;
+      // The guide is built lazily: far from the end the chat is not built
+      // yet, so jump near the end first to bring it into the tree.
+      if (_followUpChatKey.currentContext == null &&
+          _scrollController.hasClients) {
+        for (var i = 0;
+            i < 5 && _followUpChatKey.currentContext == null && mounted;
+            i++) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          await WidgetsBinding.instance.endOfFrame;
+        }
+      }
       final chatContext = _followUpChatKey.currentContext;
       if (chatContext != null && mounted) {
         Scrollable.ensureVisible(

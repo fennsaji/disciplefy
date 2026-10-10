@@ -41,11 +41,13 @@ Widget _app(Widget child, {required bool dark}) => MaterialApp(
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-      home: Scaffold(body: SingleChildScrollView(child: child)),
+      home: Scaffold(body: CustomScrollView(slivers: [child])),
     );
 
+/// 320pt wide; tall enough that every section is built, since the body
+/// builds only the sections near the viewport.
 void _useNarrowPhone(WidgetTester tester) {
-  tester.view.physicalSize = const Size(320, 640);
+  tester.view.physicalSize = const Size(320, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 }

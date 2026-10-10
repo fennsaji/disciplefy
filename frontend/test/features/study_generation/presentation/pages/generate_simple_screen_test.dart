@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:disciplefy_bible_study/shared/widgets/status_bar_scrim.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
@@ -796,6 +797,45 @@ void main() {
           });
         }
       }
+    }
+  });
+
+  group('status bar', () {
+    for (final dark in [true, false]) {
+      testWidgets(
+          'scrolled content slides under an opaque status-bar scrim '
+          '(${dark ? 'dark' : 'light'})', (tester) async {
+        tester.view.padding = const FakeViewPadding(top: 40);
+        await pumpSimple(tester, dark: dark, size: const Size(390, 420));
+
+        final scrim = find.byKey(StatusBarScrim.scrimKey);
+        expect(scrim, findsOneWidget);
+        expect(tester.getRect(scrim), const Rect.fromLTWH(0, 0, 390, 40));
+        double opacity() => tester
+            .widget<Opacity>(
+                find.ancestor(of: scrim, matching: find.byType(Opacity)).first)
+            .opacity;
+        // Unscrolled, the hero photo shows under the status bar.
+        expect(opacity(), 0);
+
+        await tester.drag(
+            find.byType(SingleChildScrollView).first, const Offset(0, -300));
+        await tester.pumpAndSettle();
+
+        // The subtitle has moved up under the status bar...
+        expect(
+            tester
+                .getRect(find.text('Type a verse, a topic or a question'))
+                .top,
+            lessThan(40));
+        // ...and an opaque page-coloured scrim covers it.
+        expect(opacity(), 1);
+        final box =
+            tester.widget<DecoratedBox>(scrim).decoration as BoxDecoration;
+        expect(box.color!.a, 1);
+        final page = Theme.of(tester.element(scrim)).scaffoldBackgroundColor;
+        expect(box.color, page);
+      });
     }
   });
 }
