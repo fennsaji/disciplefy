@@ -332,6 +332,32 @@ export type Database = {
         }
         Relationships: []
       }
+      growth_goal_paths: {
+        Row: {
+          goal: string
+          path_slug: string
+          position: number
+        }
+        Insert: {
+          goal: string
+          path_slug: string
+          position: number
+        }
+        Update: {
+          goal?: string
+          path_slug?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_goal_paths_path_slug_fkey"
+            columns: ["path_slug"]
+            isOneToOne: false
+            referencedRelation: "learning_paths"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       learning_path_topics: {
         Row: {
           created_at: string | null
@@ -2303,6 +2329,30 @@ export type Database = {
           },
         ]
       }
+      user_growth_goals: {
+        Row: {
+          created_at: string
+          goal: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_learning_path_progress: {
         Row: {
           completed_at: string | null
@@ -3455,6 +3505,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      growth_goal_from_answers: {
+        Args: {
+          p_biggest_challenge: string
+          p_faith_stage: string
+          p_life_stage_focus: string
+          p_spiritual_goals: string[]
+        }
+        Returns: string
+      }
       has_active_subscription: {
         Args: { p_user_id: string }
         Returns: boolean
@@ -3475,6 +3534,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      merge_guest_growth_goal: {
+        Args: { p_guest: string; p_user: string }
+        Returns: undefined
       }
       record_purchase_history: {
         Args: {
@@ -3525,6 +3588,22 @@ export type Database = {
       set_default_payment_method: {
         Args: { p_method_id: string; p_user_id: string }
         Returns: boolean
+      }
+      set_my_growth_goal: {
+        Args: { p_goal: string; p_source?: string }
+        Returns: {
+          created_at: string
+          goal: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_growth_goals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       store_pending_purchase: {
         Args: {
