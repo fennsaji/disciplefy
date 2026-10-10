@@ -1228,6 +1228,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         }
       });
 
+      // Like the other load paths: without these, notes typed in a guide
+      // opened from Saved, Recent or a shared link were never saved, and
+      // notes saved earlier were not shown when the list had none.
+      _setupAutoSave();
+      if (!_notesLoaded) {
+        this
+            .context
+            .read<StudyBloc>()
+            .add(LoadPersonalNotesRequested(guideId: studyGuide.id));
+      }
       // Like the other load paths: without this, guides opened from Saved,
       // Recent or a shared link could never complete by reading.
       _startCompletionTracking();
