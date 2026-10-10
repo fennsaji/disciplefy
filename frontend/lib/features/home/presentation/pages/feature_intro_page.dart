@@ -16,7 +16,7 @@ import 'package:disciplefy_bible_study/features/community/domain/entities/public
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_content.dart';
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/feature_intro_source.dart';
 import 'package:disciplefy_bible_study/features/home/domain/new_for_you/new_for_you_scheduler.dart';
-import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/choose_first_path_card.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/next_path_row.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
@@ -353,7 +353,7 @@ class _FeatureIntroPageState extends State<FeatureIntroPage> {
     return Column(
       children: [
         for (final path in paths)
-          FirstPathRow(path: path, onTap: () => _openPath(path)),
+          NextPathRow(path: path, onTap: () => _openPath(path)),
       ],
     );
   }

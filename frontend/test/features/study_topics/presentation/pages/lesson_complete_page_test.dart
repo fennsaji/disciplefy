@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
@@ -74,6 +75,19 @@ LearningPathDetail _path() => LearningPathDetail(
       topics: [for (var i = 0; i < 8; i++) _topic(i + 1, _titles[i])],
     );
 
+LearningPath _listed(String id, String title) => LearningPath(
+      id: id,
+      slug: id,
+      title: title,
+      description: '',
+      iconName: 'menu_book',
+      color: '',
+      totalXp: 0,
+      estimatedDays: 14,
+      discipleLevel: 'seeker',
+      topicsCount: 8,
+    );
+
 void main() {
   late _MockRepo repo;
   late GoRouter router;
@@ -85,6 +99,15 @@ void main() {
           language: any(named: 'language'),
           forceRefresh: any(named: 'forceRefresh'),
         )).thenAnswer((_) async => Right(_path()));
+    when(() => repo.getNextPaths(
+          language: any(named: 'language'),
+          limit: any(named: 'limit'),
+        )).thenAnswer((_) async => Right(NextPathsResult(paths: [
+          _listed('p', 'NBE'), // the path just finished: never listed
+          _listed('rooted', 'Rooted in Christ'),
+          _listed('mark', 'Gospel of Mark'),
+          _listed('john', 'Gospel of John'),
+        ])));
     sl.registerSingleton<TranslationService>(FakeTranslationService());
     sl.registerSingleton<LearningPathsRepository>(repo);
     sl.registerSingleton<LanguagePreferenceService>(_FakePrefs());
@@ -117,6 +140,12 @@ void main() {
         GoRoute(
             path: '/study-guide-v2', builder: (_, __) => const Text('guide')),
         GoRoute(path: '/', builder: (_, __) => const Text('home')),
+        GoRoute(
+          path: '/learning-path/:pathId',
+          builder: (_, s) => Text('path:${s.pathParameters['pathId']}'),
+        ),
+        GoRoute(
+            path: '/study-topics', builder: (_, __) => const Text('topics')),
       ],
     );
     await tester.pumpWidget(MaterialApp.router(
@@ -187,6 +216,65 @@ void main() {
     expect(find.text('You finished NBE'), findsOneWidget);
     expect(find.textContaining('Continue to lesson'), findsNothing);
     expect(find.text('Back to Home'), findsOneWidget);
+  });
+
+  testWidgets('last lesson: What next? lists three next paths, not this one',
+      (tester) async {
+    await pumpPage(tester, 8);
+    final card = find.byKey(const Key('lesson_complete_what_next'));
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('What next?')),
+        findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('NBE')), findsNothing);
+    for (final t in ['Rooted in Christ', 'Gospel of Mark', 'Gospel of John']) {
+      expect(find.text(t), findsOneWidget);
+    }
+    verify(() => repo.getNextPaths(language: any(named: 'language'), limit: 4))
+        .called(1);
+
+    await tester.ensureVisible(find.text('Gospel of Mark'));
+    await tester.tap(find.text('Gospel of Mark'));
+    await tester.pumpAndSettle();
+    expect(find.text('path:mark'), findsOneWidget);
+  });
+
+  testWidgets('before the last lesson: no What next?', (tester) async {
+    await pumpPage(tester, 1);
+    expect(find.byKey(const Key('lesson_complete_what_next')), findsNothing);
+    verifyNever(() => repo.getNextPaths(
+        language: any(named: 'language'), limit: any(named: 'limit')));
+  });
+
+  testWidgets('What next? never blocks: a failed load offers Retry',
+      (tester) async {
+    when(() => repo.getNextPaths(
+          language: any(named: 'language'),
+          limit: any(named: 'limit'),
+        )).thenAnswer((_) async => const Left(NetworkFailure()));
+    await pumpPage(tester, 8);
+    expect(find.byKey(const Key('next_paths_retry')), findsOneWidget);
+    expect(find.text('Back to Home'), findsOneWidget);
+  });
+
+  testWidgets(
+      'guest: only the paths the server allows; none left asks for an '
+      'account', (tester) async {
+    final guest = _MockGuest();
+    final flags = _MockFlags();
+    when(() => guest.isGuest).thenReturn(true);
+    when(() => flags.guestMode).thenReturn(true);
+    sl.registerSingleton<GuestSessionService>(guest);
+    sl.registerSingleton<RolloutFlags>(flags);
+    when(() => repo.getNextPaths(
+          language: any(named: 'language'),
+          limit: any(named: 'limit'),
+        )).thenAnswer((_) async => const Right(NextPathsResult(paths: [])));
+    await pumpPage(tester, 8);
+    final row = find.byKey(const Key('next_paths_guest_account'));
+    await tester.ensureVisible(row);
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
   });
 
   testWidgets('primary fill is white on dark and gold on light',

@@ -270,14 +270,6 @@ void main() {
                 const LoadLearningPaths(forceRefresh: true, language: 'hi'),
               ))
           .called(1);
-      // The For You section's personalized paths are dropped from state by
-      // a reload from LearningPathsResetSuccess (not LearningPathsLoaded) —
-      // this re-fetch is what makes it recover.
-      mocktail
-          .verify(() => learningPathsBloc.add(
-                const LoadPersonalizedPaths(language: 'hi', forceRefresh: true),
-              ))
-          .called(1);
     });
   });
 

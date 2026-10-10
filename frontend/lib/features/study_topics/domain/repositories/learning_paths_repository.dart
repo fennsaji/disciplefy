@@ -119,7 +119,7 @@ abstract class LearningPathsRepository {
   ///
   /// Returns a learning path based on priority:
   /// 1. Active (in-progress) learning path for authenticated users
-  /// 2. Personalized path based on questionnaire for authenticated users
+  /// 2. The next path of the user's growth goal
   /// 3. Featured path as fallback (works for all users including anonymous)
   ///
   /// [language] - The language for localized content (default: 'en')
@@ -129,20 +129,10 @@ abstract class LearningPathsRepository {
     bool forceRefresh = false,
   });
 
-  /// Get top N personalized learning paths for the "For You" section.
-  ///
-  /// Returns paths scored by the questionnaire algorithm, or featured paths
-  /// for users who have not completed the questionnaire.
-  ///
-  /// [language] - The language for localized content (default: 'en')
-  /// [limit] - Number of paths to return (default: 5)
-  ///
-  /// [forceRefresh] skips the in-memory copy. The list carries the user's
-  /// progress, so a screen showing it after topics were completed must pass
-  /// true or it reads the progress from when it was first fetched.
-  Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
+  /// What to study next ([NextPathsResult]), at most [limit] paths. Always
+  /// fresh: the list depends on the user's progress.
+  Future<Either<Failure, NextPathsResult>> getNextPaths({
     String language = 'en',
-    int limit = 5,
-    bool forceRefresh = false,
+    int limit = 3,
   });
 }

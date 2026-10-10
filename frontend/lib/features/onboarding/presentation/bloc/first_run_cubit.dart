@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';
@@ -11,6 +13,7 @@ import 'package:disciplefy_bible_study/core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/auth/data/services/guest_session_service.dart';
 import 'package:disciplefy_bible_study/features/onboarding/domain/growth_goals.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_state.dart';
+import 'package:disciplefy_bible_study/features/personalization/domain/growth_goal_repository.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
@@ -30,6 +33,7 @@ class FirstRunCubit extends Cubit<FirstRunState> {
   final LanguagePreferenceService _language;
   final Box _settings;
   final WalkthroughRepository _walkthrough;
+  final GrowthGoalRepository? _goals;
 
   /// Hive `app_settings` key of the picked goal ([GrowthGoal.name]).
   static const String goalKey = 'first_run_goal';
@@ -51,7 +55,9 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     required LanguagePreferenceService language,
     required Box settings,
     required WalkthroughRepository walkthrough,
+    GrowthGoalRepository? goals,
   })  : _guest = guest,
+        _goals = goals,
         _paths = paths,
         _flags = flags,
         _language = language,
@@ -119,6 +125,8 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     if (!_guest.hasSession) {
       if (!_flags.guestMode) {
         await _settings.put(goalKey, goal.name);
+        // Nobody signed in yet: the account that signs in next owns it.
+        await _goals?.rememberChoice(goal);
         Logger.info('First run needs login before lesson 1',
             tag: 'FIRST_RUN', context: {'goal': goal.name});
         _emit(const FirstRunNeedsLogin());
@@ -146,6 +154,13 @@ class FirstRunCubit extends Cubit<FirstRunState> {
 
     _step = _Step.saveGoal;
     await _settings.put(goalKey, goal.name);
+    await _goals?.rememberChoice(goal);
+    // On the server too (it picks what comes next). Never holds up lesson 1:
+    // a failed save is retried by the goal sync on Home.
+    final goals = _goals;
+    if (goals != null) {
+      unawaited(goals.saveGoal(goal, source: GrowthGoalSource.firstRun));
+    }
 
     _step = _Step.pathDetails;
     final details = await _paths.getLearningPathDetails(

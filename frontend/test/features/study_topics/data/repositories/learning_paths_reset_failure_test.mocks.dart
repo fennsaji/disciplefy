@@ -11,6 +11,8 @@ import 'package:disciplefy_bible_study/features/study_topics/data/datasources/le
     as _i4;
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_model.dart'
     as _i2;
+import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart'
+    as _i6;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -105,9 +107,9 @@ class _FakeRecommendedPathResponseModel_6 extends _i1.SmartFake
         );
 }
 
-class _FakePersonalizedPathsResponseModel_7 extends _i1.SmartFake
-    implements _i2.PersonalizedPathsResponseModel {
-  _FakePersonalizedPathsResponseModel_7(
+class _FakeNextPathsResponseModel_7 extends _i1.SmartFake
+    implements _i2.NextPathsResponseModel {
+  _FakeNextPathsResponseModel_7(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -243,6 +245,20 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
       ) as _i5.Future<_i2.RecommendedPathResponseModel?>);
 
   @override
+  _i5.Future<List<_i6.LearningPathCategorySummary>>
+      getLearningPathCategorySummaries({String? language = 'en'}) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getLearningPathCategorySummaries,
+              [],
+              {#language: language},
+            ),
+            returnValue:
+                _i5.Future<List<_i6.LearningPathCategorySummary>>.value(
+                    <_i6.LearningPathCategorySummary>[]),
+          ) as _i5.Future<List<_i6.LearningPathCategorySummary>>);
+
+  @override
   _i5.Future<_i2.LearningPathCategoryPathsResponseModel>
       getLearningPathsForCategory({
     required String? category,
@@ -372,24 +388,24 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
       ) as _i5.Future<_i2.RecommendedPathResponseModel>);
 
   @override
-  _i5.Future<_i2.PersonalizedPathsResponseModel> getPersonalizedPaths({
+  _i5.Future<_i2.NextPathsResponseModel> getNextPaths({
     String? language = 'en',
-    int? limit = 5,
+    int? limit = 3,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
-          #getPersonalizedPaths,
+          #getNextPaths,
           [],
           {
             #language: language,
             #limit: limit,
           },
         ),
-        returnValue: _i5.Future<_i2.PersonalizedPathsResponseModel>.value(
-            _FakePersonalizedPathsResponseModel_7(
+        returnValue: _i5.Future<_i2.NextPathsResponseModel>.value(
+            _FakeNextPathsResponseModel_7(
           this,
           Invocation.method(
-            #getPersonalizedPaths,
+            #getNextPaths,
             [],
             {
               #language: language,
@@ -397,5 +413,5 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
             },
           ),
         )),
-      ) as _i5.Future<_i2.PersonalizedPathsResponseModel>);
+      ) as _i5.Future<_i2.NextPathsResponseModel>);
 }

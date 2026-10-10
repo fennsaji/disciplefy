@@ -21,7 +21,6 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/me
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/review_statistics_entity.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:disciplefy_bible_study/features/personalization/presentation/widgets/personalization_prompt_card.dart';
 import 'package:flutter/rendering.dart';
 import 'package:dartz/dartz.dart';
 import 'package:disciplefy_bible_study/core/error/failures.dart';
@@ -460,40 +459,6 @@ void main() {
         await pump(tester, hero(_loaded(_shortVerse)), width: width);
         expect(fullyShown(tester, 'Study now'), isTrue);
         expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      });
-    }
-
-    testWidgets('Personalize card buttons keep their full labels at 280px',
-        (tester) async {
-      var started = 0, skipped = 0;
-      await pump(
-        tester,
-        PersonalizationPromptCard(
-          onGetStarted: () => started++,
-          onSkip: () => skipped++,
-        ),
-        width: 280,
-      );
-      expect(find.text('Personalize Your Experience'), findsOneWidget);
-      expect(fullyShown(tester, 'Get Started'), isTrue);
-      expect(fullyShown(tester, 'Maybe Later'), isTrue);
-      expect(tester.takeException(), isNull);
-      await tester.tap(find.text('Get Started'));
-      await tester.tap(find.text('Maybe Later'));
-      expect((started, skipped), (1, 1));
-    });
-
-    for (final (label, theme) in [
-      ('dark', AppTheme.darkTheme),
-      ('light', AppTheme.lightTheme),
-    ]) {
-      testWidgets('Personalize card renders in $label theme', (tester) async {
-        await pump(
-          tester,
-          PersonalizationPromptCard(onGetStarted: () {}, onSkip: () {}),
-          theme: theme,
-        );
         expect(tester.takeException(), isNull);
       });
     }

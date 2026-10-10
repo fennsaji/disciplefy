@@ -1086,13 +1086,10 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
       // Everything derived from the deleted rows must be refetched: the
       // path list (in the user's actual study-content language — passing
       // none here would silently reload in LoadLearningPaths' 'en' default),
-      // the personalized "For You" paths (dropped from state on this reload
-      // since the prior state is LearningPathsResetSuccess, not
-      // LearningPathsLoaded — see `_onLoadLearningPaths`), and XP/rank/badges
+      // and XP/rank/badges
       // (via GamificationBloc, a singleton reached directly through the
       // service locator).
       bloc.add(LoadLearningPaths(forceRefresh: true, language: language));
-      bloc.add(LoadPersonalizedPaths(language: language, forceRefresh: true));
       sl<GamificationBloc>().add(const RefreshGamificationStats());
       continueBloc?.add(RefreshContinueLearning(language: language));
     } else if (outcome is LearningPathsResetError) {

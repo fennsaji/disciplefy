@@ -179,10 +179,9 @@ class PagedPathsRepository extends Fake implements LearningPathsRepository {
       null;
 
   @override
-  Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
+  Future<Either<Failure, NextPathsResult>> getNextPaths({
     String language = 'en',
-    int limit = 5,
-    bool forceRefresh = false,
+    int limit = 3,
   }) async =>
-      const Right([]);
+      const Right(NextPathsResult(paths: []));
 }

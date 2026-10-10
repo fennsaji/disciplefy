@@ -88,18 +88,16 @@ abstract class LearningPathsRemoteDataSource {
 
   /// Get the recommended learning path for the current user.
   ///
-  /// Returns based on priority: active > personalized > featured
+  /// Returns based on priority: active > growth goal > featured
   Future<RecommendedPathResponseModel> getRecommendedPath({
     String language = 'en',
   });
 
-  /// Get top N personalized learning paths for the current user.
-  ///
-  /// Returns paths scored by the questionnaire algorithm, or featured paths
-  /// for unauthenticated / non-personalized users.
-  Future<PersonalizedPathsResponseModel> getPersonalizedPaths({
+  /// What to study next (`recommended_paths`): the server's next-path
+  /// engine, plus the path just finished when nothing else is active.
+  Future<NextPathsResponseModel> getNextPaths({
     String language = 'en',
-    int limit = 5,
+    int limit = 3,
   });
 }
 
@@ -696,13 +694,12 @@ class LearningPathsRemoteDataSourceImpl
   }
 
   @override
-  Future<PersonalizedPathsResponseModel> getPersonalizedPaths({
+  Future<NextPathsResponseModel> getNextPaths({
     String language = 'en',
-    int limit = 5,
+    int limit = 3,
   }) async {
     try {
-      _logDebug(
-          'Fetching personalized paths (language: $language, limit: $limit)');
+      _logDebug('Fetching next paths (language: $language, limit: $limit)');
 
       final headers = await _httpService.createHeaders();
       final body = jsonEncode({'language': language, 'limit': limit});
@@ -713,21 +710,21 @@ class LearningPathsRemoteDataSourceImpl
         body: body,
       );
 
-      _logDebug('Personalized paths API response: ${response.statusCode}');
+      _logDebug('Next paths API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body) as Map<String, dynamic>;
         if (jsonData['success'] != true) {
           throw const ClientException(
             message: 'API returned unsuccessful response',
-            code: 'PERSONALIZED_PATHS_API_FAILURE',
+            code: 'NEXT_PATHS_API_FAILURE',
           );
         }
-        return PersonalizedPathsResponseModel.fromJson(jsonData);
+        return NextPathsResponseModel.fromJson(jsonData);
       } else {
         throw ServerException(
-          message: 'Failed to fetch personalized paths: ${response.statusCode}',
-          code: 'PERSONALIZED_PATHS_API_ERROR',
+          message: 'Failed to fetch next paths: ${response.statusCode}',
+          code: 'NEXT_PATHS_API_ERROR',
         );
       }
     } on ServerException {
@@ -735,10 +732,10 @@ class LearningPathsRemoteDataSourceImpl
     } on ClientException {
       rethrow;
     } catch (e) {
-      _logDebug('Exception in getPersonalizedPaths: $e');
+      _logDebug('Exception in getNextPaths: $e');
       throw NetworkException(
         message: 'Failed to connect to learning paths service',
-        code: 'PERSONALIZED_PATHS_NETWORK_ERROR',
+        code: 'NEXT_PATHS_NETWORK_ERROR',
       );
     }
   }

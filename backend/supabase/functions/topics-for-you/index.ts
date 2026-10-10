@@ -1,8 +1,8 @@
 /**
  * Topics For You Edge Function
  *
- * Returns personalized topic recommendations for the "For You" section
- * Part of the home screen personalization feature
+ * Next lessons to suggest, from the next-path engine (active path, growth
+ * goal list, featured). Older apps call it for their For You list.
  */
 
 import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts';
@@ -100,6 +100,7 @@ async function handleTopicsForYou(
     userId,
     limit,
     services.supabaseServiceClient as any,
+    userContext.isGuest === true,
   );
 
   if (!result.success) {

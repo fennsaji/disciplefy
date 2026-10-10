@@ -18,6 +18,8 @@ import 'package:disciplefy_bible_study/features/auth/data/services/guest_session
 import 'package:disciplefy_bible_study/features/feedback/presentation/widgets/feedback_bottom_sheet.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_bloc.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
+import 'package:disciplefy_bible_study/features/onboarding/domain/growth_goals.dart';
+import 'package:disciplefy_bible_study/features/personalization/domain/growth_goal_repository.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_state.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
@@ -129,11 +131,11 @@ class _SettingsMorePageState extends State<SettingsMorePage> {
       SettingsGroup(
         children: [
           SettingsRow(
-            icon: Icons.auto_awesome_outlined,
-            title: context.tr(TranslationKeys.settingsRetakeQuestionnaire),
-            subtitle:
-                context.tr(TranslationKeys.settingsRetakeQuestionnaireSubtitle),
-            onTap: () => _navigateToQuestionnaire(context),
+            key: const Key('settings_change_goal'),
+            icon: Icons.flag_outlined,
+            title: context.tr(TranslationKeys.goalSettingsRow),
+            subtitle: _goalSubtitle(context),
+            onTap: () => _openChangeGoal(context),
           ),
           SettingsRow(
             icon: Icons.school_outlined,
@@ -248,15 +250,29 @@ class _SettingsMorePageState extends State<SettingsMorePage> {
   // Actions
   // -------------------------------------------------------------------------
 
-  /// Navigate to the personalization questionnaire.
-  void _navigateToQuestionnaire(BuildContext context) {
-    context.push('/personalization-questionnaire').then((_) {
-      // Clear LearningPaths repository cache so Study Topics gets fresh data.
-      sl<LearningPathsRepository>().clearCache();
-      // Refresh all personalization-dependent data.
-      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+  /// The saved goal's name, or "Not chosen yet".
+  String _goalSubtitle(BuildContext context) {
+    GrowthGoal? goal;
+    try {
+      if (sl.isRegistered<GrowthGoalRepository>()) {
+        goal = sl<GrowthGoalRepository>().cachedGoal;
+      }
+    } catch (_) {
+      goal = null;
+    }
+    return context.tr(goal?.labelKey ?? TranslationKeys.goalNotChosen);
+  }
+
+  /// Opens Change my goal; a new goal changes what comes next, so the
+  /// suggested paths are reloaded.
+  Future<void> _openChangeGoal(BuildContext context) async {
+    final changed = await context.push<bool>(AppRoutes.changeGoal);
+    if (changed != true) return;
+    if (mounted) setState(() {});
+    sl<LearningPathsRepository>().clearCache();
+    if (sl.isRegistered<HomeBloc>()) {
       sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
-    });
+    }
   }
 
   /// Replay app walkthrough by resetting all walkthrough seen states.

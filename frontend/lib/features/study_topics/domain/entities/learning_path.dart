@@ -391,6 +391,32 @@ enum LearningPathRecommendationReason {
   offlineAvailable,
 }
 
+/// The path a "What next?" card is about: the one the user just finished.
+class FinishedPathRef extends Equatable {
+  final String id;
+  final String title;
+
+  const FinishedPathRef({required this.id, required this.title});
+
+  @override
+  List<Object?> get props => [id, title];
+}
+
+/// What to study next, from the server's next-path engine: the active path,
+/// then the paths of the user's growth goal, then featured paths. A guest only
+/// gets guest-accessible paths.
+class NextPathsResult extends Equatable {
+  final List<LearningPath> paths;
+
+  /// Set when the user's latest path is finished and no other is active.
+  final FinishedPathRef? finishedPath;
+
+  const NextPathsResult({required this.paths, this.finishedPath});
+
+  @override
+  List<Object?> get props => [paths, finishedPath];
+}
+
 /// Result container for recommended learning path.
 class RecommendedPathResult {
   final LearningPath path;

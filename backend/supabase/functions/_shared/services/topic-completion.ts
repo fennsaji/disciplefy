@@ -5,22 +5,13 @@
  * Two endpoints record completions: topic-progress (`complete`, sent by the
  * client when the guide was opened with a topic id) and
  * mark-study-guide-complete (which resolves the topic from the guide). The
- * client fires both for a path lesson, in either order, so the follow-up hooks
- * run from whichever call recorded the first completion:
- *   - score recalculation runs only on the call whose RPC reported
- *     `is_first_completion` (complete_topic_progress lets exactly one caller
- *     win), so it runs once per real first completion;
- *   - fellowship auto-advance runs on every call; it is idempotent (it needs
- *     every member done and updates with an optimistic lock on the index).
+ * client fires both for a path lesson, in either order. The follow-up hook,
+ * fellowship auto-advance, runs on every call; it is idempotent (it needs
+ * every member done and updates with an optimistic lock on the index).
+ *
+ * (Questionnaire score recalculation ran here until 2026-10-10; the next-path
+ * engine reads finished paths live, so nothing needs recomputing.)
  */
-
-import { getCompletedPathIds } from '../utils/path-progress.ts'
-import {
-  calculatePathScores,
-  getScoringResultsSummary,
-  type LearningPath as ScoringLearningPath,
-  type QuestionnaireResponses,
-} from '../personalization/scoring-algorithm.ts'
 
 // deno-lint-ignore no-explicit-any -- supabase-js client, not narrowed here
 type Client = any
@@ -44,14 +35,6 @@ export const RECENT_COMPLETION_WINDOW_MS = 2 * 60 * 1000
 // ============================================================================
 // Pure decisions
 // ============================================================================
-
-/** Which follow-up hooks to run after a completion RPC returned [isFirstCompletion]. */
-export function completionHookPlan(isFirstCompletion: boolean): {
-  recalculateScores: boolean
-  autoAdvanceFellowship: boolean
-} {
-  return { recalculateScores: isFirstCompletion, autoAdvanceFellowship: true }
-}
 
 /** True when the learning_path_topics row at the study's index is [topicId]. */
 export function lessonTopicMatches(
@@ -200,108 +183,16 @@ export async function loadStoredCompletion(
 }
 
 /**
- * Runs the follow-up hooks for a completion: score recalculation on the first
- * completion, fellowship auto-advance always. Never throws.
+ * Runs the follow-up hooks for a completion: fellowship auto-advance. Never
+ * throws. [_isFirstCompletion] is kept for the callers' signature.
  */
 export async function runCompletionHooks(
   db: Client,
   userId: string,
   topicId: string,
-  isFirstCompletion: boolean,
+  _isFirstCompletion: boolean,
 ): Promise<FellowshipAdvanceResult | null> {
-  const plan = completionHookPlan(isFirstCompletion)
-  if (plan.recalculateScores) {
-    await maybeTriggerScoreRecalculation(db, userId)
-  }
-  return plan.autoAdvanceFellowship ? await maybeTriggerFellowshipAutoAdvance(db, userId, topicId) : null
-}
-
-// ============================================================================
-// Score recalculation
-// ============================================================================
-
-/**
- * Recalculates personalization scores after a first completion, when a learning
- * path was just completed (completed_at in the last 10 seconds) or the user's
- * completed topic count reached a multiple of 10. Non-fatal.
- */
-export async function maybeTriggerScoreRecalculation(db: Client, userId: string): Promise<void> {
-  try {
-    // The completion trigger runs inside the complete_topic_progress RPC, so a
-    // newly finished path already has completed_at set here.
-    const { data: justCompletedPaths } = await db
-      .from('user_learning_path_progress')
-      .select('learning_path_id')
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null)
-      .gte('completed_at', new Date(Date.now() - 10_000).toISOString())
-
-    const pathJustCompleted = (justCompletedPaths || []).length > 0
-
-    const { count: completedCount } = await db
-      .from('user_topic_progress')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null)
-
-    const isMilestone =
-      typeof completedCount === 'number' && completedCount > 0 && completedCount % 10 === 0
-
-    if (!pathJustCompleted && !isMilestone) return
-
-    const triggerReason = pathJustCompleted ? 'path_completion' : 'topic_milestone'
-    console.log(`[topic-completion] Score recalculation triggered (${triggerReason})`)
-
-    const { data: personalization } = await db
-      .from('user_personalization')
-      .select(
-        'faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed',
-      )
-      .eq('user_id', userId)
-      .single()
-
-    if (!personalization?.questionnaire_completed || !personalization.faith_stage) return
-
-    const { data: allPaths } = await db
-      .from('learning_paths')
-      .select('id, slug, title, disciple_level, recommended_mode, is_featured, display_order')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true })
-
-    if (!allPaths || allPaths.length === 0) return
-
-    // Finished paths: stored completion or every visible lesson done.
-    const completedPathIds = [...await getCompletedPathIds(db, userId)]
-
-    const responses: QuestionnaireResponses = {
-      faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
-      spiritual_goals: personalization.spiritual_goals || [],
-      time_availability: personalization.time_availability as QuestionnaireResponses['time_availability'],
-      learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
-      life_stage_focus: personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
-      biggest_challenge: personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
-    }
-
-    const scoredPaths = calculatePathScores(responses, allPaths as ScoringLearningPath[], completedPathIds)
-    if (!scoredPaths || scoredPaths.length === 0) return
-
-    const topPath = scoredPaths[0]
-    const scoringSummary = getScoringResultsSummary(topPath, scoredPaths)
-
-    const { error: updateError } = await db
-      .from('user_personalization')
-      .update({ scoring_results: scoringSummary, updated_at: new Date().toISOString() })
-      .eq('user_id', userId)
-
-    if (updateError) {
-      console.warn('[topic-completion] Failed to update scoring_results:', updateError.message)
-    }
-  } catch (err) {
-    console.warn(
-      '[topic-completion] Score recalculation error (non-fatal):',
-      err instanceof Error ? err.message : 'unknown error',
-    )
-  }
+  return await maybeTriggerFellowshipAutoAdvance(db, userId, topicId)
 }
 
 // ============================================================================

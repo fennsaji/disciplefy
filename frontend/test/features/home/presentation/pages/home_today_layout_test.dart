@@ -51,7 +51,6 @@ import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_cubit.dart';
-import 'package:disciplefy_bible_study/features/personalization/presentation/widgets/personalization_prompt_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
@@ -134,6 +133,28 @@ const _summary4of8 = ActivePathSummary(
   ),
 );
 
+const _summaryFinished = ActivePathSummary(
+  pathId: 'p1',
+  title: 'New Believer Essentials',
+  description: 'First steps',
+  discipleLevel: 'seeker',
+  lessonTotal: 8,
+  lessonsCompleted: 8,
+);
+
+LearningPath _next(String id, String title) => LearningPath(
+      id: id,
+      slug: id,
+      title: title,
+      description: '',
+      iconName: 'menu_book',
+      color: '',
+      totalXp: 0,
+      estimatedDays: 14,
+      discipleLevel: 'seeker',
+      topicsCount: 8,
+    );
+
 const _summaryLesson1 = ActivePathSummary(
   pathId: 'p1',
   title: 'New Believer Essentials',
@@ -190,7 +211,6 @@ HomeCombinedState _home({
   ActivePathSummary? summary,
   bool enrolled = true,
   bool loading = false,
-  bool personalization = false,
 }) =>
     HomeCombinedState(
       activeLearningPath: summary == null && !enrolled
@@ -198,7 +218,6 @@ HomeCombinedState _home({
           : (summary == null ? null : _path(enrolled: enrolled)),
       activePathSummary: summary,
       isLoadingActivePath: loading,
-      showPersonalizationPrompt: personalization,
     );
 
 DailyVerseLoaded _verse() {
@@ -479,15 +498,13 @@ void main() {
 
   group('flag on', () {
     testWidgets(
-        'verse, path section, lesson card; no streak tile, no personalize, '
+        'verse, path section, lesson card; no streak tile, '
         'no fellowship', (tester) async {
-      await pumpHome(tester,
-          state: _home(summary: _summary4of8, personalization: true));
+      await pumpHome(tester, state: _home(summary: _summary4of8));
       expect(find.byType(HomeTodayLayout), findsOneWidget);
       expect(find.text('Reflect on this verse'), findsOneWidget);
       expect(find.text('Start lesson 4'), findsOneWidget);
       expect(find.byType(HomeTodayTiles), findsNothing);
-      expect(find.byType(PersonalizationPromptCard), findsNothing);
       expect(find.byType(HomeCommunitySection), findsNothing);
       expect(find.byKey(const Key('home_active_path_row')), findsNothing);
       expect(find.text('Study now'), findsNothing);
@@ -495,8 +512,6 @@ void main() {
       expect(find.byTooltip('Copy'), findsOneWidget);
       expect(find.byTooltip('Share'), findsOneWidget);
       expect(find.byTooltip('Add to Memory Verses'), findsOneWidget);
-      // No For You list is requested.
-      verifyNever(() => homeBloc.add(any(that: isA<LoadForYouTopics>())));
       verify(() => homeBloc.add(const LoadActiveLearningPath())).called(1);
     });
 
@@ -753,6 +768,70 @@ void main() {
   });
 
   group('flag off', () {
+    void nextPaths(List<LearningPath> list, {FinishedPathRef? finished}) {
+      when(() => paths.getNextPaths(
+                language: any(named: 'language'),
+                limit: any(named: 'limit'),
+              ))
+          .thenAnswer((_) async =>
+              Right(NextPathsResult(paths: list, finishedPath: finished)));
+    }
+
+    testWidgets('finished active path: What next? under the path row',
+        (tester) async {
+      when(() => flags.homeTodayLayout).thenReturn(false);
+      nextPaths([
+        _path(), // the finished path itself: never listed
+        _next('rooted', 'Rooted in Christ'),
+        _next('mark', 'Gospel of Mark'),
+      ]);
+      await pumpHome(tester, summary: _summaryFinished);
+      final card = find.byKey(const Key('home_legacy_what_next'));
+      expect(card, findsOneWidget);
+      expect(find.descendant(of: card, matching: find.text('What next?')),
+          findsOneWidget);
+      expect(find.descendant(of: card, matching: find.text('Rooted in Christ')),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: card, matching: find.text('New Believer Essentials')),
+          findsNothing);
+      await tester.ensureVisible(find.text('Gospel of Mark'));
+      await tester.tap(find.text('Gospel of Mark'));
+      await tester.pumpAndSettle();
+      expect(find.text('stub:path:mark'), findsOneWidget);
+    });
+
+    testWidgets('no active path after finishing one: What next?',
+        (tester) async {
+      when(() => flags.homeTodayLayout).thenReturn(false);
+      nextPaths([_next('rooted', 'Rooted in Christ')],
+          finished: const FinishedPathRef(id: 'p0', title: 'Mark'));
+      await pumpHome(tester,
+          state: _home(summary: _summary4of8, enrolled: false));
+      expect(find.text('What next?'), findsOneWidget);
+      expect(find.text('Rooted in Christ'), findsOneWidget);
+    });
+
+    testWidgets('a suggested path with nothing finished: no What next?',
+        (tester) async {
+      when(() => flags.homeTodayLayout).thenReturn(false);
+      nextPaths([_next('rooted', 'Rooted in Christ')]);
+      await pumpHome(tester,
+          state: _home(summary: _summary4of8, enrolled: false));
+      expect(find.text('What next?'), findsNothing);
+      expect(find.text('Rooted in Christ'), findsNothing);
+    });
+
+    testWidgets('path in progress: no What next?, nothing fetched',
+        (tester) async {
+      when(() => flags.homeTodayLayout).thenReturn(false);
+      await pumpHome(tester, summary: _summary4of8);
+      expect(find.text('What next?'), findsNothing);
+      verifyNever(() => paths.getNextPaths(
+          language: any(named: 'language'), limit: any(named: 'limit')));
+    });
+
     testWidgets('old Home unchanged', (tester) async {
       when(() => flags.homeTodayLayout).thenReturn(false);
       await pumpHome(tester, summary: _summary4of8);
@@ -761,8 +840,6 @@ void main() {
       expect(find.text('Study now'), findsOneWidget);
       expect(find.text('Reflect on this verse'), findsNothing);
       expect(find.byType(HomePathSection), findsNothing);
-      // Nothing on the old Home shows "For You" topics: none are fetched.
-      verifyNever(() => homeBloc.add(any(that: isA<LoadForYouTopics>())));
     });
 
     testWidgets('due count keeps the shipped badge', (tester) async {

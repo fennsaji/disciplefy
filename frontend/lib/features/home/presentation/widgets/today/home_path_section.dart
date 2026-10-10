@@ -15,12 +15,14 @@ import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/choose_first_path_card.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/today_lesson_card.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/next_paths_card.dart';
 
 /// Home's path block: the active path's header ("See path") above one card
 /// holding its progress strip and today's lesson ([TodayLessonCard]).
 ///
 /// Without a path (and not loading) it shows [ChooseFirstPathCard] instead,
-/// never a lesson card.
+/// never a lesson card. A finished path is followed by "What next?"
+/// ([NextPathsCard]).
 class HomePathSection extends StatelessWidget {
   final ActivePathSummary? summary;
   final bool loading;
@@ -159,6 +161,14 @@ class _ActivePathState extends State<_ActivePath> {
           onChooseNextPath: () => _chooseNextPath(context),
           onSeePath: () => _openPath(context),
         ),
+        if (summary.isFinished) ...[
+          const SizedBox(height: 12),
+          NextPathsCard(
+            key: const Key('home_what_next'),
+            excludePathId: summary.pathId,
+            onPathChanged: widget.onProgressMayHaveChanged,
+          ),
+        ],
       ],
     );
   }

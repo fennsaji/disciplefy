@@ -17,6 +17,7 @@ import 'package:disciplefy_bible_study/features/auth/data/services/guest_session
 import 'package:disciplefy_bible_study/features/onboarding/domain/growth_goals.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_cubit.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_state.dart';
+import 'package:disciplefy_bible_study/features/personalization/domain/growth_goal_repository.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
@@ -30,6 +31,8 @@ class _MockPaths extends Mock implements LearningPathsRepository {}
 class _MockFlags extends Mock implements RolloutFlags {}
 
 class _MockLanguage extends Mock implements LanguagePreferenceService {}
+
+class _MockGoals extends Mock implements GrowthGoalRepository {}
 
 class _FakeWalkthrough extends Fake implements WalkthroughRepository {
   @override
@@ -83,6 +86,8 @@ LearningPathDetail _serverDetail(String fixture) {
   return LearningPathDetailModel.fromJson(body['data'] as Map<String, dynamic>);
 }
 
+_MockGoals? _goalsMock;
+
 void main() {
   late Directory tempDir;
   late Box settings;
@@ -93,6 +98,8 @@ void main() {
 
   setUpAll(() async {
     registerFallbackValue(AppLanguage.english);
+    registerFallbackValue(GrowthGoal.newToFaith);
+    registerFallbackValue(GrowthGoalSource.app);
     tempDir = await Directory.systemTemp.createTemp('first_run_cubit_test');
     Hive.init(tempDir.path);
     settings = await Hive.openBox('app_settings');
@@ -211,6 +218,34 @@ void main() {
       verify(() => paths.enrollInPathBySlug('gospel-of-mark')).called(1);
       await c.close();
     });
+
+    blocTest<FirstRunCubit, FirstRunState>(
+      'the picked goal is saved on the server as a first-run goal',
+      build: () {
+        final goals = _MockGoals();
+        when(() => goals.saveGoal(any(), source: any(named: 'source')))
+            .thenAnswer((_) async => const Right(GrowthGoal.readGospel));
+        when(() => goals.rememberChoice(any())).thenAnswer((_) async {});
+        _goalsMock = goals;
+        return FirstRunCubit(
+          guest: guest,
+          paths: paths,
+          flags: flags,
+          language: language,
+          settings: settings,
+          walkthrough: _FakeWalkthrough(),
+          goals: goals,
+        );
+      },
+      act: (c) => c.startLessonOne(GrowthGoal.readGospel, 'en'),
+      expect: () => [isA<FirstRunStarting>(), isA<FirstRunReady>()],
+      verify: (_) {
+        verify(() => _goalsMock!.rememberChoice(GrowthGoal.readGospel))
+            .called(1);
+        verify(() => _goalsMock!.saveGoal(GrowthGoal.readGospel,
+            source: GrowthGoalSource.firstRun)).called(1);
+      },
+    );
 
     blocTest<FirstRunCubit, FirstRunState>(
       'signed-in user: no guest is started',

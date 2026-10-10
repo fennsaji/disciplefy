@@ -207,9 +207,7 @@ class _LearningPathCategoryPageState extends State<LearningPathCategoryPage> {
         extra: path);
     if (!mounted || progressChanged != true) return;
     final language = await _resolveLanguage();
-    bloc
-      ..add(LoadLearningPaths(forceRefresh: true, language: language))
-      ..add(LoadPersonalizedPaths(language: language, forceRefresh: true));
+    bloc.add(LoadLearningPaths(forceRefresh: true, language: language));
   }
 
   void _goBack() {

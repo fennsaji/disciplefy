@@ -79,7 +79,7 @@ void main() {
   late HomeBloc bloc;
 
   setUpAll(() {
-    registerFallbackValue(const topics_events.LoadForYouTopics());
+    registerFallbackValue(const topics_events.LoadRecommendedTopics());
   });
 
   setUp(() {

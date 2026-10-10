@@ -22,7 +22,6 @@ import 'package:disciplefy_bible_study/features/study_topics/domain/entities/lea
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_state.dart';
-import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/for_you_learning_paths_section.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/guest_path_lock.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/learning_paths_section.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/topics_current_path_card.dart';
@@ -215,7 +214,6 @@ void main() {
     expect(find.text('Browse all paths'), findsOneWidget);
     expect(find.byKey(const Key('topics_streak_tile')), findsOneWidget);
     expect(find.byKey(const Key('topics_leaderboard_tile')), findsOneWidget);
-    expect(find.byType(ForYouLearningPathsSection), findsNothing);
     expect(find.byKey(const Key('learning_paths_chip_seeker')), findsNothing);
     expect(find.byKey(const Key('learning_paths_chip_all')), findsNothing);
     expect(find.text('Seeker'), findsNothing);

@@ -291,9 +291,8 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     _load();
   }
 
-  /// Study content language, matching the other two callers of
-  /// `getFellowships` (`fellowship_list_bloc.dart`,
-  /// `for_you_learning_paths_section.dart`). What this parameter selects is
+  /// Study content language, matching the other caller of `getFellowships`
+  /// (`fellowship_list_bloc.dart`). What this parameter selects is
   /// the translation of each fellowship's current learning-path title —
   /// generated study content, not UI chrome — so it follows the content axis.
   /// Falls back to English only if the preference cannot be read at all.

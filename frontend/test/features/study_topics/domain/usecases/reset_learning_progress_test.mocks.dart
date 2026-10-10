@@ -136,6 +136,29 @@ class MockLearningPathsRepository extends _i1.Mock
               _i2.Either<_i5.Failure, _i6.LearningPathCategoriesResult>>);
 
   @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i6.LearningPathCategorySummary>>>
+      getLearningPathCategorySummaries({String? language = 'en'}) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getLearningPathCategorySummaries,
+              [],
+              {#language: language},
+            ),
+            returnValue: _i4.Future<
+                _i2.Either<_i5.Failure,
+                    List<_i6.LearningPathCategorySummary>>>.value(_FakeEither_0<
+                _i5.Failure, List<_i6.LearningPathCategorySummary>>(
+              this,
+              Invocation.method(
+                #getLearningPathCategorySummaries,
+                [],
+                {#language: language},
+              ),
+            )),
+          ) as _i4.Future<
+              _i2.Either<_i5.Failure, List<_i6.LearningPathCategorySummary>>>);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, _i6.LearningPathCategory>>
       getLearningPathsForCategory({
     required String? category,
@@ -347,35 +370,31 @@ class MockLearningPathsRepository extends _i1.Mock
           ) as _i4.Future<_i2.Either<_i5.Failure, _i6.RecommendedPathResult>>);
 
   @override
-  _i4.Future<
-      _i2.Either<_i5.Failure, List<_i6.LearningPath>>> getPersonalizedPaths({
+  _i4.Future<_i2.Either<_i5.Failure, _i6.NextPathsResult>> getNextPaths({
     String? language = 'en',
-    int? limit = 5,
-    bool? forceRefresh = false,
+    int? limit = 3,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
-          #getPersonalizedPaths,
+          #getNextPaths,
           [],
           {
             #language: language,
             #limit: limit,
-            #forceRefresh: forceRefresh,
           },
         ),
         returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, List<_i6.LearningPath>>>.value(
-                _FakeEither_0<_i5.Failure, List<_i6.LearningPath>>(
+            _i4.Future<_i2.Either<_i5.Failure, _i6.NextPathsResult>>.value(
+                _FakeEither_0<_i5.Failure, _i6.NextPathsResult>(
           this,
           Invocation.method(
-            #getPersonalizedPaths,
+            #getNextPaths,
             [],
             {
               #language: language,
               #limit: limit,
-              #forceRefresh: forceRefresh,
             },
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, List<_i6.LearningPath>>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i6.NextPathsResult>>);
 }

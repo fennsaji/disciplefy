@@ -55,10 +55,6 @@ class LearningPathsLoaded extends LearningPathsState {
   /// together told users no path matched when the request never succeeded.
   final bool searchFailed;
 
-  /// Questionnaire-based personalized paths for the "For You" section.
-  /// Empty if personalization has not loaded yet or failed.
-  final List<LearningPath> personalizedPaths;
-
   /// Counts listings fetched from the server; 0 for a listing painted from
   /// the cache. Stays the same across load-more, search and personalization
   /// updates, so a change means "a fresh listing just arrived" — what the
@@ -77,7 +73,6 @@ class LearningPathsLoaded extends LearningPathsState {
     this.searchResults,
     this.isSearching = false,
     this.searchFailed = false,
-    this.personalizedPaths = const [],
     this.listingRevision = 0,
   });
 
@@ -93,7 +88,6 @@ class LearningPathsLoaded extends LearningPathsState {
         searchResults,
         isSearching,
         searchFailed,
-        personalizedPaths,
         listingRevision,
       ];
 
@@ -131,7 +125,6 @@ class LearningPathsLoaded extends LearningPathsState {
     bool? isSearching,
     bool? searchFailed,
     bool clearSearch = false,
-    List<LearningPath>? personalizedPaths,
   }) {
     return LearningPathsLoaded(
       categories: categories ?? this.categories,
@@ -145,7 +138,6 @@ class LearningPathsLoaded extends LearningPathsState {
       searchResults: clearSearch ? null : (searchResults ?? this.searchResults),
       isSearching: clearSearch ? false : (isSearching ?? this.isSearching),
       searchFailed: clearSearch ? false : (searchFailed ?? this.searchFailed),
-      personalizedPaths: personalizedPaths ?? this.personalizedPaths,
       listingRevision: listingRevision,
     );
   }

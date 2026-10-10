@@ -24,6 +24,7 @@ import 'package:disciplefy_bible_study/features/study_topics/domain/entities/les
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 import 'package:disciplefy_bible_study/features/study_topics/domain/utils/lesson_launch.dart';
 import 'package:disciplefy_bible_study/features/study_topics/presentation/study_topics_refresh_requests.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/next_paths_card.dart';
 
 /// What the Lesson complete page needs to know about the finished lesson.
 class LessonCompleteArgs {
@@ -46,6 +47,7 @@ class LessonCompleteArgs {
 
 /// Full-screen "Lesson N complete" page with the next lessons and a one-tap
 /// way into the next one. No day gate: the next lesson opens immediately.
+/// After a path's last lesson it shows "What next?" ([NextPathsCard]).
 class LessonCompletePage extends StatefulWidget {
   final LessonCompleteArgs args;
 
@@ -212,6 +214,16 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                           topics: upNext,
                           firstNumber: lesson.lessonNumber + 1,
                           onTap: _open,
+                        ),
+                      ],
+                      // The path is done: what to study next.
+                      if (lesson.isLast) ...[
+                        const SizedBox(height: 16),
+                        NextPathsCard(
+                          key: const Key('lesson_complete_what_next'),
+                          excludePathId: lesson.pathId,
+                          source: 'lessonComplete',
+                          language: widget.args.language,
                         ),
                       ],
                       ...widget.extraSections,

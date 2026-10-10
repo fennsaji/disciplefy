@@ -4,14 +4,15 @@
 // Intelligently selects the best notification for each user:
 // 1. PRIORITY: Continue Learning (next topic in the user's most recently
 //    active learning path)
-// 2. FALLBACK: Personalized For You recommendations, rotating through
-//    candidate paths so an ignored push doesn't repeat forever
+// 2. FALLBACK: the next-path engine's suggestions (growth goal list, then
+//    featured), rotating so an ignored push doesn't repeat forever
 //
 // This aligns push notifications with the "For You" section in the app
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { selectTopicsForYouWithLearningPath, getLocalizedTopicContent } from './topic-selector.ts';
 import { formatError } from './utils/error-formatter.ts';
+import { loadNextPaths } from './personalization/next-paths.ts';
 import {
   type ActivePathRow,
   type PathTopicRow,
@@ -22,6 +23,9 @@ import {
 
 /** Active paths looked at before giving up on "Continue Learning". */
 const CONTINUE_PATH_CANDIDATES = 10;
+
+/** Suggested paths the For You push rotates through. */
+const ROTATION_CANDIDATES = 10;
 
 // ============================================================================
 // Types
@@ -67,9 +71,9 @@ const CONTINUE_LEARNING_BODIES: Record<string, string> = {
 };
 
 const FOR_YOU_TITLES: Record<string, string> = {
-  en: '💡 Recommended Topic',
-  hi: '💡 अनुशंसित विषय',
-  ml: '💡 ശുപാർശിത വിഷയം',
+  en: '💡 A lesson for you',
+  hi: '💡 आपके लिए एक पाठ',
+  ml: '💡 നിങ്ങൾക്കായി ഒരു പാഠം',
 };
 
 const FOR_YOU_INTROS: Record<string, string> = {
@@ -85,7 +89,7 @@ const FOR_YOU_INTROS: Record<string, string> = {
 /**
  * Selects the best notification for a user based on:
  * 1. PRIORITY: Next topic in an active learning path (Continue Learning)
- * 2. FALLBACK: Personalized topic recommendations (For You)
+ * 2. FALLBACK: a suggested lesson from the next-path engine (For You)
  */
 export async function selectNotificationForUser(
   supabaseUrl: string,
@@ -112,12 +116,11 @@ export async function selectNotificationForUser(
       );
     }
 
-    console.log('[UnifiedSelector] No active learning path, fetching personalized For You topic...');
+    console.log('[UnifiedSelector] No active learning path, picking a suggested lesson...');
 
-    // Step 2: Fallback to personalized For You recommendations. Rotate
-    // through the user's ranked candidate paths rather than always the top
-    // match — otherwise a user who never starts anything gets the identical
-    // notification forever (product decision, 4 Sept 2026).
+    // Step 2: the engine's suggestions, rotating through them rather than
+    // always the first — otherwise a user who never starts anything gets the
+    // identical notification forever (product decision, 4 Sept 2026).
     const rotatingTopic = await selectRotatingForYouTopic(supabase, userId);
     if (rotatingTopic) {
       return await createForYouNotificationFromTopic(
@@ -128,8 +131,7 @@ export async function selectNotificationForUser(
       );
     }
 
-    // No scoring data to rotate through (e.g. onboarding questionnaire never
-    // completed) — same single-best-match selection as before.
+    // Nothing to rotate through: the single-pick selection.
     return await createForYouNotification(
       supabaseUrl,
       supabaseServiceKey,
@@ -154,7 +156,7 @@ export async function selectNotificationForUser(
  * 4 Sept 2026:
  *
  *  1. No active (enrolled, uncompleted) path at all -> null, caller falls
- *     back to a personalized "For You" topic.
+ *     back to a suggested "For You" lesson.
  *  2. Active paths -> the first unfinished lesson of the most recently
  *     active one (last_activity_at), at or after its stored cursor.
  *  3. A path whose every visible lesson is done is skipped even when its
@@ -352,7 +354,7 @@ async function createContinuePathNotification(
 // ============================================================================
 
 /**
- * Creates a personalized For You notification using the same algorithm
+ * Creates a For You notification using the same selection
  * as the For You section in the app
  */
 async function createForYouNotification(
@@ -415,53 +417,26 @@ interface RotatingTopicCandidate {
 }
 
 /**
- * Picks a personalized "For You" topic that rotates through the user's
- * ranked candidate paths, instead of the single best match every time.
+ * Picks a "For You" lesson that rotates through the next-path engine's list
+ * (growth goal list, then featured, then the catalogue), instead of the single
+ * first pick every time: a user who never starts anything would otherwise get
+ * the identical push forever (product decision, 4 Sept 2026).
  *
- * Without this, `selectTopicsForYouWithLearningPath`'s priority-2 logic
- * always returns `scoring_results.allScores[0]` — deterministic, so a user
- * who never starts a path gets the identical push forever if they ignore it
- * (product decision, 4 Sept 2026).
+ * Walks the picks in order, skipping finished paths (the engine already does)
+ * and any path whose first unfinished lesson has already been sent as a
+ * for_you/recommended_topic push. Once every candidate has been sent, the
+ * cycle restarts from the top rather than falling silent.
  *
- * Walks the ranked candidates (best first), skipping paths the user has
- * finished (stored completion or every visible lesson done) and any path whose
- * first unfinished lesson has already been sent as a for_you/recommended_topic push. Once
- * every candidate has been tried, the cycle restarts from the top rather
- * than falling silent.
- *
- * Returns null when there's nothing to rotate through — no completed
- * questionnaire, or `scoring_results.allScores` missing/empty — so the
- * caller can fall back to the existing single-best-match selection
- * unchanged. That fallback also covers the (very unlikely) case of a
- * candidate path with no active topics.
+ * Returns null when nothing is left to suggest, so the caller can fall back
+ * to the single-pick selection.
  */
 async function selectRotatingForYouTopic(
   supabase: SupabaseClient,
   userId: string
 ): Promise<RotatingTopicCandidate | null> {
-  const { data: personalization, error: persError } = await supabase
-    .from('user_personalization')
-    .select('scoring_results')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (persError) {
-    console.error('[UnifiedSelector] Error fetching personalization for rotation:', persError);
-    return null;
-  }
-
-  const allScores = (personalization?.scoring_results as { allScores?: { pathSlug: string }[] } | null)
-    ?.allScores;
-  if (!allScores || allScores.length === 0) {
-    return null;
-  }
-
-  const [{ data: completedPaths }, { data: sentLogs }, completedTopicIds] = await Promise.all([
-    supabase
-      .from('user_learning_path_progress')
-      .select('learning_path_id, learning_paths!inner(slug)')
-      .eq('user_id', userId)
-      .not('completed_at', 'is', null),
+  const isGuest = await isGuestUser(supabase, userId);
+  const [next, { data: sentLogs }, completedTopicIds] = await Promise.all([
+    loadNextPaths(supabase, { userId, isGuest, limit: ROTATION_CANDIDATES }),
     supabase
       .from('notification_logs')
       .select('topic_id')
@@ -475,45 +450,24 @@ async function selectRotatingForYouTopic(
     return null;
   }
 
-  const completedSlugs = new Set<string>(
-    (completedPaths || []).map((p: any) => p.learning_paths?.slug).filter(Boolean)
-  );
+  // Active paths are Step 1's job; only suggestions rotate here.
+  const candidateIds = next.paths.filter((p) => p.reason !== 'active').map((p) => p.pathId);
+  if (candidateIds.length === 0) {
+    return null;
+  }
+
   const alreadySentTopicIds = new Set<string>(
     (sentLogs || []).map((l: any) => l.topic_id).filter(Boolean)
   );
 
-  const candidateSlugs = allScores
-    .map((s) => s.pathSlug)
-    .filter((slug) => slug && !completedSlugs.has(slug));
-
-  if (candidateSlugs.length === 0) {
-    return null;
-  }
-
-  const { data: paths, error: pathsError } = await supabase
-    .from('learning_paths')
-    .select('id, slug')
-    .in('slug', candidateSlugs)
-    .eq('is_active', true);
-  if (pathsError) {
-    console.error('[UnifiedSelector] Error fetching candidate paths:', pathsError);
-    return null;
-  }
-  const pathIdBySlug = new Map<string, string>(
-    (paths || []).map((p: { id: string; slug: string }) => [p.slug, p.id])
-  );
-
-  const topics = await fetchVisiblePathTopics(supabase, [...pathIdBySlug.values()]);
+  const topics = await fetchVisiblePathTopics(supabase, candidateIds);
   if (!topics) {
     return null;
   }
 
   let firstCandidateTopic: RotatingTopicCandidate | null = null;
 
-  for (const slug of candidateSlugs) {
-    const pathId = pathIdBySlug.get(slug);
-    if (!pathId) continue;
-
+  for (const pathId of candidateIds) {
     // Suggest the first lesson the user has not done — not lesson 1 of a path
     // they already finished through topic rows (stored completed_at may lag).
     const pathTopics = topics.filter((t) => t.learning_path_id === pathId);
@@ -540,8 +494,22 @@ async function selectRotatingForYouTopic(
 
   // Every candidate in this cycle has already been sent — restart from the
   // top rather than returning null (which would fall through to the
-  // single-best-match path and re-send the exact same thing anyway).
+  // single-pick path and re-send the exact same thing anyway).
   return firstCandidateTopic;
+}
+
+/**
+ * True for an anonymous (guest) user: guests are only ever offered
+ * guest-accessible paths. False when unknown.
+ */
+async function isGuestUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
+    if (error) return false;
+    return (data?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous === true;
+  } catch {
+    return false;
+  }
 }
 
 async function createForYouNotificationFromTopic(

@@ -14,6 +14,7 @@ import 'package:disciplefy_bible_study/features/onboarding/domain/growth_goals.d
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_cubit.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/bloc/first_run_state.dart';
 import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/first_run_choice_row.dart';
+import 'package:disciplefy_bible_study/features/onboarding/presentation/widgets/growth_goal_icon.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
 import 'package:disciplefy_bible_study/shared/widgets/welcome_chrome.dart';
 
@@ -33,16 +34,6 @@ class _GrowthGoalPageState extends State<GrowthGoalPage> {
   GrowthGoal _selected = GrowthGoal.values.first;
   StarterPaths _starter = StarterPaths.empty;
   late final bool _guestHelper;
-
-  /// Icon of each goal's leading tile.
-  static IconData iconFor(GrowthGoal goal) => switch (goal) {
-        GrowthGoal.newToFaith => Icons.eco_outlined,
-        GrowthGoal.freshStart => Icons.wb_twilight_rounded,
-        GrowthGoal.walkWithGod => Icons.directions_walk_rounded,
-        GrowthGoal.hopeHardTimes => Icons.light_mode_outlined,
-        GrowthGoal.readGospel => Icons.auto_stories_outlined,
-        GrowthGoal.understandGospel => Icons.lightbulb_outline_rounded,
-      };
 
   String get _language => sl<TranslationService>().currentLanguage.code;
 
@@ -154,8 +145,8 @@ class _GrowthGoalPageState extends State<GrowthGoalPage> {
                             for (final goal in GrowthGoal.values)
                               FirstRunChoiceRow(
                                 key: Key('first_run_goal_${goal.name}'),
-                                leading: (color) =>
-                                    Icon(iconFor(goal), size: 20, color: color),
+                                leading: (color) => Icon(growthGoalIcon(goal),
+                                    size: 20, color: color),
                                 title: context.tr(goal.labelKey),
                                 subtitle: _meta(context, goal),
                                 isSelected: _selected == goal,

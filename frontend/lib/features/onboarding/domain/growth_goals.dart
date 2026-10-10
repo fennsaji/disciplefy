@@ -1,17 +1,20 @@
 import 'package:equatable/equatable.dart';
 
-/// What a new person wants to grow in, picked on the first-run goal screen.
-/// Each goal opens one guest-accessible learning path.
+/// What a person wants to grow in: picked on the first-run goal screen and
+/// changed from Settings. Each goal starts one guest-accessible learning path;
+/// the server keeps an ordered list of paths per goal for what comes next.
 ///
 /// Declared in screen order. The goal's [name] is what is stored in Hive
-/// `app_settings['first_run_goal']`.
+/// (`app_settings`); [serverKey] is what `user_growth_goals.goal` holds.
 enum GrowthGoal {
-  newToFaith('new-believer-essentials', 'goal.new_to_faith'),
-  freshStart('sin-repentance-and-grace', 'goal.fresh_start'),
-  walkWithGod('growing-in-discipleship', 'goal.walk_with_god'),
-  hopeHardTimes('theology-of-suffering', 'goal.hope_hard_times'),
-  readGospel('gospel-of-mark', 'goal.read_gospel'),
-  understandGospel('romans-gospel-unfolded', 'goal.understand_gospel');
+  newToFaith('new-believer-essentials', 'goal.new_to_faith', 'new_to_faith'),
+  freshStart('sin-repentance-and-grace', 'goal.fresh_start', 'fresh_start'),
+  walkWithGod('growing-in-discipleship', 'goal.walk_with_god', 'walk_with_god'),
+  hopeHardTimes(
+      'theology-of-suffering', 'goal.hope_hard_times', 'hope_hard_times'),
+  readGospel('gospel-of-mark', 'goal.read_gospel', 'read_gospel'),
+  understandGospel(
+      'romans-gospel-unfolded', 'goal.understand_gospel', 'understand_gospel');
 
   /// Slug of the learning path this goal starts.
   final String pathSlug;
@@ -19,7 +22,18 @@ enum GrowthGoal {
   /// Translation key of the goal's label.
   final String labelKey;
 
-  const GrowthGoal(this.pathSlug, this.labelKey);
+  /// The goal's value on the server.
+  final String serverKey;
+
+  const GrowthGoal(this.pathSlug, this.labelKey, this.serverKey);
+
+  /// The goal stored on the server as [key], or null when unknown.
+  static GrowthGoal? fromServerKey(Object? key) {
+    for (final goal in values) {
+      if (goal.serverKey == key) return goal;
+    }
+    return null;
+  }
 
   /// The goal stored under [name], or null when unknown (for example a goal
   /// from an older build).

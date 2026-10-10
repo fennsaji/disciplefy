@@ -1,12 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/language_preference_service.dart';
-import '../../../auth/data/services/auth_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../data/services/recommended_guides_service.dart';
 import 'recommended_topics_event.dart';
@@ -24,34 +20,17 @@ class RecommendedTopicsBloc
     extends Bloc<RecommendedTopicsEvent, RecommendedTopicsState> {
   final RecommendedGuidesService _topicsService;
   final LanguagePreferenceService _languagePreferenceService;
-  final AuthService _authService;
-  final SharedPreferences _prefs;
-
-  // Key for storing prompt dismissal in local storage
-  static const String _promptDismissedKey = 'personalization_prompt_dismissed';
-
-  // Track if personalization prompt was dismissed (loaded from storage)
-  bool _promptDismissed = false;
 
   RecommendedTopicsBloc({
     required RecommendedGuidesService topicsService,
     required LanguagePreferenceService languagePreferenceService,
-    required SharedPreferences prefs,
-    AuthService? authService,
   })  : _topicsService = topicsService,
         _languagePreferenceService = languagePreferenceService,
-        _prefs = prefs,
-        _authService = authService ?? AuthService(),
         super(const RecommendedTopicsInitial()) {
-    // Load persisted dismissal state
-    _promptDismissed = _prefs.getBool(_promptDismissedKey) ?? false;
     on<LoadRecommendedTopics>(_onLoadRecommendedTopics);
     on<RefreshRecommendedTopics>(_onRefreshRecommendedTopics);
     on<ClearRecommendedTopicsError>(_onClearError);
     on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
-    on<LoadForYouTopics>(_onLoadForYouTopics);
-    on<DismissPersonalizationPrompt>(_onDismissPersonalizationPrompt);
-    on<InvalidateForYouCache>(_onInvalidateForYouCache);
     // Language changes are not subscribed to here: HomeBloc, which owns this
     // bloc, reloads "For You" in the study content language on both the app
     // and content language streams. Subscribing here as well fetched the
@@ -100,15 +79,12 @@ class RecommendedTopicsBloc
   }
 
   /// Handle refreshing recommended topics (always forces fresh data)
-  /// Uses LoadForYouTopics to get personalized topics for authenticated users
+  /// Reloads the recommended topics, bypassing the cache.
   Future<void> _onRefreshRecommendedTopics(
     RefreshRecommendedTopics event,
     Emitter<RecommendedTopicsState> emit,
   ) async {
-    // Force refresh with personalized "For You" topics
-    add(const LoadForYouTopics(
-      forceRefresh: true,
-    ));
+    add(const LoadRecommendedTopics(forceRefresh: true));
   }
 
   /// Handle clearing errors
@@ -130,147 +106,13 @@ class RecommendedTopicsBloc
     _topicsService.clearCache();
 
     // Only reload if we have loaded topics
-    final currentState = state;
-    if (currentState is RecommendedTopicsLoaded) {
-      // Check if user is authenticated to decide which endpoint to use
-      final isAuthenticatedUser =
-          _authService.isAuthenticated && _authService.currentUser != null;
-      if (isAuthenticatedUser) {
-        add(LoadForYouTopics(
-          language: event.languageCode,
-          forceRefresh: true,
-        ));
-      } else {
-        add(LoadRecommendedTopics(
-          limit: 6,
-          language: event.languageCode,
-          forceRefresh: true,
-        ));
-      }
-    }
-  }
-
-  /// Handle loading personalized "For You" topics for authenticated users.
-  ///
-  /// This uses the personalized topics endpoint that considers the user's
-  /// questionnaire responses and study history for recommendations.
-  Future<void> _onLoadForYouTopics(
-    LoadForYouTopics event,
-    Emitter<RecommendedTopicsState> emit,
-  ) async {
-    // Check if user is authenticated
-    final isUnauthenticatedUser =
-        !_authService.isAuthenticated || _authService.currentUser == null;
-    if (isUnauthenticatedUser) {
-      // Fall back to regular topics for unauthenticated users
-      Logger.info(
-        'User is not authenticated, falling back to generic topics',
-        tag: 'RECOMMENDED_TOPICS',
-      );
+    if (state is RecommendedTopicsLoaded) {
       add(LoadRecommendedTopics(
-        limit: event.limit,
-        language: event.language,
-        forceRefresh: event.forceRefresh,
+        limit: 6,
+        language: event.languageCode,
+        forceRefresh: true,
       ));
-      return;
     }
-
-    // Skip loading state if we might have cached data (better UX)
-    final shouldShowLoading =
-        event.forceRefresh || state is RecommendedTopicsInitial;
-
-    if (shouldShowLoading) {
-      emit(const RecommendedTopicsLoading());
-    }
-
-    final result = await _topicsService.getForYouTopics(
-      limit: event.limit,
-      language: event.language,
-      forceRefresh: event.forceRefresh,
-    );
-
-    result.fold(
-      (failure) {
-        Logger.error(
-          'Failed to load personalized topics: ${ErrorMessageSanitizer.sanitize(failure)}',
-          tag: 'RECOMMENDED_TOPICS',
-        );
-        emit(RecommendedTopicsError(
-          message: ErrorMessageSanitizer.sanitize(failure),
-          errorCode: failure.code,
-        ));
-      },
-      (forYouResult) {
-        Logger.info(
-          'Loaded ${forYouResult.topics.length} personalized topics',
-          tag: 'RECOMMENDED_TOPICS',
-          context: {
-            'topic_count': forYouResult.topics.length,
-            'questionnaire_completed': forYouResult.hasCompletedQuestionnaire,
-          },
-        );
-
-        // Show the prompt only if the user hasn't completed the questionnaire
-        // AND hasn't seen the prompt before (once shown it is permanently hidden).
-        final showPrompt =
-            !forYouResult.hasCompletedQuestionnaire && !_promptDismissed;
-
-        // Mark as seen immediately so it never reappears, even if the user
-        // navigates away without tapping either button.
-        if (showPrompt) {
-          _promptDismissed = true;
-          unawaited(_prefs.setBool(_promptDismissedKey, true));
-        }
-
-        emit(RecommendedTopicsLoaded(
-          topics: forYouResult.topics,
-          showPersonalizationPrompt: showPrompt,
-          isPersonalized: forYouResult.hasCompletedQuestionnaire,
-        ));
-      },
-    );
-  }
-
-  /// Handle dismissing the personalization prompt card.
-  ///
-  /// This persists the dismissal to local storage so the prompt
-  /// won't reappear on page reload for the same device/browser.
-  Future<void> _onDismissPersonalizationPrompt(
-    DismissPersonalizationPrompt event,
-    Emitter<RecommendedTopicsState> emit,
-  ) async {
-    _promptDismissed = true;
-
-    // Persist dismissal to local storage
-    await _prefs.setBool(_promptDismissedKey, true);
-    Logger.info(
-      'Personalization prompt dismissed and persisted to local storage',
-      tag: 'RECOMMENDED_TOPICS',
-    );
-
-    final currentState = state;
-    if (currentState is RecommendedTopicsLoaded) {
-      emit(currentState.copyWith(showPersonalizationPrompt: false));
-    }
-  }
-
-  /// Handle invalidating the "For You" cache after study guide completion.
-  ///
-  /// This clears only the "For You" cache entries, ensuring that completed
-  /// topics are refreshed on next load without affecting other cached data.
-  Future<void> _onInvalidateForYouCache(
-    InvalidateForYouCache event,
-    Emitter<RecommendedTopicsState> emit,
-  ) async {
-    Logger.info(
-      'Invalidating For You cache after study guide completion',
-      tag: 'RECOMMENDED_TOPICS',
-    );
-
-    await _topicsService.clearForYouCache();
-
-    // Note: We don't reload topics here to avoid unnecessary API calls
-    // The cache will be refreshed on next LoadForYouTopics event
   }
 
   @override

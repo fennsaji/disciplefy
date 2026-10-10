@@ -451,28 +451,46 @@ class LearningPathCategoryPathsResponseModel {
   }
 }
 
-/// Model for parsing the personalized paths list response from API.
-class PersonalizedPathsResponseModel {
+/// Model for the `recommended_paths` response: the next paths to study and
+/// the path just finished (`finished_path`, null on older servers).
+class NextPathsResponseModel {
   final List<LearningPathModel> paths;
   final String reason;
+  final FinishedPathRef? finishedPath;
 
-  const PersonalizedPathsResponseModel({
+  const NextPathsResponseModel({
     required this.paths,
     required this.reason,
+    this.finishedPath,
   });
 
-  factory PersonalizedPathsResponseModel.fromJson(Map<String, dynamic> json) {
+  factory NextPathsResponseModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>;
     final pathsJson = data['paths'] as List<dynamic>? ?? [];
-    return PersonalizedPathsResponseModel(
+    final finished = data['finished_path'];
+    FinishedPathRef? finishedPath;
+    if (finished is Map<String, dynamic> &&
+        finished['id'] is String &&
+        finished['title'] is String) {
+      final short = finished['short_title'];
+      finishedPath = FinishedPathRef(
+        id: finished['id'] as String,
+        title: short is String && short.trim().isNotEmpty
+            ? short
+            : finished['title'] as String,
+      );
+    }
+    return NextPathsResponseModel(
       paths: pathsJson
           .map((p) => LearningPathModel.fromJson(p as Map<String, dynamic>))
           .toList(),
       reason: data['reason'] as String? ?? 'featured',
+      finishedPath: finishedPath,
     );
   }
 
-  List<LearningPath> toEntity() => paths;
+  NextPathsResult toEntity() =>
+      NextPathsResult(paths: paths, finishedPath: finishedPath);
 }
 
 /// Model for parsing recommended learning path response from API.

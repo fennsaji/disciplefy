@@ -36,12 +36,12 @@ import {
   resolveShortTitle,
   type PathTranslation,
 } from './batch-loaders.ts';
-import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
-  calculatePathScores,
-  type QuestionnaireResponses,
-  type LearningPath as ScoringLearningPath,
-} from '../_shared/personalization/scoring-algorithm.ts';
+  legacyPathReason,
+  loadNextPaths,
+  type NextPath,
+  type NextPathReason,
+} from '../_shared/personalization/next-paths.ts';
 
 // ============================================================================
 // Types
@@ -1245,266 +1245,142 @@ async function handleEnroll(
 }
 
 // ============================================================================
-// Get Recommended Learning Paths (plural — For You section)
+// Get Recommended Learning Paths (plural) and the single recommended path
 // ============================================================================
+//
+// Both come from the one next-path engine (_shared/personalization/next-paths.ts):
+// active path, then the growth goal list, then featured, then the catalogue.
+// Reasons keep the values older apps parse: a goal pick reports 'personalized'.
+
+/** Language and limit from the body (POST) or the query string (GET). */
+async function readRecommendationParams(
+  req: Request,
+  defaultLimit: number,
+): Promise<{ language: string; limit: number }> {
+  let language = 'en';
+  let limit = defaultLimit;
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json() as { language?: string; limit?: number };
+      language = body.language || 'en';
+      if (typeof body.limit === 'number' && body.limit > 0) limit = body.limit;
+    } catch { /* use defaults */ }
+  } else {
+    const url = new URL(req.url);
+    language = url.searchParams.get('language') || 'en';
+    const limitParam = parseInt(url.searchParams.get('limit') ?? '', 10);
+    if (limitParam > 0) limit = limitParam;
+  }
+  return { language, limit: Math.min(Math.max(limit, 1), 20) };
+}
+
+/** The signed-in user (guests included) and whether they are a guest. */
+function recommendationUser(userContext?: UserContext): { userId: string | null; isGuest: boolean } {
+  const userId = userContext?.type === 'authenticated' ? userContext.userId ?? null : null;
+  return { userId, isGuest: userId !== null && userContext?.isGuest === true };
+}
 
 /**
- * Returns top N personalized learning paths based on the user's questionnaire.
- * Used by the "For You" section to show multiple scored recommendations.
- *
- * - Authenticated + questionnaire completed → top N from scoring algorithm
- * - Otherwise → top N featured paths
+ * Response objects for the engine's picks, in order. Progress comes from
+ * user_topic_progress floored by stored completion, as everywhere else; a pick
+ * that turns out finished is dropped.
+ */
+async function buildEnginePaths(
+  // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
+  supabaseClient: any,
+  picks: NextPath[],
+  userId: string | null,
+  language: string,
+  finishedIds: Set<string>,
+  enrolledIds: Set<string>,
+): Promise<{ path: LearningPath; reason: NextPathReason }[]> {
+  const ids = picks.map((p) => p.pathId);
+  if (ids.length === 0) return [];
+  const [{ data: rows, error }, preload] = await Promise.all([
+    supabaseClient.from('learning_paths').select('*').in('id', ids),
+    preloadCandidateData(supabaseClient, ids, userId, language),
+  ]);
+  if (error) {
+    console.error('[RECOMMENDED_PATH] Error fetching path rows:', error.message);
+    return [];
+  }
+  // deno-lint-ignore no-explicit-any -- select('*') row
+  const byId = new Map<string, any>((rows ?? []).map((r: { id: string }) => [r.id, r]));
+
+  const out: { path: LearningPath; reason: NextPathReason }[] = [];
+  for (const pick of picks) {
+    const row = byId.get(pick.pathId);
+    if (!row) continue;
+    const topicsCount = await getTopicsCount(supabaseClient, row.id);
+    const completed = userId ? await completedFor(supabaseClient, preload.completed, row.id, userId) : 0;
+    const percentage = userId ? pathProgressPercentage(completed, topicsCount, row.id, finishedIds) : 0;
+    if (userId && percentage >= 100) continue;
+    const localized = await getLocalizedTitleDescription(
+      supabaseClient, row.id, language, row.title, row.description, row.short_title
+    );
+    const isEnrolled = enrolledIds.has(row.id) || (preload.enrolled?.has(row.id) ?? false);
+    out.push({
+      path: buildLearningPathResponse(row, topicsCount, isEnrolled, percentage, localized, completed),
+      reason: pick.reason,
+    });
+  }
+  return out;
+}
+
+/**
+ * Top N paths to suggest (Topics, the "What next?" card, "Choose your first
+ * path"). Adds `finished_path` (id and title of the path the user just
+ * finished, when nothing else is active) for the "What next?" card.
  */
 async function handleGetRecommendedPaths(
   req: Request,
   services: ServiceContainer,
   userContext?: UserContext,
-  limit = 5
 ): Promise<Response> {
   const { supabaseServiceClient } = services;
+  const { language, limit } = await readRecommendationParams(req, 5);
+  const { userId, isGuest } = recommendationUser(userContext);
 
-  let language = 'en';
-  if (req.method === 'POST') {
-    try {
-      const body = await req.json() as { language?: string; limit?: number };
-      language = body.language || 'en';
-      if (body.limit) limit = body.limit;
-    } catch { /* use defaults */ }
-  } else {
-    const url = new URL(req.url);
-    language = url.searchParams.get('language') || 'en';
-    const limitParam = url.searchParams.get('limit');
-    if (limitParam) limit = parseInt(limitParam, 10);
-  }
+  // A few extra picks: one can still turn out finished by lesson count.
+  const next = await loadNextPaths(supabaseServiceClient, { userId, isGuest, limit: limit + 3 });
+  const built = (await buildEnginePaths(
+    supabaseServiceClient, next.paths, userId, language, next.finishedIds, next.enrolledIds,
+  )).slice(0, limit);
 
-  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
-
-  // The studies already under way come first, exactly as the single-path
-  // recommendation does. Without this the Topics tab could only surface what
-  // its first page of categories happened to contain, so a path the user was
-  // halfway through — or the one Home was recommending — was missing entirely.
-  const inProgressFirst: LearningPath[] = [];
-  if (userId) {
-    const completedIds = await getCompletedPathIds(supabaseServiceClient, userId);
-    const { data: activeRows } = await supabaseServiceClient
-      .from('user_learning_path_progress')
-      .select('learning_path_id, learning_paths!inner(*)')
-      .eq('user_id', userId)
-      .is('completed_at', null)
-      .not('enrolled_at', 'is', null)
-      .order('last_activity_at', { ascending: false })
-      .limit(ACTIVE_PATH_CANDIDATES);
-
-    // One count query for every path below, instead of one per path.
-    await preloadTopicCounts(supabaseServiceClient, (activeRows ?? []).map((r: { learning_path_id: string }) => r.learning_path_id));
-
-    for (const row of (activeRows ?? [])) {
-      const pathData = row.learning_paths as unknown as LearningPathRow | null;
-      if (!pathData?.is_active) continue;
-
-      const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-      const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
-      const percentage = effectiveProgress(
-        topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
-        pathData.id,
-        completedIds,
-      );
-      if (percentage >= 100) continue;
-
+  let finishedPath: { id: string; title: string; short_title: string | null } | null = null;
+  if (next.lastFinishedPathId) {
+    const { data: row } = await supabaseServiceClient
+      .from('learning_paths')
+      .select('id, title, description, short_title')
+      .eq('id', next.lastFinishedPathId)
+      .maybeSingle();
+    if (row) {
       const localized = await getLocalizedTitleDescription(
-        supabaseServiceClient, pathData.id, language, pathData.title, pathData.description, pathData.short_title
+        supabaseServiceClient, row.id, language, row.title, row.description, row.short_title
       );
-      inProgressFirst.push(buildLearningPathResponse(
-        pathData, topicsCountNum, true, percentage, localized,
-      ));
-      if (inProgressFirst.length >= limit) break;
+      finishedPath = { id: row.id, title: localized.title, short_title: localized.shortTitle };
     }
   }
 
-  /** Puts the in-progress studies first and drops anything already listed. */
-  const withInProgress = (paths: LearningPath[]): LearningPath[] => {
-    const seen = new Set(inProgressFirst.map((p) => p.id));
-    return [...inProgressFirst, ...paths.filter((p) => !seen.has(p.id))].slice(0, limit);
-  };
-  console.log(`[RECOMMENDED_PATHS] userId=${userId || 'anonymous'}, language=${language}, limit=${limit}`);
-
-  // Personalized paths for authenticated users with completed questionnaire
-  if (userId) {
-    const { data: personalization } = await supabaseServiceClient
-      .from('user_personalization')
-      .select('faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed')
-      .eq('user_id', userId)
-      .single();
-
-    if (personalization?.questionnaire_completed && personalization?.faith_stage) {
-      const { data: allPaths } = await supabaseServiceClient
-        .from('learning_paths')
-        .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, guest_accessible, display_order')
-        .eq('is_active', true);
-
-      if (allPaths && allPaths.length > 0) {
-        const { data: completedPaths } = await supabaseServiceClient
-          .from('user_learning_path_progress')
-          .select('learning_path_id')
-          .eq('user_id', userId)
-          .not('completed_at', 'is', null);
-
-        const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
-
-        const responses: QuestionnaireResponses = {
-          faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
-          spiritual_goals: personalization.spiritual_goals || [],
-          time_availability: personalization.time_availability as QuestionnaireResponses['time_availability'],
-          learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
-          life_stage_focus: personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
-          biggest_challenge: personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
-        };
-
-        const scoredPaths = calculatePathScores(responses, allPaths as ScoringLearningPath[], completedPathIds);
-        const topPaths = scoredPaths.slice(0, limit);
-
-        if (topPaths.length > 0) {
-          // Fetch enrollment info for the user (include all enrollments, not just non-completed)
-          const { data: enrollments } = await supabaseServiceClient
-            .from('user_learning_path_progress')
-            .select('learning_path_id')
-            .eq('user_id', userId);
-
-          const enrolledPathIds = new Set(
-            (enrollments || []).map((e) => e.learning_path_id as string)
-          );
-
-          const pathObjects: LearningPath[] = [];
-          for (const scored of topPaths) {
-            const { data: pathData } = await supabaseServiceClient
-              .from('learning_paths')
-              .select('*')
-              .eq('id', scored.pathId)
-              .single();
-
-            if (!pathData) continue;
-
-            const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-            const localized = await getLocalizedTitleDescription(
-              supabaseServiceClient, pathData.id, language, pathData.title, pathData.description, pathData.short_title
-            );
-
-            const isEnrolled = enrolledPathIds.has(pathData.id);
-            // Always compute progress from user_topic_progress for authenticated users
-            const actualCompleted = userId
-              ? await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId)
-              : 0;
-            const progressPercentage = topicsCountNum > 0
-              ? Math.round((actualCompleted / topicsCountNum) * 100)
-              : 0;
-
-            // Skip paths that are fully completed (all topics done)
-            if (progressPercentage >= 100) continue;
-
-            pathObjects.push(buildLearningPathResponse(
-              pathData, topicsCountNum, isEnrolled, progressPercentage,
-              localized
-            ));
-          }
-
-          if (pathObjects.length > 0) {
-            return new Response(
-              JSON.stringify({
-                success: true,
-                data: {
-                  paths: withInProgress(pathObjects),
-                  // Same rule as the featured branch: say 'active' when a study
-                  // already under way leads, whatever filled the rest.
-                  reason: inProgressFirst.length > 0 ? 'active' : 'personalized',
-                },
-              }),
-              { status: 200, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-        }
-      }
-    }
-  }
-
-  // Fallback: top featured paths, for anyone without questionnaire answers.
-  //
-  // This branch used to report every path as unenrolled and 0% complete and
-  // filtered nothing, so a user who had already finished a featured path was
-  // recommended it again — reading "0/8 Topics" on a path they had completed.
-  // The scored branch above already skips completed paths; this one has to do
-  // the same, and report the progress it knows about.
-  //
-  // The pool matches the single-path recommendation's (see
-  // handleGetRecommendedPath): featured paths plus the default one. Two
-  // different pools meant Home could suggest a study that this list — the one
-  // behind the Topics tab's For You — had no way of showing.
-  const { data: featuredPaths } = await supabaseServiceClient
-    .from('learning_paths')
-    .select('*')
-    .or(`slug.eq.${DEFAULT_FEATURED_PATH_SLUG},is_featured.eq.true`)
-    .eq('is_active', true)
-    .order('display_order', { ascending: true })
-    .limit(limit + 10);
-
-  // Progress comes from user_topic_progress, as on the detail screen and in
-  // every other branch. The enrollment row's topics_completed counter goes
-  // stale (and there is no row for topics finished without enrolling), so a
-  // path whose every topic was done read "0/16 Topics" here and stayed listed.
-  const featuredIds = (featuredPaths || []).map((p: { id: string }) => p.id);
-  const [, completedCounts, enrolledIds, completedPathIds] = await Promise.all([
-    preloadTopicCounts(supabaseServiceClient, featuredIds),
-    userId ? loadCompletedTopicCounts(supabaseServiceClient, featuredIds, userId) : Promise.resolve(null),
-    userId ? loadEnrolledPathIds(supabaseServiceClient, featuredIds, userId) : Promise.resolve(null),
-    userId ? getCompletedPathIds(supabaseServiceClient, userId) : Promise.resolve(new Set<string>()),
-  ]);
-
-  const fallbackObjects: LearningPath[] = [];
-  for (const pathData of (featuredPaths || [])) {
-    if (fallbackObjects.length >= limit) break;
-
-    const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-    const topicsCompleted = userId
-      ? await completedFor(supabaseServiceClient, completedCounts, pathData.id, userId)
-      : 0;
-    const percentage = pathProgressPercentage(topicsCompleted, topicsCountNum, pathData.id, completedPathIds);
-    if (percentage >= 100) continue;
-
-    const localized = await getLocalizedTitleDescription(
-      supabaseServiceClient, pathData.id, language, pathData.title, pathData.description, pathData.short_title
-    );
-    fallbackObjects.push(buildLearningPathResponse(
-      pathData,
-      topicsCountNum,
-      enrolledIds?.has(pathData.id) ?? false,
-      percentage,
-      localized,
-      topicsCompleted,
-    ));
-  }
+  console.log(`[RECOMMENDED_PATHS] guest=${isGuest} goal=${next.goal ?? 'none'} count=${built.length}`);
 
   return new Response(
     JSON.stringify({
       success: true,
       data: {
-        paths: withInProgress(fallbackObjects),
-        // 'active' when a study already under way leads the list, so the client
-        // can tell a resumption from a fresh suggestion.
-        reason: inProgressFirst.length > 0 ? 'active' : 'featured',
+        paths: built.map((b) => b.path),
+        reason: built.length > 0 ? legacyPathReason(built[0].reason) : 'featured',
+        finished_path: finishedPath,
       },
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
 
-// ============================================================================
-// Get Recommended Learning Path
-// ============================================================================
-
 /**
- * Returns a single recommended learning path based on priority:
- * 1. Active learning path (enrolled and in-progress) for authenticated users
- * 2. Personalized path based on questionnaire responses for authenticated users
- * 3. Featured learning path for anonymous users or users without personalization
+ * The single recommended path (Home "Continue learning"): the engine's first
+ * pick. When every path is finished, the default path is returned anyway so
+ * older apps always have a path to show.
  */
 async function handleGetRecommendedPath(
   req: Request,
@@ -1512,382 +1388,56 @@ async function handleGetRecommendedPath(
   userContext?: UserContext
 ): Promise<Response> {
   const { supabaseServiceClient } = services;
-
-  // Parse language from request
-  let language = 'en';
-  if (req.method === 'POST') {
-    try {
-      const body: RecommendedPathRequest = await req.json();
-      language = body.language || 'en';
-    } catch {
-      // Use default
-    }
-  } else {
-    const url = new URL(req.url);
-    language = url.searchParams.get('language') || 'en';
-  }
-
-  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
-
-  console.log(`[RECOMMENDED_PATH] Getting recommended path for user: ${userId || 'anonymous'}, language: ${language}`);
+  const { language } = await readRecommendationParams(req, 1);
+  const { userId, isGuest } = recommendationUser(userContext);
 
   try {
-    // Read once and use at every priority: a path finished at path level must
-    // not be offered again as active, personalized or featured.
-    // The active-path read below does not depend on it, so both run together.
-    const completedPathIdsPromise = userId
-      ? getCompletedPathIds(supabaseServiceClient, userId)
-      : Promise.resolve(new Set<string>());
-    // Settle the promise even if the active-path branch is skipped or throws.
-    completedPathIdsPromise.catch(() => {});
-
-    // Priority 1: Check for active learning path (authenticated users only)
-    if (userId) {
-      console.log('[RECOMMENDED_PATH] Checking for active learning path...');
-      // Several, not one: the most recent row can turn out to be 100% done by
-      // topic count, and taking only that one meant falling through to a
-      // recommendation while the user still had another study in progress.
-      const activePathQuery = supabaseServiceClient
-        .from('user_learning_path_progress')
-        .select(`
-          learning_path_id,
-          current_topic_position,
-          topics_completed,
-          learning_paths!inner(
-            id,
-            slug,
-            title,
-            short_title,
-            description,
-            icon_name,
-            color,
-            total_xp,
-            estimated_days,
-            disciple_level,
-            is_featured,
-            is_active,
-            guest_accessible
-          )
-        `)
-        .eq('user_id', userId)
-        .is('completed_at', null)
-        .not('enrolled_at', 'is', null)
-        .order('last_activity_at', { ascending: false })
-        .limit(ACTIVE_PATH_CANDIDATES);
-      const [{ data: activePathProgress, error: progressError }, activeCompletedPathIds] = await Promise.all([
-        activePathQuery,
-        completedPathIdsPromise,
-      ]);
-
-      if (progressError) {
-        console.error('[RECOMMENDED_PATH] Error fetching active path:', progressError);
-      }
-
-      const activePreload = await preloadCandidateData(
-        supabaseServiceClient,
-        (activePathProgress || []).map((p: { learning_path_id: string }) => p.learning_path_id),
-        userId,
-        language
+    const next = await loadNextPaths(supabaseServiceClient, { userId, isGuest, limit: 4 });
+    const built = await buildEnginePaths(
+      supabaseServiceClient, next.paths, userId, language, next.finishedIds, next.enrolledIds,
+    );
+    const first = built[0];
+    if (first) {
+      console.log(`[RECOMMENDED_PATH] reason=${first.reason} guest=${isGuest}`);
+      return createRecommendedPathResponse(
+        await withNextTopic(supabaseServiceClient, first.path, userId, language),
+        legacyPathReason(first.reason),
       );
-
-      for (const activePath of activePathProgress || []) {
-        // Supabase returns joined relation as object (due to !inner), cast through unknown for type safety
-        const pathData = activePath.learning_paths as unknown as LearningPathRow | null;
-        if (!pathData?.is_active) continue;
-
-        console.log(`[RECOMMENDED_PATH] Considering active path: ${pathData.title}`);
-
-        const topicsCountNum = await getTopicsCount(supabaseServiceClient, activePath.learning_path_id);
-        const localized = await getLocalizedTitleDescription(
-          supabaseServiceClient,
-          activePath.learning_path_id,
-          language,
-          pathData.title,
-          pathData.description,
-          pathData.short_title
-        );
-        const actualCompleted = await completedFor(supabaseServiceClient, activePreload.completed, activePath.learning_path_id, userId);
-        const progressPercentage = effectiveProgress(
-          topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
-          activePath.learning_path_id,
-          activeCompletedPathIds,
-        );
-
-        // Finished — try the next in-progress path rather than giving up on the
-        // whole priority.
-        if (progressPercentage >= 100) {
-          console.log(`[RECOMMENDED_PATH] Active path ${pathData.title} is complete, trying the next one`);
-          continue;
-        }
-
-        const path = buildLearningPathResponse(
-          pathData,
-          topicsCountNum,
-          true,
-          progressPercentage,
-          localized
-        );
-
-        return createRecommendedPathResponse(
-          await withNextTopic(supabaseServiceClient, path, userId, language),
-          'active'
-        );
-      }
     }
 
-    const completedPathIds = await completedPathIdsPromise;
-
-    // Priority 2: Get personalized path based on questionnaire (authenticated users only)
-    if (userId) {
-      console.log('[RECOMMENDED_PATH] Checking for personalization...');
-      const { data: personalization, error: persError } = await supabaseServiceClient
-        .from('user_personalization')
-        .select('faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed')
-        .eq('user_id', userId)
-        .single();
-
-      if (persError && persError.code !== 'PGRST116') {
-        console.error('[RECOMMENDED_PATH] Error fetching personalization:', persError);
-      }
-
-      if (personalization?.questionnaire_completed && personalization?.faith_stage) {
-        console.log(`[RECOMMENDED_PATH] User has personalization, faith_stage: ${personalization.faith_stage}`);
-
-        // Active paths for scoring and the user's completed paths, together.
-        const [
-          { data: allPaths, error: pathsError },
-          { data: completedPaths, error: completedError },
-        ] = await Promise.all([
-          supabaseServiceClient
-            .from('learning_paths')
-            .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, guest_accessible, display_order')
-            .eq('is_active', true),
-          supabaseServiceClient
-            .from('user_learning_path_progress')
-            .select('learning_path_id')
-            .eq('user_id', userId)
-            .not('completed_at', 'is', null),
-        ]);
-
-        if (pathsError || !allPaths || allPaths.length === 0) {
-          console.error('[RECOMMENDED_PATH] Error fetching paths for scoring:', pathsError);
-        } else {
-          if (completedError && completedError.code !== 'PGRST116') {
-            console.error('[RECOMMENDED_PATH] Error fetching completed paths:', completedError);
-          }
-
-          // Named apart from the outer `completedPathIds` set: the scorer takes
-          // an array, and two same-named bindings of different types in one
-          // function is a trap for the next reader.
-          const completedForScoring = (completedPaths || []).map((p) => p.learning_path_id);
-
-          // Build questionnaire responses object for scoring
-          const responses: QuestionnaireResponses = {
-            faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
-            spiritual_goals: personalization.spiritual_goals || [],
-            time_availability: personalization.time_availability as QuestionnaireResponses['time_availability'],
-            learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
-            life_stage_focus: personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
-            biggest_challenge: personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
-          };
-
-          // Calculate scores using scoring algorithm
-          const scoredPaths = calculatePathScores(
-            responses,
-            allPaths as ScoringLearningPath[],
-            completedForScoring
-          );
-
-          // Full rows and per-user data for every candidate, in one batch.
-          const candidateIds = scoredPaths.map((p) => p.pathId);
-          const [{ data: candidateRows, error: candidateError }, personalizedPreload] = await Promise.all([
-            candidateIds.length > 0
-              ? supabaseServiceClient.from('learning_paths').select('*').in('id', candidateIds)
-              : Promise.resolve({ data: [], error: null }),
-            preloadCandidateData(supabaseServiceClient, candidateIds, userId, language),
-          ]);
-          if (candidateError) {
-            console.error('[RECOMMENDED_PATH] Error fetching path data:', candidateError);
-          }
-          // deno-lint-ignore no-explicit-any -- select('*') row
-          const rowsById = new Map<string, any>((candidateRows || []).map((r: { id: string }) => [r.id, r]));
-
-          // Iterate through scored paths to find first non-completed recommendation
-          for (const candidatePath of scoredPaths) {
-            console.log(`[RECOMMENDED_PATH] Evaluating personalized path: ${candidatePath.pathTitle} (score: ${candidatePath.score})`);
-
-            const pathData = rowsById.get(candidatePath.pathId);
-            if (!pathData) {
-              continue;
-            }
-
-            const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-            const localized = await getLocalizedTitleDescription(
-              supabaseServiceClient,
-              pathData.id,
-              language,
-              pathData.title,
-              pathData.description,
-              pathData.short_title
-            );
-
-            // Check if user is enrolled
-            const existingProgress = personalizedPreload.enrolled
-              ? personalizedPreload.enrolled.has(pathData.id)
-              : !!(await supabaseServiceClient
-                .from('user_learning_path_progress')
-                .select('learning_path_id')
-                .eq('user_id', userId)
-                .eq('learning_path_id', pathData.id)
-                .single()).data;
-
-            // Always compute progress from user_topic_progress
-            const actualCompleted = await completedFor(supabaseServiceClient, personalizedPreload.completed, pathData.id, userId);
-            const progressPercentage = effectiveProgress(
-              topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
-              pathData.id,
-              completedPathIds,
-            );
-
-            // Skip fully completed paths — try the next scored path
-            if (progressPercentage >= 100) {
-              console.log(`[RECOMMENDED_PATH] Skipping ${candidatePath.pathTitle} — already completed (${progressPercentage}%)`);
-              continue;
-            }
-
-            const path = buildLearningPathResponse(
-              pathData,
-              topicsCountNum,
-              !!existingProgress,
-              progressPercentage,
-              localized
-            );
-
-            return createRecommendedPathResponse(
-          await withNextTopic(supabaseServiceClient, path, userId, language),
-          'personalized'
-        );
-          }
-        }
-      }
-    }
-
-    // Priority 3: Return featured learning path (for anonymous or non-personalized users)
-    console.log('[RECOMMENDED_PATH] Falling back to featured path...');
-
-    // Fetch all featured paths ordered by priority so we can skip completed ones
-    const { data: featuredPaths, error: featuredError } = await supabaseServiceClient
+    // Everything finished (or nothing readable): the default path, as before.
+    const { data: fallback } = await supabaseServiceClient
       .from('learning_paths')
       .select('*')
+      .eq('slug', DEFAULT_FEATURED_PATH_SLUG)
       .eq('is_active', true)
-      .or(`slug.eq.${DEFAULT_FEATURED_PATH_SLUG},is_featured.eq.true`)
-      .order('display_order', { ascending: true });
+      .maybeSingle();
+    if (!fallback) return createRecommendedPathResponse(null, 'featured');
 
-    if (featuredError || !featuredPaths || featuredPaths.length === 0) {
-      console.log('[RECOMMENDED_PATH] No featured path found');
-      return createRecommendedPathResponse(null, 'featured');
-    }
-
-    // Put the default featured path first, then the rest
-    const sortedFeatured = [
-      ...featuredPaths.filter(p => p.slug === DEFAULT_FEATURED_PATH_SLUG),
-      ...featuredPaths.filter(p => p.slug !== DEFAULT_FEATURED_PATH_SLUG),
-    ];
-
-    // Iterate through featured paths to find the first non-completed one
-    const featuredPreload = await preloadCandidateData(
-      supabaseServiceClient,
-      sortedFeatured.map((p: { id: string }) => p.id),
-      userId,
-      language
+    const topicsCount = await getTopicsCount(supabaseServiceClient, fallback.id);
+    const localized = await getLocalizedTitleDescription(
+      supabaseServiceClient, fallback.id, language, fallback.title, fallback.description, fallback.short_title
     );
-
-    for (const pathData of sortedFeatured) {
-      const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-      const localized = await getLocalizedTitleDescription(
-        supabaseServiceClient,
-        pathData.id,
-        language,
-        pathData.title,
-        pathData.description,
-        pathData.short_title
-      );
-
-      let isEnrolled = false;
-      let progressPercentage = 0;
-
-      if (userId) {
-        const userProgress = featuredPreload.enrolled
-          ? featuredPreload.enrolled.has(pathData.id)
-          : !!(await supabaseServiceClient
-            .from('user_learning_path_progress')
-            .select('learning_path_id')
-            .eq('user_id', userId)
-            .eq('learning_path_id', pathData.id)
-            .single()).data;
-
-        if (userProgress) {
-          isEnrolled = true;
-        }
-
-        const actualCompleted = await completedFor(supabaseServiceClient, featuredPreload.completed, pathData.id, userId);
-        progressPercentage = effectiveProgress(
-          topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
-          pathData.id,
-          completedPathIds,
-        );
-      }
-
-      // Skip completed paths for authenticated users
-      if (userId && progressPercentage >= 100) {
-        console.log(`[RECOMMENDED_PATH] Skipping featured path ${pathData.title} — completed (${progressPercentage}%)`);
-        continue;
-      }
-
-      console.log(`[RECOMMENDED_PATH] Using featured path: ${pathData.title} (progress: ${progressPercentage}%)`);
-
-      const path = buildLearningPathResponse(
-        pathData,
-        topicsCountNum,
-        isEnrolled,
-        progressPercentage,
-        localized
-      );
-
-      return createRecommendedPathResponse(
-          await withNextTopic(supabaseServiceClient, path, userId, language),
-          'featured'
-        );
-    }
-
-    // All featured paths completed — return the first one anyway (for anonymous users this won't happen)
-    console.log('[RECOMMENDED_PATH] All featured paths completed, returning first one');
-    const fallbackPath = sortedFeatured[0];
-    const fallbackTopicsCount = await getTopicsCount(supabaseServiceClient, fallbackPath.id);
-    const fallbackLocalized = await getLocalizedTitleDescription(
-      supabaseServiceClient, fallbackPath.id, language, fallbackPath.title, fallbackPath.description, fallbackPath.short_title
-    );
-    const fallbackActualCompleted = userId
-      ? await completedFor(supabaseServiceClient, featuredPreload.completed, fallbackPath.id, userId)
+    const completed = userId
+      ? await getActualTopicsCompleted(supabaseServiceClient, fallback.id, userId)
       : 0;
-    const fallbackProgress = fallbackTopicsCount > 0
-      ? Math.round((fallbackActualCompleted / fallbackTopicsCount) * 100)
-      : 0;
-
     const path = buildLearningPathResponse(
-      fallbackPath, fallbackTopicsCount, false, fallbackProgress,
-      fallbackLocalized
+      fallback,
+      topicsCount,
+      next.enrolledIds.has(fallback.id),
+      userId ? pathProgressPercentage(completed, topicsCount, fallback.id, next.finishedIds) : 0,
+      localized,
+      completed,
     );
     return createRecommendedPathResponse(
-          await withNextTopic(supabaseServiceClient, path, userId, language),
-          'featured'
-        );
+      await withNextTopic(supabaseServiceClient, path, userId, language),
+      'featured'
+    );
   } catch (error) {
-    console.error('[RECOMMENDED_PATH] Error:', error);
+    console.error('[RECOMMENDED_PATH] Error:', error instanceof Error ? error.message : 'unknown');
     throw new AppError('SERVER_ERROR', 'Failed to get recommended learning path', 500);
   }
 }
-
 // ============================================================================
 // Export
 // ============================================================================

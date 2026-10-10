@@ -45,6 +45,7 @@ const _guestSlugs = [
 
 LearningPath _path(
   String slug, {
+  String? id,
   bool guestAccessible = false,
   bool featured = false,
   int? order,
@@ -53,7 +54,7 @@ LearningPath _path(
   String title = '',
 }) =>
     LearningPath(
-      id: 'id-$slug',
+      id: id ?? 'id-$slug',
       slug: slug,
       title: title.isEmpty ? 'Path $slug' : title,
       description: '',
@@ -154,23 +155,26 @@ void main() {
   });
 
   tearDown(() async {
-    ChooseFirstPathCard.clearSessionCache();
     GuestPathEnrollment.reset();
     await sl.reset();
   });
 
-  void listPaths(List<LearningPath> list) {
-    when(() => paths.getLearningPaths(
+  /// What the server's next-path engine answers (it already orders and
+  /// filters: goal paths, featured, guest-accessible only for a guest).
+  void listPaths(List<LearningPath> list, {FinishedPathRef? finished}) {
+    when(() => paths.getNextPaths(
               language: any(named: 'language'),
-              includeEnrolled: any(named: 'includeEnrolled'),
-              forceRefresh: any(named: 'forceRefresh'),
               limit: any(named: 'limit'),
-              offset: any(named: 'offset'),
-              search: any(named: 'search'),
-              fellowshipId: any(named: 'fellowshipId'),
             ))
         .thenAnswer((_) async =>
-            Right(LearningPathsResult(paths: list, total: list.length)));
+            Right(NextPathsResult(paths: list, finishedPath: finished)));
+  }
+
+  void failNextPaths() {
+    when(() => paths.getNextPaths(
+          language: any(named: 'language'),
+          limit: any(named: 'limit'),
+        )).thenAnswer((_) async => const Left(NetworkFailure()));
   }
 
   final launchPath = Uri.parse(
@@ -314,35 +318,53 @@ void main() {
   });
 
   testWidgets('a failed path list still offers See all paths', (tester) async {
-    when(() => paths.getLearningPaths(
-          language: any(named: 'language'),
-          includeEnrolled: any(named: 'includeEnrolled'),
-          forceRefresh: any(named: 'forceRefresh'),
-          limit: any(named: 'limit'),
-          offset: any(named: 'offset'),
-          search: any(named: 'search'),
-          fellowshipId: any(named: 'fellowshipId'),
-        )).thenAnswer((_) async => const Left(NetworkFailure()));
+    failNextPaths();
     await tester.pumpWidget(app(section(null)));
     await tester.pumpAndSettle();
     expect(find.text('Choose your first path'), findsOneWidget);
     expect(find.text('See all paths'), findsOneWidget);
   });
 
-  testWidgets('guest chooser lists only guest paths, at most three',
+  testWidgets('chooser shows at most three of the server\'s paths, in order',
       (tester) async {
     when(() => guest.isGuest).thenReturn(true);
-    listPaths([
-      _path('rooted-in-christ', featured: true, order: 1),
-      for (final s in _guestSlugs) _path(s, guestAccessible: true),
-    ]);
+    listPaths([for (final s in _guestSlugs) _path(s, guestAccessible: true)]);
     await tester.pumpWidget(app(section(null)));
     await tester.pumpAndSettle();
-    expect(find.text('Path rooted-in-christ'), findsNothing);
     for (final s in _guestSlugs.take(3)) {
       expect(find.text('Path $s'), findsOneWidget);
     }
     expect(find.text('Path theology-of-suffering'), findsNothing);
+    expect(
+        verify(() => paths.getNextPaths(
+            language: any(named: 'language'),
+            limit: captureAny(named: 'limit'))).captured,
+        [3]);
+  });
+
+  testWidgets('guest with no guest path left: one row opens the account sheet',
+      (tester) async {
+    when(() => guest.isGuest).thenReturn(true);
+    listPaths(const []);
+    await tester.pumpWidget(app(section(null)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create an account for more paths'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+  });
+
+  testWidgets('no active path after finishing one: the chooser says What next?',
+      (tester) async {
+    listPaths(
+      [_path('gospel-of-john', title: 'John'), _path('gospel-of-luke')],
+      finished: const FinishedPathRef(id: 'id-mark', title: 'Mark'),
+    );
+    await tester.pumpWidget(app(section(null)));
+    await tester.pumpAndSettle();
+    expect(find.text('What next?'), findsOneWidget);
+    expect(find.text('Pick a path to keep going.'), findsOneWidget);
+    expect(find.text('Choose your first path'), findsNothing);
+    expect(find.text('John'), findsOneWidget);
   });
 
   testWidgets('guest tapping a locked path gets the account sheet',
@@ -521,37 +543,9 @@ void main() {
     expect(refreshed, 1);
   });
 
-  testWidgets('chooser: the path list is loaded once per session',
-      (tester) async {
-    listPaths([_path('rooted-in-christ', featured: true, order: 1)]);
-    await tester.pumpWidget(app(section(null)));
-    await tester.pumpAndSettle();
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(app(section(null)));
-    await tester.pumpAndSettle();
-    expect(find.text('Path rooted-in-christ'), findsOneWidget);
-    verify(() => paths.getLearningPaths(
-          language: any(named: 'language'),
-          includeEnrolled: any(named: 'includeEnrolled'),
-          forceRefresh: any(named: 'forceRefresh'),
-          limit: any(named: 'limit'),
-          offset: any(named: 'offset'),
-          search: any(named: 'search'),
-          fellowshipId: any(named: 'fellowshipId'),
-        )).called(1);
-  });
-
   testWidgets('chooser: a failed list offers Retry, which loads it again',
       (tester) async {
-    when(() => paths.getLearningPaths(
-          language: any(named: 'language'),
-          includeEnrolled: any(named: 'includeEnrolled'),
-          forceRefresh: any(named: 'forceRefresh'),
-          limit: any(named: 'limit'),
-          offset: any(named: 'offset'),
-          search: any(named: 'search'),
-          fellowshipId: any(named: 'fellowshipId'),
-        )).thenAnswer((_) async => const Left(NetworkFailure()));
+    failNextPaths();
     await tester.pumpWidget(app(section(null)));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't load paths"), findsOneWidget);
@@ -613,6 +607,7 @@ void main() {
   testWidgets('guest finished path: Choose your next path opens account sheet',
       (tester) async {
     when(() => guest.isGuest).thenReturn(true);
+    listPaths(const []);
     await tester.pumpWidget(app(section(finishedSummary)));
     await tester.pumpAndSettle();
     expect(find.text('Lesson 8 of 8'), findsNothing);
@@ -622,8 +617,46 @@ void main() {
     expect(find.text('stub:topics'), findsNothing);
   });
 
+  testWidgets(
+      'finished path: What next? lists the next paths, not the finished one',
+      (tester) async {
+    listPaths([
+      // The finished path itself (a stale server answer) is never listed.
+      _path('new-believer-essentials', id: 'p1', title: 'Finished one'),
+      _path('rooted-in-christ', title: 'Rooted in Christ'),
+      _path('gospel-of-mark', title: 'Mark'),
+      _path('gospel-of-john', title: 'John'),
+    ]);
+    await tester.pumpWidget(app(section(finishedSummary)));
+    await tester.pumpAndSettle();
+    final card = find.byKey(const Key('home_what_next'));
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('What next?')),
+        findsOneWidget);
+    expect(find.text('Rooted in Christ'), findsOneWidget);
+    expect(find.text('Finished one'), findsNothing);
+    expect(find.text('John'), findsOneWidget);
+    // One extra asked for, as the finished path is left out.
+    verify(() => paths.getNextPaths(language: any(named: 'language'), limit: 4))
+        .called(1);
+    await tester.ensureVisible(find.text('Mark'));
+    await tester.tap(find.text('Mark'));
+    await tester.pumpAndSettle();
+    expect(find.text('detail:id-gospel-of-mark:home'), findsOneWidget);
+  });
+
+  testWidgets('unfinished path: no What next?', (tester) async {
+    listPaths([_path('gospel-of-mark')]);
+    await tester.pumpWidget(app(section(summary4of8)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home_what_next')), findsNothing);
+    verifyNever(() => paths.getNextPaths(
+        language: any(named: 'language'), limit: any(named: 'limit')));
+  });
+
   testWidgets('full user finished path: Choose your next path opens Topics',
       (tester) async {
+    listPaths(const []);
     await tester.pumpWidget(app(section(finishedSummary)));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose your next path'));

@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import 'package:disciplefy_bible_study/core/connectivity/connectivity_bloc.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/features/onboarding/domain/growth_goals.dart';
+import 'package:disciplefy_bible_study/features/personalization/domain/growth_goal_repository.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:disciplefy_bible_study/core/models/app_language.dart';
@@ -93,6 +96,8 @@ class _FakeSystemConfig extends Fake implements SystemConfigService {
   bool isFeatureLocked(String featureKey, String userPlan) => false;
 }
 
+class _MockGoals extends Mock implements GrowthGoalRepository {}
+
 void main() {
   late FakeTranslationService translations;
   late _MockSettingsBloc settingsBloc;
@@ -160,6 +165,9 @@ void main() {
         GoRoute(
             path: '/settings/more',
             builder: (_, __) => const SettingsMorePage()),
+        GoRoute(
+            path: '/settings/goal',
+            builder: (_, __) => const Scaffold(body: Text('stub:goal'))),
       ],
     );
     return MultiBlocProvider(
@@ -224,7 +232,7 @@ void main() {
     expect(find.text('Learning path study mode'), findsOneWidget);
     for (final key in [
       TranslationKeys.settingsStudyModePreference,
-      TranslationKeys.settingsRetakeQuestionnaire,
+      TranslationKeys.goalSettingsRow,
       TranslationKeys.settingsFeedback,
       TranslationKeys.settingsReportPurchaseIssue,
       TranslationKeys.settingsContactUs,
@@ -258,6 +266,42 @@ void main() {
     expect(find.text('Privacy policy'), findsOneWidget);
     expect(find.text(tr(TranslationKeys.settingsReportPurchaseIssue)),
         findsNothing);
+  });
+
+  testWidgets(
+      'More: Change my goal shows the saved goal and opens the goal page '
+      '(no questionnaire)', (tester) async {
+    setUpWorld(guest: true);
+    final goals = _MockGoals();
+    when(() => goals.cachedGoal).thenReturn(GrowthGoal.hopeHardTimes);
+    sl.registerSingleton<GrowthGoalRepository>(goals);
+    useTall(tester);
+    await tester.pumpWidget(app(dark: false, initial: '/settings/more'));
+    await tester.pumpAndSettle();
+
+    final row = find.byKey(const Key('settings_change_goal'));
+    expect(row, findsOneWidget);
+    expect(find.descendant(of: row, matching: find.text('Change my goal')),
+        findsOneWidget);
+    expect(find.descendant(of: row, matching: find.text('Hope in hard times')),
+        findsOneWidget);
+    expect(find.textContaining('questionnaire'), findsNothing);
+    expect(find.textContaining('Questionnaire'), findsNothing);
+
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(find.text('stub:goal'), findsOneWidget);
+  });
+
+  testWidgets('More: no goal yet says so', (tester) async {
+    setUpWorld(guest: false);
+    final goals = _MockGoals();
+    when(() => goals.cachedGoal).thenReturn(null);
+    sl.registerSingleton<GrowthGoalRepository>(goals);
+    useTall(tester);
+    await tester.pumpWidget(app(dark: false, initial: '/settings/more'));
+    await tester.pumpAndSettle();
+    expect(find.text('Not chosen yet'), findsOneWidget);
   });
 
   for (final width in fitWidths) {
