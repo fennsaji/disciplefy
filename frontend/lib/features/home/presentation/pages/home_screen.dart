@@ -299,10 +299,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (_hasTriggeredDailyVersePrompt) return;
     _hasTriggeredDailyVersePrompt = true;
 
-    // Small delay to let the UI settle after verse loads
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    if (!mounted || !await _homeWalkthroughDone()) return;
+    if (!await _settledOnHome()) {
+      // Not now (left Home or the tour is due): offer it on a later visit.
+      _hasTriggeredDailyVersePrompt = false;
+      return;
+    }
 
     await showNotificationEnablePrompt(
       context: context,
@@ -331,10 +332,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     _hasTriggeredStreakPrompt = true;
 
-    // Delay to show after daily verse prompt (if shown)
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    if (!mounted || !await _homeWalkthroughDone()) return;
+    if (!await _settledOnHome()) {
+      _hasTriggeredStreakPrompt = false;
+      return;
+    }
 
     final promptType = currentStreak >= 7
         ? NotificationPromptType.streakMilestone
@@ -358,15 +359,36 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     _hasTriggeredStreakLostPrompt = true;
 
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    if (!mounted || !await _homeWalkthroughDone()) return;
+    if (!await _settledOnHome()) {
+      _hasTriggeredStreakLostPrompt = false;
+      return;
+    }
 
     await showNotificationEnablePrompt(
       context: context,
       type: NotificationPromptType.streakLost,
       languageCode: languageCode,
     );
+  }
+
+  /// How long Home is shown before a notification prompt may open, so the
+  /// person sees where they landed first (e.g. back from a lesson).
+  static const Duration notificationPromptDelay = Duration(seconds: 4);
+
+  /// Waits [notificationPromptDelay], then true only if Home is still the
+  /// screen in front (not another tab, a lesson or a sheet) and the
+  /// first-run walkthrough is done.
+  Future<bool> _settledOnHome() async {
+    await Future<void>.delayed(notificationPromptDelay);
+    if (!mounted) return false;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return false;
+    final rootNavigator = AppRouter.rootNavigatorKey.currentState;
+    if (rootNavigator != null && rootNavigator.canPop()) return false;
+    final path =
+        GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+    if (path != AppRoutes.home) return false;
+    return _homeWalkthroughDone();
   }
 
   /// Notification prompts wait for the first-run walkthrough: a bottom sheet
