@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
+import '../../../onboarding/domain/first_run_flags.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -173,34 +174,29 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     StudyMode? selectedMode;
 
-    // Determine mode based on preference
-    if (StudyModePreferences.isRecommended(learningPathModePreference)) {
-      // Use path's recommended mode
-      selectedMode =
-          studyModeFromString(path.recommendedMode) ?? StudyMode.standard;
+    // 'recommended' or a concrete mode: the same rule as the Home and Topics
+    // lesson cards (first-run lesson 1 → Quick, 'recommended' → Standard).
+    if (StudyModePreferences.isRecommended(learningPathModePreference) ||
+        StudyModePreferences.isSpecificMode(learningPathModePreference,
+            isLearningPath: true)) {
+      selectedMode = pathLessonMode(
+        lessonNumber: topic.position + 1,
+        hasFirstRunGoal: FirstRunFlags.hasGoal,
+        savedRaw: learningPathModePreference,
+      );
       Logger.debug(
-          '[LEARNING_PATH_DETAIL] Using recommended mode: ${selectedMode.name}');
-      await _navigateToTopicWithMode(topic, path, selectedMode, false);
-    } else if (StudyModePreferences.isSpecificMode(learningPathModePreference,
-        isLearningPath: true)) {
-      // Use specific mode from settings (quick, standard, deep, lectio)
-      selectedMode =
-          studyModeFromString(learningPathModePreference) ?? StudyMode.standard;
-      Logger.debug(
-          '[LEARNING_PATH_DETAIL] Using specific mode from settings: ${selectedMode.name}');
+          '[LEARNING_PATH_DETAIL] Using lesson mode: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
     } else {
       // No saved preference — check connectivity before showing the sheet.
       // When offline, skip the sheet and use the best available mode:
       //   1. General study mode preference (if saved locally)
-      //   2. Path's recommended mode
+      //   2. Standard
       final isOffline =
           context.read<ConnectivityBloc>().state is ConnectivityOffline;
       if (isOffline) {
         final generalPref = await languageService.getStudyModePreferenceRaw();
-        selectedMode = studyModeFromString(generalPref) ??
-            studyModeFromString(path.recommendedMode) ??
-            StudyMode.standard;
+        selectedMode = studyModeFromString(generalPref) ?? StudyMode.standard;
         Logger.debug(
             '[LEARNING_PATH_DETAIL] Offline – using mode without sheet: ${selectedMode.name}');
         await _navigateToTopicWithMode(topic, path, selectedMode, false);
