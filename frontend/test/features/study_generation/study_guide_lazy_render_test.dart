@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -193,5 +194,72 @@ void main() {
     expect(tracker.readCount, greaterThanOrEqualTo(5));
     tracker.update(thresholdY: 300, atBottom: true);
     expect(tracker.readCount, 6);
+  });
+
+  testWidgets(
+      'scrolling to the bottom and back renders every paragraph once, in '
+      'order, with tappable scripture links', (tester) async {
+    final guide = _longGuide('order');
+    final controller = await pumpGuide(tester, guide);
+
+    // Every paragraph the guide holds, top to bottom.
+    final expected = <String>[
+      for (final name in ['summary', 'context'])
+        for (var i = 0; i < (name == 'summary' ? 8 : 12); i++)
+          _mlParagraph('order-$name', i),
+      for (var i = 0; i < 40; i++) _mlParagraph('order-interpretation', i),
+      for (var i = 0; i < 15; i++) _mlParagraph('order-verse', i),
+      for (var i = 0; i < 10; i++) _mlParagraph('order-question', i),
+      for (var i = 0; i < 8; i++) _mlParagraph('order-prayer', i),
+    ];
+    final firstSeen = <String, int>{};
+    var linksSeen = 0;
+
+    // Markdown renders selectable text: one SelectableText per paragraph or
+    // list item.
+    List<InlineSpan> spans() => [
+          for (final t
+              in tester.widgetList<SelectableText>(find.byType(SelectableText)))
+            t.textSpan ?? TextSpan(text: t.data),
+        ];
+
+    Future<void> look() async {
+      final texts = spans().map((s) => s.toPlainText()).toList();
+      for (final p in expected) {
+        final hits = texts.where((t) => t.contains(p)).length;
+        expect(hits, lessThanOrEqualTo(1), reason: 'duplicated: $p');
+        if (hits == 1) firstSeen.putIfAbsent(p, () => firstSeen.length);
+      }
+      for (final root in spans()) {
+        root.visitChildren((span) {
+          if (span is TextSpan &&
+              span.recognizer is TapGestureRecognizer &&
+              (span.text ?? '').contains(':')) {
+            linksSeen++;
+          }
+          return true;
+        });
+      }
+    }
+
+    for (var down = true;; down = !down) {
+      while (true) {
+        await look();
+        final pos = controller.position;
+        if (down ? pos.pixels >= pos.maxScrollExtent : pos.pixels <= 0) {
+          break;
+        }
+        controller.jumpTo(
+            (pos.pixels + (down ? 300 : -300)).clamp(0.0, pos.maxScrollExtent));
+        await tester.pump();
+      }
+      if (!down) break;
+    }
+
+    final missing = expected.where((p) => !firstSeen.containsKey(p));
+    expect(missing, isEmpty, reason: 'never rendered: ${missing.take(3)}');
+    final order = firstSeen.keys.toList();
+    expect(order, expected, reason: 'paragraphs rendered out of order');
+    expect(linksSeen, greaterThan(0), reason: 'no tappable scripture links');
   });
 }
