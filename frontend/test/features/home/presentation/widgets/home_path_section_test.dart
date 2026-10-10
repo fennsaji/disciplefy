@@ -231,7 +231,6 @@ void main() {
         summary: summary,
         loading: loading,
         mode: StudyMode.quick,
-        onModeChanged: (_) {},
       );
 
   group('selectFirstPaths', () {
@@ -511,7 +510,6 @@ void main() {
       summary: summary4of8,
       loading: false,
       mode: StudyMode.quick,
-      onModeChanged: (_) {},
       onProgressMayHaveChanged: () => refreshed++,
     )));
     await tester.pumpAndSettle();
@@ -532,7 +530,6 @@ void main() {
       summary: null,
       loading: false,
       mode: StudyMode.quick,
-      onModeChanged: (_) {},
       onProgressMayHaveChanged: () => refreshed++,
     )));
     await tester.pumpAndSettle();

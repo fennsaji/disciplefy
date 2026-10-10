@@ -1209,6 +1209,7 @@ const Map<String, dynamic> englishTranslations = {
     'learning_path_study_mode_description': 'Choose how you study path lessons',
     'use_recommended': 'Use Recommended',
     'use_recommended_subtitle': 'Each path suggests the best study mode',
+    'use_recommended_path_subtitle': 'Standard, free on every path lesson',
     'error_updating_preference': 'Failed to update preference',
     'preference_updated_successfully': 'Preference updated successfully',
     'reflection_journal': 'Reflection journal',
@@ -2990,7 +2991,7 @@ const Map<String, dynamic> englishTranslations = {
     'sermon': {
       'short_name': 'Sermon',
       'name': 'Sermon Outline',
-      'description': 'Full sermon with timing + illustrations (2x credits)',
+      'description': 'Full sermon with timing + illustrations',
       'duration_label': 'Sermon Outline • 50-60 min',
     },
   },

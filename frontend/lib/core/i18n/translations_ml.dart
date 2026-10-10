@@ -1225,6 +1225,7 @@ const Map<String, dynamic> malayalamTranslations = {
         'പാതയിലെ പാഠങ്ങൾ എങ്ങനെ പഠിക്കണമെന്ന് തിരഞ്ഞെടുക്കൂ',
     'use_recommended': 'ശുപാർശ ചെയ്ത രീതി ഉപയോഗിക്കുക',
     'use_recommended_subtitle': 'ഓരോ പാതയും മികച്ച പഠന രീതി നിർദ്ദേശിക്കുന്നു',
+    'use_recommended_path_subtitle': 'സ്റ്റാൻഡേർഡ്, എല്ലാ പാഠത്തിലും സൗജന്യം',
     'error_updating_preference': 'മുൻഗണന അപ്‌ഡേറ്റ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു',
     'preference_updated_successfully': 'മുൻഗണന വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു',
     'reflection_journal': 'ചിന്തന ഡയറി',
@@ -3093,7 +3094,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'sermon': {
       'short_name': 'പ്രഭാഷണം',
       'name': 'പ്രഭാഷണ രൂപരേഖ',
-      'description': 'സമയവും ഉദാഹരണങ്ങളും ഉള്ള പൂർണ്ണ പ്രഭാഷണം (2x ക്രെഡിറ്റ്)',
+      'description': 'സമയവും ഉദാഹരണങ്ങളും ഉള്ള പൂർണ്ണ പ്രഭാഷണം',
       'duration_label': 'പ്രഭാഷണ രൂപരേഖ • 50-60 മിനിറ്റ്',
     },
   },

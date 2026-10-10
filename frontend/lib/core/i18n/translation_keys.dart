@@ -2377,6 +2377,8 @@ class TranslationKeys {
   /// Subtitle for use recommended mode option
   static const settingsUseRecommendedSubtitle =
       'settings.use_recommended_subtitle';
+  static const settingsUseRecommendedPathSubtitle =
+      'settings.use_recommended_path_subtitle';
 
   /// Error message when updating preference fails
   static const errorUpdatingPreference = 'settings.error_updating_preference';

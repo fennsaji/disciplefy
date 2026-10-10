@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
-import '../../../onboarding/domain/first_run_flags.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -174,16 +173,18 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     StudyMode? selectedMode;
 
+    // A guest always studies a path lesson in Standard, its only free mode.
+    if (GuestRouteGate.currentUserIsGuest()) {
+      await _navigateToTopicWithMode(topic, path, StudyMode.standard, false);
+      return;
+    }
+
     // 'recommended' or a concrete mode: the same rule as the Home and Topics
-    // lesson cards (first-run lesson 1 → Quick, 'recommended' → Standard).
+    // lesson cards ('recommended' → Standard).
     if (StudyModePreferences.isRecommended(learningPathModePreference) ||
         StudyModePreferences.isSpecificMode(learningPathModePreference,
             isLearningPath: true)) {
-      selectedMode = pathLessonMode(
-        lessonNumber: topic.position + 1,
-        hasFirstRunGoal: FirstRunFlags.hasGoal,
-        savedRaw: learningPathModePreference,
-      );
+      selectedMode = pathLessonMode(savedRaw: learningPathModePreference);
       Logger.debug(
           '[LEARNING_PATH_DETAIL] Using lesson mode: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);

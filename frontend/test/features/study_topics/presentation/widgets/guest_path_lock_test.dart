@@ -113,7 +113,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Your next path needs an account'), findsOneWidget);
     expect(opened, isEmpty);
-    await tester.tap(find.text('Continue as guest'));
+    await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Path mine'));

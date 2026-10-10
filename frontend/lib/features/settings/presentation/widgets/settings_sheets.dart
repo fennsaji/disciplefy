@@ -21,6 +21,7 @@ import 'package:disciplefy_bible_study/features/settings/presentation/bloc/setti
 import 'package:disciplefy_bible_study/features/settings/presentation/bloc/settings_event.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_group.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheet.dart';
+import 'package:disciplefy_bible_study/features/study_generation/data/repositories/token_cost_repository.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 import 'package:disciplefy_bible_study/features/user_profile/data/models/user_profile_model.dart';
 import 'package:disciplefy_bible_study/features/user_profile/data/services/user_profile_service.dart';
@@ -511,12 +512,21 @@ void showStudyModeSheet(BuildContext context, String? currentMode) {
   );
 }
 
-/// Study mode used for learning path topics.
-void showLearningPathStudyModeSheet(BuildContext context, String? currentMode) {
+/// Study mode used for learning path topics. Each mode shows what a path
+/// lesson costs in it: 0 credits in Standard (the only free mode), the
+/// mode's credit cost otherwise.
+Future<void> showLearningPathStudyModeSheet(
+  BuildContext context,
+  String? currentMode, {
+  bool useRootNavigator = false,
+}) async {
   final parentContext = context;
+  final costs = await _pathLessonCosts();
+  if (!parentContext.mounted) return;
 
-  showSettingsSheet<void>(
-    context: context,
+  await showSettingsSheet<void>(
+    context: parentContext,
+    useRootNavigator: useRootNavigator,
     builder: (sheetContext) {
       Future<void> choose(String? value, String label) async {
         // Learning paths always store a value ("Ask" has its own value).
@@ -575,9 +585,31 @@ void showLearningPathStudyModeSheet(BuildContext context, String? currentMode) {
         currentMode: currentMode,
         askEveryTimeValue: StudyModePreferences.learningPathDefault,
         onChoose: choose,
+        costs: costs,
       );
     },
   );
+}
+
+/// Credits a path lesson costs per mode, in the study content language:
+/// Standard is free, the rest cost what the backend says. A mode whose cost
+/// cannot be read is left out (its row shows no cost).
+Future<Map<StudyMode, int>> _pathLessonCosts() async {
+  final costs = <StudyMode, int>{StudyMode.standard: 0};
+  try {
+    final language =
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+    final repository = sl<TokenCostRepository>();
+    for (final mode in StudyMode.values) {
+      if (mode == StudyMode.standard) continue;
+      final result = await repository.getTokenCost(language.code, mode.value);
+      result.fold((_) {}, (cost) => costs[mode] = cost);
+    }
+  } catch (e) {
+    Logger.warning('Settings: path lesson costs unavailable',
+        context: {'error': e.runtimeType.toString()});
+  }
+  return costs;
 }
 
 /// Recommended / Ask every time, then one row per study mode.
@@ -590,12 +622,16 @@ class _StudyModeSheetBody extends StatelessWidget {
   final String? askEveryTimeValue;
   final Future<void> Function(String? value, String label) onChoose;
 
+  /// Credits per mode shown after each mode's description; none when null.
+  final Map<StudyMode, int>? costs;
+
   const _StudyModeSheetBody({
     required this.title,
     required this.description,
     required this.currentMode,
     required this.askEveryTimeValue,
     required this.onChoose,
+    this.costs,
   });
 
   @override
@@ -611,8 +647,10 @@ class _StudyModeSheetBody extends StatelessWidget {
             SettingsRadioRow(
               icon: Icons.stars_outlined,
               title: recommended,
-              subtitle:
-                  context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
+              // On path lessons 'recommended' means Standard, the free mode.
+              subtitle: context.tr(costs != null
+                  ? TranslationKeys.settingsUseRecommendedPathSubtitle
+                  : TranslationKeys.settingsUseRecommendedSubtitle),
               selected: currentMode == StudyModePreferences.recommended,
               onTap: () =>
                   onChoose(StudyModePreferences.recommended, recommended),
@@ -634,8 +672,13 @@ class _StudyModeSheetBody extends StatelessWidget {
               SettingsRadioRow(
                 icon: mode.iconData,
                 title: studyModeName(context, mode),
-                subtitle:
-                    '${mode.durationText} • ${studyModeDescription(context, mode)}',
+                subtitle: [
+                  mode.durationText,
+                  studyModeDescription(context, mode),
+                  if (costs?[mode] != null)
+                    context.tr(TranslationKeys.ledgerCreditsCount,
+                        {'count': '${costs![mode]}'}),
+                ].join(' • '),
                 selected: currentMode == mode.value,
                 onTap: () => onChoose(mode.value, studyModeName(context, mode)),
               ),

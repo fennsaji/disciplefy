@@ -13,9 +13,11 @@ import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 Future<T?> showSettingsSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  bool useRootNavigator = false,
 }) =>
     showModalBottomSheet<T>(
       context: context,
+      useRootNavigator: useRootNavigator,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: builder,

@@ -38,61 +38,13 @@ ActivePathSummary? enrolledPathSummary(HomeCombinedState state) =>
         : null;
 
 /// Lesson mode shown on today's lesson card before the person picks one:
-/// Quick for lesson 1 after the first-run goal, else [saved] (the
-/// learning-path preference, see [nextLessonModeNow]). Same rule as
+/// [saved] (the learning-path preference, see [nextLessonModeNow]). Same rule as
 /// [pathLessonMode], which the path detail page uses.
 StudyMode defaultTodayLessonMode({
   required ActivePathSummary? summary,
-  required bool hasFirstRunGoal,
   required StudyMode saved,
 }) =>
-    pathLessonMode(
-      lessonNumber: summary?.next?.number,
-      hasFirstRunGoal: hasFirstRunGoal,
-      savedRaw: saved.name,
-    );
-
-/// Saves the learning-path lesson mode [value] (a [StudyMode] name) on the
-/// profile and on this device, as the lesson card's mode chip does on Home
-/// and Topics. A guest without a profile row keeps it on the device only;
-/// nothing is shown when either write fails.
-Future<void> persistLessonModePreference(String value) async {
-  try {
-    await sl<LanguagePreferenceService>()
-        .cacheLearningPathStudyModePreference(value);
-  } catch (e) {
-    Logger.warning('Today: could not cache lesson mode',
-        tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
-  }
-  final auth = sl<AuthStateProvider>();
-  try {
-    final result = await sl<UserProfileService>()
-        .updateLearningPathStudyModePreference(value);
-    result.fold(
-      (_) => _keepModeOnCachedProfile(auth, value),
-      (profile) {
-        final userId = auth.userId;
-        if (userId != null) {
-          auth.cacheProfile(
-              userId, UserProfileModel.fromEntity(profile).toJson());
-        }
-      },
-    );
-  } catch (e) {
-    Logger.warning('Today: could not save lesson mode',
-        tag: 'HOME_TODAY', context: {'error': e.runtimeType.toString()});
-    _keepModeOnCachedProfile(auth, value);
-  }
-}
-
-/// The cached profile's mode is read before the device copy, so it must
-/// carry the new mode too when the server write did not happen.
-void _keepModeOnCachedProfile(AuthStateProvider auth, String value) {
-  final userId = auth.userId;
-  final profile = auth.userProfile;
-  if (userId == null || profile == null) return;
-  auth.cacheProfile(userId, {...profile, 'learning_path_study_mode': value});
-}
+    pathLessonMode(savedRaw: saved.name);
 
 /// Home's Today layout, in this order and nothing else: the verse hero, the
 /// path section (header, progress strip, today's lesson, or the first-path
@@ -117,13 +69,13 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
   /// The learning-path preference; [StudyMode.standard] if it cannot be read.
   StudyMode _savedMode = StudyMode.standard;
 
-  /// The mode picked on the card in this session, which wins over defaults.
-  StudyMode? _chosenMode;
-
   @override
   void initState() {
     super.initState();
     _readSavedMode();
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().addListener(_onProfileChanged);
+    }
     // HomeBloc outside its combined state never reports a finished path
     // load, so the banner is worked out straight away.
     final state = context.read<HomeBloc>().state;
@@ -134,6 +86,9 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
 
   @override
   void dispose() {
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().removeListener(_onProfileChanged);
+    }
     _newForYou.close();
     super.dispose();
   }
@@ -149,18 +104,19 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
     }
   }
 
-  StudyMode _modeFor(ActivePathSummary? summary) =>
-      _chosenMode ??
-      defaultTodayLessonMode(
+  /// Re-reads the saved mode when the profile changes (a server refresh, or
+  /// the mode changed in Settings or on another card), so the card never
+  /// keeps a stale mode from the cached profile.
+  void _onProfileChanged() {
+    final previous = _savedMode;
+    _readSavedMode();
+    if (mounted && _savedMode != previous) setState(() {});
+  }
+
+  StudyMode _modeFor(ActivePathSummary? summary) => defaultTodayLessonMode(
         summary: summary,
-        hasFirstRunGoal: FirstRunFlags.hasGoal,
         saved: _savedMode,
       );
-
-  void _onModeChanged(StudyMode mode) {
-    setState(() => _chosenMode = mode);
-    unawaited(persistLessonModePreference(mode.name));
-  }
 
   void _refreshPath() =>
       context.read<HomeBloc>().add(const LoadActiveLearningPath(
@@ -239,7 +195,6 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
                         summary: summary,
                         loading: home.isLoadingActivePath,
                         mode: _modeFor(summary),
-                        onModeChanged: _onModeChanged,
                         onProgressMayHaveChanged: _refreshPath,
                       ),
                     ),

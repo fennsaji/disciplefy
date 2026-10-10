@@ -48,9 +48,8 @@ LearningPath? topicsCurrentPath(
 class TopicsCurrentPathCard extends StatelessWidget {
   final ActivePathSummary? summary;
 
-  /// Lesson mode on the card's chip, chosen (and saved) by the caller.
+  /// Lesson mode shown on the card, worked out by the caller.
   final StudyMode mode;
-  final ValueChanged<StudyMode> onModeChanged;
 
   /// Opens the next lesson in [mode].
   final VoidCallback onContinue;
@@ -67,11 +66,8 @@ class TopicsCurrentPathCard extends StatelessWidget {
     required this.onSeePath,
     required this.onBrowse,
     this.mode = StudyMode.standard,
-    this.onModeChanged = _ignoreMode,
     this.onChooseNextPath,
   });
-
-  static void _ignoreMode(StudyMode _) {}
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +119,6 @@ class TopicsCurrentPathCard extends StatelessWidget {
           key: const Key('topics_current_path_lesson'),
           summary: summary,
           mode: mode,
-          onModeChanged: onModeChanged,
           onStart: onContinue,
           onChooseNextPath: onChooseNextPath ?? onBrowse,
           onSeePath: onSeePath,

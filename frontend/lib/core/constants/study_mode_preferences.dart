@@ -9,6 +9,7 @@
 library;
 
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart';
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart';
 
@@ -81,22 +82,15 @@ class StudyModePreferences {
 
 /// The one rule for the mode a path lesson starts in, shared by the Home and
 /// Topics lesson cards, the path detail page and lesson complete:
-/// - lesson 1 after the first-run goal → Quick Read;
-/// - otherwise the saved concrete `learning_path_study_mode` ([savedRaw]);
+/// - the saved concrete `learning_path_study_mode` ([savedRaw]);
 /// - 'recommended', 'ask', nothing or an unknown value → Standard.
 ///
 /// Decision (2026-10-10): 'recommended' means Standard everywhere. It no
 /// longer means the path's own `recommended_mode` on the path detail page,
 /// which the Home summary does not even carry, so a lesson opened from Home,
 /// Topics or the path page now starts in the same mode.
-StudyMode pathLessonMode({
-  required int? lessonNumber,
-  required bool hasFirstRunGoal,
-  required String? savedRaw,
-}) {
-  if (lessonNumber == 1 && hasFirstRunGoal) return StudyMode.quick;
-  return studyModeFromString(savedRaw) ?? StudyMode.standard;
-}
+StudyMode pathLessonMode({required String? savedRaw}) =>
+    studyModeFromString(savedRaw) ?? StudyMode.standard;
 
 /// Mode for lessons 2+ of a path: the user's concrete learning-path mode, or
 /// Standard when they chose 'recommended', 'ask' or nothing.
@@ -104,12 +98,14 @@ Future<StudyMode> resolveNextLessonMode() async => nextLessonModeNow();
 
 /// [resolveNextLessonMode], read synchronously (the preference is cached on
 /// the profile or the device), so a lesson card starts on the saved mode.
-StudyMode nextLessonModeNow() => pathLessonMode(
-      lessonNumber: null,
-      hasFirstRunGoal: false,
-      savedRaw: sl<LanguagePreferenceService>()
-          .getLearningPathStudyModePreferenceRaw(),
-    );
+/// A guest always gets Standard: it is the only free mode on a path lesson
+/// and a guest cannot pay for another.
+StudyMode nextLessonModeNow() => GuestRouteGate.currentUserIsGuest()
+    ? StudyMode.standard
+    : pathLessonMode(
+        savedRaw: sl<LanguagePreferenceService>()
+            .getLearningPathStudyModePreferenceRaw(),
+      );
 
 /// The general "Default study mode" for a new study that names no mode
 /// (a notification, a tapped verse, a link): the saved concrete mode, else

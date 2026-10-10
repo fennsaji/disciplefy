@@ -69,7 +69,7 @@ void main() {
     expect(find.text('Memory verses need an account'), findsOneWidget);
     expect(find.byType(AccountNeededSheet), findsOneWidget);
 
-    await tester.tap(find.text('Continue as guest'));
+    await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(find.byType(AccountNeededSheet), findsNothing);
     expect(location(), '/');
@@ -87,7 +87,7 @@ void main() {
     expect(homeBuilds, greaterThanOrEqualTo(buildsWithSheet));
     expect(find.byType(AccountNeededSheet), findsOneWidget);
 
-    await tester.tap(find.text('Continue as guest'));
+    await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(find.byType(AccountNeededSheet), findsNothing);
   });
@@ -101,7 +101,7 @@ void main() {
     router.go('/?account=memory_verses');
     await tester.pumpAndSettle();
     expect(find.byType(AccountNeededSheet), findsOneWidget);
-    await tester.tap(find.text('Continue as guest'));
+    await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
 
     router.go('/?account=memory_verses');
@@ -132,7 +132,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.byType(AccountNeededSheet), findsOneWidget);
-    await tester.tap(find.text('Continue as guest'));
+    await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(location(), '/');
   });

@@ -133,39 +133,20 @@ void main() {
   });
 
   group('pathLessonMode (Home, Topics, path detail, lesson complete)', () {
-    final cases = <(int?, bool, String?), StudyMode>{
-      // First-run lesson 1 is Quick whatever is saved.
-      (1, true, null): StudyMode.quick,
-      (1, true, 'recommended'): StudyMode.quick,
-      (1, true, 'standard'): StudyMode.quick,
-      (1, true, 'deep'): StudyMode.quick,
-      // Without the first-run goal, lesson 1 follows the saved mode.
-      (1, false, null): StudyMode.standard,
-      (1, false, 'quick'): StudyMode.quick,
-      // The goal flag never makes a later lesson Quick.
-      (5, true, null): StudyMode.standard,
-      (5, true, 'recommended'): StudyMode.standard,
-      (5, true, 'ask'): StudyMode.standard,
-      (5, true, 'standard'): StudyMode.standard,
-      (2, false, 'recommended'): StudyMode.standard,
-      // A saved concrete mode wins for lessons 2+.
-      (5, false, 'quick'): StudyMode.quick,
-      (5, true, 'quick'): StudyMode.quick,
-      (3, false, 'deep'): StudyMode.deep,
-      (3, false, 'lectio'): StudyMode.lectio,
-      (null, false, 'sermon'): StudyMode.sermon,
-      (null, false, 'bogus'): StudyMode.standard,
+    final cases = <String?, StudyMode>{
+      null: StudyMode.standard,
+      'recommended': StudyMode.standard,
+      'ask': StudyMode.standard,
+      'bogus': StudyMode.standard,
+      'standard': StudyMode.standard,
+      'quick': StudyMode.quick,
+      'deep': StudyMode.deep,
+      'lectio': StudyMode.lectio,
+      'sermon': StudyMode.sermon,
     };
     for (final c in cases.entries) {
-      final (lesson, goal, raw) = c.key;
-      test(
-          'lesson $lesson, first-run goal $goal, saved "$raw" → '
-          '${c.value.name}', () {
-        expect(
-          pathLessonMode(
-              lessonNumber: lesson, hasFirstRunGoal: goal, savedRaw: raw),
-          c.value,
-        );
+      test('saved "${c.key}" → ${c.value.name}', () {
+        expect(pathLessonMode(savedRaw: c.key), c.value);
       });
     }
   });

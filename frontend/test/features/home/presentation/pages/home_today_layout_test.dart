@@ -569,55 +569,14 @@ void main() {
           findsNothing);
     });
 
-    testWidgets('Start lesson 4 opens lesson 4 in the chosen mode and saves it',
-        (tester) async {
-      await pumpHome(tester, summary: _summary4of8);
-      // Saved preference: Standard.
-      expect(find.text('Standard · 8 min'), findsOneWidget);
-      await tester.tap(find.text('Standard · 8 min'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Quick Read · 3 min').last);
-      await tester.pumpAndSettle();
-      expect(find.text('Quick Read · 3 min'), findsOneWidget);
-      verify(() => languagePrefs.cacheLearningPathStudyModePreference('quick'))
-          .called(1);
-      verify(() => profile.updateLearningPathStudyModePreference('quick'))
-          .called(1);
-
-      await tester.tap(find.text('Start lesson 4'));
-      await tester.pumpAndSettle();
-      expect(find.text('stub:lesson:quick'), findsOneWidget);
-
-      // Back on Home the path is refreshed.
-      clearInteractions(homeBloc);
-      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
-      await tester.pumpAndSettle();
-      verify(() =>
-              homeBloc.add(const LoadActiveLearningPath(forceRefresh: true)))
-          .called(1);
-    });
-
-    testWidgets('a failed profile write keeps the mode on the cached profile',
-        (tester) async {
-      when(() => auth.userProfile)
-          .thenReturn({'id': 'u1', 'learning_path_study_mode': 'standard'});
-      await pumpHome(tester, summary: _summary4of8);
-      await tester.tap(find.text('Standard · 8 min'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Quick Read · 3 min').last);
-      await tester.pumpAndSettle();
-      verify(() => auth.cacheProfile(
-          'u1', {'id': 'u1', 'learning_path_study_mode': 'quick'})).called(1);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('lesson 1 after the first-run goal starts as Quick Read',
+    testWidgets('lesson 1 after the first-run goal starts as Standard',
         (tester) async {
       await tester.runAsync(() =>
           Hive.box('app_settings').put(FirstRunCubit.goalKey, 'know_jesus'));
       await pumpHome(tester, summary: _summaryLesson1);
       expect(find.text('Start lesson 1'), findsOneWidget);
-      expect(find.text('Quick Read · 3 min'), findsOneWidget);
+      expect(find.text('Standard · 8 min'), findsOneWidget);
+      expect(find.text('Quick Read · 3 min'), findsNothing);
     });
 
     testWidgets('a saved Quick path mode shows and opens Quick Read',
@@ -730,17 +689,14 @@ void main() {
       expect(find.byKey(const Key('daily_verse_memory_lock')), findsOneWidget);
     });
 
-    testWidgets('a guest can change the lesson mode (kept on the device)',
+    testWidgets('a guest always sees Standard, whatever is saved',
         (tester) async {
       asGuest();
+      when(() => languagePrefs.getLearningPathStudyModePreferenceRaw())
+          .thenReturn('quick');
       await pumpHome(tester, summary: _summary4of8);
-      await tester.tap(find.text('Standard · 8 min'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Quick Read · 3 min').last);
-      await tester.pumpAndSettle();
-      verify(() => languagePrefs.cacheLearningPathStudyModePreference('quick'))
-          .called(1);
-      expect(find.text('Quick Read · 3 min'), findsOneWidget);
+      expect(find.text('Standard · 8 min'), findsOneWidget);
+      expect(find.text('Quick Read · 3 min'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

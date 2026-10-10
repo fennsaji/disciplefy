@@ -1,11 +1,11 @@
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import { isFreeCatalogueLesson, normalizeTopicTitle, resolveCatalogueRequest, titleMatchesTopic } from './lesson-pricing.ts'
 
-Deno.test('path lessons are free in quick and in the recommended mode', () => {
-  assertEquals(isFreeCatalogueLesson('standard', 'quick'), true)
+Deno.test('path lessons are free in standard only', () => {
   assertEquals(isFreeCatalogueLesson('standard', 'standard'), true)
+  assertEquals(isFreeCatalogueLesson('standard', 'quick'), false)
   assertEquals(isFreeCatalogueLesson('standard', 'deep'), false)
-  assertEquals(isFreeCatalogueLesson(null, 'quick'), false)
+  assertEquals(isFreeCatalogueLesson(null, 'standard'), false)
 })
 
 Deno.test('a topic outside every path is never free, in any mode', () => {
@@ -14,22 +14,17 @@ Deno.test('a topic outside every path is never free, in any mode', () => {
   }
 })
 
-Deno.test('a path lesson is free in its own recommended mode, whatever that mode is', () => {
-  for (const mode of ['quick', 'standard', 'deep', 'lectio', 'sermon']) {
-    assertEquals(isFreeCatalogueLesson(mode, mode), true)
+Deno.test('standard is free whatever mode the path recommends', () => {
+  for (const recommended of ['quick', 'standard', 'deep', 'lectio', 'sermon']) {
+    assertEquals(isFreeCatalogueLesson(recommended, 'standard'), true)
   }
 })
 
-Deno.test('a path lesson in another paid mode still costs', () => {
-  assertEquals(isFreeCatalogueLesson('deep', 'standard'), false)
-  assertEquals(isFreeCatalogueLesson('standard', 'lectio'), false)
-  assertEquals(isFreeCatalogueLesson('standard', 'sermon'), false)
-  assertEquals(isFreeCatalogueLesson('quick', 'standard'), false)
-})
-
-Deno.test('quick is free for a path lesson whose path recommends a deeper mode', () => {
-  assertEquals(isFreeCatalogueLesson('deep', 'quick'), true)
-  assertEquals(isFreeCatalogueLesson('sermon', 'quick'), true)
+Deno.test('every other mode costs, even the recommended one', () => {
+  for (const mode of ['quick', 'deep', 'lectio', 'sermon']) {
+    assertEquals(isFreeCatalogueLesson(mode, mode), false)
+    assertEquals(isFreeCatalogueLesson('standard', mode), false)
+  }
 })
 
 Deno.test('titles compare without case, outer space or repeated inner space', () => {
@@ -48,9 +43,9 @@ Deno.test('a title that is not one of the topic titles does not match', () => {
 
 const titles = ['Walking in Faith', 'विश्वास में चलना']
 
-Deno.test('a matching path lesson in quick is free and keyed by topic', () => {
+Deno.test('a matching path lesson in standard is free and keyed by topic', () => {
   assertEquals(
-    resolveCatalogueRequest({ topicId: 't1', inputValue: 'walking in faith', titles, recommendedMode: 'standard', studyMode: 'quick' }),
+    resolveCatalogueRequest({ topicId: 't1', inputValue: 'walking in faith', titles, recommendedMode: 'deep', studyMode: 'standard' }),
     { cacheTopicId: 't1', isFree: true },
   )
 })

@@ -106,9 +106,9 @@ void main() {
           isTrue);
     });
 
-    test('a guest, in any mode', () {
+    test('never a guest, in any mode', () {
       for (final mode in StudyMode.values) {
-        expect(LessonModeSwitch.shownFor(mode: mode, isGuest: true), isTrue);
+        expect(LessonModeSwitch.shownFor(mode: mode, isGuest: true), isFalse);
       }
     });
 

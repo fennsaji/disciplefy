@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
+import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
@@ -58,7 +60,6 @@ import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_today_layout.dart';
-import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
@@ -388,15 +389,15 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   /// The learning-path lesson mode; [StudyMode.standard] if it cannot be read.
   StudyMode _savedMode = StudyMode.standard;
 
-  /// The mode picked on the lesson card in this session; wins over defaults.
-  StudyMode? _chosenMode;
-
   @override
   void initState() {
     super.initState();
     _triggerWalkthroughIfNeeded();
     _loadFallbackPath();
     _readSavedMode();
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().addListener(_onProfileChanged);
+    }
 
     // Handle deep link navigation from notification
     if (widget.topicId != null) {
@@ -436,19 +437,20 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
   }
 
+  /// Re-reads the saved mode when the profile changes (a server refresh, or
+  /// the mode changed in Settings or on another card), so the card never
+  /// keeps a stale mode from the cached profile.
+  void _onProfileChanged() {
+    final previous = _savedMode;
+    _readSavedMode();
+    if (mounted && _savedMode != previous) setState(() {});
+  }
+
   /// The lesson mode on the card, as Home works it out.
-  StudyMode _modeFor(ActivePathSummary? summary) =>
-      _chosenMode ??
-      defaultTodayLessonMode(
+  StudyMode _modeFor(ActivePathSummary? summary) => defaultTodayLessonMode(
         summary: summary,
-        hasFirstRunGoal: FirstRunFlags.hasGoal,
         saved: _savedMode,
       );
-
-  void _onModeChanged(StudyMode mode) {
-    setState(() => _chosenMode = mode);
-    unawaited(persistLessonModePreference(mode.name));
-  }
 
   Future<void> _loadFallbackPath() async {
     try {
@@ -469,6 +471,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   void dispose() {
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().removeListener(_onProfileChanged);
+    }
     _navGuard.dispose();
     super.dispose();
   }
@@ -676,7 +681,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         final card = TopicsCurrentPathCard(
           summary: summary,
           mode: _modeFor(summary),
-          onModeChanged: _onModeChanged,
           onChooseNextPath: _chooseNextPath,
           onContinue: () {
             if (summary != null) _continuePath(summary);
@@ -973,24 +977,26 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ),
-              PopupMenuItem<String>(
-                value: 'study_mode',
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome, color: palette.accentIcon),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        context.tr(TranslationKeys.studyModePreferenceTitle),
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          color: palette.text,
+              // A guest studies path lessons in Standard only.
+              if (!GuestRouteGate.currentUserIsGuest())
+                PopupMenuItem<String>(
+                  value: 'study_mode',
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: palette.accentIcon),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          context.tr(TranslationKeys.studyModePreferenceTitle),
+                          style: AppFonts.inter(
+                            fontSize: 14,
+                            color: palette.text,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               PopupMenuDivider(color: palette.hairline),
               PopupMenuItem<String>(
                 value: 'reset_progress',
@@ -1113,127 +1119,10 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// Show learning path study mode preference bottom sheet
   void _showStudyModeSelector(BuildContext context) {
-    final authProvider = sl<AuthStateProvider>();
-
-    // Get current learning path mode preference
-    final currentMode =
-        authProvider.userProfile?['learning_path_study_mode'] as String?;
-
-    // Capture parent context for snackbars after sheet closes
-    final parentContext = context;
-
-    showModalBottomSheet(
-      useRootNavigator: true,
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        void choose(String value) =>
-            _chooseLearningPathMode(sheetContext, parentContext, value);
-        final recommended =
-            sheetContext.tr(TranslationKeys.settingsUseRecommended);
-        final ask = sheetContext.tr(TranslationKeys.settingsAskEveryTime);
-        return SettingsSheetFrame(
-          title: sheetContext
-              .tr(TranslationKeys.settingsLearningPathStudyModePreference),
-          description: sheetContext
-              .tr(TranslationKeys.settingsLearningPathStudyModeDescription),
-          children: [
-            SettingsSheetGroup(
-              children: [
-                SettingsRadioRow(
-                  icon: Icons.stars_outlined,
-                  title: recommended,
-                  subtitle: sheetContext
-                      .tr(TranslationKeys.settingsUseRecommendedSubtitle),
-                  selected: currentMode == StudyModePreferences.recommended,
-                  onTap: () => choose(StudyModePreferences.recommended),
-                ),
-                SettingsRadioRow(
-                  icon: Icons.help_outline,
-                  title: ask,
-                  subtitle: sheetContext
-                      .tr(TranslationKeys.settingsAskEveryTimeSubtitle),
-                  selected:
-                      currentMode == StudyModePreferences.learningPathDefault,
-                  onTap: () => choose(StudyModePreferences.learningPathDefault),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            SettingsSheetGroup(
-              children: [
-                for (final mode in StudyMode.values)
-                  SettingsRadioRow(
-                    icon: mode.iconData,
-                    title: _getStudyModeTranslatedName(mode, sheetContext),
-                    subtitle: '${mode.durationText} • '
-                        '${_getStudyModeTranslatedDescription(mode, sheetContext)}',
-                    selected: currentMode == mode.value,
-                    onTap: () => choose(mode.value),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Saves the learning-path study mode, refreshes the cached profile and
-  /// closes the sheet, reporting the outcome on the page.
-  Future<void> _chooseLearningPathMode(
-    BuildContext sheetContext,
-    BuildContext parentContext,
-    String value,
-  ) async {
-    try {
-      final userProfileService = sl<UserProfileService>();
-      final authProvider = sl<AuthStateProvider>();
-
-      final result =
-          await userProfileService.updateLearningPathStudyModePreference(value);
-
-      if (!parentContext.mounted) return;
-      result.fold(
-        (failure) {
-          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-          showAppSnackBar(
-            parentContext,
-            parentContext.tr(TranslationKeys.errorUpdatingPreference),
-            tone: AppSnackTone.error,
-          );
-        },
-        (profile) {
-          // Update AuthStateProvider cache with new profile
-          final userId = authProvider.userId;
-          if (userId != null) {
-            final profileMap = UserProfileModel.fromEntity(profile).toJson();
-            authProvider.cacheProfile(userId, profileMap);
-          }
-
-          // Close sheet AFTER cache is updated
-          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-
-          showAppSnackBar(
-            parentContext,
-            parentContext.tr(TranslationKeys.preferenceUpdatedSuccessfully),
-            tone: AppSnackTone.success,
-          );
-        },
-      );
-    } catch (e) {
-      // Close sheet even on error
-      if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-      if (parentContext.mounted) {
-        showAppSnackBar(
-          parentContext,
-          parentContext.tr(TranslationKeys.errorUpdatingPreference),
-          tone: AppSnackTone.error,
-        );
-      }
-    }
+    final currentMode = sl<AuthStateProvider>()
+        .userProfile?['learning_path_study_mode'] as String?;
+    showLearningPathStudyModeSheet(context, currentMode,
+        useRootNavigator: true);
   }
 
   /// Get translated display name for study mode enum

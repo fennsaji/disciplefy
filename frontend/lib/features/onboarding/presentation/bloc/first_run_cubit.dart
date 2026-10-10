@@ -23,7 +23,7 @@ import 'package:disciplefy_bible_study/features/walkthrough/domain/walkthrough_s
 
 /// Drives the first-run goal screen: saves the language and goal, starts a
 /// guest when nobody is signed in, enrols the goal's path and hands back the
-/// location of lesson 1 in Quick Read.
+/// location of lesson 1 in Standard (the free mode on a path lesson).
 ///
 /// Never logs ids or user input; goal and slug names only.
 class FirstRunCubit extends Cubit<FirstRunState> {
@@ -219,7 +219,7 @@ class FirstRunCubit extends Cubit<FirstRunState> {
     final location = buildLessonLaunchLocation(
       path: path,
       topic: first,
-      mode: StudyMode.quick,
+      mode: StudyMode.standard,
       language: language,
     );
     return '$location&$firstRunParam=1';

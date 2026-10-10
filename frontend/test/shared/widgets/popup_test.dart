@@ -144,7 +144,7 @@ void main() {
       final eyebrow = tester.widget<Text>(find.text('ACHIEVEMENT UNLOCKED'));
       expect(eyebrow.style?.color, gold);
       expect(find.text('Faithful Reader of the Whole Gospel'), findsOneWidget);
-      expect(find.text('+50 XP'), findsOneWidget);
+      expect(find.textContaining('XP'), findsNothing);
       expect(find.byIcon(Icons.emoji_events_outlined), findsOneWidget);
       expect(
           pillFill(tester, find.byKey(const Key('achievement_unlock_dismiss'))),
