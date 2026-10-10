@@ -204,7 +204,7 @@ class _AccountNeededSheetState extends State<AccountNeededSheet> {
                   textStyle:
                       AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
-                child: Text(context.tr(TranslationKeys.accountContinueGuest)),
+                child: Text(context.tr(TranslationKeys.accountNotNow)),
               ),
             ],
           ),

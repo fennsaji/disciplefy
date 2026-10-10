@@ -67,7 +67,7 @@ void main() {
       final result = await tapAsk(tester, guest: true);
       expect(find.text('Discipler needs an account'), findsOneWidget);
       expect(find.text('Tap to upgrade'), findsNothing);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);
     });
@@ -103,7 +103,7 @@ void main() {
       final result = await tapListen(tester, guest: true);
       expect(find.text('Listening needs an account'), findsOneWidget);
       expect(find.textContaining('pgrade'), findsNothing);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);
     });

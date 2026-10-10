@@ -87,15 +87,14 @@ void main() {
   });
 
   group('requireAccount', () {
-    testWidgets('guest sees the sheet; Continue as guest returns false',
-        (tester) async {
+    testWidgets('guest sees the sheet; Not now returns false', (tester) async {
       final result = await tapGo(tester, AccountReason.discipler);
       expect(find.text('Discipler needs an account'), findsOneWidget);
       expect(find.text('Join groups and keep your progress'), findsOneWidget);
       // A guest only ever gets one path; an account opens all of them.
       expect(find.text('Unlock every learning path'), findsOneWidget);
       expect(find.text('Start a second path any time'), findsNothing);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);
       expect(find.text('Discipler needs an account'), findsNothing);
@@ -116,7 +115,7 @@ void main() {
       when(() => flags.guestMode).thenReturn(false);
       final result = await tapGo(tester, AccountReason.community);
       expect(find.text('Groups need an account'), findsOneWidget);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);
     });
@@ -211,7 +210,7 @@ void main() {
             password: 'secret123',
             fullName: 'Anu Mathew',
           )).called(1);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);
     });
@@ -242,7 +241,7 @@ void main() {
           findsOneWidget);
       expect(find.text("Couldn't sign up. Please try again."), findsNothing);
       expect(find.byKey(const Key('account_email_password')), findsOneWidget);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await result, isFalse);
     });
@@ -278,7 +277,7 @@ void main() {
       for (final entry in expected.entries) {
         await tapGo(tester, entry.key);
         expect(find.text(entry.value), findsOneWidget, reason: '${entry.key}');
-        await tester.tap(find.text('Continue as guest'));
+        await tester.tap(find.text('Not now'));
         await tester.pumpAndSettle();
       }
     });
@@ -297,7 +296,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(identical(first, second), isTrue);
       expect(find.byType(AccountNeededSheet), findsOneWidget);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(await first, isFalse);
     });
@@ -306,7 +305,7 @@ void main() {
         (tester) async {
       await tapGo(tester, AccountReason.community);
       expect(find.text('Continue with Apple'), findsNothing);
-      await tester.tap(find.text('Continue as guest'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
 
       AccountLinkPanel.debugShowApple = true;

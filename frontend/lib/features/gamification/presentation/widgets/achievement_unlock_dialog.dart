@@ -9,7 +9,8 @@ import 'package:disciplefy_bible_study/features/gamification/domain/entities/ach
 /// Dialog shown when user unlocks an achievement.
 ///
 /// Popup: gold "ACHIEVEMENT UNLOCKED" eyebrow, the badge in a soft gold
-/// circle, the achievement name, its XP reward and one primary pill.
+/// circle, the achievement name and one primary pill. No XP wording: this
+/// pops up on a new user's first lessons.
 class AchievementUnlockDialog extends StatelessWidget {
   final AchievementUnlockResult achievement;
 
@@ -75,10 +76,6 @@ class AchievementUnlockDialog extends StatelessWidget {
           eyebrow: context.tr(TranslationKeys.popupAchievementEyebrow),
           title: achievement.achievementName,
         ),
-        if (achievement.xpReward > 0) ...[
-          const SizedBox(height: 14),
-          XpRewardPill(xp: achievement.xpReward),
-        ],
         const SizedBox(height: 24),
         PopupPrimaryButton(
           key: const Key('achievement_unlock_dismiss'),
