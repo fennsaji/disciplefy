@@ -2,6 +2,7 @@
 /// person has not tried yet.
 ///
 /// Rules (owner, 2026-10-09; replaces "one new banner a week"):
+/// - Signed-in accounts only: a guest never sees a banner.
 /// - Nothing in the person's first week: the first banner can show on the
 ///   7th calendar day after their start (account or guest creation, from the
 ///   server), and never before lesson 1 is completed.
@@ -141,19 +142,10 @@ class NewForYouEligibility {
       );
 }
 
-/// Kinds that need an account: a guest would only reach the account sheet.
-const Set<NewForYouKind> accountOnlyNewForYouKinds = {
-  NewForYouKind.memory,
-  NewForYouKind.generate,
-  NewForYouKind.discipler,
-  NewForYouKind.fellowships,
-};
-
 /// Builds the eligibility from plain signals.
 ///
-/// A kind is available when its feature is not in [hiddenFeatures], has not
-/// been used ([usedFeatures]) and, for a guest, is not in
-/// [accountOnlyNewForYouKinds].
+/// A kind is available when its feature is not in [hiddenFeatures] and has
+/// not been used ([usedFeatures]). A guest gets none.
 NewForYouEligibility buildEligibility({
   required bool isGuest,
   required bool firstLessonCompleted,
@@ -164,13 +156,16 @@ NewForYouEligibility buildEligibility({
   return NewForYouEligibility(
     firstLessonCompleted: firstLessonCompleted,
     startedAt: startedAt,
-    available: {
-      for (final kind in NewForYouKind.values)
-        if (!hiddenFeatures.contains(kind) &&
-            !usedFeatures.contains(kind) &&
-            (!isGuest || !accountOnlyNewForYouKinds.contains(kind)))
-          kind,
-    },
+    // Owner rule (2026-10-11): New for you is for signed-in accounts only;
+    // a guest is never offered a banner.
+    available: isGuest
+        ? const {}
+        : {
+            for (final kind in NewForYouKind.values)
+              if (!hiddenFeatures.contains(kind) &&
+                  !usedFeatures.contains(kind))
+                kind,
+          },
   );
 }
 

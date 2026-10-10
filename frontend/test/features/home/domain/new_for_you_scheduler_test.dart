@@ -165,14 +165,11 @@ void main() {
   });
 
   group('guest', () {
-    test('only kinds a guest can use are offered', () {
+    test('a guest is never offered a banner', () {
       final guest = buildEligibility(
           isGuest: true, firstLessonCompleted: true, startedAt: start);
-      var s = NewForYouState.empty();
       for (var d = 7; d < 20; d++) {
-        final kind = pickBanner(s, guest, day(d));
-        expect(kind, NewForYouKind.paths);
-        s = shown(s, kind, day(d));
+        expect(pickBanner(NewForYouState.empty(), guest, day(d)), isNull);
       }
     });
 
@@ -276,20 +273,14 @@ void main() {
       expect(el.startedAt, start);
     });
 
-    test('guest: no account-only kinds (paths only)', () {
-      final el = buildEligibility(isGuest: true, firstLessonCompleted: true);
-      expect(el.available, {NewForYouKind.paths});
-      for (final k in accountOnlyNewForYouKinds) {
-        expect(el.available, isNot(contains(k)));
-      }
-    });
-
-    test('guest with paths hidden: nothing', () {
+    test('guest: no banner of any kind', () {
       final el = buildEligibility(
-          isGuest: true,
-          firstLessonCompleted: true,
-          hiddenFeatures: {NewForYouKind.paths});
+          isGuest: true, firstLessonCompleted: true, startedAt: start);
       expect(el.available, isEmpty);
+      expect(
+          pickBanner(
+              NewForYouState.empty(), el, start.add(const Duration(days: 30))),
+          isNull);
     });
 
     test('hidden kinds are dropped', () {
