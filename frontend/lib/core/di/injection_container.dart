@@ -262,6 +262,9 @@ import '../../features/walkthrough/data/walkthrough_repository_impl.dart';
 import '../connectivity/connectivity_bloc.dart';
 import '../services/connectivity_sync_service.dart';
 import '../../features/saved_guides/data/services/saved_guides_sync_service.dart';
+import '../../features/personalization/data/growth_goal_remote_impl.dart';
+import '../../features/personalization/data/growth_goal_repository_impl.dart';
+import '../../features/personalization/domain/growth_goal_repository.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -740,7 +743,6 @@ Future<void> initializeDependencies() async {
     () => RecommendedTopicsBloc(
       topicsService: sl(),
       languagePreferenceService: sl(),
-      prefs: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );
@@ -878,7 +880,17 @@ Future<void> initializeDependencies() async {
         language: sl(),
         settings: Hive.box('app_settings'),
         walkthrough: sl(),
+        goals: sl(),
       ));
+
+  //! Growth goal (the only personalisation question)
+  sl.registerLazySingleton<GrowthGoalRepository>(
+    () => GrowthGoalRepositoryImpl(
+      remote: GrowthGoalRemoteImpl(client: sl<SupabaseClient>()),
+      settings: Hive.box('app_settings'),
+      currentUserId: () => sl<SupabaseClient>().auth.currentUser?.id,
+    ),
+  );
 
   //! User Profile
   sl.registerLazySingleton<UserProfileRepository>(
