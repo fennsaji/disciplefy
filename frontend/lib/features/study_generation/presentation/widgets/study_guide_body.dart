@@ -1215,6 +1215,8 @@ class StudySectionContinuation extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // The gap between paragraphs: this continues the block above.
+          const SizedBox(height: MarkdownWithScripture.blockSpacing),
           MarkdownWithScripture(
             data: body,
             textStyle:

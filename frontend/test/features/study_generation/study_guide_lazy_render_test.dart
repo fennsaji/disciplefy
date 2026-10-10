@@ -262,4 +262,40 @@ void main() {
     expect(order, expected, reason: 'paragraphs rendered out of order');
     expect(linksSeen, greaterThan(0), reason: 'no tappable scripture links');
   });
+
+  testWidgets(
+      'paragraphs either side of a block split are spaced like any other '
+      'paragraphs', (tester) async {
+    final guide = _longGuide('gap');
+    final controller = await pumpGuide(tester, guide);
+    final parts = chunkSectionMarkdown(guide.summary);
+    expect(parts.length, greaterThan(1));
+    // The last paragraph of the first block and the first of the second.
+    final split = '\n\n'.allMatches(parts.first).length + 1;
+
+    Rect rectOf(int i) => tester.getRect(find.byWidgetPredicate((w) =>
+        w is SelectableText &&
+        (w.textSpan?.toPlainText() ?? w.data ?? '')
+            .contains(_mlParagraph('gap-summary', i))));
+
+    Future<double> gapAfter(int i) async {
+      // Bring the pair on screen.
+      while (find
+          .byWidgetPredicate((w) =>
+              w is SelectableText &&
+              (w.textSpan?.toPlainText() ?? w.data ?? '')
+                  .contains(_mlParagraph('gap-summary', i + 1)))
+          .evaluate()
+          .isEmpty) {
+        controller.jumpTo(controller.offset + 200);
+        await tester.pump();
+      }
+      return rectOf(i + 1).top - rectOf(i).bottom;
+    }
+
+    final within = await gapAfter(0);
+    final across = await gapAfter(split - 1);
+    expect(within, greaterThan(0));
+    expect(across, moreOrLessEquals(within, epsilon: 0.5));
+  });
 }

@@ -15,6 +15,10 @@ class MarkdownWithScripture extends StatelessWidget {
   final String data;
   final TextStyle? textStyle;
 
+  /// Space between paragraphs, lists and other blocks. Text split across
+  /// several of these widgets leaves this gap between them to read as one.
+  static const double blockSpacing = 8;
+
   /// Creates a markdown renderer with clickable scripture references.
   ///
   /// The [data] parameter is required and contains the markdown text to render.
@@ -143,6 +147,7 @@ class MarkdownWithScripture extends StatelessWidget {
         );
 
     return MarkdownStyleSheet(
+      blockSpacing: blockSpacing,
       p: baseStyle?.copyWith(
         color: palette.text,
         height: 1.6,
