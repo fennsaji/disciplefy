@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:disciplefy_bible_study/features/home/presentation/bloc/new_for_you_cubit.dart';
+import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -571,6 +573,15 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
       if (next != null && !_achievementDialogOpen) {
         Logger.debug('[MAIN] Achievement pop-up waits on $location');
       }
+      return;
+    }
+    if (AchievementPopupGate.suppressedFor(
+      isGuest: GuestRouteGate.currentUserIsGuest(),
+      accountCreatedAt: currentAccountCreatedAt(),
+      now: DateTime.now(),
+    )) {
+      // Skipped, not deferred: take it off the queue.
+      sl<GamificationBloc>().add(const DismissAchievementNotification());
       return;
     }
     _showAchievementUnlockDialog(next!);

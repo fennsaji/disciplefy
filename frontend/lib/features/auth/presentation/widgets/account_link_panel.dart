@@ -153,6 +153,7 @@ class _AccountLinkPanelState extends State<AccountLinkPanel> {
           AccountButton(
             key: const Key('account_google'),
             label: context.tr(TranslationKeys.accountContinueGoogle),
+            imageAsset: 'assets/images/google_logo_96.png',
             style: AccountButtonStyle.primary,
             onPressed: _busy ? null : () => _run(service.linkGoogle),
           ),
@@ -304,6 +305,9 @@ enum AccountButtonStyle {
 class AccountButton extends StatelessWidget {
   final String label;
   final IconData? icon;
+
+  /// An image shown in place of [icon] (the Google "G").
+  final String? imageAsset;
   final AccountButtonStyle style;
   final VoidCallback? onPressed;
   final bool busy;
@@ -314,6 +318,7 @@ class AccountButton extends StatelessWidget {
     required this.style,
     required this.onPressed,
     this.icon,
+    this.imageAsset,
     this.busy = false,
   });
 
@@ -344,7 +349,10 @@ class AccountButton extends StatelessWidget {
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
+              if (imageAsset != null) ...[
+                Image.asset(imageAsset!, width: 18, height: 18),
+                const SizedBox(width: 8),
+              ] else if (icon != null) ...[
                 Icon(icon, size: 18, color: fg),
                 const SizedBox(width: 6),
               ],

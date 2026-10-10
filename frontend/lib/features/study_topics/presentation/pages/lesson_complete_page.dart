@@ -66,6 +66,10 @@ class LessonCompletePage extends StatefulWidget {
 
 class _LessonCompletePageState extends State<LessonCompletePage> {
   LearningPathDetail? _path;
+
+  /// True until the path detail has loaded or failed: Up next shows its
+  /// placeholder rows meanwhile, so nothing jumps in later.
+  bool _pathLoading = true;
   bool _popupsScheduled = false;
 
   @override
@@ -80,10 +84,18 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
           forceRefresh: true,
         )
         .then((r) => r.fold(
-              (f) => Logger.warning(
-                  '[LESSON_COMPLETE] path load failed: ${f.message}'),
+              (f) {
+                Logger.warning(
+                    '[LESSON_COMPLETE] path load failed: ${f.message}');
+                if (mounted) setState(() => _pathLoading = false);
+              },
               (p) {
-                if (mounted) setState(() => _path = p);
+                if (mounted) {
+                  setState(() {
+                    _path = p;
+                    _pathLoading = false;
+                  });
+                }
               },
             ));
   }
@@ -162,6 +174,11 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
     final primaryFill = palette.isDark ? palette.ctaFill : palette.selectedFill;
     final lesson = widget.args.lesson;
     final upNext = lesson.isLast ? const <LearningPathTopic>[] : _upNext;
+    // Rows Up next will hold, known before the path loads.
+    final upNextSlots = lesson.isLast
+        ? 0
+        : (lesson.lessonTotal - lesson.lessonNumber).clamp(0, 2);
+    final showUpNext = _pathLoading ? upNextSlots > 0 : upNext.isNotEmpty;
     final title = lesson.isLast
         ? context
             .tr(TranslationKeys.lessonPathFinished, {'path': lesson.pathTitle})
@@ -208,10 +225,11 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                             fontWeight: FontWeight.w500,
                             color: palette.muted),
                       ),
-                      if (upNext.isNotEmpty) ...[
+                      if (showUpNext) ...[
                         const SizedBox(height: 16),
                         _UpNextCard(
-                          topics: upNext,
+                          topics: _pathLoading ? null : upNext,
+                          placeholderRows: upNextSlots,
                           firstNumber: lesson.lessonNumber + 1,
                           onTap: _open,
                         ),
@@ -232,9 +250,12 @@ class _LessonCompletePageState extends State<LessonCompletePage> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (!lesson.isLast && upNext.isNotEmpty) ...[
+              if (!lesson.isLast && showUpNext) ...[
                 FilledButton(
-                  onPressed: () => _open(upNext.first),
+                  // Stays in place while the path loads; opens once it has.
+                  onPressed: () {
+                    if (upNext.isNotEmpty) _open(upNext.first);
+                  },
                   style: _buttonStyle(
                     primaryFill,
                     ReaderPalette.ink,
@@ -315,7 +336,7 @@ class LessonCompleteCelebration extends StatefulWidget {
 
 class _LessonCompleteCelebrationState extends State<LessonCompleteCelebration>
     with SingleTickerProviderStateMixin {
-  static const _totalMs = 1250.0;
+  static const _totalMs = 2250.0;
   static const _checkMs = 500.0;
   static const _burstStartMs = 300.0;
   static const _burstMs = 700.0;
@@ -364,12 +385,18 @@ class _LessonCompleteCelebrationState extends State<LessonCompleteCelebration>
   ];
   static const _checkInterval =
       Interval(0, _checkMs / _totalMs, curve: Curves.easeOutBack);
-  static const _fadeInterval = Interval(0, 0.2, curve: Curves.easeOut);
-  static const _ringInterval = Interval(0.15, 0.6, curve: Curves.easeOut);
+  static const _fadeInterval =
+      Interval(0, 250 / _totalMs, curve: Curves.easeOut);
+  static const _ringInterval =
+      Interval(150 / _totalMs, 750 / _totalMs, curve: Curves.easeOut);
+
+  /// The confetti rests briefly after the burst, then fades away.
+  static const _confettiOutInterval =
+      Interval(1450 / _totalMs, 1, curve: Curves.easeIn);
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1250),
+    duration: const Duration(milliseconds: 2250),
   );
   bool _started = false;
 
@@ -410,8 +437,10 @@ class _LessonCompleteCelebrationState extends State<LessonCompleteCelebration>
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  for (var i = 0; i < _pieces.length; i++)
-                    _piece(i, _intervals[i].transform(v)),
+                  if (v < 1)
+                    for (var i = 0; i < _pieces.length; i++)
+                      _piece(i, _intervals[i].transform(v),
+                          1 - _confettiOutInterval.transform(v)),
                   Positioned(
                     left: 143,
                     top: 28,
@@ -464,24 +493,27 @@ class _LessonCompleteCelebrationState extends State<LessonCompleteCelebration>
     );
   }
 
-  Widget _piece(int i, double t) {
+  Widget _piece(int i, double t, double opacity) {
     final (x, y, w, h, deg, tone) = _pieces[i];
     return Positioned(
       left: x + 20,
       top: y,
-      child: Transform.translate(
-        offset: _offsets[i] * -(1 - t),
-        child: Transform.scale(
-          scale: t,
-          child: Transform.rotate(
-            angle: (deg + (1 - t) * -90) * math.pi / 180,
-            child: Container(
-              key: Key('lesson_complete_confetti_$i'),
-              width: w,
-              height: h,
-              decoration: BoxDecoration(
-                color: _tones[tone],
-                borderRadius: BorderRadius.circular(2),
+      child: Opacity(
+        opacity: opacity,
+        child: Transform.translate(
+          offset: _offsets[i] * -(1 - t),
+          child: Transform.scale(
+            scale: t,
+            child: Transform.rotate(
+              angle: (deg + (1 - t) * -90) * math.pi / 180,
+              child: Container(
+                key: Key('lesson_complete_confetti_$i'),
+                width: w,
+                height: h,
+                decoration: BoxDecoration(
+                  color: _tones[tone],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
           ),
@@ -492,12 +524,15 @@ class _LessonCompleteCelebrationState extends State<LessonCompleteCelebration>
 }
 
 class _UpNextCard extends StatelessWidget {
-  final List<LearningPathTopic> topics;
+  /// Null while the path loads: [placeholderRows] grey rows instead.
+  final List<LearningPathTopic>? topics;
+  final int placeholderRows;
   final int firstNumber;
   final ValueChanged<LearningPathTopic> onTap;
 
   const _UpNextCard({
     required this.topics,
+    required this.placeholderRows,
     required this.firstNumber,
     required this.onTap,
   });
@@ -525,11 +560,10 @@ class _UpNextCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          for (var i = 0; i < topics.length; i++)
-            InkWell(
-              onTap: () => onTap(topics[i]),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
+          if (topics == null)
+            for (var i = 0; i < placeholderRows; i++)
+              Padding(
+                key: Key('lesson_complete_up_next_loading_$i'),
                 padding: const EdgeInsets.symmetric(vertical: 7),
                 child: Row(
                   children: [
@@ -552,26 +586,66 @@ class _UpNextCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        topics[i].title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.inter(
-                          fontSize: 14,
-                          fontWeight:
-                              i == 0 ? FontWeight.w600 : FontWeight.w500,
-                          color: i == 0 ? palette.text : palette.muted,
-                        ),
+                    Container(
+                      width: i == 0 ? 170 : 130,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: palette.hairline,
+                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    if (i == 0)
-                      Icon(Icons.chevron_right_rounded,
-                          size: 18, color: palette.muted),
                   ],
                 ),
+              )
+          else
+            for (var i = 0; i < topics!.length; i++)
+              InkWell(
+                onTap: () => onTap(topics![i]),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 26,
+                        height: 26,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i == 0 ? null : palette.raised,
+                          border:
+                              i == 0 ? Border.all(color: palette.gold) : null,
+                        ),
+                        child: Text(
+                          '${firstNumber + i}',
+                          style: AppFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: i == 0 ? palette.gold : palette.muted,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          topics![i].title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.inter(
+                            fontSize: 14,
+                            fontWeight:
+                                i == 0 ? FontWeight.w600 : FontWeight.w500,
+                            color: i == 0 ? palette.text : palette.muted,
+                          ),
+                        ),
+                      ),
+                      if (i == 0)
+                        Icon(Icons.chevron_right_rounded,
+                            size: 18, color: palette.muted),
+                    ],
+                  ),
+                ),
               ),
-            ),
         ],
       ),
     );
