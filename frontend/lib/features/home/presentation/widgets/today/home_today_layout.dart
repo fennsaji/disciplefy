@@ -38,19 +38,13 @@ ActivePathSummary? enrolledPathSummary(HomeCombinedState state) =>
         : null;
 
 /// Lesson mode shown on today's lesson card before the person picks one:
-/// Quick for lesson 1 after the first-run goal, else [saved] (the
-/// learning-path preference, see [nextLessonModeNow]). Same rule as
+/// [saved] (the learning-path preference, see [nextLessonModeNow]). Same rule as
 /// [pathLessonMode], which the path detail page uses.
 StudyMode defaultTodayLessonMode({
   required ActivePathSummary? summary,
-  required bool hasFirstRunGoal,
   required StudyMode saved,
 }) =>
-    pathLessonMode(
-      lessonNumber: summary?.next?.number,
-      hasFirstRunGoal: hasFirstRunGoal,
-      savedRaw: saved.name,
-    );
+    pathLessonMode(savedRaw: saved.name);
 
 /// Saves the learning-path lesson mode [value] (a [StudyMode] name) on the
 /// profile and on this device, as the lesson card's mode chip does on Home
@@ -124,6 +118,9 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
   void initState() {
     super.initState();
     _readSavedMode();
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().addListener(_onProfileChanged);
+    }
     // HomeBloc outside its combined state never reports a finished path
     // load, so the banner is worked out straight away.
     final state = context.read<HomeBloc>().state;
@@ -134,6 +131,9 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
 
   @override
   void dispose() {
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().removeListener(_onProfileChanged);
+    }
     _newForYou.close();
     super.dispose();
   }
@@ -149,11 +149,19 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
     }
   }
 
+  /// Re-reads the saved mode when the profile changes (a server refresh, or
+  /// the mode changed in Settings or on another card), so the card never
+  /// keeps a stale mode from the cached profile.
+  void _onProfileChanged() {
+    final previous = _savedMode;
+    _readSavedMode();
+    if (mounted && _savedMode != previous) setState(() {});
+  }
+
   StudyMode _modeFor(ActivePathSummary? summary) =>
       _chosenMode ??
       defaultTodayLessonMode(
         summary: summary,
-        hasFirstRunGoal: FirstRunFlags.hasGoal,
         saved: _savedMode,
       );
 

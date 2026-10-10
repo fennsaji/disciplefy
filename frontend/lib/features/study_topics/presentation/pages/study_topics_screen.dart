@@ -58,7 +58,6 @@ import 'package:disciplefy_bible_study/features/home/domain/utils/lesson_launch_
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_event.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/bloc/home_state.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_today_layout.dart';
-import 'package:disciplefy_bible_study/features/onboarding/domain/first_run_flags.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/account_needed_sheet.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import 'package:disciplefy_bible_study/shared/widgets/photo_wash.dart';
@@ -397,6 +396,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     _triggerWalkthroughIfNeeded();
     _loadFallbackPath();
     _readSavedMode();
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().addListener(_onProfileChanged);
+    }
 
     // Handle deep link navigation from notification
     if (widget.topicId != null) {
@@ -436,12 +438,20 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
   }
 
+  /// Re-reads the saved mode when the profile changes (a server refresh, or
+  /// the mode changed in Settings or on another card), so the card never
+  /// keeps a stale mode from the cached profile.
+  void _onProfileChanged() {
+    final previous = _savedMode;
+    _readSavedMode();
+    if (mounted && _savedMode != previous) setState(() {});
+  }
+
   /// The lesson mode on the card, as Home works it out.
   StudyMode _modeFor(ActivePathSummary? summary) =>
       _chosenMode ??
       defaultTodayLessonMode(
         summary: summary,
-        hasFirstRunGoal: FirstRunFlags.hasGoal,
         saved: _savedMode,
       );
 
@@ -469,6 +479,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   void dispose() {
+    if (sl.isRegistered<AuthStateProvider>()) {
+      sl<AuthStateProvider>().removeListener(_onProfileChanged);
+    }
     _navGuard.dispose();
     super.dispose();
   }

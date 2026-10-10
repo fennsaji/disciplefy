@@ -611,13 +611,14 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('lesson 1 after the first-run goal starts as Quick Read',
+    testWidgets('lesson 1 after the first-run goal starts as Standard',
         (tester) async {
       await tester.runAsync(() =>
           Hive.box('app_settings').put(FirstRunCubit.goalKey, 'know_jesus'));
       await pumpHome(tester, summary: _summaryLesson1);
       expect(find.text('Start lesson 1'), findsOneWidget);
-      expect(find.text('Quick Read · 3 min'), findsOneWidget);
+      expect(find.text('Standard · 8 min'), findsOneWidget);
+      expect(find.text('Quick Read · 3 min'), findsNothing);
     });
 
     testWidgets('a saved Quick path mode shows and opens Quick Read',
