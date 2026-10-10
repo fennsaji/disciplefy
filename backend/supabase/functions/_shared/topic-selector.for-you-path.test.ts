@@ -64,3 +64,31 @@ Deno.test('For You skips a finished-but-unmarked path and continues the next act
   assertEquals(result.suggestedLearningPath?.id, 'john')
   assertEquals(result.topics?.map((t) => t.title), ['John 2'])
 })
+
+/**
+ * Answers saved before scores were stored (scoring_results NULL) use the
+ * faith-stage list. Its first slug for a committed disciple no longer exists,
+ * and the lookup stopped there, so the default new-believer path was offered.
+ */
+Deno.test('For You skips a missing path in the faith-stage list and suggests the next one', async () => {
+  const db = fakeSupabase({
+    user_learning_path_progress: [],
+    learning_paths: [
+      { id: 'nbe', slug: 'new-believer-essentials', title: 'New Believer Essentials', is_active: true },
+      { id: 'dyf', slug: 'defending-your-faith', title: 'Defending Your Faith', is_active: true },
+    ],
+    learning_path_topics: [
+      { learning_path_id: 'nbe', topic_id: 'n1', position: 0, is_active: true, recommended_topics: topic('n1', 'Who is Jesus?') },
+      { learning_path_id: 'dyf', topic_id: 'd1', position: 0, is_active: true, recommended_topics: topic('d1', 'Why believe?') },
+    ],
+    user_topic_progress: [],
+    user_study_guides: [],
+    user_personalization: [
+      { user_id: 'u', questionnaire_completed: true, faith_stage: 'committed_disciple', scoring_results: null },
+    ],
+  })
+
+  const result = await selectTopicsForYouWithLearningPath('http://x', 'k', 'u', 2, db)
+  assertEquals(result.suggestedLearningPath?.id, 'dyf')
+  assertEquals(result.suggestedLearningPath?.reason, 'personalized')
+})

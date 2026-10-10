@@ -912,10 +912,11 @@ export async function selectTopicsForYouWithLearningPath(
           (finishedPaths || []).map((p: any) => p.slug).filter(Boolean)
         );
 
-        // Pick the top-scored slug not yet completed
-        const topSlug = candidateSlugs.find((slug) => !completedSlugs.has(slug));
-
-        if (topSlug) {
+        // The first candidate, in score order, that is not finished and still
+        // exists: a slug in the list can be retired or inactive, and stopping
+        // at it used to drop the user to the default path.
+        for (const topSlug of candidateSlugs) {
+          if (completedSlugs.has(topSlug)) continue;
           const { data: pathData } = await supabase
             .from('learning_paths')
             .select('id, title, slug')
@@ -938,6 +939,7 @@ export async function selectTopicsForYouWithLearningPath(
               limit
             );
             console.log(`[TOPICS_FOR_YOU] Priority 2: suggested path "${pathData.title}" (slug: ${topSlug})`);
+            break;
           }
         }
       }
