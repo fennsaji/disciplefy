@@ -1,342 +1,143 @@
 /**
- * Save Personalization Edge Function
+ * Save Personalization Edge Function (kept for older apps)
  *
- * Saves user questionnaire responses for personalized topic recommendations
- * Part of the "For You" personalization feature
+ * The 6-step questionnaire was retired on 2026-10-10: the growth goal (first
+ * run, Settings > Change my goal) is the only personalisation question, and
+ * new apps write it with the set_my_growth_goal database function.
+ *
+ * Older apps still call this function with `save`, `get` and `skip`. It keeps
+ * the same request and response shape for them:
+ *   - save: validates and stores the answers (user_personalization), and sets
+ *     the growth goal mapped from them (growth_goal_from_answers). It no
+ *     longer changes the study mode or notification settings.
+ *   - get:  the stored row, plus `growth_goal`.
+ *   - skip: marks the questionnaire skipped (a finished one stays finished).
  */
 
-import { getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
-import { scoringResultsFor, skipChangesFor } from './rules.ts';
+import { growthGoalOrNull, loadGrowthGoal, type GrowthGoal } from '../_shared/personalization/next-paths.ts';
 import {
-  calculatePathScores,
+  answersRow,
+  responseData,
+  skipChangesFor,
   validateQuestionnaireResponses,
   type QuestionnaireResponses,
-  type LearningPath,
-  type ValidationResult,
-} from '../_shared/personalization/scoring-algorithm.ts';
-
-// ============================================================================
-// Types
-// ============================================================================
+} from './rules.ts';
 
 interface PersonalizationRequest {
   action: 'save' | 'get' | 'skip';
   data?: QuestionnaireResponses;
 }
 
-interface PersonalizationData {
-  faith_stage: string | null;
-  spiritual_goals: string[];
-  time_availability: string | null;
-  learning_style: string | null;
-  life_stage_focus: string | null;
-  biggest_challenge: string | null;
-  scoring_results: Record<string, unknown> | null;
-  questionnaire_completed: boolean;
-  questionnaire_skipped: boolean;
-}
+/** Default row for a user who never answered (the shape older apps parse). */
+const EMPTY_ROW = {
+  faith_stage: null,
+  spiritual_goals: [],
+  time_availability: null,
+  learning_style: null,
+  life_stage_focus: null,
+  biggest_challenge: null,
+  scoring_results: null,
+  questionnaire_completed: false,
+  questionnaire_skipped: false,
+};
 
-// ============================================================================
-// Study Mode Derivation
-// ============================================================================
+function json(body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 /**
- * Derives the optimal default study mode from questionnaire answers.
- *
- * Priority order:
- * 1. reflection_meditation learning style → always lectio (contemplative users need this regardless of time)
- * 2. 5_to_10_min → quick (time-constrained users; depth is unachievable)
- * 3. 20_plus_min + deep_understanding → deep (time + preference align)
- * 4. Everything else → standard (safe default for growing believers, balanced styles)
+ * Sets the goal mapped from the answers. Best effort: the answers are saved
+ * either way, and the user can still pick a goal in a newer app.
  */
-function deriveStudyMode(
-  timeAvailability: string,
-  learningStyle: string
-): string {
-  // Contemplative style overrides time — lectio can be done in any length
-  if (learningStyle === 'reflection_meditation') {
-    return 'lectio';
-  }
-
-  switch (timeAvailability) {
-    case '5_to_10_min':
-      return 'quick';
-    case '20_plus_min':
-      return learningStyle === 'deep_understanding' ? 'deep' : 'standard';
-    case '10_to_20_min':
-    default:
-      return 'standard';
-  }
-}
-
-// ============================================================================
-// Validation
-// ============================================================================
-
-function validatePersonalizationData(data: PersonalizationRequest['data']): void {
-  if (!data) {
-    throw new AppError('VALIDATION_ERROR', 'Personalization data is required', 400);
-  }
-
-  // Use scoring algorithm's validation
-  const validationResult = validateQuestionnaireResponses(data);
-  if (!validationResult.isValid) {
-    throw new AppError('VALIDATION_ERROR', validationResult.errors.join(', '), 400);
-  }
-}
-
-// ============================================================================
-// Notification Preferences Defaults (GAP-07)
-// ============================================================================
-
-/**
- * Derives and applies notification preference updates from questionnaire answers.
- *
- * Rules:
- * - biggest_challenge = staying_consistent → enable streak_reminder + streak_lost
- * - spiritual_goals includes foundational_faith → ensure recommended_topic_enabled
- * - time_availability = 5_to_10_min → shift streak reminder to morning (08:00)
- *
- * Non-fatal: errors are swallowed so questionnaire save always succeeds.
- */
-async function maybeUpdateNotificationPreferences(
-  data: QuestionnaireResponses,
+async function saveGoalFromAnswers(
   services: ServiceContainer,
-  userId: string
-): Promise<void> {
-  const updates: Record<string, unknown> = {};
-
-  // Consistency-focused users get streak motivation enabled
-  if (data.biggest_challenge === 'staying_consistent') {
-    updates.streak_reminder_enabled = true;
-    updates.streak_lost_enabled = true;
+  userId: string,
+  data: QuestionnaireResponses,
+): Promise<GrowthGoal | null> {
+  const client = services.supabaseServiceClient;
+  const { data: mapped, error } = await client.rpc('growth_goal_from_answers', {
+    p_faith_stage: data.faith_stage,
+    p_spiritual_goals: data.spiritual_goals,
+    p_life_stage_focus: data.life_stage_focus,
+    p_biggest_challenge: data.biggest_challenge,
+  });
+  const goal = growthGoalOrNull(mapped);
+  if (error || !goal) {
+    console.warn('[save-personalization] no goal from answers', { code: error?.code ?? 'none' });
+    return null;
   }
-
-  // Foundational faith seekers benefit from personalized topic recommendations
-  if (data.spiritual_goals?.includes('foundational_faith')) {
-    updates.recommended_topic_enabled = true;
+  const { error: upsertError } = await client
+    .from('user_growth_goals')
+    .upsert(
+      { user_id: userId, goal, source: 'questionnaire', updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' },
+    );
+  if (upsertError) {
+    console.warn('[save-personalization] goal save failed', { code: upsertError.code });
+    return null;
   }
-
-  // Short-session users likely study in the morning — shift reminder to AM
-  if (data.time_availability === '5_to_10_min') {
-    updates.streak_reminder_time = '08:00:00';
-  }
-
-  if (Object.keys(updates).length === 0) return;
-
-  try {
-    const { error } = await services.supabaseServiceClient
-      .from('user_notification_preferences')
-      .upsert(
-        {
-          user_id: userId,
-          ...updates,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
-
-    if (error) {
-      console.warn('[save-personalization] Failed to update notification preferences:', error);
-    } else {
-      console.log(
-        `[save-personalization] Notification preferences updated for user ${userId}:`,
-        Object.keys(updates).join(', ')
-      );
-    }
-  } catch (err) {
-    // Non-fatal — questionnaire save must always succeed
-    console.warn('[save-personalization] Notification preferences update error (non-fatal):', err);
-  }
+  return goal;
 }
-
-// ============================================================================
-// Handlers
-// ============================================================================
 
 async function savePersonalization(
   data: PersonalizationRequest['data'],
   services: ServiceContainer,
   userId: string
 ): Promise<Response> {
-  validatePersonalizationData(data);
-
-  // Fetch all available learning paths
-  const { data: learningPaths, error: pathsError } = await services.supabaseServiceClient
-    .from('learning_paths')
-    .select('id, slug, title, disciple_level, recommended_mode, is_featured, display_order')
-    .eq('is_active', true)
-    .order('display_order', { ascending: true });
-
-  if (pathsError) {
-    console.error('Failed to fetch learning paths:', pathsError);
-    throw new AppError('DATABASE_ERROR', 'Failed to fetch learning paths', 500);
+  const validation = validateQuestionnaireResponses(data);
+  if (!validation.isValid) {
+    throw new AppError('VALIDATION_ERROR', validation.errors.join(', '), 400);
   }
+  const answers = data as QuestionnaireResponses;
 
-  // Finished paths: stored completion or every visible lesson done.
-  const completedPathIds = [...await getCompletedPathIds(services.supabaseServiceClient, userId)];
-
-  // Calculate path scores using scoring algorithm
-  const scoredPaths = calculatePathScores(
-    data as QuestionnaireResponses,
-    learningPaths as LearningPath[],
-    completedPathIds
-  );
-
-  // Null when every path is finished: the answers are saved all the same.
-  const scoringSummary = scoringResultsFor(scoredPaths);
-
-  // Upsert personalization data with scoring results
-  const { data: result, error } = await services.supabaseServiceClient
+  const { data: row, error } = await services.supabaseServiceClient
     .from('user_personalization')
-    .upsert(
-      {
-        user_id: userId,
-        faith_stage: data!.faith_stage,
-        spiritual_goals: data!.spiritual_goals,
-        time_availability: data!.time_availability,
-        learning_style: data!.learning_style,
-        life_stage_focus: data!.life_stage_focus,
-        biggest_challenge: data!.biggest_challenge,
-        scoring_results: scoringSummary,
-        questionnaire_completed: true,
-        questionnaire_skipped: false,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'user_id',
-      }
-    )
+    .upsert(answersRow(userId, answers, new Date().toISOString()), { onConflict: 'user_id' })
     .select('*')
     .single();
 
   if (error) {
-    console.error('Failed to save personalization:', error);
+    console.error('[save-personalization] save failed', { code: error.code });
     throw new AppError('DATABASE_ERROR', 'Failed to save personalization', 500);
   }
 
-  // Derive and persist the optimal study mode based on questionnaire answers.
-  // Only set if user hasn't already made an explicit choice (default is 'recommended').
-  const derivedMode = deriveStudyMode(data!.time_availability, data!.learning_style);
+  const goal = await saveGoalFromAnswers(services, userId, answers);
 
-  // Fetch both profile and preferences in parallel to avoid sequential round-trips
-  const [profileResult, preferencesResult] = await Promise.all([
-    services.supabaseServiceClient
-      .from('user_profiles')
-      .select('default_study_mode')
-      .eq('id', userId)
-      .single(),
-    services.supabaseServiceClient
-      .from('user_preferences')
-      .select('learning_path_study_mode')
-      .eq('user_id', userId)
-      .single(),
-  ]);
-
-  // Set user_profiles.default_study_mode (free-form topics)
-  const shouldSetDefaultMode =
-    !profileResult.data?.default_study_mode ||
-    profileResult.data.default_study_mode === 'recommended' ||
-    profileResult.data.default_study_mode === 'ask';
-
-  if (shouldSetDefaultMode) {
-    const { error: profileError } = await services.supabaseServiceClient
-      .from('user_profiles')
-      .update({
-        default_study_mode: derivedMode,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
-
-    if (profileError) {
-      console.warn('Failed to set default_study_mode from personalization:', profileError);
-    } else {
-      console.log(`[save-personalization] Set default_study_mode=${derivedMode} for user ${userId}`);
-    }
-  }
-
-  // Set user_preferences.learning_path_study_mode (learning path topics)
-  // Same derivation — ensures path topics also use the personalized mode
-  const currentPathMode = preferencesResult.data?.learning_path_study_mode;
-  const shouldSetPathMode =
-    !currentPathMode ||
-    currentPathMode === 'recommended' ||
-    currentPathMode === 'ask';
-
-  if (shouldSetPathMode) {
-    const { error: prefError } = await services.supabaseServiceClient
-      .from('user_preferences')
-      .upsert(
-        {
-          user_id: userId,
-          learning_path_study_mode: derivedMode,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
-
-    if (prefError) {
-      console.warn('Failed to set learning_path_study_mode from personalization:', prefError);
-    } else {
-      console.log(`[save-personalization] Set learning_path_study_mode=${derivedMode} for user ${userId} (time=${data!.time_availability}, style=${data!.learning_style})`);
-    }
-  }
-
-  // Apply personalization-derived notification preference defaults (GAP-07)
-  await maybeUpdateNotificationPreferences(data as QuestionnaireResponses, services, userId);
-
-  // Return response with top recommendation
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: 'Personalization saved successfully',
-      data: result,
-      recommendation: scoredPaths[0] ?? null,
-      derivedStudyMode: derivedMode,
-    }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  );
+  return json({
+    success: true,
+    message: 'Personalization saved successfully',
+    data: responseData(row, goal),
+    // Kept for older apps; recommendations now come from learning-paths.
+    recommendation: null,
+  });
 }
 
 async function getPersonalization(
   services: ServiceContainer,
   userId: string
 ): Promise<Response> {
-  const { data, error } = await services.supabaseServiceClient
-    .from('user_personalization')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  const [{ data, error }, goal] = await Promise.all([
+    services.supabaseServiceClient
+      .from('user_personalization')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle(),
+    loadGrowthGoal(services.supabaseServiceClient, userId),
+  ]);
 
-  if (error && error.code !== 'PGRST116') {
-    // PGRST116 = no rows found, which is fine
-    console.error('Failed to get personalization:', error);
+  if (error) {
+    console.error('[save-personalization] read failed', { code: error.code });
     throw new AppError('DATABASE_ERROR', 'Failed to retrieve personalization', 500);
   }
 
-  const personalization: PersonalizationData = data || {
-    faith_stage: null,
-    spiritual_goals: [],
-    time_availability: null,
-    learning_style: null,
-    life_stage_focus: null,
-    biggest_challenge: null,
-    scoring_results: null,
-    questionnaire_completed: false,
-    questionnaire_skipped: false,
-  };
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      data: personalization,
-    }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  );
+  return json({ success: true, data: responseData(data ?? EMPTY_ROW, goal) });
 }
 
 async function skipPersonalization(
@@ -350,52 +151,32 @@ async function skipPersonalization(
     .maybeSingle();
 
   if (readError) {
-    console.error('Failed to read personalization before skip:', readError);
+    console.error('[save-personalization] read before skip failed', { code: readError.code });
     throw new AppError('DATABASE_ERROR', 'Failed to save skip status', 500);
   }
 
   // A finished questionnaire stays finished (Retake, then Close or Skip).
   const changes = skipChangesFor(existing);
   if (!changes) {
-    return new Response(
-      JSON.stringify({ success: true, message: 'Questionnaire kept', data: existing }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return json({ success: true, message: 'Questionnaire kept', data: existing });
   }
 
   const { data: result, error } = await services.supabaseServiceClient
     .from('user_personalization')
     .upsert(
-      {
-        user_id: userId,
-        ...changes,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'user_id',
-      }
+      { user_id: userId, ...changes, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
     )
     .select('*')
     .single();
 
   if (error) {
-    console.error('Failed to save skip status:', error);
+    console.error('[save-personalization] skip failed', { code: error.code });
     throw new AppError('DATABASE_ERROR', 'Failed to save skip status', 500);
   }
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: 'Questionnaire skipped',
-      data: result,
-    }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  );
+  return json({ success: true, message: 'Questionnaire skipped', data: result });
 }
-
-// ============================================================================
-// Main Handler
-// ============================================================================
 
 async function handleSavePersonalization(
   req: Request,
@@ -405,14 +186,11 @@ async function handleSavePersonalization(
   if (!userContext || userContext.type !== 'authenticated') {
     throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
   }
-
-  // Validate userId is present (defensive check)
   const userId = userContext.userId;
   if (!userId) {
     throw new AppError('UNAUTHORIZED', 'User ID not found', 401);
   }
 
-  // Parse request body with error handling for malformed JSON
   let body: PersonalizationRequest;
   try {
     body = await req.json();
@@ -420,28 +198,17 @@ async function handleSavePersonalization(
     throw new AppError('VALIDATION_ERROR', 'Invalid JSON in request body', 400);
   }
 
-  if (!body.action) {
-    throw new AppError('VALIDATION_ERROR', 'Action is required', 400);
-  }
-
-  switch (body.action) {
+  switch (body?.action) {
     case 'save':
       return savePersonalization(body.data, services, userId);
-
     case 'get':
       return getPersonalization(services, userId);
-
     case 'skip':
       return skipPersonalization(services, userId);
-
     default:
       throw new AppError('VALIDATION_ERROR', 'Invalid action. Must be: save, get, or skip', 400);
   }
 }
-
-// ============================================================================
-// Create Function with Factory
-// ============================================================================
 
 createAuthenticatedFunction(handleSavePersonalization, {
   allowedMethods: ['POST'],
