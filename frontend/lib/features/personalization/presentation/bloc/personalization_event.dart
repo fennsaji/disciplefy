@@ -108,6 +108,11 @@ class SubmitQuestionnaire extends PersonalizationEvent {
   const SubmitQuestionnaire();
 }
 
+/// Saving failed and the user tapped Retry: send the same answers again.
+class RetrySubmitQuestionnaire extends PersonalizationEvent {
+  const RetrySubmitQuestionnaire();
+}
+
 /// User skipped the questionnaire
 class SkipQuestionnaire extends PersonalizationEvent {
   const SkipQuestionnaire();

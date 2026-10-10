@@ -38,29 +38,20 @@ class PersonalizationQuestionnairePage extends StatefulWidget {
 
 class _PersonalizationQuestionnairePageState
     extends State<PersonalizationQuestionnairePage> {
-  /// Bumped by "Retry" after a failed save: a fresh bloc restarts the
-  /// questionnaire.
-  int _attempt = 0;
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      key: ValueKey(_attempt),
       create: (_) => PersonalizationBloc(repository: widget.repository)
         ..add(const NextQuestion()),
-      child: _QuestionnaireContent(
-        onComplete: widget.onComplete,
-        onRetry: () => setState(() => _attempt++),
-      ),
+      child: _QuestionnaireContent(onComplete: widget.onComplete),
     );
   }
 }
 
 class _QuestionnaireContent extends StatelessWidget {
   final VoidCallback? onComplete;
-  final VoidCallback onRetry;
 
-  const _QuestionnaireContent({this.onComplete, required this.onRetry});
+  const _QuestionnaireContent({this.onComplete});
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +76,10 @@ class _QuestionnaireContent extends StatelessWidget {
           if (state is PersonalizationError) {
             // Saving failed: without this the spinner would never end.
             return _ErrorScaffold(
-              onRetry: onRetry,
+              // Sends the same answers again; nothing is asked twice.
+              onRetry: () => context
+                  .read<PersonalizationBloc>()
+                  .add(const RetrySubmitQuestionnaire()),
               onClose: () => _showSkipDialog(context),
             );
           }
@@ -360,8 +354,8 @@ class _LoadingScaffold extends StatelessWidget {
   }
 }
 
-/// Shown when saving the answers failed: message, retry (starts the
-/// questionnaire again) and close (skip dialog).
+/// Shown when saving the answers failed: message, retry (sends the same
+/// answers again) and close (skip dialog).
 class _ErrorScaffold extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onClose;

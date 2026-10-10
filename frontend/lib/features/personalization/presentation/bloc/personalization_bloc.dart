@@ -27,6 +27,7 @@ class PersonalizationBloc
     on<NextQuestion>(_onNextQuestion);
     on<PreviousQuestion>(_onPreviousQuestion);
     on<SubmitQuestionnaire>(_onSubmitQuestionnaire);
+    on<RetrySubmitQuestionnaire>(_onRetrySubmitQuestionnaire);
     on<SkipQuestionnaire>(_onSkipQuestionnaire);
   }
 
@@ -210,7 +211,29 @@ class PersonalizationBloc
   ) async {
     final currentState = state;
     if (currentState is! QuestionnaireInProgress) return;
+    await _submit(currentState, emit);
+  }
 
+  /// Sends the answers that failed to save again. Without kept answers
+  /// (should not happen) the questionnaire starts over.
+  Future<void> _onRetrySubmitQuestionnaire(
+    RetrySubmitQuestionnaire event,
+    Emitter<PersonalizationState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! PersonalizationError) return;
+    final answers = currentState.answers;
+    if (answers == null) {
+      emit(const QuestionnaireInProgress());
+      return;
+    }
+    await _submit(answers, emit);
+  }
+
+  Future<void> _submit(
+    QuestionnaireInProgress currentState,
+    Emitter<PersonalizationState> emit,
+  ) async {
     emit(const QuestionnaireSubmitting());
 
     try {
@@ -249,8 +272,10 @@ class PersonalizationBloc
     } catch (e) {
       Logger.error('Failed to submit questionnaire',
           tag: 'PERSONALIZATION', error: e);
-      emit(const PersonalizationError(
-          'Failed to submit questionnaire. Please try again.'));
+      emit(PersonalizationError(
+        'Failed to submit questionnaire. Please try again.',
+        answers: currentState,
+      ));
     }
   }
 

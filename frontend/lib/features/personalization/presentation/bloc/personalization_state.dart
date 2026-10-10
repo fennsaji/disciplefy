@@ -144,8 +144,11 @@ class QuestionnaireSubmitted extends PersonalizationState {
 class PersonalizationError extends PersonalizationState {
   final String message;
 
-  const PersonalizationError(this.message);
+  /// The answers that failed to save, kept so Retry can send them again.
+  final QuestionnaireInProgress? answers;
+
+  const PersonalizationError(this.message, {this.answers});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, answers];
 }

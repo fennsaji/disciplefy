@@ -20,6 +20,7 @@ class _FakeRepository implements PersonalizationRepository {
   int saves = 0;
   int skips = 0;
   bool failSave = false;
+  FaithStage? lastFaithStage;
 
   @override
   Future<PersonalizationEntity> getPersonalization() async =>
@@ -35,6 +36,7 @@ class _FakeRepository implements PersonalizationRepository {
     required BiggestChallenge? biggestChallenge,
   }) async {
     saves++;
+    lastFaithStage = faithStage;
     if (failSave) throw Exception('offline');
     return const PersonalizationEntity(questionnaireCompleted: true);
   }
@@ -183,8 +185,13 @@ void main() {
       expect(repository.saves, 1);
       expect(find.byKey(const Key('questionnaire_retry')), findsOneWidget);
 
+      // Retry sends the same answers again; nothing is asked twice.
+      repository.failSave = false;
       await tapKey(tester, 'questionnaire_retry');
-      expect(find.textContaining('STEP 1 OF 6'), findsOneWidget);
+      expect(repository.saves, 2);
+      expect(repository.lastFaithStage, FaithStage.values.first);
+      expect(find.textContaining('STEP 1 OF 6'), findsNothing);
+      expect(completions, 1);
     });
   }
 }
