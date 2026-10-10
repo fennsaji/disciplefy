@@ -59,7 +59,6 @@ import '../widgets/home_verse_hero.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
-import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
@@ -77,6 +76,7 @@ import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
+import 'package:disciplefy_bible_study/features/personalization/domain/growth_goal_repository.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_today_layout.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/memory_pill_badge.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
@@ -183,6 +183,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // user and language at once while a fresh one (progress) is fetched.
     // Neither layout shows a "For You" topic list, so none is fetched.
     homeBloc.add(const LoadActiveLearningPath());
+    _syncGrowthGoal();
+  }
+
+  /// Once per user and session: the growth goal on the server (it picks the
+  /// next paths) and on this device agree. A goal that only lived on this
+  /// device is uploaded, and then the suggested path is loaded again.
+  Future<void> _syncGrowthGoal() async {
+    if (!sl.isRegistered<GrowthGoalRepository>()) return;
+    final uploaded = await sl<GrowthGoalRepository>().syncOnce();
+    if (uploaded && mounted) {
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    }
   }
 
   /// A guest who just created an account gets their memory deck (and the
@@ -200,6 +212,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       }
     }
     _wasGuest = guest;
+    // Another user (sign-in, guest merged into an account): their goal.
+    _syncGrowthGoal();
   }
 
   /// Triggers the home screen walkthrough the first time the user sees this screen.
@@ -1191,15 +1205,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (homeState.showPersonalizationPrompt) ...[
-              PersonalizationPromptCard(
-                onGetStarted: () => _navigateToQuestionnaire(),
-                onSkip: () => context
-                    .read<HomeBloc>()
-                    .add(const DismissPersonalizationPrompt()),
-              ),
-              const SizedBox(height: 20),
-            ],
             HomeSectionHeader(
               title: context.tr(TranslationKeys.homeContinueLearning),
               subtitle: path != null &&
@@ -1258,19 +1263,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         );
       },
     );
-  }
-
-  /// Navigate to the personalization questionnaire
-  void _navigateToQuestionnaire() {
-    context.push('/personalization-questionnaire').then((_) {
-      // Ensure widget is still mounted before dispatching events
-      if (!mounted) return;
-      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
-      sl<LearningPathsRepository>().clearCache();
-      // Refresh all personalization-dependent data after questionnaire completion
-      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
-      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
-    });
   }
 
   /// Navigate to learning path detail and refresh on return.

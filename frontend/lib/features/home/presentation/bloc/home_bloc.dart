@@ -43,9 +43,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// screen while the right one loads.
   String? _activePathScope;
 
-  /// Content language the "For You" topics were last requested in.
-  String? _topicsLanguage;
-
   /// Content language the last language-change reload was requested for.
   String? _languageReloadRequestedFor;
 
@@ -72,8 +69,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     // Register event handlers
     on<LoadRecommendedTopics>(_onLoadRecommendedTopics);
     on<RefreshRecommendedTopics>(_onRefreshRecommendedTopics);
-    on<LoadForYouTopics>(_onLoadForYouTopics);
-    on<DismissPersonalizationPrompt>(_onDismissPersonalizationPrompt);
     on<GenerateStudyGuideFromVerse>(_onGenerateStudyGuideFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateStudyGuideFromTopic);
     on<ClearHomeError>(_onClearHomeError);
@@ -112,8 +107,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           emit(currentState.copyWith(
             isLoadingTopics: false,
             topics: loaded.topics,
-            showPersonalizationPrompt: loaded.showPersonalizationPrompt,
-            isPersonalized: loaded.isPersonalized,
             clearTopicsError: true,
           ));
           break;
@@ -160,8 +153,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             topicsError: currentState.topicsError,
             generationInput: currentState.generationInput,
             generationInputType: currentState.generationInputType,
-            showPersonalizationPrompt: currentState.showPersonalizationPrompt,
-            isPersonalized: currentState.isPersonalized,
             activeLearningPath: currentState.activeLearningPath,
             learningPathReason: currentState.learningPathReason,
             isLoadingActivePath: currentState.isLoadingActivePath,
@@ -213,38 +204,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _topicsBloc.add(const topics_events.RefreshRecommendedTopics());
   }
 
-  /// Handle loading personalized "For You" topics by delegating to topics BLoC
-  Future<void> _onLoadForYouTopics(
-    LoadForYouTopics event,
-    Emitter<HomeState> emit,
-  ) async {
-    // Get study content language preference (not app UI language)
-    String? languageCode;
-    try {
-      final appLanguage =
-          await _languagePreferenceService.getStudyContentLanguage();
-      languageCode = appLanguage.code;
-    } catch (e) {
-      // Fall back to default language if getting study content language fails
-      languageCode = 'en';
-    }
-
-    _topicsLanguage = languageCode;
-    _topicsBloc.add(topics_events.LoadForYouTopics(
-      limit: event.limit,
-      language: languageCode,
-      forceRefresh: event.forceRefresh,
-    ));
-  }
-
-  /// Handle dismissing the personalization prompt
-  void _onDismissPersonalizationPrompt(
-    DismissPersonalizationPrompt event,
-    Emitter<HomeState> emit,
-  ) {
-    _topicsBloc.add(const topics_events.DismissPersonalizationPrompt());
-  }
-
   /// Handle generating study guide from verse by delegating to generation BLoC
   void _onGenerateStudyGuideFromVerse(
     GenerateStudyGuideFromVerse event,
@@ -291,7 +250,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       languageCode =
           (await _languagePreferenceService.getStudyContentLanguage()).code;
     } catch (_) {}
-    final alreadyInLanguage = _topicsLanguage == languageCode &&
+    final alreadyInLanguage =
         _activePathScope == LearningCacheScope.scopeFor(languageCode);
     if (alreadyInLanguage || _languageReloadRequestedFor == languageCode) {
       return;
@@ -303,11 +262,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       tag: 'HOME_BLOC',
     );
 
-    // Reload all language-dependent content with forceRefresh
-    // 1. Reload personalized "For You" topics
-    add(const LoadForYouTopics(forceRefresh: true));
-
-    // 2. Reload active learning path (translations are language-dependent)
+    // Reload the active learning path (translations are language-dependent)
     add(const LoadActiveLearningPath(
       forceRefresh: true,
     ));
@@ -315,10 +270,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   /// Handle loading the recommended learning path for the For You section.
   ///
-  /// This uses the new backend endpoint that returns a learning path based on priority:
-  /// 1. Active (in-progress) path for authenticated users
-  /// 2. Personalized path based on questionnaire
-  /// 3. Featured path for all users (including anonymous)
+  /// The backend's next-path engine picks it: the active (in-progress) path,
+  /// else the first path of the user's growth goal list, else a featured one.
   ///
   /// Stale-while-revalidate: the path already on screen (or, on a cold start,
   /// the copy persisted for this user and language) is shown at once, and a

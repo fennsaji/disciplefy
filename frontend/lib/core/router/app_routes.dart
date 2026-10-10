@@ -80,9 +80,8 @@ class AppRoutes {
   static const String discipler = '/discipler';
   static const String voicePreferences = '/voice-preferences';
 
-  // Personalization
-  static const String personalizationQuestionnaire =
-      '/personalization-questionnaire';
+  /// Settings > Change my goal.
+  static const String changeGoal = '/settings/goal';
 
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';

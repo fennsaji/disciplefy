@@ -102,17 +102,6 @@ class HomeCombinedState extends HomeState {
   final String? generationInputType;
   final String? generationError;
 
-  /// Whether to show the personalization questionnaire prompt.
-  ///
-  /// This is true when the user is authenticated but hasn't completed
-  /// or skipped the personalization questionnaire yet.
-  final bool showPersonalizationPrompt;
-
-  /// Whether the topics are personalized based on questionnaire responses.
-  ///
-  /// If false, topics are based on study history or default recommendations.
-  final bool isPersonalized;
-
   /// The user's recommended learning path to display in For You section.
   ///
   /// This can be an active (in-progress) path, a personalized recommendation,
@@ -122,7 +111,7 @@ class HomeCombinedState extends HomeState {
   /// The reason why this learning path is being shown.
   ///
   /// - 'active': User has an in-progress learning path
-  /// - 'personalized': Recommended based on questionnaire answers
+  /// - 'personalized': The next path of the user's growth goal
   /// - 'featured': Default featured path (for anonymous/new users)
   final LearningPathRecommendationReason? learningPathReason;
 
@@ -140,8 +129,6 @@ class HomeCombinedState extends HomeState {
     this.generationInput,
     this.generationInputType,
     this.generationError,
-    this.showPersonalizationPrompt = false,
-    this.isPersonalized = false,
     this.activeLearningPath,
     this.learningPathReason,
     this.isLoadingActivePath = false,
@@ -157,8 +144,6 @@ class HomeCombinedState extends HomeState {
         generationInput,
         generationInputType,
         generationError,
-        showPersonalizationPrompt,
-        isPersonalized,
         activeLearningPath,
         learningPathReason,
         isLoadingActivePath,
@@ -174,8 +159,6 @@ class HomeCombinedState extends HomeState {
     String? generationInput,
     String? generationInputType,
     String? generationError,
-    bool? showPersonalizationPrompt,
-    bool? isPersonalized,
     LearningPath? activeLearningPath,
     LearningPathRecommendationReason? learningPathReason,
     bool? isLoadingActivePath,
@@ -197,9 +180,6 @@ class HomeCombinedState extends HomeState {
         generationError: clearGenerationError
             ? null
             : (generationError ?? this.generationError),
-        showPersonalizationPrompt:
-            showPersonalizationPrompt ?? this.showPersonalizationPrompt,
-        isPersonalized: isPersonalized ?? this.isPersonalized,
         activeLearningPath: clearActiveLearningPath
             ? null
             : (activeLearningPath ?? this.activeLearningPath),
@@ -224,8 +204,6 @@ class HomeStudyGuideGeneratedCombined extends HomeCombinedState {
     super.topicsError,
     super.generationInput,
     super.generationInputType,
-    super.showPersonalizationPrompt,
-    super.isPersonalized,
     super.activeLearningPath,
     super.learningPathReason,
     super.isLoadingActivePath,

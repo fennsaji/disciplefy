@@ -38,7 +38,6 @@ import '../../domain/entities/study_guide.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../../core/navigation/study_navigator.dart';
-import '../../../home/data/services/recommended_guides_service.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
@@ -2403,11 +2402,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   );
                 }
               }
-              // Handle study completion - show notification prompt and invalidate cache
+              // Handle study completion - show notification prompt
               else if (state is StudyCompletionSuccess) {
-                // Invalidate the "For You" cache so completed topics don't show again
-                sl<RecommendedGuidesService>().clearForYouCache();
-
                 // Track topic progress completion (XP, first-completion badge, etc.)
                 // Store the future so _handleBackNavigation can await it.
                 _topicProgressFuture ??= _completeTopicProgress();

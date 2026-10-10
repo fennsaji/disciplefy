@@ -12,26 +12,6 @@ import '../datasources/recommended_topics_local_datasource.dart';
 import '../../../../core/utils/logger.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_cache_scope.dart';
 
-/// Result container for "For You" topics API response.
-///
-/// Contains both the list of personalized topics and a flag indicating
-/// whether the user has completed the personalization questionnaire.
-class ForYouTopicsResult {
-  /// List of personalized topics recommended for the user.
-  final List<RecommendedGuideTopic> topics;
-
-  /// Whether the user has completed the personalization questionnaire.
-  ///
-  /// If false, the topics are based on study history only, and the UI
-  /// should show the personalization prompt card.
-  final bool hasCompletedQuestionnaire;
-
-  const ForYouTopicsResult({
-    required this.topics,
-    required this.hasCompletedQuestionnaire,
-  });
-}
-
 /// Cache entry for recommended topics
 class _CacheEntry<T> {
   final T data;
@@ -46,12 +26,10 @@ class _CacheEntry<T> {
 
 /// Service for fetching recommended study guide topics from the backend API.
 /// Enhanced with intelligent caching to reduce unnecessary API calls.
-/// Supports both generic topics and personalized "For You" topics.
 class RecommendedGuidesService {
   // API Configuration
   static String get _baseUrl => AppConfig.supabaseUrl;
   static const String _topicsEndpoint = '/functions/v1/topics-recommended';
-  static const String _forYouEndpoint = '/functions/v1/topics-for-you';
 
   // Cache version - increment this when adding new fields to invalidate old cache
   // v2: Added learning path fields (learning_path_id, learning_path_name, position_in_path, total_topics_in_path)
@@ -63,7 +41,6 @@ class RecommendedGuidesService {
   // Caching configuration
   static const Duration _defaultCacheExpiry = Duration(hours: 24);
   static const Duration _filteredCacheExpiry = Duration(hours: 6);
-  static const Duration _forYouCacheExpiry = Duration(hours: 6);
 
   // In-memory cache - now language-aware (for faster access during same session)
   final Map<String, _CacheEntry<List<RecommendedGuideTopic>>> _allTopicsCache =
@@ -342,212 +319,6 @@ class RecommendedGuidesService {
     });
   }
 
-  /// Fetches personalized "For You" topics based on user's questionnaire responses.
-  ///
-  /// This endpoint returns topics tailored to the user's spiritual journey,
-  /// what they're seeking, and their time commitment preferences.
-  ///
-  /// [language] - Language code for topic translations (optional, defaults to 'en')
-  /// [limit] - Maximum number of topics to return (optional, defaults to 4)
-  /// [forceRefresh] - If true, bypasses cache and fetches fresh data
-  ///
-  /// Returns a tuple containing:
-  /// - [Right] with list of personalized topics on success
-  /// - [hasCompletedQuestionnaire] flag indicating if user has completed the questionnaire
-  /// - [Left] with [Failure] on error
-  Future<Either<Failure, ForYouTopicsResult>> getForYouTopics({
-    String? language,
-    int limit = 4,
-    bool forceRefresh = false,
-  }) async {
-    // Serialize all cache operations with lock to prevent race conditions
-    return await _cacheLock.synchronized(() async {
-      // Wait for local datasource initialization
-      await _initFuture;
-
-      // Create language-specific cache key for "For You" topics
-      // Include cache version to invalidate old cache when new fields are added
-      // The user id is part of the key: these are personal recommendations,
-      // and the persistent copy survives a sign-out.
-      final cacheKey =
-          'for_you_${_cacheVersion}_${LearningCacheScope.currentUserKey()}_${language ?? 'en'}_$limit';
-
-      // Check in-memory cache first (unless force refresh is requested)
-      if (!forceRefresh && _filteredTopicsCache.containsKey(cacheKey)) {
-        final cacheEntry = _filteredTopicsCache[cacheKey]!;
-        if (!cacheEntry.isExpired(_forYouCacheExpiry)) {
-          if (kDebugMode) {
-            final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
-            Logger.debug(
-                '✅ [FOR YOU] Returning in-memory cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
-          }
-          // INVARIANT: We only cache results when hasCompletedQuestionnaire was true
-          // (see caching logic at lines 464-480), so returning true here is safe.
-          return Right(ForYouTopicsResult(
-            topics: cacheEntry.data,
-            hasCompletedQuestionnaire: true,
-          ));
-        } else {
-          // Remove expired cache entry
-          _filteredTopicsCache.remove(cacheKey);
-        }
-      }
-
-      // Check persistent local cache (Hive) if not force refresh
-      if (!forceRefresh) {
-        final cachedTopics = await _localDataSource.getCachedTopics(
-            cacheKey, _forYouCacheExpiry);
-        if (cachedTopics != null && cachedTopics.isNotEmpty) {
-          // Convert models to entities
-          final topics = cachedTopics.map((model) => model.toEntity()).toList();
-          // Also populate in-memory cache for faster access
-          _filteredTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
-          Logger.debug(
-              '✅ [FOR YOU] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
-          // INVARIANT: We only cache results when hasCompletedQuestionnaire was true
-          // (see caching logic at lines 464-480), so returning true here is safe.
-          return Right(ForYouTopicsResult(
-            topics: topics,
-            hasCompletedQuestionnaire: true,
-          ));
-        }
-      }
-
-      try {
-        Logger.debug(
-            '🚀 [FOR YOU] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} personalized topics from API...');
-
-        // Prepare headers for API request (includes auth token for user identification)
-        final headers = await _httpService.createHeaders();
-
-        // Build request body
-        final normalizedLanguage = language ?? 'en';
-        final requestBody = jsonEncode({
-          'language': normalizedLanguage,
-          'limit': limit,
-        });
-
-        final uri = Uri.parse('$_baseUrl$_forYouEndpoint');
-
-        // Make API request (POST for personalized topics)
-        final response = await _httpService.post(
-          uri.toString(),
-          headers: headers,
-          body: requestBody,
-        );
-
-        Logger.info('📡 [FOR YOU] API Response Status: ${response.statusCode}');
-
-        if (response.statusCode == 200) {
-          final result = _parseForYouTopicsResponse(response.body);
-
-          // Cache successful responses only if questionnaire was completed
-          if (result.isRight()) {
-            final forYouResult = result.getOrElse(
-              () => const ForYouTopicsResult(
-                topics: [],
-                hasCompletedQuestionnaire: false,
-              ),
-            );
-            if (forYouResult.hasCompletedQuestionnaire &&
-                forYouResult.topics.isNotEmpty) {
-              // Cache in-memory
-              _filteredTopicsCache[cacheKey] =
-                  _CacheEntry(forYouResult.topics, DateTime.now());
-
-              // Cache persistently to Hive
-              final topicModels = forYouResult.topics
-                  .map((topic) => RecommendedGuideTopicModel.fromEntity(topic))
-                  .toList();
-              await _localDataSource.cacheTopics(cacheKey, topicModels);
-
-              Logger.debug(
-                  '💾 [FOR YOU] Cached ${forYouResult.topics.length} topics for ${language ?? 'en'} (in-memory + persistent) for ${_forYouCacheExpiry.inHours} hours');
-            }
-          }
-
-          return result;
-        } else {
-          Logger.error(
-              '❌ [FOR YOU] API error: ${response.statusCode} - ${response.body}');
-          return Left(ServerFailure(
-              message:
-                  'Failed to fetch personalized topics: ${response.statusCode}'));
-        }
-      } catch (e, stackTrace) {
-        if (kDebugMode) {
-          Logger.debug('💥 [FOR YOU] Exception: $e');
-          Logger.debug('📚 [FOR YOU] Stack trace: $stackTrace');
-        }
-
-        return Left(NetworkFailure(
-            message: 'Failed to connect to personalized topics service: $e'));
-      }
-    });
-  }
-
-  /// Parses the "For You" API response and converts to domain entities.
-  Either<Failure, ForYouTopicsResult> _parseForYouTopicsResponse(
-      String responseBody) {
-    try {
-      if (kDebugMode) Logger.debug('📄 [FOR YOU] Parsing response...');
-      final Map<String, dynamic> jsonData = json.decode(responseBody);
-
-      // Handle nested response format: {"success": true, "data": {...}}
-      final Map<String, dynamic> topicsData =
-          jsonData.containsKey('data') && jsonData['data'] is Map
-              ? jsonData['data'] as Map<String, dynamic>
-              : jsonData;
-
-      // Extract the hasCompletedQuestionnaire flag
-      final hasCompletedQuestionnaire =
-          topicsData['hasCompletedQuestionnaire'] as bool? ?? false;
-
-      // Log suggested learning path if present
-      if (kDebugMode && topicsData.containsKey('suggestedLearningPath')) {
-        Logger.info(
-            '🎯 [FOR YOU] Suggested Learning Path: ${topicsData['suggestedLearningPath']}');
-      }
-
-      // Parse the topics using existing model
-      if (topicsData.containsKey('topics')) {
-        final response = RecommendedGuideTopicsResponse.fromJson(topicsData);
-        final topics = response.toEntities();
-
-        if (kDebugMode) {
-          Logger.info(
-              '✅ [FOR YOU] Successfully parsed ${topics.length} topics (questionnaire completed: $hasCompletedQuestionnaire)');
-          // Log learning path fields for each topic
-          for (final topic in topics) {
-            if (topic.isFromLearningPath) {
-              Logger.debug(
-                  '  📍 Topic "${topic.title}" - Path: ${topic.learningPathName}, Position: ${topic.positionInPath}/${topic.totalTopicsInPath}');
-            } else {
-              Logger.debug(
-                  '  📍 Topic "${topic.title}" - No learning path (learningPathId: ${topic.learningPathId})');
-            }
-          }
-        }
-        return Right(ForYouTopicsResult(
-          topics: topics,
-          hasCompletedQuestionnaire: hasCompletedQuestionnaire,
-        ));
-      } else {
-        Logger.error(
-            '❌ [FOR YOU] API response missing topics data: $topicsData');
-        return const Left(
-            ClientFailure(message: 'API response missing topics data'));
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        Logger.error('💥 [FOR YOU] JSON parsing error: $e');
-        Logger.debug('📄 [FOR YOU] Raw response: $responseBody');
-      }
-      return Left(ClientFailure(
-          message: 'Failed to parse personalized topics response: $e'));
-    }
-  }
-
   /// Parses the API response and converts to domain entities.
   Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(
       String responseBody) {
@@ -594,46 +365,6 @@ class RecommendedGuidesService {
       normalizedLanguage,
     ];
     return parts.join('_');
-  }
-
-  /// Clears the "For You" topics cache from both in-memory and persistent storage.
-  ///
-  /// This method specifically targets only the personalized "For You" cache entries,
-  /// preserving other cached topics (all-topics, filtered-topics) for efficiency.
-  ///
-  /// **Use Cases:**
-  /// - Study guide completion (completed topics should no longer appear in "For You")
-  /// - After completing personalization questionnaire
-  /// - When user's study history changes
-  ///
-  /// **Thread Safety:**
-  /// This method is protected by an internal lock to ensure thread-safe
-  /// cache clearing even during concurrent cache operations.
-  ///
-  /// **Example:**
-  /// ```dart
-  /// await recommendedGuidesService.clearForYouCache();
-  /// // Only "For You" cache entries are cleared, other caches remain
-  /// ```
-  Future<void> clearForYouCache() async {
-    await _cacheLock.synchronized(() async {
-      await _initFuture;
-
-      // Find and remove all "for_you_*" cache entries from in-memory cache
-      final forYouKeys = _filteredTopicsCache.keys
-          .where((key) => key.startsWith('for_you_'))
-          .toList();
-
-      for (final key in forYouKeys) {
-        _filteredTopicsCache.remove(key);
-      }
-
-      // Clear persistent cache entries for "for_you_*" keys
-      await _localDataSource.clearCacheByPrefix('for_you_');
-
-      Logger.debug(
-          '🗑️ [FOR YOU] Cleared ${forYouKeys.length} For You cache entries (in-memory + persistent)');
-    });
   }
 
   /// Clears all cached data from both in-memory and persistent storage.

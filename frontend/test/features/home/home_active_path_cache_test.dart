@@ -65,7 +65,7 @@ void main() {
   var user = 'user-a';
 
   setUpAll(() {
-    registerFallbackValue(const topics_events.LoadForYouTopics());
+    registerFallbackValue(const topics_events.LoadRecommendedTopics());
   });
 
   setUp(() {
