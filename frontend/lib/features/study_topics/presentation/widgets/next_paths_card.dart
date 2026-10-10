@@ -23,6 +23,10 @@ enum NextPathsCardMode {
   /// "Choose your first path", unless the server reports a finished path,
   /// which turns it into "What next?".
   firstPath,
+
+  /// "What next?" only when the server reports a finished path (and nothing
+  /// else is active); nothing at all otherwise, while loading or on failure.
+  afterFinish,
 }
 
 /// Up to three paths to study next, from the server's next-path engine
@@ -126,6 +130,10 @@ class _NextPathsCardState extends State<NextPathsCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.mode == NextPathsCardMode.afterFinish &&
+        _result?.finishedPath == null) {
+      return const SizedBox.shrink();
+    }
     final palette = ReaderPalette.of(context);
     final loading = _result == null && !_failed;
     final paths = _paths;

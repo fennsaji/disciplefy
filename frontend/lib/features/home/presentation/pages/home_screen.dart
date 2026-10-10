@@ -77,6 +77,7 @@ import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/core/services/rollout_flags.dart';
 import 'package:disciplefy_bible_study/features/personalization/domain/growth_goal_repository.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/widgets/next_paths_card.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/home_today_layout.dart';
 import 'package:disciplefy_bible_study/features/home/presentation/widgets/today/memory_pill_badge.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
@@ -1259,6 +1260,32 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 accent: accentIcon,
                 onTap: () => context.go(AppRoutes.studyTopics),
               ),
+            // The path is done (or the last one was, and none is active):
+            // what to study next.
+            if (path != null && !_isLearningPathsLocked())
+              if (path.isEnrolled &&
+                  homeState.activePathSummary?.isFinished == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: NextPathsCard(
+                    key: const Key('home_legacy_what_next'),
+                    excludePathId: path.id,
+                    onPathChanged: () => context
+                        .read<HomeBloc>()
+                        .add(const LoadActiveLearningPath(forceRefresh: true)),
+                  ),
+                )
+              else if (!path.isEnrolled)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: NextPathsCard(
+                    key: Key('home_legacy_after_finish_${path.id}'),
+                    mode: NextPathsCardMode.afterFinish,
+                    onPathChanged: () => context
+                        .read<HomeBloc>()
+                        .add(const LoadActiveLearningPath(forceRefresh: true)),
+                  ),
+                ),
           ],
         );
       },
