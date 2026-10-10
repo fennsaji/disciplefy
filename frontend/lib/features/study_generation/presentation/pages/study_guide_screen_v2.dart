@@ -1907,6 +1907,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       );
 
   /// Checks if Study Chat feature should be visible (not hidden)
+  /// False only when ai_discipler is off or hidden for this plan; a locked
+  /// Discipler still shows (with the lock).
+  bool _shouldShowAiDiscipler() {
+    final userPlan = sl<TokenBloc>().state.knownPlanName ?? 'free';
+    return !sl<SystemConfigService>()
+        .shouldHideFeature('ai_discipler', userPlan);
+  }
+
   bool _shouldShowStudyChat() {
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
@@ -3595,11 +3603,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   ),
                 ), // WalkthroughTooltip
               ),
-              // Ask Discipler (right) - only if ai_discipler is enabled and
-              // study_chat is not hidden
+              // Ask Discipler (right) - shown unless ai_discipler or
+              // study_chat is hidden; behind the plan lock when the flag
+              // says lock and the plan has no access.
               if (isGuest ||
-                  (_isAiDisciplerFeatureEnabled() &&
-                      _shouldShowStudyChat())) ...[
+                  (_shouldShowAiDiscipler() && _shouldShowStudyChat())) ...[
                 const SizedBox(width: 10),
                 Expanded(
                   child: WalkthroughTooltip(
@@ -3613,32 +3621,38 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     totalSteps: 1,
                     highlightBorderRadius: pillHeight / 2,
                     onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                    child: SizedBox(
-                      height: pillHeight,
-                      // White on dark; gold with ink on light, as the
-                      // design.
-                      child: Material(
-                        color: palette.isDark
-                            ? palette.ctaFill
-                            : palette.selectedFill,
-                        shape: const StadiumBorder(),
-                        child: InkWell(
-                          customBorder: const StadiumBorder(),
-                          onTap: _askDiscipler,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: StudyBarIconLabel(
-                              // Flat ink glyph, no disc, on the white or
-                              // gold pill.
-                              icon: const DisciplerGlyph(
-                                size: 20,
-                                variant: DisciplerGlyphVariant.ink,
+                    child: _guestOrLocked(
+                      isGuest: isGuest,
+                      featureKey: 'ai_discipler',
+                      child: SizedBox(
+                        height: pillHeight,
+                        // White on dark; gold with ink on light, as the
+                        // design.
+                        child: Material(
+                          color: palette.isDark
+                              ? palette.ctaFill
+                              : palette.selectedFill,
+                          shape: const StadiumBorder(),
+                          child: InkWell(
+                            customBorder: const StadiumBorder(),
+                            onTap: _askDiscipler,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: StudyBarIconLabel(
+                                // Flat ink glyph, no disc, on the white or
+                                // gold pill.
+                                icon: const DisciplerGlyph(
+                                  size: 20,
+                                  variant: DisciplerGlyphVariant.ink,
+                                ),
+                                iconWidth: 20,
+                                text:
+                                    context.tr(TranslationKeys.studyGuideAskAi),
+                                color: palette.isDark
+                                    ? palette.ctaInk
+                                    : palette.onSelected,
                               ),
-                              iconWidth: 20,
-                              text: context.tr(TranslationKeys.studyGuideAskAi),
-                              color: palette.isDark
-                                  ? palette.ctaInk
-                                  : palette.onSelected,
                             ),
                           ),
                         ),
@@ -3663,7 +3677,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }) =>
       isGuest
           ? child
-          : LockedFeatureWrapper(featureKey: featureKey, child: child);
+          : LockedFeatureWrapper(
+              featureKey: featureKey, compact: true, child: child);
 
   /// True when the Discipler may open: a full account, or a guest who has
   /// just signed up from the account-needed sheet (reason `discipler`).

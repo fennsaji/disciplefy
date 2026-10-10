@@ -34,12 +34,17 @@ class LockedFeatureWrapper extends StatelessWidget {
   final bool showLockOverlay;
   final String? customLockedMessage;
 
+  /// For small pills (a bottom bar): keeps the child's label readable and
+  /// marks it with a lock icon instead of covering it with the upgrade pill.
+  final bool compact;
+
   const LockedFeatureWrapper({
     super.key,
     required this.child,
     required this.featureKey,
     this.showLockOverlay = true,
     this.customLockedMessage,
+    this.compact = false,
   });
 
   @override
@@ -90,13 +95,16 @@ class LockedFeatureWrapper extends StatelessWidget {
     final requiredPlans = systemConfig.getRequiredPlans(featureKey);
     final upgradePlan = systemConfig.getUpgradePlan(featureKey, currentPlan);
 
+    final radius = compact ? 999.0 : 12.0;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(radius),
       child: Stack(
+        // Compact keeps the child's own width (a full-width bar pill).
+        fit: compact ? StackFit.passthrough : StackFit.loose,
         children: [
           // Original child (dimmed)
           Opacity(
-            opacity: 0.5,
+            opacity: compact ? 0.6 : 0.5,
             child: IgnorePointer(
               child: child,
             ),
@@ -127,15 +135,30 @@ class LockedFeatureWrapper extends StatelessWidget {
                     upgradePlan,
                   );
                 },
-                borderRadius: BorderRadius.circular(12),
-                child: LockedFeatureScrim(
-                  label: isOffline
-                      ? context
-                          .tr(TranslationKeys.appChromeLockNotAvailableOffline)
-                      : (customLockedMessage ??
-                          context
-                              .tr(TranslationKeys.appChromeLockTapToUpgrade)),
-                ),
+                borderRadius: BorderRadius.circular(radius),
+                child: compact
+                    ? Semantics(
+                        button: true,
+                        label: context
+                            .tr(TranslationKeys.appChromeLockTapToUpgrade),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 14),
+                            child: Icon(Icons.lock_rounded,
+                                size: 16,
+                                color: ReaderPalette.of(context).gold),
+                          ),
+                        ),
+                      )
+                    : LockedFeatureScrim(
+                        label: isOffline
+                            ? context.tr(TranslationKeys
+                                .appChromeLockNotAvailableOffline)
+                            : (customLockedMessage ??
+                                context.tr(
+                                    TranslationKeys.appChromeLockTapToUpgrade)),
+                      ),
               ),
             ),
           ),
