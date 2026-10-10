@@ -51,6 +51,7 @@ import '../widgets/guide_share_prompts.dart';
 import '../widgets/streaming_study_content.dart';
 import '../widgets/study_guide_body.dart';
 import '../widgets/guide_complete_sheet.dart';
+import '../../../../shared/widgets/keep_alive_block.dart';
 import '../../../../shared/widgets/sign_in_required_dialog.dart';
 import '../widgets/study_reading_tracker.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
@@ -3160,93 +3161,102 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 ),
               ),
 
-            // Share with fellowship — a reflection, question, or insight
+            // Share with fellowship — a reflection, question, or insight.
+            // Kept alive once built: the list is lazy, and scrolling away
+            // must not drop a half-written post.
             if (showShare)
-              Padding(
-                padding: sidePadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    blockTop,
-                    WalkthroughTooltip(
-                      showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
-                      title: context
-                          .tr(TranslationKeys.studyGuideFellowshipShareTitle),
-                      description: context.tr(
-                          TranslationKeys.studyGuideFellowshipWalkthroughDesc),
-                      screen: WalkthroughScreen.studyGuideCompletion,
-                      stepNumber: 1,
-                      totalSteps: 3,
-                      onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-                      child: _FellowshipShareSection(
-                        number: shareNumber,
-                        studyGuideId: guide.id,
-                        guideTitle: _getDisplayTitle(),
-                        guideInputType: guide.inputType,
-                        guideLanguage: guide.language,
-                        guideStudyMode:
-                            guide.studyMode ?? widget.studyMode.name,
-                        guideSummary: guide.summary,
-                        userFellowships: _userFellowships!,
+              KeepAliveBlock(
+                child: Padding(
+                  padding: sidePadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      blockTop,
+                      WalkthroughTooltip(
+                        showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
+                        title: context
+                            .tr(TranslationKeys.studyGuideFellowshipShareTitle),
+                        description: context.tr(TranslationKeys
+                            .studyGuideFellowshipWalkthroughDesc),
+                        screen: WalkthroughScreen.studyGuideCompletion,
+                        stepNumber: 1,
+                        totalSteps: 3,
+                        onNext: () =>
+                            ShowCaseWidget.of(_showcaseContext!).next(),
+                        child: _FellowshipShareSection(
+                          number: shareNumber,
+                          studyGuideId: guide.id,
+                          guideTitle: _getDisplayTitle(),
+                          guideInputType: guide.inputType,
+                          guideLanguage: guide.language,
+                          guideStudyMode:
+                              guide.studyMode ?? widget.studyMode.name,
+                          guideSummary: guide.summary,
+                          userFellowships: _userFellowships!,
+                        ),
                       ),
-                    ),
-                    blockBottom,
-                    const ReaderHairline(),
-                  ],
+                      blockBottom,
+                      const ReaderHairline(),
+                    ],
+                  ),
                 ),
               ),
 
             // Follow-up Chat Section, with lock support for study_chat feature.
             // Not built for a guest (no panel, no history call).
+            // Kept alive once built, so scrolling away keeps the loaded
+            // conversation and an unsent question.
             if (chatNumber != null)
-              LockedFeatureWrapper(
-                featureKey: 'study_chat',
-                child: Padding(
-                  padding: sidePadding,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      blockTop,
-                      WalkthroughTooltip(
-                        showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
-                        title: context
-                            .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
-                        description: context
-                            .tr(TranslationKeys.studyGuideWalkthroughChatDesc),
-                        screen: WalkthroughScreen.studyGuideCompletion,
-                        stepNumber: 2,
-                        totalSteps: 3,
-                        onNext: () =>
-                            ShowCaseWidget.of(_showcaseContext!).next(),
-                        child: Container(
-                          key: _followUpChatKey,
-                          child: BlocProvider(
-                            create: (context) {
-                              final bloc = sl<FollowUpChatBloc>();
-                              bloc.add(StartConversationEvent(
+              KeepAliveBlock(
+                child: LockedFeatureWrapper(
+                  featureKey: 'study_chat',
+                  child: Padding(
+                    padding: sidePadding,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        blockTop,
+                        WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
+                          title: context.tr(
+                              TranslationKeys.studyGuideWalkthroughChatTitle),
+                          description: context.tr(
+                              TranslationKeys.studyGuideWalkthroughChatDesc),
+                          screen: WalkthroughScreen.studyGuideCompletion,
+                          stepNumber: 2,
+                          totalSteps: 3,
+                          onNext: () =>
+                              ShowCaseWidget.of(_showcaseContext!).next(),
+                          child: Container(
+                            key: _followUpChatKey,
+                            child: BlocProvider(
+                              create: (context) {
+                                final bloc = sl<FollowUpChatBloc>();
+                                bloc.add(StartConversationEvent(
+                                  studyGuideId: guide.id,
+                                  studyGuideTitle: _getDisplayTitle(),
+                                ));
+                                return bloc;
+                              },
+                              child: FollowUpChatWidget(
                                 studyGuideId: guide.id,
                                 studyGuideTitle: _getDisplayTitle(),
-                              ));
-                              return bloc;
-                            },
-                            child: FollowUpChatWidget(
-                              studyGuideId: guide.id,
-                              studyGuideTitle: _getDisplayTitle(),
-                              sectionNumber: chatNumber,
-                              isExpanded: _isChatExpanded,
-                              onToggleExpanded: () {
-                                setState(() {
-                                  _isChatExpanded = !_isChatExpanded;
-                                });
-                              },
+                                sectionNumber: chatNumber,
+                                isExpanded: _isChatExpanded,
+                                onToggleExpanded: () {
+                                  setState(() {
+                                    _isChatExpanded = !_isChatExpanded;
+                                  });
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                      ), // WalkthroughTooltip
-                      blockBottom,
-                      const ReaderHairline(),
-                    ],
+                        ), // WalkthroughTooltip
+                        blockBottom,
+                        const ReaderHairline(),
+                      ],
+                    ),
                   ),
                 ),
               ),
