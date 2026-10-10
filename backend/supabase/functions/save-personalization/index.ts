@@ -10,10 +10,10 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
+import { scoringResultsFor, skipChangesFor } from './rules.ts';
 import {
   calculatePathScores,
   validateQuestionnaireResponses,
-  getScoringResultsSummary,
   type QuestionnaireResponses,
   type LearningPath,
   type ValidationResult,
@@ -187,13 +187,8 @@ async function savePersonalization(
     completedPathIds
   );
 
-  if (!scoredPaths || scoredPaths.length === 0) {
-    throw new AppError('VALIDATION_ERROR', 'No learning paths available for scoring', 400);
-  }
-
-  // Get scoring summary for analytics
-  const topPath = scoredPaths[0]; // First path is highest scored
-  const scoringSummary = getScoringResultsSummary(topPath, scoredPaths);
+  // Null when every path is finished: the answers are saved all the same.
+  const scoringSummary = scoringResultsFor(scoredPaths);
 
   // Upsert personalization data with scoring results
   const { data: result, error } = await services.supabaseServiceClient
@@ -300,7 +295,7 @@ async function savePersonalization(
       success: true,
       message: 'Personalization saved successfully',
       data: result,
-      recommendation: scoredPaths.length > 0 ? scoredPaths[0] : null,
+      recommendation: scoredPaths[0] ?? null,
       derivedStudyMode: derivedMode,
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -348,14 +343,32 @@ async function skipPersonalization(
   services: ServiceContainer,
   userId: string
 ): Promise<Response> {
-  // Upsert with skipped flag
+  const { data: existing, error: readError } = await services.supabaseServiceClient
+    .from('user_personalization')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (readError) {
+    console.error('Failed to read personalization before skip:', readError);
+    throw new AppError('DATABASE_ERROR', 'Failed to save skip status', 500);
+  }
+
+  // A finished questionnaire stays finished (Retake, then Close or Skip).
+  const changes = skipChangesFor(existing);
+  if (!changes) {
+    return new Response(
+      JSON.stringify({ success: true, message: 'Questionnaire kept', data: existing }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   const { data: result, error } = await services.supabaseServiceClient
     .from('user_personalization')
     .upsert(
       {
         user_id: userId,
-        questionnaire_completed: false,
-        questionnaire_skipped: true,
+        ...changes,
         updated_at: new Date().toISOString(),
       },
       {
