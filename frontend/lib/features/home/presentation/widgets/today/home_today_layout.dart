@@ -170,8 +170,16 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
             current is HomeCombinedState &&
             !current.isLoadingActivePath &&
             (previous is! HomeCombinedState || previous.isLoadingActivePath),
-        listener: (context, state) =>
-            _loadNewForYou(enrolledPathSummary(state as HomeCombinedState)),
+        listener: (context, state) {
+          final summary = enrolledPathSummary(state as HomeCombinedState);
+          // An account that finished lessons elsewhere (e.g. signed in on a
+          // new device after the first run) is past lesson 1 here too, so
+          // notification prompts are no longer held back.
+          if ((summary?.lessonsCompleted ?? 0) > 0) {
+            unawaited(FirstRunFlags.markFirstLessonCompleted());
+          }
+          _loadNewForYou(summary);
+        },
         builder: (context, state) {
           final home =
               state is HomeCombinedState ? state : const HomeCombinedState();
