@@ -18,6 +18,7 @@ class TopicsLayout extends StatelessWidget {
   final Widget statTiles;
   final Widget paths;
   final VoidCallback onBrowseAll;
+
   final ScrollController? controller;
 
   /// Called when the list is within [nearEndExtent] of its end: after a

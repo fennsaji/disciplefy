@@ -64,7 +64,15 @@ class AllPathsPage extends StatefulWidget {
   /// Content language; resolved from preferences when null.
   final String? language;
 
-  const AllPathsPage({super.key, this.initialCategory, this.language});
+  /// Opens with the search field shown and focused.
+  final bool startWithSearch;
+
+  const AllPathsPage({
+    super.key,
+    this.initialCategory,
+    this.language,
+    this.startWithSearch = false,
+  });
 
   @override
   State<AllPathsPage> createState() => _AllPathsPageState();
@@ -75,7 +83,6 @@ class _AllPathsPageState extends State<AllPathsPage> {
   final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
   String? _language;
-  bool _searchOpen = false;
 
   /// Ignores a double tap; never held across the awaited push.
   final TapGuard _navGuard = TapGuard();
@@ -157,14 +164,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
     });
   }
 
-  void _toggleSearch() {
-    setState(() {
-      _searchOpen = !_searchOpen;
-      if (!_searchOpen && _searchController.text.isNotEmpty) {
-        _searchController.clear();
-        _onSearchChanged('');
-      }
-    });
+  void _clearSearch() {
+    _searchController.clear();
+    _onSearchChanged('');
   }
 
   /// A chip lists its category; a search covers every path, so it is
@@ -267,8 +269,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeader(context, state),
-              if (_searchOpen) _buildSearchField(context),
-              _buildChips(context, state),
+              _buildSearchField(context),
+              // A search covers every category, so the chips step aside.
+              if (!state.searching) _buildChips(context, state),
               const SizedBox(height: 8),
               Expanded(child: _buildBody(context, state)),
             ],
@@ -280,7 +283,9 @@ class _AllPathsPageState extends State<AllPathsPage> {
 
   Widget _buildHeader(BuildContext context, AllPathsState state) {
     final palette = ReaderPalette.of(context);
-    final total = state.allTotal;
+    // While searching: the number of matches (nothing until known, and
+    // the empty state speaks for itself at zero).
+    final total = state.searching ? state.matchCount : state.allTotal;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
       child: Row(
@@ -314,22 +319,17 @@ class _AllPathsPageState extends State<AllPathsPage> {
                   if (total != null && total > 0) ...[
                     const SizedBox(height: 2),
                     Text(
-                      context.tr(TranslationKeys.allPathsCount, {'n': total}),
+                      total == 1
+                          ? context.tr(TranslationKeys.topicsHubPathsCountOne,
+                              {'count': total})
+                          : context
+                              .tr(TranslationKeys.allPathsCount, {'n': total}),
                       style: AppFonts.inter(fontSize: 13, color: palette.gold),
                     ),
                   ],
                 ],
               ),
             ),
-          ),
-          IconButton(
-            key: const Key('all_paths_search_toggle'),
-            icon: Icon(_searchOpen ? Icons.close : Icons.search),
-            color: palette.muted,
-            tooltip: _searchOpen
-                ? MaterialLocalizations.of(context).closeButtonTooltip
-                : MaterialLocalizations.of(context).searchFieldLabel,
-            onPressed: _toggleSearch,
           ),
         ],
       ),
@@ -347,7 +347,8 @@ class _AllPathsPageState extends State<AllPathsPage> {
       child: TextField(
         key: const Key('all_paths_search_field'),
         controller: _searchController,
-        autofocus: true,
+        // Keyboard up only when opened from the Learning Paths search bar.
+        autofocus: widget.startWithSearch,
         onChanged: _onSearchChanged,
         style: AppFonts.inter(fontSize: 15, color: palette.text),
         decoration: InputDecoration(
@@ -355,6 +356,15 @@ class _AllPathsPageState extends State<AllPathsPage> {
           hintText: AppLocalizations.of(context)!.searchPathsHint,
           hintStyle: AppFonts.inter(fontSize: 15, color: palette.dim),
           prefixIcon: Icon(Icons.search, size: 21, color: palette.muted),
+          suffixIcon: _searchController.text.isEmpty
+              ? null
+              : IconButton(
+                  key: const Key('all_paths_search_clear'),
+                  icon: Icon(Icons.close, size: 20, color: palette.muted),
+                  tooltip:
+                      MaterialLocalizations.of(context).deleteButtonTooltip,
+                  onPressed: _clearSearch,
+                ),
           filled: true,
           fillColor: palette.card,
           contentPadding:

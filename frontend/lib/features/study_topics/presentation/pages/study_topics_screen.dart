@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:disciplefy_bible_study/core/localization/app_localizations.dart';
 import 'package:disciplefy_bible_study/core/router/guest_route_gate.dart';
 import 'package:disciplefy_bible_study/features/settings/presentation/widgets/settings_sheets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -583,6 +584,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   StudyTopicsAppBar(
+                    onSearch: () => _openAllPaths(search: true),
                     onLanguageChange: _handleStudyLanguageChange,
                     language: widget.currentLanguage,
                   ),
@@ -729,12 +731,14 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   /// Every path, with category chips. Open to guests: locked rows there
   /// open the account sheet.
-  Future<void> _openAllPaths() async {
+  /// [search] opens it with the search field focused.
+  Future<void> _openAllPaths({bool search = false}) async {
     if (!_navGuard.tryAcquire()) return;
     // In the language Topics lists its paths in, not a re-read preference.
-    await context.push<void>(Uri(
-        path: AppRoutes.allPaths,
-        queryParameters: {'language': widget.currentLanguage}).toString());
+    await context.push<void>(Uri(path: AppRoutes.allPaths, queryParameters: {
+      'language': widget.currentLanguage,
+      if (search) 'search': '1',
+    }).toString());
     if (!mounted) return;
     _reloadAfterProgressChange();
   }
@@ -904,6 +908,9 @@ void openLeaderboardWithAccessCheck(BuildContext context) {
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLanguageChange;
 
+  /// Opens All paths with its search field focused. No search icon when null.
+  final VoidCallback? onSearch;
+
   /// The user's current study-content language code (e.g. 'en', 'hi', 'ml').
   ///
   /// Threaded in from `_StudyTopicsScreenState.currentLanguage` so the reset
@@ -914,6 +921,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   const StudyTopicsAppBar({
     super.key,
     this.onLanguageChange,
+    this.onSearch,
     this.language = 'en',
   });
 
@@ -939,6 +947,13 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
+          if (onSearch != null)
+            IconButton(
+              key: const Key('topics_search_button'),
+              icon: Icon(Icons.search, color: palette.text),
+              tooltip: AppLocalizations.of(context)!.searchPathsHint,
+              onPressed: onSearch,
+            ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: palette.text),
             tooltip: context.tr(TranslationKeys.moreOptionsTooltip),

@@ -84,6 +84,7 @@ void main() {
     bool dark = true,
     AppLanguage lang = AppLanguage.english,
     Size size = const Size(390, 900),
+    bool startWithSearch = false,
   }) async {
     translations.language = lang;
     useSurface(tester, size);
@@ -101,11 +102,20 @@ void main() {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: BlocProvider<AllPathsBloc>.value(
         value: bloc!,
-        child: const AllPathsPage(language: 'en'),
+        child: AllPathsPage(language: 'en', startWithSearch: startWithSearch),
       ),
     ));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('opened from the search bar: field shown and focused',
+      (tester) async {
+    await pumpAllPaths(tester, paths: [pathA, pathB], startWithSearch: true);
+    final field = find.byKey(const Key('all_paths_search_field'));
+    expect(field, findsOneWidget);
+    expect(tester.widget<TextField>(field).focusNode?.hasFocus ?? true, isTrue);
+    expect(tester.testTextInput.isVisible, isTrue);
+  });
 
   testWidgets('current path pinned with Current tag; chips filter',
       (tester) async {
@@ -145,8 +155,8 @@ void main() {
       (tester) async {
     await pumpAllPaths(tester, paths: [pathA, pathB]);
     expect(repository.flatOffsets, [0]);
-    await tester.tap(find.byKey(const Key('all_paths_search_toggle')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('all_paths_search_field')), findsOneWidget);
+    expect(tester.testTextInput.isVisible, isFalse);
     await tester.enterText(
         find.byKey(const Key('all_paths_search_field')), 'mark');
     await tester.pump(const Duration(milliseconds: 500));
@@ -154,6 +164,14 @@ void main() {
     expect(repository.searches.last, 'mark');
     expect(find.text(pathB.title), findsOneWidget);
     expect(find.text(pathC.title), findsNothing);
+    // Chips step aside; the header counts the matches.
+    expect(find.text('Gospels'), findsNothing);
+    expect(find.text('1 path'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('all_paths_search_clear')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(repository.searches.last, isNull);
   });
 
   testWidgets(
