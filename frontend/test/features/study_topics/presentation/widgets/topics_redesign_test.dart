@@ -328,6 +328,18 @@ void main() {
       }
     }
 
+    testWidgets('header: search icon opens search', (tester) async {
+      var searched = 0;
+      await tester.pumpWidget(app(
+        Scaffold(body: StudyTopicsAppBar(onSearch: () => searched++)),
+        dark: true,
+        lang: AppLanguage.english,
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('topics_search_button')));
+      expect(searched, 1);
+    });
+
     testWidgets('header: title and overflow menu, no trophy', (tester) async {
       useSurface(tester, const Size(320, 640));
       await tester.pumpWidget(app(
@@ -336,7 +348,7 @@ void main() {
         lang: AppLanguage.english,
       ));
       await tester.pumpAndSettle();
-      expect(find.text('Topics'), findsOneWidget);
+      expect(find.text('Learning Paths'), findsOneWidget);
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
       expect(find.byIcon(Icons.emoji_events_outlined), findsNothing);
     });

@@ -279,6 +279,8 @@ class AppRouter {
                       child: AllPathsPage(
                         initialCategory: state.uri.queryParameters['category'],
                         language: state.uri.queryParameters['language'],
+                        startWithSearch:
+                            state.uri.queryParameters['search'] == '1',
                       ),
                     ),
                   ),

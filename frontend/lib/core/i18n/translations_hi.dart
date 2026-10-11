@@ -2233,7 +2233,7 @@ const Map<String, dynamic> hindiTranslations = {
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
   'topics': {
-    'title': 'विषय',
+    'title': 'सीखने के रास्ते',
     'browse_all': 'सभी रास्ते देखें',
     'continue': 'जारी रखें',
     'start_a_path': 'रास्ता शुरू करें',
@@ -2270,7 +2270,7 @@ const Map<String, dynamic> hindiTranslations = {
     'all_levels': 'सभी',
   },
   'disciple_level': {
-    'seeker': 'शुरुआती',
+    'seeker': 'खोजी',
     'believer': 'विश्वासी',
     'disciple': 'शिष्य',
     'leader': 'नेता',

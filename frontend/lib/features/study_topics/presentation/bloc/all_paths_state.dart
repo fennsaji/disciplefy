@@ -44,6 +44,10 @@ class AllPathsState extends Equatable {
   /// Number of active paths per the server, null while unknown.
   final int? listTotal;
 
+  /// Number of paths matching [query] per the server, null when not
+  /// searching or unknown.
+  final int? searchTotal;
+
   const AllPathsState({
     this.language,
     this.category,
@@ -57,6 +61,7 @@ class AllPathsState extends Equatable {
     this.refreshing = false,
     this.categories = const [],
     this.listTotal,
+    this.searchTotal,
   });
 
   bool get searching => query.isNotEmpty;
@@ -68,6 +73,13 @@ class AllPathsState extends Equatable {
     if (total != null) return total;
     if (categories.isEmpty) return null;
     return categories.fold<int>(0, (sum, c) => sum + c.totalPaths);
+  }
+
+  /// Paths matching the search: the server's count, else the loaded list
+  /// once it is complete; null when not searching or still unknown.
+  int? get matchCount {
+    if (!searching || status != AllPathsStatus.loaded) return null;
+    return searchTotal ?? (hasMore ? null : paths.length);
   }
 
   AllPathsState copyWith({
@@ -85,6 +97,8 @@ class AllPathsState extends Equatable {
     List<LearningPathCategorySummary>? categories,
     int? listTotal,
     bool clearListTotal = false,
+    int? searchTotal,
+    bool clearSearchTotal = false,
   }) =>
       AllPathsState(
         language: language ?? this.language,
@@ -99,6 +113,8 @@ class AllPathsState extends Equatable {
         refreshing: refreshing ?? this.refreshing,
         categories: categories ?? this.categories,
         listTotal: clearListTotal ? null : (listTotal ?? this.listTotal),
+        searchTotal:
+            clearSearchTotal ? null : (searchTotal ?? this.searchTotal),
       );
 
   @override
@@ -113,6 +129,7 @@ class AllPathsState extends Equatable {
         loadingMore,
         moreFailed,
         refreshing,
+        searchTotal,
         categories,
         listTotal,
       ];

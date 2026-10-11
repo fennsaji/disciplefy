@@ -122,7 +122,7 @@ void main() {
 
   testWidgets('search asks the server', (tester) async {
     await pump(tester);
-    await tester.tap(find.byKey(const Key('all_paths_search_toggle')));
+    expect(find.byKey(const Key('all_paths_search_field')), findsOneWidget);
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byKey(const Key('all_paths_search_field')), 'path 55');

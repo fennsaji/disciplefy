@@ -2239,7 +2239,7 @@ const Map<String, dynamic> englishTranslations = {
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
   'topics': {
-    'title': 'Topics',
+    'title': 'Learning Paths',
     'browse_all': 'Browse all paths',
     'continue': 'Continue',
     'start_a_path': 'Start a path',
@@ -2276,7 +2276,7 @@ const Map<String, dynamic> englishTranslations = {
     'all_levels': 'All',
   },
   'disciple_level': {
-    'seeker': 'Beginner',
+    'seeker': 'Seeker',
     'believer': 'Believer',
     'disciple': 'Disciple',
     'leader': 'Leader',

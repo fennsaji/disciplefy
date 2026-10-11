@@ -678,18 +678,38 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     try {
       emit(const auth_states.AuthLoadingState());
 
-      // Unregister FCM token before deleting the account
-      await _notificationService.unregisterToken();
+      // Best-effort: the account (and its tokens) is deleted next anyway.
+      try {
+        await _notificationService.unregisterToken();
+      } catch (e) {
+        Logger.debug('Delete account: FCM unregister failed: $e');
+      }
 
       // Delete account and all associated data
       await _authService.deleteAccount();
-
-      emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       Logger.debug('Delete account error: $e');
       emit(const auth_states.AuthErrorState(
           message: 'Failed to delete account'));
+      return;
     }
+
+    // The account is gone: always end on the signed-out state, even if part
+    // of the local cleanup fails (the deleted user's session is invalid).
+    _stopTokenValidationTimer();
+    try {
+      sl<LanguagePreferenceService>().invalidateLanguageCache();
+      RouterGuard.invalidateLanguageSelectionCache();
+    } catch (_) {}
+    try {
+      await _clearUserDataUseCase.execute();
+    } catch (e) {
+      Logger.debug('Delete account: local cleanup failed: $e');
+      try {
+        await Supabase.instance.client.auth.signOut();
+      } catch (_) {}
+    }
+    emit(const auth_states.UnauthenticatedState());
   }
 
   /// Handles email sign-up with retry logic and error recovery

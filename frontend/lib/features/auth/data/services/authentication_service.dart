@@ -713,7 +713,9 @@ class AuthenticationService {
     }
   }
 
-  /// Delete user account and all associated data
+  /// Deletes the account and all its data on the server. Signing out
+  /// afterwards is the caller's job: the user no longer exists, so a server
+  /// sign-out may fail and must not undo a successful delete.
   Future<void> deleteAccount() async {
     if (!isAuthenticated) return;
 
@@ -724,10 +726,8 @@ class AuthenticationService {
       );
 
       if (response.status != 200) {
-        throw Exception('Delete account failed: ${response.data}');
+        throw Exception('Delete account failed: ${response.status}');
       }
-
-      await signOut();
     } catch (e) {
       Logger.debug('Delete Account Error: $e');
       rethrow;

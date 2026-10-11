@@ -98,6 +98,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<LoadMorePathsForCategory>(_onLoadMorePathsForCategory);
     on<SearchLearningPaths>(_onSearchLearningPaths);
     on<LoadFlatLearningPaths>(_onLoadFlatLearningPaths);
+    on<LoadMoreFlatLearningPaths>(_onLoadMoreFlatLearningPaths);
     on<ResetLearningProgressRequested>(_onResetLearningProgress);
   }
 
@@ -406,32 +407,102 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
   ///
   /// Used by the fellowship picker so that completed paths (sorted last in the
   /// category API) are never cut off by the 3-paths-per-category limit.
+  /// Paths per page of the flat list; the next page loads on scroll.
+  static const flatListPageSize = 20;
+
+  /// The request behind the current flat list, reused for its next pages.
+  LoadFlatLearningPaths? _flatRequest;
+
+  /// First page of the flat list (every path, or [LoadFlatLearningPaths.search]
+  /// matches); [LoadMoreFlatLearningPaths] fetches the rest page by page.
   Future<void> _onLoadFlatLearningPaths(
     LoadFlatLearningPaths event,
     Emitter<LearningPathsState> emit,
   ) async {
+    _flatRequest = event;
+    final query = event.search?.trim() ?? '';
     final current = state;
     if (current is LearningPathsLoaded) {
-      emit(current.copyWith(isSearching: true, searchQuery: ''));
+      emit(current.copyWith(isSearching: true, searchQuery: query));
     } else {
       emit(const LearningPathsLoading());
     }
 
-    final result = await _fetchAllFlat(
+    final result = await _repository.getLearningPaths(
       language: event.language,
+      limit: flatListPageSize,
+      forceRefresh: true,
+      search: query.isEmpty ? null : query,
       fellowshipId: event.fellowshipId,
     );
+    // A newer request replaced this one while it was in flight.
+    if (!identical(_flatRequest, event)) return;
 
     // The flat list replaces the category listing in the state.
     _listingLanguage = null;
     result.fold(
       (failure) => emit(
           LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
-      (paths) => emit(LearningPathsLoaded(
-        categories: const [],
-        searchResults: paths,
-        searchQuery: '',
-      )),
+      (page) {
+        final seen = <String>{};
+        emit(LearningPathsLoaded(
+          categories: const [],
+          searchResults: [
+            for (final p in page.paths)
+              if (seen.add(p.id)) p
+          ],
+          searchQuery: query,
+          flatHasMore: page.hasMore && page.paths.isNotEmpty,
+          flatNextOffset: page.paths.length,
+        ));
+      },
+    );
+  }
+
+  Future<void> _onLoadMoreFlatLearningPaths(
+    LoadMoreFlatLearningPaths event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    final request = _flatRequest;
+    final current = state;
+    if (request == null ||
+        current is! LearningPathsLoaded ||
+        !current.flatHasMore ||
+        current.isFetchingMoreFlat ||
+        current.isSearching) {
+      return;
+    }
+    emit(current.copyWith(isFetchingMoreFlat: true));
+    final query = request.search?.trim() ?? '';
+    final result = await _repository.getLearningPaths(
+      language: request.language,
+      limit: flatListPageSize,
+      offset: current.flatNextOffset,
+      forceRefresh: true,
+      search: query.isEmpty ? null : query,
+      fellowshipId: request.fellowshipId,
+    );
+    final latest = state;
+    if (!identical(_flatRequest, request) || latest is! LearningPathsLoaded) {
+      return;
+    }
+    result.fold(
+      // Stops paging; a new search or reopening the sheet starts over.
+      (_) =>
+          emit(latest.copyWith(isFetchingMoreFlat: false, flatHasMore: false)),
+      (page) {
+        final listed = latest.searchResults ?? const <LearningPath>[];
+        final seen = {for (final p in listed) p.id};
+        emit(latest.copyWith(
+          searchResults: [
+            ...listed,
+            ...page.paths.where((p) => seen.add(p.id)),
+          ],
+          flatHasMore: page.hasMore && page.paths.isNotEmpty,
+          flatNextOffset: latest.flatNextOffset + page.paths.length,
+          isFetchingMoreFlat: false,
+        ));
+      },
     );
   }
 

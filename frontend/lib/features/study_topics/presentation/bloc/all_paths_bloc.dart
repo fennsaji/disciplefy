@@ -190,6 +190,8 @@ class AllPathsBloc extends Bloc<AllPathsEvent, AllPathsState> {
           moreFailed: false,
           refreshing: false,
           listTotal: _allTotalFrom(request, page),
+          searchTotal: request.searching ? page.total : null,
+          clearSearchTotal: !request.searching || page.total == null,
         ));
       },
     );

@@ -110,10 +110,22 @@ class LoadFlatLearningPaths extends LearningPathsEvent {
   final String language;
   final String? fellowshipId;
 
-  const LoadFlatLearningPaths({this.language = 'en', this.fellowshipId});
+  /// Server-side search; the whole list when null or empty.
+  final String? search;
+
+  const LoadFlatLearningPaths({
+    this.language = 'en',
+    this.fellowshipId,
+    this.search,
+  });
 
   @override
-  List<Object?> get props => [language, fellowshipId];
+  List<Object?> get props => [language, fellowshipId, search];
+}
+
+/// Next page of the list [LoadFlatLearningPaths] started.
+class LoadMoreFlatLearningPaths extends LearningPathsEvent {
+  const LoadMoreFlatLearningPaths();
 }
 
 /// Search learning paths by query (bypasses cache, hits backend).

@@ -2,11 +2,9 @@
  * Delete Account Edge Function
  *
  * Permanently deletes the authenticated user's account and all associated data.
- * Handles FK constraints that would otherwise block auth.admin.deleteUser:
- *   - fellowships.mentor_user_id  ON DELETE RESTRICT  → delete fellowships the user mentors
- *   - fellowship_invites.used_by  NO ACTION (default) → null out used_by references
- *
- * All other tables cascade automatically from auth.users deletion.
+ * Never deletes a fellowship: each one the user owns is handed to another
+ * mentor or member first (hand_over_fellowships), or deactivated when nobody
+ * else is in it. Every FK to auth.users either cascades or is SET NULL.
  */
 
 import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
@@ -78,21 +76,15 @@ async function handleDeleteAccount(
     console.warn('[DeleteAccount] Google cleanup failed (non-fatal):', err)
   }
 
-  // 2. Null out fellowship_invites.used_by (NO ACTION default would block deletion)
-  await db
-    .from('fellowship_invites')
-    .update({ used_by: null })
-    .eq('used_by', userId)
+  // 2. Hand over every fellowship the user owns. Must succeed before the user
+  //    is deleted, so a fellowship is never left without an owner by accident.
+  const { error: handOverError } = await db.rpc('hand_over_fellowships', { p_user: userId })
+  if (handOverError) {
+    console.error('[DeleteAccount] Fellowship hand-over failed:', handOverError.code)
+    throw new AppError('DATABASE_ERROR', 'Failed to delete account', 500)
+  }
 
-  // 3. Delete fellowships where user is mentor (ON DELETE RESTRICT would block deletion).
-  //    fellowship_members, fellowship_posts, fellowship_comments, fellowship_invites
-  //    all cascade from fellowships, so this cleans up the whole fellowship.
-  await db
-    .from('fellowships')
-    .delete()
-    .eq('mentor_user_id', userId)
-
-  // 4. Delete the auth user — all remaining related data cascades via FK constraints
+  // 3. Delete the auth user — all remaining related data cascades via FK constraints
   const { error } = await db.auth.admin.deleteUser(userId)
 
   if (error) {

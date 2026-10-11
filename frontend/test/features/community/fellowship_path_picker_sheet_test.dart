@@ -190,15 +190,15 @@ void main() {
     expect(find.text('1 path'), findsNWidgets(3));
 
     double y(String text) => tester.getTopLeft(find.text(text)).dy;
-    // Beginner (curated order), follower, disciple, leader.
+    // Seeker (curated order), follower, disciple, leader.
     expect(y('New Believer Essentials'), lessThan(y('Rooted in Christ')));
     expect(y('Rooted in Christ'), lessThan(y('Who Is the Holy Spirit?')));
     expect(y('Who Is the Holy Spirit?'), lessThan(y('Sermon on the Mount')));
     expect(y('Sermon on the Mount'), lessThan(y('Leading Others')));
 
     // Level headings sit left, counts right-aligned in the same row.
-    expect(find.text('BEGINNER'), findsOneWidget);
-    expect(tester.getTopLeft(find.text('BEGINNER')).dy,
+    expect(find.text('SEEKER'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('SEEKER')).dy,
         closeTo(tester.getTopLeft(find.text('2 paths')).dy, 4));
   });
 
@@ -282,13 +282,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     verifyNever(() => _paths.add(any()));
     await tester.pump(const Duration(milliseconds: 300));
-    verify(() => _paths.add(const SearchLearningPaths(query: 'grace')))
+    verify(() => _paths.add(
+            const LoadFlatLearningPaths(fellowshipId: 'f1', search: 'grace')))
         .called(1);
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pump(const Duration(milliseconds: 500));
-    verify(() => _paths.add(const LoadFlatLearningPaths(fellowshipId: 'f1')))
-        .called(1);
+    verify(() => _paths.add(
+        const LoadFlatLearningPaths(fellowshipId: 'f1', search: ''))).called(1);
   });
 
   testWidgets('no search results', (tester) async {
@@ -347,8 +348,8 @@ void main() {
         _expectClean(tester);
         expect(find.text('Network error'), findsOneWidget);
         await tester.tap(find.byType(OutlinedButton));
-        verify(() =>
-                _paths.add(const LoadFlatLearningPaths(fellowshipId: 'f1')))
+        verify(() => _paths.add(
+                const LoadFlatLearningPaths(fellowshipId: 'f1', search: '')))
             .called(1);
       });
     }

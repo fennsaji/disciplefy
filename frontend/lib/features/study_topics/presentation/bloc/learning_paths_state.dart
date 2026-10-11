@@ -74,7 +74,17 @@ class LearningPathsLoaded extends LearningPathsState {
     this.isSearching = false,
     this.searchFailed = false,
     this.listingRevision = 0,
+    this.flatHasMore = false,
+    this.flatNextOffset = 0,
+    this.isFetchingMoreFlat = false,
   });
+
+  /// Paged flat list ([LoadFlatLearningPaths]): the server has more paths
+  /// after [searchResults], fetched from [flatNextOffset] by
+  /// [LoadMoreFlatLearningPaths].
+  final bool flatHasMore;
+  final int flatNextOffset;
+  final bool isFetchingMoreFlat;
 
   @override
   List<Object?> get props => [
@@ -89,6 +99,9 @@ class LearningPathsLoaded extends LearningPathsState {
         isSearching,
         searchFailed,
         listingRevision,
+        flatHasMore,
+        flatNextOffset,
+        isFetchingMoreFlat,
       ];
 
   /// Whether there are any paths to display
@@ -125,6 +138,9 @@ class LearningPathsLoaded extends LearningPathsState {
     bool? isSearching,
     bool? searchFailed,
     bool clearSearch = false,
+    bool? flatHasMore,
+    int? flatNextOffset,
+    bool? isFetchingMoreFlat,
   }) {
     return LearningPathsLoaded(
       categories: categories ?? this.categories,
@@ -139,6 +155,10 @@ class LearningPathsLoaded extends LearningPathsState {
       isSearching: clearSearch ? false : (isSearching ?? this.isSearching),
       searchFailed: clearSearch ? false : (searchFailed ?? this.searchFailed),
       listingRevision: listingRevision,
+      flatHasMore: clearSearch ? false : (flatHasMore ?? this.flatHasMore),
+      flatNextOffset: clearSearch ? 0 : (flatNextOffset ?? this.flatNextOffset),
+      isFetchingMoreFlat:
+          clearSearch ? false : (isFetchingMoreFlat ?? this.isFetchingMoreFlat),
     );
   }
 }
