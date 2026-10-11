@@ -336,7 +336,7 @@ void main() {
         lang: AppLanguage.english,
       ));
       await tester.pumpAndSettle();
-      expect(find.text('Topics'), findsOneWidget);
+      expect(find.text('Learning Paths'), findsOneWidget);
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
       expect(find.byIcon(Icons.emoji_events_outlined), findsNothing);
     });

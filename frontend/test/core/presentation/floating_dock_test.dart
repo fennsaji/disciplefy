@@ -79,7 +79,7 @@ void main() {
       (tester) async {
     await pump(tester, selected: 0);
     final xs = [
-      for (final l in ['Home', 'Generate', 'Discipler', 'Topics', 'Community'])
+      for (final l in ['Home', 'Generate', 'Discipler', 'Paths', 'Community'])
         tester.getCenter(find.text(l)).dx,
     ];
     expect(xs, orderedEquals([...xs]..sort()));
@@ -123,7 +123,7 @@ void main() {
   testWidgets('a regular tab selected: gold label, Discipler has no ring',
       (tester) async {
     await pump(tester, selected: 3); // Topics
-    expect(labelColor(tester, 'Topics'), AppColors.brandGold);
+    expect(labelColor(tester, 'Paths'), AppColors.brandGold);
     expect(labelColor(tester, 'Home'), isNot(AppColors.brandGold));
     expect(ringVisible(tester), isFalse);
   });
@@ -133,7 +133,7 @@ void main() {
     await pump(tester, selected: 2);
     expect(ringVisible(tester), isTrue);
     expect(labelColor(tester, 'Discipler'), AppColors.brandGold);
-    for (final l in ['Home', 'Generate', 'Topics', 'Community']) {
+    for (final l in ['Home', 'Generate', 'Paths', 'Community']) {
       expect(labelColor(tester, l), isNot(AppColors.brandGold), reason: l);
     }
   });

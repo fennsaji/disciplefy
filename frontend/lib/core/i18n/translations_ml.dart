@@ -2328,7 +2328,7 @@ const Map<String, dynamic> malayalamTranslations = {
   },
   // Topics tab: current path card, category "See all", "Browse all paths"
   'topics': {
-    'title': 'വിഷയം',
+    'title': 'പഠന പാതകൾ',
     'browse_all': 'എല്ലാ പാതകളും',
     'continue': 'തുടരുക',
     'start_a_path': 'പാത തുടങ്ങാം',
