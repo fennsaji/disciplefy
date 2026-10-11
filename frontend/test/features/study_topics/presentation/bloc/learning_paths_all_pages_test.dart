@@ -30,20 +30,42 @@ void main() {
 
   tearDown(() => bloc.close());
 
-  test('the flat list loads every page until the server has no more', () async {
+  test('the flat list loads one page, the next on demand', () async {
     bloc.add(const LoadFlatLearningPaths());
-    final state = await settle();
+    var state = await settle() as LearningPathsLoaded;
+    expect(state.searchResults, hasLength(20));
+    expect(state.flatHasMore, isTrue);
+    expect(repository.flatOffsets, [0]);
 
-    expect(state, isA<LearningPathsLoaded>());
-    final paths = (state as LearningPathsLoaded).searchResults!;
-    expect(paths, hasLength(120));
-    expect(paths.map((p) => p.id).toSet(), hasLength(120));
-    expect(paths.last.title, 'Path 120');
-    expect(repository.flatOffsets, [0, 50, 100]);
+    bloc.add(const LoadMoreFlatLearningPaths());
+    state = await settle() as LearningPathsLoaded;
+    expect(state.searchResults, hasLength(40));
+    expect(state.searchResults!.map((p) => p.id).toSet(), hasLength(40));
+    expect(repository.flatOffsets, [0, 20]);
   });
 
-  test('a failed later page is an error, not a short list', () async {
-    repository.failFlatAt = 50;
+  test('a paged search keeps its query on the next page', () async {
+    bloc.add(const LoadFlatLearningPaths(search: 'path'));
+    var state = await settle() as LearningPathsLoaded;
+    expect(state.searchQuery, 'path');
+    expect(state.searchResults, hasLength(20));
+    bloc.add(const LoadMoreFlatLearningPaths());
+    state = await settle() as LearningPathsLoaded;
+    expect(state.searchResults, hasLength(40));
+    expect(state.searchQuery, 'path');
+  });
+
+  test('a failed first page is an error; a failed later page stops paging',
+      () async {
+    repository.failFlatAt = 20;
+    bloc.add(const LoadFlatLearningPaths());
+    var state = await settle() as LearningPathsLoaded;
+    bloc.add(const LoadMoreFlatLearningPaths());
+    state = await settle() as LearningPathsLoaded;
+    expect(state.searchResults, hasLength(20));
+    expect(state.flatHasMore, isFalse);
+
+    repository.failFlatAt = 0;
     bloc.add(const LoadFlatLearningPaths());
     expect(await settle(), isA<LearningPathsError>());
   });

@@ -282,13 +282,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     verifyNever(() => _paths.add(any()));
     await tester.pump(const Duration(milliseconds: 300));
-    verify(() => _paths.add(const SearchLearningPaths(query: 'grace')))
+    verify(() => _paths.add(
+            const LoadFlatLearningPaths(fellowshipId: 'f1', search: 'grace')))
         .called(1);
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pump(const Duration(milliseconds: 500));
-    verify(() => _paths.add(const LoadFlatLearningPaths(fellowshipId: 'f1')))
-        .called(1);
+    verify(() => _paths.add(
+        const LoadFlatLearningPaths(fellowshipId: 'f1', search: ''))).called(1);
   });
 
   testWidgets('no search results', (tester) async {
@@ -347,8 +348,8 @@ void main() {
         _expectClean(tester);
         expect(find.text('Network error'), findsOneWidget);
         await tester.tap(find.byType(OutlinedButton));
-        verify(() =>
-                _paths.add(const LoadFlatLearningPaths(fellowshipId: 'f1')))
+        verify(() => _paths.add(
+                const LoadFlatLearningPaths(fellowshipId: 'f1', search: '')))
             .called(1);
       });
     }

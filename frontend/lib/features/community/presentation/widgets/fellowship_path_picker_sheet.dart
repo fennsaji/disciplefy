@@ -27,8 +27,10 @@ import 'package:disciplefy_bible_study/features/study_topics/presentation/widget
 /// fellowship studies together.
 ///
 /// Reads [LearningPathsBloc] from the context (the caller provides one and
-/// loads it with [LoadFlatLearningPaths]). Paths are searched on the server
-/// (debounced), filtered by discipleship level on the client, and listed in
+/// loads it with [LoadFlatLearningPaths]). Paths arrive a page at a time —
+/// the next page loads as the list nears its end — and are searched on the
+/// server (debounced), filtered by discipleship level on the client, and
+/// listed in
 /// discipleship order — seeker, follower, disciple, leader — each level under
 /// its own heading with its path count.
 ///
@@ -79,15 +81,11 @@ class _FellowshipPathPickerSheetState extends State<FellowshipPathPickerSheet> {
   }
 
   void _reload(String query) {
-    final bloc = context.read<LearningPathsBloc>();
-    if (query.isEmpty) {
-      bloc.add(LoadFlatLearningPaths(
-        language: widget.language,
-        fellowshipId: widget.fellowshipId,
-      ));
-    } else {
-      bloc.add(SearchLearningPaths(query: query, language: widget.language));
-    }
+    context.read<LearningPathsBloc>().add(LoadFlatLearningPaths(
+          language: widget.language,
+          fellowshipId: widget.fellowshipId,
+          search: query,
+        ));
   }
 
   /// Dispatches the search (or the full listing when cleared) after 400 ms.
@@ -140,14 +138,16 @@ class _FellowshipPathPickerSheetState extends State<FellowshipPathPickerSheet> {
     final metrics = notification.metrics;
     if (metrics.pixels < metrics.maxScrollExtent - 160) return;
 
+    _loadMore();
+  }
+
+  void _loadMore() {
     final bloc = context.read<LearningPathsBloc>();
     final state = bloc.state;
-    // Only load more categories when not in search mode.
     if (state is LearningPathsLoaded &&
-        state.searchQuery == null &&
-        state.hasMoreCategories &&
-        !state.isFetchingMoreCategories) {
-      bloc.add(LoadMoreCategories(language: widget.language));
+        state.flatHasMore &&
+        !state.isFetchingMoreFlat) {
+      bloc.add(const LoadMoreFlatLearningPaths());
     }
   }
 
@@ -367,13 +367,19 @@ class _FellowshipPathPickerSheetState extends State<FellowshipPathPickerSheet> {
       // LoadFlatLearningPaths emits every path as `searchResults` with an
       // empty query, so `categories` — and therefore `allPaths` — is empty.
       source = state.searchResults ?? const [];
-      hasFooter = false;
+      hasFooter = state.flatHasMore || state.isFetchingMoreFlat;
     } else {
       source = state.allPaths;
       hasFooter = state.hasMoreCategories || state.isFetchingMoreCategories;
     }
 
     final paths = _filtered(source);
+    // A level chip can leave too few loaded paths to scroll: fetch more.
+    if (hasFooter && paths.length < 8) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadMore();
+      });
+    }
     if (paths.isEmpty) {
       if (hasFooter) return [spinner];
       final String message;
@@ -404,7 +410,8 @@ class _FellowshipPathPickerSheetState extends State<FellowshipPathPickerSheet> {
             if (entry is _LevelEntry) {
               return _LevelHeading(
                 level: entry.level,
-                count: entry.count,
+                // A partial count would mislead while pages are still due.
+                count: hasFooter ? null : entry.count,
                 first: index == 0,
               );
             }
@@ -427,7 +434,7 @@ class _FellowshipPathPickerSheetState extends State<FellowshipPathPickerSheet> {
         child: Padding(
           padding: EdgeInsets.only(
               top: 8, bottom: 24 + MediaQuery.paddingOf(context).bottom),
-          child: state.isFetchingMoreCategories
+          child: hasFooter
               ? Center(
                   child: SizedBox(
                     width: 24,
@@ -479,10 +486,11 @@ class _PathEntry {
   const _PathEntry(this.path, {required this.divider});
 }
 
-/// Gold level label with the level's path count on the right.
+/// Gold level label with the level's path count on the right (no count
+/// until every page has loaded).
 class _LevelHeading extends StatelessWidget {
   final String level;
-  final int count;
+  final int? count;
   final bool first;
 
   const _LevelHeading({
@@ -494,12 +502,15 @@ class _LevelHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ReaderPalette.of(context);
-    final countLabel = context.tr(
-      count == 1
-          ? TranslationKeys.topicsHubPathsCountOne
-          : TranslationKeys.topicsHubPathsCount,
-      {'count': count},
-    );
+    final count = this.count;
+    final countLabel = count == null
+        ? ''
+        : context.tr(
+            count == 1
+                ? TranslationKeys.topicsHubPathsCountOne
+                : TranslationKeys.topicsHubPathsCount,
+            {'count': count},
+          );
     return Padding(
       padding: EdgeInsets.only(top: first ? 12 : 24, bottom: 2),
       child: Row(
