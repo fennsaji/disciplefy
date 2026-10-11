@@ -451,7 +451,7 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
 // Discover public fellowships  GET /fellowship/discover
 // ---------------------------------------------------------------------------
 
-interface FellowshipRow { id: string; name: string; description: string | null; language: string; max_members: number | null; created_at: string; mentor_user_id: string; is_official?: boolean; discipler_allowed?: boolean }
+interface FellowshipRow { id: string; name: string; description: string | null; language: string; max_members: number | null; created_at: string; mentor_user_id: string | null; is_official?: boolean; discipler_allowed?: boolean }
 interface MentorEntry { userId: string; name: string | null; avatar: string | null }
 interface MemberRow { fellowship_id: string }
 interface StudyRow { fellowship_id: string; learning_paths: { title: string | null }[] | null }
@@ -544,7 +544,7 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
   }
 
   const ids = pageRows.map(f => f.id)
-  const mentorIds = [...new Set(pageRows.map(f => f.mentor_user_id))]
+  const mentorIds = [...new Set(pageRows.map(f => f.mentor_user_id).filter((id): id is string => !!id))]
 
   const [memberRowsResult, studyRowsResult, mentorEntries] = await Promise.all([
     db.from('fellowship_members').select('fellowship_id').in('fellowship_id', ids).eq('is_active', true),
@@ -604,7 +604,7 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
     member_count: memberCountMap.get(f.id) ?? 0,
     max_members: f.max_members,
     current_study_title: studyTitleMap.get(f.id) ?? null,
-    mentor_name: mentorNameMap.get(f.mentor_user_id) ?? null,
+    mentor_name: f.mentor_user_id ? mentorNameMap.get(f.mentor_user_id) ?? null : null,
     is_official: f.is_official ?? false,
     discipler_allowed: f.discipler_allowed ?? false,
   }))
