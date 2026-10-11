@@ -2270,7 +2270,7 @@ const Map<String, dynamic> hindiTranslations = {
     'all_levels': 'सभी',
   },
   'disciple_level': {
-    'seeker': 'शुरुआती',
+    'seeker': 'खोजी',
     'believer': 'विश्वासी',
     'disciple': 'शिष्य',
     'leader': 'नेता',

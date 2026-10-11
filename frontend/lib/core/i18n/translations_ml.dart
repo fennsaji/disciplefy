@@ -2365,7 +2365,7 @@ const Map<String, dynamic> malayalamTranslations = {
     'all_levels': 'എല്ലാം',
   },
   'disciple_level': {
-    'seeker': 'തുടക്കക്കാരൻ',
+    'seeker': 'അന്വേഷകൻ',
     'believer': 'വിശ്വാസി',
     'disciple': 'ശിഷ്യൻ',
     'leader': 'നേതാവ്',

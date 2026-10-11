@@ -2276,7 +2276,7 @@ const Map<String, dynamic> englishTranslations = {
     'all_levels': 'All',
   },
   'disciple_level': {
-    'seeker': 'Beginner',
+    'seeker': 'Seeker',
     'believer': 'Believer',
     'disciple': 'Disciple',
     'leader': 'Leader',
