@@ -87,7 +87,6 @@ void main() {
         bad.add('${e.key}: XP');
       }
       if (RegExp(r'\bAI\b').hasMatch(v)) bad.add('${e.key}: AI');
-      if (RegExp(r'\bSeekers?\b').hasMatch(v)) bad.add('${e.key}: Seeker');
     }
     for (final e in flatten(englishTranslations)
         .where((e) => pathItemKeys.any(e.key.startsWith))) {

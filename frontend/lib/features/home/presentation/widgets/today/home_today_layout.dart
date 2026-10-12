@@ -174,8 +174,10 @@ class _HomeTodayLayoutState extends State<HomeTodayLayout> {
           final summary = enrolledPathSummary(state as HomeCombinedState);
           // An account that finished lessons elsewhere (e.g. signed in on a
           // new device after the first run) is past lesson 1 here too, so
-          // notification prompts are no longer held back.
-          if ((summary?.lessonsCompleted ?? 0) > 0) {
+          // notification prompts are no longer held back. Only needed while
+          // a hold is actually in effect on this device.
+          if ((summary?.lessonsCompleted ?? 0) > 0 &&
+              !FirstRunFlags.notificationPromptsAllowed) {
             unawaited(FirstRunFlags.markFirstLessonCompleted());
           }
           _loadNewForYou(summary);

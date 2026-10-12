@@ -34,9 +34,9 @@ List<Color> photoHeaderScrim(ReaderPalette palette) => palette.isDark
         palette.page,
       ]
     : [
-        palette.page.withValues(alpha: 0.94),
         palette.page.withValues(alpha: 0.9),
-        palette.page.withValues(alpha: 0.92),
+        palette.page.withValues(alpha: 0.85),
+        palette.page.withValues(alpha: 0.9),
         palette.page,
       ];
 
@@ -96,9 +96,9 @@ class PhotoWash extends StatelessWidget {
             page,
           ]
         : [
-            page.withValues(alpha: 0.85),
-            page.withValues(alpha: 0.8),
-            page.withValues(alpha: 0.93),
+            page.withValues(alpha: 0.5),
+            page.withValues(alpha: 0.45),
+            page.withValues(alpha: 0.82),
             page,
           ];
 

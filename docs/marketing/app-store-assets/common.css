@@ -1,0 +1,10 @@
+@font-face{font-family:P;src:url(Poppins-ExtraBold.ttf);font-weight:800}
+*{margin:0;box-sizing:border-box}
+body{background:#0F172A;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;overflow:hidden;position:relative}
+.bg{position:absolute;inset:0;background:radial-gradient(900px 700px at 78% 40%,#5B4FE9 0%,rgba(91,79,233,.35) 45%,transparent 75%),linear-gradient(135deg,#1B1F5E 0%,#0F172A 70%)}
+h1{font-family:P,sans-serif;font-weight:800;color:#fff;line-height:1.05;letter-spacing:-1px}
+h1 em{font-style:normal;color:#C9C2FF}
+p.sub{color:#CBD5E1;font-size:30px;line-height:1.4}
+.logo{height:56px;display:block}
+.phone{position:absolute;border-radius:54px;border:10px solid #0B1020;box-shadow:0 0 0 2px #3a3f6b,0 40px 90px rgba(0,0,0,.55);overflow:hidden;background:#000}
+.phone img{width:100%;display:block}

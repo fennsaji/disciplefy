@@ -346,7 +346,7 @@ ${JSON_OUTPUT_RULES}
 
 ${createLanguageBlock(languageConfig, params.language)}${getDiscipleLevelContext(params.discipleLevel)}
 
-STUDY MODE: STANDARD (10 minutes reading-with-understanding time)
+STUDY MODE: STANDARD (7-8 minutes reading-with-understanding time)
 Reading-with-understanding speed: 140-150 words/minute = ${wordTarget} words TARGET
 Tone: Conversational pastor — warm, personal, clear, practically grounding.
 
@@ -355,7 +355,7 @@ ${WRITING_STYLE}
 ${createNativeWritingStyle(params.language)}
 
 ⚠️ CRITICAL INSTRUCTION: CLEAR AND THOUGHTFUL
-This is a 10-MINUTE study optimized for understanding and reflection.
+This is a 7-8 MINUTE study optimized for understanding and reflection.
 Write focused, clear content that readers can grasp and apply in one sitting.
 Target total output: ${wordTarget} words across all fields.`
 
@@ -368,37 +368,37 @@ CONTENT STRUCTURE — ALL 7 FIELDS MANDATORY
 ---
 
 WORD COUNTS:
-- "summary": 100-130 words (6-8 sentences)
-- "context": 40-70 words (one short paragraph, essential background only)
+- "summary": 70-90 words (5-6 sentences)
+- "context": 40-60 words (one short paragraph, essential background only)
 - "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
-- "interpretation": 900-1,200 words, EXACTLY 4-5 paragraphs, each 7-9 sentences
-- "prayerPoints": ONE single prayer paragraph (5-6 sentences, 80-100 words)
-- Total: ${wordTarget} words (10-minute study at 140-150 wpm)
+- "interpretation": 650-800 words, EXACTLY 4 paragraphs, each 5-6 sentences
+- "prayerPoints": ONE single prayer paragraph (4-5 sentences, 60-80 words)
+- Total: ${wordTarget} words (7-8 minute study at 140-150 wpm)
 
 INTERPRETATION STRUCTURE:
-- 4-5 paragraphs of flowing prose (NO bullets, NO bracketed headings)
-- Each paragraph: **Bold Section Title** followed by 7-9 sentences
+- 4 paragraphs of flowing prose (NO bullets, NO bracketed headings)
+- Each paragraph: **Bold Section Title** followed by 5-6 sentences
 - Each sentence = theological point + biblical support + practical grounding
-- Separate paragraphs with \\n\\n. Target: 900-1,200 words total.
+- Separate paragraphs with \\n\\n. Target: 650-800 words total.
 
 {
-  "summary": "6-8 sentences (100-130 words) — doctrinal overview",
-  "context": "40-70 words MAX — single most essential background fact",
+  "summary": "5-6 sentences (70-90 words) — doctrinal overview",
+  "context": "40-60 words MAX — single most essential background fact",
   "passage": "Scripture reference only (e.g., 'Romans 8:1-39'). MANDATORY. No verse text.",
-  "interpretation": "4-5 sections, each with **Bold Title** + 7-9 sentences. 900-1,200 words. Prose only.",
+  "interpretation": "4 sections, each with **Bold Title** + 5-6 sentences. 650-800 words. Prose only.",
   "relatedVerses": ["EXACTLY 4 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["EXACTLY 4 deep application questions"],
-  "prayerPoints": ["ONE single continuous prayer paragraph (5-6 sentences, 80-100 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."]
+  "prayerPoints": ["ONE single continuous prayer paragraph (4-5 sentences, 60-80 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."]
 }
 
-${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
+${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
-PRAYER: 5-6 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
+PRAYER: 4-5 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
 
 VERIFY BEFORE OUTPUT:
-- interpretation: 4-5 paragraphs × 7-9 sentences each = 900-1,200 words?
+- interpretation: 4 paragraphs × 5-6 sentences each = 650-800 words?
 - passage: reference ONLY (not full text)?
-- prayer: 5-6 sentences with correct closing?
+- prayer: 4-5 sentences with correct closing?
 - All 7 fields present? All verse references in ${languageConfig.name}?
 
 ${languageExamples}
@@ -1099,7 +1099,7 @@ export function getWordCountTarget(languageConfig: LanguageConfig, studyMode: St
   // Optimized for comprehension at 110-160 wpm (vs previous 200 wpm)
   const defaultTargets: Record<StudyMode, string> = {
     quick: '450-600',       // 3 min @ 140-160 wpm (understanding-focused)
-    standard: '1200-1500',  // 8 min @ 140-150 wpm (thoughtful reading)
+    standard: '1000-1200',  // 7-8 min @ 140-150 wpm (thoughtful reading)
     deep: '1500-1800',      // 12 min @ 120-140 wpm (comprehensive depth)
     lectio: '1000-1200',    // 9 min @ 110-130 wpm (contemplative)
     sermon: '4500-5350'     // 30 min read | 50-60 min preach (preacher-facing explanation)
