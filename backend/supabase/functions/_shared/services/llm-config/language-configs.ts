@@ -30,7 +30,7 @@ const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
     culturalContext: 'Western Christian context with Protestant theological emphasis',
     wordCountTargets: {
       quick: { min: 600, max: 750, display: '600-750' },
-      standard: { min: 2000, max: 2500, display: '2000-2500' },
+      standard: { min: 1000, max: 1200, display: '1000-1200' },
       deep: { min: 1800, max: 2400, display: '1800-2400' },
       lectio: { min: 3000, max: 3500, display: '3000-3500' },
       sermon: { min: 9000, max: 11000, display: '9000-11000' }
@@ -64,7 +64,7 @@ Avoid Sanskritised literary words (निहितार्थ, अगम्य�
     culturalContext: 'Indian Christian context - use terms familiar to Protestant Christians in India',
     wordCountTargets: {
       quick: { min: 500, max: 600, display: '500-600' },
-      standard: { min: 2000, max: 2500, display: '2000-2500' },
+      standard: { min: 1000, max: 1200, display: '1000-1200' },
       deep: { min: 1800, max: 2400, display: '1800-2400' },
       lectio: { min: 3000, max: 3500, display: '3000-3500' },
       sermon: { min: 9000, max: 11000, display: '9000-11000' }
@@ -125,7 +125,7 @@ a verse, and never around a pronoun or word you have silently changed.`,
     // Malayalam script requires significantly more tokens per word than English/Hindi
     wordCountTargets: {
       quick: { min: 400, max: 500, display: '400-500' },           // 75% of English
-      standard: { min: 1500, max: 1800, display: '1500-1800' },    // 70% of English
+      standard: { min: 600, max: 750, display: '600-750' },        // same content as English; Malayalam words are long
       deep: { min: 1200, max: 1600, display: '1200-1600' },        // actual 2-pass output (~1100-1150 words due to token constraints)
       lectio: { min: 2200, max: 2600, display: '2200-2600' },      // 70% of English
       sermon: { min: 4000, max: 5000, display: '4000-5000' }       // 45% of English
