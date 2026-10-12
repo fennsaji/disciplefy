@@ -504,3 +504,6 @@ docs/marketing/Content_Playbook_Season1/PDF/
 # Playwright MCP screenshot/snapshot output
 .playwright-mcp/
 design-exports/
+
+# Production content snapshots (learning paths + generated guides)
+docs/content-export/
