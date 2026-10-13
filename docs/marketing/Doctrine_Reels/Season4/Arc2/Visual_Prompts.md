@@ -3,7 +3,7 @@
 Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md](../../Curriculum.md) (Stage 4) ·
 Direction rules: [Flow_Direction_Guide.md](../../Flow_Direction_Guide.md)
 
-Concept, workflow, rules and the Rahul / Amit / Sunil references:
+Older Sunil: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md) · Concept, workflow, rules and the Rahul / Amit references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
 Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·

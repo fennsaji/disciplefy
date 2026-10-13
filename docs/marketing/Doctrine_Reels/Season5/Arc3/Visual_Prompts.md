@@ -3,7 +3,7 @@
 Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md](../../Curriculum.md) (Stage 5) ·
 Direction rules: [Flow_Direction_Guide.md](../../Flow_Direction_Guide.md)
 
-Concept, workflow, rules and the Rahul / Sunil references:
+Older Sunil: [../../Season4/Arc1/Visual_Prompts.md](../../Season4/Arc1/Visual_Prompts.md) · Concept, workflow, rules and the Rahul references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
 Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
@@ -529,7 +529,7 @@ CAMERA: close shot, 50mm lens, chest height, camera side-on to the two men, squa
 SET: Rahul's rented room on a Thursday evening, the cream wall soft behind.
 BLOCKING: from screen-left, an older man's lined hands and the cuff of a light-blue collared shirt hold out a worn printed Bible, its cover soft with years; from screen-right, Rahul's open hands and plain grey t-shirt sleeves reach up to receive it from below. Both men's faces are cropped out above the top of the frame. The cover has no readable text.
 LIGHT: warm evening lamplight from screen-left across the Bible and the hands.
-Skin tone and sleeve on the left match Sunil's character reference. Skin tone and sleeve on the right match Rahul's character reference.
+Skin tone, lined hands and sleeve on the left match the older Sunil reference. Skin tone and sleeve on the right match Rahul's character reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, readable text, people facing the wrong way, duplicated people.
 ```

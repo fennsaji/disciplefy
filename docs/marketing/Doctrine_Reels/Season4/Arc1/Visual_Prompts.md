@@ -3,7 +3,7 @@
 Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md](../../Curriculum.md) (Stage 4) ·
 Direction rules: [Flow_Direction_Guide.md](../../Flow_Direction_Guide.md)
 
-Concept, workflow, rules and the Rahul / Amit / Sunil references:
+Concept, workflow, rules and the Rahul / Amit references (older Sunil: sheet below):
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
 Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
@@ -38,6 +38,15 @@ dissolves into your outro in the edit, the closing line landing over the brand
 frame.
 
 ## References — build these first
+
+**Sunil, older — Seasons 4 and 5**
+
+Sunil is no longer the 24-year-old of Season 1 here: he has a grown family and, by Season 5, hands his Bible on. Build this sheet from his Season 1 reference (attach it) so the face carries over, aged.
+```
+Character reference sheet on a plain warm grey background. Sunil, aged: the same Indian man as the attached Season 1 reference, now in his early fifties. Slight build, neatly side-parted hair now mostly grey and thinning at the temples, clean-shaven, fine lines at the eyes and mouth, a reserved and polite expression, lined and slightly knotted hands. Three views side by side: front, three-quarter and profile, plus one close view of his hands. Wearing a plain light-blue collared shirt. Even soft studio light.
+Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
+```
 
 **Arjun — the young believer Rahul walks with (Arc 3)**
 ```
@@ -219,7 +228,7 @@ table screen-left. The open Bible lies in front of them with its pages toward
 them, so every page shot is taken from across the table and above, faces
 cropped by the frame top. Sunil's bedroom: the camera stands in his doorway;
 he kneels at the far side of his bed facing the wall, his back to the lens.
-Sunil is older here than his reference — late forties, greying at the temples.
+Sunil is older here than his Season 1 reference — use the older Sunil sheet above.
 
 ### Frames
 
@@ -227,9 +236,9 @@ Sunil is older here than his reference — late forties, greying at the temples.
 ```
 CAMERA: medium shot, 35mm lens, chest height, camera in the corridor doorway looking into the room.
 SET: a grown man's bedroom at night in an Indian home, neatly kept and unused — a made bed against the left wall, a cricket bat leaning in the far corner, a desk against the right wall with nothing on it. The room is in shadow; light spills in from the corridor behind the camera.
-BLOCKING: Sunil, lean, in his late forties, greying at the temples, in a plain light-blue collared shirt, sits on the edge of the bed screen-left, body facing screen-right toward the empty desk; his elbows rest on his knees, his hands are clasped, his head is bowed and his eyes are on the floor in front of him.
+BLOCKING: Sunil, slight, in his early fifties, hair mostly grey, in a plain light-blue collared shirt, sits on the edge of the bed screen-left, body facing screen-right toward the empty desk; his elbows rest on his knees, his hands are clasped, his head is bowed and his eyes are on the floor in front of him.
 LIGHT: warm corridor lamplight from behind the camera falling across the floor and his shoulder; the room beyond dim and warm.
-Sunil's face matches his character reference, aged to his late forties.
+Sunil matches the older Sunil reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
@@ -240,7 +249,7 @@ CAMERA: medium close two-shot, 50mm lens, slightly above seated eye level, camer
 SET: Sunil's small dining room at night, a plain wall behind them, a table lamp screen-left, two glasses of tea on the table, a low shelf behind Rahul with a few old books.
 BLOCKING: Sunil sits screen-left in his plain light-blue collared shirt, body facing the table, head bowed, weary eyes on the page. Rahul sits screen-right in a plain grey t-shirt, body facing the table, head turned slightly screen-left toward Sunil; his right index finger rests on one line of a printed Bible lying open on the table in front of them at Proverbs, pages toward them. The Devanagari is soft and deliberately unreadable. Neither looks at the lens.
 LIGHT: warm table-lamp light from screen-left on both faces and the page.
-Sunil's face matches his character reference, aged to his late forties. Rahul matches the character reference exactly.
+Sunil matches the older Sunil reference. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
@@ -251,7 +260,7 @@ CAMERA: close shot, 50mm lens, same position and direction as the attached previ
 SET: the same table at night, the lamp a warm blur screen-left, the open Bible flat on the table below.
 BLOCKING: Rahul, screen-right, holds an old handwritten letter in his left hand and a small worn hymnbook in his right, raised side by side just above the open Bible, both facing him; the writing is deliberately unreadable. Sunil's light-blue sleeve and folded hands rest on the table screen-left. Rahul's grey t-shirt sleeves are in frame.
 LIGHT: warm lamplight from screen-left on the paper.
-Same location, light and wardrobe as the attached previous frame. Skin tones and sleeves match Rahul's and Sunil's character references.
+Same location, light and wardrobe as the attached previous frame. Skin tones and sleeves match Rahul's character reference and the older Sunil reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, readable text, people facing the wrong way, duplicated people.
 ```
@@ -262,7 +271,7 @@ CAMERA: close shot, 50mm lens, same position and direction as the attached previ
 SET: the same table, the letter and hymnbook set down at the frame edge screen-right, the lamp a warm blur screen-left.
 BLOCKING: the printed Bible lies open near its end at Revelation, pages toward them. Sunil's hand, screen-left, light-blue cuff, rests with one finger on a line; Rahul's hand, screen-right, grey sleeve, lifts a few pages back toward the Psalms. The Devanagari is soft and deliberately unreadable.
 LIGHT: warm lamplight from screen-left across the pages.
-Same location, light and wardrobe as the attached previous frame. Skin tones and sleeves match Rahul's and Sunil's character references.
+Same location, light and wardrobe as the attached previous frame. Skin tones and sleeves match Rahul's character reference and the older Sunil reference.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, readable text, people facing the wrong way, duplicated people.
 ```

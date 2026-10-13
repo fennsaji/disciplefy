@@ -3,7 +3,7 @@
 Scripts: [Scripts_Hindi.md](./Scripts_Hindi.md) · Roadmap: [../../Curriculum.md](../../Curriculum.md) (Stage 4) ·
 Direction rules: [Flow_Direction_Guide.md](../../Flow_Direction_Guide.md)
 
-Concept, workflow, rules and the Rahul / Amit / Sunil references:
+Older Sunil: [../Arc1/Visual_Prompts.md](../Arc1/Visual_Prompts.md) · Concept, workflow, rules and the Rahul / Amit references:
 [../../Season1/Arc1/Visual_Prompts.md](../../Season1/Arc1/Visual_Prompts.md) ·
 Vikram: [../../Season2/Arc1/Visual_Prompts.md](../../Season2/Arc1/Visual_Prompts.md#character-references) ·
 Joseph: [../../Season2/Arc2/Visual_Prompts.md](../../Season2/Arc2/Visual_Prompts.md) ·
@@ -409,7 +409,7 @@ CAMERA: medium two-shot, 40mm lens, seated eye height, camera standing in front 
 SET: Sunil's small veranda at night: a whitewashed house wall behind, a closed wooden door at the screen-left edge, a single bare warm bulb on the wall above at centre, a potted plant at the screen-right edge. Two cane chairs side by side, angled slightly toward each other.
 BLOCKING: Sunil sits screen-left in his light-blue collared shirt, body angled screen-right toward Rahul, hands loosely clasped, listening quietly, no surprise, no judgement in his face. Rahul sits screen-right in his plain grey t-shirt, leaning forward with elbows on his knees, body angled screen-left toward Sunil, speaking low with his eyes down on the floor. Neither looks at the lens.
 LIGHT: the warm bulb above and behind them, soft warm fill on both faces.
-Sunil matches his character reference. Rahul matches the character reference exactly.
+Sunil matches the older Sunil reference. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
@@ -420,7 +420,7 @@ CAMERA: medium close two-shot, 50mm lens, seated eye height, same position and d
 SET: the same veranda at night; the bulb a warm glow at the top of frame, the door a soft shape at the screen-left edge.
 BLOCKING: Sunil sits screen-left, light-blue collared shirt, leaning toward Rahul, his left hand resting on Rahul's near shoulder, head bowed, eyes closed. Rahul sits screen-right, plain grey t-shirt, head bowed, eyes closed, hands folded between his knees. Both seated at the same height — neither stands over the other. Neither looks at the lens.
 LIGHT: the warm bulb above them, soft warm light on their bowed heads.
-Same location, light and wardrobe as the attached previous frame. Sunil matches his character reference. Rahul matches the character reference exactly.
+Same location, light and wardrobe as the attached previous frame. Sunil matches the older Sunil reference. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
