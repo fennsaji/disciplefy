@@ -13,6 +13,16 @@ import { calculateOptimalTokens } from '../llm-utils/prompt-builder.ts'
 import { studyGuideSchema } from '../llm-utils/study-guide-schema.ts'
 import { CostTrackingService } from '../cost-tracking-service.ts'
 
+
+/**
+ * OpenAI model for every OpenAI request; it replaced gpt-4o-mini and
+ * gpt-4.1-mini, which shut down on 2027-01-14. gpt-6-luna is a reasoning
+ * model: requests send reasoning_effort 'none' (the only setting that accepts a
+ * temperature, and it keeps latency low), max_completion_tokens instead of
+ * max_tokens, and no presence/frequency penalty (either one makes the request
+ * fail with a server error).
+ */
+export const OPENAI_MODEL = 'gpt-6-luna'
 /**
  * OpenAI API configuration
  */
@@ -98,18 +108,14 @@ export class OpenAIClient {
   }
 
   /**
-   * Selects the optimal OpenAI model based on language and tier.
-   * Premium English users get GPT-4.1-mini for better quality.
+   * Selects the OpenAI model: gpt-6-luna for every tier and language.
    * 
    * @param language - Target language code
    * @param tier - User subscription tier (optional)
    * @returns OpenAI model identifier
    */
   selectModel(language: string, tier?: string): string {
-    if (language === 'en' && tier === 'premium') {
-      return 'gpt-4.1-mini-2025-04-14'
-    }
-    return 'gpt-4o-mini-2024-07-18'
+    return OPENAI_MODEL
   }
 
   /**
@@ -127,7 +133,7 @@ export class OpenAIClient {
       jsonMode = false
     } = options
 
-    const model = 'gpt-4o-mini-2024-07-18'
+    const model = OPENAI_MODEL
     const request: OpenAIRequest = {
       model,
       messages: [
@@ -135,9 +141,8 @@ export class OpenAIClient {
         { role: 'user', content: userMessage }
       ],
       temperature,
-      max_tokens: maxTokens,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+      max_completion_tokens: maxTokens,
+      reasoning_effort: 'none',
       ...(jsonMode && { response_format: { type: 'json_object' as const } })
     }
 
@@ -198,9 +203,8 @@ export class OpenAIClient {
         { role: 'user', content: userMessage }
       ],
       temperature: languageConfig.temperature,
-      max_tokens: maxTokens,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+      max_completion_tokens: maxTokens,
+      reasoning_effort: 'none',
       response_format: useSchema ? {
         type: 'json_schema',
         json_schema: studyGuideSchema
@@ -248,7 +252,7 @@ export class OpenAIClient {
    * @returns Response content with usage metadata
    */
   async callForVerse(systemMessage: string, userMessage: string): Promise<LLMResponseWithUsage<string>> {
-    const model = 'gpt-4o-mini-2024-07-18'
+    const model = OPENAI_MODEL
     const request: OpenAIRequest = {
       model,
       messages: [
@@ -256,7 +260,8 @@ export class OpenAIClient {
         { role: 'user', content: userMessage }
       ],
       temperature: 0.3,
-      max_tokens: 800,
+      max_completion_tokens: 800,
+      reasoning_effort: 'none',
       response_format: { type: 'json_object' }
     }
 
@@ -297,7 +302,7 @@ export class OpenAIClient {
    * @returns Response content with usage metadata
    */
   async callForFollowUp(systemMessage: string, userMessage: string): Promise<LLMResponseWithUsage<string>> {
-    const model = 'gpt-4o-mini-2024-07-18'
+    const model = OPENAI_MODEL
     const request: OpenAIRequest = {
       model,
       messages: [
@@ -305,9 +310,8 @@ export class OpenAIClient {
         { role: 'user', content: userMessage }
       ],
       temperature: 0.4,
-      max_tokens: 800,
-      presence_penalty: 0.2,
-      frequency_penalty: 0.1
+      max_completion_tokens: 800,
+      reasoning_effort: 'none',
     }
 
     const response = await fetch(this.baseUrl, {
@@ -364,9 +368,8 @@ export class OpenAIClient {
         { role: 'user', content: userMessage }
       ],
       temperature: languageConfig.temperature,
-      max_tokens: maxTokens,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+      max_completion_tokens: maxTokens,
+      reasoning_effort: 'none',
       stream: true
     }
 
@@ -469,9 +472,8 @@ export class OpenAIClient {
         { role: 'user', content: userMessage }
       ],
       temperature: languageConfig.temperature,
-      max_tokens: maxTokens,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+      max_completion_tokens: maxTokens,
+      reasoning_effort: 'none',
       // Only enforce complete schema for single-pass generation
       // Multi-pass prompts define their own partial JSON structure
       ...(useSchema ? {

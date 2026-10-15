@@ -75,3 +75,18 @@ Deno.test('Haiku 4.5 is priced at $1 and $5 per million', () => {
   const out = service.calculateCost('anthropic', 'claude-haiku-4-5-20251001', 0, 1_000_000)
   assertAlmostEquals(out.totalCost, 5, 1e-9)
 })
+
+Deno.test('Sonnet 5.5 is priced at $2 and $10 per million', () => {
+  assertAlmostEquals(service.calculateCost('anthropic', 'claude-sonnet-5-5', 1_000_000, 0).totalCost, 2, 1e-9)
+  assertAlmostEquals(service.calculateCost('anthropic', 'claude-sonnet-5-5', 0, 1_000_000).totalCost, 10, 1e-9)
+})
+
+Deno.test('Haiku 5.5 is priced at $0.10 and $0.50 per million', () => {
+  assertAlmostEquals(service.calculateCost('anthropic', 'claude-haiku-5-5', 1_000_000, 0).totalCost, 0.1, 1e-9)
+  assertAlmostEquals(service.calculateCost('anthropic', 'claude-haiku-5-5', 0, 1_000_000).totalCost, 0.5, 1e-9)
+})
+
+Deno.test('gpt-6-luna is priced at $0.10 and $0.50 per million', () => {
+  assertAlmostEquals(service.calculateCost('openai', 'gpt-6-luna', 1_000_000, 0).totalCost, 0.1, 1e-9)
+  assertAlmostEquals(service.calculateCost('openai', 'gpt-6-luna', 0, 1_000_000).totalCost, 0.5, 1e-9)
+})

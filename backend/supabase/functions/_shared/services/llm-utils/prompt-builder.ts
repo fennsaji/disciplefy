@@ -165,31 +165,34 @@ export function createNativeWritingStyle(language: string): string {
 व्यावहारिक आधार:
 ✓ हर बात को रोज़मर्रा की ज़िंदगी से जोड़ो
 
-नियम: छोटे वाक्य, एक बात प्रति वाक्य, गांव का आदमी समझे ऐसी भाषा। **बोल्ड शीर्षक** interpretation में।`.trim()
+नियम: छोटे वाक्य, एक बात प्रति वाक्य, गांव का आदमी समझे ऐसी भाषा। **बोल्ड शीर्षक** interpretation में।
+यीशु और परमेश्वर के लिए हर जगह आदरसूचक रूप लिखो (हैं, थे, मरे, उन्होंने) — "मरा" या "था" नहीं (बाइबल के उद्धरण जैसे लिखे हैं वैसे ही रहें)।
+प्रार्थना में "हम" वाले रूप लिखो ("हम धन्यवाद करते हैं") — "करता हूं/करती हूं" जैसे लिंग वाले रूप नहीं।`.trim()
   }
   if (language === 'ml') {
     return `
 മലയാളം ശൈലി — WRITING TECHNIQUES (MALAYALAM STYLE):
 
-നേരിട്ടുള്ള അഭിസംബോധന ("നിങ്ങൾ/നീ"):
+നേരിട്ടുള്ള അഭിസംബോധന ("നിങ്ങൾ"):
 ✓ "ഭയം തോന്നുമ്പോൾ ഓർക്കൂ — ദൈവം പറഞ്ഞു, 'ഞാൻ എപ്പോഴും നിന്നോടൊപ്പം ഉണ്ട്.'"
 ✗ "ഭയജനകമായ സാഹചര്യങ്ങളിൽ ദൈവിക സർവ്വസാന്നിദ്ധ്യത്തെ അനുസ്മരിക്കേണ്ടത് അനിവാര്യമാണ്."
 
 ചെറിയ, വൈവിധ്യമുള്ള വാക്യങ്ങൾ:
-✓ "ഇത് വളരെ പ്രധാനമാണ്. ദൈവത്തിന്റെ മുമ്പിൽ നിന്റെ നിലനിൽപ്പ് യേശു ചെയ്തതിന്മേൽ ആണ്."
+✓ "ഇത് വളരെ പ്രധാനമാണ്. ദൈവത്തിന്റെ മുമ്പിൽ നിങ്ങളുടെ നിലനിൽപ്പ് യേശു ചെയ്തതിന്മേൽ ആണ്."
 ✗ "മേൽപ്പറഞ്ഞ സത്യത്തിന്റെ പ്രാധാന്യം അത്യന്തം ഗഹനമാണ്..."
 
 ചോദ്യരൂപത്തിലുള്ള ശൈലി:
-✓ "നീ ശരിക്കും ദൈവത്തിന്റെ സ്വന്തമാണെന്ന് നിനക്ക് എപ്പോഴെങ്കിലും തോന്നിയിട്ടുണ്ടോ?"
+✓ "നിങ്ങൾ ശരിക്കും ദൈവത്തിന്റെ സ്വന്തമാണെന്ന് നിങ്ങൾക്ക് എപ്പോഴെങ്കിലും തോന്നിയിട്ടുണ്ടോ?"
 
 സൗമ്യമായ പരിവർത്തനങ്ങൾ:
-✓ "ഇവിടെ നിന്നാണ് ഇത് നിന്റെ ജീവിതത്തെ തൊടുന്നത്."
+✓ "ഇവിടെ നിന്നാണ് ഇത് നിങ്ങളുടെ ജീവിതത്തെ തൊടുന്നത്."
 ✗ "രണ്ടാമത്തെ പ്രധാന ആശയം ഉൾക്കൊള്ളുന്നത്..."
 
 പ്രായോഗിക അടിത്തറ:
 ✓ ഓരോ കാര്യവും ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക
 
-നിയമം: ചെറിയ വാക്യങ്ങൾ, ഒരു വാക്യത്തിൽ ഒരു കാര്യം, ഗ്രാമത്തിലെ ആർക്കും മനസ്സിലാകുന്ന ഭാഷ. **ബോൾഡ് ശീർഷകങ്ങൾ** interpretation-ൽ.`.trim()
+നിയമം: ചെറിയ വാക്യങ്ങൾ, ഒരു വാക്യത്തിൽ ഒരു കാര്യം, ഗ്രാമത്തിലെ ആർക്കും മനസ്സിലാകുന്ന ഭാഷ. **ബോൾഡ് ശീർഷകങ്ങൾ** interpretation-ൽ.
+വായനക്കാരനെ എപ്പോഴും "നിങ്ങൾ" എന്ന് അഭിസംബോധന ചെയ്യുക; "നീ" ഉപയോഗിക്കരുത് (ബൈബിൾ ഉദ്ധരണികളിൽ മാത്രം അത് അതേപടി നിലനിർത്താം).`.trim()
   }
   return '' // English: WRITING_STYLE already covers it
 }
@@ -210,22 +213,50 @@ export function createSharedFoundation(
   languageConfig: LanguageConfig,
   language: string,
   discipleLevel?: string,
-  includeWritingStyle: boolean = true
+  includeWritingStyle: boolean = true,
+  lengthUplift: boolean = true
 ): string {
   return [
     THEOLOGICAL_FOUNDATION,
     JSON_OUTPUT_RULES,
-    createLanguageBlock(languageConfig, language) + getDiscipleLevelContext(discipleLevel),
+    createLanguageBlock(languageConfig, language, lengthUplift) + getDiscipleLevelContext(discipleLevel),
     includeWritingStyle ? WRITING_STYLE : '',
     createNativeWritingStyle(language) // Always included for HI/ML (returns '' for EN)
   ].filter(Boolean).join('\n\n')
 }
 
 /**
+ * Length rules shared by every study mode.
+ *
+ * Sonnet 5.5 treats a word range as a ceiling and keeps to the low end of the
+ * sentence count, so every mode came out short of its section counts - most
+ * of all in Malayalam, whose answers ran at about half the requested length.
+ * The uplift line is skipped where a mode already scales its numbers per
+ * language (standard multi-pass).
+ */
+export function createLengthRules(language: string, lengthUplift = true): string {
+  const uplift = !lengthUplift ? '' : language === 'ml'
+    ? '\n- Malayalam: Malayalam words are long, so Malayalam answers come out far too short. Write about 40% more than feels natural - a fuller explanation and one more example or Scripture connection in every section - so each count is met in Malayalam words.'
+    : language === 'hi'
+    ? '\n- Hindi: aim for the upper half of every range; Hindi answers tend to fall below the lower bound.'
+    : ''
+  return `
+---
+SCRIPTURE CITATIONS
+- Cite a verse only for what it actually says (for example, John 1:12 is about receiving Christ and becoming God's children, not about forgiveness).
+---
+LENGTH RULES
+- Every word count in this prompt is a MINIMUM to reach, not a ceiling. Reach at least the lower bound of every section.
+- Writing short is the most common failure. Develop each point fully, with explanation and Scripture, before moving on; do not pad with repetition.${uplift}
+---
+`
+}
+
+/**
  * Language enforcement block with native script requirements
  */
-export function createLanguageBlock(languageConfig: LanguageConfig, language: string): string {
-  return `
+export function createLanguageBlock(languageConfig: LanguageConfig, language: string, lengthUplift = true): string {
+  return createLengthRules(language, lengthUplift) + `
 ---
 LANGUAGE REQUIREMENTS - STRICT ENFORCEMENT
 ---
@@ -371,21 +402,21 @@ WORD COUNTS:
 - "summary": 70-90 words (5-6 sentences)
 - "context": 40-60 words (one short paragraph, essential background only)
 - "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
-- "interpretation": 650-800 words, EXACTLY 4 paragraphs, each 5-6 sentences
+- "interpretation": at least 700 words (700-850), EXACTLY 4 paragraphs, each 6-8 sentences
 - "prayerPoints": ONE single prayer paragraph (4-5 sentences, 60-80 words)
 - Total: ${wordTarget} words (7-8 minute study at 140-150 wpm)
 
 INTERPRETATION STRUCTURE:
 - 4 paragraphs of flowing prose (NO bullets, NO bracketed headings)
-- Each paragraph: **Bold Section Title** followed by 5-6 sentences
+- Each paragraph: **Bold Section Title** followed by 6-8 sentences (at least 175 words)
 - Each sentence = theological point + biblical support + practical grounding
-- Separate paragraphs with \\n\\n. Target: 650-800 words total.
+- Separate paragraphs with \\n\\n. Target: at least 700 words total.
 
 {
   "summary": "5-6 sentences (70-90 words) — doctrinal overview",
   "context": "40-60 words MAX — single most essential background fact",
   "passage": "Scripture reference only (e.g., 'Romans 8:1-39'). MANDATORY. No verse text.",
-  "interpretation": "4 sections, each with **Bold Title** + 5-6 sentences. 650-800 words. Prose only.",
+  "interpretation": "4 sections, each with **Bold Title** + 6-8 sentences. At least 700 words. Prose only.",
   "relatedVerses": ["EXACTLY 4 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["EXACTLY 4 deep application questions"],
   "prayerPoints": ["ONE single continuous prayer paragraph (4-5 sentences, 60-80 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."]
@@ -396,7 +427,7 @@ ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 PRAYER: 4-5 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
 
 VERIFY BEFORE OUTPUT:
-- interpretation: 4 paragraphs × 5-6 sentences each = 650-800 words?
+- interpretation: 4 paragraphs × 6-8 sentences each = at least 700 words?
 - passage: reference ONLY (not full text)?
 - prayer: 4-5 sentences with correct closing?
 - All 7 fields present? All verse references in ${languageConfig.name}?
@@ -438,7 +469,8 @@ ${WRITING_STYLE}
 ${createNativeWritingStyle(params.language)}`
 
   // Word limits for Quick Read — unified across languages (previous HI/ML reduction caused guides to fall short of target)
-  const wordLimits = { summary: 60, interpretation: 150, context: 70, prayer: 80 }
+  // Ranges, not caps: as hard maximums Sonnet 5.5 wrote about 340 words.
+  const wordLimits = { summary: '50-70', interpretation: '200-250', context: '40-70', prayer: '60-80' }
 
   const userMessage = `${taskDescription}
 
@@ -446,31 +478,30 @@ ${createVerseReferenceBlock(params.language)}
 
 QUICK READ — 3 MINUTES (450-600 words total at 140-160 wpm)
 
-WORD LIMITS (strict):
-- summary: 50-60 words, 3-4 sentences
+WORD COUNTS (reach each lower bound):
+- summary: 50-70 words, 3-4 sentences
 - context: 40-70 words, essential background only
-- interpretation: 120-150 words, EXACTLY 2 paragraphs (3-4 sentences each), NO headings
+- interpretation: 200-250 words, EXACTLY 2 paragraphs (5-6 sentences each), NO headings
 - prayer: 60-80 words, 4-5 sentences
 - relatedVerses/reflectionQuestions: EXACTLY 3 each
 
 {
-  "summary": "3-4 sentences (MAX ${wordLimits.summary} words)",
+  "summary": "3-4 sentences (${wordLimits.summary} words)",
   "context": "Essential background (40-70 words). One brief paragraph.",
   "passage": "Scripture reference only (prefer 10-20+ verses). MANDATORY. In ${languageConfig.name}.",
-  "interpretation": "2 paragraphs, 3-4 sentences each, MAX ${wordLimits.interpretation} words. Prose only.",
+  "interpretation": "2 paragraphs, 5-6 sentences each, ${wordLimits.interpretation} words. Prose only.",
   "relatedVerses": ["EXACTLY 3 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["EXACTLY 3 practical questions"],
-  "prayerPoints": ["4-5 sentences, MAX ${wordLimits.prayer} words, addressing God directly"]
+  "prayerPoints": ["4-5 sentences, ${wordLimits.prayer} words, addressing God directly"]
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
-Focus on ONE central truth. Continuous prose, \\n\\n between paragraphs. Brevity is paramount.
+Focus on ONE central truth. Continuous prose, \\n\\n between paragraphs. Concise, but reach every lower bound.
 
-VERIFY: summary ≤${wordLimits.summary}w | interpretation: 2 paragraphs, 3-4 sentences each, ≤${wordLimits.interpretation}w | context ≤${wordLimits.context}w | prayer: 4-5 sentences, ≤${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions | All 7 fields present.
+VERIFY: summary ${wordLimits.summary}w | interpretation: 2 paragraphs, 5-6 sentences each, ${wordLimits.interpretation}w | context ${wordLimits.context}w | prayer: 4-5 sentences, ${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions | All 7 fields present.
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
-IF WORD LIMITS ARE EXCEEDED - YOU MUST CUT CONTENT TO MEET LIMITS.
 
 ${getLanguageExamples(params.language)}
 
@@ -1071,7 +1102,7 @@ export function calculateOptimalTokens(params: LLMGenerationParams, _languageCon
   const multiplier = languageMultipliers[language] ?? 1.0
   const calculatedTokens = Math.ceil(base * multiplier)
 
-  // Sonnet 4.5 accepts far more than this; the ceiling is here so a bad
+  // Sonnet accepts far more than this; the ceiling is here so a bad
   // multiplier cannot ask for something the model will reject outright.
   const MODEL_MAX_TOKENS = 32000
   const maxTokens = Math.min(calculatedTokens, MODEL_MAX_TOKENS)

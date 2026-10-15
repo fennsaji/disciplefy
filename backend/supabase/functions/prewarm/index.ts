@@ -36,9 +36,9 @@ import { calculateOptimalTokens } from '../_shared/services/llm-utils/prompt-bui
 import { getLanguageConfig } from '../_shared/services/llm-config/language-configs.ts'
 import type { LLMGenerationParams } from '../_shared/services/llm-types.ts'
 
-const MODEL = 'claude-sonnet-4-5-20250929'
+const MODEL = 'claude-sonnet-5-5'
 /** Batch pricing, per million tokens: half the streaming rate. */
-const PRICE_PER_MTOK = { input: 1.5, output: 7.5 }
+const PRICE_PER_MTOK = { input: 1, output: 5 }
 const DEFAULT_MONTHLY_BUDGET_USD = 20
 const LANGUAGES = ['en', 'hi', 'ml'] as const
 const STUDY_MODE = 'standard'

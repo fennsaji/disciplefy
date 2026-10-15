@@ -23,6 +23,10 @@ import { FALLBACK_USD_TO_INR } from './exchange-rate.ts';
 
 const LLM_PRICING = {
   openai: {
+    'gpt-6-luna': {
+      input_per_1k: 0.0001, // $0.10 per million input tokens
+      output_per_1k: 0.0005, // $0.50 per million output tokens
+    },
     'gpt-3.5-turbo': {
       input_per_1k: 0.0005, // $0.50 per million input tokens
       output_per_1k: 0.0015, // $1.50 per million output tokens
@@ -55,6 +59,16 @@ const LLM_PRICING = {
     'claude-sonnet-4-5-20250929': {
       input_per_1k: 0.003, // $0.003 per 1K input tokens
       output_per_1k: 0.015, // $0.015 per 1K output tokens
+    },
+    'claude-sonnet-5-5': {
+      input_per_1k: 0.002, // $2 per million input tokens
+      output_per_1k: 0.01, // $10 per million output tokens
+    },
+    // Prompts of 100K tokens or fewer; longer prompts are $0.50/$2.50, which
+    // nothing here sends.
+    'claude-haiku-5-5': {
+      input_per_1k: 0.0001, // $0.10 per million input tokens
+      output_per_1k: 0.0005, // $0.50 per million output tokens
     },
     'claude-haiku-4-5-20251001': {
       input_per_1k: 0.001, // $1 per million input tokens

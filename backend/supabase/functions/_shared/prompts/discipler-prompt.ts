@@ -30,6 +30,42 @@ const LANGUAGES = new Set(['en', 'hi', 'ml', 'hinglish', 'manglish'])
 const REACTIONS = new Set(['amen', 'heart', 'fire', 'hands'])
 const INPUT_TYPES = new Set(['topic', 'scripture'])
 
+const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: 'null' }] })
+
+/**
+ * The Discipler's reply shape as a structured-output schema. Haiku 5.5
+ * occasionally wrapped the object in prose, which failed the parse and dropped
+ * the reply; with the schema the text is always this object.
+ */
+export const DISCIPLER_OUTPUT_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    action: { type: 'string', enum: ['reply', 'react'] },
+    reaction: nullable({ type: 'string', enum: [...REACTIONS] }),
+    language: { type: 'string', enum: [...LANGUAGES] },
+    reply: nullable({ type: 'string' }),
+    guide_request: nullable({
+      type: 'object',
+      properties: {
+        input_type: { type: 'string', enum: ['topic', 'scripture'] },
+        input_value: { type: 'string' },
+      },
+      required: ['input_type', 'input_value'],
+      additionalProperties: false,
+    }),
+  },
+  required: ['action', 'reaction', 'language', 'reply', 'guide_request'],
+  additionalProperties: false,
+}
+
+/** The daily teaser's shape as a structured-output schema. */
+export const TEASER_OUTPUT_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: { hook: { type: 'string' }, body: { type: 'string' } },
+  required: ['hook', 'body'],
+  additionalProperties: false,
+}
+
 export function buildDisciplerSystemPrompt(): string {
   return `${THEOLOGICAL_FOUNDATION}
 

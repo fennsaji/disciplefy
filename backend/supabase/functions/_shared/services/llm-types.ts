@@ -97,9 +97,8 @@ export interface OpenAIRequest {
     content: string
   }>
   temperature: number
-  max_tokens: number
-  presence_penalty?: number
-  frequency_penalty?: number
+  max_completion_tokens: number
+  reasoning_effort: 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   response_format?: 
     | { type: 'json_object' } 
     | { type: 'json_schema'; json_schema: OpenAIJsonSchema }
@@ -130,9 +129,14 @@ export interface OpenAIResponse {
 export interface AnthropicRequest {
   model: string
   max_tokens: number
-  temperature: number
+  temperature?: number
   top_p?: number
   top_k?: number
+  output_config?: {
+    effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+    format?: { type: 'json_schema'; schema: Record<string, unknown> }
+  }
+  fallbacks?: 'default'
   messages: Array<{
     role: 'user' | 'assistant'
     content: string
@@ -148,8 +152,9 @@ export interface AnthropicRequest {
  * Anthropic Claude API response structure.
  */
 export interface AnthropicResponse {
+  // Thinking and fallback blocks can precede the text; read blocks by type.
   content: Array<{
-    type: 'text'
+    type: 'text' | 'thinking' | 'fallback' | string
     text: string
   }>
   usage: {
@@ -159,6 +164,7 @@ export interface AnthropicResponse {
     cache_read_input_tokens?: number
   }
   stop_reason: string
+  stop_details?: { type: 'refusal'; category: string | null; explanation?: string } | null
 }
 
 /**
