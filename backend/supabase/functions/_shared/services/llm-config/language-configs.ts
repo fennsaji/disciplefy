@@ -15,7 +15,7 @@ export type SupportedLanguage = 'en' | 'hi' | 'ml'
 /**
  * Language configurations map
  */
-// v3.3: All languages now prefer Anthropic (Claude Sonnet 4.5) for better length compliance
+// v3.3: All languages now prefer Anthropic (Claude Sonnet) for better length compliance
 // v3.4: Added language-specific word count targets for Malayalam (adjusted to 70% due to token inefficiency)
 const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
   ['en', {

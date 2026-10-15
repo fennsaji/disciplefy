@@ -42,6 +42,10 @@ import {
   type NextPath,
   type NextPathReason,
 } from '../_shared/personalization/next-paths.ts';
+import { inCurriculumOrder } from './curriculum-order.ts';
+
+/** Enough to fetch every active path at once (there are well under 100). */
+const ALL_PATHS_LIMIT = 500;
 
 // ============================================================================
 // Types
@@ -885,12 +889,15 @@ async function handleListPathsFlat(
 
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
 
+  // The fellowship picker groups paths by level, so it needs pages in
+  // curriculum order: fetch every path, order it here, then cut the page.
+  const curriculumOrder = !!fellowshipId && !search;
   const rpcParams: Record<string, unknown> = {
     p_user_id: userId,
     p_language: language,
     p_include_enrolled: includeEnrolled,
-    p_limit: limit + 1,
-    p_offset: offset,
+    p_limit: curriculumOrder ? ALL_PATHS_LIMIT : limit + 1,
+    p_offset: curriculumOrder ? 0 : offset,
   };
   if (search) rpcParams['p_search'] = search;
 
@@ -922,7 +929,9 @@ async function handleListPathsFlat(
     }
   }
 
-  const rows = data || [];
+  const rows = curriculumOrder
+    ? inCurriculumOrder((data || []) as Record<string, unknown>[]).slice(offset, offset + limit + 1)
+    : data || [];
   const hasMore = rows.length > limit;
   const pageRows: Record<string, unknown>[] = hasMore ? rows.slice(0, limit) : rows;
   const shortTitles = await loadShortTitles(

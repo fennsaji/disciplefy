@@ -36,9 +36,9 @@ import { calculateOptimalTokens } from '../supabase/functions/_shared/services/l
 import { getLanguageConfig } from '../supabase/functions/_shared/services/llm-config/language-configs.ts'
 import type { LLMGenerationParams } from '../supabase/functions/_shared/services/llm-types.ts'
 
-const MODEL = 'claude-sonnet-4-5-20250929'
+const MODEL = 'claude-sonnet-5-5'
 // Batch pricing is half the standard rate, per million tokens.
-const PRICE_PER_MTOK = { input: 1.5, output: 7.5 }
+const PRICE_PER_MTOK = { input: 1, output: 5 }
 const POLL_SECONDS = 60
 
 interface Lesson {

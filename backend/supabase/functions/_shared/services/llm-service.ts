@@ -26,8 +26,9 @@ import type {
 import { CostTrackingContext } from './llm-types.ts'
 
 // Import extracted modules
-import { OpenAIClient, isValidOpenAIKey } from './llm-clients/openai-client.ts'
-import { AnthropicClient, isValidAnthropicKey } from './llm-clients/anthropic-client.ts'
+import { OpenAIClient, isValidOpenAIKey, OPENAI_MODEL } from './llm-clients/openai-client.ts'
+import { DISCIPLER_OUTPUT_SCHEMA, TEASER_OUTPUT_SCHEMA } from '../prompts/discipler-prompt.ts'
+import { AnthropicClient, isValidAnthropicKey, SONNET_MODEL, HAIKU_MODEL } from './llm-clients/anthropic-client.ts'
 import {
   getLanguageConfig,
   getLanguageConfigOrDefault,
@@ -69,12 +70,12 @@ export type { LLMServiceConfig } from './llm-types.ts'
  */
 /**
  * Anthropic model for a daily teaser in [language]. English reads fine on
- * Haiku 4.5; Hindi and Malayalam need Sonnet 4.5 (see generateDailyTeaser).
+ * Haiku; Hindi and Malayalam need Sonnet (see generateDailyTeaser).
  */
 export function teaserModelForLanguage(language: string): string {
   return language === 'hi' || language === 'ml'
-    ? 'claude-sonnet-4-5-20250929'
-    : 'claude-haiku-4-5-20251001'
+    ? SONNET_MODEL
+    : HAIKU_MODEL
 }
 
 export class LLMService {
@@ -121,7 +122,7 @@ export class LLMService {
     }
 
     // Set primary provider
-    // v3.3: Prefer Anthropic (Claude Sonnet 4.5) by default for better length compliance
+    // v3.3: Prefer Anthropic (Claude Sonnet) by default for better length compliance
     if (config.provider && this.availableProviders.has(config.provider)) {
       this.provider = config.provider
     } else {
@@ -199,7 +200,7 @@ export class LLMService {
       yield* this.streamMockStudyGuide()
       return {
         provider: 'openai',
-        model: 'gpt-4o-mini-2024-07-18',
+        model: OPENAI_MODEL,
         inputTokens: 100,
         outputTokens: 500,
         totalTokens: 600,
@@ -295,7 +296,7 @@ export class LLMService {
       yield* this.streamMockStudyGuide()
       return {
         provider: 'openai',
-        model: 'gpt-4o-mini-2024-07-18',
+        model: OPENAI_MODEL,
         inputTokens: 100,
         outputTokens: 500,
         totalTokens: 600,
@@ -390,7 +391,7 @@ export class LLMService {
         content: JSON.stringify(this.getMockStudyGuide()),
         usage: {
           provider: 'openai',
-          model: 'gpt-4o-mini-2024-07-18',
+          model: OPENAI_MODEL,
           inputTokens: 100,
           outputTokens: 500,
           totalTokens: 600,
@@ -465,7 +466,7 @@ export class LLMService {
       const mockSermon = this.getMockStudyGuide() as unknown as Record<string, unknown>
       const mockUsage: LLMUsageMetadata = {
         provider: 'openai',
-        model: 'gpt-4o-mini-2024-07-18',
+        model: OPENAI_MODEL,
         inputTokens: 400,
         outputTokens: 2000,
         totalTokens: 2400,
@@ -580,7 +581,7 @@ export class LLMService {
       const mockResponse = this.getMockFollowUpResponse(prompt.userMessage, language)
       const mockUsage: LLMUsageMetadata = {
         provider: 'anthropic',
-        model: 'claude-sonnet-4-5-20250929',
+        model: SONNET_MODEL,
         inputTokens: 50,
         outputTokens: 150,
         totalTokens: 200,
@@ -660,7 +661,7 @@ Return ONLY the numeric score, nothing else.`
           userMessage: userPrompt,
           temperature: 0.3,
           maxTokens: 10,
-          model: 'claude-haiku-4-5-20251001'
+          model: HAIKU_MODEL
         })
       } else {
         const client = this.getOpenAIClient()
@@ -700,14 +701,14 @@ Return ONLY the numeric score, nothing else.`
   }> {
     const provider: LLMProvider = this.availableProviders.has('anthropic') ? 'anthropic' : this.getAnyAvailableProvider()
     if (provider === 'anthropic') {
-      const model = 'claude-haiku-4-5-20251001'
+      const model = HAIKU_MODEL
       const result = await this.getAnthropicClient().call({
         systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
-        temperature: 0.3, maxTokens: 350, model,
+        temperature: 0.3, maxTokens: 350, model, jsonSchema: DISCIPLER_OUTPUT_SCHEMA,
       })
       return { content: result.content, usage: result.usage, model, provider }
     }
-    const model = 'gpt-4o-mini-2024-07-18'
+    const model = OPENAI_MODEL
     const result = await this.getOpenAIClient().call({
       systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
       temperature: 0.3, maxTokens: 350,
@@ -733,11 +734,11 @@ Return ONLY the numeric score, nothing else.`
       const model = teaserModelForLanguage(language)
       const result = await this.getAnthropicClient().call({
         systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
-        temperature: 0.7, maxTokens: 500, model,
+        temperature: 0.7, maxTokens: 500, model, jsonSchema: TEASER_OUTPUT_SCHEMA,
       })
       return { content: result.content, usage: result.usage, model, provider }
     }
-    const model = 'gpt-4o-mini-2024-07-18'
+    const model = OPENAI_MODEL
     const result = await this.getOpenAIClient().call({
       systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
       temperature: 0.7, maxTokens: 500,

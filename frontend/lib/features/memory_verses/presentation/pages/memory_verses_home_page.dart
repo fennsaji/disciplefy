@@ -439,7 +439,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
                 child: MemorySectionLabel(
                   '${context.tr(TranslationKeys.memoryDueForReview)} (${dueVerses.length})',
-                  padding: const EdgeInsets.only(top: 20),
+                  // Room for the first due card's glow below the label.
+                  padding: const EdgeInsets.only(top: 20, bottom: 16),
                 ),
               ),
             ),
@@ -462,7 +463,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: _kHomeGutter),
                   child: MemorySectionLabel(
                     context.tr(TranslationKeys.memoryScreensComingUp),
-                    padding: const EdgeInsets.only(top: 24),
+                    padding: const EdgeInsets.only(top: 24, bottom: 12),
                   ),
                 ),
               ),

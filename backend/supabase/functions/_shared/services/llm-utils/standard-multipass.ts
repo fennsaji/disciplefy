@@ -24,6 +24,34 @@ export interface StandardPassResult {
 }
 
 /**
+ * How much to scale the interpretation figures we ask for, per language.
+ *
+ * Measured, not derived: asked for the same figures as English, Sonnet 5.5
+ * writes roughly 95% of them in Hindi and under half in Malayalam (whose words
+ * are long, so its guide target is 600-750 rather than 1,000-1,200). Scaling
+ * Malayalam's request down by that lower target made its guides shorter still.
+ */
+const INTERPRETATION_REQUEST_SCALE: Record<string, number> = { en: 1.0, hi: 1.08, ml: 1.3 }
+
+/**
+ * Interpretation length to request for one language. The figures are stated
+ * as minimums: Sonnet 5.5 keeps to the sentence count and the low end of a
+ * range, and with the old "5-6 sentences, 200-240 words" wording it wrote
+ * 10-25% under the guide's target in every language.
+ */
+export function standardInterpretationTargets(language: string) {
+  const scale = INTERPRETATION_REQUEST_SCALE[language] ?? 1.0
+  const r = (n: number) => Math.round((n * scale) / 10) * 10
+  return {
+    part1: `${r(460)}-${r(540)}`, part1Min: r(460),
+    part1Para: `${r(230)}-${r(270)}`, part1ParaMin: r(230),
+    part2: `${r(300)}-${r(360)}`, part2Min: r(300),
+    part2Para: `${r(150)}-${r(180)}`, part2ParaMin: r(150),
+    pass1Total: r(600), pass2Total: r(450),
+  }
+}
+
+/**
  * Creates the first pass prompt: Summary + Context + Interpretation Part 1
  */
 export function createStandardPass1Prompt(
@@ -41,13 +69,15 @@ export function createStandardPass1Prompt(
     ? `Create a STANDARD STUDY for: \"${inputValue}\"`
     : `Create a STANDARD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  // Standard scales its own numbers per language, so no extra length uplift.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, true, false)
+  const t = standardInterpretationTargets(language)
 
   const passSystem = `You are a Bible teacher creating balanced, accessible study guides.
 
 STUDY MODE: STANDARD STUDY - PASS 1/2 (Foundation + Teaching)
 This is part 1 of a multi-pass standard study generation. Focus on solid teaching.
-Target output: ~550 words for this pass.
+Target output: ~${t.pass1Total} words for this pass.
 Tone: Clear, accessible, biblically grounded, practical.`
 
   const passInstructions = `${createVerseReferenceBlock(language)}
@@ -62,7 +92,7 @@ Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
   "summary": "[60-80 words: Study title, key message, main takeaways, practical focus]",
   "context": "[40-60 words: MINIMAL - necessary biblical background only]",
   "passage": "⚠️ MANDATORY - Scripture reference for meditation. PREFER LONGER PASSAGES (10-20+ verses) that provide substantial content (e.g., 'Romans 8:1-39', 'Psalm 119:1-24'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
-  "interpretationPart1": "[400-480 words: MAIN TEACHING with verse explanation, key principles, theological insights, biblical connections]"
+  "interpretationPart1": "[${t.part1} words, at least ${t.part1Min}: MAIN TEACHING with verse explanation, key principles, theological insights, biblical connections]"
 }
 
 CRITICAL INSTRUCTIONS FOR PASS 1:
@@ -94,10 +124,10 @@ Write MINIMAL necessary biblical background only (1 concise paragraph covering):
 • Literary setting and theological framework
 Keep it SHORT and FOCUSED - only what's essential to understand the study.
 
-**INTERPRETATION PART 1 - MAIN TEACHING (400-480 words):**
+**INTERPRETATION PART 1 - MAIN TEACHING (${t.part1} words, at least ${t.part1Min}):**
 
 This section MUST contain EXACTLY 2 paragraphs of continuous narrative prose.
-EACH paragraph MUST begin with a **Bold Section Title** followed by 5-6 sentences.
+EACH paragraph MUST begin with a **Bold Section Title** followed by 6-8 sentences.
 Use **Bold Title** format (NOT ## markdown headers).
 
 ⚠️ SINGLE-VERSE INPUT — MANDATORY EXPANSION:
@@ -109,9 +139,9 @@ If the study input is a single verse (e.g., "John 3:16"), you MUST reach the ful
 - Showing the verse's role in its LITERARY CONTEXT (surrounding chapter/book)
 Do NOT stop early because one verse "runs out" of material. Cross-references and doctrinal connections are required to fill the target length.
 
-Count sentences as you write (end with ./!/?). Each paragraph: 5-6 sentences, 200-240 words.
+LENGTH IS A FLOOR, NOT A CEILING: each paragraph needs at least ${t.part1ParaMin} words in ${languageConfig.name} (6-8 sentences). Writing short is the most common failure — develop each point fully before moving on.
 
-## Paragraph 1 (5-6 sentences): Verse Explanation
+## Paragraph 1 (6-8 sentences): Verse Explanation
 
 Break down the passage clearly with depth:
 - What does this passage say? (Observation)
@@ -124,9 +154,9 @@ Break down the passage clearly with depth:
 - [OPTIONAL] Original language insights if relevant
 - [OPTIONAL] Historical background connection
 
-Target: 200-240 words, 5-6 complete sentences with rich content.
+Target: ${t.part1Para} words (at least ${t.part1ParaMin}), 6-8 complete sentences with rich content.
 
-## Paragraph 2 (5-6 sentences): Key Principles & Theological Insights
+## Paragraph 2 (6-8 sentences): Key Principles & Theological Insights
 
 Extract 2-3 timeless principles and connect to broader biblical teaching:
 - What universal truths does this teach?
@@ -136,9 +166,9 @@ Extract 2-3 timeless principles and connect to broader biblical teaching:
 - What theological doctrines are supported here?
 - Christological connections (how it points to Christ)
 
-Target: 200-240 words, 5-6 complete sentences with biblical support.
+Target: ${t.part1Para} words (at least ${t.part1ParaMin}), 6-8 complete sentences with biblical support.
 
-VERIFY: summary 60-80 words | context 40-60 words | passage reference ONLY (MANDATORY) | interpretationPart1: 2 paragraphs, 5-6 sentences each, 400-480 words total | Verse refs in ${languageConfig.name} | Total ~550 words. FIX any issues BEFORE output.
+VERIFY: summary 60-80 words | context 40-60 words | passage reference ONLY (MANDATORY) | interpretationPart1: 2 paragraphs, 6-8 sentences each, at least ${t.part1Min} words total | Verse refs in ${languageConfig.name} | Total ~${t.pass1Total} words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
@@ -163,13 +193,15 @@ export function createStandardPass2Prompt(
 ): CacheablePromptPair {
   const { language, discipleLevel } = params
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  // Standard scales its own numbers per language, so no extra length uplift.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, true, false)
+  const t = standardInterpretationTargets(language)
 
   const passSystem = `You are a Bible teacher completing a balanced, accessible study guide.
 
 STUDY MODE: STANDARD STUDY - PASS 2/2 (Application + Resources)
 This is part 2 of a 2-part standard study generation. Focus on practical life change.
-Target output: ~400 words for this pass.
+Target output: ~${t.pass2Total} words for this pass.
 Continue the clear, practical, biblically grounded tone.`
 
   const passInstructions = `CONTEXT FROM PASS 1:
@@ -181,16 +213,17 @@ NOW COMPLETE THE STUDY with practical application and supporting resources.
 Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for optimal streaming):
 
 {
-  "interpretationPart2": "[260-320 words: PRACTICAL APPLICATION with life transformation and specific action steps]",
+  "interpretationPart2": "[${t.part2} words, at least ${t.part2Min}: PRACTICAL APPLICATION with life transformation and specific action steps]",
   "relatedVerses": [4 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'John 14:6', 'Romans 12:1-2') - NO verse text],
   "reflectionQuestions": [4 reflection questions mixing understanding and application],
   "prayerPoints": [ONE single continuous prayer paragraph (4-5 sentences, 60-80 words) responding to the study. Do NOT split into multiple items.]
 }
 
-**INTERPRETATION PART 2 - PRACTICAL APPLICATION (260-320 words):**
+**INTERPRETATION PART 2 - PRACTICAL APPLICATION (${t.part2} words, at least ${t.part2Min}):**
 
 This section MUST contain EXACTLY 2 paragraphs of continuous narrative prose.
-EACH paragraph MUST begin with a **Bold Section Title** followed by 4-5 sentences with PRACTICAL, ACTION-ORIENTED content.
+EACH paragraph MUST begin with a **Bold Section Title** followed by 5-7 sentences with PRACTICAL, ACTION-ORIENTED content.
+LENGTH IS A FLOOR, NOT A CEILING: each paragraph needs at least ${t.part2ParaMin} words in ${languageConfig.name}.
 Use **Bold Title** format (NOT ## markdown headers).
 
 ⚠️ PRACTICAL APPLICATION EMPHASIS:
@@ -200,7 +233,7 @@ Use **Bold Title** format (NOT ## markdown headers).
 - Address REAL struggles and challenges believers face
 - Bridge from biblical truth to contemporary Christian living
 
-## Paragraph 1 (4-5 sentences): Life Transformation
+## Paragraph 1 (5-7 sentences): Life Transformation
 
 Show how this truth changes daily life with specificity:
 - Personal Growth: How should this shape your character? Give examples.
@@ -209,9 +242,9 @@ Show how this truth changes daily life with specificity:
 - Heart Transformation: What attitudes or desires need renewal?
 - Behavioral Changes: What specific actions demonstrate obedience?
 
-Target: 130-160 words, 4-5 complete sentences with practical depth.
+Target: ${t.part2Para} words (at least ${t.part2ParaMin}), 5-7 complete sentences with practical depth.
 
-## Paragraph 2 (4-5 sentences): Specific Action Steps
+## Paragraph 2 (5-7 sentences): Specific Action Steps
 
 Provide CONCRETE steps for the next 7 days:
 - This Week: 2-3 SPECIFIC actions to take (be precise, not general)
@@ -219,14 +252,14 @@ Provide CONCRETE steps for the next 7 days:
 - With Others: How to apply this in relationships
 - In Challenges: How to use this when facing difficulties
 
-Target: 130-160 words, 4-5 complete sentences that are actionable, not vague.
+Target: ${t.part2Para} words (at least ${t.part2ParaMin}), 5-7 complete sentences that are actionable, not vague.
 
 **SUPPORTING MATERIALS:**
 - relatedVerses: 4 verse REFERENCES ONLY in ${languageConfig.name} (e.g., 'Galatians 5:22-23') - NO verse text
 - reflectionQuestions: 4 questions (understanding + application)
 - prayerPoints: ONE single prayer paragraph (4-5 sentences, 60-80 words)
 
-VERIFY: interpretationPart2: 2 paragraphs, 4-5 sentences each, 260-320 words | prayerPoints: 1 item, single paragraph (4-5 sentences, 60-80 words) | Verse refs in ${languageConfig.name} | Total ~400 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 paragraphs, 5-7 sentences each, at least ${t.part2Min} words | prayerPoints: 1 item, single paragraph (4-5 sentences, 60-80 words) | Verse refs in ${languageConfig.name} | Total ~${t.pass2Total} words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 

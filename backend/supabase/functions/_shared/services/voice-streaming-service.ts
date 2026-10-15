@@ -7,6 +7,9 @@
  * - Tier-based model selection
  */
 
+import { adaptiveRequestFields, HAIKU_MODEL } from './llm-clients/anthropic-client.ts'
+import { OPENAI_MODEL } from './llm-clients/openai-client.ts'
+
 /**
  * Message format for LLM requests
  */
@@ -49,19 +52,19 @@ export class VoiceStreamingService {
   private readonly MODELS: Record<string, ModelConfig> = {
     premium: {
       provider: 'openai',
-      model: 'gpt-4.1-mini-2025-04-14',
+      model: OPENAI_MODEL,
       maxTokens: 500,
       temperature: 0.7
     },
     standard: {
       provider: 'openai',
-      model: 'gpt-4o-mini-2024-07-18',
+      model: OPENAI_MODEL,
       maxTokens: 500,
       temperature: 0.7
     },
     free: {
       provider: 'openai',
-      model: 'gpt-4o-mini-2024-07-18',
+      model: OPENAI_MODEL,
       maxTokens: 500,
       temperature: 0.7
     }
@@ -70,7 +73,7 @@ export class VoiceStreamingService {
   // Fallback model (Anthropic Claude)
   private readonly FALLBACK_MODEL: ModelConfig = {
     provider: 'anthropic',
-    model: 'claude-haiku-4-5-20251001',
+    model: HAIKU_MODEL,
     maxTokens: 500,
     temperature: 0.7
   }
@@ -182,7 +185,8 @@ export class VoiceStreamingService {
         model: config.model,
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         stream: true,
-        max_tokens: config.maxTokens,
+        max_completion_tokens: config.maxTokens,
+        reasoning_effort: 'none',
         temperature: config.temperature,
       }),
     })
@@ -260,8 +264,7 @@ export class VoiceStreamingService {
         system: systemMessage,
         messages: conversationMessages,
         stream: true,
-        max_tokens: config.maxTokens,
-        temperature: config.temperature,
+        ...adaptiveRequestFields(config.maxTokens),
       }),
     })
 

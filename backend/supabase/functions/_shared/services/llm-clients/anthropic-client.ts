@@ -12,6 +12,36 @@ import { calculateOptimalTokens } from '../llm-utils/prompt-builder.ts'
 import { CostTrackingService } from '../cost-tracking-service.ts'
 
 /**
+ * Sonnet model for study generation and Hindi/Malayalam teasers.
+ * claude-sonnet-4-5-20250929 retires on 2026-11-30; this is its named replacement.
+ */
+export const SONNET_MODEL = 'claude-sonnet-5-5'
+
+/** Server-side refusal fallback, Claude API only (rejected on the Batches API). */
+const FALLBACK_BETA = 'server-side-fallback-2026-07-01'
+
+/**
+ * Extra max_tokens for models that think before answering. Thinking counts
+ * against max_tokens; without headroom a 500-token teaser came back as a
+ * thinking block cut off at the limit, with no text at all.
+ */
+export const THINKING_HEADROOM_TOKENS = 4000
+
+/** Haiku model for short replies: Discipler, follow-ups, daily verse, sentiment, English teasers, voice fallback. */
+export const HAIKU_MODEL = 'claude-haiku-5-5'
+
+/**
+ * Sizing and effort for every Anthropic request. Sonnet 5.5 and Haiku 5.5
+ * reject a non-default temperature, top_p or top_k (a 400), so none is sent;
+ * callers' temperatures apply to OpenAI only. Both models think by default
+ * (Haiku 5.5 at medium effort), so effort is set to low - thinking is skipped
+ * on most requests - and max_tokens gets thinking headroom.
+ */
+export function adaptiveRequestFields(maxTokens: number): Pick<AnthropicRequest, 'max_tokens' | 'output_config'> {
+  return { max_tokens: maxTokens + THINKING_HEADROOM_TOKENS, output_config: { effort: 'low' } }
+}
+
+/**
  * Anthropic API configuration
  */
 export interface AnthropicClientConfig {
@@ -27,6 +57,8 @@ export interface AnthropicCallOptions {
   temperature?: number
   maxTokens?: number
   model?: string  // Optional model override (e.g., Haiku for sentiment analysis)
+  /** JSON Schema the reply must match (structured outputs); the text is then always valid JSON. */
+  jsonSchema?: Record<string, unknown>
 }
 
 /**
@@ -115,25 +147,23 @@ export class AnthropicClient {
 
   /**
    * Selects the optimal Anthropic model based on language and study mode.
-   * v3.6: Cost optimization - Claude Haiku 4.5 for lightweight tasks (73% cheaper).
-   * v3.5: Claude Sonnet 4.5 for study guide generation (better quality).
+   * Haiku 4.5 handles lightweight tasks; Sonnet handles study guide generation.
    *
    * @param language - Target language code
    * @param studyMode - Optional study mode for cost optimization
    * @returns Anthropic model name
    */
   selectModel(language: string, studyMode?: string): string {
-    // v3.6: Claude Sonnet 4.5 for study guide generation
-    return 'claude-sonnet-4-5-20250929'
+    return SONNET_MODEL
   }
 
   /**
    * Selects a lightweight model for short-response tasks.
-   * Claude Haiku 4.5 is 73% cheaper than Sonnet ($0.0008/$0.004 vs $0.003/$0.015).
+   * Haiku 5.5 is $0.10/$0.50 per million tokens against Sonnet 5.5's $2/$10.
    * Used for: daily verse, follow-ups, sentiment analysis.
    */
   private selectLightweightModel(): string {
-    return 'claude-haiku-4-5-20251001'
+    return HAIKU_MODEL
   }
 
   /**
@@ -146,12 +176,8 @@ export class AnthropicClient {
   private async makeRequest(request: AnthropicRequest): Promise<AnthropicResponse> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion
-      },
-      body: JSON.stringify(request)
+      headers: this.headersFor(request.model),
+      body: JSON.stringify(this.withFallback(request))
     })
 
     if (!response.ok) {
@@ -162,6 +188,24 @@ export class AnthropicClient {
     return await response.json()
   }
 
+  private headersFor(model: string): Record<string, string> {
+    const headers: Record<string, string> = {
+      'x-api-key': this.apiKey,
+      'Content-Type': 'application/json',
+      'anthropic-version': this.apiVersion
+    }
+    if (model === SONNET_MODEL) headers['anthropic-beta'] = FALLBACK_BETA
+    return headers
+  }
+
+  /**
+   * On Sonnet 5.5, a safety-classifier decline is retried server-side on the
+   * model Anthropic routes that category to, inside the same call.
+   */
+  private withFallback<T extends { model: string }>(request: T): T & { fallbacks?: 'default' } {
+    return request.model === SONNET_MODEL ? { ...request, fallbacks: 'default' } : request
+  }
+
   /**
    * Parses and validates the Anthropic API response.
    *
@@ -170,13 +214,18 @@ export class AnthropicClient {
    * @throws Error if the response contains no valid text content
    */
   private parseResponse(data: AnthropicResponse): string {
+    if (data.stop_reason === 'refusal') {
+      const category = data.stop_details?.category ?? 'unspecified'
+      throw new Error(`Anthropic declined the request (refusal: ${category})`)
+    }
+
     if (!data.content || data.content.length === 0) {
       throw new Error('Anthropic API returned no content')
     }
 
     const textContent = data.content.find(c => c.type === 'text')
     if (!textContent) {
-      throw new Error('Anthropic API returned no text content')
+      throw new Error(`Anthropic API returned no text content (stop_reason: ${data.stop_reason})`)
     }
 
     return textContent.text
@@ -190,7 +239,7 @@ export class AnthropicClient {
    * @throws Error if the API request fails or returns invalid content
    */
   async call(options: AnthropicCallOptions): Promise<LLMResponseWithUsage<string>> {
-    const { systemMessage, userMessage, temperature = 0.3, maxTokens = 3000, model: modelOverride } = options
+    const { systemMessage, userMessage, maxTokens = 3000, model: modelOverride, jsonSchema } = options
 
     const model = modelOverride || this.selectModel('en')
 
@@ -204,11 +253,12 @@ export class AnthropicClient {
 
     const request: AnthropicRequest = {
       model,
-      max_tokens: maxTokens,
-      temperature,
-      top_k: 250,
+      ...adaptiveRequestFields(maxTokens),
       system,
       messages: [{ role: 'user', content: userMessage }]
+    }
+    if (jsonSchema) {
+      request.output_config = { effort: 'low', format: { type: 'json_schema', schema: jsonSchema } }
     }
 
     const data = await this.makeRequest(request)
@@ -240,9 +290,7 @@ export class AnthropicClient {
 
     const request: AnthropicRequest = {
       model,
-      max_tokens: maxTokens,
-      temperature: languageConfig.temperature,
-      top_k: 250,
+      ...adaptiveRequestFields(maxTokens),
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }]
     }
@@ -276,8 +324,7 @@ export class AnthropicClient {
     const model = this.selectLightweightModel()
     const request: AnthropicRequest = {
       model,
-      max_tokens: 800,
-      temperature: 0.2,
+      ...adaptiveRequestFields(800),
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }]
     }
@@ -303,8 +350,7 @@ export class AnthropicClient {
     const model = this.selectLightweightModel()
     const request: AnthropicRequest = {
       model,
-      max_tokens: 800,
-      temperature: 0.4,
+      ...adaptiveRequestFields(800),
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }]
     }
@@ -369,9 +415,7 @@ export class AnthropicClient {
 
     const request: AnthropicRequest = {
       model,
-      max_tokens: maxTokens,
-      temperature: languageConfig.temperature,
-      top_k: 250,
+      ...adaptiveRequestFields(maxTokens),
       system,
       messages: [{ role: 'user', content: userMessage }]
     }
@@ -409,9 +453,7 @@ export class AnthropicClient {
 
     const request = {
       model,
-      max_tokens: maxTokens,
-      temperature: languageConfig.temperature,
-      top_k: 250,
+      ...adaptiveRequestFields(maxTokens),
       system,
       messages: [{ role: 'user', content: userMessage }],
       stream: true
@@ -421,12 +463,8 @@ export class AnthropicClient {
 
     const response = await fetch(this.baseUrl, {
       method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion
-      },
-      body: JSON.stringify(request)
+      headers: this.headersFor(model),
+      body: JSON.stringify(this.withFallback(request))
     })
 
     if (!response.ok) {
@@ -513,6 +551,9 @@ export class AnthropicClient {
                   }
                 }
               } else if (parsed.type === 'message_delta') {
+                if (parsed.delta?.stop_reason === 'refusal') {
+                  throw new Error(`Anthropic declined the request (refusal: ${parsed.delta?.stop_details?.category ?? 'unspecified'})`)
+                }
                 if (parsed.usage) {
                   usageData = this.extractUsage({
                     content: [], usage: parsed.usage, stop_reason: 'end_turn'
@@ -561,9 +602,7 @@ export class AnthropicClient {
 
     const request = {
       model,
-      max_tokens: maxTokens,
-      temperature: languageConfig.temperature,
-      top_k: 250,
+      ...adaptiveRequestFields(maxTokens),
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }],
       stream: true
@@ -573,12 +612,8 @@ export class AnthropicClient {
 
     const response = await fetch(this.baseUrl, {
       method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion
-      },
-      body: JSON.stringify(request)
+      headers: this.headersFor(model),
+      body: JSON.stringify(this.withFallback(request))
     })
 
     if (!response.ok) {
@@ -696,6 +731,9 @@ export class AnthropicClient {
                   }
                 }
               } else if (parsed.type === 'message_delta') {
+                if (parsed.delta?.stop_reason === 'refusal') {
+                  throw new Error(`Anthropic declined the request (refusal: ${parsed.delta?.stop_details?.category ?? 'unspecified'})`)
+                }
                 // Anthropic sends final usage in message_delta event
                 if (parsed.usage) {
                   usageData = this.extractUsage({

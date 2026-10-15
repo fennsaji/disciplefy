@@ -12,6 +12,8 @@
  * the blog generator waits for tomorrow.
  */
 
+import { adaptiveRequestFields } from './anthropic-client.ts'
+
 const BATCHES_URL = 'https://api.anthropic.com/v1/messages/batches'
 const API_VERSION = '2023-06-01'
 
@@ -74,9 +76,7 @@ export class AnthropicBatchClient {
         custom_id: r.customId,
         params: {
           model: r.model,
-          max_tokens: r.maxTokens,
-          temperature: r.temperature,
-          top_k: 250,
+          ...adaptiveRequestFields(r.maxTokens),
           system: r.system,
           messages: [{ role: 'user', content: r.userMessage }],
         },
@@ -158,7 +158,12 @@ export function parseResultLine(line: string): BatchResult {
   }
 
   const message = result.message
+  if (message?.stop_reason === 'refusal') {
+    return { customId, error: `refusal: ${message?.stop_details?.category ?? 'unspecified'}` }
+  }
+  // Thinking blocks can precede the text on models that think by default.
   const content = (message?.content ?? [])
+    .filter((block: { type?: string }) => block.type === 'text')
     .map((block: { text?: string }) => block.text ?? '')
     .join('')
 
