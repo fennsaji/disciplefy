@@ -18,8 +18,12 @@ COMMENT ON COLUMN public.daily_verses_cache.text_source IS
 -- the function refreshes such rows in place (keeping uuid and reference).
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron')
-     AND EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cleanup-expired-verse-cache') THEN
+  -- Return before cron.job is mentioned: the reference fails to plan on a
+  -- database without pg_cron even when the first check is false.
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    RETURN;
+  END IF;
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'cleanup-expired-verse-cache') THEN
     PERFORM cron.schedule(
       'cleanup-expired-verse-cache',
       '0 3 * * *',
