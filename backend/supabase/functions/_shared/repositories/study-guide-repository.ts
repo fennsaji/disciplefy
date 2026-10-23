@@ -143,8 +143,72 @@ export class StudyGuideRepository {
     content: StudyGuideContent,
     userContext: UserContext
   ): Promise<any> {
-    // First, try to INSERT with creator info (ON CONFLICT DO NOTHING)
-    const { data: insertedContent, error: insertError } = await this.supabase
+    const { data: insertedContent, error: insertError } = await this.insertCachedContent(input, inputHash, content, userContext)
+
+    // If INSERT succeeded, return the new content (this user is the creator)
+    if (!insertError && insertedContent) {
+      console.log(`[StudyGuideRepository] New content created with creator: ${insertedContent.id}`)
+      return insertedContent
+    }
+
+    // If conflict (content already exists), SELECT the existing record
+    // This preserves the original creator
+    if (insertError && insertError.code === '23505') { // Unique constraint violation
+      const existingContent = await this.findCachedRow(input)
+
+      // Two catalogue topics can share a title in one language. The row that
+      // won the title hash then belongs to the other lesson, so this lesson
+      // gets its own row under a topic-qualified hash.
+      if (input.topic_id && existingContent && existingContent.topic_id !== input.topic_id) {
+        const topicHash = await this.securityValidator.hashSensitiveData(
+          `${this.hashSource(input)}#${input.topic_id}`
+        )
+        const { data: topicContent, error: topicError } =
+          await this.insertCachedContent(input, topicHash, content, userContext)
+        if (!topicError && topicContent) {
+          console.log(`[StudyGuideRepository] Title shared with another topic; created ${topicContent.id} for topic ${input.topic_id}`)
+          return topicContent
+        }
+        if (topicError?.code !== '23505') {
+          console.error('[StudyGuideRepository] Topic-qualified INSERT failed:', topicError)
+        }
+        const raced = await this.findCachedRow(input)
+        if (raced) return raced
+      }
+
+      if (!existingContent) {
+        throw new AppError(
+          'CACHE_CORRUPTION',
+          'Content conflict detected but the existing row could not be retrieved',
+          500
+        )
+      }
+
+      console.log(`[StudyGuideRepository] Existing content found (race condition): ${existingContent.id}`)
+      return existingContent
+    }
+
+    // Other errors
+    console.error('[StudyGuideRepository] INSERT failed:', insertError)
+    throw new AppError(
+      'CACHE_CREATION_ERROR',
+      `Failed to create cached content: ${insertError?.message}`,
+      500
+    )
+  }
+
+  /**
+   * INSERT a cached guide with creator info. A unique-hash conflict comes back
+   * as a 23505 error rather than overwriting, so the original creator is kept.
+   */
+  // deno-lint-ignore no-explicit-any -- row shape mirrors findOrCreateCachedContent
+  private async insertCachedContent(
+    input: StudyGuideInput,
+    inputHash: string,
+    content: StudyGuideContent,
+    userContext: UserContext
+  ): Promise<{ data: any; error: any }> {
+    return await this.supabase
       .from('study_guides')
       .insert({
         input_type: input.type,
@@ -169,37 +233,6 @@ export class StudyGuideRepository {
       })
       .select()
       .single()
-
-    // If INSERT succeeded, return the new content (this user is the creator)
-    if (!insertError && insertedContent) {
-      console.log(`[StudyGuideRepository] New content created with creator: ${insertedContent.id}`)
-      return insertedContent
-    }
-
-    // If conflict (content already exists), SELECT the existing record
-    // This preserves the original creator
-    if (insertError && insertError.code === '23505') { // Unique constraint violation
-      const existingContent = await this.findCachedRow(input)
-
-      if (!existingContent) {
-        throw new AppError(
-          'CACHE_CORRUPTION',
-          'Content conflict detected but the existing row could not be retrieved',
-          500
-        )
-      }
-
-      console.log(`[StudyGuideRepository] Existing content found (race condition): ${existingContent.id}`)
-      return existingContent
-    }
-
-    // Other errors
-    console.error('[StudyGuideRepository] INSERT failed:', insertError)
-    throw new AppError(
-      'CACHE_CREATION_ERROR',
-      `Failed to create cached content: ${insertError?.message}`,
-      500
-    )
   }
 
   /**
@@ -898,13 +931,17 @@ export class StudyGuideRepository {
    * and to allow different cached content for each study mode.
    */
   private async generateInputHash(input: StudyGuideInput): Promise<string> {
+    return await this.securityValidator.hashSensitiveData(this.hashSource(input))
+  }
+
+  /**
+   * The string the input hash is taken over. Includes type, language and
+   * study_mode to prevent collisions and allow per-mode caching.
+   */
+  private hashSource(input: StudyGuideInput): string {
     // Normalize the value for consistent hashing
     const normalizedValue = input.value.toLowerCase().trim().replace(/\s+/g, ' ')
-
-    // Include type, language, and study_mode to prevent collisions and allow per-mode caching
-    const hashInput = `${input.type}:${input.language}:${input.study_mode}:${normalizedValue}`
-
-    return await this.securityValidator.hashSensitiveData(hashInput)
+    return `${input.type}:${input.language}:${input.study_mode}:${normalizedValue}`
   }
 
   /**

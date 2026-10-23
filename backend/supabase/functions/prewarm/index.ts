@@ -94,18 +94,31 @@ function paramsFor(lesson: Lesson, language: string): LLMGenerationParams {
   }
 }
 
-/** The same hash the repository writes, so a title lookup also finds these rows. */
-async function hashInput(language: string, value: string): Promise<string> {
+/**
+ * The same hash the repository writes, so a title lookup also finds these rows.
+ * With [topicId] it is the topic-qualified hash used when another topic already
+ * holds this title, matching the repository's fallback.
+ */
+async function hashInput(language: string, value: string, topicId?: string): Promise<string> {
   const normalized = value.toLowerCase().trim().replace(/\s+/g, ' ')
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(`topic:${language}:${STUDY_MODE}:${normalized}`),
-  )
+  const source = `topic:${language}:${STUDY_MODE}:${normalized}` + (topicId ? `#${topicId}` : '')
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source))
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 // deno-lint-ignore no-explicit-any -- the generated database types are not wired into functions
 type Db = any
+
+async function topicHasGuide(db: Db, topicId: string, language: string): Promise<boolean> {
+  const { data } = await db
+    .from('study_guides')
+    .select('id')
+    .eq('topic_id', topicId)
+    .eq('language', language)
+    .eq('study_mode', STUDY_MODE)
+    .limit(1)
+  return (data?.length ?? 0) > 0
+}
 
 async function remainingBudgetUsd(db: Db): Promise<{ budget: number; spent: number; left: number }> {
   const { data: row } = await db
@@ -381,7 +394,7 @@ createServiceRoleFunction(async (_req, supabase) => {
         pass2 as never,
       )
 
-      const { error } = await supabase.from('study_guides').insert({
+      const row = {
         input_type: 'topic',
         input_value: lesson.title,
         input_value_hash: await hashInput(language, lesson.title),
@@ -396,7 +409,18 @@ createServiceRoleFunction(async (_req, supabase) => {
         reflection_questions: guide.reflectionQuestions,
         prayer_points: guide.prayerPoints,
         updated_at: new Date().toISOString(),
-      })
+      }
+      let { error } = await supabase.from('study_guides').insert(row)
+
+      // Two catalogue topics can share a title in one language. If the title
+      // hash already belongs to another topic's row, this lesson still has no
+      // guide, so it gets its own row under a topic-qualified hash.
+      if (error?.code === '23505' && !(await topicHasGuide(supabase, topicId, language))) {
+        ;({ error } = await supabase.from('study_guides').insert({
+          ...row,
+          input_value_hash: await hashInput(language, lesson.title, topicId),
+        }))
+      }
 
       // A conflict means something generated this lesson while the batch ran.
       // Either guide is fine, so the insert is allowed to lose quietly.
