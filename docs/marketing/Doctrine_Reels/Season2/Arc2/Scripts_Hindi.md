@@ -211,7 +211,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: steady and respectf
 | "कोई अगुवा खड़ा नहीं हो सकता" | मत्ती 23:8-10 — shown, not read |
 | "बाइबल खोलकर जाँचीं" | प्रेरितों के काम 17:11 |
 | "जाँचना पाप नहीं" | 1 थिस्सलुनीकियों 5:21 |
-| closing line | इब्रानियों 4:16 |
+| closing line | इब्रानियों 4:14-16 |
 
 **Why the hook works:** a yes-or-no question about something almost every believer taught not to question the pulpit has wondered and never said. It asks about *testing*, not suspecting, and names no person — *जो आपको बाइबल सिखाता है* is a role the viewer fills in himself.
 

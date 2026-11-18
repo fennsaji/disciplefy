@@ -311,7 +311,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "पौलुस ने तीमुथियुस से कहा — वचन का प्रचार कर। तो उस हिस्से की मुख्य बात ही आपके पाठ की मुख्य बात हो। हर शब्द में छिपा अर्थ मत ढूँढिए — जो लिखने वाला कहना चाहता था, वही।"
 
-*On screen:* 2 तीमुथियुस 4:2 · 2 पतरस 1:20-21
+*On screen:* 2 तीमुथियुस 4:2 · 2 कुरिन्थियों 1:13
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -476,7 +476,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "साफ़ आयतों की रोशनी में कठिन आयत पढ़िए — वचन अपने को नहीं काटता। और 'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए। पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की। जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं।"
 
-*On screen:* भजन संहिता 119:160 · 1 कुरिन्थियों 2:12-13 · 1 कुरिन्थियों 15:3-4
+*On screen:* भजन संहिता 119:160 · 1 कुरिन्थियों 2:12-13 · 4:6 · 1 कुरिन्थियों 15:3-4
 
 ```
 CAMERA: starts directly overhead on the open Bibles; one slow crane down and tilt up to just above the mat; ends on the low close shot of the one Bible left open.
@@ -606,7 +606,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "परखने के तीन सवाल — यीशु कौन हैं? क्रूस ने क्या किया, और क्या वे जी उठे? उद्धार — दान है, या कमाई?"
 
-*On screen:* 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
+*On screen:* यूहन्ना 1:1 · 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```

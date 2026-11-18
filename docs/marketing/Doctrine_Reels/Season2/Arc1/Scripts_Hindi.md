@@ -85,7 +85,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: gentle and level; t
 | "दाम… चुकाया गया… पूरा" | इब्रानियों 10:14 |
 | "जो उन पर विश्वास करते हैं, वे भी जी उठेंगे" | यूहन्ना 11:25 · 1 कुरिन्थियों 15:20-23 |
 | "अभी उद्धार का दिन है" | 2 कुरिन्थियों 6:2 |
-| closing line | यूहन्ना 11:25-26 |
+| closing line | यूहन्ना 11:25-27 |
 
 **Why the hook works:** a sentence the viewer has heard all his life, quoted without comment — and then the reel concedes what is attractive about it (*एक और मौका*) before asking what the Bible says. A neighbour overhearing hears his own hope described fairly, not mocked.
 
@@ -218,7 +218,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: candid, a little ru
 | "एक देह, एक प्रभु, एक विश्वास" | इफिसियों 4:4-6 |
 | "छोटी नहीं — पर सुसमाचार नहीं" | रोमियों 14:1, 5 |
 | "सुसमाचार ही नहीं बचा" | गलातियों 1:6-9 |
-| "यीशु परमेश्वर हैं… मरे और जी उठे" | 1 कुरिन्थियों 15:3-4 |
+| "यीशु परमेश्वर हैं… मरे और जी उठे" | कुलुस्सियों 2:9 · 1 कुरिन्थियों 15:3-4 |
 | "अनुग्रह से — कमाई से नहीं" | इफिसियों 2:8-9 |
 | closing line | इफिसियों 2:14-16 |
 

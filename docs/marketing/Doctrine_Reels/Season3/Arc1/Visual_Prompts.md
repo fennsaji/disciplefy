@@ -762,7 +762,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "उजाले की जल्दी नहीं। अगर आप मसीह में हैं — अँधेरे में भी उसी के हाथ में हैं।"
 
-*On screen:* भजन संहिता 139:11-12
+*On screen:* भजन संहिता 139:10-12
 
 Dissolve into the brand outro in the edit.
 ```

@@ -262,7 +262,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: very quiet througho
 | "मेरा जी बहुत उदास है" | मत्ती 26:38 |
 | "वे रोए" | यूहन्ना 11:35 |
 | "रोने वालों के साथ रोओ" | रोमियों 12:15 |
-| closing line | भजन संहिता 139:11-12 |
+| closing line | भजन संहिता 139:10-12 |
 
 **Why the hook works:** the sentence that hurt, quoted first and flat. The viewer it was said to stops because he has been carrying it; the reel then asks, simply, whether it is true.
 

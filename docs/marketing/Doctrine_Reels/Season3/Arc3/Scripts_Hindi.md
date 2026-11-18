@@ -164,8 +164,8 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: matter-of-fact at t
 | "तुम्हारी हाँ, हाँ हो" | मत्ती 5:37 |
 | "झूठ छोड़कर सच बोलो" | इफिसियों 4:25 |
 | "घूस न्याय को बिगाड़ देती है" | नीतिवचन 17:23 |
-| "तोहफ़ा अलग है" | निर्गमन 23:8 |
-| "उनकी गवाही" | 1 तीमुथियुस 3:7 |
+| "वही घूस है… तोहफ़ा अलग है" | निर्गमन 23:8 |
+| "उनकी गवाही" | मत्ती 5:16 |
 | closing line | लूका 16:10 |
 
 **Why the hook works:** the offer in the clerk's own bored words, then two flat facts and a one-word question — *आप?* The viewer has stood at that window and knows what he did.
@@ -384,7 +384,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open (
 | "इकट्ठा होना मत छोड़ो" | इब्रानियों 10:25 |
 | "अवसर को बहुमूल्य समझो" | इफिसियों 5:15-16 |
 | "एक देह" | 1 कुरिन्थियों 12:27 |
-| closing line | भजन संहिता 92:1 |
+| closing line | भजन संहिता 122:1 · भजन संहिता 92:1 |
 
 **Why the hook works:** a number the viewer's own device already knows, asked while he is holding it. The second question is the comparison he has never made.
 

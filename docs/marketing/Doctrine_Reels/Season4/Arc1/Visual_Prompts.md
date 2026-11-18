@@ -153,7 +153,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "उस दिन आप काँपती हुई सेना में होते। लड़ा वह, जिसे परमेश्वर ने चुना था — सबकी ओर से। बाइबल में छियासठ किताबें हैं — पर कहानी एक है। परमेश्वर ने सब अच्छा बनाया। इंसान ने पाप किया। परमेश्वर ने बचाने वाले का वादा किया। यीशु आए। और अंत में सब कुछ नया होगा।"
 
-*On screen:* 1 शमूएल 17:11, 45-47 · उत्पत्ति 3:15 · प्रकाशितवाक्य 21:5
+*On screen:* 1 शमूएल 16:12-13 · 17:11, 45-47 · उत्पत्ति 3:15 · प्रकाशितवाक्य 21:5
 
 ```
 CAMERA: starts on the full painting; one slow push in toward the dusty gold light around the lone figure in the valley; the gold fills the frame and settles into the warm lamplight on the desk; ends on the close shot from in front of the desk looking down at the Bible.
@@ -337,7 +337,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "पत्री एक चिट्ठी है — पहले देखिए, किसे लिखी गई। और प्रकाशितवाक्य अख़बार नहीं — दर्शन है; उसकी बात साफ़ है — मेम्ना जीतता है। हर किताब पर पूछिए — यह कैसी किताब है?"
 
-*On screen:* फिलिप्पियों 1:1 · प्रकाशितवाक्य 1:4 · 17:14
+*On screen:* फिलिप्पियों 1:1 · प्रकाशितवाक्य 1:1 · 17:14
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -467,7 +467,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "दूसरी आयत — जो मुझे सामर्थ्य देता है, उसमें मैं सब कुछ कर सकता हूँ। ठीक ऊपर पौलुस लिखते हैं — मैंने भूखा रहना भी सीखा है, पेट भरना भी। और यह वे क़ैद से लिख रहे हैं।"
 
-*On screen:* फिलिप्पियों 4:13 · फिलिप्पियों 4:11-12
+*On screen:* फिलिप्पियों 4:13 · फिलिप्पियों 4:11-12 · फिलिप्पियों 1:13
 
 ```
 CAMERA: starts on the full painting; one slow push into the gold evening light on the river; the gold settles into the morning sun on the desk; ends on the close over-the-shoulder shot of the Bible at Philippians 4.

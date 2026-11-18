@@ -135,13 +135,13 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: brisk at the open, 
 | Line | Reference |
 |---|---|
 | "मेज़ें उलट दीं" | यूहन्ना 2:15 |
-| "क्रोधित हुए — और निष्पाप" | मरकुस 3:5 |
+| "क्रोधित हुए — और निष्पाप" | मरकुस 3:5 · 1 पतरस 2:22 |
 | "भाई पर क्रोध… दंड के योग्य" | मत्ती 5:21-22 |
 | "सूरज डूबने तक" | इफिसियों 4:26-27 |
 | "क्रोध में धीमे" | याकूब 1:19-20 |
 | "परमेश्वर का क्रोध यीशु ने सह लिया" | रोमियों 5:9 |
 | "संयम आत्मा का फल" | गलातियों 5:22-23 |
-| closing line | गलातियों 5:24 — shown, not read |
+| arc verse | गलातियों 5:24 — the arc's verse; shown, not read |
 
 **Why the hook works:** the proof-text every angry believer reaches for, followed by his own conclusion in his own tone — *है न?* The reel grants the first half before it takes the second away.
 
@@ -231,7 +231,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light and knowing a
 | "कभी नहीं छोड़ेगा" | इब्रानियों 13:5 |
 | "पहचान… उनसे है" | कुलुस्सियों 2:10 |
 | "केवल प्रभु में" | 1 कुरिन्थियों 7:39 |
-| closing line | गलातियों 5:24 — shown, not read |
+| arc verse | गलातियों 5:24 — the arc's verse; shown, not read |
 
 **Why the hook works:** the question itself, in the auntie's voice — the viewer has heard it at every wedding this year. The second beat is what he asks himself afterwards, which nobody hears.
 
@@ -272,12 +272,12 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: even and unhurried;
 | Line | Reference |
 |---|---|
 | "मतवाले मत बनो… आत्मा से भरते जाओ" | इफिसियों 5:18 |
-| "सब पर नियम नहीं" | रोमियों 14:3 |
+| "सब पर नियम नहीं" | रोमियों 14:3, 17 |
 | "किसी भी चीज़ के वश में नहीं" | 1 कुरिन्थियों 6:12 |
 | "नम्रता से सँभालो" | गलातियों 6:1 |
 | "अकेले नहीं" | याकूब 5:16 |
 | closing line | 1 कुरिन्थियों 6:11 · इफिसियों 5:18 |
-| closing line | गलातियों 5:24 — shown, not read |
+| arc verse | गलातियों 5:24 — the arc's verse; shown, not read |
 
 **Why the hook works:** it skips the argument everyone has and asks about the person nobody talks to. The viewer who drinks alone hears himself; the viewer who knows one hears a question aimed at him.
 
@@ -366,7 +366,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and matter-of-
 | "अपनी किताबें जला दीं" | प्रेरितों के काम 19:19 |
 | "एक व्यक्ति" | भजन संहिता 121:5-8 |
 | closing line | भजन संहिता 31:15 |
-| closing line | गलातियों 5:24 — shown, not read |
+| arc verse | गलातियों 5:24 — the arc's verse; shown, not read |
 
 **Why the hook works:** the advice itself, as the family gives it, and then the fair question — *what is the harm?* The reel treats it as a real question and answers it without contempt.
 

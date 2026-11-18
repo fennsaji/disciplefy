@@ -293,7 +293,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 *Voiceover:* "यीशु ने मंदिर में मेज़ें उलट दीं। तो मेरा गुस्सा भी ठीक है — है न? हर क्रोध पाप नहीं। यीशु क्रोधित हुए — और निष्पाप रहे।"
 
-*On screen:* यूहन्ना 2:15 · मरकुस 3:5
+*On screen:* यूहन्ना 2:15 · मरकुस 3:5 · 1 पतरस 2:22
 
 ```
 CAMERA: starts on the medium shot across the counter; one slow, steady dolly straight in toward Rahul; ends on the close-up of his face.
@@ -355,7 +355,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अगर आप मसीह में हैं — आप पर आने वाला परमेश्वर का क्रोध यीशु ने क्रूस पर सह लिया। संयम आत्मा का फल है — भीतर की आग वही ठंडी करते हैं।"
 
-*On screen:* रोमियों 5:9 · गलातियों 5:22-23 · गलातियों 5:24 — shown, not read
+*On screen:* रोमियों 5:9 · गलातियों 5:22-23 · गलातियों 5:24 — the arc's verse; shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -662,7 +662,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "और जब चुनें — केवल प्रभु में।"
 
-*On screen:* 1 कुरिन्थियों 7:39 · गलातियों 5:24 — shown, not read
+*On screen:* 1 कुरिन्थियों 7:39 · गलातियों 5:24 — the arc's verse; shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -769,7 +769,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "बिल्कुल न पीना — बहुतों का अच्छा चुनाव है। पर वचन उसे सब पर नियम नहीं बनाता। पौलुस लिखते हैं — मैं किसी भी चीज़ के वश में नहीं होऊँगा। जो चीज़ आपको चलाने लगे, वह मालिक बन बैठी।"
 
-*On screen:* रोमियों 14:3 · 1 कुरिन्थियों 6:12
+*On screen:* रोमियों 14:3, 17 · 1 कुरिन्थियों 6:12
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -816,7 +816,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अगर आप मसीह में हैं — यह ज़ंजीर आपकी पहचान नहीं। पवित्र आत्मा से भरते जाइए।"
 
-*On screen:* 1 कुरिन्थियों 6:11 · इफिसियों 5:18 · गलातियों 5:24 — shown, not read
+*On screen:* 1 कुरिन्थियों 6:11 · इफिसियों 5:18 · गलातियों 5:24 — the arc's verse; shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -1114,7 +1114,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "अगर आप मसीह में हैं — आपका कल सितारों के हाथ में नहीं; उसके हाथ में है, जिसके आप हैं।"
 
-*On screen:* भजन संहिता 31:15 · गलातियों 5:24 — shown, not read
+*On screen:* भजन संहिता 31:15 · गलातियों 5:24 — the arc's verse; shown, not read
 
 Dissolve into the brand outro in the edit.
 ```

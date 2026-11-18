@@ -741,7 +741,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "वचन ईमानदार है। पौलुस लिखते हैं — देमास मुझे छोड़ गया। और अगली ही आयत में — मरकुस को साथ ले आ; वह मेरे काम का है। वही मरकुस — जो कभी बीच सफ़र से लौट गया था।"
 
-*On screen:* 2 तीमुथियुस 4:10 · 2 तीमुथियुस 4:11 · प्रेरितों के काम 15:38
+*On screen:* 2 तीमुथियुस 4:10 · 2 तीमुथियुस 4:11 · प्रेरितों के काम 15:37-38
 
 ```
 CAMERA: starts on the close-up of Rahul's face; one slow arc left with a pull back, lowering to kneeling height; ends on the medium shot along the side of the bed.

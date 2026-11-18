@@ -92,7 +92,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and a little p
 
 | Line | Reference |
 |---|---|
-| "लड़ा वह, जिसे परमेश्वर ने चुना था" | 1 शमूएल 17:11, 45-47 |
+| "लड़ा वह, जिसे परमेश्वर ने चुना था" | 1 शमूएल 16:12-13 · 17:11, 45-47 |
 | "एक बचाने वाले का वादा" | उत्पत्ति 3:15 |
 | "सब कुछ नया" | प्रकाशितवाक्य 21:5 |
 | "उन्हीं के बारे में लिखा है" | लूका 24:27, 44 |
@@ -144,7 +144,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: gentle at the open,
 | "सब परमेश्वर का वचन है" | 2 तीमुथियुस 3:16 |
 | "भजन" | भजन संहिता 13 |
 | "किसे लिखी गई" | फिलिप्पियों 1:1 |
-| "मेम्ना जीतता है" | प्रकाशितवाक्य 1:4 · 17:14 |
+| "मेम्ना जीतता है" | प्रकाशितवाक्य 1:1 · 17:14 |
 | closing line | यहेजकेल 36:26 |
 
 **Why the hook works:** a parent's grief and the accusation underneath it, in two lines. The viewer who has prayed over a wandering son or brother stops because the reel has said the thing he was afraid to think about the Bible.
@@ -190,6 +190,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and curious, n
 | "वहाँ घर बनाओ… सत्तर वर्ष" | यिर्मयाह 29:5-7, 10 |
 | "मैं सब कुछ कर सकता हूँ" | फिलिप्पियों 4:13 |
 | "भूखा रहना भी सीखा" | फिलिप्पियों 4:11-12 |
+| "क़ैद से लिख रहे हैं" | फिलिप्पियों 1:13 |
 | closing line | प्रेरितों के काम 17:11 |
 
 **Why the hook works:** three words that make every viewer think of one verse — his own — and then a question he can answer honestly: no, he has never read above it.

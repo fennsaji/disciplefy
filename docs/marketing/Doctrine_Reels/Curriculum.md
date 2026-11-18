@@ -354,8 +354,9 @@ did not change.
 
 ### Stage 2 · Season 2 — खड़ा होना (standing) · 16 reels
 
-Curriculum: [Season2/Curriculum.md](Season2/Curriculum.md). Seven reels are
-produced (scripts, visuals, captions at `Season2/Arc1/`); nine are new. The
+Curriculum: [Season2/Curriculum.md](Season2/Curriculum.md). All sixteen reels
+are scripted (scripts, visuals, captions under `Season2/Arc1/`–`Arc3/`); two
+early topics were replaced (S2·01 → S2·17, S2·12 → S2·18). The
 viewer enters as a follower and leaves as a disciple who can stand.
 
 | Arc | Title | Reels | Must establish before the next arc |

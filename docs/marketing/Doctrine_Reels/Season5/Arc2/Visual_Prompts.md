@@ -172,7 +172,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "वरदान मंच पर दिखता है। चरित्र घर में। पौलुस ने पहले घर देखा। यह सूची खुली बाइबल में है — इसलिए झुंड भी अगुवे को इसी से परख सकता है; दोष ढूँढने को नहीं, आदर और प्रार्थना के साथ।"
 
-*On screen:* 1 तीमुथियुस 3:4-5 · 1 तीमुथियुस 5:17, 19
+*On screen:* 1 तीमुथियुस 3:4-5 · 1 तीमुथियुस 5:17, 19 · इब्रानियों 13:18
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -597,7 +597,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "यीशु परमेश्वर हैं; हमारे पापों के लिए मरे; सचमुच जी उठे; उद्धार अनुग्रह से, विश्वास के द्वारा — कमाई से नहीं। यहाँ कोई समझौता नहीं।"
 
-*On screen:* 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
+*On screen:* यूहन्ना 1:1 · 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -644,7 +644,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "सुसमाचार में एक। बाकी में आज़ादी। दोनों में प्रेम।"
 
-*On screen:* इफिसियों 4:3-6
+*On screen:* इफिसियों 4:2-6 · रोमियों 14:5
 
 Dissolve into the brand outro in the edit.
 ```

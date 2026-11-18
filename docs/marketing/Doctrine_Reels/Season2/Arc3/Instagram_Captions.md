@@ -69,7 +69,7 @@ reads as career promise. No payment handle anywhere near 3·5.
 
 देना परमेश्वर से कुछ खरीदता नहीं। न आशीष, न फसल। जिसका सब कुछ है, उसे देने में आप ग़रीब नहीं होते — आज़ाद होते हैं।
 
-📖 प्रेरितों के काम 20:35
+📖 2 कुरिन्थियों 9:7
 🔖 सेव कर लीजिए।
 
 #Disciplefy #हिंदीबाइबिल #संतोष #HindiChristian #BibleStudy

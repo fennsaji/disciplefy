@@ -182,7 +182,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "आपको एक और जन्म नहीं चाहिए। आपको एक उद्धारकर्ता चाहिए — और वे आ चुके हैं।"
 
-*On screen:* यूहन्ना 11:25-26
+*On screen:* यूहन्ना 11:25-27
 
 Dissolve into the brand outro in the edit.
 ```
@@ -609,7 +609,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "पहचान नाम से नहीं, इससे होती है — क्या वहाँ यीशु को परमेश्वर माना जाता है, जो हमारे पापों के लिए मरे और जी उठे? और उद्धार अनुग्रह से, विश्वास से — कमाई से नहीं? जहाँ यह है, वहाँ आपके भाई-बहन हैं।"
 
-*On screen:* 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
+*On screen:* कुलुस्सियों 2:9 · 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```

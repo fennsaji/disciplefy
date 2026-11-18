@@ -494,7 +494,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "नुक़सान होगा? हो सकता है। पर अगर आप मसीह में हैं — आपकी हाँ अब उनकी गवाही है। और जहाँ हक़ का काम बिना दिए न हो — वह कठिन सवाल है; अकेले मत तय कीजिए।"
 
-*On screen:* 1 तीमुथियुस 3:7
+*On screen:* मत्ती 5:16
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -1267,7 +1267,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "हफ़्ते का केंद्र यह परदा नहीं — परमेश्वर के लोगों के साथ उसकी आराधना है।"
 
-*On screen:* भजन संहिता 92:1
+*On screen:* भजन संहिता 122:1 · भजन संहिता 92:1
 
 Dissolve into the brand outro in the edit. No subscription or notification prompt on this reel's outro.
 ```

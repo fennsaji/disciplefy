@@ -632,7 +632,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अगुवे की सुनिए — पर परमेश्वर तक आप यीशु के ज़रिए पहुँचते हैं।"
 
-*On screen:* इब्रानियों 4:16
+*On screen:* इब्रानियों 4:14-16
 
 Dissolve into the brand outro in the edit.
 ```

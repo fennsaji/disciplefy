@@ -128,7 +128,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "परमेश्वर पवित्र है; उसने हमें अपने लिए बनाया। हम सबने पाप किया — और पाप उसके दण्ड के लायक है।"
 
-*On screen:* यशायाह 6:3 · उत्पत्ति 1:27 · रोमियों 3:23 · 6:23
+*On screen:* यशायाह 6:3 · कुलुस्सियों 1:16 · रोमियों 3:23 · 6:23
 
 ```
 CAMERA: starts on the close-up of Rahul; one slow pull back, drifting screen-right; ends on the medium close two-shot of both men.
@@ -307,7 +307,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "पर हिम्मत का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं। चतुराई पाप नहीं है। चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"
 
-*On screen:* कुलुस्सियों 4:5-6 · मत्ती 10:16 · नीतिवचन 15:22
+*On screen:* मत्ती 10:16 · कुलुस्सियों 4:5-6 · सभोपदेशक 3:7 · नीतिवचन 15:22
 
 ```
 CAMERA: starts on the full painting; one slow push into the warm glow of the hanging lamps; the lamplight settles into the pantry's daylight; ends on the medium two-shot from the pantry doorway.

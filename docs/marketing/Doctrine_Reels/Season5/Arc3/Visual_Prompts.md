@@ -302,7 +302,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "पौलुस लिखते हैं — क्रूस पर मसीह ने दुष्ट शक्तियों को निहत्था किया, और खुलेआम उन पर जय पाई।"
 
-*On screen:* कुलुस्सियों 2:14-15
+*On screen:* कुलुस्सियों 2:15
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
