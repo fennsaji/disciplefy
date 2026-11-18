@@ -424,7 +424,7 @@ take वे (*क्या वे जी उठे*, *पवित्र आत�
 हैं*); परमेश्वर takes वह (*परमेश्वर कहता है*); पौलुस, याकूब, पतरस
 *लिखते/कहते हैं*; एज्रा *चले*. Church leaders are *अगुवे*; no office title
 anywhere. *उपदेशक* (याकूब 3:1 OV) is not voiced. Words chosen on purpose:
-*सिखाने वाला* (function, not rank) · *अमानत* for the OV's *थाती* (on-screen
+*सिखाने वाला* (function, not rank) · *अमानत* for the OV's *धरोहर* (on-screen
 text follows the OV) · *व्यवस्था के काम*, never *ख़तना* · *बाइबल अध्ययन*
 (not a loanword in this audience's church vocabulary) · *नुस्ख़े*, not
 *फ़ॉर्मूला*. OV wording voiced in indirect speech and believed close —
@@ -438,7 +438,7 @@ is a paraphrase; do not set it as a quotation), याकूब 3:2 (*हम स
 व्यवस्थाविवरण 29:29 (*गुप्त बातें हमारे परमेश्वर यहोवा के वश में हैं*),
 गलातियों 1:7-8, यहूदा 3 (*एक ही बार सौंपा गया*), 1 तीमुथियुस 4:16 (*अपनी
 और अपने उपदेश की चौकसी रख*), 2 तीमुथियुस 1:14 (*पवित्र आत्मा के द्वारा जो
-हम में बसा हुआ है, इस अच्छी थाती की रखवाली कर*). Verify OV spellings
+हम में बसा हुआ है, इस अच्छी धरोहर की रखवाली कर*). Verify OV spellings
 *नहेम्याह*, *एज्रा*, *गलातिया*, *यहूदा* before the on-screen text is set.
 
 **No reel in this arc ends open.** Each closes on its own instruction; none

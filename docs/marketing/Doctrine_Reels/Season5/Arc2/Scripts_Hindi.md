@@ -293,7 +293,7 @@ any other faith. Leaders are shown from behind, as hands, or at a distance.
 "Rahul matches the character reference" appears only on frames where Rahul's
 face is actually visible — not on hand-only or Bible-only frames.
 **S5·05** — no list of office titles on screen; the list is shown as the
-*character words* only (निर्दोष, संयमी, पहुनाई…), never as the OV text of 3:2;
+*character words* only (निर्दोष, संयमी, अतिथि-सत्कार…), never as the OV text of 3:2;
 the *घर* beat is a lit doorway or a shared meal table from outside, no
 children lined up for inspection. **S5·06** — the basin, towel and feet;
 first-century room or a plain Indian courtyard; **no church foot-washing
@@ -394,7 +394,7 @@ Walking Worthy). Do not pin *Church Leadership and Authority*.
 take वे (*उन्होंने… सौंपी*, *पवित्र आत्मा… गढ़ते हैं*); परमेश्वर takes वह
 (*परमेश्वर कहता है*, *परमेश्वर मन देखता है*); पौलुस, पतरस *लिखते हैं*.
 Leaders are *अगुवे/अगुवा* throughout; no office title in any voiceover,
-caption, visual or reply. OV words used on purpose: *पहुनाई करने वाला*,
+caption, visual or reply. OV words used on purpose: *अतिथि-सत्कार करनेवाला* (voiced as *सत्कार करने वाला*),
 *संयमी*, *निर्दोष*, *पियक्कड़*, *झगड़ालू*, *लोभी*, *सिखाने में निपुण*
 (1 तीमुथियुस 3), *अँगोछा* (यूहन्ना 13:4), *नमूना* (यूहन्ना 13:15), *छुड़ौती*
 (मरकुस 10:45), *झुंड* (1 पतरस 5:2), *निश्चय कर ले* (रोमियों 14:5). **Verify

@@ -400,7 +400,7 @@ believed close — **verify against the OV before on-screen text is set**:
 अन्त है*), रोमियों 6:14 (*अनुग्रह के अधीन*), निर्गमन 34:6 (*दयालु और
 अनुग्रहकारी*), इब्रानियों 13:5 (*मैं तुझे कभी न छोड़ूँगा* — the voiceover
 drops *कभी* for length; the on-screen text follows the OV), 2 कुरिन्थियों
-1:20 (*हाँ*). Verify OV spellings *फसह*, *बन्धुआई*, *यहोशू*, *पीतल का साँप*,
+1:20 (*हाँ*). The re-edited OV reads *बेबीलोन* (not *बाबुल*) and *सामर्थ्य*. Verify OV spellings *फसह*, *बन्धुआई*, *यहोशू*, *पीतल का साँप*,
 *प्रकाशितवाक्य* before the on-screen text is set; in v2 the voiceover no longer says *फ़सह*
 or *बंधुआई* (it says *बंदी बनाकर* and *मुसीबत*); the OV forms matter only for
 on-screen text.

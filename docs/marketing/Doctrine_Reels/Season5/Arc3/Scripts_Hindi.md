@@ -479,8 +479,7 @@ not with the flock.
     paraphrase)
   - कुलुस्सियों 2:14-15 (*कीलों से जड़ कर*; *जय-जयकार*)
   - इफिसियों 6:12 (*लहू और मांस*)
-  - याकूब 4:7 (OV spells *आधीन*; the voiceover's *अधीन* is the modern
-    spelling)
+  - याकूब 4:7 (the re-edited OV spells *अधीन*, as the voiceover does)
   - मत्ती 25:46 (*अनन्त दण्ड… अनन्त जीवन*)
   - यहेजकेल 33:11
   - रोमियों 9:2
