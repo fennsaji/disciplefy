@@ -606,7 +606,7 @@ Romans path, where a reader has chapters 1–8 in hand before chapter 9.
 
 ## Changelog
 
-**v5 — Seasons 2 and 3 scripts simplified.** Both seasons rewritten to the
+**v5 — Seasons 2, 3 and 4 scripts simplified.** Each season rewritten to the
 *Script rules* in [Season2/Curriculum.md](Season2/Curriculum.md): a one-line
 hook first, everyday Hindi a 15-year-old follows, one idea per reel, about
 50 seconds, and no line voiced twice in a season. Season 2 replaced two
@@ -614,8 +614,12 @@ repeated topics (S2·01 → S2·17 अगला जन्म?; S2·12 → S2·18
 Season 3 kept all 21 topics — none repeats another season — but
 गलातियों 5:24, which closed five reels of its second arc, is now spoken once
 (S3·09) and shown at the close of the rest; S3·19 no longer repeats S3·21's
-*यह कलीसिया नहीं है*. Each season had a doctrinal review pass and a check of
-the visual prompts against the new voiceover.
+*यह कलीसिया नहीं है*. Season 4 kept all 15 topics; S4·12 says the *not the app* point in its own
+words instead of repeating S3·21's line, and S4·09 keeps the brake but
+shows 1 पतरस 3:15 instead of reading it (S2·04 voices it). In four Season 4
+reels a painting played one clip after the line that tells its story; those
+lines now sit under their paintings. Each season had a doctrinal review
+pass and a check of the visual prompts against the new voiceover.
 
 **v4 — gap audit; stage 3 added.** The v3 outline was audited against the
 Sermon on the Mount, गलातियों 5:19-23, the *one another* commands, the

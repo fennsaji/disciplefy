@@ -17,6 +17,8 @@ will act on it tonight, as S2·05 was, every reel licenses only restraint
 where speaking costs something, and none of them gives the viewer a person
 to aim at, a script to use on anyone, or a benefit to offer.
 
+**v2: simplified** — a one-line hook first, wording a 15-year-old follows, one idea per reel, about 50 seconds; each reel's *Guardrails held* note lists what was cut. Rules: *Script rules* in [Season2/Curriculum.md](../../Season2/Curriculum.md).
+
 Production IDs are `S4·06`–`S4·10` (Season 4 is 5 / 5 / 5; Arc 1 is
 S4·01–05, Arc 3 is S4·11–15). Arc position is the heading; the production ID
 stays in the `===` block. All five hold आप register, no English loanwords,
@@ -68,93 +70,45 @@ Four constraints run through the whole arc, beyond the format.
 
 ```
 === DOCTRINE REELS · S4·06 · एक साँस में ===
-Target: 49–50 seconds. Register: आप. Tone: plain and unhurried; the five gospel lines steady and evenly weighted, none rushed, none swelled; the एक भी हटाइए section brisk; the closing quiet.
+Target: about 50 seconds, unhurried. Register: आप. Tone: plain and unhurried; the five gospel lines steady and evenly weighted, none rushed, none swelled; the एक भी हटाइए section brisk; the closing quiet.
 
-"कोई सीधे पूछे — जिस सुसमाचार पर आप टिके हैं, वह है क्या?
-जवाब एक साँस में देना हो —
-तो क्या कुछ छूट जाएगा?"
-
-पौलुस इसे सबसे पहली बात कहते हैं —
+सुसमाचार क्या है — एक साँस में बता सकते हैं?
+कोई आपसे सीधे पूछे, तो क्या कहेंगे?
+पौलुस इसे सबसे पहली बात कहते हैं।
 
 परमेश्वर पवित्र है; उसने हमें अपने लिए बनाया।
 हम सबने पाप किया — और पाप उसके दण्ड के लायक है।
+
 परमेश्वर के बेटे, निष्पाप यीशु, हमारी जगह क्रूस पर मरे — वह दण्ड उन्होंने उठाया।
+
 गाड़े गए, और तीसरे दिन सचमुच जी उठे।
 इसलिए यीशु कहते हैं — मन फिराओ, और सुसमाचार पर विश्वास करो। उद्धार दान है, कमाई नहीं।
+एक भी हटाइए — सुसमाचार नहीं बचता। मन फिराव हटाइए — विश्वास बस हामी रह जाता है।
 
-एक भी हटाइए — सुसमाचार नहीं बचता।
-पाप हटाइए — क्रूस बेमतलब। मन फिराव हटाइए — विश्वास बस हामी।
-यह बेहतर ज़िंदगी का वादा नहीं — पापियों की क्षमा की ख़बर है।
-ये शब्द जादू नहीं — रटकर दोहराने से कोई नहीं बचता।
-
+यह बेहतर ज़िंदगी का वादा नहीं — पापियों की क्षमा की ख़बर है। ये शब्द जादू नहीं।
 यह किसी पर आज़माने को नहीं — पहले खुद जानने को है।
-कोई पूछे, तो नम्रता और आदर से।
-
-सुसमाचार छोटा है — क्योंकि काम उन्होंने पूरा कर दिया।
+सुसमाचार छोटा है — क्योंकि काम यीशु ने पूरा कर दिया।
 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
-*"पौलुस इसे सबसे पहली बात कहते हैं —"* (1 कुरिन्थियों 15:3 stays on
-screen). **Never** cut or shorten any of the five lines from *परमेश्वर पवित्र
-है* to *उद्धार दान है, कमाई नहीं* — together they are the reel; **never**
-*"मन फिराव हटाइए — विश्वास बस हामी"*, **never** *"यह बेहतर ज़िंदगी का वादा
-नहीं"*, and **never** *"यह किसी पर आज़माने को नहीं — पहले खुद जानने को है"*.
+**Length:** ~132 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut or shorten any of the five lines from *परमेश्वर पवित्र है* to *उद्धार दान है, कमाई नहीं* — together they are the reel; **never** *"मन फिराव हटाइए — विश्वास बस हामी"*, *"यह बेहतर ज़िंदगी का वादा नहीं"* or *"यह किसी पर आज़माने को नहीं — पहले खुद जानने को है"*. If the artist runs long, cut *"पौलुस इसे सबसे पहली बात कहते हैं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "सबसे पहली बात" | 1 कुरिन्थियों 15:1-3 |
-| "परमेश्वर पवित्र है" | यशायाह 6:3 · 1 पतरस 1:15-16 |
-| "अपने लिए बनाया" | कुलुस्सियों 1:16 · प्रकाशितवाक्य 4:11 |
-| "हम सबने पाप किया" | रोमियों 3:23 |
-| "दण्ड के लायक" | रोमियों 6:23 |
-| "निष्पाप यीशु, हमारी जगह" | 2 कुरिन्थियों 5:21 · 1 पतरस 3:18 |
-| "वह दण्ड उन्होंने उठाया" | यशायाह 53:5-6 |
-| "गाड़े गए… तीसरे दिन… जी उठे" | 1 कुरिन्थियों 15:4 |
-| "मन फिराओ… विश्वास करो" | मरकुस 1:15 |
-| "दान है, कमाई नहीं" | इफिसियों 2:8-9 |
-| "पापियों की क्षमा की ख़बर" | लूका 24:46-47 |
-| "रटकर दोहराने से" | मत्ती 15:8 · रोमियों 10:10 |
-| "नम्रता और आदर से" | 1 पतरस 3:15 |
-| closing line | यूहन्ना 19:30 · इब्रानियों 10:12 |
+| "सबसे पहली बात" | 1 कुरिन्थियों 15:3 |
+| "पवित्र… अपने लिए बनाया" | यशायाह 6:3 · उत्पत्ति 1:27 |
+| "सबने पाप किया" | रोमियों 3:23 · 6:23 |
+| "हमारी जगह" | 2 कुरिन्थियों 5:21 · 1 पतरस 3:18 |
+| "तीसरे दिन जी उठे" | 1 कुरिन्थियों 15:4 |
+| "मन फिराओ… विश्वास करो" | मरकुस 1:15 · इफिसियों 2:8-9 |
+| closing line | यूहन्ना 19:30 |
 
-**Why the hook works:** it does not ask whether the viewer believes the
-gospel; it assumes he does (*जिस सुसमाचार पर आप टिके हैं*) and asks whether
-he could *say* it — a test he has never set himself, and a quietly
-frightening one. *क्या कुछ छूट जाएगा?* makes the question diagnostic rather
-than performative: the viewer is not asked to be eloquent, only complete,
-and he stays to find out which part he would have dropped.
+**Why the hook works:** a direct challenge the viewer can test himself against on the spot. Most believers discover in the first second that they cannot do it, and stay to hear it done.
 
-**Guardrails held:** **the gospel is theologically complete in five lines,
-each carrying one element the roadmap names.** God is holy and the Creator
-who made us for himself (the Season 1 order: holiness before sin, 2 → 4 →
-5). Sin is universal and *deserves his judgment* — the risk register's
-reel-5 sentence, not a euphemism. Christ is **sinless**, dies **in our
-place**, and **bears that judgment** (*वह दण्ड उन्होंने उठाया*) — penal
-substitution, not moral example; is **buried** (real death) and **truly**
-raised (*सचमुच* — bodily, Season 1 reel 6). The response is **repentance and
-faith together, in Jesus's own words** (मरकुस 1:15, the one OV wording
-voiced), and **grace is stated against works** in the same breath so
-repentance cannot be heard as the price. **Dropping repentance is refused on
-the face of the reel** (*मन फिराव हटाइए — विश्वास बस हामी*): faith without
-turning is named as mere assent, which is Season 1 reel 7's line in a new
-form. **The formula is refused as incantation** (*ये शब्द जादू नहीं —
-रटकर दोहराने से कोई नहीं बचता*) — no sinner's prayer, no repeat-after-me,
-consistent with reel 7's *कोई प्रार्थना दोहरा देना मन फिराव नहीं है*.
-**The therapeutic gospel and inducement are refused together** (*यह बेहतर
-ज़िंदगी का वादा नहीं — पापियों की क्षमा की ख़बर है*): the reel offers
-nothing but forgiveness, and names its recipients as sinners. **The reel is
-not a script to use on anyone.** It is framed as the viewer's own gospel
-(*पहले खुद जानने को*), refuses use as a technique on its face (*किसी पर
-आज़माने को नहीं*), and licenses speech only when someone asks, in 1 पतरस
-3:15's posture (*कोई पूछे, तो नम्रता और आदर से*) — responsive, never
-initiated, never public. The closing grounds the brevity in the finished
-work (*काम उन्होंने पूरा कर दिया*), so the shortness of the message is
-explained by Christ, not by technique. No assurance is spoken, so no
-conditional is needed; no one is addressed as unsaved.
+**Guardrails held:** **The five lines are verbatim from v1 and are the reel**: God holy and our maker; all have sinned and sin deserves his judgment; the sinless Son died in our place bearing it; buried and truly risen; therefore repent and believe, salvation a gift. **Nothing is missing and nothing is softened** — substitution, bodily resurrection and repentance are each in a full clause. **Not a formula**: *ये शब्द जादू नहीं*. **Not a therapeutic gospel**: *बेहतर ज़िंदगी का वादा नहीं*. **Not a script to try on someone** — the viewer is told to know it himself first. Cut from v1: *पाप हटाइए — क्रूस बेमतलब*, *रटकर दोहराने से कोई नहीं बचता*, *कोई पूछे, तो नम्रता और आदर से* (S2·04's line; 1 पतरस 3:15 is S4·09's on-screen reference).
 
 ---
 
@@ -162,22 +116,20 @@ conditional is needed; no one is addressed as unsaved.
 
 ```
 === DOCTRINE REELS · S4·07 · ज़बान रुक गई ===
-Target: 49–50 seconds. Register: आप. Tone: gentle at the open, as to someone already ashamed; the पतरस and पौलुस lines plain, almost warm; the हियाव section slow; the brake lines level and unhurried, never stern; the closing quiet.
+Target: about 50 seconds, unhurried. Register: आप. Tone: gentle at the open, as to someone already ashamed; the पतरस and पौलुस lines plain, almost warm; the हिम्मत section slow; the brake lines level and unhurried, never stern; the closing quiet.
 
-"बात यीशु तक पहुँची — और आपकी ज़बान रुक गई।
-बाद में शर्म आई।
-तो क्या डरने वाला मसीही कमज़ोर मसीही है?"
+बात यीशु तक पहुँची — और आपकी ज़बान रुक गई।
+बाद में शर्म आई। तो क्या डरने वाला मसीही कमज़ोर मसीही है?
+पतरस ने डरकर यीशु को पहचानने से इनकार कर दिया — और यीशु ने उन्हें फिर खड़ा किया।
 
-पतरस एक दासी के सामने डरकर इनकार तक कर बैठे — और यीशु ने उन्हें लौटाया।
-पौलुस लिखते हैं — मैं डरता और काँपता हुआ तुम्हारे पास आया।
+पौलुस ने लिखा — मैं डरता और काँपता हुआ तुम्हारे पास आया।
 डर उनमें भी था। डर लगना अनोखा नहीं।
 
-धमकियों के बीच प्रेरितों ने कोई तरकीब नहीं ढूँढी।
-प्रार्थना की — कि वचन हियाव से सुना सकें। और पवित्र आत्मा ने उन्हें भर दिया।
-हियाव सीखा नहीं जाता — माँगा जाता है।
+जब प्रेरितों को धमकाया गया, उन्होंने कोई तरकीब नहीं ढूँढी।
+प्रार्थना की — कि तेरा वचन हिम्मत से सुना सकें। और पवित्र आत्मा ने उन्हें भर दिया।
+हिम्मत सीखी नहीं जाती — माँगी जाती है।
 
-पर हियाव का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं।
-पौलुस लिखते हैं — बाहर वालों से बुद्धि से बरताव करो; बातों में अनुग्रह हो।
+पर हिम्मत का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं।
 चतुराई पाप नहीं है। चुप रहना भी इनकार नहीं।
 कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।
 
@@ -187,61 +139,22 @@ Target: 49–50 seconds. Register: आप. Tone: gentle at the open, as to someo
 === END ===
 ```
 
-**Length:** 151 tokens · 49–50 seconds. If the artist runs long, cut
-*"डर उनमें भी था।"* — **never** cut *"डर लगना अनोखा नहीं"*, **never** *"पर
-हियाव का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं।"*, **never**
-*"चतुराई पाप नहीं है"*, **never** *"चुप रहना भी इनकार नहीं"*, **never**
-*"कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात
-कीजिए।"*, and **never** *"डर को शर्म मत बनाइए"*.
+**Length:** ~141 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"डर लगना अनोखा नहीं"*, *"पर हिम्मत का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं।"*, *"चतुराई पाप नहीं है"*, *"चुप रहना भी इनकार नहीं"*, *"कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"* or *"डर को शर्म मत बनाइए"*. If the artist runs long, cut *"डर उनमें भी था।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "एक दासी के सामने… इनकार" | लूका 22:56-57 |
-| "यीशु ने उन्हें लौटाया" | यूहन्ना 21:15-17 |
+| "इनकार कर दिया — और यीशु ने उन्हें फिर खड़ा किया" | लूका 22:56-62 · यूहन्ना 21:15-17 |
 | "डरता और काँपता हुआ" | 1 कुरिन्थियों 2:3 |
-| "धमकियों के बीच… हियाव" | प्रेरितों के काम 4:29 |
-| "पवित्र आत्मा ने उन्हें भर दिया" | प्रेरितों के काम 4:31 |
-| "हियाव… माँगा जाता है" | इफिसियों 6:19-20 |
-| "बाहर वालों से बुद्धि से… अनुग्रह" | कुलुस्सियों 4:5-6 |
-| "चतुराई पाप नहीं है" | मत्ती 10:16 |
-| "चुप रहना भी इनकार नहीं" | यूहन्ना 7:1 · सभोपदेशक 3:7 |
-| "अकेले मत उठाइए" | नीतिवचन 15:22 · इब्रानियों 13:17 |
-| "दिल खोलना — परमेश्वर का" | प्रेरितों के काम 16:14 |
+| "हिम्मत से सुना सकें" | प्रेरितों के काम 4:29-31 |
+| "चतुराई… चुप रहना" | कुलुस्सियों 4:5-6 · मत्ती 10:16 |
+| "अकेले मत उठाइए" | नीतिवचन 15:22 |
+| closing line | प्रेरितों के काम 16:14 |
 
-**Why the hook works:** it names a moment, not a doctrine — the second the
-conversation reached Jesus and the tongue stopped — and then the shame that
-followed, which is the part the viewer carries. The question it asks (*is a
-fearful Christian a weak one?*) is the accusation he has already made
-against himself, usually after a sermon on boldness; he stays because the
-reel treats the fear as a question rather than a verdict.
+**Why the hook works:** the exact moment — the conversation reached Jesus and the words stopped — and the shame that followed. Almost every believer has one, and has told no one.
 
-**Guardrails held:** **fear is made normal from the apostles' own lives,
-without shame.** Peter's fear went as far as denial and Jesus restored him
-(यूहन्ना 21 on screen), and Paul says he came to Corinth in fear and
-trembling (1 कुरिन्थियों 2:3); *डर लगना अनोखा नहीं* is marked uncuttable,
-and the closing turns the shame into prayer rather than resolve (*डर को
-शर्म मत बनाइए — प्रार्थना बनाइए*). **The answer is prayer and the Spirit,
-not technique** — the roadmap's must-land is carried by प्रेरितों 4:29-31 in
-its own order: threatened, they sought no method, they prayed, and the
-Spirit filled them; *हियाव सीखा नहीं जाता — माँगा जाता है*, with Paul's own
-request for prayer for boldness (इफिसियों 6:19-20) on screen. **Boldness is
-explicitly not defined as street or family confrontation** (*भीड़ में
-चिल्लाना नहीं। घर में टकराना भी नहीं*, uncuttable). The reel does not deny
-that the apostles preached publicly in प्रेरितों 4; it declines to make that
-the measure of this viewer's boldness, and gives him Paul's measure for
-*outsiders* instead — wisdom and gracious speech (कुलुस्सियों 4:5-6). **S2·05's
-brake survives whole**: *चतुराई पाप नहीं है*, *चुप रहना भी इनकार नहीं*, and
-*कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए*
-are carried verbatim, which is what makes *wisdom is not cowardice* land
-without licensing risk. Placing Peter's denial beside *चुप रहना भी इनकार
-नहीं* is deliberate: the reel distinguishes the failure Peter was restored
-from and the wise silence Jesus himself practised (यूहन्ना 7:1), so a viewer
-who stays quiet at home is neither accused nor excused of denial. The
-closing moves the outcome off the viewer (*दिल खोलना — परमेश्वर का*,
-प्रेरितों 16:14), which is what S4·08 then teaches in full. No assurance is
-spoken beyond Peter's restoration, which is narrated, not applied.
+**Guardrails held:** **Fear is normal**, shown in Peter and Paul, and Peter's failure is followed at once by his restoration. **Boldness is asked for, not learned** (प्रेरितों 4) — so no technique is taught. **Boldness is then defined against street and family confrontation**, and **S2·05's brake survives whole**: shrewdness is not sin, silence is not denial, no large step alone. The reel ends with fear turned into prayer and the result left to God. *हियाव* is now *हिम्मत*, the word a young viewer uses. Cut from v1: the कुलुस्सियों 4:5-6 sentence (shown).
 
 ---
 
@@ -249,88 +162,43 @@ spoken beyond Peter's restoration, which is narrated, not applied.
 
 ```
 === DOCTRINE REELS · S4·08 · कसूर किसका? ===
-Target: 49–50 seconds. Register: आप. Tone: calm and level; the हवा line slow, almost wondering; the दबाव नहीं line flat and firm; the तसल्ली lines gentle; the closing unhurried.
+Target: about 50 seconds, unhurried. Register: आप. Tone: calm and level; the हवा line slow, almost wondering; the दबाव नहीं line flat and firm; the तसल्ली lines gentle; the closing unhurried.
 
-"आपने साफ़ बताया। उन्होंने ध्यान से सुना।
-फिर मुस्कुराए — और बात वहीं ख़त्म।
-कसूर किसका था?"
+आपने साफ़ बताया। उन्होंने ध्यान से सुना।
+फिर मुस्कुराए — और बात वहीं ख़त्म। कसूर किसका था?
+यीशु ने कहा — नया जन्म पवित्र आत्मा से होता है।
 
-यीशु ने नीकुदेमुस से कहा — नया जन्म आत्मा से होता है।
-हवा जिधर चाहती है, चलती है; आप उसे चला नहीं सकते।
-आत्मा से जन्म भी ऐसा ही है।
+हवा जिधर चाहती है, चलती है; आप उसे चला नहीं सकते। आत्मा का काम भी ऐसा ही है।
+पौलुस लिखते हैं — मैंने लगाया, अपुल्लोस ने सींचा; पर बढ़ाया परमेश्वर ने।
 
-पौलुस लिखते हैं — मैंने लगाया, अपुल्लोस ने सींचा; बढ़ाया परमेश्वर ने।
 लगाना आपका काम। सींचना आपका काम। बढ़ाना — नहीं।
-अगर आपने सच्चाई और प्रेम से बताया — तो आपने अपना काम किया।
-
 इसलिए दबाव नहीं। लालच नहीं। गिनती नहीं।
 दबाव से सिर हिल सकता है — दिल नहीं बदलता।
 
 पर इसका मतलब चुप रहना भी नहीं।
-आत्मा वचन से ही नया जन्म देते हैं — इसलिए वचन सुनाते रहिए, प्रेम से, बिना जल्दी के।
+पवित्र आत्मा वचन से ही नया जन्म देते हैं — इसलिए वचन सुनाते रहिए; प्रेम से, बिना जल्दी के।
 
-और तसल्ली यह नहीं कि आख़िर में सब अपने-आप बच जाएँगे।
-तसल्ली यह है — बचाने वाले आप नहीं। बचाता परमेश्वर है — और वह प्रार्थना सुनता है।
-
-आप लगाइए, सींचिए — और प्रतीक्षा कीजिए। फ़सल उसकी है।
+तसल्ली यह नहीं कि आख़िर में सब बच ही जाएँगे।
+तसल्ली यह है — बचाने वाले आप नहीं; परमेश्वर है। प्रार्थना कीजिए — फ़सल उसकी है।
 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
-*"दबाव से सिर हिल सकता है — दिल नहीं बदलता।"* — **never** cut *"इसलिए दबाव
-नहीं। लालच नहीं। गिनती नहीं।"*, **never** *"पर इसका मतलब चुप रहना भी
-नहीं"* with the line after it, and **never** *"तसल्ली यह नहीं कि आख़िर में
-सब अपने-आप बच जाएँगे"*.
+**Length:** ~129 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"इसलिए दबाव नहीं। लालच नहीं। गिनती नहीं।"*, *"पर इसका मतलब चुप रहना भी नहीं"* with the line after it, or *"तसल्ली यह नहीं कि आख़िर में सब बच ही जाएँगे"*. If the artist runs long, cut *"दबाव से सिर हिल सकता है — दिल नहीं बदलता।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "नया जन्म आत्मा से" | यूहन्ना 3:3, 5-6 |
+| "नया जन्म पवित्र आत्मा से" | यूहन्ना 3:5-8 |
 | "हवा जिधर चाहती है" | यूहन्ना 3:8 |
-| "मैंने लगाया… बढ़ाया परमेश्वर ने" | 1 कुरिन्थियों 3:6-7 |
-| "आपने अपना काम किया" | 1 कुरिन्थियों 4:2 |
-| "दबाव नहीं। लालच नहीं।" | 2 कुरिन्थियों 4:2 · 1 थिस्सलुनीकियों 2:3-5 |
-| "दिल नहीं बदलता" | यहेजकेल 36:26 |
-| "आत्मा वचन से ही नया जन्म" | 1 पतरस 1:23 · याकूब 1:18 |
-| "वचन सुनाते रहिए… बिना जल्दी" | रोमियों 10:14, 17 · 2 तीमुथियुस 2:24-25 |
-| "सब अपने-आप बच जाएँगे" — नहीं | यूहन्ना 3:18 · प्रेरितों के काम 17:30 |
-| "वह प्रार्थना सुनता है" | रोमियों 10:1 · 1 तीमुथियुस 2:1-4 |
-| closing line | 1 कुरिन्थियों 3:7 · याकूब 5:7 |
+| "बढ़ाया परमेश्वर ने" | 1 कुरिन्थियों 3:6-7 |
+| "वचन से ही नया जन्म" | 1 पतरस 1:23 · रोमियों 10:17 |
+| "फ़सल उसकी है" | 1 कुरिन्थियों 3:7 · रोमियों 10:1 |
 
-**Why the hook works:** it describes the most common outcome of honest
-witness — not rejection, not anger, but a polite smile and the subject
-changed — which the viewer has experienced and never heard anyone speak
-about. *कसूर किसका था?* offers him two people to blame, himself or the
-listener, and the reel's answer is neither: new birth was never in either
-of their hands.
+**Why the hook works:** a conversation that went well and went nowhere, told in three beats. *कसूर किसका था?* is what the witness asks on the way home, and the reel's answer is that it is the wrong question.
 
-**Guardrails held:** **new birth is God's work, stated from Jesus's own
-words** (यूहन्ना 3:5-8 — born of the Spirit, the wind that blows where it
-wills) and **the witness's part is bounded by Paul's** (1 कुरिन्थियों 3:6:
-plant, water; God gives the growth). The viewer is released from the
-outcome (*तो आपने अपना काम किया*) without being released from the task.
-**Manipulation, pressure and decision-counting are refused by name, in
-three words that are uncuttable**: *दबाव नहीं। लालच नहीं। गिनती नहीं।* —
-*लालच नहीं* also refuses inducement outright, which in this context is not
-only a doctrinal error but the one accusation a witness must never be able
-to have made against him (2 कुरिन्थियों 4:2 and 1 थिस्सलुनीकियों 2:3-5 on
-screen: no deceit, no pretext for greed). *सिर हिल सकता है — दिल नहीं
-बदलता* refuses the counted hand as evidence of new birth (यहेजकेल 36:26).
-**Hyper-Calvinist passivity is closed in the next breath** — *पर इसका मतलब
-चुप रहना भी नहीं* — on the ground that the Spirit gives new birth *through
-the word* (1 पतरस 1:23, याकूब 1:18), so the viewer keeps speaking, but *with
-love, without hurry*: no deadline, no push. **Universalism is refused as
-comfort on the face of the reel** (*तसल्ली यह नहीं कि आख़िर में सब अपने-आप
-बच जाएँगे*, uncuttable, with यूहन्ना 3:18 and प्रेरितों 17:30 on screen), and
-the true comfort is placed in God's saving and his hearing of prayer
-(रोमियों 10:1). The listener in the hook is by construction courteous, not
-hostile, and is never characterised; no person, faith or group is named;
-no verdict is passed on anyone. The Spirit takes *वे/देते हैं* throughout.
-Election is not taught and predestination is not named — the reel says only
-what यूहन्ना 3 and 1 कुरिन्थियों 3 say, and stops (the series' permanent
-exclusion holds).
+**Guardrails held:** **New birth is God's work** (यूहन्ना 3:8; 1 कुरिन्थियों 3:6) — so the witness is freed from guilt and from technique. **Manipulation, inducement and decision-counting are refused in three words**, uncuttable. **This does not license silence**: the Spirit gives new birth through the word, so the word goes on being spoken, without hurry. **Universalism is refused as the comfort** — in so many words — and the comfort given instead is that God saves; the witness prays and the harvest is his — no guarantee about any one person. Cut from v1: *नीकुदेमुस* by name, *अगर आपने सच्चाई और प्रेम से बताया — तो आपने अपना काम किया*, *और वह प्रार्थना सुनता है*, which read as a guarantee.
 
 ---
 
@@ -338,87 +206,43 @@ exclusion holds).
 
 ```
 === DOCTRINE REELS · S4·09 · सब धर्म एक ही? ===
-Target: 49–50 seconds. Register: आप. Tone: tender at the open — the hook's elder is loved, not opposed; the 1 पतरस line steady; the ख़बर lines clear and unhurried, never pointed; the brake level; the closing warm.
+Target: about 50 seconds, unhurried. Register: आप. Tone: tender at the open — the hook's elder is loved, not opposed; the 1 पतरस line steady; the ख़बर lines clear and unhurried, never pointed; the brake level; the closing warm.
 
-"'सब धर्म एक ही बात सिखाते हैं।'
-जब यह बात घर का कोई बड़ा प्यार से कहे —
-तो आप चुप रहेंगे? या बहस जीतेंगे?"
+"सब धर्म एक ही बात सिखाते हैं।"
+जब घर का कोई बड़ा यह प्यार से कहे — तो आप चुप रहेंगे? या बहस जीतेंगे?
 
-पतरस लिखते हैं — जो आपसे आपकी आशा का कारण पूछे, उसे जवाब देने को तैयार रहिए;
-पर नम्रता और आदर से।
-
-पहले सुनिए। याकूब लिखते हैं — सुनने को तैयार, बोलने में धीमे।
+पहले सुनिए। याकूब लिखते हैं — सुनने को तैयार रहो, बोलने में धीमे।
 भलाई की बात हर घर में सिखाई जाती है — वह अच्छी है। यह खुलकर मानिए।
 
-सुसमाचार भला बनने की सलाह नहीं — एक ख़बर है।
+फ़र्क बताइए। सुसमाचार भला बनने की सलाह नहीं — एक ख़बर है।
 यीशु हमारे पापों के लिए मरे, और जी उठे।
+
 आप इसलिए नहीं मानते कि हमारा धर्म बेहतर है — इसलिए कि वे जी उठे।
+बाइबल कहती है — प्रभु का दास झगड़ालू न हो; कोमलता से समझाए।
+बात गरम हो जाए — तो रुक जाइए। चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए।
 
-बहस जीतना लक्ष्य नहीं। पौलुस लिखते हैं — प्रभु का दास झगड़ालू न हो; कोमलता से समझाए।
-नतीजा परमेश्वर के हाथ में है — आपके नहीं।
-
-बात गरम हो जाए — चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए।
-
-कारण भी दीजिए, आदर भी — एक के बिना दूसरा सुनाई नहीं देता।
+कारण भी दीजिए, आदर भी।
+एक के बिना दूसरा सुनाई नहीं देता।
 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
-*"बहस जीतना लक्ष्य नहीं।"* (2 तीमुथियुस 2:24 carries it) — **never** cut *"पर
-नम्रता और आदर से"*, **never** *"भलाई की बात हर घर में सिखाई जाती है — वह
-अच्छी है। यह खुलकर मानिए।"*, **never** *"आप इसलिए नहीं मानते कि हमारा धर्म बेहतर
-है — इसलिए कि वे जी उठे"*, and **never** the *बात गरम हो जाए* line.
+**Length:** ~126 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"भलाई की बात हर घर में सिखाई जाती है — वह अच्छी है। यह खुलकर मानिए।"*, *"आप इसलिए नहीं मानते कि हमारा धर्म बेहतर है — इसलिए कि वे जी उठे"* or any of the three *बात गरम हो जाए* sentences, the brake included. If the artist runs long, cut *"याकूब लिखते हैं —"* only.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "आशा का कारण… नम्रता और आदर से" | 1 पतरस 3:15-16 |
 | "सुनने को तैयार, बोलने में धीमे" | याकूब 1:19 |
-| "भलाई की बात… यह खुलकर मानिए" | रोमियों 2:14-15 |
-| "सलाह नहीं — एक ख़बर" | 1 कुरिन्थियों 15:3-4 · लूका 2:10-11 |
-| "इसलिए कि वे जी उठे" | 1 कुरिन्थियों 15:14, 17 · प्रेरितों के काम 17:31 |
-| "हमारा धर्म बेहतर" — नहीं | फिलिप्पियों 3:7-9 · इफिसियों 2:8-9 |
+| "एक ख़बर है" | 1 कुरिन्थियों 15:3-4 |
+| "इसलिए कि वे जी उठे" | 1 कुरिन्थियों 15:14, 20 |
 | "झगड़ालू न हो; कोमलता से" | 2 तीमुथियुस 2:24-25 |
-| "नतीजा परमेश्वर के हाथ में" | 2 तीमुथियुस 2:25 · 1 कुरिन्थियों 3:6 |
-| "चुप रहना भी इनकार नहीं" | यूहन्ना 7:1 · सभोपदेशक 3:7 |
-| "अकेले मत उठाइए" | नीतिवचन 15:22 · इब्रानियों 13:17 |
-| closing line | इफिसियों 4:15 · कुलुस्सियों 4:6 |
+| "अकेले मत उठाइए" | नीतिवचन 15:22 |
+| "कारण भी… आदर भी" | 1 पतरस 3:15 |
 
-**Why the hook works:** it quotes the sentence exactly as the viewer hears
-it — not as an attack but from an elder at home, *प्यार से* — which is the
-hardest form to answer, because contradicting it feels like contradicting
-the love. It then names the only two responses he has tried, silence and
-argument, and implies a third he has not. S2·04 opened on the same table and
-asked *do you believe it?*; this reel assumes he does and asks *how do you
-say it?* — the spiral the roadmap requires.
+**Why the hook works:** the sentence itself, said fondly by someone the viewer loves — which is harder than hearing it from an opponent. The two options offered are both wrong, and he knows it.
 
-**Guardrails held:** **the relative-over-the-shoulder test from S2·04 was
-applied line by line.** No faith, deity, scripture, practice or community is
-named or described; the only religion the reel disqualifies is *हमारा* (*आप
-इसलिए नहीं मानते कि हमारा धर्म बेहतर है*, uncuttable), restating S2·04's
-*हमारा भी नहीं* so exclusivity cannot read as tribal. **Respect is given
-content, not just tone**: listen first (याकूब 1:19), and honour what is
-true in what the elder taught — *भलाई की बात… वह अच्छी है। यह खुलकर मानिए* —
-grounded in the conscience God gives every person (रोमियों 2:14-15, on screen
-only). The claim that answers the sentence is made about **the gospel, not
-about other faiths**: *सुसमाचार भला बनने की सलाह नहीं — एक ख़बर है*. The
-contrast is between advice and news — which refutes moralistic Christianity
-as much as anything else — and the news is a historical claim (died for
-sins, rose) whose truth is the reason, *not* the superiority of a religion.
-**Pluralism is refused without mockery**: news of an event cannot be one
-with teachings about being good, and the reel lets that stand without
-saying so of anyone's tradition. **Debate is refused as the goal** with
-Paul's own instruction (2 तीमुथियुस 2:24-25) and the outcome is placed in
-God's hands (*नतीजा परमेश्वर के हाथ में है — आपके नहीं*) — deliberately not
-*मन फिराव परमेश्वर देता है*, which would have turned the loved elder into the
-object of the sentence. **S2·05's brake is carried** (*चुप रहना भी इनकार
-नहीं। कोई बड़ा कदम अकेले मत उठाइए*), which also resolves the hook: silence
-was offered there as one of two failures, and the reel returns to say that
-silence, when the room is heated, is not denial. The reason is given only
-because 1 पतरस 3:15's *someone asks* — the reel never counsels raising the
-subject.
+**Guardrails held:** This reel is **how to answer**; S2·04 is the doctrine and is pinned beneath it. Its one new idea is the reel's centre: **the gospel is news, not advice** — which is why it cannot be one teaching among others, and why the claim rests on the resurrection and **not on our religion being better** (uncuttable; the only religion disqualified by name is still *हमारा*). **Common moral ground is granted openly, first.** **Winning is refused as the aim**; if it heats up, stop — silence is not denial. No faith is named or described. 1 पतरस 3:15 is now shown, not read (S2·04 voices it), and **the brake is restated verbatim** — a reel that tells a viewer to state the difference to an elder at home must carry it. Cut from v1: the 1 पतरस 3:15 quotation, *बहस जीतना लक्ष्य नहीं*, *नतीजा परमेश्वर के हाथ में है* (S4·08's point).
 
 ---
 
@@ -426,84 +250,41 @@ subject.
 
 ```
 === DOCTRINE REELS · S4·10 · कहानी में कौन? ===
-Target: 49–50 seconds. Register: आप. Tone: warm and a little wry at the open — the quoted testimony is familiar, not mocked; the अग्रिप्पा section narrative; the लालच line plain, not scolding; the तीमुथियुस line tender; the closing slow.
+Target: about 50 seconds, unhurried. Register: आप. Tone: warm and a little wry at the open — the quoted testimony is familiar, not mocked; the अग्रिप्पा section narrative; the लालच line plain, not scolding; the तीमुथियुस line tender; the closing slow.
 
-"'मैं ऐसा था। फिर यीशु मिले। अब सब ठीक है।'
-गवाही अच्छी लगती है।
-पर इसमें से एक चीज़ ग़ायब है। कौन-सी?"
+"मैं ऐसा था। फिर यीशु मिले। अब सब ठीक है।"
+गवाही अच्छी लगती है। पर इसमें एक चीज़ ग़ायब है। कौन-सी?
 
-पौलुस राजा अग्रिप्पा के सामने अपनी कहानी सुनाते हैं — दमिश्क का रास्ता।
-पर कहानी पर रुकते नहीं।
-अंत में कहते हैं — मसीह ने दुख उठाया, और मरे हुओं में से जी उठे; सब मन फिराकर परमेश्वर की ओर फिरें।
+पौलुस ने एक राजा के सामने अपनी कहानी सुनाई — कैसे यीशु उन्हें रास्ते में मिले।
 
+पर वे कहानी पर रुके नहीं। अंत में कहा — मसीह ने दुख उठाया, और मरे हुओं में से जी उठे; सब मन फिराकर परमेश्वर की ओर फिरें।
 कहानी दरवाज़ा थी। संदेश मसीह थे।
-पौलुस लिखते हैं — हम अपना नहीं, मसीह यीशु का प्रचार करते हैं।
 
-ग़ायब था — क्रूस। पाप भी, और उसकी क्षमा भी।
-यीशु मिले, और नौकरी लग गई — ऐसी गवाही लालच बन जाती है।
-बढ़ा-चढ़ाकर मत कहिए — सच की गवाही में झूठ की जगह नहीं।
+तो ग़ायब क्या था? क्रूस। पाप — और उसकी क्षमा।
+"यीशु मिले, और नौकरी लग गई" — ऐसी गवाही लालच बन जाती है।
+जो बचपन से वचन सुनकर मसीह पर टिका, बिना किसी बड़े मोड़ के — उसकी गवाही भी पूरी है। क्योंकि नायक आप नहीं।
 
-जो बचपन से वचन सुनकर मसीह पर टिका — बिना किसी बड़े मोड़ के — उसकी गवाही भी पूरी है।
-क्योंकि नायक आप नहीं।
-
-सुनने वाले को आपकी कहानी नहीं बचाएगी। उसे वही चाहिए, जो आपको चाहिए था — मसीह।
+सुनने वाले को आपकी कहानी नहीं बचाएगी।
+उसे वही चाहिए, जो आपको चाहिए था — मसीह।
 
 === END ===
 ```
 
-**Length:** 150 tokens · 48–50 seconds. If the artist runs long, cut
-*"पौलुस लिखते हैं — हम अपना नहीं, मसीह यीशु का प्रचार करते हैं।"* (2
-कुरिन्थियों 4:5 stays on screen) — **never** cut *"सब मन फिराकर परमेश्वर की
-ओर फिरें"*, **never** *"कहानी दरवाज़ा थी। संदेश मसीह थे।"*, **never** *"यीशु
-मिले, और नौकरी लग गई — ऐसी गवाही लालच बन जाती है"*, and **never** the
-*बचपन से* line with *क्योंकि नायक आप नहीं*.
+**Length:** ~127 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"सब मन फिराकर परमेश्वर की ओर फिरें"*, *"कहानी दरवाज़ा थी। संदेश मसीह थे।"*, the *"नौकरी लग गई — ऐसी गवाही लालच बन जाती है"* line or the *बचपन से* line with *क्योंकि नायक आप नहीं*. If the artist runs long, cut *"बिना किसी बड़े मोड़ के —"*.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "राजा अग्रिप्पा… अपनी कहानी" | प्रेरितों के काम 26:1-3 |
-| "दमिश्क का रास्ता" | प्रेरितों के काम 26:12-15 |
-| "मसीह ने दुख उठाया… जी उठे" | प्रेरितों के काम 26:22-23 |
-| "मन फिराकर परमेश्वर की ओर फिरें" | प्रेरितों के काम 26:20 |
-| "हम अपना नहीं, मसीह यीशु का" | 2 कुरिन्थियों 4:5 |
-| "ग़ायब था — क्रूस" | 1 कुरिन्थियों 2:2 |
-| "लालच बन जाती है" | 2 कुरिन्थियों 2:17 · 1 थिस्सलुनीकियों 2:5 |
-| "बढ़ा-चढ़ाकर मत कहिए" | 2 कुरिन्थियों 4:2 · इफिसियों 4:25 |
+| "राजा के सामने" | प्रेरितों के काम 26:12-18 |
+| "दुख उठाया… जी उठे… मन फिराकर" | प्रेरितों के काम 26:20-23 |
+| "संदेश मसीह थे" | 2 कुरिन्थियों 4:5 |
 | "बचपन से वचन सुनकर" | 2 तीमुथियुस 3:15 |
-| "नायक आप नहीं" | गलातियों 6:14 · 1 कुरिन्थियों 1:31 |
-| closing line | प्रेरितों के काम 4:12 |
+| closing line | 1 कुरिन्थियों 2:2 |
 
-**Why the hook works:** it quotes the testimony every viewer has heard from
-a stage and has probably told himself, in its standard three beats, and
-then turns it into a puzzle — *one thing is missing* — without saying what.
-He stays to check his own story against it, and the answer, when it comes
-(*क्रूस*), is the one he did not expect a testimony to need.
+**Why the hook works:** the three-sentence testimony everyone has heard and most have given, and then a riddle — something is missing. The viewer runs it again in his head looking for the gap.
 
-**Guardrails held:** **testimony serves the message and is never the
-message.** प्रेरितों 26 is read in its own shape: Paul tells his story
-before Agrippa (the Damascus road) and does not stop there — he ends on
-Christ's suffering and resurrection and on the call to repent and turn to
-God (26:20-23), which the reel voices, so repentance is present in the
-apostolic model itself. *कहानी दरवाज़ा थी। संदेश मसीह थे* is the
-must-land in one line, and 2 कुरिन्थियों 4:5 names the rule. **Testimony as
-gospel is refused by diagnosis**: what the three-beat story lacked was the
-cross — *पाप भी, और उसकी क्षमा भी* — so *अब सब ठीक है* is shown to be a
-therapeutic ending, not a gospel one. **Prosperity testimony is refused as
-inducement** (*यीशु मिले, और नौकरी लग गई — ऐसी गवाही लालच बन जाती है*,
-uncuttable). Gratitude for God's provision is not refused; offering it as
-the reason to come to Christ is. No healing claim is voiced or implied in
-either direction (the series' permanent exclusion). **Embellishment is
-refused as lying** (*सच की गवाही में झूठ की जगह नहीं*, इफिसियों 4:25).
-**The quiet testimony is honoured** — the believer who grew up hearing the
-word and trusted Christ *without a dramatic turn* — with 2 तीमुथियुस 3:15 on
-screen and the ground stated (*क्योंकि नायक आप नहीं*); the line is
-conditioned on faith (*मसीह पर टिका*), not upbringing, so it cannot be heard
-as S2·11's *born a Christian*. The reel sends the viewer to tell his story
-to no one; it corrects the content of a testimony, not its occasion, which
-is why it carries no brake line (see *Rulings*). The closing restates the
-exclusivity of Christ without naming anyone's faith (*उसे वही चाहिए, जो
-आपको चाहिए था — मसीह*): the hearer and the witness stand in the same need.
+**Guardrails held:** **Testimony serves the message** — Paul before Agrippa tells his story and does not stop at it. **What is missing is named: the cross, sin and its forgiveness.** **Prosperity testimonies are refused by example.** **The believer with no dramatic turn is told his testimony is whole**, because he is not its hero — the pastoral line for most church-raised viewers. The closing puts the hearer's need where the witness's was. Cut from v1: *दमिश्क का रास्ता* by name, *हम अपना नहीं, मसीह यीशु का प्रचार करते हैं* (shown), *बढ़ा-चढ़ाकर मत कहिए — सच की गवाही में झूठ की जगह नहीं*.
 
 ---
 
@@ -661,8 +442,9 @@ take वे (*आत्मा… नया जन्म देते हैं*)
 पतरस, याकूब *लिखते/कहते हैं*; पतरस's denial is narrated in the honorific
 (*कर बैठे*). Church leaders are nowhere named in this arc; *कलीसिया के
 परिपक्व लोग* is S2·05's own phrase, and any added line uses *अगुवे*, never
-पास्टर. *हियाव* is the OV word of प्रेरितों 4:13, 29, 31; verify before the
-on-screen text is set. OV wording voiced and believed certain: मरकुस 1:15
+पास्टर. *हियाव* is the OV word of प्रेरितों 4:13, 29, 31; the v2 voiceover says
+*हिम्मत*, the word a young viewer uses, and the OV form is for on-screen text
+only. OV wording voiced and believed certain: मरकुस 1:15
 (*मन फिराओ और सुसमाचार पर विश्वास करो*). Everything else is paraphrase and
 carries no quotation marks. Verify OV spelling of नीकुदेमुस, अपुल्लोस,
 अग्रिप्पा and दमिश्क before the on-screen text is set. *ग़ायब*, *फ़सल*,

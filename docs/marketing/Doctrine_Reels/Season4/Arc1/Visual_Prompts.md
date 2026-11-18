@@ -65,8 +65,8 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 ---
 
 ## REEL 1·1 — एक कहानी, एक नायक · S4·01
-Rahul's Sunday Bible class for young adults. A lanky classmate flexes like a giant-slayer — 'I'm David!' — and Rahul laughs, then isn't sure. The painting is the trembling ranks and one figure walking out. At his desk he turns the Bible from its first page to its last. The reel ends with the class on the floor around one open Bible. No stones, no sling, no red cord anywhere.
-**Cast:** Rahul, a young-adult Sunday class (men and women in their twenties), Rohit (one-off — the lanky classmate) · painted scene (Israel's ranks on the hillside; one young figure walking out, from behind) · **Hook text on frame 01:** "बचपन से सुना — दाऊद जैसे बनो, गोलियत गिराओ।"
+Rahul's Sunday Bible class for young adults. A lanky classmate flexes like a giant-slayer — 'I'm David!' — and Rahul laughs, then isn't sure. The painting is the trembling ranks and one figure walking out. At his desk he turns the Bible from its first page to its last. The reel ends with the class on the floor around one open Bible. No stones, no sling anywhere.
+**Cast:** Rahul, a young-adult Sunday class (men and women in their twenties), Rohit (one-off — the lanky classmate) · painted scene (Israel's ranks on the hillside; one young figure walking out, from behind) · **Hook text on frame 01:** "अगर उस कहानी में आप दाऊद हों ही नहीं?"
 
 **Staging.** A small church classroom with a window on the left wall and the
 door behind the camera. The class sits on floor mats in a loose ring. In the
@@ -137,9 +137,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "बचपन से सुना — दाऊद जैसे बनो, गोलियत गिराओ। पर अगर उस कहानी में आप दाऊद हों ही नहीं? उस दिन आप काँपती सेना में होते। लड़ा वह, जिसका अभिषेक हो चुका था — सबकी ओर से।"
-
-*On screen:* 1 शमूएल 17:11, 24 · 1 शमूएल 16:13 · 1 शमूएल 17:8-9
+*Voiceover:* "'दाऊद जैसे बनो — अपने गोलियत को गिराओ।' पर अगर उस कहानी में आप दाऊद हों ही नहीं?"
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -153,9 +151,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · PAINT FADE · 0:10–0:20
 
-*Voiceover:* "बाइबल छियासठ किताबें हैं; कहानी एक है। सृष्टि। पाप। फिर वादा — स्त्री का वंश साँप का सिर कुचलेगा। फिर मसीह। अंत में सब नया।"
+*Voiceover:* "उस दिन आप काँपती हुई सेना में होते। लड़ा वह, जिसे परमेश्वर ने चुना था — सबकी ओर से। बाइबल में छियासठ किताबें हैं — पर कहानी एक है। परमेश्वर ने सब अच्छा बनाया। इंसान ने पाप किया। परमेश्वर ने बचाने वाले का वादा किया। यीशु आए। और अंत में सब कुछ नया होगा।"
 
-*On screen:* उत्पत्ति 1:1 · उत्पत्ति 3:15 · प्रकाशितवाक्य 21:5
+*On screen:* 1 शमूएल 17:11, 45-47 · उत्पत्ति 3:15 · प्रकाशितवाक्य 21:5
 
 ```
 CAMERA: starts on the full painting; one slow push in toward the dusty gold light around the lone figure in the valley; the gold fills the frame and settles into the warm lamplight on the desk; ends on the close shot from in front of the desk looking down at the Bible.
@@ -168,9 +166,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "जी उठने के दिन यीशु ने मूसा और सब भविष्यद्वक्ताओं से दिखाया — उनमें उन्हीं के बारे में लिखा है। दाऊद से सीखिए — भरोसा सच्चा था। पर वह गिरा भी, और अपने उस वंशज की राह देखता था।"
+*Voiceover:* "जी उठने के दिन यीशु ने दिखाया — पूरे पवित्रशास्त्र में उन्हीं के बारे में लिखा है। दाऊद से सीखिए — उसका भरोसा सच्चा था। पर वह भी गिरा; उसे भी उद्धारकर्ता चाहिए था।"
 
-*On screen:* लूका 24:27, 44 · 1 कुरिन्थियों 10:11 · इब्रानियों 11:32-33 · 2 शमूएल 12:7-13 · 2 शमूएल 7:12-13 · प्रेरितों के काम 2:30-31
+*On screen:* लूका 24:27, 44 · प्रेरितों के काम 2:29-31
 
 ```
 CAMERA: starts on the close shot of the fanning pages; one slow dolly in and tilt down; ends on the closer, higher shot of the Bible lying open at Luke 24.
@@ -183,9 +181,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "पर हर लाल धागा क्रूस का चित्र नहीं। जहाँ वचन खुद जोड़ता है — फ़सह का मेम्ना, पीतल का साँप — वहीं जोड़िए। और परमेश्वर दो नहीं। पुराने नियम में ही वह अपने को दयालु और अनुग्रहकारी कहता है।"
+*Voiceover:* "पर हर बात को ज़बरदस्ती यीशु से मत जोड़िए — जहाँ बाइबल खुद जोड़े, वहीं जोड़िए। और परमेश्वर दो नहीं। पुराने नियम में भी वह अपने को दयालु और अनुग्रहकारी कहता है।"
 
-*On screen:* 1 कुरिन्थियों 5:7 · गिनती 21:8-9 · यूहन्ना 3:14-15 · निर्गमन 34:6
+*On screen:* यूहन्ना 3:14 · 1 कुरिन्थियों 5:7 · निर्गमन 34:6
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -199,9 +197,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "किसी भी पन्ने पर पूछिए — यह उस एक कहानी में कहाँ है? कहानी उन्हीं तक जाती है।"
+*Voiceover:* "किसी भी पन्ने पर पूछिए — यह उस एक कहानी में कहाँ है? कहानी यीशु तक जाती है।"
 
-*On screen:* लूका 24:27 · यूहन्ना 5:39
+*On screen:* यूहन्ना 5:39
 
 Dissolve into the brand outro in the edit.
 ```
@@ -217,7 +215,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 1·2 — हर किताब एक जैसी नहीं · S4·02
 Sunil at night in the empty room of the one he raised, a grown man who has wandered — never shown, and nothing promises his return. At Sunil's table Rahul opens Proverbs with him; an old letter and a hymnbook side by side; Revelation open under Sunil's hand. The reel ends with Sunil on his knees by his own bed.
-**Cast:** Sunil, Rahul. The one who wandered is never shown. · **Hook text on frame 01:** "बच्चे को सही राह सिखाई। फिर भी वह भटक गया।"
+**Cast:** Sunil, Rahul. The one who wandered is never shown. · **Hook text on frame 01:** "तो क्या बाइबल का वादा झूठा निकला?"
 
 **Staging.** Three places in Sunil's home. The empty room: the camera stands
 in the corridor doorway looking in, the bed against the left wall, Sunil on
@@ -291,7 +289,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "बच्चे को सही राह सिखाई। फिर भी वह भटक गया। तो क्या बाइबल का वादा झूठा निकला? नीतिवचन कहता है — लड़के को सही मार्ग सिखाओ, बुढ़ापे में भी वह उससे न हटेगा।"
+*Voiceover:* "बच्चे को सही राह सिखाई — फिर भी वह भटक गया। तो क्या बाइबल का वादा झूठा निकला? नीतिवचन कहता है — लड़के को सही मार्ग सिखाओ, तो बुढ़ापे में भी वह उससे न हटेगा।"
 
 *On screen:* नीतिवचन 22:6
 
@@ -307,9 +305,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "यह नीतिवचन है — वादा नहीं। ज़िंदगी आम तौर पर कैसे चलती है, उसकी बुद्धि। एक आयत कहती है, मूर्ख को उत्तर न दो; अगली कहती है, दो। दोनों सच — अलग मौक़ों पर।"
+*Voiceover:* "पर यह नीतिवचन है — वादा नहीं। यह बताता है कि ज़िंदगी आम तौर पर कैसे चलती है। एक नीतिवचन कहता है — मूर्ख को उत्तर न दो; अगला ही कहता है — दो। दोनों सच हैं, अलग-अलग मौक़ों पर।"
 
-*On screen:* नीतिवचन 1:1-6 · नीतिवचन 26:4-5 — hold both
+*On screen:* नीतिवचन 26:4-5
 
 ```
 CAMERA: starts on the medium close two-shot across the table; one slow dolly in and tilt down; ends on the close shot of Rahul's hands holding the letter and hymnbook above the Bible, faces cropped out above.
@@ -322,9 +320,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "सब परमेश्वर का वचन है। पर हर किताब अपनी तरह बोलती है। आप यह रोज़ करते हैं — चिट्ठी और गीत एक तरह नहीं पढ़ते। भजन गीत और प्रार्थना हैं — परमेश्वर से बोलना सिखाते हैं; हर पंक्ति नियम नहीं।"
+*Voiceover:* "सब परमेश्वर का वचन है। पर हर किताब अपनी तरह बोलती है। आप यह रोज़ करते हैं — चिट्ठी और गीत एक तरह नहीं पढ़ते। भजन गीत और प्रार्थना हैं।"
 
-*On screen:* भजन संहिता 119:160 · भजन संहिता 62:8
+*On screen:* 2 तीमुथियुस 3:16 · भजन संहिता 13
 
 ```
 CAMERA: starts on the close shot of the letter and hymnbook; one slow tilt down onto the open Bible; ends on the close shot of the Bible at Revelation.
@@ -337,9 +335,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "पत्री का पता है — पहले उनकी जगह बैठकर पढ़िए, जिन्हें लिखी गई। प्रकाशितवाक्य अख़बार नहीं — सात कलीसियाओं को दिया दर्शन, चिन्हों से भरा; उसकी बात साफ़ है — मेम्ना जीतता है। हर किताब पर पूछिए — यह कैसी किताब है?"
+*Voiceover:* "पत्री एक चिट्ठी है — पहले देखिए, किसे लिखी गई। और प्रकाशितवाक्य अख़बार नहीं — दर्शन है; उसकी बात साफ़ है — मेम्ना जीतता है। हर किताब पर पूछिए — यह कैसी किताब है?"
 
-*On screen:* 1 कुरिन्थियों 1:2 · कुलुस्सियों 4:16 · प्रकाशितवाक्य 1:4, 11 · प्रकाशितवाक्य 12:1 · प्रकाशितवाक्य 17:14
+*On screen:* फिलिप्पियों 1:1 · प्रकाशितवाक्य 1:4 · 17:14
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -353,9 +351,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "और वह बच्चा — दिल बदलना परमेश्वर का काम है। प्रार्थना मत छोड़िए।"
+*Voiceover:* "और वह बच्चा? दिल बदलना परमेश्वर का काम है। प्रार्थना मत छोड़िए।"
 
-*On screen:* यहेजकेल 36:26 · यूहन्ना 3:8 · लूका 18:1
+*On screen:* यहेजकेल 36:26
 
 Dissolve into the brand outro in the edit.
 ```
@@ -437,7 +435,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "आपकी सबसे प्यारी आयत। अगर उसके ऊपर की आयतें भी पढ़ें — तो क्या बदलेगा? यिर्मयाह में परमेश्वर कहता है — जो योजनाएँ मैं तुम्हारे लिए रखता हूँ, वे हानि की नहीं, भलाई की हैं। ऊपर पढ़िए — बाबुल की बंधुआई में भेजी चिट्ठी:"
+*Voiceover:* "आपकी सबसे प्यारी आयत। क्या कभी उसके ऊपर की आयतें पढ़ी हैं? परमेश्वर कहता है — मेरी योजनाएँ तुम्हारी हानि की नहीं, भलाई की हैं। यह एक चिट्ठी है — उन लोगों को, जो बंदी बनाकर बाबुल ले जाए गए थे।"
 
 *On screen:* यिर्मयाह 29:11 · यिर्मयाह 29:1, 4
 
@@ -452,9 +450,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · PAINT BLOOM · 0:10–0:20
 
-*Voiceover:* "वहाँ घर बनाओ, उस नगर की भलाई के लिए प्रार्थना करो। सत्तर बरस पूरे होंगे, तब। योजना बंधुआई से बचाने की नहीं थी — उसके बीच से ले चलने की।"
+*Voiceover:* "उसमें लिखा है — वहाँ घर बनाओ; सत्तर बरस बाद लौटाऊँगा। योजना मुसीबत से बचाने की नहीं थी — उसके बीच से ले चलने की थी।"
 
-*On screen:* यिर्मयाह 29:5-7 · यिर्मयाह 29:10
+*On screen:* यिर्मयाह 29:5-7, 10
 
 ```
 CAMERA: starts on the close over-the-shoulder shot of the page; one slow, steady push down into the page until the paper fills the frame; ends on the full painting of the riverbank.
@@ -467,9 +465,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "फिलिप्पियों — जो मुझे सामर्थ देता है, उसमें मैं सब कुछ कर सकता हूँ। ऊपर पौलुस लिखते हैं — भूखा रहना भी सीखा, पेट भरना भी; घटना भी, बढ़ना भी। और लिख रहे हैं क़ैद से।"
+*Voiceover:* "दूसरी आयत — जो मुझे सामर्थ देता है, उसमें मैं सब कुछ कर सकता हूँ। ठीक ऊपर पौलुस लिखते हैं — मैंने भूखा रहना भी सीखा है, पेट भरना भी। और यह वे क़ैद से लिख रहे हैं।"
 
-*On screen:* फिलिप्पियों 4:13 · फिलिप्पियों 4:11-12 · फिलिप्पियों 1:13
+*On screen:* फिलिप्पियों 4:13 · फिलिप्पियों 4:11-12
 
 ```
 CAMERA: starts on the full painting; one slow push into the gold evening light on the river; the gold settles into the morning sun on the desk; ends on the close over-the-shoulder shot of the Bible at Philippians 4.
@@ -482,7 +480,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "सब कुछ — इम्तिहान में अव्वल आना नहीं; हर हाल में संतोष। आयत छोटी नहीं हुई — बड़ी हो गई। वह भूख में भी सच है, बंधुआई में भी।"
+*Voiceover:* "तो सब कुछ का मतलब इम्तिहान में अव्वल आना नहीं — हर हाल में संतोष है। आयत छोटी नहीं हुई — बड़ी हो गई।"
 
 ```
 CAMERA: starts on the close over-the-shoulder shot of Philippians 4; one slow pull back and tilt up; ends on the close shot of his hand on the closed Bible with the framed card soft on the wall behind.
@@ -495,7 +493,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "कोई भी आयत — ऊपर-नीचे का पूरा हिस्सा पढ़िए। इसके लिए विद्वान होना ज़रूरी नहीं। आपके हाथ की बाइबल काफ़ी है।"
+*Voiceover:* "कोई भी आयत हो — ऊपर-नीचे का पूरा हिस्सा पढ़िए। इसके लिए विद्वान होना ज़रूरी नहीं। आपके हाथ की बाइबल काफ़ी है।"
+
+*On screen:* प्रेरितों के काम 17:11
 
 Dissolve into the brand outro in the edit.
 ```
@@ -511,7 +511,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 1·4 — वादा किसका है? · S4·04
 Feet on a dirt path at dawn — the walk someone told Rahul to take, and nothing else of it: no plot, no sign, no keys. He stops under a tree and opens Joshua 1. Joshua overlooking the Jordan in the painting; Hebrews 13 at his desk; and Rahul in his rented room, content.
-**Cast:** Rahul alone · painted scene (Joshua looking over the Jordan into Canaan, from behind) · **Hook text on frame 01:** "जहाँ-जहाँ पाँव रखोगे, वह तुम्हारा।"
+**Cast:** Rahul alone · painted scene (Joshua looking over the Jordan into Canaan, from behind) · **Hook text on frame 01:** "जहाँ-जहाँ पाँव रखोगे, वह जगह तुम्हारी।"
 
 **Staging.** Outdoors, a dirt path runs straight away from the camera toward a
 lone neem tree, the low dawn sun beyond it. The camera **follows behind
@@ -580,7 +580,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "किसी ने सिखाया — ज़मीन के चारों ओर चलिए, और यह आयत बोलिए: जहाँ-जहाँ पाँव रखोगे, वह तुम्हारा। क्या वह वादा आपसे किया गया था?"
+*Voiceover:* "'जहाँ-जहाँ पाँव रखोगे, वह जगह तुम्हारी।' किसी ने सिखाया — ज़मीन के चारों ओर चलकर यह आयत बोलिए। पर क्या यह वादा आपसे किया गया था?"
 
 *On screen:* यहोशू 1:3
 
@@ -595,9 +595,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · PAINT BLOOM · 0:10–0:20
 
-*Voiceover:* "यहोशू का पहला अध्याय। परमेश्वर यहोशू से बोल रहा है — इस्राएल को कनान देने के लिए। सीमाएँ भी गिनाई हैं। वादा सच्चा था — और पूरा हुआ। उसी देश में, उसी प्रजा के लिए।"
+*Voiceover:* "यह यहोशू की किताब में है। परमेश्वर यहोशू से बोल रहा है — इस्राएल को कनान देश देने के बारे में। वादा सच्चा था — और पूरा हुआ। उसी देश में, उन्हीं लोगों के लिए।"
 
-*On screen:* यहोशू 1:4 · यहोशू 21:43-45
+*On screen:* यहोशू 1:2-4 · यहोशू 21:43-45
 
 ```
 CAMERA: starts on the over-the-shoulder shot of the open page; one slow, steady push past his shoulder into the page until the paper fills the frame; ends on the full painting of the hilltop.
@@ -610,9 +610,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "तो पुराने वादे बेकार? नहीं। पौलुस लिखते हैं — परमेश्वर के जितने वादे हैं, सब मसीह में हाँ हैं। वादे मसीह से होकर आप तक आते हैं — जैसे मसीह में पूरे हुए, वैसे।"
+*Voiceover:* "तो पुराने वादे बेकार? नहीं। पौलुस लिखते हैं — परमेश्वर के जितने वादे हैं, सब मसीह में हाँ हैं। वे मसीह से होकर हम तक आते हैं।"
 
-*On screen:* 2 कुरिन्थियों 1:20 · गलातियों 3:16, 29
+*On screen:* 2 कुरिन्थियों 1:20
 
 ```
 CAMERA: starts on the full painting; one slow push into the bright morning haze over the valley; the haze settles into the window sun on the desk; ends on the close over-the-shoulder shot of the Bible at Hebrews 13.
@@ -625,9 +625,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "उसी अध्याय में एक और वादा है — मैं तुझे न छोड़ूँगा। इब्रानियों में यही वादा विश्वासियों को दिया गया है — लोभ के ख़िलाफ़: जो है, उसी पर संतोष करो। ज़मीन नहीं — साथ आप तक पहुँचा। अगर आप मसीह में हैं — उसका हाँ आपका है।"
+*Voiceover:* "उसी अध्याय में एक और वादा है — मैं तुझे न छोड़ूँगा। इब्रानियों की पत्री यही वादा विश्वासियों को देती है — लोभ के ख़िलाफ़: जो है, उसी पर संतोष करो। ज़मीन नहीं — उसका साथ आप तक पहुँचा।"
 
-*On screen:* यहोशू 1:5 · इब्रानियों 13:5 · 2 कुरिन्थियों 1:20-22
+*On screen:* यहोशू 1:5 · इब्रानियों 13:5
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -641,9 +641,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "हर वादे पर दो सवाल — किससे कहा गया? और मसीह में यह मुझ तक कैसे आता है?"
+*Voiceover:* "अगर आप मसीह में हैं — उसकी हाँ आपकी है। हर वादे पर पूछिए — यह किससे कहा गया? और मसीह में यह मुझ तक कैसे आता है?"
 
-*On screen:* रोमियों 15:4
+*On screen:* गलातियों 3:29
 
 Dissolve into the brand outro in the edit.
 ```
@@ -659,7 +659,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 1·5 — व्यवस्था और मसीही · S4·05
 A tailor's shop. Rahul fingers his own shirt cuff — cotton and something else — and grins at the verse someone threw at him. Two spools winding; Leviticus and then Matthew on his desk; a loom finishing a length of cloth; Rahul stepping out of the shop in the new shirt. Thread and cloth only — no food, anywhere.
-**Cast:** Rahul, a tailor (one-off). No food in any frame. · **Hook text on frame 01:** "दो तरह के धागे से बना कपड़ा मत पहनो।"
+**Cast:** Rahul, a tailor (one-off). No food in any frame. · **Hook text on frame 01:** "आपकी कमीज़ में शायद दो हैं।"
 
 **Staging.** The tailor's shop is a narrow room: shelves stacked with bolts
 of cloth line the back wall, a sewing machine on a small table stands
@@ -732,7 +732,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "लैव्यव्यवस्था कहती है — दो तरह के धागे से बना कपड़ा मत पहनो। आपकी कमीज़ में शायद दो हैं। बाइबल मानें, या नहीं?"
+*Voiceover:* "बाइबल कहती है — दो तरह के धागे से बना कपड़ा मत पहनो। आपकी कमीज़ में शायद दो हैं। तो बाइबल मानें, या नहीं?"
 
 *On screen:* लैव्यव्यवस्था 19:19
 
@@ -747,9 +747,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "यीशु ने कहा — मैं व्यवस्था को लोप करने नहीं, पूरा करने आया हूँ। पूरा करना मिटाना नहीं — जिसकी ओर व्यवस्था इशारा करती थी, वह आ गया। बलिदान? मसीह एक ही बार अपने को चढ़ा चुके।"
+*Voiceover:* "यीशु ने कहा — मैं व्यवस्था को मिटाने नहीं, पूरा करने आया हूँ। पूरा करना — यानी जिसकी ओर वे नियम इशारा करते थे, वह आ गया। बलिदान? यीशु एक ही बार अपने को चढ़ा चुके।"
 
-*On screen:* मत्ती 5:17 · लूका 24:44 · इब्रानियों 10:1 · इब्रानियों 10:10-14
+*On screen:* मत्ती 5:17 · इब्रानियों 10:10-12
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -763,9 +763,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "कपड़े और भोजन के नियम इस्राएल को दूसरे राष्ट्रों से अलग रखते थे। भोजन, पर्व, सब्त — छाया थे; असल मसीह है। पौलुस लिखते हैं — मसीह व्यवस्था का अंत है, हर विश्वास करने वाले की धार्मिकता के लिए।"
+*Voiceover:* "कपड़े और भोजन के नियम इस्राएल को दूसरे राष्ट्रों से अलग रखते थे। भोजन, पर्व, सब्त — ये सब छाया थे; असल मसीह है।"
 
-*On screen:* लैव्यव्यवस्था 20:24-26 · कुलुस्सियों 2:16-17 · मरकुस 7:19 · रोमियों 10:4
+*On screen:* कुलुस्सियों 2:16-17
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -779,9 +779,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "अगर आप मसीह में हैं — व्यवस्था के अधीन नहीं, अनुग्रह के अधीन हैं। तो झूठ, चोरी — सब ठीक? नहीं। परमेश्वर की माँग गई नहीं — दिल पर लिख दी गई। प्रेम व्यवस्था को पूरा करता है।"
+*Voiceover:* "अगर आप मसीह में हैं — व्यवस्था के अधीन नहीं, अनुग्रह के अधीन हैं। तो झूठ, चोरी — सब ठीक? नहीं। परमेश्वर की माँग गई नहीं — दिल पर लिख दी गई।"
 
-*On screen:* रोमियों 6:14-15 · गलातियों 3:24-25 · यिर्मयाह 31:33 · इब्रानियों 8:10 · रोमियों 13:8-10
+*On screen:* रोमियों 6:14 · रोमियों 10:4 · यिर्मयाह 31:33 · रोमियों 13:10
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -795,9 +795,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "आज्ञा मानते हैं — धर्मी बनने के लिए नहीं; धर्मी ठहराए गए हैं, इसलिए। हर आज्ञा पर पूछिए — मसीह ने इसके साथ क्या किया?"
+*Voiceover:* "हम आज्ञा मानते हैं — धर्मी बनने के लिए नहीं; धर्मी ठहराए गए हैं, इसलिए। हर आज्ञा पर पूछिए — मसीह ने इसके साथ क्या किया?"
 
-*On screen:* रोमियों 8:3-4 · इफिसियों 2:8-10 · मत्ती 5:17 · 2 कुरिन्थियों 3:14
+*On screen:* रोमियों 8:3-4
 
 Dissolve into the brand outro in the edit.
 ```
@@ -814,11 +814,11 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 ## Across the arc
 
 - **Every person is an adult.** 1·1's Sunday class is a young-adult class (Rohit, the "I'm David" classmate, is about 22); 1·3's exiles are men and women at work.
-- **1·1 has no stones, sling or red cord** — only the ranks, one figure walking out, and an open Bible.
+- **1·1 has no stones or sling** — only the ranks, one figure walking out, and an open Bible.
 - **1·2 never shows the one who wandered** — a grown man — and never hints at his return. The VO's "बच्चे … लड़के … वह बच्चा" stays as written; the picture is only his empty room and Sunil.
 - **1·3's verse card is never readable** and never on screen alone as a quote; the chapter is always read with it.
 - **1·4 shows no property, plot, sign, keys or money** — feet on a path, then Joshua 1.
 - **1·5 shows no food of any kind.** Thread and cloth only.
 - **Arjun** (reference above, used in Arcs 2–3) is 23 with a fuller short beard so he never reads as under-age.
-- **The five closing questions** are the reels' last spoken lines; none is cut from any clip.
+- **The five closing questions** sit in each reel's last two clips; none is cut from any clip.
 - **Pins** (from the arc's production notes): follow the script file.

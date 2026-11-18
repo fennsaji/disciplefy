@@ -15,6 +15,8 @@ repeatedly, over an open Bible, through his sins and his own, and sometimes
 through his leaving. The arc is written for **every believer**: nothing here
 is a programme, a title, an office or a course, and no reel names one.
 
+**v2: simplified** — a one-line hook first, wording a 15-year-old follows, one idea per reel, about 50 seconds; each reel's *Guardrails held* note lists what was cut. Rules: *Script rules* in [Season2/Curriculum.md](../../Season2/Curriculum.md).
+
 Production IDs are `S4·11`–`S4·15` (Season 4 is 5 / 5 / 5; Arc 1 is
 S4·01–05, Arc 2 is S4·06–10). Arc position is the heading; the production ID
 stays in the `===` block. All five hold आप register, no English loanwords,
@@ -60,82 +62,43 @@ itself — *अकेले में*, the fisherman's word *संभालो
 
 ```
 === DOCTRINE REELS · S4·11 · कुछ को शक था ===
-Target: 49–50 seconds. Register: आप. Tone: plain and a little surprised at the hook's third line; level through the middle; the *'सब'* line slow; the closing an invitation, not a charge.
+Target: about 50 seconds, unhurried. Register: आप. Tone: plain and a little surprised at the hook's third line; level through the middle; the *'सब'* line slow; the closing an invitation, not a charge.
 
-"यीशु की आख़िरी आज्ञा — जाओ, चेले बनाओ।
-किसे दी गई? अगुवों को? प्रचारकों को?
-मत्ती लिखते हैं — सुनने वालों में कुछ को अब भी शक था।"
+यीशु की आख़िरी आज्ञा — जाओ, चेले बनाओ।
+यह किसे दी गई? बड़े अगुवों को? नहीं।
+ग्यारह साधारण लोगों को — और मत्ती लिखते हैं, उनमें से कुछ को अब भी शक था।
 
-ग्यारह साधारण लोग — मछुए, एक चुंगी लेने वाला। कोई विद्वान नहीं।
-
-यीशु ने कहा — बपतिस्मा दो, और जो मैंने आज्ञा दी, सब मानना सिखाओ।
+यीशु ने कहा — उन्हें वह सब मानना सिखाओ, जो मैंने तुम्हें आज्ञा दी है।
 उस 'सब' में यही आज्ञा भी है। इसलिए यह हर चेले तक पहुँचती है — आप तक भी।
 
 सिर्फ़ सिखाना नहीं — मानना सिखाना। यह भाषण से नहीं, साथ चलने से होता है।
-पौलुस लिखते हैं — मेरी सी चाल चलो, जैसे मैं मसीह की सी चाल चलता हूँ।
-
 कोई कार्यक्रम नहीं। कोई पाठ्यक्रम नहीं, जो ख़रीदा जाए।
 एक इंसान, एक बाइबल, और बहुत-सा समय।
 
-आप चेले इसलिए नहीं कि बनाते हैं — चेले हैं, इसलिए बनाते हैं।
-और वादा भी — मैं जगत के अंत तक सदा तुम्हारे साथ हूँ।
+आप चेले इसलिए नहीं कि चेले बनाते हैं — चेले हैं, इसलिए बनाते हैं।
+चेलों से यीशु का वादा है — मैं जगत के अंत तक सदा तुम्हारे साथ हूँ।
 
-जिसने आपको वचन सुनाया, शायद उसकी भी कोई पदवी नहीं थी। अब एक से शुरू कीजिए।
+जिसने आपको वचन सुनाया, शायद वह भी कोई बड़ा आदमी नहीं था।
+अब किसी एक के साथ चलिए।
 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
-*"पौलुस लिखते हैं — मेरी सी चाल चलो…"* — **never** cut *"उस 'सब' में यही
-आज्ञा भी है"*, **never** *"कोई कार्यक्रम नहीं। कोई पाठ्यक्रम नहीं, जो ख़रीदा
-जाए"*, and **never** *"आप चेले इसलिए नहीं कि बनाते हैं — चेले हैं, इसलिए
-बनाते हैं"*.
+**Length:** ~138 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"उस 'सब' में यही आज्ञा भी है"*, *"कोई कार्यक्रम नहीं। कोई पाठ्यक्रम नहीं, जो ख़रीदा जाए"* or *"आप चेले इसलिए नहीं कि चेले बनाते हैं — चेले हैं, इसलिए बनाते हैं"*. If the artist runs long, cut *"यह भाषण से नहीं, साथ चलने से होता है।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "जाओ, चेले बनाओ" | मत्ती 28:19 |
-| "कुछ को अब भी शक था" | मत्ती 28:16-17 |
-| "मछुए, एक चुंगी लेने वाला" | मत्ती 4:18-22 · मत्ती 9:9 |
-| "कोई पदवी नहीं" | प्रेरितों के काम 4:13 — shown, not read |
-| "बपतिस्मा दो… सब मानना सिखाओ" | मत्ती 28:19-20 — hold |
-| "उस 'सब' में यही आज्ञा भी" | मत्ती 28:20 · 2 तीमुथियुस 2:2 |
-| "साथ चलने से" | मरकुस 3:14 |
-| "मेरी सी चाल चलो… मसीह की" | 1 कुरिन्थियों 11:1 |
-| "चेले हैं, इसलिए बनाते हैं" | इफिसियों 2:8-10 · यूहन्ना 15:5 |
-| "जगत के अंत तक सदा तुम्हारे साथ" | मत्ती 28:20 |
-| closing line | रोमियों 10:14 · 1 पतरस 2:9 |
+| "जाओ, चेले बनाओ… कुछ को शक था" | मत्ती 28:16-19 |
+| "सब मानना सिखाओ" | मत्ती 28:20 |
+| "साथ चलने से" | 1 कुरिन्थियों 11:1 |
+| "सदा तुम्हारे साथ हूँ" | मत्ती 28:20 |
+| closing line | 2 तीमुथियुस 2:2 |
 
-**Why the hook works:** every viewer knows the Great Commission and has
-quietly filed it under someone else — the अगुवे, the preacher, the man with
-training. The hook asks the question he has never asked out loud (*किसे दी
-गई?*) and then answers with a detail almost nobody has noticed: the men on
-that mountain had seen the risen Christ and *some still doubted* (28:17).
-The commission was not handed to the certain and the qualified. That is the
-stop.
+**Why the hook works:** a command everyone knows and a question about its addressee, answered with a detail almost nobody remembers — some of them still doubted. If they qualified, the viewer does.
 
-**Guardrails held:** **every believer's, not a title.** The case is made
-from the text, not from sentiment: the eleven were ordinary (fishermen, a
-tax collector; प्रेरितों 4:13 on screen — *unschooled, ordinary men*), some
-were doubting, and — the reel's exegetical centre — 28:20 commands that new
-disciples be taught to obey *everything* Jesus commanded, which includes the
-commission itself, so it passes to every disciple of every generation; the
-promise *to the end of the age* confirms it outlives the eleven. That line
-is uncuttable. **Leader-elitism is refused** twice without polity: *कोई
-पदवी नहीं* of the eleven, and the closing's *जिसने आपको वचन सुनाया, उसकी भी
-कोई पदवी नहीं थी*. **Discipling as a course to buy is refused by name** —
-*कोई पाठ्यक्रम नहीं, जो ख़रीदा जाए* — uncuttable, and said by a reel that
-belongs to a subscription app, which is why it is said; see production notes
-on the caption. **Disciple-making is fruit, never ground**: *आप चेले इसलिए
-नहीं कि बनाते हैं — चेले हैं, इसलिए बनाते हैं* is Season 1 reel 15 in this
-arc's terms (इफिसियों 2:8-10), so no viewer who has never led anyone to
-Christ hears that he is not really a disciple. **Discipling is defined from
-28:20's own verb** — *मानना सिखाना*, not information transfer — and from
-मरकुस 3:14 (*that they might be with him*): *साथ चलने से*. Baptism is named
-as the text names it and nothing is ruled on its mode or timing. The power
-is not the disciple's: the reel ends its teaching on the promise of
-presence, not on a charge. No numbers, no *multiply*, no method.
+**Guardrails held:** **The commission is every disciple's**, argued from its own words: *teach them to obey everything* includes this command. The eleven are ordinary and some doubt, so **no leader-elitism**. **Discipling is not a product**: no programme, no course to buy — uncuttable, and said by a Bible app about itself. **Making disciples does not make one a disciple** — the order is identity first, as everywhere in the series. The promise of Christ's presence is the commission's own. The closing is one person. Cut from v1: *मछुए, एक चुंगी लेने वाला*, *बपतिस्मा दो* (मत्ती 28:19 is on screen), the 1 कुरिन्थियों 11:1 quotation (shown).
 
 ---
 
@@ -143,76 +106,43 @@ presence, not on a charge. No numbers, no *multiply*, no method.
 
 ```
 === DOCTRINE REELS · S4·12 · रथ पर एक सवाल ===
-Target: 49–50 seconds. Register: आप. Tone: told as a scene at the open, unhurried; the two questions slow and separated; the *कलीसिया नहीं है* line plain, spoken for ourselves; the closing practical.
+Target: about 50 seconds, unhurried. Register: आप. Tone: told as a scene at the open, unhurried; the two questions slow and separated; the *जो आप अभी देख रहे हैं* line plain, spoken for ourselves; the closing practical.
 
-"रेगिस्तान की सड़क। रथ में एक आदमी यशायाह पढ़ रहा है — और समझ नहीं रहा।
-जो दौड़कर उसके पास गया, उसने उपदेश नहीं दिया।
-एक सवाल पूछा।"
+उसने उपदेश नहीं दिया। बस एक सवाल पूछा।
+रेगिस्तान की सड़क; रथ में एक आदमी यशायाह पढ़ रहा है — और समझ नहीं रहा। फिलिप्पुस दौड़कर उसके पास पहुँचा।
 
 फिलिप्पुस ने पूछा — जो पढ़ रहे हो, क्या समझते भी हो?
-उसने कहा — कोई समझाए नहीं, तो कैसे समझूँ? और उसे पास बिठाया।
+उसने कहा — कोई समझाए नहीं, तो कैसे समझूँ?
 फिलिप्पुस ने उसी पन्ने से शुरू किया — और यीशु का सुसमाचार सुनाया।
 
-आपको हर जवाब नहीं चाहिए। खुला पन्ना और दो सवाल —
+आपको हर जवाब आना ज़रूरी नहीं। खुला पन्ना और दो सवाल काफ़ी हैं —
 यह क्या कहता है? और यह यीशु के बारे में क्या दिखाता है?
 
-पौलुस ने तीमुथियुस से कहा — जो मुझसे सुना, विश्वासयोग्य लोगों को सौंप दो, जो औरों को भी सिखा सकें।
-एक वाक्य में — चार पीढ़ियाँ।
-
-और साफ़ — ये सब जो आप अभी देख रहे हैं, कलीसिया नहीं है; चेला भी नहीं बनाता।
-इसे बनाने वाले भी यही कहते हैं। फिलिप्पुस रथ पर बैठा था।
+पौलुस ने तीमुथियुस से कहा — जो मुझसे सुना, उसे विश्वासयोग्य लोगों को सौंप दो, जो औरों को भी सिखा सकें।
+और जो आप अभी देख रहे हैं, वह किसी को चेला नहीं बनाता। फिलिप्पुस रथ पर साथ बैठा था।
 
 इस हफ़्ते किसी एक के साथ — एक अध्याय, आमने-सामने।
 
 === END ===
 ```
 
-**Length:** 148 tokens · 48–50 seconds. If the artist runs long, cut
-*"एक वाक्य में — चार पीढ़ियाँ।"* — **never** cut *"फिलिप्पुस ने उसी पन्ने से
-शुरू किया — और यीशु का सुसमाचार सुनाया"*, **never** the two questions, and
-**never** *"ये सब जो आप अभी देख रहे हैं, कलीसिया नहीं है; चेला भी नहीं
-बनाता। इसे बनाने वाले भी यही कहते हैं"*.
+**Length:** ~133 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"फिलिप्पुस ने उसी पन्ने से शुरू किया — और यीशु का सुसमाचार सुनाया"*, the two questions, or *"जो आप अभी देख रहे हैं, वह किसी को चेला नहीं बनाता"*. If the artist runs long, cut *"उसने कहा — कोई समझाए नहीं, तो कैसे समझूँ?"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "रथ में… यशायाह पढ़ रहा है" | प्रेरितों के काम 8:27-28 |
-| "जो दौड़कर उसके पास गया" | प्रेरितों के काम 8:29-30 |
-| "क्या समझते भी हो?… कैसे समझूँ?" | प्रेरितों के काम 8:30-31 |
-| "उसे पास बिठाया" | प्रेरितों के काम 8:31 |
-| "उसी पन्ने से… यीशु का सुसमाचार" | प्रेरितों के काम 8:32-35 · यशायाह 53:7-8 |
-| "यह क्या कहता है?" | नहेम्याह 8:8 |
-| "यीशु के बारे में क्या दिखाता है?" | लूका 24:27 · यूहन्ना 5:39 |
-| "विश्वासयोग्य लोगों को सौंप दो… औरों को भी" | 2 तीमुथियुस 2:2 |
-| "कलीसिया नहीं है" | इब्रानियों 10:24-25 |
-| closing line | व्यवस्थाविवरण 6:6-7 |
+| "रथ में… यशायाह" | प्रेरितों के काम 8:27-30 |
+| "क्या समझते भी हो?" | प्रेरितों के काम 8:30-31 |
+| "यीशु का सुसमाचार सुनाया" | प्रेरितों के काम 8:35 |
+| "यीशु के बारे में क्या दिखाता है?" | लूका 24:27 |
+| "विश्वासयोग्य लोगों को सौंप दो" | 2 तीमुथियुस 2:2 |
+| "साथ बैठा था" | प्रेरितों के काम 8:31 |
+| closing line | इब्रानियों 10:24-25 |
 
-**Why the hook works:** it is a scene, and the scene has a twist the viewer
-does not expect from a Bible reel: the evangelist runs up to a stranger's
-chariot and does **not** preach — he asks. The viewer who is afraid to
-disciple anyone because he does not know enough is told, in the hook's last
-line, that the first move in the book of Acts was a question. He stays to
-hear what it was.
+**Why the hook works:** the surprise comes first — a man who could have preached asked a question instead — and the scene is filled in after. The viewer who thinks he cannot disciple anyone hears that it starts with a question.
 
-**Guardrails held:** **the method is the text's, not a technique.** Every
-step is in प्रेरितों 8 in order — Philip asks (8:30), is invited to sit
-(8:31), begins *from that very Scripture* (8:35), and preaches Jesus — and the
-reel's two questions are the Arc 1 method compressed: *what does it say*
-(the verse in its place, नहेम्याह 8:8) and *what does it show of Jesus*
-(लूका 24:27, the Arc 1 opener's verse), so the discipler points to Christ,
-not to himself and not to a moral. **The viewer is not asked to be an
-expert** — *आपको हर जवाब नहीं चाहिए* — yet the reel does not license
-guessing: the page is open and the questions are asked *of it*. **2 तीमुथियुस
-2:2 carries the multiplication without a programme** — Paul, Timothy,
-faithful men, others: four generations in one sentence, and no scheme, target
-or curriculum. **Disciplefy is not the discipler.** Season 1 reel 18's line
-is restated with its memory-rule wording (*ये सब जो आप अभी देख रहे हैं*,
-never ऐप/फ़ोन) and extended to this arc's subject — *चेला भी नहीं बनाता* —
-and marked uncuttable; *फिलिप्पुस रथ पर बैठा था* makes the point in the
-story's own terms: discipling happened side by side, not on a screen. The
-closing sends the viewer to one person, one chapter, face to face
-(*आमने-सामने*), and to nothing in the app.
+**Guardrails held:** **The method is the text's own**: open the page the person is already on, ask what it says, and go from there to Christ (प्रेरितों 8:35) — so discipling is neither a lecture nor a discussion that never reaches the gospel. **Two questions are enough**, and not knowing every answer is permitted. 2 तीमुथियुस 2:2 gives the handing-on. **The app is not the discipler — said about ourselves**, in this reel's own words (*जो आप अभी देख रहे हैं, वह किसी को चेला नहीं बनाता*); the fuller *यह कलीसिया नहीं है* belongs to Season 3's S3·21 and is not repeated. Philip *sat with him*. Cut from v1: *एक वाक्य में — चार पीढ़ियाँ*, *इसे बनाने वाले भी यही कहते हैं*.
 
 ---
 
@@ -220,90 +150,45 @@ closing sends the viewer to one person, one chapter, face to face
 
 ```
 === DOCTRINE REELS · S4·13 · किसे बताऊँ? ===
-Target: 49–50 seconds. Register: आप. Tone: quiet and level; the *नहीं* at the top of the body plain and immediate; the *किसे बताएँ* section slow and practical; the last line warm, almost gentle.
+Target: about 50 seconds, unhurried. Register: आप. Tone: quiet and level; the *नहीं* at the top of the body plain and immediate; the *किसे बताएँ* section slow and practical; the last line warm, almost gentle.
 
-"याकूब लिखते हैं — एक-दूसरे के सामने अपने पाप मान लो।
-तो क्या किसी इंसान को बताए बिना
-माफ़ी नहीं मिलती?"
+क्या माफ़ी के लिए किसी इंसान को बताना ज़रूरी है?
+याकूब ने तो लिखा है — एक-दूसरे के सामने अपने पाप मान लो।
 
 नहीं। माफ़ी का पता एक ही है।
-यूहन्ना लिखते हैं — पाप मान लें, तो वह क्षमा करने में विश्वासयोग्य और धर्मी है।
-परमेश्वर और मनुष्य के बीच एक ही बिचवई है — मसीह यीशु। दूसरा कोई नहीं।
+बाइबल कहती है — हम अपने पाप मान लें, तो परमेश्वर क्षमा करने में विश्वासयोग्य और धर्मी है।
+हमें परमेश्वर से मिलाने वाले एक ही हैं — मसीह यीशु। दूसरा कोई नहीं।
 
-तो याकूब क्यों कहते हैं? वाक्य पूरा पढ़िए — एक-दूसरे के लिए प्रार्थना करो, कि चंगे हो जाओ।
+दाऊद ने परमेश्वर से कहा — जब तक मैं चुप रहा, मेरी हड्डियाँ घुलती रहीं।
+फिर याकूब क्यों कहते हैं? वाक्य पूरा पढ़िए — एक-दूसरे के लिए प्रार्थना करो।
 भाई के सामने मानना — माफ़ी के लिए नहीं; सहारे और प्रार्थना के लिए।
-
-दाऊद ने लिखा — जब तक चुप रहा, हड्डियाँ पिघलती रहीं।
-छिपा पाप अँधेरे में बढ़ता है।
 
 किसे बताएँ? भीड़ को नहीं। मंच से नहीं।
 एक भरोसेमंद, परिपक्व विश्वासी को — जो बात फैलाए नहीं, और ख़ुद को आपसे ऊपर न समझे।
 
 अगर आप मसीह में हैं — दोष का फ़ैसला क्रूस पर हो चुका।
-
 माफ़ी ऊपर से मिलती है। सहारा बगल से।
 
 === END ===
 ```
 
-**Length:** 149 tokens · 49–50 seconds. If the artist runs long, cut
-*"छिपा पाप अँधेरे में बढ़ता है।"* — **never** cut *"नहीं। माफ़ी का पता एक ही
-है"*, **never** *"एक ही बिचवई है — मसीह यीशु। दूसरा कोई नहीं"*, **never**
-*"माफ़ी के लिए नहीं; सहारे और प्रार्थना के लिए"*, **never** *"भीड़ को नहीं।
-मंच से नहीं"*, **never** *"अगर आप मसीह में हैं"*, and **never** the closing
-line.
+**Length:** ~143 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"नहीं। माफ़ी का पता एक ही है"*, *"हमें परमेश्वर से मिलाने वाले एक ही हैं — मसीह यीशु। दूसरा कोई नहीं"*, *"माफ़ी के लिए नहीं; सहारे और प्रार्थना के लिए"*, *"भीड़ को नहीं। मंच से नहीं"*, *"अगर आप मसीह में हैं"* or the closing line. If the artist runs long, cut the दाऊद sentence.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
 | "एक-दूसरे के सामने अपने पाप मान लो" | याकूब 5:16 |
-| "पाप मान लें… विश्वासयोग्य और धर्मी" | 1 यूहन्ना 1:9 |
-| "एक ही बिचवई — मसीह यीशु" | 1 तीमुथियुस 2:5 |
-| "दूसरा कोई नहीं" | इब्रानियों 4:14-16 · मरकुस 2:7 |
-| "एक-दूसरे के लिए प्रार्थना… चंगे हो जाओ" | याकूब 5:16 — hold |
-| "जब तक चुप रहा, हड्डियाँ पिघलती रहीं" | भजन संहिता 32:3-5 |
-| "छिपा पाप" | नीतिवचन 28:13 |
-| "जो बात फैलाए नहीं" | नीतिवचन 11:13 |
-| "ख़ुद को आपसे ऊपर न समझे" | गलातियों 6:1 · रोमियों 3:23 |
-| "दोष का फ़ैसला क्रूस पर हो चुका" | रोमियों 8:1 · कुलुस्सियों 2:14 |
-| closing line | 1 यूहन्ना 1:9 · याकूब 5:16 |
+| "क्षमा करने में विश्वासयोग्य और धर्मी" | 1 यूहन्ना 1:9 |
+| "मिलाने वाले एक ही हैं — मसीह यीशु" | 1 तीमुथियुस 2:5 · 1 पतरस 3:18 |
+| "जब तक मैं चुप रहा" | भजन संहिता 32:3-5 |
+| "एक-दूसरे के लिए प्रार्थना करो" | याकूब 5:16 — hold |
+| "परिपक्व विश्वासी" | गलातियों 6:1-2 |
+| "दोष का फ़ैसला क्रूस पर" | रोमियों 8:1 |
 
-**Why the hook works:** it reads the verse aloud first, so the viewer hears
-याकूब 5:16 as Scripture, not as a church's practice, and then asks the
-question the verse raises in an Indian believer's mind — some from their
-own background, some from a neighbour's — *so is forgiveness conditional on
-telling a man?* The viewer either fears that it is, or has been told that it
-is. He stays because the reel is going to answer the question from the same
-verse.
+**Why the hook works:** a fear put as a plain yes-or-no question, with the verse that seems to answer *yes* quoted straight after it. The viewer needs the next line.
 
-**Guardrails held:** **no human mediator of forgiveness.** The hook's
-question is answered *नहीं* in the first word of the body, uncuttable; the
-address of forgiveness is God (1 यूहन्ना 1:9, *वह* — the faithful and just
-one), and 1 तीमुथियुस 2:5 is read in the OV's own word, *बिचवई* — one
-mediator, Christ Jesus — with *दूसरा कोई नहीं* uncuttable and इब्रानियों
-4:14-16 (our high priest; approach the throne *boldly*) on screen. No church,
-rite or tradition is named or attacked; the reel refuses a doctrine, not a
-community. **याकूब 5:16 is read whole, as help, not as mediation** — the
-verse's own purpose clause is read (*pray for one another, that you may be
-healed*) and stated: *माफ़ी के लिए नहीं; सहारे और प्रार्थना के लिए*. The
-reel does not over-read *चंगे* — it claims only that the confession is for
-prayer and support, which is what the clause says. **Silence is not
-commended**: भजन 32 (David's bones wasting while he kept silent) and नीतिवचन
-28:13 (the one who conceals does not prosper; the one who confesses *and
-forsakes* finds mercy) — so the reel is not confession-free assurance, and
-forsaking is on screen. **No public confession, no exposure**: *भीड़ को नहीं।
-मंच से नहीं* is uncuttable; the one who hears is described three ways —
-trustworthy, mature, and *keeps it to himself* (नीतिवचन 11:13) — and a
-fourth that closes clericalism and shame culture together: *ख़ुद को आपसे ऊपर
-न समझे* (गलातियों 6:1's *considering yourself*; रोमियों 3:23). No gender
-rule is voiced; production notes carry the practical wisdom. **Shame is
-answered with the cross, under the conditional**: *अगर आप मसीह में हैं —
-दोष का फ़ैसला क्रूस पर हो चुका* (रोमियों 8:1), so the viewer who confesses
-is not handing anyone a verdict over him. **Builds on S3·19, does not repeat
-it**: S3·19 was *how are you really*; this reel is the named sin, and its
-closing fixes the two directions in six words — *माफ़ी ऊपर से मिलती है। सहारा
-बगल से।*
+**Guardrails held:** **The answer is *no*, first and flatly**: forgiveness is from God (1 यूहन्ना 1:9), and there is one between God and us, Christ (1 तीमुथियुस 2:5) — so no man mediates and none is required. **याकूब 5:16 is then read to its end**: confession to a brother is for prayer and help, *not for forgiveness*. **No public confession** (*भीड़ को नहीं, मंच से नहीं*) and no shame culture; the confidant is described by character — trustworthy, mature, not above you. **The verdict is already given at the cross, under the conditional.** *बिचवई* is now said as *हमें परमेश्वर से मिलाने वाले एक ही हैं*, which keeps the mediator in the sentence. The hook is a positive question, so the flat *नहीं* that answers it cannot be heard as *no, you are not forgiven*; David's line is marked as spoken *to God*. Cut from v1: *छिपा पाप अँधेरे में बढ़ता है*, *कि चंगे हो जाओ*.
 
 ---
 
@@ -311,24 +196,21 @@ closing fixes the two directions in six words — *माफ़ी ऊपर स
 
 ```
 === DOCTRINE REELS · S4·14 · फटा हुआ जाल ===
-Target: 49–50 seconds. Register: आप. Tone: level and serious at the open, never dramatic; the *अकेले में* lines slow; the fishermen line warm; the safety line plain and set apart; the closing quiet.
+Target: about 50 seconds, unhurried. Register: आप. Tone: level and serious at the open, never dramatic; the *अकेले में* lines slow; the fishermen line warm; the safety line plain and set apart; the closing quiet.
 
-"आपको पता चल गया — एक भाई किसी पाप में फँसा है।
-तीन रास्ते हैं — चुप रहना, दूसरों को बताना,
-या वह, जो सबसे कठिन है।"
-
+आपको पता चल गया — एक भाई किसी पाप में फँसा है।
+अब तीन रास्ते हैं — चुप रहना, दूसरों को बताना… या वह, जो सबसे कठिन है।
 यीशु ने कहा — जा, और अकेले में उसे समझा।
+
 अकेले में। किसी और से पहले नहीं।
 पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है।
+पौलुस लिखते हैं — ऐसे भाई को नम्रता से सँभालो।
 
-पौलुस लिखते हैं — तुम जो आत्मिक हो, नम्रता से उसे संभालो।
-आत्मिक — कोई पदवी नहीं। जो आत्मा के चलाए चलता है।
-और संभालना — पौलुस का यही शब्द उन मछुओं के लिए आया है, जो फटे जाल सुधार रहे थे।
-मक़सद बहस जीतना नहीं। जाल फिर काम का बने।
+सँभालना — पौलुस का यही शब्द उन मछुओं के लिए आया है, जो अपने फटे जाल सुधार रहे थे।
+मक़सद बहस जीतना नहीं — जाल फिर काम का बने।
 
-धीमी आवाज़। और अपनी भी चौकसी — कल आप भी गिर सकते हैं।
-यीशु कहते हैं — वह सुने, तो तू ने भाई को पा लिया। भाई को पाना — उसे हराना नहीं।
-
+इसलिए धीमी आवाज़। और अपनी भी चौकसी — कल आप भी गिर सकते हैं।
+यीशु कहते हैं — वह सुन ले, तो तूने अपने भाई को पा लिया।
 पर जहाँ किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती।
 
 फटा जाल मछुआ फेंकता नहीं — बैठकर सुधारता है।
@@ -336,61 +218,22 @@ Target: 49–50 seconds. Register: आप. Tone: level and serious at the open, 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
-*"मक़सद बहस जीतना नहीं। जाल फिर काम का बने।"* — **never** cut *"अकेले में।
-किसी और से पहले नहीं"*, **never** *"पहले दूसरों से कहा — तो वह सुधार नहीं,
-चुगली है"*, **never** *"कल आप भी गिर सकते हैं"*, and **never** *"पर जहाँ
-किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती"*.
+**Length:** ~137 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"अकेले में। किसी और से पहले नहीं"*, *"पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है"*, *"कल आप भी गिर सकते हैं"* or *"पर जहाँ किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती"*. If the artist runs long, cut *"मक़सद बहस जीतना नहीं — जाल फिर काम का बने।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "जा, और अकेले में उसे समझा" | मत्ती 18:15 |
-| "सुधार नहीं, चुगली है" | नीतिवचन 16:28 · नीतिवचन 17:9 |
-| "तुम जो आत्मिक हो, नम्रता से… संभालो" | गलातियों 6:1 |
-| "जो आत्मा के चलाए चलता है" | गलातियों 5:25 |
-| "मछुओं… फटे जाल सुधार रहे थे" | मत्ती 4:21 · मरकुस 1:19 |
-| "अपनी भी चौकसी — कल आप भी" | गलातियों 6:1 · 1 कुरिन्थियों 10:12 |
-| "तू ने भाई को पा लिया" | मत्ती 18:15 — hold |
-| "किसी और की सुरक्षा दाँव पर" | नीतिवचन 24:11 · रोमियों 13:3-4 — shown, not read |
+| "अकेले में उसे समझा" | मत्ती 18:15 |
+| "नम्रता से सँभालो" | गलातियों 6:1 |
+| "फटे जाल सुधार रहे थे" | मत्ती 4:21 |
+| "अपनी भी चौकसी" | गलातियों 6:1 |
+| "भाई को पा लिया" | मत्ती 18:15 |
 | closing line | याकूब 5:19-20 |
 
-**Why the hook works:** the viewer has been here — he knows something about
-a brother that the brother does not know he knows — and the hook names the
-two reflexes he actually has, silence and telling someone, before promising
-a third that is *harder than both*. It does not name the sin, so every viewer
-supplies his own case; and it does not say *confront*, so the viewer who
-dreads confrontation keeps listening.
+**Why the hook works:** a situation and three exits, with the third withheld. The viewer has taken one of the first two before and knows which.
 
-**Guardrails held:** **private first, and gossip named.** मत्ती 18:15's own
-*अकेले में* is read and then repeated, and the reel says what the first
-alternative is when it goes wrong: telling others first is *चुगली*, not
-correction (नीतिवचन 16:28, 17:9 on screen) — uncuttable. **Gentle, and not
-a title**: गलातियों 6:1's *नम्रता* is read, and *आत्मिक* is glossed from
-5:25 as the one who walks by the Spirit, never a rank — the arc's
-every-believer rule. **The goal is restoration, from the verb itself**: Paul's
-*καταρτίζω* (OV *संभालो*) is the word used of James and John *mending* their
-nets (मत्ती 4:21; मरकुस 1:19 on screen). The reel says only that it is
-*Paul's* word used there — the Hindi OV renders the two differently — and
-builds the image out of the text rather than laying it on. The closing turns
-it into the reel's one picture: a torn net is not thrown away. **Looking to
-yourself** is read with its reason, *कल आप भी गिर सकते हैं* (1 कुरिन्थियों
-10:12), uncuttable. **Winning is refused**: मत्ती 18:15's *you have gained
-your brother* is held on screen, and *भाई को पाना — उसे हराना नहीं* states
-it. **No church-discipline mechanics**: मत्ती 18:16-17 is not read, shown or
-summarised; nothing is said about witnesses, the assembly, removal or any
-office — polity is untouched — and the question *what if he does not
-listen* is left to production notes. **Private is never cover-up** — the one
-ruling this reel adds beyond the brief: *पर जहाँ किसी और की सुरक्षा दाँव पर हो
-— वहाँ बात अकेले में नहीं रुकती* is uncuttable, with नीतिवचन 24:11 (*rescue
-those being taken away to death*) and रोमियों 13:3-4 shown, not read, so the
-reel cannot be used to keep abuse or a crime against a third party inside a
-private conversation — the failure churches most often commit in exactly
-this passage's name. It names no crime and prescribes no step; it only
-refuses to let *private* mean *silent*. **Builds on S3·15, does not repeat
-it**: no log, no speck, no *who am I to judge*; that reel's question is
-assumed answered.
+**Guardrails held:** **Privately, and before anyone else** — the line that separates correction from gossip is drawn in so many words. **Gently, and watching yourself**: *कल आप भी गिर सकते हैं*. **The aim is to win the brother, not the argument** — the mended-net picture carries it, from the word Paul himself uses. **Privacy has a limit: where someone else's safety is at stake, it does not stay private** — uncuttable, so the reel cannot be used to keep harm quiet. No church-discipline procedure is described. Cut from v1: *आत्मिक — कोई पदवी नहीं। जो आत्मा के चलाए चलता है*, *भाई को पाना — उसे हराना नहीं* (carried by *मक़सद बहस जीतना नहीं*).
 
 ---
 
@@ -398,88 +241,44 @@ assumed answered.
 
 ```
 === DOCTRINE REELS · S4·15 · वह अब नहीं आता ===
-Target: 49–50 seconds. Register: आप. Tone: quiet, as to someone who is hurting; the देमास and मरकुस lines side by side, the second with a small lift; the *फ़ैसला आपका नहीं* line plain; the closing gentle, with the door in it.
+Target: about 50 seconds, unhurried. Register: आप. Tone: quiet, as to someone who is hurting; the देमास and मरकुस lines side by side, the second with a small lift; the *फ़ैसला आपका नहीं* line plain; the closing gentle, with the door in it.
 
-"जिसके साथ आपने बाइबल पढ़ी — वह अब सभा में नहीं आता।
-संदेश देखता है, जवाब नहीं देता।
-ग़लती आपकी थी?"
+जिसके साथ आपने बाइबल पढ़ी — वह अब सभा में नहीं आता।
+आपका संदेश देखता है, जवाब नहीं देता। ग़लती आपकी थी?
+बाइबल कहती है — यीशु के भी बहुत-से चेले लौट गए। यीशु में कोई कमी नहीं थी। फिर भी लोग गए।
 
-यूहन्ना लिखते हैं — यीशु के भी बहुत-से चेले लौट गए, और फिर उनके साथ न चले।
-यीशु में कोई कमी नहीं थी। फिर भी लोग गए।
-
-वचन ईमानदार है। पौलुस लिखते हैं — देमास संसार को प्रिय जानकर मुझे छोड़ गया।
-और अगली ही आयत में — मरकुस को साथ ले आ; वह सेवा के लिए मेरे काम का है।
-वही मरकुस — जो कभी बीच सफ़र लौट गया था।
+वचन ईमानदार है। पौलुस लिखते हैं — देमास मुझे छोड़ गया।
+और अगली ही आयत में — मरकुस को साथ ले आ; वह मेरे काम का है।
+वही मरकुस — जो कभी बीच सफ़र से लौट गया था।
 
 तो आख़िरी पन्ना आप नहीं लिखते।
-कौन किसका है — प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं। न डर बाँटिए, न झूठी तसल्ली।
+प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं। न डर बाँटिए, न झूठी तसल्ली।
 
-आपके लिए तीन काम बचते हैं — दुख, प्रार्थना, और खुला दरवाज़ा।
-यीशु की कहानी में पिता ने बेटे को रोका नहीं —
-पर दूर से ही देख लिया, और दौड़ा।
+तीन काम बचते हैं — दुख, प्रार्थना, और खुला दरवाज़ा।
+यीशु की कहानी में पिता ने बेटे को रोका नहीं — पर जब वह लौटा, दूर से देख लिया, और दौड़ पड़ा।
 
-ताना नहीं। दबाव नहीं। संदेश भेजते रहिए — दरवाज़ा खुला है।
+ताना नहीं। दबाव नहीं।
+संदेश भेजते रहिए — दरवाज़ा खुला है।
 
 === END ===
 ```
 
-**Length:** 150 tokens · 49–50 seconds. If the artist runs long, cut
-*"वही मरकुस — जो कभी बीच सफ़र लौट गया था।"* only together with the मरकुस
-line before it — **never** cut *"यीशु में कोई कमी नहीं थी। फिर भी लोग
-गए"*, **never** *"प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं। न डर बाँटिए,
-न झूठी तसल्ली"*, **never** *"दुख, प्रार्थना, और खुला दरवाज़ा"*, and
-**never** the closing line.
+**Length:** ~136 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"यीशु में कोई कमी नहीं थी। फिर भी लोग गए"*, *"प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं। न डर बाँटिए, न झूठी तसल्ली"*, *"दुख, प्रार्थना, और खुला दरवाज़ा"* or the closing line. If the artist runs long, cut *"वही मरकुस — जो कभी बीच सफ़र से लौट गया था।"* only together with the मरकुस line before it.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "बहुत-से चेले लौट गए… साथ न चले" | यूहन्ना 6:66 |
-| "वचन ईमानदार है" | 1 यूहन्ना 2:19 — reference only, not read |
-| "देमास संसार को प्रिय जानकर… छोड़ गया" | 2 तीमुथियुस 4:10 |
-| "मरकुस को साथ ले आ… काम का है" | 2 तीमुथियुस 4:11 |
-| "बीच सफ़र लौट गया था" | प्रेरितों के काम 13:13 · 15:37-38 |
-| "प्रभु अपनों को पहचानता है" | 2 तीमुथियुस 2:19 |
-| "फ़ैसला आपका नहीं" | 1 कुरिन्थियों 4:5 · रोमियों 14:4 |
-| "दुख" | लूका 19:41 · रोमियों 9:2 |
-| "प्रार्थना" | 1 शमूएल 12:23 |
-| "दूर से ही देख लिया, और दौड़ा" | लूका 15:20 |
-| closing line | लूका 15:20 · याकूब 5:19-20 |
+| "बहुत-से चेले लौट गए" | यूहन्ना 6:66 |
+| "देमास मुझे छोड़ गया" | 2 तीमुथियुस 4:10 |
+| "मरकुस को साथ ले आ" | 2 तीमुथियुस 4:11 · प्रेरितों के काम 15:38 |
+| "प्रभु अपनों को पहचानता है" | 2 तीमुथियुस 2:19 · 1 यूहन्ना 2:19 |
+| "जब वह लौटा, दूर से देख लिया" | लूका 15:20 |
+| closing line | याकूब 5:19-20 |
 
-**Why the hook works:** it is the discipler's own grief, told in the two
-details that make it real — he no longer comes, and he *reads* the messages
-without answering — and then the question every discipler asks himself
-alone: *was it my fault?* No one has answered it for him. He stays because
-the reel will, and because it opens not with a verdict on the one who left
-but with Jesus's own disciples leaving.
+**Why the hook works:** a small modern cruelty every discipler knows — *seen*, no reply — and the question it leaves. The reel answers it from the one teacher who had no fault and still lost people.
 
-**Guardrails held:** **no verdict on anyone's salvation, in either
-direction.** The line *प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं* puts the
-judgment where 2 तीमुथियुस 2:19 puts it, and *न डर बाँटिए, न झूठी तसल्ली*
-refuses both errors in six words — the fear-sermon (*he is lost*) and the
-universalist comfort (*he'll be fine*) — without entering the
-loss-of-salvation debate at all. **1 यूहन्ना 2:19 is on screen, not read**
-(ruled): the must-land is that *Scripture is honest that some leave*, and
-the reel carries that honesty in Jesus's own disciples (यूहन्ना 6:66) and
-Paul's own Demas. John's second clause — *they were not of us* — is his
-apostolic hindsight on the false teachers of 2:18; voiced over a viewer's
-particular friend it becomes exactly the verdict the reel forbids, so the
-voiceover never says it. **The discipler's guilt is neither fed nor
-dismissed**: *यीशु में कोई कमी नहीं थी। फिर भी लोग गए* is uncuttable — the
-perfect discipler was left too — without claiming the viewer made no
-mistakes. **The door is left open from the text, not from optimism**: in
-the same chapter, one verse apart, Paul records Demas leaving and asks for
-Mark — the Mark who once turned back mid-journey (प्रेरितों 13:13; 15:38).
-The reel says only that Mark *बीच सफ़र लौट गया था*, which is accurate; it
-does not claim Mark had abandoned the faith or that Demas had, and it
-promises no one's return. **Grief and prayer are the discipler's work** (लूका
-19:41 and रोमियों 9:2 for grief; 1 शमूएल 12:23 — ceasing to pray would be sin
-— for prayer), and **the door is लूका 15's**: the father did not stop the
-son (15:12-13), but saw him *while still far off* and ran (15:20), so the
-viewer is taught to wait watching, not to chase or to shame — *ताना नहीं।
-दबाव नहीं* — while keeping in touch (*संदेश भेजते रहिए*), which keeps याकूब
-5:19-20's *bring him back* alive without pressure. No person, church or
-reason for leaving is named.
+**Guardrails held:** **Scripture is honest that some leave**, and that this happened to Jesus, so the discipler is not made the cause. **No verdict on the person**: the Lord knows his own; the reel gives **neither a threat nor a false comfort**, and the loss-of-salvation debate is not opened. Mark, who once turned back, stands beside Demas so the story is not closed. **What remains is grief, prayer and an open door** — the father of लूका 15 did not chase and did not stop watching. **No taunt, no pressure.** Nothing promises a return. Cut from v1: *संसार को प्रिय जानकर*, *कौन किसका है*.
 
 ---
 
@@ -530,8 +329,8 @@ read *I've never led anyone to Christ — am I a real disciple?* get *चेल�
 it, *The Great Commission*.
 
 **S4·12.** No visual of a phone or a screen as the place the reading happens;
-two people, one printed Bible, side by side. The *कलीसिया नहीं है; चेला भी
-नहीं बनाता* line survives every cut, caption and subtitle. **App gap — flag
+two people, one printed Bible, side by side. The *जो आप अभी देख रहे हैं, वह किसी को
+चेला नहीं बनाता* line survives every cut, caption and subtitle. **App gap — flag
 for the product:** there is no topic on प्रेरितों 8 or on reading Scripture
 *with* someone; the nearest are *How to Study the Bible* (milestone of
 *Understanding the Bible*) and *2 Timothy 2: Entrust It to Faithful People*.
@@ -547,8 +346,8 @@ with the reel's two lines only — 1 यूहन्ना 1:9 (to God) and *ए
 the sin. Comments disclosing a crime or danger to someone are answered the
 same way plus a pointer to local help and to their अगुवे, and are not
 discussed in public. **Comments debating confession to a priest, or any
-church's practice, are not engaged**; moderation gives *एक ही बिचवई है —
-मसीह यीशु* and no name. Practical wisdom that the reel does not voice but
+church's practice, are not engaged**; moderation gives *हमें परमेश्वर से मिलाने वाले
+एक ही हैं — मसीह यीशु* and no name. Practical wisdom that the reel does not voice but
 moderation may give if asked: choose someone of the same sex where the sin
 is of a sexual nature, and someone who is not also the person sinned
 against. No *accountability partner* feature, form or group is offered.
@@ -585,8 +384,8 @@ would be read as a verdict about the absent person, either way).
 
 **Uncuttable lines, collected.** S4·11 *उस 'सब' में यही आज्ञा भी है* · *कोई
 पाठ्यक्रम नहीं, जो ख़रीदा जाए* · *चेले हैं, इसलिए बनाते हैं*. S4·12 the
-Season 1 reel 18 line with *चेला भी नहीं बनाता*. S4·13 *नहीं। माफ़ी का पता
-एक ही है* · *एक ही बिचवई… दूसरा कोई नहीं* · *माफ़ी के लिए नहीं; सहारे और
+Season 1 reel 18 point in its own words — *जो आप अभी देख रहे हैं, वह किसी को चेला नहीं बनाता*. S4·13 *नहीं। माफ़ी का पता
+एक ही है* · *मिलाने वाले एक ही हैं… दूसरा कोई नहीं* · *माफ़ी के लिए नहीं; सहारे और
 प्रार्थना के लिए* · *भीड़ को नहीं। मंच से नहीं* · *अगर आप मसीह में हैं*.
 S4·14 *अकेले में* · *चुगली* · the safety line. S4·15 *फ़ैसला आपका नहीं। न डर
 बाँटिए, न झूठी तसल्ली* · the closing. These survive every edit, caption,
@@ -596,8 +395,8 @@ subtitle and short clip.
 take वे; परमेश्वर takes वह; पौलुस, याकूब, यूहन्ना, मत्ती *लिखते हैं*. Church
 leaders are *अगुवे*; no office title anywhere. OV words used on purpose:
 *चेला/चेले* (मत्ती 28:19 — the series' *शिष्य* is kept for the arc and
-season titles only), *बिचवई* (1 तीमुथियुस 2:5), *संभालो* (गलातियों 6:1),
-*अकेले में* (मत्ती 18:15), *चंगे हो जाओ* (याकूब 5:16), *फिलिप्पुस*
+season titles only), *संभालो* (गलातियों 6:1),
+*अकेले में* (मत्ती 18:15), *फिलिप्पुस*
 (प्रेरितों 8). OV wording believed certain and used without quotation marks:
 मत्ती 28:20 (*मैं जगत के अन्त तक सदैव तुम्हारे संग हूं* — the voiceover's
 *सदा तुम्हारे साथ* is a paraphrase; do not set it as a quotation on screen),

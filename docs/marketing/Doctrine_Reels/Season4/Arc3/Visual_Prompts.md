@@ -61,7 +61,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 ## REEL 3·1 — कुछ को शक था · S4·11
 The eleven on the mountain in Galilee — some kneeling, some hanging back. Then Sunday: Rahul notices Arjun, new, alone on the back bench. He sits beside him with two teas. Weeks later they walk the church courtyard together; and the reel ends in Rahul's room with one printed Bible between them.
-**Cast:** Rahul, Arjun · painted scene (the eleven on the mountain — Jesus a distant figure in light) · **Hook text on frame 01:** "यीशु की आख़िरी आज्ञा — जाओ, चेले बनाओ।"
+**Cast:** Rahul, Arjun · painted scene (the eleven on the mountain — Jesus a distant figure in light) · **Hook text on frame 01:** "यह आज्ञा किसे दी गई?"
 
 **Staging.** In the painting the viewer stands low on the slope behind the
 eleven, who face up the hill toward a distant figure standing in the morning
@@ -131,13 +131,13 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT FADE · 0:00–0:10
 
-*Voiceover:* "यीशु की आख़िरी आज्ञा — जाओ, चेले बनाओ। किसे दी गई? अगुवों को? प्रचारकों को? मत्ती लिखते हैं — सुनने वालों में कुछ को अब भी शक था। ग्यारह साधारण लोग — मछुए, एक चुंगी लेने वाला। कोई विद्वान नहीं।"
+*Voiceover:* "यीशु की आख़िरी आज्ञा — जाओ, चेले बनाओ। यह किसे दी गई? बड़े अगुवों को? नहीं। ग्यारह साधारण लोगों को — और मत्ती लिखते हैं, उनमें से कुछ को अब भी शक था।"
 
-*On screen:* मत्ती 28:19 · मत्ती 28:16-17 · मत्ती 4:18-22 · मत्ती 9:9 · प्रेरितों के काम 4:13 — shown, not read
+*On screen:* मत्ती 28:16-19
 
 ```
 CAMERA: starts on the full painting; holds almost still with a very slow push up the slope toward the bright morning sky behind the distant figure; the gold light fills the frame and settles into the bright open back door of the church hall; ends on the medium-wide down the aisle.
-ACTION: opening — the painted grass stirs; the kneeling men stay bowed, the standing men stay back with arms folded. Middle — the push nears the light; the distant figure stays a silhouette. Landing — as the painting dissolves into the hall, people are walking away up the aisle toward the door, Arjun sits alone on the back bench screen-left, and Rahul stops in the aisle, holding two teas, and turns his head toward him.
+ACTION: opening — the painted grass stirs; the kneeling men stay bowed, the standing men stay back with arms folded. Middle — the push nears the light; the distant figure stays a silhouette. Landing — the painting holds until the last two seconds, then dissolves into the hall: people are walking away up the aisle toward the door, Arjun sits alone on the back bench screen-left, and Rahul stops in the aisle, holding two teas, and turns his head toward him.
 LOCKS: the figure on the hill is only ever a distant silhouette; no face appears. In the hall the leaving churchgoers keep walking away toward the door, backs to camera; Arjun stays seated facing the front; Rahul stays screen-right of Arjun.
 AUDIO: soft wind over grass fading into the shuffle of feet and a ceiling fan in a hall. No dialogue, no music, no singing.
 Slow, calm transformation from warm painterly illustration back into photoreal, the morning sky becoming the bright doorway. Warm golden grade, one continuous shot, no cuts, no text.
@@ -146,9 +146,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "यीशु ने कहा — बपतिस्मा दो, और जो मैंने आज्ञा दी, सब मानना सिखाओ। उस 'सब' में यही आज्ञा भी है। इसलिए यह हर चेले तक पहुँचती है — आप तक भी।"
+*Voiceover:* "यीशु ने कहा — उन्हें वह सब मानना सिखाओ, जो मैंने तुम्हें आज्ञा दी है। उस 'सब' में यही आज्ञा भी है। इसलिए यह हर चेले तक पहुँचती है — आप तक भी।"
 
-*On screen:* मत्ती 28:19-20 — hold · 2 तीमुथियुस 2:2
+*On screen:* मत्ती 28:20
 
 ```
 CAMERA: starts on the medium-wide down the aisle from the front of the hall; one slow, steady dolly straight forward up the aisle, lowering to seated height; ends on the medium close two-shot on the back bench.
@@ -161,9 +161,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "सिर्फ़ सिखाना नहीं — मानना सिखाना। यह भाषण से नहीं, साथ चलने से होता है। पौलुस लिखते हैं — मेरी सी चाल चलो, जैसे मैं मसीह की सी चाल चलता हूँ। कोई कार्यक्रम नहीं। कोई पाठ्यक्रम नहीं, जो ख़रीदा जाए। एक इंसान, एक बाइबल, और बहुत-सा समय।"
+*Voiceover:* "सिर्फ़ सिखाना नहीं — मानना सिखाना। यह भाषण से नहीं, साथ चलने से होता है। कोई कार्यक्रम नहीं। कोई पाठ्यक्रम नहीं, जो ख़रीदा जाए। एक इंसान, एक बाइबल, और बहुत-सा समय।"
 
-*On screen:* मरकुस 3:14 · 1 कुरिन्थियों 11:1
+*On screen:* 1 कुरिन्थियों 11:1
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -177,9 +177,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "आप चेले इसलिए नहीं कि बनाते हैं — चेले हैं, इसलिए बनाते हैं। और वादा भी — मैं जगत के अंत तक सदा तुम्हारे साथ हूँ।"
+*Voiceover:* "आप चेले इसलिए नहीं कि चेले बनाते हैं — चेले हैं, इसलिए बनाते हैं। चेलों से यीशु का वादा है — मैं जगत के अंत तक सदा तुम्हारे साथ हूँ।"
 
-*On screen:* इफिसियों 2:8-10 · यूहन्ना 15:5 · मत्ती 28:20
+*On screen:* मत्ती 28:20
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -193,9 +193,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जिसने आपको वचन सुनाया, शायद उसकी भी कोई पदवी नहीं थी। अब एक से शुरू कीजिए।"
+*Voiceover:* "जिसने आपको वचन सुनाया, शायद वह भी कोई बड़ा आदमी नहीं था। अब किसी एक के साथ चलिए।"
 
-*On screen:* रोमियों 10:14 · 1 पतरस 2:9
+*On screen:* 2 तीमुथियुस 2:2
 
 Dissolve into the brand outro in the edit.
 ```
@@ -211,7 +211,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·2 — रथ पर एक सवाल · S4·12
 Philip running up beside the official's chariot, calling a question up to him. Then Rahul's room: Arjun puzzled over a page, Rahul asking a question instead of preaching; two pairs of hands on one printed Bible; Arjun explaining it back. The last frame is Arjun on a doorstep, reading with his elder brother. Never a phone as the place the reading happens.
-**Cast:** Rahul, Arjun, Arjun's elder brother (late twenties) · painted scene (Philip running up to the official's chariot) · **Hook text on frame 01:** "जो दौड़कर उसके पास गया, उसने उपदेश नहीं दिया। एक सवाल पूछा।"
+**Cast:** Rahul, Arjun, Arjun's elder brother (late twenties) · painted scene (Philip running up to the official's chariot) · **Hook text on frame 01:** "उसने उपदेश नहीं दिया। एक सवाल पूछा।"
 
 **Staging.** In the painting the chariot travels from screen-left to
 screen-right along the road, seen side-on; Philip runs on the near side. In
@@ -266,7 +266,7 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
 
-**05 — four generations**
+**05 — passing it on**
 ```
 CAMERA: medium shot, 40mm lens, low, camera standing in the small front yard facing the house's front door.
 SET: the doorstep of a small, plain house in the evening, a few weeks later: a single wide concrete step below a blue-painted wooden door standing ajar, a potted green plant in a tin at screen-right, a whitewashed wall. Warm light from inside the doorway.
@@ -281,7 +281,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT FADE · 0:00–0:10
 
-*Voiceover:* "रेगिस्तान की सड़क। रथ में एक आदमी यशायाह पढ़ रहा है — और समझ नहीं रहा। जो दौड़कर उसके पास गया, उसने उपदेश नहीं दिया। एक सवाल पूछा।"
+*Voiceover:* "उसने उपदेश नहीं दिया। बस एक सवाल पूछा। रेगिस्तान की सड़क; रथ में एक आदमी यशायाह पढ़ रहा है — और समझ नहीं रहा। फिलिप्पुस दौड़कर उसके पास पहुँचा।"
 
 *On screen:* प्रेरितों के काम 8:27-30
 
@@ -296,9 +296,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "फिलिप्पुस ने पूछा — जो पढ़ रहे हो, क्या समझते भी हो? उसने कहा — कोई समझाए नहीं, तो कैसे समझूँ? और उसे पास बिठाया। फिलिप्पुस ने उसी पन्ने से शुरू किया — और यीशु का सुसमाचार सुनाया।"
+*Voiceover:* "फिलिप्पुस ने पूछा — जो पढ़ रहे हो, क्या समझते भी हो? उसने कहा — कोई समझाए नहीं, तो कैसे समझूँ? फिलिप्पुस ने उसी पन्ने से शुरू किया — और यीशु का सुसमाचार सुनाया।"
 
-*On screen:* प्रेरितों के काम 8:30-35 · यशायाह 53:7-8
+*On screen:* प्रेरितों के काम 8:30-31 · प्रेरितों के काम 8:35
 
 ```
 CAMERA: starts on the medium shot across the desk; one slow crane up and tilt down toward the open Bible, the men's faces leaving the top of the frame; ends on the close shot of the two hands on the page.
@@ -311,9 +311,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "आपको हर जवाब नहीं चाहिए। खुला पन्ना और दो सवाल — यह क्या कहता है? और यह यीशु के बारे में क्या दिखाता है?"
+*Voiceover:* "आपको हर जवाब आना ज़रूरी नहीं। खुला पन्ना और दो सवाल काफ़ी हैं — यह क्या कहता है? और यह यीशु के बारे में क्या दिखाता है?"
 
-*On screen:* नहेम्याह 8:8 · लूका 24:27 · यूहन्ना 5:39
+*On screen:* लूका 24:27
 
 ```
 CAMERA: starts on the close shot of the two hands on the page; one slow crane down and tilt up, easing back to seated eye height; ends on the medium close two-shot across the desk.
@@ -326,9 +326,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "पौलुस ने तीमुथियुस से कहा — जो मुझसे सुना, विश्वासयोग्य लोगों को सौंप दो, जो औरों को भी सिखा सकें। एक वाक्य में — चार पीढ़ियाँ। और साफ़ — ये सब जो आप अभी देख रहे हैं, कलीसिया नहीं है; चेला भी नहीं बनाता। इसे बनाने वाले भी यही कहते हैं। फिलिप्पुस रथ पर बैठा था।"
+*Voiceover:* "पौलुस ने तीमुथियुस से कहा — जो मुझसे सुना, उसे विश्वासयोग्य लोगों को सौंप दो, जो औरों को भी सिखा सकें। और जो आप अभी देख रहे हैं, वह किसी को चेला नहीं बनाता। फिलिप्पुस रथ पर साथ बैठा था।"
 
-*On screen:* 2 तीमुथियुस 2:2 · इब्रानियों 10:24-25
+*On screen:* 2 तीमुथियुस 2:2 · प्रेरितों के काम 8:31
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -344,7 +344,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "इस हफ़्ते किसी एक के साथ — एक अध्याय, आमने-सामने।"
 
-*On screen:* व्यवस्थाविवरण 6:6-7
+*On screen:* इब्रानियों 10:24-25
 
 Dissolve into the brand outro in the edit.
 ```
@@ -360,7 +360,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·3 — किसे बताऊँ? · S4·13
 Rahul carrying something at night — never shown, never named. He confesses it alone at his bedside first. David bowed over a scroll in the painting. Then Sunil's veranda: Rahul speaking low, Sunil listening, and the two of them praying side by side — Sunil's hand on his shoulder, not above him. No crowd, no stage, no public confession.
-**Cast:** Rahul, Sunil · painted scene (David alone at night over a scroll) · **Hook text on frame 01:** "तो क्या किसी इंसान को बताए बिना माफ़ी नहीं मिलती?"
+**Cast:** Rahul, Sunil · painted scene (David alone at night over a scroll) · **Hook text on frame 01:** "क्या माफ़ी के लिए किसी इंसान को बताना ज़रूरी है?"
 
 **Staging.** Rahul's room from the reference. The camera stands **near the
 door in the left-hand wall, looking across the room**: the desk and lamp are
@@ -429,7 +429,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "याकूब लिखते हैं — एक-दूसरे के सामने अपने पाप मान लो। तो क्या किसी इंसान को बताए बिना माफ़ी नहीं मिलती? नहीं। माफ़ी का पता एक ही है।"
+*Voiceover:* "क्या माफ़ी के लिए किसी इंसान को बताना ज़रूरी है? याकूब ने तो लिखा है — एक-दूसरे के सामने अपने पाप मान लो।"
 
 *On screen:* याकूब 5:16
 
@@ -444,13 +444,13 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · PAINT BLOOM · 0:10–0:20
 
-*Voiceover:* "यूहन्ना लिखते हैं — पाप मान लें, तो वह क्षमा करने में विश्वासयोग्य और धर्मी है। परमेश्वर और मनुष्य के बीच एक ही बिचवई है — मसीह यीशु। दूसरा कोई नहीं।"
+*Voiceover:* "नहीं। माफ़ी का पता एक ही है। बाइबल कहती है — हम अपने पाप मान लें, तो परमेश्वर क्षमा करने में विश्वासयोग्य और धर्मी है। हमें परमेश्वर से मिलाने वाले एक ही हैं — मसीह यीशु। दूसरा कोई नहीं।"
 
-*On screen:* 1 यूहन्ना 1:9 · 1 तीमुथियुस 2:5 · इब्रानियों 4:14-16 · मरकुस 2:7
+*On screen:* 1 यूहन्ना 1:9 · 1 तीमुथियुस 2:5 · 1 पतरस 3:18
 
 ```
 CAMERA: starts on the medium shot of Rahul kneeling at the bedside; one slow, steady push past his folded hands down into the open page until the paper fills the frame; ends on the full painting of the stone room.
-ACTION: opening — Rahul stays bowed, his shoulders rising with a slow breath. Middle — the camera passes his hands; the lamplight on the page deepens into the painted oil lamp's glow. Landing — the paper grain turns into gouache brushwork and the painting resolves: the man bowed over the scroll, facing screen-right, the oil lamp beside him.
+ACTION: opening — Rahul stays bowed, his shoulders rising with a slow breath. Middle — the camera passes his hands; the lamplight on the page deepens into the painted oil lamp's glow. Landing — only in the final second the paper grain turns into gouache brushwork and the painting resolves: the man bowed over the scroll, facing screen-right, the oil lamp beside him.
 LOCKS: Rahul stays kneeling and still, facing screen-right. The painted figure faces screen-right, bowed, and never turns toward the viewer. Page text stays unreadable.
 AUDIO: a ceiling fan fading into a quiet stone room, a lamp flame's faint flutter. No dialogue, no music.
 Slow, calm transformation from photoreal into warm painterly illustration, like a painting blooming out of the page. Warm golden grade, one continuous shot, no cuts, no text.
@@ -459,9 +459,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "तो याकूब क्यों कहते हैं? वाक्य पूरा पढ़िए — एक-दूसरे के लिए प्रार्थना करो, कि चंगे हो जाओ। भाई के सामने मानना — माफ़ी के लिए नहीं; सहारे और प्रार्थना के लिए। दाऊद ने लिखा — जब तक चुप रहा, हड्डियाँ पिघलती रहीं। छिपा पाप अँधेरे में बढ़ता है।"
+*Voiceover:* "दाऊद ने परमेश्वर से कहा — जब तक मैं चुप रहा, मेरी हड्डियाँ घुलती रहीं। फिर याकूब क्यों कहते हैं? वाक्य पूरा पढ़िए — एक-दूसरे के लिए प्रार्थना करो। भाई के सामने मानना — माफ़ी के लिए नहीं; सहारे और प्रार्थना के लिए।"
 
-*On screen:* याकूब 5:16 — hold · भजन संहिता 32:3-5 · नीतिवचन 28:13
+*On screen:* भजन संहिता 32:3-5 · याकूब 5:16 — hold
 
 ```
 CAMERA: starts on the full painting; a slow push in toward the oil lamp's pool of light; the lamp's glow fills the frame and settles into the bare bulb on Sunil's veranda wall; ends on the medium two-shot of the two cane chairs.
@@ -474,9 +474,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "किसे बताएँ? भीड़ को नहीं। मंच से नहीं। एक भरोसेमंद, परिपक्व विश्वासी को — जो बात फैलाए नहीं, और ख़ुद को आपसे ऊपर न समझे। अगर आप मसीह में हैं — दोष का फ़ैसला क्रूस पर हो चुका।"
+*Voiceover:* "किसे बताएँ? भीड़ को नहीं। मंच से नहीं। एक भरोसेमंद, परिपक्व विश्वासी को — जो बात फैलाए नहीं, और ख़ुद को आपसे ऊपर न समझे।"
 
-*On screen:* नीतिवचन 11:13 · गलातियों 6:1 · रोमियों 3:23 · रोमियों 8:1 · कुलुस्सियों 2:14
+*On screen:* गलातियों 6:1-2
 
 ```
 CAMERA: starts on the medium two-shot of the two chairs; one slow, steady dolly straight in; ends on the medium close two-shot.
@@ -489,9 +489,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "माफ़ी ऊपर से मिलती है। सहारा बगल से।"
+*Voiceover:* "अगर आप मसीह में हैं — दोष का फ़ैसला क्रूस पर हो चुका। माफ़ी ऊपर से मिलती है। सहारा बगल से।"
 
-*On screen:* 1 यूहन्ना 1:9 · याकूब 5:16
+*On screen:* रोमियों 8:1
 
 Dissolve into the brand outro in the edit.
 ```
@@ -574,9 +574,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "आपको पता चल गया — एक भाई किसी पाप में फँसा है। तीन रास्ते हैं — चुप रहना, दूसरों को बताना, या वह, जो सबसे कठिन है। यीशु ने कहा — जा, और अकेले में उसे समझा। अकेले में। किसी और से पहले नहीं। पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है।"
+*Voiceover:* "आपको पता चल गया — एक भाई किसी पाप में फँसा है। अब तीन रास्ते हैं — चुप रहना, दूसरों को बताना… या वह, जो सबसे कठिन है। यीशु ने कहा — जा, और अकेले में उसे समझा।"
 
-*On screen:* मत्ती 18:15 · नीतिवचन 16:28 · नीतिवचन 17:9
+*On screen:* मत्ती 18:15
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -590,9 +590,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पौलुस लिखते हैं — तुम जो आत्मिक हो, नम्रता से उसे संभालो। आत्मिक — कोई पदवी नहीं। जो आत्मा के चलाए चलता है।"
+*Voiceover:* "अकेले में। किसी और से पहले नहीं। पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है। पौलुस लिखते हैं — ऐसे भाई को नम्रता से सँभालो।"
 
-*On screen:* गलातियों 6:1 · गलातियों 5:25
+*On screen:* गलातियों 6:1
 
 ```
 CAMERA: starts on the medium shot facing Amit's door; one slow dolly straight in and down to seated height; ends on the medium close two-shot on the step.
@@ -605,9 +605,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "और संभालना — पौलुस का यही शब्द उन मछुओं के लिए आया है, जो फटे जाल सुधार रहे थे। मक़सद बहस जीतना नहीं। जाल फिर काम का बने।"
+*Voiceover:* "सँभालना — पौलुस का यही शब्द उन मछुओं के लिए आया है, जो अपने फटे जाल सुधार रहे थे। मक़सद बहस जीतना नहीं — जाल फिर काम का बने।"
 
-*On screen:* मत्ती 4:21 · मरकुस 1:19
+*On screen:* मत्ती 4:21
 
 There is no page in this reel: the push goes into the warm light on their hands. Fallback: hard cut on the close of their hands.
 ```
@@ -621,9 +621,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "धीमी आवाज़। और अपनी भी चौकसी — कल आप भी गिर सकते हैं। यीशु कहते हैं — वह सुने, तो तू ने भाई को पा लिया। भाई को पाना — उसे हराना नहीं। पर जहाँ किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती।"
+*Voiceover:* "इसलिए धीमी आवाज़। और अपनी भी चौकसी — कल आप भी गिर सकते हैं। यीशु कहते हैं — वह सुन ले, तो तूने अपने भाई को पा लिया। पर जहाँ किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती।"
 
-*On screen:* गलातियों 6:1 · 1 कुरिन्थियों 10:12 · मत्ती 18:15 — hold · नीतिवचन 24:11 · रोमियों 13:3-4 — shown, not read
+*On screen:* गलातियों 6:1 · मत्ती 18:15
 
 ```
 CAMERA: starts on the full painting; a slow pull back and drop to sand level; the painted gold water settles into the real dusk sea; ends on the medium-wide of the two fishermen on the beach.
@@ -654,7 +654,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·5 — वह अब नहीं आता · S4·15
 Arjun has stopped coming. Rahul's messages show as seen, no reply. Grief, then prayer at night. The father running down the road in the painting. The reel ends on Rahul typing one more short message under the lamp, his door open to the corridor. No empty chair, no judgement, no promise that Arjun returns.
-**Cast:** Rahul alone · painted scene (the father running out to meet the returning man, the younger of two brothers, Luke 15 — the returning man beyond the frame) · **Hook text on frame 01:** "जिसके साथ आपने बाइबल पढ़ी — वह अब सभा में नहीं आता।"
+**Cast:** Rahul alone · painted scene (the father running out to meet the returning man, the younger of two brothers, Luke 15 — the returning man beyond the frame) · **Hook text on frame 01:** "वह अब सभा में नहीं आता।"
 
 **Staging.** Rahul's room from the reference. For frames 01–03 the camera
 stands **in the middle of the room facing the bed** along the back wall; the
@@ -724,7 +724,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "जिसके साथ आपने बाइबल पढ़ी — वह अब सभा में नहीं आता। संदेश देखता है, जवाब नहीं देता। ग़लती आपकी थी? यूहन्ना लिखते हैं — यीशु के भी बहुत-से चेले लौट गए, और फिर उनके साथ न चले। यीशु में कोई कमी नहीं थी। फिर भी लोग गए।"
+*Voiceover:* "जिसके साथ आपने बाइबल पढ़ी — वह अब सभा में नहीं आता। आपका संदेश देखता है, जवाब नहीं देता। ग़लती आपकी थी? बाइबल कहती है — यीशु के भी बहुत-से चेले लौट गए। यीशु में कोई कमी नहीं थी। फिर भी लोग गए।"
 
 *On screen:* यूहन्ना 6:66
 
@@ -739,9 +739,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "वचन ईमानदार है। पौलुस लिखते हैं — देमास संसार को प्रिय जानकर मुझे छोड़ गया। और अगली ही आयत में — मरकुस को साथ ले आ; वह सेवा के लिए मेरे काम का है। वही मरकुस — जो कभी बीच सफ़र लौट गया था।"
+*Voiceover:* "वचन ईमानदार है। पौलुस लिखते हैं — देमास मुझे छोड़ गया। और अगली ही आयत में — मरकुस को साथ ले आ; वह मेरे काम का है। वही मरकुस — जो कभी बीच सफ़र से लौट गया था।"
 
-*On screen:* 1 यूहन्ना 2:19 (reference only) · 2 तीमुथियुस 4:10-11 · प्रेरितों के काम 13:13 · 15:37-38
+*On screen:* 2 तीमुथियुस 4:10 · 2 तीमुथियुस 4:11 · प्रेरितों के काम 15:38
 
 ```
 CAMERA: starts on the close-up of Rahul's face; one slow arc left with a pull back, lowering to kneeling height; ends on the medium shot along the side of the bed.
@@ -754,9 +754,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "तो आख़िरी पन्ना आप नहीं लिखते। कौन किसका है — प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं। न डर बाँटिए, न झूठी तसल्ली।"
+*Voiceover:* "तो आख़िरी पन्ना आप नहीं लिखते। प्रभु अपनों को पहचानता है। फ़ैसला आपका नहीं। न डर बाँटिए, न झूठी तसल्ली।"
 
-*On screen:* 2 तीमुथियुस 2:19 · 1 कुरिन्थियों 4:5 · रोमियों 14:4
+*On screen:* 2 तीमुथियुस 2:19 · 1 यूहन्ना 2:19
 
 ```
 CAMERA: starts on the medium shot of Rahul kneeling at the bedside; one slow, steady push past his folded hands down into the open page until the paper fills the frame; ends on the full painting of the road.
@@ -769,9 +769,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "आपके लिए तीन काम बचते हैं — दुख, प्रार्थना, और खुला दरवाज़ा। यीशु की कहानी में पिता ने बेटे को रोका नहीं — पर दूर से ही देख लिया, और दौड़ा।"
+*Voiceover:* "तीन काम बचते हैं — दुख, प्रार्थना, और खुला दरवाज़ा। यीशु की कहानी में पिता ने बेटे को रोका नहीं — पर जब वह लौटा, दूर से देख लिया, और दौड़ पड़ा।"
 
-*On screen:* लूका 19:41 · रोमियों 9:2 · 1 शमूएल 12:23 · लूका 15:20
+*On screen:* लूका 15:20
 
 ```
 CAMERA: starts on the full painting; a slow push toward the gold light at the screen-left edge where the father is running; the gold light fills the frame and settles into the warm open doorway behind Rahul; ends on the medium shot of Rahul at the desk.
@@ -786,7 +786,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "ताना नहीं। दबाव नहीं। संदेश भेजते रहिए — दरवाज़ा खुला है।"
 
-*On screen:* लूका 15:20 · याकूब 5:19-20
+*On screen:* याकूब 5:19-20
 
 Dissolve into the brand outro in the edit.
 ```

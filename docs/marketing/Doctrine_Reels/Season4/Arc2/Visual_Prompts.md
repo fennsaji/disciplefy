@@ -40,8 +40,8 @@ frame.
 ---
 
 ## REEL 2·1 — एक साँस में · S4·06
-Vikram's terrace, evening, two plastic chairs. Vikram asks straight out: what is this gospel you stand on? Rahul takes one breath and says it plainly, hands still, nothing pushed across. The empty tomb in the painting. The two of them quiet on the terrace afterwards. No street, stage, crowd or leaflet.
-**Cast:** Rahul, Vikram · painted scene (the empty tomb at dawn — no figure) · **Hook text on frame 01:** "जिस सुसमाचार पर आप टिके हैं, वह है क्या?"
+Vikram's terrace, evening, two plastic chairs. Vikram asks straight out: what is the gospel — can you say it in one breath? Rahul takes one breath and says it plainly, hands still, nothing pushed across. The empty tomb in the painting. The two of them quiet on the terrace afterwards. No street, stage, crowd or leaflet.
+**Cast:** Rahul, Vikram · painted scene (the empty tomb at dawn — no figure) · **Hook text on frame 01:** "सुसमाचार क्या है — एक साँस में?"
 
 **Staging.** Vikram's rooftop terrace. The two plastic chairs stand near the
 front parapet, angled a little toward each other. At dusk the camera stands
@@ -111,9 +111,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "कोई सीधे पूछे — जिस सुसमाचार पर आप टिके हैं, वह है क्या? जवाब एक साँस में देना हो — तो क्या कुछ छूट जाएगा? पौलुस इसे सबसे पहली बात कहते हैं —"
+*Voiceover:* "सुसमाचार क्या है — एक साँस में बता सकते हैं? कोई आपसे सीधे पूछे, तो क्या कहेंगे? पौलुस इसे सबसे पहली बात कहते हैं।"
 
-*On screen:* 1 कुरिन्थियों 15:1-3
+*On screen:* 1 कुरिन्थियों 15:3
 
 ```
 CAMERA: starts on the medium two-shot from the front parapet; one slow dolly in, drifting slightly screen-left; ends on the close-up of Rahul.
@@ -128,7 +128,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "परमेश्वर पवित्र है; उसने हमें अपने लिए बनाया। हम सबने पाप किया — और पाप उसके दण्ड के लायक है।"
 
-*On screen:* यशायाह 6:3 · 1 पतरस 1:15-16 · कुलुस्सियों 1:16 · प्रकाशितवाक्य 4:11 · रोमियों 3:23 · रोमियों 6:23
+*On screen:* यशायाह 6:3 · उत्पत्ति 1:27 · रोमियों 3:23 · 6:23
 
 ```
 CAMERA: starts on the close-up of Rahul; one slow pull back, drifting screen-right; ends on the medium close two-shot of both men.
@@ -141,9 +141,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "परमेश्वर के बेटे, निष्पाप यीशु, हमारी जगह क्रूस पर मरे — वह दण्ड उन्होंने उठाया। गाड़े गए, और तीसरे दिन सचमुच जी उठे। इसलिए यीशु कहते हैं — मन फिराओ, और सुसमाचार पर विश्वास करो। उद्धार दान है, कमाई नहीं।"
+*Voiceover:* "परमेश्वर के बेटे, निष्पाप यीशु, हमारी जगह क्रूस पर मरे — वह दण्ड उन्होंने उठाया।"
 
-*On screen:* 2 कुरिन्थियों 5:21 · 1 पतरस 3:18 · यशायाह 53:5-6 · 1 कुरिन्थियों 15:4 · मरकुस 1:15 · इफिसियों 2:8-9
+*On screen:* 2 कुरिन्थियों 5:21 · 1 पतरस 3:18
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -157,9 +157,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "एक भी हटाइए — सुसमाचार नहीं बचता। पाप हटाइए — क्रूस बेमतलब। मन फिराव हटाइए — विश्वास बस हामी। यह बेहतर ज़िंदगी का वादा नहीं — पापियों की क्षमा की ख़बर है। ये शब्द जादू नहीं — रटकर दोहराने से कोई नहीं बचता।"
+*Voiceover:* "गाड़े गए, और तीसरे दिन सचमुच जी उठे। इसलिए यीशु कहते हैं — मन फिराओ, और सुसमाचार पर विश्वास करो। उद्धार दान है, कमाई नहीं। एक भी हटाइए — सुसमाचार नहीं बचता। मन फिराव हटाइए — विश्वास बस हामी रह जाता है।"
 
-*On screen:* लूका 24:46-47 · मत्ती 15:8 · रोमियों 10:10
+*On screen:* 1 कुरिन्थियों 15:4 · मरकुस 1:15 · इफिसियों 2:8-9
 
 ```
 CAMERA: starts on the full painting of the tomb; one slow push toward the first light on the horizon; the pale gold of the dawn settles into the warm glow of the city lights; ends on the wide shot from behind the two chairs.
@@ -172,9 +172,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "यह किसी पर आज़माने को नहीं — पहले खुद जानने को है। कोई पूछे, तो नम्रता और आदर से। सुसमाचार छोटा है — क्योंकि काम उन्होंने पूरा कर दिया।"
+*Voiceover:* "यह बेहतर ज़िंदगी का वादा नहीं — पापियों की क्षमा की ख़बर है। ये शब्द जादू नहीं। यह किसी पर आज़माने को नहीं — पहले खुद जानने को है। सुसमाचार छोटा है — क्योंकि काम यीशु ने पूरा कर दिया।"
 
-*On screen:* 1 पतरस 3:15 · यूहन्ना 19:30 · इब्रानियों 10:12
+*On screen:* यूहन्ना 19:30
 
 Dissolve into the brand outro in the edit.
 ```
@@ -190,7 +190,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·2 — ज़बान रुक गई · S4·07
 The office pantry. A friendly colleague asks Rahul why he goes to church; the words stick. The bus home, ashamed. 1 Corinthians 2 at his desk; the apostles praying in the painting; and the next day, the same pantry, the same colleague, an easy word over tea. No street preacher, no crowd, no family argument.
-**Cast:** Rahul, a colleague (one-off — friendly) · painted scene (the apostles praying together, Acts 4) · **Hook text on frame 01:** "बात यीशु तक पहुँची — और आपकी ज़बान रुक गई।"
+**Cast:** Rahul, a colleague (one-off — friendly) · painted scene (the apostles praying together, Acts 4) · **Hook text on frame 01:** "और आपकी ज़बान रुक गई।"
 
 **Staging.** The office pantry is a small room with the counter along the
 back wall — microwave screen-left, water cooler screen-right. The camera
@@ -258,9 +258,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "बात यीशु तक पहुँची — और आपकी ज़बान रुक गई। बाद में शर्म आई। तो क्या डरने वाला मसीही कमज़ोर मसीही है? पतरस एक दासी के सामने डरकर इनकार तक कर बैठे — और यीशु ने उन्हें लौटाया।"
+*Voiceover:* "बात यीशु तक पहुँची — और आपकी ज़बान रुक गई। बाद में शर्म आई। तो क्या डरने वाला मसीही कमज़ोर मसीही है? पतरस ने डरकर यीशु को पहचानने से इनकार कर दिया — और यीशु ने उन्हें फिर खड़ा किया।"
 
-*On screen:* लूका 22:56-57 · यूहन्ना 21:15-17
+*On screen:* लूका 22:56-62 · यूहन्ना 21:15-17
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -274,7 +274,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पौलुस लिखते हैं — मैं डरता और काँपता हुआ तुम्हारे पास आया। डर उनमें भी था। डर लगना अनोखा नहीं।"
+*Voiceover:* "पौलुस ने लिखा — मैं डरता और काँपता हुआ तुम्हारे पास आया। डर उनमें भी था। डर लगना अनोखा नहीं।"
 
 *On screen:* 1 कुरिन्थियों 2:3
 
@@ -290,9 +290,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "धमकियों के बीच प्रेरितों ने कोई तरकीब नहीं ढूँढी। प्रार्थना की — कि वचन हियाव से सुना सकें। और पवित्र आत्मा ने उन्हें भर दिया। हियाव सीखा नहीं जाता — माँगा जाता है।"
+*Voiceover:* "जब प्रेरितों को धमकाया गया, उन्होंने कोई तरकीब नहीं ढूँढी। प्रार्थना की — कि तेरा वचन हिम्मत से सुना सकें। और पवित्र आत्मा ने उन्हें भर दिया। हिम्मत सीखी नहीं जाती — माँगी जाती है।"
 
-*On screen:* प्रेरितों के काम 4:29 · प्रेरितों के काम 4:31 · इफिसियों 6:19-20
+*On screen:* प्रेरितों के काम 4:29-31
 
 ```
 CAMERA: starts on the close over-the-shoulder shot of the open page; one slow, steady push down into the page until the paper fills the frame; ends on the full painting of the praying room.
@@ -305,9 +305,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "पर हियाव का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं। पौलुस लिखते हैं — बाहर वालों से बुद्धि से बरताव करो; बातों में अनुग्रह हो। चतुराई पाप नहीं है। चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"
+*Voiceover:* "पर हिम्मत का मतलब भीड़ में चिल्लाना नहीं। घर में टकराना भी नहीं। चतुराई पाप नहीं है। चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"
 
-*On screen:* कुलुस्सियों 4:5-6 · मत्ती 10:16 · यूहन्ना 7:1 · सभोपदेशक 3:7 · नीतिवचन 15:22 · इब्रानियों 13:17
+*On screen:* कुलुस्सियों 4:5-6 · मत्ती 10:16 · नीतिवचन 15:22
 
 ```
 CAMERA: starts on the full painting; one slow push into the warm glow of the hanging lamps; the lamplight settles into the pantry's daylight; ends on the medium two-shot from the pantry doorway.
@@ -338,7 +338,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·3 — कसूर किसका? · S4·08
 The same terrace a week later. Vikram listened; now he smiles, pats Rahul's shoulder and goes down — conversation over. Rahul alone with the wind in the clothesline; watering a seedling in a clay pot; another evening with Vikram, the word spoken gently, nothing pressed; and Rahul praying at night, Vikram's lit window across the lane.
-**Cast:** Rahul, Vikram · **Hook text on frame 01:** "फिर मुस्कुराए — और बात वहीं ख़त्म।"
+**Cast:** Rahul, Vikram · **Hook text on frame 01:** "कसूर किसका था?"
 
 **Staging.** The terrace from Reel 2·1. In the chair frames the camera stands
 **at the front parapet looking back across the terrace**: **Rahul screen-left,
@@ -409,9 +409,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "आपने साफ़ बताया। उन्होंने ध्यान से सुना। फिर मुस्कुराए — और बात वहीं ख़त्म। कसूर किसका था? यीशु ने नीकुदेमुस से कहा — नया जन्म आत्मा से होता है।"
+*Voiceover:* "आपने साफ़ बताया। उन्होंने ध्यान से सुना। फिर मुस्कुराए — और बात वहीं ख़त्म। कसूर किसका था? यीशु ने कहा — नया जन्म पवित्र आत्मा से होता है।"
 
-*On screen:* यूहन्ना 3:3, 5-6
+*On screen:* यूहन्ना 3:5-8
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -425,7 +425,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "हवा जिधर चाहती है, चलती है; आप उसे चला नहीं सकते। आत्मा से जन्म भी ऐसा ही है। पौलुस लिखते हैं — मैंने लगाया, अपुल्लोस ने सींचा; बढ़ाया परमेश्वर ने।"
+*Voiceover:* "हवा जिधर चाहती है, चलती है; आप उसे चला नहीं सकते। आत्मा का काम भी ऐसा ही है। पौलुस लिखते हैं — मैंने लगाया, अपुल्लोस ने सींचा; पर बढ़ाया परमेश्वर ने।"
 
 *On screen:* यूहन्ना 3:8 · 1 कुरिन्थियों 3:6-7
 
@@ -440,9 +440,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "लगाना आपका काम। सींचना आपका काम। बढ़ाना — नहीं। अगर आपने सच्चाई और प्रेम से बताया — तो आपने अपना काम किया। इसलिए दबाव नहीं। लालच नहीं। गिनती नहीं। दबाव से सिर हिल सकता है — दिल नहीं बदलता।"
-
-*On screen:* 1 कुरिन्थियों 4:2 · 2 कुरिन्थियों 4:2 · 1 थिस्सलुनीकियों 2:3-5 · यहेजकेल 36:26
+*Voiceover:* "लगाना आपका काम। सींचना आपका काम। बढ़ाना — नहीं। इसलिए दबाव नहीं। लालच नहीं। गिनती नहीं। दबाव से सिर हिल सकता है — दिल नहीं बदलता।"
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -456,9 +454,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "पर इसका मतलब चुप रहना भी नहीं। आत्मा वचन से ही नया जन्म देते हैं — इसलिए वचन सुनाते रहिए, प्रेम से, बिना जल्दी के। और तसल्ली यह नहीं कि आख़िर में सब अपने-आप बच जाएँगे।"
+*Voiceover:* "पर इसका मतलब चुप रहना भी नहीं। पवित्र आत्मा वचन से ही नया जन्म देते हैं — इसलिए वचन सुनाते रहिए; प्रेम से, बिना जल्दी के।"
 
-*On screen:* 1 पतरस 1:23 · याकूब 1:18 · रोमियों 10:14, 17 · 2 तीमुथियुस 2:24-25 · यूहन्ना 3:18 · प्रेरितों के काम 17:30
+*On screen:* 1 पतरस 1:23 · रोमियों 10:17
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -472,9 +470,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "तसल्ली यह है — बचाने वाले आप नहीं। बचाता परमेश्वर है — और वह प्रार्थना सुनता है। आप लगाइए, सींचिए — और प्रतीक्षा कीजिए। फ़सल उसकी है।"
+*Voiceover:* "तसल्ली यह नहीं कि आख़िर में सब बच ही जाएँगे। तसल्ली यह है — बचाने वाले आप नहीं; परमेश्वर है। प्रार्थना कीजिए — फ़सल उसकी है।"
 
-*On screen:* रोमियों 10:1 · 1 तीमुथियुस 2:1-4 · 1 कुरिन्थियों 3:7 · याकूब 5:7
+*On screen:* 1 कुरिन्थियों 3:7 · रोमियों 10:1
 
 Dissolve into the brand outro in the edit.
 ```
@@ -490,7 +488,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·4 — सब धर्म एक ही? · S4·09
 Sunday lunch at Rahul's family home. His uncle — mama-ji, warm, white-haired — says it fondly over the rice: all religions teach the same thing. Rahul listens first, then answers gently. The women at the empty tomb in the painting. The uncle and Rahul on the veranda afterwards with tea, his hand on Rahul's knee. The elder is never an opponent.
-**Cast:** Rahul, his uncle (mama-ji), family at the table · painted scene (the women at the empty tomb at dawn) · **Hook text on frame 01:** "'सब धर्म एक ही बात सिखाते हैं।'"
+**Cast:** Rahul, his uncle (mama-ji), family at the table · painted scene (the women at the empty tomb at dawn) · **Hook text on frame 01:** "सब धर्म एक ही बात सिखाते हैं।"
 
 **Staging.** A rectangular dining table. The uncle sits **at the head of the
 table**, facing down its length toward the camera; Rahul sits on the long
@@ -559,9 +557,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "'सब धर्म एक ही बात सिखाते हैं।' जब यह बात घर का कोई बड़ा प्यार से कहे — तो आप चुप रहेंगे? या बहस जीतेंगे? पतरस लिखते हैं — जो आपसे आपकी आशा का कारण पूछे, उसे जवाब देने को तैयार रहिए; पर नम्रता और आदर से।"
-
-*On screen:* 1 पतरस 3:15-16
+*Voiceover:* "'सब धर्म एक ही बात सिखाते हैं।' जब घर का कोई बड़ा यह प्यार से कहे — तो आप चुप रहेंगे? या बहस जीतेंगे?"
 
 ```
 CAMERA: starts on the medium-wide from the foot of the table; one slow dolly in up the table, drifting slightly screen-right; ends on the close-up of Rahul.
@@ -574,9 +570,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पहले सुनिए। याकूब लिखते हैं — सुनने को तैयार, बोलने में धीमे। भलाई की बात हर घर में सिखाई जाती है — वह अच्छी है। यह खुलकर मानिए।"
+*Voiceover:* "पहले सुनिए। याकूब लिखते हैं — सुनने को तैयार रहो, बोलने में धीमे। भलाई की बात हर घर में सिखाई जाती है — वह अच्छी है। यह खुलकर मानिए।"
 
-*On screen:* याकूब 1:19 · रोमियों 2:14-15
+*On screen:* याकूब 1:19
 
 ```
 CAMERA: starts on the close-up of Rahul; one slow pull back, drifting screen-left; ends on the medium close two-shot of the uncle and Rahul.
@@ -589,9 +585,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "सुसमाचार भला बनने की सलाह नहीं — एक ख़बर है। यीशु हमारे पापों के लिए मरे, और जी उठे। आप इसलिए नहीं मानते कि हमारा धर्म बेहतर है — इसलिए कि वे जी उठे।"
+*Voiceover:* "फ़र्क बताइए। सुसमाचार भला बनने की सलाह नहीं — एक ख़बर है। यीशु हमारे पापों के लिए मरे, और जी उठे।"
 
-*On screen:* 1 कुरिन्थियों 15:3-4 · लूका 2:10-11 · 1 कुरिन्थियों 15:14, 17 · प्रेरितों के काम 17:31 · फिलिप्पियों 3:7-9 · इफिसियों 2:8-9
+*On screen:* 1 कुरिन्थियों 15:3-4
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -605,9 +601,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "बहस जीतना लक्ष्य नहीं। पौलुस लिखते हैं — प्रभु का दास झगड़ालू न हो; कोमलता से समझाए। नतीजा परमेश्वर के हाथ में है — आपके नहीं। बात गरम हो जाए — चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए।"
+*Voiceover:* "आप इसलिए नहीं मानते कि हमारा धर्म बेहतर है — इसलिए कि वे जी उठे। बाइबल कहती है — प्रभु का दास झगड़ालू न हो; कोमलता से समझाए। बात गरम हो जाए — तो रुक जाइए। चुप रहना भी इनकार नहीं। कोई बड़ा कदम अकेले मत उठाइए।"
 
-*On screen:* 2 तीमुथियुस 2:24-25 · 1 कुरिन्थियों 3:6 · यूहन्ना 7:1 · सभोपदेशक 3:7 · नीतिवचन 15:22 · इब्रानियों 13:17
+*On screen:* 1 कुरिन्थियों 15:14, 20 · 2 तीमुथियुस 2:24-25 · नीतिवचन 15:22
 
 ```
 CAMERA: starts on the full painting; one slow push into the dawn light above the open tomb; the rose-gold dawn settles into the low afternoon sun on the veranda; ends on the medium two-shot of the uncle and Rahul in their cane chairs.
@@ -620,9 +616,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "कारण भी दीजिए, आदर भी — एक के बिना दूसरा सुनाई नहीं देता।"
+*Voiceover:* "कारण भी दीजिए, आदर भी। एक के बिना दूसरा सुनाई नहीं देता।"
 
-*On screen:* इफिसियों 4:15 · कुलुस्सियों 4:6
+*On screen:* 1 पतरस 3:15
 
 Dissolve into the brand outro in the edit.
 ```
@@ -638,7 +634,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·5 — कहानी में कौन? · S4·10
 Rahul drafting his testimony in a notebook at night — and reading it back, something missing. Paul before Agrippa in the painting. Rahul strikes a line and writes the cross in. The reel ends on the church steps, telling his story to Joseph with the Bible open between them. No before/after, no job or money imagery.
-**Cast:** Rahul, Joseph · painted scene (Paul in chains before King Agrippa) · **Hook text on frame 01:** "'मैं ऐसा था। फिर यीशु मिले। अब सब ठीक है।'"
+**Cast:** Rahul, Joseph · painted scene (Paul in chains before King Agrippa) · **Hook text on frame 01:** "इसमें एक चीज़ ग़ायब है।"
 
 **Staging.** Rahul's desk faces a plain wall, a lamp **screen-left**. For every
 desk frame the camera stands **on the wall side of the desk, in front of Rahul
@@ -705,7 +701,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "'मैं ऐसा था। फिर यीशु मिले। अब सब ठीक है।' गवाही अच्छी लगती है। पर इसमें से एक चीज़ ग़ायब है। कौन-सी?"
+*Voiceover:* "'मैं ऐसा था। फिर यीशु मिले। अब सब ठीक है।' गवाही अच्छी लगती है। पर इसमें एक चीज़ ग़ायब है। कौन-सी?"
 
 ```
 CAMERA: starts on the close shot of the notebook from in front of the desk; one slow pull back and tilt up; ends on the medium close-up of Rahul's face.
@@ -718,9 +714,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पौलुस राजा अग्रिप्पा के सामने अपनी कहानी सुनाते हैं — दमिश्क का रास्ता। पर कहानी पर रुकते नहीं। अंत में कहते हैं — मसीह ने दुख उठाया, और मरे हुओं में से जी उठे; सब मन फिराकर परमेश्वर की ओर फिरें।"
+*Voiceover:* "पौलुस ने एक राजा के सामने अपनी कहानी सुनाई — कैसे यीशु उन्हें रास्ते में मिले।"
 
-*On screen:* प्रेरितों के काम 26:1-3 · प्रेरितों के काम 26:12-15 · प्रेरितों के काम 26:20, 22-23
+*On screen:* प्रेरितों के काम 26:12-18
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -734,9 +730,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "कहानी दरवाज़ा थी। संदेश मसीह थे। पौलुस लिखते हैं — हम अपना नहीं, मसीह यीशु का प्रचार करते हैं। ग़ायब था — क्रूस। पाप भी, और उसकी क्षमा भी।"
+*Voiceover:* "पर वे कहानी पर रुके नहीं। अंत में कहा — मसीह ने दुख उठाया, और मरे हुओं में से जी उठे; सब मन फिराकर परमेश्वर की ओर फिरें। कहानी दरवाज़ा थी। संदेश मसीह थे।"
 
-*On screen:* 2 कुरिन्थियों 4:5 · 1 कुरिन्थियों 2:2
+*On screen:* प्रेरितों के काम 26:20-23 · 2 कुरिन्थियों 4:5
 
 ```
 CAMERA: starts on the full painting; one slow push into the torchlight on the marble; the torchlight settles into the desk lamp's glow; ends on the close shot of the notebook from in front of the desk.
@@ -749,9 +745,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "यीशु मिले, और नौकरी लग गई — ऐसी गवाही लालच बन जाती है। बढ़ा-चढ़ाकर मत कहिए — सच की गवाही में झूठ की जगह नहीं। जो बचपन से वचन सुनकर मसीह पर टिका — बिना किसी बड़े मोड़ के — उसकी गवाही भी पूरी है। क्योंकि नायक आप नहीं।"
+*Voiceover:* "तो ग़ायब क्या था? क्रूस। पाप — और उसकी क्षमा। 'यीशु मिले, और नौकरी लग गई' — ऐसी गवाही लालच बन जाती है। जो बचपन से वचन सुनकर मसीह पर टिका, बिना किसी बड़े मोड़ के — उसकी गवाही भी पूरी है। क्योंकि नायक आप नहीं।"
 
-*On screen:* 2 कुरिन्थियों 2:17 · 1 थिस्सलुनीकियों 2:5 · 2 कुरिन्थियों 4:2 · इफिसियों 4:25 · 2 तीमुथियुस 3:15 · गलातियों 6:14 · 1 कुरिन्थियों 1:31
+*On screen:* 2 तीमुथियुस 3:15
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -767,7 +763,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "सुनने वाले को आपकी कहानी नहीं बचाएगी। उसे वही चाहिए, जो आपको चाहिए था — मसीह।"
 
-*On screen:* प्रेरितों के काम 4:12
+*On screen:* 1 कुरिन्थियों 2:2
 
 Dissolve into the brand outro in the edit.
 ```
