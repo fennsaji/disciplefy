@@ -58,7 +58,7 @@ wooden double door at the other end opening onto four concrete front steps.
 
 ## REEL 2·1 — प्रार्थना के लिए ही तो बताया था · S3·07
 The Wednesday prayer meeting. A man stands and shares what is happening at home — seen only from behind. Afterwards, at the chai stall, Amit leans in: 'so what's really going on there?' Rahul's mouth stays shut. James 3 on the bus home; and the reel ends with Rahul on the church steps, praying with the man who shared. No whispering, no aunties, no phone thread.
-**Cast:** Rahul, Amit, a man from the church (seen only from behind) · **Hook text on frame 01:** "प्रार्थना के लिए ही तो बताया था — उसके घर में क्या चल रहा है।"
+**Cast:** Rahul, Amit, a man from the church (seen only from behind) · **Hook text on frame 01:** "बस प्रार्थना के लिए बता रहा हूँ…"
 
 **Staging.** Four places, so three clips are CUT-OUTs. In the church hall the
 chairs are pulled into a circle in the middle of the floor; the camera stands
@@ -138,9 +138,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "प्रार्थना के लिए ही तो बताया था — उसके घर में क्या चल रहा है। फिर वही बात तीन घरों तक पहुँची। गलती कहाँ हुई? याकूब लिखते हैं — जीभ छोटा-सा अंग है; चिंगारी बड़े जंगल को जला देती है।"
+*Voiceover:* "'बस प्रार्थना के लिए बता रहा हूँ…' और वही बात तीन घरों तक पहुँच गई। याकूब लिखते हैं — जीभ छोटी-सी है; पर एक चिंगारी पूरा जंगल जला देती है।"
 
-*On screen:* याकूब 3:5-6
+*On screen:* याकूब 3:5
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -154,9 +154,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "एक ही मुँह से स्तुति भी, शाप भी — ऐसा नहीं होना चाहिए। पौलुस चुगलखोरों और निंदकों को उसी सूची में रखते हैं, जिसमें हत्या। कलीसिया में आम पाप — और सबसे हल्का समझा गया।"
+*Voiceover:* "एक ही मुँह से परमेश्वर की स्तुति, और उसी से किसी की बुराई। बाइबल चुगली और निंदा को उसी सूची में रखती है, जिसमें हत्या है।"
 
-*On screen:* याकूब 3:9-10 · रोमियों 1:29-30 · 2 कुरिन्थियों 12:20 · नीतिवचन 16:28
+*On screen:* याकूब 3:9-10 · रोमियों 1:29-30
 
 ```
 CAMERA: starts on the medium two-shot across the lane; one slow, steady dolly straight in, drifting slightly screen-right; ends on the medium close-up of Rahul with Amit's shoulder soft at the screen-left edge.
@@ -169,9 +169,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "पर इलाज चुप्पी नहीं — चुप्पी पवित्रता नहीं। पौलुस लिखते हैं — कोई गंदी बात मुँह से न निकले; वह निकले जो उन्नति करे, सुनने वालों पर अनुग्रह हो।"
+*Voiceover:* "पर इलाज चुप्पी नहीं — चुप्पी पवित्रता नहीं। बाइबल कहती है — मुँह से वही निकले, जो सुनने वाले को बनाए, गिराए नहीं।"
 
-*On screen:* याकूब 3:2 · इफिसियों 4:15 · इफिसियों 4:29
+*On screen:* इफिसियों 4:29
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -187,7 +187,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "जड़ ज़बान में नहीं। यीशु ने कहा — जो मन में भरा है, वही मुँह पर आता है। याकूब मानते हैं — ज़बान को कोई मनुष्य वश में नहीं कर सकता।"
 
-*On screen:* मत्ती 12:34 · लूका 6:45 · याकूब 3:8
+*On screen:* मत्ती 12:34 · याकूब 3:8
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -201,9 +201,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "यह काम आत्मा का है। जो मसीह के हैं, उन्होंने शरीर को उसकी लालसाओं समेत क्रूस पर चढ़ा दिया है — ज़बान समेत।"
+*Voiceover:* "यह काम पवित्र आत्मा का है। अगर आप मसीह में हैं — वे मन बदलते हैं, तब ज़बान बदलती है।"
 
-*On screen:* गलातियों 5:24 · गलातियों 5:22-23
+*On screen:* गलातियों 5:22-24
 
 Dissolve into the brand outro in the edit.
 ```
@@ -219,7 +219,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·2 — यीशु ने मेज़ें उलट दीं · S3·08
 The parcel counter from Season 2. A customer throws a parcel back across the counter and says something contemptuous; heat rises in Rahul's jaw. The temple tables in the painting — Jesus from behind. Rahul steps out to the back lane, breathes, comes back and serves the next person; the sun goes down on no anger. No home, no family, anywhere.
-**Cast:** Rahul, a rude customer (one-off), a queue (background) · painted scene (Jesus overturning the tables — from behind, no face) · **Hook text on frame 01:** "यीशु ने मंदिर में मेज़ें उलट दीं।"
+**Cast:** Rahul, a rude customer (one-off), a queue (background) · painted scene (Jesus overturning the tables — from behind, no face) · **Hook text on frame 01:** "तो मेरा गुस्सा भी ठीक है — है न?"
 
 **Staging.** The parcel office: a steel counter runs across the frame, Rahul
 behind it, the back wall behind him with a narrow **back door at
@@ -291,9 +291,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "यीशु ने मंदिर में मेज़ें उलट दीं। तो जब मुझे गुस्सा आता है — क्या वह भी पवित्र है? हर क्रोध पाप नहीं। यीशु क्रोधित हुए — और निष्पाप रहे।"
+*Voiceover:* "यीशु ने मंदिर में मेज़ें उलट दीं। तो मेरा गुस्सा भी ठीक है — है न? हर क्रोध पाप नहीं। यीशु क्रोधित हुए — और निष्पाप रहे।"
 
-*On screen:* यूहन्ना 2:15-17 · मरकुस 3:5 · इब्रानियों 4:15
+*On screen:* यूहन्ना 2:15 · मरकुस 3:5
 
 ```
 CAMERA: starts on the medium shot across the counter; one slow, steady dolly straight in toward Rahul; ends on the close-up of his face.
@@ -306,14 +306,14 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · PAINT BLOOM · 0:10–0:20
 
-*Voiceover:* "पर किस पर? परमेश्वर के घर के अपमान पर, कठोर मनों पर — अपने लिए नहीं। हमारा अक्सर अपने लिए होता है। यीशु ने कहा — हत्या ही नहीं; जो भाई पर क्रोध करे, वह भी दंड के योग्य है।"
+*Voiceover:* "पर उनका क्रोध किस बात पर था? परमेश्वर के घर के अपमान पर — अपने लिए नहीं। हमारा गुस्सा अक्सर अपने लिए होता है। और यीशु ने कहा — जो अपने भाई पर क्रोध करे, वह भी दंड के योग्य है।"
 
-*On screen:* यूहन्ना 2:17 · मरकुस 3:5 · मत्ती 5:21-22
+*On screen:* मत्ती 5:21-22
 
 Fallback: hard cut on the close-up of Rahul.
 ```
 CAMERA: starts on the close-up of Rahul's face; one slow, steady push in toward the hot light on his cheek until it fills the frame; ends on the full painting of the temple court.
-ACTION: opening — Rahul stays still, breath held. Middle — the hard light on his face flares into gold and fills the frame; skin texture softens into gouache brushwork. Landing — the painting resolves: the robed figure from behind at centre, the table going over, coins and doves in the air.
+ACTION: opening — the hard light on Rahul's face flares into gold and fills the frame; skin texture softens into gouache brushwork. Middle — the painting resolves: the robed figure from behind at centre, the table going over, coins and doves in the air. Landing — the painting holds.
 LOCKS: Jesus is only ever seen from behind; no face appears. The traders stay in profile; nobody faces the viewer.
 AUDIO: the counter-room hum fading into a soft rush of wind and the flutter of wings. No dialogue, no music.
 Slow, calm transformation from photoreal into warm painterly illustration, like a painting blooming out of the page. Warm golden grade, one continuous shot, no cuts, no text.
@@ -322,13 +322,13 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "हत्या बाहर बाद में — पहले भीतर सुलगती है। दबा देना भी हल नहीं। पौलुस लिखते हैं — क्रोध तो करो, पर पाप मत करो; सूरज ढलने तक क्रोध न रहे; शैतान को जगह मत दो।"
+*Voiceover:* "क्योंकि हत्या हाथ से पहले मन में शुरू होती है। पर दबा देना भी हल नहीं। बाइबल कहती है — क्रोध तो करो, पर पाप मत करो; सूरज डूबने तक क्रोध न रहे।"
 
-*On screen:* 1 यूहन्ना 3:15 · इफिसियों 4:26-27
+*On screen:* इफिसियों 4:26-27
 
 ```
 CAMERA: starts on the full painting; one slow push into the bright sky between the columns; the gold light fills the frame and settles into the warm sliver of sun at the top of the back lane; ends on the medium shot of Rahul against the wall.
-ACTION: opening — the doves drift upward slowly; the robed figure stays still, seen from behind. Middle — the painting's gold light fills the frame and fades. Landing — the lane resolves: Rahul against the office wall, eyes closed, Bible held to his chest, taking one slow breath.
+ACTION: opening — the painting's gold light fills the frame and fades, the doves drifting up out of it. Middle — the lane resolves: Rahul against the office wall, eyes closed, Bible held to his chest. Landing — he takes one slow breath and holds still.
 LOCKS: Jesus stays seen from behind, no face. In the lane, Rahul stays against the wall facing across the lane, eyes closed; he does not look at the lens.
 AUDIO: wings fading into a quiet back lane, a distant pressure horn, a crow. No dialogue, no music.
 Slow, calm transformation from warm painterly illustration back into photoreal, the painting's sky becoming the lane's sunlight. Warm golden grade, one continuous shot, no cuts, no text.
@@ -337,7 +337,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "और याकूब — सुनने में तत्पर, बोलने में धीर, क्रोध में धीमे; मनुष्य का क्रोध परमेश्वर की धार्मिकता नहीं लाता।"
+*Voiceover:* "याकूब लिखते हैं — सुनने को तैयार, बोलने में धीमे, क्रोध में धीमे रहो।"
 
 *On screen:* याकूब 1:19-20
 
@@ -353,9 +353,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जो मसीह के हैं — जिस क्रोध के वे योग्य थे, वह क्रूस पर उतरा। उन्होंने शरीर को क्रूस पर चढ़ा दिया है। संयम आत्मा का फल है — आग वही धीमी करते हैं।"
+*Voiceover:* "अगर आप मसीह में हैं — आप पर आने वाला परमेश्वर का क्रोध यीशु ने क्रूस पर सह लिया। संयम आत्मा का फल है — भीतर की आग वही ठंडी करते हैं।"
 
-*On screen:* रोमियों 5:9 · 1 थिस्सलुनीकियों 1:10 · गलातियों 5:23-24
+*On screen:* रोमियों 5:9 · गलातियों 5:22-23 · गलातियों 5:24 — shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -371,7 +371,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·3 — किसी ने देखा भी नहीं · S3·09
 No person appears in this reel — by rule. A still basin of water at night; an open Bible; water poured into a brass basin; a stream at first light; the Bible again in the morning. The reel is water and a page.
-**Cast:** No one. No body, silhouette, device, screen, bed or couple in any frame. · **Hook text on frame 01:** "कुछ किया नहीं। किसी ने देखा भी नहीं। बस मन में — बार-बार।"
+**Cast:** No one. No body, silhouette, device, screen, bed or couple in any frame. · **Hook text on frame 01:** "बस मन में — बार-बार।"
 
 **Staging.** One room and one stream. In the room a plain wooden desk stands
 against a whitewashed wall on a stone floor; the wide **brass basin sits on the
@@ -441,9 +441,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, HDR, oversaturated, c
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "कुछ किया नहीं। किसी ने देखा भी नहीं। बस मन में — बार-बार। क्या वचन इसे भी गिनता है? यीशु ने कहा — जो बुरी इच्छा से देखता है, वह मन में व्यभिचार कर चुका।"
+*Voiceover:* "कुछ किया नहीं। किसी ने देखा भी नहीं। बस मन में — बार-बार। क्या परमेश्वर इसे भी गिनता है? यीशु ने कहा — जो बुरी इच्छा से देखता है, वह मन में व्यभिचार कर चुका।"
 
-*On screen:* मत्ती 5:27-28
+*On screen:* मत्ती 5:28
 
 ```
 CAMERA: starts straight down over the still basin; holds for the first beat, then one slow crane up with a gentle slide screen-left, still looking straight down; ends straight down over the desk top and the open Bible.
@@ -456,9 +456,9 @@ Negative: any person, hands, arm, body, silhouette, shadow of a person, objects 
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पाप काम से पहले मन में होता है — पवित्रता भी वहीं से। पौलुस लिखते हैं — परमेश्वर की इच्छा है कि तुम पवित्र बनो; व्यभिचार से बचे रहो। आपकी देह पवित्र आत्मा का मंदिर है। आप अपने नहीं — दाम देकर मोल लिए गए हैं। नियम से पहले — एक दाम।"
+*Voiceover:* "पाप काम से पहले मन में होता है — पवित्रता भी वहीं से। बाइबल विश्वासियों से कहती है — आपकी देह पवित्र आत्मा का मंदिर है; आप दाम देकर मोल लिए गए हैं।"
 
-*On screen:* मरकुस 7:21-23 · 1 थिस्सलुनीकियों 4:3-5 · 1 कुरिन्थियों 6:19-20 · याकूब 1:14-15
+*On screen:* 1 कुरिन्थियों 6:18-20 · 1 थिस्सलुनीकियों 4:3
 
 ```
 CAMERA: starts straight down over the open Bible; one slow crane down with a gentle slide screen-right, still looking straight down; ends straight down over the basin, the lota's spout at the top edge.
@@ -471,9 +471,9 @@ Negative: any person, hands, arm, body, silhouette, shadow of a person, objects 
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "और जो गिर चुके हैं — मन में, या उससे आगे — पौलुस उसी कलीसिया को लिखते हैं — तुम में से कितने ऐसे ही थे; पर धोए गए, पवित्र किए गए, धर्मी ठहरे।"
+*Voiceover:* "और जो गिर चुके हैं — मन में, या उससे आगे — पौलुस उसी कलीसिया को लिखते हैं — तुम में से कितने ऐसे ही थे; पर तुम धोए गए, पवित्र किए गए, धर्मी ठहरे।"
 
-*On screen:* 1 कुरिन्थियों 6:11 — hold
+*On screen:* 1 कुरिन्थियों 6:11
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -487,9 +487,9 @@ Negative: any person, hands, arm, body, silhouette, shadow of a person, objects 
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "छिपिए मत — मान लीजिए; वह क्षमा करने में विश्वासयोग्य है। पवित्रता से आप उसके नहीं बनते; उसके हैं — इसलिए पवित्र।"
+*Voiceover:* "इसलिए छिपिए मत — मान लीजिए; वह माफ़ करने में विश्वासयोग्य है। पवित्रता से आप उसके नहीं बनते; उसके हैं — इसलिए पवित्र।"
 
-*On screen:* 1 यूहन्ना 1:9 · 1 कुरिन्थियों 1:2 · इफिसियों 2:10
+*On screen:* 1 यूहन्ना 1:9
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -503,9 +503,9 @@ Negative: any person, hands, arm, body, silhouette, shadow of a person, objects 
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जो मसीह के हैं, उन्होंने शरीर को उसकी अभिलाषाओं समेत क्रूस पर चढ़ा दिया है।"
+*Voiceover:* "जो मसीह के हैं, उन्होंने अपने पापी स्वभाव को उसकी बुरी इच्छाओं समेत क्रूस पर चढ़ा दिया है। और आप अकेले नहीं लड़ते।"
 
-*On screen:* गलातियों 5:24
+*On screen:* गलातियों 5:24 · गलातियों 5:16
 
 Dissolve into the brand outro in the edit.
 ```
@@ -521,7 +521,7 @@ Negative: any person, hands, arm, body, silhouette, shadow of a person, objects 
 
 ## REEL 2·4 — अब तुम्हारी बारी कब? · S3·10
 A cousin's wedding reception. An auntie pats Rahul's cheek: 'अब तुम्हारी बारी कब?' He laughs; at home, alone, he doesn't. 1 Corinthians 7 at his desk; Rahul helping at the church's adult reading class on Sunday — a season, not a waiting room; and his mother at the kitchen table, her worry met with a hand over hers and no promise. No wedding couple on screen.
-**Cast:** Rahul, an auntie (one-off), the adult reading class (background), Rahul's mother · **Hook text on frame 01:** "हर शादी में वही सवाल — अब तुम्हारी बारी कब?"
+**Cast:** Rahul, an auntie (one-off), the adult reading class (background), Rahul's mother · **Hook text on frame 01:** "अब तुम्हारी बारी कब?"
 
 **Staging.** Four places, so three clips are CUT-OUTs. On the reception lawn
 the camera stands at the back of the lawn; the stage is somewhere far beyond
@@ -597,9 +597,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "हर शादी में वही सवाल — अब तुम्हारी बारी कब? और घर लौटकर, अकेले में — क्या मुझमें कुछ कमी है? यीशु ने कभी शादी नहीं की। पौलुस भी अविवाहित थे। उनमें क्या कमी थी?"
+*Voiceover:* "'अब तुम्हारी बारी कब?' हर शादी में यही सवाल। और घर लौटकर, अकेले में — क्या मुझमें कोई कमी है? यीशु ने शादी नहीं की। पौलुस भी अविवाहित थे। उनमें क्या कमी थी?"
 
-*On screen:* मत्ती 19:12 · 1 कुरिन्थियों 7:7-8
+*On screen:* 1 कुरिन्थियों 7:7-8
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -613,9 +613,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पौलुस लिखते हैं — हर एक को परमेश्वर से अपना-अपना वरदान मिला है। अविवाहित रहना भी वरदान है — अधूरापन नहीं। वे कहते हैं — अविवाहित बिना बँटे मन से प्रभु की बातों में लग सकते हैं।"
+*Voiceover:* "पौलुस लिखते हैं — हर एक को परमेश्वर से अपना-अपना वरदान मिला है। अविवाहित रहना भी वरदान है — अधूरापन नहीं।"
 
-*On screen:* 1 कुरिन्थियों 7:7-8 · 1 कुरिन्थियों 7:38 · 1 कुरिन्थियों 7:32-35
+*On screen:* 1 कुरिन्थियों 7:7
 
 ```
 CAMERA: starts on the medium close-up of Rahul on the bed edge; one slow dolly in and up while tilting down; ends on the close shot looking down onto the open book on his knees, his face out of frame above.
@@ -628,9 +628,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "यह इंतज़ार का कमरा नहीं — सेवा का मौसम है; किसी के लिए कुछ बरस, किसी के लिए उम्र भर। घर वालों की फ़िक्र प्रेम से आती है। जवाब आदर है — ग़ुस्सा नहीं; और कोई वादा भी नहीं।"
+*Voiceover:* "यह इंतज़ार का कमरा नहीं — सेवा का मौसम है — कुछ साल का, या उम्र भर का। घर वालों की फ़िक्र प्रेम से आती है। जवाब आदर से दीजिए।"
 
-*On screen:* 1 कुरिन्थियों 7:35 · यशायाह 56:4-5 · इफिसियों 6:2 · 1 पतरस 3:15
+*On screen:* 1 कुरिन्थियों 7:32-35 · इफिसियों 6:2
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -644,9 +644,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "वचन यह वादा नहीं करता कि साथी मिलेगा ही। वादा यह है — वह आपको कभी नहीं छोड़ेगा। और जब चुनें — केवल प्रभु में। जल्दी में भी यह शर्त नहीं बदलती।"
+*Voiceover:* "वचन यह वादा नहीं करता कि साथी मिलेगा ही। पर अगर आप मसीह में हैं — वादा यह है: परमेश्वर आपको कभी नहीं छोड़ेगा। और आपकी पहचान किसी रिश्ते से नहीं, उनसे है।"
 
-*On screen:* इब्रानियों 13:5 · 1 कुरिन्थियों 7:39
+*On screen:* इब्रानियों 13:5 · कुलुस्सियों 2:10
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -660,9 +660,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जो मसीह के हैं, उनकी पहचान रिश्ते से नहीं — उससे है। आप उसी में भरपूर हैं।"
+*Voiceover:* "और जब चुनें — केवल प्रभु में।"
 
-*On screen:* कुलुस्सियों 2:10 · गलातियों 5:24
+*On screen:* 1 कुरिन्थियों 7:39 · गलातियों 5:24 — shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -678,7 +678,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·5 — हर शाम · S3·11
 Evening in a one-room flat. Manoj, a man from the church, sits alone by the window as he does every evening; across from him an empty chair. No bottle, no bar, no drunkenness on screen — only the evening, the window and the chair. A knock; Sunil and Rahul at the door; and the chair gets filled.
-**Cast:** Manoj (new — see reference below), Sunil, Rahul. Alcohol is never shown. · **Hook text on frame 01:** "पर जो हर शाम पिए बिना रह नहीं पाता — उससे बात कौन करता है?"
+**Cast:** Manoj (new — see reference below), Sunil, Rahul. Alcohol is never shown. · **Hook text on frame 01:** "उससे बात कौन करता है?"
 
 **Staging.** Manoj's one-room flat: a small table stands under the window; the
 **front door is in the side wall at screen-left**. The camera always stands in
@@ -752,9 +752,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "एक गिलास — पाप है या नहीं? बहस बहुत होती है। पर जो हर शाम पिए बिना रह नहीं पाता — उससे बात कौन करता है? पौलुस लिखते हैं — दाखरस से मतवाले न बनो; आत्मा से भरते जाओ। नाम मतवालेपन का लिया गया है।"
+*Voiceover:* "जो हर शाम पिए बिना रह नहीं पाता — उससे बात कौन करता है? लोग बहस करते हैं — एक गिलास पाप है या नहीं। बाइबल कहती है — दाखरस से मतवाले मत बनो; पवित्र आत्मा से भरते जाओ।"
 
-*On screen:* इफिसियों 5:18 · गलातियों 5:21 · नीतिवचन 23:29-35
+*On screen:* इफिसियों 5:18
 
 ```
 CAMERA: starts on the medium-wide from the corner; one slow dolly forward across the room with a gentle pan screen-right; ends on the close shot of the empty chair, Manoj's hand at the screen-left edge.
@@ -767,9 +767,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "बिल्कुल न पीना — बहुतों का अच्छा चुनाव है। पर वचन उसे सब पर नियम नहीं बनाता। और पौलुस लिखते हैं — मैं किसी भी चीज़ के वश में नहीं होऊँगा। जो आपको चलाने लगे, वह मालिक बन बैठा। मालिक एक ही है।"
+*Voiceover:* "बिल्कुल न पीना — बहुतों का अच्छा चुनाव है। पर वचन उसे सब पर नियम नहीं बनाता। पौलुस लिखते हैं — मैं किसी भी चीज़ के वश में नहीं होऊँगा। जो चीज़ आपको चलाने लगे, वह मालिक बन बैठी।"
 
-*On screen:* रोमियों 14:3, 21 · भजन संहिता 104:15 — shown, not read · 1 कुरिन्थियों 6:12 · मत्ती 6:24 · रोमियों 6:16
+*On screen:* रोमियों 14:3 · 1 कुरिन्थियों 6:12
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -783,7 +783,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "जो बँध चुका है — वह तिरस्कार का नहीं, बहाली का व्यक्ति है। पौलुस लिखते हैं — जो आत्मिक हैं, वे उसे नम्रता से संभालें।"
+*Voiceover:* "और जो बँध चुका है — उसे धिक्कारना नहीं, वापस उठाना है। बाइबल कहती है — उसे नम्रता से सँभालो।"
 
 *On screen:* गलातियों 6:1
 
@@ -799,9 +799,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "प्रार्थना — हाँ। पर अकेले नहीं, और सिर्फ़ प्रार्थना नहीं। कलीसिया साथ चले; और मदद भी लीजिए — टूटी हड्डी की तरह। कुरिन्थुस में कुछ ऐसे ही बँधे थे — पर धोए गए।"
+*Voiceover:* "प्रार्थना — हाँ। पर अकेले नहीं, और सिर्फ़ प्रार्थना नहीं। कलीसिया साथ चले; और इलाज की मदद भी लीजिए — इसमें कोई शर्म नहीं।"
 
-*On screen:* गलातियों 6:2 · याकूब 5:16 · 1 कुरिन्थियों 6:10-11 — hold
+*On screen:* याकूब 5:16
 
 ```
 CAMERA: starts on the medium shot of the doorway from the corner; one slow pan right of about eighty degrees, following the three men across the room; ends on the medium-wide of the table under the window.
@@ -814,9 +814,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जो मसीह के हैं, उन्होंने शरीर को क्रूस पर चढ़ा दिया है। भरे जाइए — आत्मा से।"
+*Voiceover:* "अगर आप मसीह में हैं — यह ज़ंजीर आपकी पहचान नहीं। पवित्र आत्मा से भरते जाइए।"
 
-*On screen:* गलातियों 5:24 · इफिसियों 5:18
+*On screen:* 1 कुरिन्थियों 6:11 · इफिसियों 5:18 · गलातियों 5:24 — shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -903,9 +903,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "पड़ोसी के बेटे के नंबर। सहेली की शादी। किसी का चेहरा। आपने बधाई दी — और भीतर कुछ चुभा। पौलुस डाह को शरीर के कामों में गिनते हैं, और लिखते हैं — एक-दूसरे से डाह न करें।"
+*Voiceover:* "पड़ोसी के बेटे के नंबर। दोस्त की शादी। किसी का चेहरा। आपने बधाई दी — और भीतर कुछ चुभा। बाइबल इस चुभन को नाम देती है — डाह; यानी जलन।"
 
-*On screen:* गलातियों 5:21 · गलातियों 5:26
+*On screen:* गलातियों 5:21, 26
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -919,9 +919,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "आसाप मानते हैं — मेरे पाँव फिसलने को थे; मैं घमंडियों का सुख देखकर डाह करता था। डाह परमेश्वर पर एक आरोप है — उसने मेरे साथ ठीक नहीं किया।"
+*Voiceover:* "भजन लिखने वाले आसाप ने माना — दुष्टों का सुख देखकर मैं जलता था। जलन असल में परमेश्वर पर एक आरोप है — तूने मेरे साथ ठीक नहीं किया।"
 
-*On screen:* भजन संहिता 73:2-3 · भजन संहिता 73:13-14
+*On screen:* भजन संहिता 73:2-3
 
 ```
 CAMERA: starts on the high close shot of the invitation from behind Rahul's right shoulder; one slow tilt up from the desk top to the mirror on the wall above it; ends on his reflected face.
@@ -934,9 +934,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "आसाप का मन कब बदला? जब वे परमेश्वर के पवित्र स्थान में गए। फिर लिखा — स्वर्ग में तेरे सिवा मेरा कौन है? पृथ्वी पर तेरे सिवा मैं कुछ नहीं चाहता।"
+*Voiceover:* "आसाप का मन कब बदला? जब वे परमेश्वर के पवित्र स्थान में गए। वहाँ उन्होंने कहा — स्वर्ग में तेरे सिवा मेरा कौन है? और पृथ्वी पर तेरे सिवा मैं कुछ नहीं चाहता।"
 
-*On screen:* भजन संहिता 73:16-17 · भजन संहिता 73:25-26 — hold
+*On screen:* भजन संहिता 73:17 · भजन संहिता 73:25
 
 Fallback: hard cut on the mirror close-up.
 ```
@@ -950,9 +950,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "इलाज यह नहीं कि आपको भी वैसा मिलेगा — अगर आप मसीह में हैं, आपके पास वह है, जो सबसे बढ़कर है। संतोष सिर्फ़ पैसे का नहीं — चेहरे, नंबर, शादी का भी।"
+*Voiceover:* "इलाज यह नहीं कि आपको भी वैसा ही मिलेगा। अगर आप मसीह में हैं — परमेश्वर खुद आपका है। संतोष सिर्फ़ पैसे का नहीं — चेहरे, नंबर और शादी का भी।"
 
-*On screen:* फिलिप्पियों 4:11-13
+*On screen:* फिलिप्पियों 4:11-12
 
 ```
 CAMERA: starts on the full painting; one slow push up the steps toward the lit sanctuary doors; the gold doorway light fills the frame and settles into the warm light of the church's open door; ends on the medium-wide of Rahul at the threshold.
@@ -965,9 +965,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जो मसीह के हैं, उन्होंने शरीर को क्रूस पर चढ़ा दिया है — तुलना की चुभन समेत। आत्मा वह दिल उगाते हैं, जो दूसरे के आनंद में आनंदित हो।"
+*Voiceover:* "पवित्र आत्मा वह दिल उगाते हैं, जो दूसरे की ख़ुशी में सच में ख़ुश हो सके।"
 
-*On screen:* गलातियों 5:24 · रोमियों 12:15
+*On screen:* रोमियों 12:15 · गलातियों 5:22-24
 
 Dissolve into the brand outro in the edit.
 ```
@@ -983,7 +983,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·7 — शुभ मुहूर्त · S3·13
 Joseph from Season 2 is getting married, and the date has to be fixed. A wall calendar with no date circled; his mother at the table, gentle; Deuteronomy open. The Ephesian believers burning their own scrolls in the painting. The last frame: the same calendar, a date circled in plain ink, the Bible open beside it. No deity, shrine, priest, thread, zodiac, festival or place in any frame.
-**Cast:** Joseph, his mother (one-off — plain, warm) · painted scene (the Ephesian believers burning their scrolls) · **Hook text on frame 01:** "कोई कहता है — पहले शुभ मुहूर्त निकलवा लो। नुक़सान क्या है?"
+**Cast:** Joseph, his mother (one-off — plain, warm) · painted scene (the Ephesian believers burning their scrolls) · **Hook text on frame 01:** "पहले शुभ मुहूर्त निकलवा लो।"
 
 **Staging.** The family dining room: the plain wall calendar hangs on the end
 wall, and the dining table runs from that wall toward the camera. The camera
@@ -1052,7 +1052,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "आपकी शादी की तारीख़ तय होनी है। कोई कहता है — पहले शुभ मुहूर्त निकलवा लो। नुक़सान क्या है? यह शब्द बाइबल में है।"
+*Voiceover:* "'पहले शुभ मुहूर्त निकलवा लो।' शादी की तारीख़ तय करनी है। नुक़सान क्या है?"
 
 ```
 CAMERA: starts on the close shot of the calendar; holds for a beat, then one slow pull back along the table's length while tilting down; ends on the medium two-shot of mother and Joseph at the table.
@@ -1065,7 +1065,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "व्यवस्थाविवरण में परमेश्वर कहता है — तुम में कोई भावी कहने वाला न हो, न शुभ-अशुभ मुहूर्त मानने वाला, न टोना करने वाला। पौलुस भी टोने को शरीर के कामों में गिनते हैं।"
+*Voiceover:* "बाइबल में परमेश्वर कहता है — तुम में कोई भावी कहने वाला न हो, न शुभ-अशुभ मुहूर्त मानने वाला, न टोना करने वाला।"
 
 *On screen:* व्यवस्थाविवरण 18:10-12 · गलातियों 5:20
 
@@ -1081,9 +1081,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "क्यों? डराने को नहीं। यह वह जानना चाहना है, जो परमेश्वर ने नहीं दिया। उसने सितारों से पूछने को नहीं कहा — वचन दिया, और वादा किया हुआ नबी — यीशु। इफिसुस में जिन्होंने विश्वास किया, वे अपनी जादू की किताबें लाए और जला दीं। अपनी — पड़ोसियों की नहीं।"
+*Voiceover:* "क्यों? डराने को नहीं। यह वह जानने की कोशिश है, जो परमेश्वर ने नहीं बताया। उसने पूछने को सितारे नहीं — वचन दिया है, और यीशु। इफिसुस में जिन्होंने विश्वास किया, उन्होंने जादू की अपनी किताबें जला दीं। अपनी — पड़ोसियों की नहीं।"
 
-*On screen:* व्यवस्थाविवरण 29:29 · यशायाह 8:19 · यशायाह 47:13-14 — shown, not read · यिर्मयाह 10:2 · व्यवस्थाविवरण 18:15 · प्रेरितों के काम 3:22 · प्रेरितों के काम 19:18-19
+*On screen:* व्यवस्थाविवरण 18:15 · 29:29 · प्रेरितों के काम 19:19
 
 ```
 CAMERA: starts on the close shot of the open book; one slow, steady push down into the page until the paper fills the frame; ends on the full painting of the bonfire in Ephesus.
@@ -1096,9 +1096,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "इसलिए शिष्य दिन सितारों से नहीं पूछता, न सुरक्षा का ताबीज़ बाँधता। उसकी सुरक्षा कोई चीज़ नहीं — एक व्यक्ति है। घर में ज़िद नहीं — आदर से अपनी बात; कलीसिया के साथ। कोई बड़ा कदम अकेले मत उठाइए।"
+*Voiceover:* "इसलिए यीशु का शिष्य दिन सितारों से नहीं पूछता, न ताबीज़ बाँधता है। उसकी सुरक्षा कोई चीज़ नहीं — एक व्यक्ति है। घर में ज़िद नहीं — आदर से अपनी बात रखिए। कोई बड़ा कदम अकेले मत उठाइए।"
 
-*On screen:* भजन संहिता 121:5-8 · यूहन्ना 10:28 · इफिसियों 6:2 · 1 पतरस 3:15
+*On screen:* भजन संहिता 121:5-8
 
 Fallback: cross-dissolve in the edit.
 ```
@@ -1112,9 +1112,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "जो मसीह के हैं — उनका कल सितारों के हाथ में नहीं; उसके हाथ में है, जिसके वे हैं।"
+*Voiceover:* "अगर आप मसीह में हैं — आपका कल सितारों के हाथ में नहीं; उसके हाथ में है, जिसके आप हैं।"
 
-*On screen:* गलातियों 5:24 · भजन संहिता 31:15
+*On screen:* भजन संहिता 31:15 · गलातियों 5:24 — shown, not read
 
 Dissolve into the brand outro in the edit.
 ```
@@ -1130,7 +1130,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## Across the arc
 
-- **Every reel closes on गलातियों 5:24**, and its closing line is on screen in clip 5. 2·4 closes on 5:24's first clause only, by design.
+- **गलातियों 5:24 is spoken once, in 2·3, and shown on screen in clip 5 of every reel in the arc.** Each reel's spoken close is its own line — on belonging to Christ or on the Spirit's work, never on the sin.
 - **Every last clip is a HOLD** on frame 05, dissolved into the brand outro in the edit. Location changes are CUT-OUTs; Flow is never asked to morph one place into another.
 - **2·1 does not gossip in its picture.** One speaker from behind, a closed mouth, a prayer on the steps — no whispering, no aunties, no phone thread.
 - **2·2 has no home, couple or family member.** Its setting is a workplace and a lane, and the only overturned table is in the painting.
