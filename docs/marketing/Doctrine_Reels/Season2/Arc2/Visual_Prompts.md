@@ -25,7 +25,7 @@ for contrast with another faith; no antagonist, crowd or confrontation in any
 reel about pressure at home — the only people on screen are the ones the reel
 tells the viewer to go to.
 
-The painting appears once, in Reel 2·5 — Jonah asleep in the ship. Reel 2·3 returns to the desk from the money reel; reel 2·4 returns to the living-room study from Season 1 reel 7, with the same leader.
+The painting appears once, in Reel 2·5 — Jonah asleep in the ship. Reel 2·3 is one room at night — Rahul, his mother and an old family photograph; reel 2·4 returns to the living-room study from Season 1 reel 7, with the same leader.
 
 Timing: five clips of 10s, the last one a HOLD on frame 05 that dissolves into
 your outro in the edit, the closing line landing over the brand frame.
@@ -49,8 +49,8 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 ---
 
 ## REEL 2·1 — क्या मैं पैदाइशी मसीही हूँ? · S2·11
-Joseph — Christian name, Christian home, baptised long before he could choose it — messages Rahul at midnight with the question he has never said aloud. They meet on the church steps in the morning. Joseph has a photo of his old baptism certificate on his phone; Rahul has John 3.
-**Cast:** Rahul, Joseph (new — see reference below) · **Hook text on frame 01:** "क्या मैं मसीही हूँ? या बस मसीही घर में पैदा हुआ?"
+Joseph — Christian name, Christian home, baptised long before he could choose it — messages Rahul at midnight with the question he has never said aloud. They meet on the church steps in the morning. Joseph has a photo of his old baptism certificate on his phone; Rahul has his Bible.
+**Cast:** Rahul, Joseph (new — see reference below) · **Hook text on frame 01:** "मसीही घर में पैदा होने से कोई मसीही नहीं बनता।"
 
 **Staging.** Two places. At night the camera is beside Rahul's bed, looking
 down at him lying on his back. In the morning the camera stands **at the foot of
@@ -95,7 +95,7 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, readable text, people facing the wrong way, duplicated people.
 ```
 
-**04 — John 3**
+**04 — the open Bible**
 ```
 CAMERA: medium close two-shot, 40mm lens, seated eye level, the same direction as the attached previous frame — from the path looking up the steps — pulled back and raised.
 SET: the same steps, the shut door behind them.
@@ -121,9 +121,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "नाम मसीही, घर मसीही, बपतिस्मा बचपन में। पर रात में एक सवाल — क्या मैं मसीही हूँ? या बस मसीही घर में पैदा हुआ? यूहन्ना जवाब देते हैं — परमेश्वर की सन्तान न लहू से, न इंसान की इच्छा से — परमेश्वर से जन्मी है।"
-
-*On screen:* यूहन्ना 1:12-13
+*Voiceover:* "मसीही घर में पैदा होने से कोई मसीही नहीं बनता। नाम मसीही, घर मसीही — फिर भी रात में एक सवाल: क्या मैं सच में मसीही हूँ?"
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -137,9 +135,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पैदाइशी मसीही कोई नहीं होता। नीकुदेमुस धर्म का गुरु था — यीशु ने कहा, नया जन्म लेना होगा। नाम, बपतिस्मा — बुरे नहीं। जन्म इनसे नहीं होता।"
+*Voiceover:* "बाइबल कहती है — परमेश्वर की सन्तान ख़ून के रिश्ते से नहीं, परमेश्वर से जन्म लेती है। नाम और बपतिस्मा की अपनी जगह है — पर नया जन्म इनसे नहीं होता।"
 
-*On screen:* यूहन्ना 3:3, 7 · 1 पतरस 1:23 · तीतुस 3:5
+*On screen:* यूहन्ना 1:12-13 · यूहन्ना 3:3
 
 ```
 CAMERA: starts on the low medium-wide from the foot of the steps; one slow dolly forward and up while tilting down; ends on the close shot of Joseph's phone held between them.
@@ -152,9 +150,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "पर मसीही घर बाहर भी नहीं करता। तीमुथियुस का विश्वास नानी में था, माँ में — फिर उसमें। घर से सुना, खुद माना। सवाल कब का नहीं — तारीख नहीं पूछी जा रही। सवाल यह है — क्या आपने मन फिराकर यीशु पर भरोसा किया है?"
+*Voiceover:* "तीमुथियुस ने नानी और माँ से सुना — फिर खुद भरोसा किया। सवाल कब का नहीं — तारीख नहीं पूछी जा रही। सवाल यह है — क्या आपने मन फिराकर यीशु पर भरोसा किया है?"
 
-*On screen:* 2 तीमुथियुस 1:5 · प्रेरितों के काम 20:21 · 2 तीमुथियुस 3:15
+*On screen:* 2 तीमुथियुस 1:5 · प्रेरितों के काम 20:21
 
 ```
 CAMERA: starts on the close shot of the phone; one slow pull back, rising to seated eye level; ends on the medium close two-shot of the two men.
@@ -167,9 +165,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "अगर हाँ — आप मसीह में हैं। नाम से नहीं, भरोसे से। और अगर आप मसीह में हैं — निश्चय घर के नाम पर नहीं, मसीह के पूरे किए काम पर टिका है।"
+*Voiceover:* "अगर हाँ — आप मसीह में हैं। और अगर आप मसीह में हैं — आपका भरोसा घर के नाम पर नहीं, क्रूस पर मसीह के पूरे किए काम पर टिका है।"
 
-*On screen:* रोमियों 8:1 · इब्रानियों 10:14 · यूहन्ना 1:12 · रोमियों 10:9-10
+*On screen:* रोमियों 8:1 · इब्रानियों 10:14
 
 ```
 CAMERA: starts on the medium close two-shot; one slow pull back; ends on the medium shot of both men on the steps.
@@ -182,7 +180,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "और अगर अभी नहीं — जो घर ने बताया, आज मन फिराकर खुद यीशु पर भरोसा कीजिए।"
+*Voiceover:* "और अगर अभी नहीं — घर में जिनके बारे में सुना, आज मन फिराकर खुद उन्हीं यीशु पर भरोसा कीजिए।"
 
 *On screen:* प्रेरितों के काम 16:31
 
@@ -200,7 +198,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·2 — दूसरा सुसमाचार · S2·03
 Sunil's mother is ill and has been sending 'seed' money for a year. Now she has been told her faith was too small. Sunil lays the envelopes on the table in front of Rahul. No teacher is named, no screen is shown.
-**Cast:** Rahul, Sunil, Sunil's mother · **Hook text on frame 01:** "हुआ नहीं। तो कसूर किसका?"
+**Cast:** Rahul, Sunil, Sunil's mother · **Hook text on frame 01:** "फिर भी कुछ नहीं हुआ।"
 
 **Staging.** Two rooms joined by a curtained doorway. In the living room the
 camera is above the table looking down; **Sunil stands screen-left, Rahul sits
@@ -246,7 +244,7 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
 
-**04 — the thorn**
+**04 — grace is enough**
 ```
 CAMERA: medium close shot, 40mm lens, chest height, same position and direction as the attached previous frame, pulled back.
 SET: the same bedroom; on the bedside table at screen-left the stack of envelopes from the living room now sits beside the steel tumbler. The curtained doorway in the far wall at screen-right.
@@ -272,7 +270,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "आपने बीज बोया। दावा किया। विश्वास किया। हुआ नहीं। तो कसूर किसका — आपका? या उस बात का जो सिखाई गई? एक सिखावन हर जगह है — विश्वास वह तरीका है जिससे परमेश्वर से सेहत और दौलत निकलती है। दो, ताकि मिले।"
+*Voiceover:* "बीज बोया। दावा किया। विश्वास किया। फिर भी कुछ नहीं हुआ। तो ग़लती किसकी — आपकी? या उस बात की, जो सिखाई गई? सिखाया जाता है — विश्वास करो, पैसा दो, तो परमेश्वर सेहत और दौलत देगा।"
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -286,9 +284,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "बाइबल इसे दूसरा सुसमाचार कहती है। यीशु के पास सिर रखने की जगह नहीं थी। पौलुस ने अपने काँटे के लिए तीन बार माँगा — जवाब था, अनुग्रह ही काफ़ी है। काँटा रहा। क्या इन सबका विश्वास कम था?"
+*Voiceover:* "बाइबल इसे दूसरा सुसमाचार कहती है — यानी असली नहीं। पौलुस ने अपनी तकलीफ़ के लिए तीन बार प्रार्थना की — वह नहीं हटी। जवाब मिला — मेरा अनुग्रह काफ़ी है। क्या पौलुस का विश्वास कम था?"
 
-*On screen:* गलातियों 1:6-8 · 2 कुरिन्थियों 12:7-9 · लूका 9:58 · 2 तीमुथियुस 4:20 · 1 तीमुथियुस 5:23 — shown, not read
+*On screen:* गलातियों 1:6-8 · 2 कुरिन्थियों 12:7-9 · लूका 9:58 — shown, not read
 
 ```
 CAMERA: starts on the medium shot of the mother on the bed; one slow dolly in; ends on the close-up of her face with Rahul's back at the screen-right edge.
@@ -301,9 +299,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "जो भक्ति को कमाई का ज़रिया समझते हैं — बाइबल कहती है, वे सत्य से खाली हैं। हाँ — परमेश्वर देता है, चंगा भी करता है। पिता की तरह, मुफ़्त। पर वह आपका देनदार नहीं। बीज से खरीदा नहीं जाता।"
+*Voiceover:* "हाँ — परमेश्वर देता है, चंगा भी करता है। पिता की तरह, मुफ़्त। पर उससे सौदा नहीं होता।"
 
-*On screen:* 1 तीमुथियुस 6:5 · रोमियों 11:35 · मत्ती 7:11 · याकूब 1:17
+*On screen:* मत्ती 7:11 · रोमियों 11:35
 
 ```
 CAMERA: starts on the close-up of the mother; one slow pull back; ends on the medium close shot of the bed with Sunil in the far doorway.
@@ -316,7 +314,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "सबसे बुरी बात — यह सिखावन दबे हुए को ही दोष देती है: विश्वास कम था। सुसमाचार वादा नहीं करता कि आप अमीर होंगे।"
+*Voiceover:* "यह सिखावन दबे हुए को ही दोष देती है: तुम्हारा विश्वास कम था। सुसमाचार दौलत का वादा नहीं — क्रूस के कारण पापों की क्षमा का वादा है।"
+
+*On screen:* इफिसियों 1:7 · 1 कुरिन्थियों 15:3-4
 
 ```
 CAMERA: starts on the medium close shot; one slow dolly in while tilting down; ends on the close shot of the two hands on the blanket.
@@ -329,7 +329,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "वादा यह है — अगर आप मसीह में हैं, मसीह आपके हैं। बीमारी में भी, क़ब्र के पार भी।"
+*Voiceover:* "और अगर आप मसीह में हैं — मसीह आपके हैं। बीमारी में भी, क़ब्र के पार भी।"
 
 *On screen:* रोमियों 8:35-39
 
@@ -345,151 +345,148 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ---
 
-## REEL 2·3 — मलाकी 3 — दशमांश और शाप · S2·12
-Month-end at the same desk as the money reel. The salary came short; there is no envelope for the offering this month, and a voice in Rahul's head says the word. His Bible opens at Galatians 3. On Sunday the envelope he drops is a small one, and his face is at peace.
-**Cast:** Rahul, congregation (background) · **Hook text on frame 01:** "क्या आप सच में शाप के नीचे हैं?"
+## REEL 2·3 — पीढ़ियों का शाप? · S2·18
+Late evening in Rahul's front room. His mother sits alone with an old photograph of her parents in her lap and a medical report on the table — someone has told her the family is under a curse. Rahul sits down beside her, opens his Bible, and by the end the photograph is back on its shelf and the two of them are drinking chai. No one who said it is shown.
+**Cast:** Rahul, Rahul's mother · **Hook text on frame 01:** "आपके घर पर पीढ़ियों का शाप है।"
 
-**Staging.** At the desk the camera is **in front of the desk and above it**,
-looking down across the desk at Rahul seated behind it, facing the camera side;
-the lamp is screen-left. Page shots are taken from the same side, face cropped
-by the frame top. In the church the camera stands **at the side wall, looking
-across the rows**: the stage is off screen-left, the back door screen-right.
-Every worshipper sits facing the stage — that is, facing screen-left, seen in
-profile. The wooden offering box stands on a stand at the back of the hall
-beside the door, screen-right.
+**Staging.** One room, one camera axis for the whole reel. The camera stands
+**in front of the diwan, looking at the wall behind it**. The diwan runs across
+the frame against that wall; a table lamp stands on a side table at
+screen-left and is the key light. A plain wooden wall shelf hangs on the wall
+above the screen-right half of the diwan — the photograph's place, empty until
+frame 04. A low wooden table stands in front of the diwan. **The mother is
+always screen-left, Rahul always screen-right.** The photograph is an ordinary
+family portrait: no garland, no lamp, no incense, nothing devotional near it.
 
 ### Frames
 
-**01 — short this month**
+**01 — the photograph**
 ```
-CAMERA: medium shot, 35mm lens, high, camera in front of the desk and above it, looking down across the desk at Rahul seated behind it.
-SET: Rahul's desk at night under a warm desk lamp at screen-left — the same desk as before: a row of paper envelopes laid out, fewer banknotes than before, a phone showing a bank notification with no readable figures, a hospital bill folded beside it.
-BLOCKING: Rahul sits behind the desk in a plain grey t-shirt, facing the camera side of the desk, his right hand hovering over one empty envelope, his eyes down on it, his face tight with a worry that is more than arithmetic. He does not look at the lens.
-LIGHT: warm lamp light from screen-left, the room around in deep warm shadow.
-Rahul matches the character reference exactly.
+CAMERA: medium shot, 35mm lens, seated eye height, camera in front of the diwan looking at the wall behind it.
+SET: the front room of a modest Indian flat at night. A diwan with a plain rust-coloured cover runs across the frame against a cream wall. A table lamp glows on a side table at the screen-left end. A plain wooden wall shelf hangs above the screen-right half of the diwan, holding two steel tumblers and an empty gap where a frame belongs. On the low wooden table in front of the diwan lies a folded medical report in a clear plastic sleeve, its print unreadable.
+BLOCKING: Rahul's mother — an Indian woman in her fifties, greying hair in a low bun, in a plain cream cotton sari — sits alone at the screen-left end of the diwan, body angled toward screen-right, holding a small framed black-and-white photograph of an elderly couple in both hands on her lap, her head bowed over it, her eyes on it, her face tight with worry. The screen-right half of the diwan is empty.
+LIGHT: warm lamp light from screen-left across her face and hands; the screen-right half of the room in soft warm shadow.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout, garland, incense, shrine, religious image.
 ```
 
 **02 — the word**
 ```
-CAMERA: close-up, 50mm lens, slightly above, same position and direction as the attached previous frame — in front of the desk — moved in and tilted up onto Rahul's face.
-SET: same desk, same night; the lamp a warm glow at screen-left.
-BLOCKING: Rahul, grey t-shirt, facing the camera side of the desk, eyes down on the empty envelope just below frame, a flicker of fear — the look of someone who has just remembered a threat. He does not look at the lens.
-LIGHT: the same warm lamplight from screen-left.
+CAMERA: close-up, 50mm lens, seated eye height, same position and direction as the attached previous frame, only closer on the mother at screen-left.
+SET: same front room, the cream wall soft behind her, the lamp a warm blur at the screen-left edge.
+BLOCKING: Rahul's mother in her plain cream cotton sari fills the frame in three-quarter profile facing screen-right, eyes lowered to the photograph just below frame, a flicker of fear — the look of someone repeating a sentence she was told. Rahul's shoulder in a plain grey t-shirt has just entered, soft and out of focus, at the screen-right edge as he sits down beside her. She does not look at the lens.
+LIGHT: the same warm lamp light from screen-left.
 Same location, light and wardrobe as the attached previous frame. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout, garland, incense, shrine, religious image.
 ```
 
 **03 — the page**
 ```
-CAMERA: close shot, 50mm lens, from in front of the desk and above, tilted down onto the desk — the same direction as the attached previous frame, only lower on the desk.
-SET: same desk under the lamp at screen-left.
-BLOCKING: the Hindi Bible lies open on the desk at Galatians, pages toward Rahul. His right index finger rests on a verse; grey t-shirt forearms in frame; his face is cropped out above the top of the frame. The empty envelope is pushed to the screen-right edge of the desk. The Devanagari is soft and deliberately unreadable.
-LIGHT: warm lamplight from screen-left falling across the pages.
-Same location and wardrobe as the attached previous frame. Skin tone and sleeve match Rahul's character reference.
+CAMERA: high close shot, 50mm lens, from the same side of the diwan as before, tilted down onto the low table; both faces are cropped out above the top of the frame.
+SET: the low wooden table in front of the diwan under the warm lamp light. The folded medical report lies at the far edge of the table. The framed photograph lies face-up at the screen-left edge of the table.
+BLOCKING: a printed Hindi Bible lies open in the middle of the table, pages toward the diwan, Devanagari deliberately soft and unreadable. Rahul's right hand comes in from screen-right, his index finger resting on one verse; his grey t-shirt forearm is in frame. The mother's left hand comes in from screen-left and rests flat beside the page, the edge of her cream sari at her wrist. No faces in frame.
+LIGHT: warm lamp light from screen-left raking across the page.
+Same location, light and wardrobe as the attached previous frame.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, readable text, people facing the wrong way, duplicated people.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, readable text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, phone screen, duplicated hands, mirrored layout.
 ```
 
-**04 — Sunday**
+**04 — back on the shelf**
 ```
-CAMERA: medium close shot, 50mm lens, chest height, camera at the side wall of the church hall, looking across the back of the hall toward the door.
-SET: inside a simple Indian church hall on Sunday morning: rows of white plastic chairs facing the stage off screen-left, cream walls, the open back door at screen-right with morning sun outside. A plain wooden offering box with a slot stands on a wooden stand beside the door.
-BLOCKING: Rahul stands at the offering box in a white cotton shirt, body in profile facing screen-right toward the box, his hand sliding a thin, clearly small envelope into the slot — unhurried, his face above it easy. Behind and to screen-left, seated worshippers — Indian adults in their twenties to seventies in Sunday clothes — sit in the back rows in profile, all facing the stage at screen-left. Nobody looks at the lens.
-LIGHT: warm morning sun through the open door from screen-right and through side windows.
-Rahul matches the character reference exactly.
+CAMERA: medium shot, 35mm lens, seated eye height, camera in front of the diwan looking at the wall behind it — the same position and direction as frame 01.
+SET: same front room at night: the diwan against the cream wall, the lamp at screen-left, the wooden wall shelf above the screen-right half of the diwan. The Bible lies open on the low table; the medical report beside it.
+BLOCKING: Rahul's mother stands at the wall behind the diwan, left of the shelf, in her plain cream cotton sari, her back three-quarters to the camera, both hands setting the framed black-and-white photograph upright into the gap on the shelf; her shoulders have come down. Rahul sits at the screen-right end of the diwan in his plain grey t-shirt, body turned toward the wall, head tilted up, watching her hands, the beginning of a smile.
+LIGHT: warm lamp light from screen-left, falling across her back and the shelf.
+Same location, light and wardrobe as the attached previous frame. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout, garland, incense, shrine, religious image.
 ```
 
-**05 — no curse**
+**05 — two cups**
 ```
-CAMERA: medium close shot, 50mm lens, seated eye level, the same position at the side wall as the attached previous frame, panned left onto the back row.
-SET: the same church hall, the rows of chairs facing the stage at screen-left, sunlight through a side window.
-BLOCKING: Rahul sits in the back row in his white cotton shirt, in profile, body facing the stage at screen-left like everyone else; his hands rest open, palms up, on his knees; his eyes are closed; at rest — the worry gone. The worshippers beside and in front of him sit in profile facing the stage, still. Nobody looks at the lens.
-LIGHT: a shaft of warm morning sun from a side window across his hands and lap.
-Same location and wardrobe as the attached previous frame. Rahul matches the character reference exactly.
+CAMERA: medium two-shot, 40mm lens, seated eye height, same position and direction as the attached previous frame, pulled back slightly to hold both people and the shelf.
+SET: same front room: the diwan, the lamp at screen-left, the photograph now standing on the wall shelf above and between them, the open Bible on the low table.
+BLOCKING: Rahul's mother sits at the screen-left end of the diwan in her plain cream cotton sari, body angled toward screen-right, a steel tumbler of chai in both hands, her face at rest, eyes on her son. Rahul sits at the screen-right end in his plain grey t-shirt, body angled toward screen-left, a tumbler in his right hand, mid-word, easy. Neither looks at the lens.
+LIGHT: warm lamp light from screen-left on both faces; the photograph on the shelf catches a soft edge of it.
+Same location, light and wardrobe as the attached previous frame. Rahul matches the character reference exactly.
 Photoreal cinematic still, warm golden grade, soft natural light, subtle film grain, shallow depth of field, no cold blue light. Palette: warm gold and cream with deep indigo shadows. Vertical 9:16. Every person in frame is an adult.
-Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
+Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout, garland, incense, shrine, religious image.
 ```
 
 ### Clips — Frames to Video
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "इस महीने दशमांश नहीं दे पाए। और मन में वही आवाज़ — शाप। क्या आप सच में शाप के नीचे हैं? यह मलाकी 3 है — पूरा दशमांश भण्डार में लाओ, वरना शाप। सच लिखा है। पर किससे कहा गया?"
-
-*On screen:* मलाकी 3:8-10
+*Voiceover:* "'आपके घर पर पीढ़ियों का शाप है।' किसी ने यह कहा — और तब से हर बीमारी, हर नुक़सान में वही डर। क्या यह सच है?"
 
 ```
-CAMERA: starts on the high medium shot of the desk; one slow dolly in while tilting up; ends on the close-up of Rahul's face.
-ACTION: opening — Rahul counts the notes into the envelopes. Middle — he reaches the empty envelope and stops, his hand hovering. Landing — fear crosses his face; he stays still.
-LOCKS: Rahul stays seated behind the desk facing the camera side, eyes down on the desk, never on the lens. The lamp stays screen-left.
-AUDIO: a ceiling fan, notes rustling, a distant train. No dialogue, no music.
+CAMERA: starts on the medium shot of the mother alone on the diwan; one slow, steady dolly in toward her at screen-left; ends on the close-up of her face.
+ACTION: opening — the mother's thumb moves once across the glass of the photograph. Middle — her eyes stay on it and her mouth tightens. Landing — Rahul's shoulder enters softly at the screen-right edge as he sits down beside her; she does not look up yet.
+LOCKS: the mother stays seated at screen-left, eyes down on the photograph, never on the lens. The lamp stays screen-left. Rahul enters only from screen-right.
+AUDIO: a ceiling fan, a wall clock ticking, a pressure cooker far off in another flat. No dialogue, no music.
 Photoreal, warm golden grade, subtle film grain, natural human motion at real-world speed, gimbal-smooth camera, one continuous shot, no cuts.
 Negative: morphing faces, identity change, people turning to face the camera, people reversing direction, people appearing or vanishing, rubber limbs, extra fingers, sliding feet, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, text, subtitles, watermark, cartoon.
 ```
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "परमेश्वर इस्राएल से बोल रहा है — अपनी वाचा की प्रजा से। भण्डार मन्दिर का था। दशमांश लेवियों का भोजन था। उस वाचा में आशीष और शाप, दोनों लिखे थे।"
+*Voiceover:* "यह बात एक आयत से ली जाती है — कि पुरखों के पाप का दण्ड बच्चों तक पहुँचता है। पर वही आयत आगे कहती है — बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा।"
 
-*On screen:* मलाकी 3:6-7 · गिनती 18:21 · व्यवस्थाविवरण 28:1-2, 15 · मलाकी 1:1 · नहेम्याह 10:37-38
+*On screen:* निर्गमन 20:5-6
 
 ```
-CAMERA: starts on the close-up of Rahul's face; one slow tilt down onto the desk; ends on the close shot of the open Bible, his face cropped out above.
-ACTION: opening — Rahul breathes out and lowers his eyes. Middle — he pushes the empty envelope to the edge of the desk and pulls the Bible into the lamplight. Landing — he opens it to Galatians and lays his finger on a verse.
-LOCKS: Rahul stays seated facing the camera side; the lamp stays screen-left. Page text stays unreadable.
-AUDIO: a ceiling fan, pages turning. No dialogue, no music.
+CAMERA: starts on the close-up of the mother; one slow tilt down and slight push in, past her hands, to the low table; ends on the high close shot of the open Bible.
+ACTION: opening — the mother lays the photograph face-up at the screen-left edge of the table. Middle — Rahul's hands set a Bible on the table and open it. Landing — his index finger comes to rest on a verse and her left hand settles flat beside the page.
+LOCKS: both faces leave the top of the frame and stay out. The mother's hand stays screen-left, Rahul's screen-right. Page text stays unreadable.
+AUDIO: the ceiling fan, pages turning, the clock. No dialogue, no music.
 Photoreal, warm golden grade, subtle film grain, natural human motion at real-world speed, gimbal-smooth camera, one continuous shot, no cuts.
-Negative: morphing faces, identity change, people turning to face the camera, people reversing direction, people appearing or vanishing, rubber limbs, extra fingers, sliding feet, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, text, subtitles, watermark, cartoon.
+Negative: morphing faces, identity change, people turning to face the camera, people reversing direction, people appearing or vanishing, rubber limbs, extra fingers, sliding feet, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, readable text, subtitles, watermark, cartoon.
 ```
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "पौलुस लिखते हैं — मसीह हमारे लिए शाप बने, और हमें व्यवस्था के शाप से छुड़ा लिया। अगर आप मसीह में हैं — वह शाप क्रूस पर उतर चुका है। पैसे से न लौटता, न टलता।"
+*Voiceover:* "और यहेजकेल में परमेश्वर साफ़ कहता है — बेटा पिता के पाप का बोझ नहीं उठाएगा। और शाप? बाइबल कहती है — मसीह हमारी जगह शापित बने, और हमें छुड़ा लिया।"
 
-*On screen:* गलातियों 3:13 · रोमियों 8:1 · रोमियों 11:35 · प्रेरितों के काम 8:20 — shown, not read
+*On screen:* यहेजकेल 18:20 · गलातियों 3:13
 
-Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
+Hard-cut to clip 4, which starts on frame 04.
 ```
-CAMERA: starts on the close shot of the open Bible; holds still, no camera movement.
-ACTION: opening — Rahul's finger rests on the verse for a long beat. Middle — his finger slides slowly along the line once more. Landing — he closes the Bible gently and his hands draw back out of frame; his hand reaches to the lamp and the light clicks off.
-LOCKS: Rahul's face stays out of frame. Page text stays unreadable. The empty envelope stays at the screen-right edge.
-AUDIO: a ceiling fan, the soft thud of the book closing, the lamp switch. No dialogue, no music.
+CAMERA: holds the high close shot of the open Bible; one very slow push in toward the verse under Rahul's finger.
+ACTION: opening — Rahul's finger moves down two lines and stops. Middle — the mother's hand turns palm-up on the table, open. Landing — her hand reaches to the screen-left edge and lifts the framed photograph up and out of the top of the frame.
+LOCKS: no faces enter the frame. Hands keep their screen sides. Page text stays unreadable. The medical report stays at the far edge of the table.
+AUDIO: the ceiling fan, the clock. No dialogue, no music.
 Photoreal, warm golden grade, subtle film grain, natural human motion at real-world speed, gimbal-smooth camera, one continuous shot, no cuts.
-Negative: morphing faces, identity change, people turning to face the camera, people reversing direction, people appearing or vanishing, rubber limbs, extra fingers, sliding feet, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, text, subtitles, watermark, cartoon.
+Negative: morphing faces, identity change, people appearing or vanishing, rubber limbs, extra fingers, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, readable text, subtitles, watermark, cartoon.
 ```
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "तो देना बंद? नहीं — नया नियम देने पर और ज़्यादा कहता है। बस डर से नहीं। हर एक जैसा मन में ठाने — दबाव से नहीं। दशमांश देते हैं? हर्ष से दीजिए। नहीं दे पाए? शाप नहीं है।"
+*Voiceover:* "अगर आप मसीह में हैं — आप नई सृष्टि हैं; पुराना बीत गया। आपको न कोई ख़ास विधि चाहिए, न पैसा। क्रूस काफ़ी है। घर की बुरी आदतें सच हो सकती हैं — उनसे मन फिराइए; पर वे शाप नहीं।"
 
-*On screen:* 2 कुरिन्थियों 9:7
+*On screen:* 2 कुरिन्थियों 5:17 · कुलुस्सियों 2:14-15 · 1 पतरस 1:18-19
 
 ```
-CAMERA: starts on the medium close shot at the offering box; one slow pan left following Rahul to the back row; ends on the medium close shot of him seated.
-ACTION: opening — Rahul lets the small envelope drop into the slot, unhurried. Middle — he turns screen-left and walks a few steps along the back row. Landing — he sits in the back row facing the stage, rests his hands open on his knees and closes his eyes as the sunlight falls across them.
-LOCKS: every worshipper stays seated in profile facing the stage at screen-left; nobody turns toward the camera or watches Rahul. Rahul ends in profile facing the stage. The door stays screen-right.
-AUDIO: soft shuffling of chairs, a ceiling fan, birds outside the open door. No dialogue, no music, no singing.
+CAMERA: starts on the medium shot of the mother at the shelf; one slow, steady pull back; ends on the medium two-shot of both seated on the diwan.
+ACTION: opening — the mother straightens the photograph on the shelf and lets her hands fall. Middle — she turns screen-right and sits back down at the screen-left end of the diwan; Rahul hands her a steel tumbler from the low table. Landing — both hold their tumblers, turned toward each other, her face at rest.
+LOCKS: the mother stays screen-left, Rahul screen-right. Nobody looks at the lens. The photograph stays on the shelf; the lamp stays screen-left.
+AUDIO: the ceiling fan, a tumbler set down on wood, the clock. No dialogue, no music.
 Photoreal, warm golden grade, subtle film grain, natural human motion at real-world speed, gimbal-smooth camera, one continuous shot, no cuts.
 Negative: morphing faces, identity change, people turning to face the camera, people reversing direction, people appearing or vanishing, rubber limbs, extra fingers, sliding feet, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, text, subtitles, watermark, cartoon.
 ```
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "मलाकी पढ़िए — उसकी वाचा में। आप नई वाचा में हैं — जिसकी कीमत यीशु ने चुकाई।"
+*Voiceover:* "मसीह में आपकी पहचान आपके पुरखों से नहीं — आपके पिता परमेश्वर से है।"
 
-*On screen:* लूका 22:20 · इब्रानियों 8:6, 9:15
+*On screen:* रोमियों 8:15-16
 
 Dissolve into the brand outro in the edit.
 ```
-CAMERA: starts on the medium close shot of Rahul seated in profile; a very slow dolly in toward his face and open hands.
-ACTION: opening — Rahul sits at rest, eyes closed. Middle — he breathes out slowly, shoulders settling. Landing — stillness; sunlight on his hands.
-LOCKS: Rahul and every worshipper keep facing the stage at screen-left; nobody turns toward the camera. Rahul does not open his eyes.
-AUDIO: a ceiling fan, birds outside. No dialogue, no music, no singing.
+CAMERA: starts on the medium two-shot; a very slow dolly in, rising slightly toward the photograph on the shelf above them.
+ACTION: opening — the mother sips her chai. Middle — she says something and Rahul laughs quietly. Landing — stillness; the lamp light on the photograph and the two of them beneath it.
+LOCKS: the mother stays screen-left, Rahul screen-right, both seated. Nobody looks at the lens.
+AUDIO: the ceiling fan, the clock. No dialogue, no music.
 Photoreal, warm golden grade, subtle film grain, natural human motion at real-world speed, gimbal-smooth camera, one continuous shot, no cuts.
 Negative: morphing faces, identity change, people turning to face the camera, people reversing direction, people appearing or vanishing, rubber limbs, extra fingers, sliding feet, camera shake, whip pan, sudden zoom, fast cuts, cold blue light, text, subtitles, watermark, cartoon.
 ```
@@ -497,8 +494,8 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 ---
 
 ## REEL 2·4 — एक ही मध्यस्थ · S2·13
-At the living-room Bible study, the leader says something Rahul is not sure is in the text. Walking home he is more afraid of the doubt than of the line. He checks it at his desk — and the next week he brings the open Bible to the leader, who opens his own. Nobody leaves anything.
-**Cast:** Rahul, the study leader (from Season 1 reel 7), the group (background) · **Hook text on frame 01:** "शक पर ही डर लगा — क्या यह पाप है?"
+At the living-room Bible study, the leader says something Rahul is not sure is in the text. Walking home he wonders whether checking it is a sin. He checks it at his desk — and the next week he brings the open Bible to the leader, who opens his own. Nobody leaves anything.
+**Cast:** Rahul, the study leader (from Season 1 reel 7), the group (background) · **Hook text on frame 01:** "उसकी बात जाँचना पाप है?"
 
 **Staging.** The living room has one camera position for every frame shot
 there: **at seated eye level from the open side of the room, facing the sofa
@@ -571,9 +568,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "जो आपको वचन सिखाता है, उसकी एक बात पर शक हुआ। फिर शक पर ही डर लगा — क्या यह पाप है? बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारी आत्माओं के लिए जागते हैं। कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं।"
+*Voiceover:* "जो आपको बाइबल सिखाता है — उसकी बात जाँचना पाप है? बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारी आत्माओं के लिए जागते हैं। कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं।"
 
-*On screen:* इब्रानियों 13:17 · इब्रानियों 10:24-25 · इफिसियों 4:11-12
+*On screen:* इब्रानियों 13:17
 
 ```
 CAMERA: starts on the medium-wide of the study; one slow dolly in, drifting screen-right; ends on the medium close-up of Rahul.
@@ -586,9 +583,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पर आपके और परमेश्वर के बीच कोई इंसान खड़ा नहीं हो सकता। पौलुस लिखते हैं — परमेश्वर और मनुष्यों के बीच मध्यस्थ एक ही है — मसीह यीशु। यीशु ने कहा — तुम रब्बी न कहलाना; तुम्हारा गुरु एक ही है, तुम सब भाई हो।"
+*Voiceover:* "पर आपके और परमेश्वर के बीच कोई अगुवा खड़ा नहीं हो सकता। बाइबल कहती है — परमेश्वर और मनुष्यों के बीच मध्यस्थ एक ही है — मसीह यीशु। मध्यस्थ — यानी जो अपनी जान देकर हमें परमेश्वर से मिलाए।"
 
-*On screen:* 1 तीमुथियुस 2:5 · मत्ती 23:8-10
+*On screen:* 1 तीमुथियुस 2:5 · 1 तीमुथियुस 2:6 · मत्ती 23:8-10 — shown, not read
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -602,9 +599,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "शब्द नहीं रोका — वह जगह रोकी, जहाँ एक इंसान दूसरे का स्वामी बन जाए। बिरीया के लोगों ने पौलुस तक को पवित्रशास्त्र से जाँचा। बाइबल उन्हें सराहती है।"
+*Voiceover:* "और जाँचना? बिरीया के लोगों ने पौलुस की बातें भी बाइबल खोलकर जाँचीं — और बाइबल उनकी तारीफ़ करती है।"
 
-*On screen:* प्रेरितों के काम 17:11 · इफिसियों 4:11 · याकूब 3:1 — shown, not read
+*On screen:* प्रेरितों के काम 17:11
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -618,9 +615,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "जाँचना पाप नहीं। सच्चा अगुवा जाँच से डरता नहीं — खुद वचन खोलकर दिखाता है। यह कलीसिया छोड़ने की बात नहीं। ठहरिए। आदर कीजिए। बाइबल खोलिए।"
+*Voiceover:* "जाँचना पाप नहीं। सच्चा अगुवा जाँच से डरता नहीं — वचन खोलकर दिखाता है। यह कलीसिया छोड़ने की बात नहीं। ठहरिए। आदर कीजिए। बाइबल खोलिए।"
 
-*On screen:* 1 थिस्सलुनीकियों 5:21 · 1 थिस्सलुनीकियों 5:12-13 · गलातियों 1:8 · 1 तीमुथियुस 5:17
+*On screen:* 1 थिस्सलुनीकियों 5:21
 
 ```
 CAMERA: starts on the medium shot of the two men standing; one slow dolly in, lowering to seated eye level; ends on the medium close two-shot on the sofa.
@@ -633,9 +630,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "अगुवे की सुनिए — पर परमेश्वर तक आप उसके ज़रिए नहीं, यीशु के ज़रिए पहुँचते हैं। सीधे।"
+*Voiceover:* "अगुवे की सुनिए — पर परमेश्वर तक आप यीशु के ज़रिए पहुँचते हैं।"
 
-*On screen:* इब्रानियों 4:16 · यूहन्ना 14:6
+*On screen:* इब्रानियों 4:16
 
 Dissolve into the brand outro in the edit.
 ```
@@ -719,7 +716,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "कौन सी नौकरी? किससे शादी? आपने पूछा। परमेश्वर चुप रहा। तो अब कैसे जानेंगे कि उसकी मरज़ी क्या है? पहले देखिए — बाइबल 'परमेश्वर की इच्छा' कहकर ज़्यादातर क्या कहती है।"
+*Voiceover:* "आपने पूछा — कौन सी नौकरी? किससे शादी? परमेश्वर चुप रहा। तो उसकी मरज़ी कैसे पता चले? सच यह है — उसकी मरज़ी का बड़ा हिस्सा पहले से लिखा है।"
 
 ```
 CAMERA: starts on the high medium shot of the desk; one slow pan right following Rahul; ends on the medium close shot of him lying on the bed.
@@ -732,9 +729,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "तुम्हारा पवित्र होना। हर बात में धन्यवाद। न्याय, दया, नम्रता। यह लिखा है। आवाज़ का इंतज़ार नहीं। और जो लिखा नहीं? वहाँ बाइबल आवाज़ का नहीं, बुद्धि का वादा करती है — माँगो, मिलेगी। बदला हुआ मन, जो परखता है। और सलाह — बहुत सलाहकारों से।"
+*Voiceover:* "पवित्र रहो। हर बात में धन्यवाद करो। इसके लिए किसी आवाज़ का इंतज़ार नहीं। और जो लिखा नहीं? वहाँ बाइबल आवाज़ का नहीं, बुद्धि का वादा करती है — माँगो, मिलेगी।"
 
-*On screen:* 1 थिस्सलुनीकियों 4:3 · मीका 6:8 · याकूब 1:5 · 1 थिस्सलुनीकियों 5:18 · रोमियों 12:2 · नीतिवचन 15:22
+*On screen:* 1 थिस्सलुनीकियों 4:3 · 1 थिस्सलुनीकियों 5:18 · याकूब 1:5
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -748,9 +745,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "शादी पर वचन कहता है — जिससे चाहे, केवल प्रभु में। जहाँ आज्ञा नहीं, वहाँ आज़ादी है। खुला दरवाज़ा? योना को भी तरशीश का जहाज़ तैयार मिला। मन की शांति? उसी जहाज़ में योना गहरी नींद सोए थे। ये निशान नहीं हैं।"
+*Voiceover:* "समझदार लोगों से सलाह लीजिए। जहाँ आज्ञा नहीं, वहाँ आज़ादी है। और रास्ता खुल जाना कोई निशान नहीं — परमेश्वर से भागते योना को भी जहाज़ तैयार मिला। वे उसमें चैन से सोए।"
 
-*On screen:* 1 कुरिन्थियों 7:39 · योना 1:3-5
+*On screen:* नीतिवचन 15:22 · योना 1:3, 5
 
 ```
 CAMERA: starts on the close shot of the open Bible; one slow, steady push down into the page until the paper fills the frame; ends on the full painting of Jonah asleep in the ship.
@@ -763,13 +760,13 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "कोई कहे — परमेश्वर ने मुझे बताया, तुम यह करो — वह आपको बाँधता नहीं। उसे वचन से परखिए।"
+*Voiceover:* "कोई कहे — परमेश्वर ने मुझे तुम्हारे लिए बताया — तो वह आपको बाँधता नहीं। उसे वचन से परखिए।"
 
-*On screen:* 1 थिस्सलुनीकियों 5:21 · यशायाह 8:20
+*On screen:* 1 थिस्सलुनीकियों 5:21
 
 ```
 CAMERA: starts on the full painting; one slow push in toward the swinging lantern until its gold fills the frame; the gold settles into the warm morning light of the window; ends on the medium-wide of the family table.
-ACTION: opening — the lantern swings over the sleeping Jonah; water washes across the boards. Middle — the lantern's gold blooms to fill the frame. Landing — as the painting dissolves into the morning, Dada is mid-sentence with a raised finger, the mother and the pastor lean in toward him, and Rahul holds the pen over the letters.
+ACTION: opening — the lantern swings over the sleeping Jonah; water washes across the boards. Middle — the lantern's gold blooms to fill the frame. Landing — as the painting dissolves into the morning, Dada is listening, one hand resting on the table, the mother and the pastor lean in toward him, and Rahul holds the pen over the letters.
 LOCKS: Jonah's face stays turned away. At the table, Dada stays at the screen-left end, Rahul at the screen-right end, the mother and the pastor on the far side; nobody looks at the lens.
 AUDIO: storm and timbers fading into morning birds and a teacup set on a saucer. No dialogue, no music.
 Slow, calm transformation from warm painterly illustration back into photoreal, the lantern's gold becoming the morning window light. Warm golden grade, one continuous shot, no cuts, no text.
@@ -780,7 +777,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "परमेश्वर ने मरज़ी छिपाई नहीं — लिखी है। उसके भीतर रहिए। जो चुनना बाकी है, बुद्धि से चुनिए — डर से नहीं।"
 
-*On screen:* भजन संहिता 119:105 · नीतिवचन 3:5-6
+*On screen:* भजन संहिता 119:105
 
 Dissolve into the brand outro in the edit.
 ```
@@ -796,7 +793,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## Across the arc
 
-- **Reel 2·1 shows a certificate, not a baptism.** Joseph's phone holds a photo of his old baptism certificate, writing unreadable, so the reel stays adults-only while the voiceover still names the baptism he did not choose.
+- **Reel 2·1 shows a certificate, not a baptism.** Joseph's phone holds a photo of his old baptism certificate, writing unreadable, so the reel stays adults-only while the voiceover still names baptism.
 - **Reel 2·4's leader is a good one.** He opens his own Bible beside Rahul's and is pleased. The reel is about the one mediator, not about a bad pastor, and the picture must not supply one.
-- **Reel 2·3's envelope is small and the face is at peace** — neither a tithing rule nor an anti-tithing rule is shown. In the church every worshipper faces the stage in profile; nobody watches Rahul give.
+- **Reel 2·3 shows nobody who said it.** The curse was spoken off screen and stays there: no meeting, no preacher, no ritual, and the family photograph is an ordinary portrait with nothing devotional near it. The medical report is on the table and is never given a cause.
 - **Pins** (from the arc's production notes): follow the script file.

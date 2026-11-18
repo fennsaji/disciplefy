@@ -139,8 +139,8 @@ stumble* (3:2): the warning comes from a teacher, not from a wall. **No
 clericalism in either direction**: *यह चेतावनी किसी ख़ास वर्ग की नहीं —
 बच्चों की कक्षा में सिखाने वाले की भी है* extends the warning downward to
 the humblest teaching, so it cannot be heard as *leave it to the ordained*;
-and *सिखाना कोई ऊँचा दर्जा भी नहीं* (मत्ती 23:8 shown, not read — S2·13
-voiced it) refuses the opposite error, the teacher as a class above. No
+and *सिखाना कोई ऊँचा दर्जा भी नहीं* (मत्ती 23:8 shown, not read — as in
+S2·13) refuses the opposite error, the teacher as a class above. No
 office, ordination, appointment or structure is described; the hook has the
 viewer *asked* by his कलीसिया, so the reel neither licenses self-appointment
 nor rules on who may ask. **The stricter account is not loss of
@@ -451,7 +451,7 @@ reel still stands alone; the order protects only the playlist viewer.
 assumes the reader's five questions and never re-teaches them; S5·02's
 *मुख्य बात* is S4·03's paragraph question turned toward a room. **S5·01
 after S2·13** (the listener's side; S5·01 voices याकूब 3:1, which S2·13
-showed unread, and shows मत्ती 23:8, which S2·13 voiced) and **after Season 1
+showed unread, and shows मत्ती 23:8, which S2·13 also only shows) and **after Season 1
 reel 15/16** (the *हिसाब उद्धार का नहीं* line leans on justification being
 settled). **S5·03 after Season 1 reel 13** (reel 13 tested impressions by
 the word; S5·03 applies the same rule to a teacher's *'आत्मा ने मुझे

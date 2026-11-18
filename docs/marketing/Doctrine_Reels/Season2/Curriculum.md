@@ -8,8 +8,9 @@ illustration of the Trinity, teachings named and teachers never, name no
 religion or community, आप register, no English loanwords. Series roadmap:
 [../Curriculum.md](../Curriculum.md).
 
-Status: **7 of 16 produced** (scripts, visuals and captions at `Arc1/` —
-see *Production IDs* below). Nine topics await scripts.
+Status: **all 16 scripted** (scripts, visuals and captions per arc at
+`Arc1/`–`Arc3/`), nothing recorded. Scripts are at **v3 — simplified**; see
+*Script rules* and the changelog.
 
 ---
 
@@ -51,20 +52,21 @@ Spirit as person, Scripture as the test, the local church).
 
 ## Production IDs and arc placement
 
-The seven produced reels keep their production IDs (`S2·01`–`S2·07`) —
-scripts, visuals and captions reference them and must not be renumbered.
-Arc position is a separate field. New reels take `S2·08`–`S2·16`.
+Production IDs are never renumbered — scripts, visuals and captions
+reference them. Arc position is a separate field. `S2·01` (तीन भगवान?) and
+`S2·12` (मलाकी 3) are **retired** and their IDs are not reused; their
+replacements are `S2·17` and `S2·18`.
 
 | Arc · pos | ID | Topic | Status |
 |---|---|---|---|
-| 1·1 | S2·01 | तीन भगवान? — the Trinity, defended | **produced** |
+| 1·1 | S2·17 | अगला जन्म? — one life, then judgment | new — replaces S2·01 |
 | 1·2 | S2·08 | क्या बाइबल विदेशी किताब है? | new |
 | 1·3 | S2·04 | क्या सच में एक ही रास्ता है? | **produced** |
 | 1·4 | S2·09 | इतनी कलीसियाएँ क्यों? | new |
 | 1·5 | S2·10 | त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर | new |
 | 2·1 | S2·11 | क्या मैं पैदाइशी मसीही हूँ? | new |
 | 2·2 | S2·03 | दूसरा सुसमाचार — prosperity teaching | **produced** |
-| 2·3 | S2·12 | मलाकी 3 — the tithe and the curse | new |
+| 2·3 | S2·18 | पीढ़ियों का शाप? — the generational curse | new — replaces S2·12 |
 | 2·4 | S2·13 | एक ही मध्यस्थ — the pastor is not a guru | new |
 | 2·5 | S2·07 | परमेश्वर चुप रहा — discerning God's will | **produced** |
 | 3·1 | S2·02 | उसने रोका क्यों नहीं? — suffering and sovereignty | **produced** |
@@ -91,14 +93,14 @@ become the hostile party.
 
 | # | Topic | Must land | Must avoid |
 |---|---|---|---|
-| 1·1 ✓ | S2·01 तीन भगवान? — the Trinity, defended | The doctrine is what the Bible's own data forces — each person called God, and God is one — and every error (three gods, one God in three forms, an avatar) breaks on a text, not on a picture | **Every illustration**, still. Winning tone. Any description of another faith's deity that reads as ridicule |
+| 1·1 | S2·17 अगला जन्म? — one life, then judgment | One life, appointed once, and then judgment (इब्रानियों 9:27) — and in the same sentence Christ offered once to bear sins (9:28); the Christian hope is bodily resurrection in Christ, not return; the *other chance* is now (2 कुरिन्थियों 6:2), and the hope belongs to those who believe in him | Naming any faith, scripture or teacher; ridicule of the belief or of anyone who holds it; **इब्रानियों 9:27 without 9:28**; hell described or used as a threat (S5·11); a verdict on any person's dead; karma re-argued (Season 1 reel 4 and S2·02 own it) |
 | 1·2 | S2·08 क्या बाइबल विदेशी किताब है? — is the Bible a Western book? | The gospel was Asian and African before it was European: Jesus a Jew of West Asia, Parthians and Medes at Pentecost (प्रेरितों 2:9-11), the Ethiopian (प्रेरितों 8) — and Scripture's authority rests on God, not on who carried it | Leaning on the Thomas tradition as authority (name it as tradition, valued and not Scripture); nationalist framing in either direction; contempt for the West or for India |
 | 1·3 ✓ | S2·04 क्या सच में एक ही रास्ता है? | Jesus himself said it; true because of who he is and what only he did about sin, not because Christians are better; the same Jesus commands love of neighbour | Any line a relative would hear as mockery; naming any faith; pluralism; pride; an assignment to confront the family |
 | 1·4 | S2·09 इतनी कलीसियाएँ क्यों? — why so many churches? | One body, one Lord, one faith (इफिसियों 4:4-6); true believers divide over secondary matters and Scripture grieves it (1 कुरिन्थियों 1:12-13); the test of a church is the gospel, not the name over the door | Ranking or naming denominations; *all churches are equally fine* (some deny the gospel — say so without naming); church government |
 | 1·5 | S2·10 त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर — festivals and food offered to another | 1 कुरिन्थियों 8–10 as Paul wrote it: an idol is nothing and food is food (10:25-26); the disciple does not take part in worship offered to another (10:20-21); conscience and the other's conscience decide the meal (10:28-29); and honour to family holds throughout | **Giving a rule the text does not give** — neither a ban on attending family gatherings nor a permission on the offered food; contempt for the festival or the family; the disciple as separatist; naming the festival or the practice |
 
-**Order inside the arc.** S2·01 first for the reason Season 1 put reel 12
-late: the most-attacked claim, and the viewer has shown he wants it. S2·08
+**Order inside the arc.** S2·17 first: it is the gentlest of the five — a
+remark, not an accusation — and it puts the cross in the arc's first reel. S2·08
 second because *whose book is this?* is the question underneath every other
 neighbourly objection. S2·04 before S2·09 because *only one way* must be
 settled before *then why so many of you?* can be answered without
@@ -114,21 +116,20 @@ this arc must establish:** the disciple tests teaching by Scripture even when
 it comes with authority (प्रेरितों 17:11, गलातियों 1:8). This must precede
 Arc 3 because a disciple who cannot tell another gospel from the gospel will
 pay Arc 3's cost for the wrong thing — and because Arc 3's money reel is
-heard as seed-faith unless prosperity teaching and Malachi 3 have been
-handled first.
+heard as seed-faith unless prosperity teaching has been handled first.
 
 | # | Topic | Must land | Must avoid |
 |---|---|---|---|
 | 2·1 | S2·11 क्या मैं पैदाइशी मसीही हूँ? — was I born a Christian? | No one is born a Christian (यूहन्ना 1:12-13, 3:3); repentance and faith are personal; a hereditary believer is not disqualified by his surname — the question is whether he has repented and believed, and assurance rests on Christ (*अगर आप मसीह में हैं*) | Decisionism (a date or a prayer as proof); driving genuine believers into doubt; contempt for the family's faith; nominal churchgoing confirmed |
 | 2·2 ✓ | S2·03 दूसरा सुसमाचार — prosperity teaching | The gospel promises Christ, forgiveness and resurrection, not health and wealth; a teaching that makes faith a lever for money is another gospel, and it blames the poor and sick | Naming any teacher, church, channel or city; sneering; denying that God heals or provides; making poverty holy |
-| 2·3 | S2·12 मलाकी 3 — the tithe and the curse | Malachi addressed covenant Israel under the temple system; the disciple is not under that curse (गलातियों 3:13); New Testament giving is grace-giving (2 कुरिन्थियों 8–9); the text is read in its covenant, not lifted out of it | Forbidding tithing; mocking those who tithe; seed-faith by the back door; leaving the viewer with *so giving does not matter* — S2·06 answers that and must be pinned |
+| 2·3 | S2·18 पीढ़ियों का शाप? — the generational curse | निर्गमन 20:5 read on into 20:6 (punishment for those who hate him, mercy for those who love him); God himself refuses the proverb (यहेजकेल 18:20); the curse was borne at the cross (गलातियों 3:13) and the believer is a new creation (2 कुरिन्थियों 5:17) — *अगर आप मसीह में हैं*; no rite or payment is needed; what a family hands down is habit to repent of, not a curse | Naming any ministry, meeting or teacher; mocking the frightened; a spiritual or medical cause for anyone's illness; **teaching or denying deliverance and demons** (S5·10); pretending a home leaves no mark; assurance without the conditional |
 | 2·4 | S2·13 एक ही मध्यस्थ — the pastor is not a guru | One mediator (1 तीमुथियुस 2:5); *call no man teacher* in Jesus's sense (मत्ती 23:8-10); leaders are honoured and followed (इब्रानियों 13:17) *and* tested (प्रेरितों 17:11); no man stands between the disciple and God | Anti-pastor contempt; encouraging the viewer to leave a church over a reel; naming any ministry; church government |
 | 2·5 ✓ | S2·07 परमेश्वर चुप रहा — discerning God's will | God's will is mostly already written; for the rest, wisdom, a renewed mind, counsel and liberty — not a voice, a sign or a feeling; *God told me* binds no one | Fleeces and open doors; passivity; mocking dreams; denying providence |
 
 **Order inside the arc.** S2·11 first: whether the viewer is *in Christ* is
 the ground on which testing teaching matters at all, and it carries the
-conditional. S2·03 before S2·12 because Malachi is the specific text the
-general error abuses. S2·13 after both because the *guru* reel asks the
+conditional. S2·03 before S2·18 because both teachings sell a remedy, and the
+general error is named before the particular fear. S2·13 after both because the *guru* reel asks the
 viewer to test the very person who taught him the previous two. S2·07 closes
 the arc: having tested what others say God said, the viewer asks how he
 himself hears God — and is sent to the written word.
@@ -170,7 +171,7 @@ are satisfied by the arc order above.
 | Rule | Why |
 |---|---|
 | **Arc 1 before Arc 3** (S2·04, S2·10 before S2·05, S2·14) | The posture toward neighbours and family — *नम्रता और आदर से*, honour without contempt — must be fixed before a reel tells the viewer the same people may turn hostile |
-| **Arc 2 before Arc 3** (S2·03, S2·12 before S2·06) | A generosity reel arriving before seed-faith and Malachi 3 have been named is heard as seed-faith by a viewer from that background |
+| **Arc 2 before Arc 3** (S2·03 before S2·06) | A generosity reel arriving before seed-faith has been named is heard as seed-faith by a viewer from that background |
 | **S2·02 before S2·05** | Persecution is a species of suffering; without sovereignty established, a persecution reel has only heroism or fear available |
 | **S2·11 first in Arc 2** | Testing teaching presupposes the viewer is in Christ; the conditional must be heard before the pulpit is questioned |
 | **S2·16 last** | The season ends on ordinary life. Never on S2·05 |
@@ -184,14 +185,14 @@ Verified against `backend/supabase/migrations/`.
 
 | Reel | In-app destination |
 |---|---|
-| S2·01 | One God, Three Persons |
+| S2·17 | Heaven and Eternal Life (nearest) |
 | S2·08 | Historical Reliability of the Bible (nearest) |
 | S2·04 | Is Jesus the Only Way to Salvation? |
 | S2·09 | The Local Church (nearest; gap below) |
 | S2·10 | — (gap below) |
 | S2·11 | True Repentance vs. Mere Regret · Confidence in Your Salvation |
 | S2·03 | Grace vs. Works-Based Religion (nearest; gap below) |
-| S2·12 | Tithing and Giving |
+| S2·18 | Your Identity in Christ (nearest; gap below) |
 | S2·13 | Church Leadership and Authority — **read before pinning**: the reel teaches one mediator and testing; the study must not read as a polity lesson under it |
 | S2·07 | — (gap below) |
 | S2·02 | Job and the Mystery of Suffering · Hope in Suffering: An Eternal Perspective |
@@ -220,6 +221,9 @@ and testing and never polity.
 - **Festivals and food offered to another** (S2·10) — no topic touches 1
   कुरिन्थियों 8–10 as a lived question. Probably the most-asked practical
   question among first-generation believers this app serves.
+- **The generational curse** (S2·18) — nothing in the app answers it;
+  'Your Identity in Christ' is the nearest and does not name the fear.
+  'Spiritual Warfare' is **not** to be pinned under this reel.
 - **Why so many churches** (S2·09) — no unity-in-essentials topic outside
   leader-level 'Christianity and Culture'.
 
@@ -233,12 +237,13 @@ and testing and never polity.
 | **S2·14, parents** — the same viewer as S2·05, one reel earlier, with a father in the room | Honour is the first and last word; the only limit named is sin (प्रेरितों 5:29), never *my faith*; लूका 14:26 is explained as comparative on the face of the reel; no counsel to leave home, announce, or confront; the S2·05 brake line (*कोई बड़ा कदम अकेले मत उठाइए*) is restated verbatim |
 | **S2·10, festivals** — highest relative-over-shoulder risk in the season; a rule in either direction harms someone | The reel gives Paul's distinctions and no rule beyond them; neither the festival nor the food practice is named — the script speaks as 1 कुरिन्थियों 8 does (*किसी और को चढ़ाया हुआ*); attendance out of honour is affirmed; participation in worship is declined without adjectives; the conscience clause (10:28-29) is kept so the viewer decides the meal, not the reel. Comments asking *so can I or not?* get the reel's own text and a pointer to a pastor, never a ruling |
 | **S2·04, S2·08, S2·09 — the neighbour reels** — any contempt closes the family to the viewer's witness permanently | No other faith, deity, scripture or practice named or described in script, caption or visual; the only religion disqualified by name is *हमारा*; S2·08 treats India and the West with equal respect and treats the Thomas tradition as tradition; S2·09 names no denomination and ranks none |
-| **S2·03, S2·12 — the pulpit reels** — defamation exposure; and a viewer may hear an attack on his own pastor | Teaching named by mechanism and by Scripture's verdict; no teacher, church, channel or city; S2·12 reads Malachi in its covenant and forbids nothing — it corrects a reading, not a practice; comments naming individuals left unanswered; defamatory comments removed |
+| **S2·03, S2·18 — the pulpit reels** — defamation exposure; a viewer may hear an attack on his own pastor; and S2·18 reaches people who are ill or bereaved | Teaching named by mechanism and by Scripture's verdict; no teacher, church, channel or city; S2·18 corrects a reading of निर्गमन 20:5, gives no one's suffering a cause, and neither teaches nor denies deliverance; comments naming individuals left unanswered; comments selling a remedy or defaming anyone removed |
+| **S2·17, another birth** — the belief is held by most of the viewer's relatives; and a judgment line served cold | The belief is stated in its holders' own words and its appeal conceded; no faith named; 9:27 is never voiced without 9:28 in the next breath; hell not described; no verdict on any person; resurrection hope scoped *जो उन पर विश्वास करते हैं*; comments about a dead relative get the reel's own lines and never a ruling |
 | **S2·13, one mediator** — reads as anti-pastor to a viewer in a healthy church, and as licence to a viewer in a bad one | Honour and obedience (इब्रानियों 13:17) stated *before* testing; the target is the mediator role, not the office; no counsel to leave a church; nothing named |
 | **S2·11, born Christian** — the nominal-Christian safeguard from Season 1 reel 10, applied to hereditary believers; it can push a genuine believer into doubt | Assurance is grounded in Christ, not in a remembered date; the reel asks *have you repented and believed*, not *when*; the conditional *अगर आप मसीह में हैं* survives every cut; no decisionist marker offered |
 | **S2·15, marriage** — cross-faith marriages already exist in the audience | 1 कुरिन्थियों 7:12-16 is on the face of the reel before 7:39; no shame; no method; arranged marriage as such is neither endorsed nor criticised |
 | **S2·06, S2·16 — money and work** — a Bible app teaching giving looks like a Bible app asking for money; work reels drift into prosperity | S2·06's *देना परमेश्वर से कुछ खरीदता नहीं* is uncuttable; no giving link or subscription prompt on S2·06; S2·16 promises dignity and integrity, never promotion |
-| **S2·02, S2·07, S2·01** | As before: sovereignty only from the cross with human guilt in the same breath; guidance refused from Jonah alone with no dreams raised; no illustration of the Trinity, refusal made textual (यशायाह 40:18) |
+| **S2·02, S2·07** | As before: sovereignty only from the cross with human guilt in the same breath; guidance refused from Jonah alone with no dreams raised |
 | **Cross-cutting: nothing political** | No reel names a state, law, party, movement, community or religion. The hostile party is *दुनिया*, the family is *घर वाले*, the teaching is *एक सिखावन*, the church down the road is *एक और कलीसिया* |
 
 ### Excluded on purpose
@@ -254,7 +259,54 @@ both) · a rule on food offered to another beyond Paul's own.
 
 ---
 
+## Script rules (v3)
+
+Every Season 2 script is written to these. They come from the v3 rewrite and
+from what is consistently reported about short-form retention: the viewer
+decides in the first three seconds, one idea holds better than four, and a
+conversational pace is about 130–150 words a minute.
+
+| Rule | In practice |
+|---|---|
+| **A 15-year-old follows it on first hearing** | Everyday Hindi, full short sentences, one clause at a time. A Bible word that cannot be avoided is glossed once in the script (*विवेक — यानी सही-ग़लत की भीतरी समझ*; *मध्यस्थ — यानी जो अपनी जान देकर हमें परमेश्वर से मिलाए*) |
+| **The first line is the hook, and it is one line** | A question, a quoted objection or a flat claim the viewer can take in before the three-second mark. It is also the on-frame hook text. No scene-setting before it |
+| **One idea per reel** | One question, one answer, at most three Scripture points spoken. Every other reference is shown on screen, not read |
+| **About 50 seconds** | 120–135 words by the count Season 1 used (its reels run 121–149). Never over a minute |
+| **Five beats** | The script is five blocks, one per 10-second clip; the last block is the closing line and lands on the outro |
+| **Safety lines are not simplified away** | The conditional (*अगर आप मसीह में हैं*), the brake (*कोई बड़ा कदम अकेले मत उठाइए*) and each reel's *never cut* lines survive word for word |
+| **Nothing is voiced twice in the season** | A verse or line belongs to one reel. 2 कुरिन्थियों 9:7 is S2·06's, 1 कुरिन्थियों 7:39 is S2·15's, भजन 24:1 is S2·06's, गलातियों 3:13 is S2·18's; other reels show the reference instead of reading it |
+
+### Topics that repeated — resolved
+
+| Was | Why it went | Now |
+|---|---|---|
+| **S2·01 तीन भगवान?** | The Trinity is Season 1 reel 12 — same doctrine, same viewer, one season later | **S2·17 अगला जन्म?** — a neighbour's remark no reel in any season answered. The rooftop scene with Vikram is kept; only the conversation changed |
+| **S2·12 मलाकी 3** | Third money reel in one season (with S2·03 and S2·06), and its method is Season 4's S4·03/S4·04 | **S2·18 पीढ़ियों का शाप?** — a pulpit teaching common in this audience and answered nowhere. S2·06 now carries the one line the tithe curse still needs (*न दे पाएँ — तो कोई शाप नहीं लगता*); S4·04's notes point to S2·18 |
+| **S2·04 / S2·09 / S2·13** | Each is spiralled later (S4·09, S5·08, S5·06) | Kept. The later reels were written as the next step for a later viewer and do not re-voice these |
+
+---
+
 ## Changelog
+
+**v4 — two topics replaced.** S2·01 (तीन भगवान?) retired for S2·17 (अगला
+जन्म?), and S2·12 (मलाकी 3) retired for S2·18 (पीढ़ियों का शाप?); scripts,
+visuals and captions written for both, S2·06 given one line on the tithe
+curse, ordering rules, risk register and in-app table updated. Visual
+prompts across the season were checked against the v3 voiceover and their
+scene notes corrected.
+
+**v3 — scripts simplified.** All sixteen rewritten to the *Script rules*
+above: a one-line hook first, everyday Hindi a 15-year-old follows, one idea
+per reel, 121–138 words (v2 ran about 150 denser ones). Lines voiced in more
+than one reel were given to a single reel. No must-land was dropped; each
+reel's *Guardrails held* note lists what was cut. Visual prompts (voiceover
+per clip, on-screen references, hook text) and captions were synced. Topic
+overlaps with other seasons are recorded as recommendations, not changes.
+A doctrinal review pass followed the rewrite and corrected ten reels — among
+them S2·13 (*कोई अगुवा*, not *कोई इंसान*, stands between: the one mediator
+is himself a man), S2·16 (birth assigns no one his work), S2·14 (लूका
+14:26's *अप्रिय* explained on the reel's face), S2·12 (the closing carries
+*मसीह में*) and S2·03 (the real gospel stated, not only the false one).
 
 **v2 — re-scoped into three arcs (5/5/6).** Theme sharpened to *the
 disciple in his own world* — neighbours, church, home. Seven produced reels

@@ -48,9 +48,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 ---
 
-## REEL 1·1 — तीन भगवान? · S2·01
-Evening chai on the rooftop of Rahul's building. Vikram, the neighbour from the floor below, asks the question he has been sitting on for months — three gods? Rahul answers without a diagram, and the chai does not go cold.
-**Cast:** Rahul, Vikram · **Hook text on frame 01:** "तो क्या वे खुद से बात कर रहे थे?"
+## REEL 1·1 — अगला जन्म? · S2·17
+Evening chai on the rooftop of Rahul's building. Vikram, the neighbour from the floor below, says what everyone says — if not this life, the next. Rahul answers with one verse and the verse after it, and the chai does not go cold.
+**Cast:** Rahul, Vikram · **Hook text on frame 01:** "इस जन्म में नहीं — तो अगले जन्म में?"
 
 **Staging.** One flat rooftop, one camera axis for the whole reel. The camera
 stands on the roof **with its back to the stairwell door**, looking across the
@@ -122,9 +122,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "यीशु ने प्रार्थना की। किससे? अगर वे खुद परमेश्वर हैं — तो क्या वे खुद से बात कर रहे थे? घर वाले यही पूछते हैं — तो तुम्हारे तीन भगवान हैं? जवाब सीधा है।"
-
-*On screen:* यूहन्ना 17:1
+*Voiceover:* "'इस जन्म में नहीं — तो अगले जन्म में।' बहुत लोग ऐसा मानते हैं। और यह सोच राहत देती है — एक और मौका। पर बाइबल क्या कहती है?"
 
 ```
 CAMERA: starts on the medium shot of both men at the parapet; one slow, steady dolly in, drifting slightly screen-right; ends on the medium close-up of Rahul with Vikram's shoulder soft at the screen-left edge.
@@ -137,9 +135,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "बाइबल पिता को परमेश्वर कहती है। पुत्र को भी। आत्मा को भी। और उसी साँस में कहती है — परमेश्वर एक है। तीन नहीं — वचन कहता है, एक। एक के तीन रूप भी नहीं — पुत्र पिता से बात करते हैं; पिता पुत्र को भेजता है।"
+*Voiceover:* "बाइबल कहती है — मनुष्य के लिए एक बार मरना ठहराया गया है, और उसके बाद न्याय। एक जीवन। एक बार।"
 
-*On screen:* व्यवस्थाविवरण 6:4 · यूहन्ना 3:17 · यूहन्ना 6:27 · यूहन्ना 1:1 · प्रेरितों के काम 5:3-4 · मरकुस 12:29
+*On screen:* इब्रानियों 9:27
 
 ```
 CAMERA: starts on the medium close-up of Rahul; one slow pull back, drifting slightly screen-left; ends on the medium close two-shot of both men.
@@ -152,9 +150,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "और अवतार भी नहीं। अवतार में ईश्वर कुछ समय रूप लेता है, फिर छोड़ देता है। पुत्र हमेशा से पुत्र थे। वे एक ही बार इंसान बने — और आज भी इंसान हैं। वचन देहधारी हुआ — और देह उतारी नहीं।"
+*Voiceover:* "डर लगता है? तो अगली ही आयत सुनिए — मसीह भी एक ही बार बलिदान हुए, बहुतों के पाप उठाने के लिए। जीवन एक बार मिला — और पाप का दाम भी एक ही बार चुकाया गया। क्रूस पर। पूरा।"
 
-*On screen:* यूहन्ना 1:14 · इब्रानियों 9:26 · 1 तीमुथियुस 2:5 · यूहन्ना 1:1-2 · यूहन्ना 17:5 · प्रेरितों के काम 1:11
+*On screen:* इब्रानियों 9:28 · इब्रानियों 10:14
 
 ```
 CAMERA: starts on the medium close two-shot; one slow dolly straight in; ends on the close two-shot centred on the phone between them.
@@ -167,9 +165,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "बाइबल ने कोई तस्वीर नहीं दी। वह पूछती है — परमेश्वर की उपमा किससे दोगे? तो कोई पूछे — तीन? — घबराइए नहीं।"
+*Voiceover:* "इसलिए बाइबल की आशा अगला जन्म नहीं — जी उठना है। यीशु मरकर जी उठे; और जो उन पर विश्वास करते हैं, वे भी जी उठेंगे। और मौका? बाइबल कहती है — अभी उद्धार का दिन है।"
 
-*On screen:* यशायाह 40:18
+*On screen:* यूहन्ना 11:25 · 1 कुरिन्थियों 15:20-23 · 2 कुरिन्थियों 6:2
 
 ```
 CAMERA: starts on the close two-shot of the phone; one slow, steady pull back; ends on the medium-wide of both men at the parapet with their backs to the camera.
@@ -182,9 +180,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "एक परमेश्वर। जिसने भेजा, जो आए, और जो भीतर रहते हैं — तीनों एक ही परमेश्वर हैं।"
+*Voiceover:* "आपको एक और जन्म नहीं चाहिए। आपको एक उद्धारकर्ता चाहिए — और वे आ चुके हैं।"
 
-*On screen:* मत्ती 28:19
+*On screen:* यूहन्ना 11:25-26
 
 Dissolve into the brand outro in the edit.
 ```
@@ -199,8 +197,8 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 ---
 
 ## REEL 1·2 — क्या बाइबल विदेशी किताब है? · S2·08
-A second-hand book stall outside the college. A classmate picks up Rahul's Hindi Bible, turns it over and says it's a foreigners' book. Rahul doesn't argue — because somewhere he had thought so too. The page becomes a chariot on a desert road, an African official reading Isaiah.
-**Cast:** Rahul, a classmate (one-off) · painted scene (the Ethiopian official and Philip) · **Hook text on frame 01:** "यह बाहर वालों की किताब है।"
+A second-hand book stall outside the college. A classmate picks up Rahul's Hindi Bible, turns it over and says it's a foreigners' book. Rahul doesn't argue — because somewhere he had thought so too. The page becomes a chariot on a desert road, an African official reading a scroll.
+**Cast:** Rahul, a classmate (one-off) · painted scene (the Ethiopian official and Philip) · **Hook text on frame 01:** "बाइबल तो विदेशी किताब है।"
 
 **Staging.** A pavement book stall under a tarpaulin awning. In frames 01–02
 the camera stands on the pavement **in front of the stall's near end**, facing
@@ -268,9 +266,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "किसी ने कहा — यह बाहर वालों की किताब है। आपने बहस नहीं की। क्योंकि कहीं भीतर आपको भी यही लगा था। यीशु एशिया में पैदा हुए, एशिया में जिए, वहीं मरे और जी उठे।"
-
-*On screen:* लूका 2:4-7 · मत्ती 2:1
+*Voiceover:* "'बाइबल तो विदेशी किताब है।' शायद कभी आपको भी ऐसा लगा हो।"
 
 ```
 CAMERA: starts on the medium shot of both men at the stall; one slow, steady dolly in, drifting screen-right; ends on the medium close-up of Rahul.
@@ -283,9 +279,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "जिस दिन पवित्र आत्मा उतरे, सुननेवालों में सबसे पहले पूरब के लोग गिने गए — पारथी, मादी, एलामी। और सुसमाचार यूरोप से पहले अफ़्रीका पहुँचा — कूश देश का अधिकारी, यशायाह पढ़ता हुआ, रास्ते में ही बपतिस्मा लेकर लौटा।"
+*Voiceover:* "पर ज़रा नक़्शा देखिए। यीशु एशिया में पैदा हुए — वहीं जिए, मरे और जी उठे।"
 
-*On screen:* प्रेरितों के काम 2:9-11 · प्रेरितों के काम 8:27-38 · प्रेरितों के काम 16:9-10 — shown, not read
+*On screen:* मत्ती 2:1
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3 (the painting).
 ```
@@ -299,9 +295,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "भारत? पुरानी परंपरा कहती है, थोमा यहाँ आए। परंपरा कीमती है — पर वचन नहीं। असली बात — यह किताब किसी देश की है ही नहीं। वचन कहता है, हर पवित्र शास्त्र परमेश्वर की प्रेरणा से रचा गया।"
+*Voiceover:* "और सुसमाचार यूरोप से पहले अफ़्रीका पहुँचा — वहाँ का एक अधिकारी रास्ते में ही बपतिस्मा लेकर घर लौटा। भारत? पुरानी परंपरा कहती है, यीशु के चेले थोमा यहाँ आए। परंपरा कीमती है — पर वचन नहीं। असली बात — यह किताब किसी देश की है ही नहीं।"
 
-*On screen:* 2 तीमुथियुस 3:16
+*On screen:* प्रेरितों के काम 8:27-38
 
 ```
 CAMERA: starts on the full painting of the chariot; one slow push in toward the scroll on the official's knees until the sunlit scroll fills the frame; the scroll's paper settles into the paper of a printed page; ends on the high close shot over Rahul's shoulder of the Bible open on the book stack.
@@ -314,13 +310,13 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "अधिकार इस पर नहीं कि इसे कौन लाया — इस पर कि किसने कहा। जो इसे यहाँ लाए, उनका आदर। पर डाकिया चिट्ठी का लेखक नहीं होता।"
+*Voiceover:* "बाइबल कहती है — यह परमेश्वर की प्रेरणा से लिखी गई। इसका अधिकार इस पर नहीं कि इसे कौन लाया — इस पर कि किसने कहा। जो इसे यहाँ लाए, उनका आदर। पर डाकिया चिट्ठी का लेखक नहीं होता।"
 
-*On screen:* 2 पतरस 1:21 · 1 थिस्सलुनीकियों 2:13
+*On screen:* 2 तीमुथियुस 3:16 · 2 पतरस 1:21
 
 ```
 CAMERA: starts on the high close shot over Rahul's right shoulder; one slow pull back, lowering to chest height; ends on the medium-wide from behind the two men on the pavement.
-ACTION: opening — Rahul closes the Bible and lifts it from the stack. Middle — he and the classmate step past the end of the table onto the pavement and start walking away from the camera, side by side. Landing — the classmate glances at the Bible in Rahul's hand with new curiosity as they walk on.
+ACTION: opening — Rahul's finger stays on the line for a beat; then he closes the Bible and lifts it from the stack. Middle — he and the classmate step past the end of the table onto the pavement and start walking away from the camera, side by side. Landing — the classmate glances at the Bible in Rahul's hand with new curiosity as they walk on.
 LOCKS: the classmate stays screen-left, Rahul screen-right. Both walk away from the camera and never turn back toward it. The stall stays screen-left, the boundary wall screen-right.
 AUDIO: pavement traffic, footsteps, a distant college bell. No dialogue, no music.
 Photoreal, warm golden grade, subtle film grain, natural human motion at real-world speed, gimbal-smooth camera, one continuous shot, no cuts.
@@ -331,7 +327,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "यह किताब न पूरब की, न पश्चिम की। यह उसकी है जिसने पूरब, पश्चिम — और आपको — बनाया।"
 
-*On screen:* प्रेरितों के काम 17:24-26 · भजन संहिता 24:1
+*On screen:* भजन संहिता 24:1 · प्रेरितों के काम 17:24-26
 
 Dissolve into the brand outro in the edit.
 ```
@@ -347,7 +343,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 1·3 — क्या सच में एक ही रास्ता है? · S2·04
 Dinner at Vikram's home. His mother feeds Rahul like one of her own. On the bus home the question sits in Rahul's face. A week later he is back at her door carrying her groceries up the stairs. The doctrine is in the voiceover; the picture is only love.
-**Cast:** Rahul, Vikram, Vikram's mother · **Hook text on frame 01:** "उनकी आँखों में देखकर कह पाएँगे?"
+**Cast:** Rahul, Vikram, Vikram's mother · **Hook text on frame 01:** "यह बात उनकी आँखों में देखकर कह पाएँगे?"
 
 **Staging.** Three places, each with one fixed camera. At dinner the camera sits
 **across a small dining table** facing Rahul; **Vikram's mother is always
@@ -419,7 +415,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "घर में जो आपसे प्रेम करते हैं — वे यीशु को नहीं मानते। क्या आप सच में मानते हैं — उनके लिए कोई और रास्ता नहीं? और यह उनकी आँखों में देखकर कह पाएँगे?"
+*Voiceover:* "'सिर्फ़ यीशु ही रास्ता हैं।' यह बात अपने घर वालों की आँखों में देखकर कह पाएँगे? वे आपसे प्रेम करते हैं — और यीशु को नहीं मानते।"
 
 ```
 CAMERA: starts on the medium shot across the table; one slow dolly in, drifting screen-left; ends on the close-up of Vikram's mother.
@@ -432,7 +428,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "यह दावा मसीहियों ने नहीं गढ़ा — यीशु ने कहा: मार्ग, सत्य, जीवन मैं ही हूँ; मेरे बिना कोई पिता तक नहीं पहुँचता। पर वे ही क्यों? सवाल यह नहीं कि कौन सा धर्म बेहतर।"
+*Voiceover:* "यह दावा मसीहियों ने नहीं बनाया। यीशु ने खुद कहा — मार्ग, सत्य और जीवन मैं ही हूँ; मेरे बिना कोई पिता तक नहीं पहुँचता।"
 
 *On screen:* यूहन्ना 14:6
 
@@ -448,9 +444,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "समस्या पाप है — और उसके लिए एक ही मरे और जी उठे। रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है। घमंड की जगह नहीं — यह रास्ता आपने ढूँढा नहीं, आपको मिला, दान में।"
+*Voiceover:* "क्यों? हमारी असली समस्या पाप है — और उसके लिए एक ही मरे और जी उठे। रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है। और यह आपको दान में मिला — तो घमंड कैसा?"
 
-*On screen:* प्रेरितों के काम 4:12 · 1 तीमुथियुस 2:5 · यूहन्ना 14:6 — hold · इफिसियों 2:8-9
+*On screen:* प्रेरितों के काम 4:12 · इफिसियों 2:8-9
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -464,7 +460,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "जो पड़ोसी को नीचा दिखाता है, उसने समझा ही नहीं। बाइबल कहती है — अपनी आशा का कारण बताओ; नम्रता और आदर से।"
+*Voiceover:* "जो पड़ोसी को नीचा दिखाता है, उसने यह बात समझी ही नहीं। बाइबल कहती है — अपनी आशा का कारण बताओ; नम्रता और आदर से।"
 
 *On screen:* 1 पतरस 3:15
 
@@ -479,9 +475,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "यीशु ही रास्ता हैं — और उसी यीशु ने कहा, पड़ोसी से अपने जैसा प्रेम रखो। घर में दोनों साथ चलती हैं। एक के बिना दूसरी सुनी नहीं जाएगी।"
+*Voiceover:* "यीशु ही रास्ता हैं — और उसी यीशु ने कहा, पड़ोसी से अपने जैसा प्रेम रखो। दोनों बातें साथ चलती हैं।"
 
-*On screen:* मरकुस 12:31 · कुलुस्सियों 4:5-6
+*On screen:* मरकुस 12:31
 
 Dissolve into the brand outro in the edit.
 ```
@@ -496,8 +492,8 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 ---
 
 ## REEL 1·4 — इतनी कलीसियाएँ क्यों? · S2·09
-One street, three church signboards. Vikram, walking it with Rahul, asks the obvious thing: if God is one, why aren't you? Rahul has no answer at first; at the chai stall that night he gives the only one he has. The reel ends as a confession, not a defence — the two of them at a church gate, Rahul's hand on the bars.
-**Cast:** Rahul, Vikram · **Hook text on frame 01:** "परमेश्वर एक है, तो तुम एक क्यों नहीं?"
+One street, three church signboards. Vikram, walking it with Rahul, asks the obvious thing: if God is one, why so many churches? Rahul has no answer at first; at the chai stall that night he gives the only one he has. The reel ends as a confession, not a defence — the two of them at a church gate, Rahul's hand on the bars.
+**Cast:** Rahul, Vikram · **Hook text on frame 01:** "परमेश्वर एक है — तो कलीसियाएँ इतनी सारी क्यों?"
 
 **Staging.** **Vikram is always screen-left, Rahul screen-right**, in all three
 places. On the street the camera stands on the pavement facing the two men as
@@ -567,9 +563,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "एक सड़क, तीन कलीसियाएँ, तीन नाम। पड़ोसी ने पूछा — परमेश्वर एक है, तो तुम एक क्यों नहीं? आपके पास जवाब नहीं था। सवाल सही है। वचन कहता है — एक देह, एक प्रभु, एक विश्वास, एक परमेश्वर।"
-
-*On screen:* इफिसियों 4:4-6
+*Voiceover:* "'परमेश्वर एक है — तो कलीसियाएँ इतनी सारी क्यों?' पड़ोसी ने पूछा — और आपके पास जवाब नहीं था। सवाल सही है।"
 
 ```
 CAMERA: starts on the medium-wide of the two men walking toward the camera; one slow dolly in as they slow and stop, drifting screen-right; ends on the medium close-up of Rahul.
@@ -582,9 +576,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "कुरिन्थुस में भी — मैं पौलुस का, मैं अपुल्लोस का। पौलुस ने पूछा: क्या मसीह बँट गया? बाइबल इस पर दुखी है। वजहें दो। पहली — सच्चे विश्वासी उन बातों पर अलग हो जाते हैं जो सुसमाचार नहीं। बपतिस्मा कब, आराधना कैसे। छोटी नहीं — पर सुसमाचार नहीं।"
+*Voiceover:* "बाइबल भी कहती है — एक देह, एक प्रभु, एक विश्वास। दो वजहें। पहली — सच्चे विश्वासी कुछ बातों पर अलग सोचते हैं — जैसे बपतिस्मा कब, आराधना कैसे। छोटी नहीं — पर सुसमाचार नहीं।"
 
-*On screen:* 1 कुरिन्थियों 1:12-13 · यूहन्ना 17:21 · 1 कुरिन्थियों 1:10 · रोमियों 14:1, 5
+*On screen:* इफिसियों 4:4-6 · रोमियों 14:1, 5
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -598,9 +592,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "दूसरी — कुछ जगहें, जिन पर कलीसिया लिखा है, सुसमाचार ही छोड़ चुकी हैं। नाम कुछ भी हो — वह कलीसिया नहीं। कसौटी दरवाज़े का नाम नहीं: क्या वहाँ यीशु परमेश्वर हैं, जो पापों का दाम चुकाकर मरे और जी उठे?"
+*Voiceover:* "दूसरी — कुछ जगहों पर कलीसिया लिखा है, पर वहाँ सुसमाचार ही नहीं बचा। नाम कुछ भी हो — वह कलीसिया नहीं।"
 
-*On screen:* गलातियों 1:6-9 · कुलुस्सियों 2:9 · 1 कुरिन्थियों 15:3-4
+*On screen:* गलातियों 1:6-9
 
 ```
 CAMERA: starts on the medium close two-shot on the bench; one slow dolly in, drifting screen-right; ends on the medium close-up of Rahul holding up two fingers.
@@ -613,9 +607,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "उद्धार अनुग्रह से, विश्वास से — कमाई से नहीं? जहाँ यह है, वहाँ आपके भाई हैं।"
+*Voiceover:* "पहचान नाम से नहीं, इससे होती है — क्या वहाँ यीशु को परमेश्वर माना जाता है, जो हमारे पापों के लिए मरे और जी उठे? और उद्धार अनुग्रह से, विश्वास से — कमाई से नहीं? जहाँ यह है, वहाँ आपके भाई-बहन हैं।"
 
-*On screen:* इफिसियों 2:8-9 · 1 यूहन्ना 5:1
+*On screen:* 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -647,7 +641,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 1·5 — त्योहार, चढ़ाया हुआ भोजन, और एक परमेश्वर · S2·10
 An evening at Vikram's home — the whole family on the floor, a steel plate of food going round. The plate comes round to Rahul with the words 'it's been offered'. He does not have an answer ready. Paul did not give him a rule; he gave him three things. The reel does not show what Rahul chooses.
-**Cast:** Rahul, Vikram, Vikram's mother, adult relatives (background). No shrine, deity image or puja corner in any frame. · **Hook text on frame 01:** "खाओगे?"
+**Cast:** Rahul, Vikram, Vikram's mother, adult relatives (background). No shrine, deity image or puja corner in any frame. · **Hook text on frame 01:** "खाएँगे?"
 
 **Staging.** One room, one camera axis, every clip continuous. The family sits
 on a floor mat in a rough circle; the camera sits **across the circle at
@@ -717,7 +711,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "घर में त्योहार है। थाली आगे बढ़ी — किसी और को चढ़ाई हुई। सवाल आएगा — खाओगे? और जवाब आपके पास नहीं। कुरिन्थुस की कलीसिया ने यही पूछा था। पौलुस ने थाली पर एक नियम नहीं दिया — तीन बातें दीं।"
+*Voiceover:* "थाली आपके सामने है — किसी और को चढ़ाई हुई। खाएँगे? घर में त्योहार है। कुरिन्थुस की कलीसिया ने पौलुस से यही पूछा था। पौलुस ने एक नियम नहीं दिया — तीन बातें दीं।"
 
 *On screen:* 1 कुरिन्थियों 8:1
 
@@ -732,9 +726,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पहली — परमेश्वर एक है; पृथ्वी और उसकी भरपूरी उसी की। चढ़ाने से भोजन बदलता नहीं। बाज़ार से लो, खाओ, पूछो मत। दूसरी — जो आराधना किसी और की है, उसमें शिष्य साझी नहीं होता।"
+*Voiceover:* "पहली — चढ़ाने से भोजन बदलता नहीं। भोजन, भोजन ही है। दूसरी — जो आराधना किसी और की है, उसमें यीशु का शिष्य शामिल नहीं होता।"
 
-*On screen:* 1 कुरिन्थियों 8:4-6 · 1 कुरिन्थियों 10:26 · भजन संहिता 24:1 · 1 कुरिन्थियों 10:25 · 1 कुरिन्थियों 10:20-21 — reference shown; not read beyond the script's words
+*On screen:* 1 कुरिन्थियों 10:25-26 · 1 कुरिन्थियों 10:20-21 — reference shown; not read beyond the script's words
 
 ```
 CAMERA: starts on the close shot of the plate; one slow tilt up; ends on the close-up of Rahul's face.
@@ -747,7 +741,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "प्रभु की मेज़ और किसी और की मेज़ — दोनों नहीं। भोजन एक बात है, आराधना दूसरी। तीसरी — अगर कोई कहे, यह चढ़ाया हुआ है, तो उसके विवेक के कारण मत खाओ। फ़ैसला डर से नहीं — विवेक से; आपके और सामने वाले के।"
+*Voiceover:* "भोजन एक बात है, आराधना दूसरी। तीसरी — अगर कोई कहे, यह चढ़ाया हुआ है, तो उसके विवेक के कारण मत खाओ। विवेक — यानी सही-ग़लत की भीतरी समझ।"
 
 *On screen:* 1 कुरिन्थियों 10:28-29
 
@@ -764,7 +758,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "और हर हाल में — माँ-बाप का आदर। घर में साथ बैठना पाप नहीं; आदर आज्ञा है।"
 
-*On screen:* इफिसियों 6:2 · 1 कुरिन्थियों 10:27 · निर्गमन 20:12 · लूका 5:29-30
+*On screen:* इफिसियों 6:2 · 1 कुरिन्थियों 10:27
 
 ```
 CAMERA: starts on the medium close two-shot; one slow, steady pull back; ends on the wide shot of the whole circle.
@@ -777,9 +771,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "पौलुस ने फ़ैसला नहीं दिया — कसौटी दी। खाओ या न खाओ, सब परमेश्वर की महिमा के लिए — और किसी के लिए ठोकर मत बनो।"
+*Voiceover:* "पौलुस ने फ़ैसला नहीं दिया — कसौटी दी। खाओ, पियो, या जो भी करो — सब परमेश्वर की महिमा के लिए करो।"
 
-*On screen:* 1 कुरिन्थियों 10:31-33
+*On screen:* 1 कुरिन्थियों 10:31
 
 Dissolve into the brand outro in the edit.
 ```
@@ -795,7 +789,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## Across the arc
 
-- **Vikram is the thread of this arc**: his question opens 1·1, his mother's table holds 1·3 and 1·5, and the three signboards are his. One friendship, never a foil. He is screen-left of Rahul in every reel he shares a frame with him.
+- **Vikram is the thread of this arc**: his remark opens 1·1, his mother's table holds 1·3 and 1·5, and the three signboards are his. One friendship, never a foil. He is screen-left of Rahul in every reel he shares a frame with him.
 - **Reel 1·5 shows nothing decided.** Rahul's plate is in front of him; whether he eats is not on screen, because the reel says Paul gave a test and not a rule. Every clip in 1·5 is continuous on one axis, so the circle never reshuffles.
 - **Deepak's reference is now about 22**, with stubble and a moustache, so he reads plainly as an adult in later seasons.
 - **Pins** (from the arc's production notes): follow the script file.

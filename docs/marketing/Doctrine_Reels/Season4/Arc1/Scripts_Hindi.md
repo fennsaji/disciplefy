@@ -357,8 +357,9 @@ not debunked.** *वादा सच्चा था — और पूरा ह
 21:43-45 on screen (*not one word failed*), so the reel corrects the
 application, never the promise. The addressee is shown from the chapter's
 own terms — spoken to Joshua, about Canaan, with borders (1:4) — which is
-the historical-grammatical question S2·12 first asked of मलाकी 3; this reel
-spirals it into a rule and does **not** revisit Malachi or the tithe.
+the historical-grammatical question S2·18 first asked of निर्गमन 20:5-6 (*read
+the verse on*); this reel spirals it into a rule and does
+**not** revisit that text or the tithe.
 **Dispensational and replacement schemes are both left alone**: the reel
 says only that the promise was fulfilled to its people in its land, and
 that every promise reaches the believer *in Christ* (2 कुरिन्थियों 1:20;
@@ -485,9 +486,9 @@ order protects only the playlist viewer.
 
 **Cross-arc dependencies.** Season 1 reel 13 must be live and is the base:
 this arc assumes *that* God has spoken and never re-argues it. **S4·04 after
-S2·12 and S2·03** — it spirals S2·12's *किससे कहा गया?* into a general rule
-and presupposes S2·03's refusal of prosperity teaching; it must never be
-edited to re-read मलाकी 3 or to re-argue the prosperity gospel. **S4·05 after
+S2·18 and S2·03** — it spirals S2·18's *read the verse to its end* into a
+general rule and presupposes S2·03's refusal of prosperity teaching; it must
+never be edited to re-argue the prosperity gospel. **S4·05 after
 S3·21 and Season 1 reels 8, 15 and 16** — it restates reel 15/16 and
 declines to repeat S3·21's कुलुस्सियों 2:16 line. **Forward:** Season 4 Arc
 3·2 (*दो लोग, एक बाइबल*) should reuse this arc's five questions as the

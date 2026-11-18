@@ -360,10 +360,10 @@ viewer enters as a follower and leaves as a disciple who can stand.
 | 2 | कलीसिया के भीतर — testing what you are taught | 5 | The disciple tests teaching by Scripture even from a pulpit. A disciple who cannot tell another gospel from the gospel will pay Arc 3's cost for the wrong thing |
 | 3 | कीमत और ज़िंदगी — the cost, and the life | 6 | Suffering, home, marriage, persecution, money and work — the disciple lives under God's hand in the places pressure actually arrives. Ends on ordinary life (work), never on persecution |
 
-Topics: Arc 1 — Trinity defended ✓ · is the Bible a Western book? · is Jesus
+Topics: Arc 1 — another birth? (one life, then judgment) · is the Bible a Western book? · is Jesus
 the only way? ✓ · why so many churches? · festivals, food offered to another,
 and the one God. Arc 2 — was I born a Christian? · prosperity teaching ✓ ·
-Malachi 3 and the tithe · one mediator (the pastor is not a guru) ·
+the generational curse · one mediator (the pastor is not a guru) ·
 discerning God's will ✓. Arc 3 — suffering and sovereignty ✓ · honouring
 parents who oppose · marriage, only in the Lord · counting the cost ✓ · money
 and generosity ✓ · work as worship. (✓ = produced.)

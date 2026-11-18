@@ -49,7 +49,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 ---
 
 ## REEL 3·1 — उसने रोका क्यों नहीं? · S2·02
-A hospital at night. A neighbour's young husband has been hit by a scooter, and his wife asks Rahul the question straight. Rahul has no answer that fixes it. His Bible opens at John 9 — the page becomes the man born blind — and then he just stays. Frame 03 must land on the voiceover's "यीशु ने कहा — न इसने पाप किया", never on "ज़रूर कोई पाप होगा": the painting is the refutation only if it arrives with Jesus's answer — start the bloom in the edit so the painting resolves on that line.
+A hospital at night. A neighbour's young husband has been hit by a scooter, and his wife asks Rahul the question straight. Rahul has no answer that fixes it. His Bible opens at John 9 — the page becomes the man born blind — and then he just stays. Frame 03 must land on the voiceover's "यीशु ने कहा — न इसने पाप किया", never on "यह किसी पाप की सज़ा है": the painting is the refutation only if it arrives with Jesus's answer — start the bloom in the edit so the painting resolves on that line.
 **Cast:** Rahul, Sunita (a neighbour, early thirties), Vinod (her husband, about thirty, asleep), a night nurse (background) · painted scene (Jesus and the blind man, Jesus from behind) · **Hook text on frame 01:** "उसने रोका क्यों नहीं?"
 
 **Staging.** A curtained bay in a general men's ward at night. Vinod's bed runs
@@ -122,7 +122,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "अगर परमेश्वर सब कुछ कर सकता है — तो उसने रोका क्यों नहीं? आपने पूछा है। शायद किसी से कहा नहीं। दो जवाब मिलते हैं। दोनों झूठे।"
+*Voiceover:* "अगर परमेश्वर सब कुछ कर सकता है — तो उसने रोका क्यों नहीं? लोग दो जवाब देते हैं। दोनों ग़लत।"
 
 ```
 CAMERA: starts on the medium-wide from the ward aisle behind Rahul's right shoulder; one slow, steady dolly straight in across the foot of the bed; ends on the medium close-up of Sunita over Rahul's shoulder.
@@ -135,13 +135,13 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · PAINT BLOOM · 0:10–0:20
 
-*Voiceover:* "पहला — ज़रूर कोई पाप होगा; यह सज़ा है। जन्म के अंधे पर यीशु से यही पूछा गया। यीशु ने कहा — न इसने पाप किया, न माँ-बाप ने। दूसरा — परमेश्वर का हाथ नहीं, बस हो गया। पर यीशु ने कहा — गौरैया भी पिता की मरज़ी बिना नहीं गिरती।"
+*Voiceover:* "पहला — यह किसी पाप की सज़ा है। पर जन्म के एक अंधे के बारे में यीशु ने कहा — न इसने पाप किया, न इसके माँ-बाप ने। दूसरा — परमेश्वर का इसमें हाथ नहीं। पर यीशु ने कहा — गौरैया भी पिता की मरज़ी बिना नहीं गिरती।"
 
 *On screen:* यूहन्ना 9:2-3 · मत्ती 10:29
 
 ```
 CAMERA: starts on the medium close-up of Sunita over Rahul's right shoulder; one slow tilt down off her face onto the Bible in Rahul's hands at his chest, pushing in over his shoulder until the page fills the frame; ends on the full painting of the blind man.
-ACTION: opening — Sunita lowers her eyes; Rahul has no answer. Middle — Rahul's hands open the small Bible at his chest and his thumb finds John 9, the page seen from over his shoulder, the Devanagari soft and unreadable. Landing — the dim lamp light on the page warms into late sun, the paper grain turns into gouache brushwork, and the painting resolves: the blind man against the wall at screen-left, Jesus from behind bending toward him.
+ACTION: opening — Rahul has no answer; his hands open the small Bible at his chest and his thumb finds John 9, the page seen from over his shoulder, the Devanagari soft and unreadable. Middle — the dim lamp light on the page warms into late sun, the paper grain turns into gouache brushwork, and the painting resolves: the blind man against the wall at screen-left, Jesus from behind bending toward him. Landing — the painting holds.
 LOCKS: Rahul stays standing at the foot corner, back to camera; Sunita stays seated and does not look at the lens. Jesus is only ever seen from behind; no face appears. Page text stays unreadable.
 AUDIO: the ward hum fading into a soft breath of wind and a quiet stone street. No dialogue, no music.
 Slow, calm transformation from photoreal into warm painterly illustration, like a painting blooming out of the page. Warm golden grade, one continuous shot, no cuts, no text.
@@ -150,9 +150,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "बाइबल जवाब में क्रूस दिखाती है। इतिहास की सबसे बड़ी बुराई — निर्दोष की हत्या — पतरस कहते हैं, परमेश्वर की ठहराई योजना से हुई। इंसानों ने पाप किया — परमेश्वर ने उसी से उद्धार निकाला।"
+*Voiceover:* "बाइबल जवाब में क्रूस दिखाती है — निर्दोष यीशु की हत्या। पतरस कहते हैं, वह परमेश्वर की ठहराई योजना से हुई। इंसानों ने पाप किया — परमेश्वर ने उसी से उद्धार निकाला।"
 
-*On screen:* प्रेरितों के काम 2:23 · प्रेरितों के काम 4:27-28 · उत्पत्ति 50:20
+*On screen:* प्रेरितों के काम 2:23
 
 ```
 CAMERA: starts on the full painting; one slow push in toward Jesus' outstretched hand and the warm light on the wall behind it; the light fills the frame and settles into the warm bedside lamp of the ward; ends on the medium shot of Rahul and Sunita seated side by side.
@@ -165,7 +165,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "इसीलिए लिखा है — जो उससे प्रेम रखते हैं, उनके लिए सब बातें मिलकर भलाई करती हैं। सब भला नहीं होता। पर उसके हाथ में बेकार नहीं जाता।"
+*Voiceover:* "इसीलिए लिखा है — जो परमेश्वर से प्रेम रखते हैं, उनके लिए सब बातें मिलकर भलाई करती हैं। सब भला नहीं होता। पर उसके हाथ में बेकार नहीं जाता।"
 
 *On screen:* रोमियों 8:28
 
@@ -180,9 +180,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "परमेश्वर ने हर 'क्यों' का जवाब नहीं दिया। उसने अपना पुत्र दिया — जो खुद उसी दुख से गुज़रे।"
+*Voiceover:* "परमेश्वर ने हर 'क्यों' का जवाब नहीं दिया। उसने अपना पुत्र दिया — जो खुद दुख से गुज़रे।"
 
-*On screen:* रोमियों 8:32 · इब्रानियों 4:15 · यशायाह 53:3
+*On screen:* रोमियों 8:32 · इब्रानियों 4:15
 
 Dissolve into the brand outro in the edit.
 ```
@@ -272,9 +272,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "यीशु ने कहा — जो अपने माँ-बाप को अप्रिय न जाने, वह मेरा चेला नहीं हो सकता। आपके माँ-बाप विश्वास के ख़िलाफ़ हैं। तो क्या अब उनकी बात मानना ग़लत है? पहले वह आज्ञा जो रद्द नहीं हुई — अपने माता-पिता का आदर कर।"
+*Voiceover:* "माँ-बाप आपके विश्वास के ख़िलाफ़ हैं। तो क्या अब उनकी बात मानना ग़लत है? यीशु ने कहा — जो माता-पिता को मुझसे ज़्यादा प्रिय जाने, वह मेरे योग्य नहीं।"
 
-*On screen:* लूका 14:26 · निर्गमन 20:12
+*On screen:* मत्ती 10:37
 
 ```
 CAMERA: starts on the medium-wide from behind the charpai; one slow dolly in and down toward the charpai's edge; ends on the close shot of the glass beside the father's knee.
@@ -287,9 +287,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पौलुस मसीहियों को फिर लिखते हैं। शर्त नहीं — अगर वे मानें, तो। क्रूस पर से भी यीशु ने माँ का इंतज़ाम किया। तो अप्रिय? उसी साँस में — अपने प्राण को भी। नफ़रत नहीं, तुलना — यीशु पहले; सबसे प्रिय भी उनके बाद।"
+*Voiceover:* "पर एक आज्ञा कभी रद्द नहीं हुई — अपने माता-पिता का आदर कर। क्रूस पर से भी यीशु ने अपनी माँ का इंतज़ाम किया। और जहाँ यीशु ने 'अप्रिय' कहा? नफ़रत नहीं, तुलना — यीशु पहले; सबसे प्रिय भी उनके बाद।"
 
-*On screen:* इफिसियों 6:1-3 · यूहन्ना 19:26-27 · लूका 14:26 — hold · मत्ती 10:37
+*On screen:* निर्गमन 20:12 · इफिसियों 6:1-3 · यूहन्ना 19:26-27 · लूका 14:26
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -303,9 +303,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "सीमा एक ही है — पाप। जहाँ आज्ञा पाप बने — पतरस कहते हैं, मनुष्यों से बढ़कर परमेश्वर की माननी है। बस वहीं। बाकी हर बात में — सुनिए, सेवा कीजिए।"
+*Voiceover:* "सीमा एक ही है — पाप। जहाँ उनकी बात मानना पाप हो — बस वहीं, परमेश्वर की माननी है। बाकी हर बात में — सुनिए, सेवा कीजिए।"
 
-*On screen:* प्रेरितों के काम 5:29 · 1 तीमुथियुस 5:4 · मरकुस 7:9-13 — shown, not read
+*On screen:* प्रेरितों के काम 5:29
 
 ```
 CAMERA: starts on the medium close of Deepak against the neem tree; one slow dolly in that arcs about 45° around behind his left shoulder and rises slightly; ends on the close shot looking down past his shoulder at the phone, the charpai soft beyond.
@@ -318,9 +318,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "बहस नहीं — चालचलन; वही देखकर लोग परमेश्वर की बड़ाई करेंगे। कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"
+*Voiceover:* "बहस से नहीं — अपने बरताव से दिखाइए। कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"
 
-*On screen:* 1 पतरस 2:12 · नीतिवचन 15:22 · इब्रानियों 13:17
+*On screen:* 1 पतरस 2:12 · नीतिवचन 15:22
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -334,9 +334,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "यीशु ने घर नहीं छीना — उसी घर में भेजा है, सबसे अच्छी संतान बनकर।"
+*Voiceover:* "यीशु ने घर नहीं छीना — उसी घर में भेजा है, सबसे अच्छी संतान बनने के लिए।"
 
-*On screen:* 1 तीमुथियुस 5:4 · तीतुस 2:10
+*On screen:* 1 तीमुथियुस 5:4
 
 Dissolve into the brand outro in the edit.
 ```
@@ -352,7 +352,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·3 — केवल प्रभु में · S2·15
 A proposal has come for Rahul. His mother shows him the photo at the kitchen table: a good person, a good family — who does not believe. His mother is not the enemy and neither is the woman in the photo. Rahul's Bible opens at 1 Corinthians 7, and the conversation that follows happens at that same table, with his mother, with respect.
-**Cast:** Rahul, his mother, Dada (last frame). No edge toward the family anywhere. · **Hook text on frame 01:** "बाइबल क्या कहती है?"
+**Cast:** Rahul, his mother, Dada (last frame). No edge toward the family anywhere. · **Hook text on frame 01:** "इंसान अच्छा है — बस यीशु को नहीं मानता।"
 
 **Staging.** A rectangular kitchen table. The camera stands **at the open foot
 of the table, looking along it** toward the stove and the back wall.
@@ -408,7 +408,7 @@ Photoreal cinematic still, warm golden grade, soft natural light, subtle film gr
 Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, oversaturated, cold blue lighting, neon, text, captions, watermark, logo, extra fingers, deformed hands, distorted faces, stock-photo smile, people facing the wrong way, people looking into the lens, duplicated people, mirrored layout.
 ```
 
-**05 — not alone**
+**05 — at the same table**
 ```
 CAMERA: medium-wide shot, 35mm lens, seated eye level, the same position and direction as the attached previous frame, pulled back to take in the head of the table.
 SET: same kitchen table, a little later the same morning.
@@ -423,7 +423,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "रिश्ता आया है। इंसान अच्छा है — बस यीशु को नहीं मानता। मन कहता है — शादी के बाद मान लेगा। बाइबल क्या कहती है? पहले उनसे, जिनकी शादी हो चुकी है और साथी नहीं मानता। पौलुस लिखते हैं — अगर साथी साथ रहना चाहे, तो छोड़िए मत; रहिए, प्रेम कीजिए।"
+*Voiceover:* "रिश्ता आया है। इंसान अच्छा है — बस यीशु को नहीं मानता। मन कहता है — शादी के बाद मान लेगा। पहले उनसे, जिनकी शादी हो चुकी है और साथी नहीं मानता — बाइबल कहती है, अगर साथी साथ रहना चाहे, तो छोड़िए मत; रहिए, प्रेम कीजिए।"
 
 *On screen:* 1 कुरिन्थियों 7:12-13
 
@@ -438,9 +438,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "क्या जाने, आपके ज़रिए वही बचाया जाए। शर्म नहीं। अब जो चुन रहे हैं — वचन कहता है, जिससे चाहे, केवल प्रभु में। असमान जूए में मत जुतो। शादी दो का एक हो जाना है।"
+*Voiceover:* "इसमें शर्म नहीं। अब जो चुन रहे हैं — वचन कहता है, जिससे चाहे, केवल प्रभु में। क्योंकि शादी में दो लोग एक हो जाते हैं।"
 
-*On screen:* 1 कुरिन्थियों 7:16, 39 · 2 कुरिन्थियों 6:14 · 1 कुरिन्थियों 7:14 — shown, not read · उत्पत्ति 2:24 · मरकुस 10:8
+*On screen:* 1 कुरिन्थियों 7:14 — shown, not read · 1 कुरिन्थियों 7:39 · 2 कुरिन्थियों 6:14 — shown, not read · उत्पत्ति 2:24
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -454,9 +454,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "जिसके आगे घुटने टेकते हैं — वही दो हों, तो एक कैसे? बाद में मान लेगा? शायद। पर वचन कहता है — प्रभु में। पहले। शर्त यही एक है। जाति, भाषा, इलाका — वचन यह शर्त नहीं रखता।"
-
-*On screen:* 1 कुरिन्थियों 7:39 — hold · गलातियों 3:28
+*Voiceover:* "और जिसके आगे आप घुटने टेकते हैं — वही अलग हो, तो एक कैसे होंगे? बाद में मान लेगा? शायद। पर वचन कहता है — प्रभु में। पहले।"
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -470,9 +468,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "घर वाले ढूँढें या आप — तरीका वचन नहीं बताता। घर में यह बात आदर से रखिए। कोई बड़ा कदम अकेले मत उठाइए — कलीसिया के साथ चलिए। विवाह मसीह और कलीसिया की तस्वीर है।"
+*Voiceover:* "शर्त यही एक है। जाति, भाषा, इलाका — वचन यह शर्त नहीं रखता। घर में यह बात आदर से रखिए।"
 
-*On screen:* नीतिवचन 15:22 · इफिसियों 5:31-32 · नीतिवचन 19:14 · इफिसियों 6:2
+*On screen:* गलातियों 3:28
 
 ```
 CAMERA: starts on the medium shot from the foot of the table; one slow pull back at seated eye level; ends on the medium-wide with Dada at the head of the table.
@@ -487,7 +485,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "जो चुन रहे हैं — उसे चुनिए, जिसके साथ एक ही प्रभु के आगे घुटने टेक सकें।"
 
-*On screen:* 1 कुरिन्थियों 7:39 · आमोस 3:3
+*On screen:* 1 कुरिन्थियों 7:39
 
 Dissolve into the brand outro in the edit.
 ```
@@ -503,7 +501,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·4 — कीमत · S2·05
 A voice note from Deepak, twenty-two, a new believer in a village where his faith has become a problem. He wants to do something. Rahul takes the morning bus, meets him at a highway dhaba, and the something they do is walk together to the pastor.
-**Cast:** Rahul, Deepak, a pastor (last frame only). No antagonist, no crowd, no confrontation — anywhere. · **Hook text on frame 01:** "क्या यह सबूत है कि आप सही हैं?"
+**Cast:** Rahul, Deepak, a pastor (last frame only). No antagonist, no crowd, no confrontation — anywhere. · **Hook text on frame 01:** "यीशु ने पहले ही बता दिया था।"
 
 **Staging.** Four places, joined by hard cuts. Rahul's room at dawn is shot
 from beside the bed. At the dhaba, Deepak and Rahul sit cross-legged at the two
@@ -577,9 +575,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "यीशु ने कहा था — दुनिया तुमसे बैर रखेगी। जब वह सच हो जाए — क्या यह सबूत है कि आप सही हैं? या कि आपने ग़लत किया? यीशु ने कीमत छिपाई नहीं। कहा — पीछे आना है, तो पहले बैठकर हिसाब लगाओ। शांत मन से — तूफ़ान के बीच नहीं।"
+*Voiceover:* "यीशु ने पहले ही बता दिया था — दुनिया तुमसे बैर रखेगी; पहले बैठकर कीमत गिन लो। और अब वही हो रहा है। तो क्या करें?"
 
-*On screen:* लूका 14:27-28 · यूहन्ना 15:18-19
+*On screen:* यूहन्ना 15:18-19 · लूका 14:27-28
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -593,9 +591,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "और — मैं तुम्हें भेड़ियों के बीच भेजता हूँ, भेड़ों की तरह। साँप जैसे चतुर बनो, कबूतर जैसे भोले। चतुराई पाप नहीं है। यीशु ने कहा — एक जगह सताएँ, तो दूसरी जगह चले जाओ। चुप रहना भी इनकार नहीं — यीशु खुद कई बार भीड़ से हटे।"
+*Voiceover:* "साँप जैसे चतुर बनो, कबूतर जैसे भोले। चतुराई पाप नहीं है। यीशु ने कहा — एक जगह सताएँ, तो दूसरी जगह चले जाओ। चुप रहना भी इनकार नहीं — यीशु खुद कई बार भीड़ से हट गए।"
 
-*On screen:* मत्ती 10:16, 23 · प्रेरितों के काम 9:25 · यूहन्ना 7:1 · यूहन्ना 11:54
+*On screen:* मत्ती 10:16 · मत्ती 10:23 · यूहन्ना 7:1 · यूहन्ना 11:54
 
 ```
 CAMERA: starts on the medium shot across the charpai; one slow dolly in that lowers and tilts down onto the middle of the charpai; ends on the close shot of Rahul's hand on Deepak's forearm.
@@ -608,9 +606,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "बदला — कभी नहीं। जहाँ तक हो सके, सबसे मेल रखो। पतरस कहते हैं — अपनी ग़लती से दुख मत उठाओ; पर मसीही होने के कारण उठे, तो शर्मिंदा मत हो।"
+*Voiceover:* "बदला — कभी नहीं। जहाँ तक हो सके, सबसे मेल रखो। पतरस कहते हैं — अपनी ग़लती से दुख मत उठाओ; पर मसीही होने के कारण उठाना पड़े, तो शर्मिंदा मत हो।"
 
-*On screen:* रोमियों 12:14, 17-18 · 1 पतरस 4:15-16
+*On screen:* रोमियों 12:17-18 · 1 पतरस 4:15-16
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -626,7 +624,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "कोई बड़ा कदम अकेले मत उठाइए। पहले कलीसिया के परिपक्व लोगों से बात कीजिए।"
 
-*On screen:* नीतिवचन 15:22 · इब्रानियों 13:17
+*On screen:* नीतिवचन 15:22
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -640,9 +638,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "कीमत सच्ची है। पर इस रास्ते पर आप पहले नहीं — यीशु आगे चले हैं, साथ चलते हैं।"
+*Voiceover:* "कीमत सच्ची है। पर इस रास्ते पर आप अकेले नहीं — यीशु आगे चले हैं, और साथ चलते हैं।"
 
-*On screen:* इब्रानियों 12:2-3 · मत्ती 28:20
+*On screen:* मत्ती 28:20
 
 Dissolve into the brand outro in the edit.
 ```
@@ -658,7 +656,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·5 — बाकी नब्बे · S2·06
 Salary day. Rahul sits at his desk dividing cash into envelopes and stops at the one for the offering. On Sunday an old widow from his church is on the steps, and the envelope goes into the box with a lighter hand than it left the desk. No amount is ever shown.
-**Cast:** Rahul, an elderly widow, congregation (background) · **Hook text on frame 01:** "और बाकी नब्बे — किसका है?"
+**Cast:** Rahul, an elderly widow, congregation (background) · **Hook text on frame 01:** "तो बाकी नब्बे किसका?"
 
 **Staging.** The desk is shot from **in front of it and above**, so Rahul faces
 the lens with the desk lamp at **screen-right**. On Sunday the camera stands at
@@ -730,9 +728,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "आपके पैसों में परमेश्वर का हिस्सा कितना है? दस प्रतिशत? और बाकी नब्बे — किसका है? भजन संहिता यह सवाल बदल देती है — पृथ्वी और जो कुछ उसमें है, सब यहोवा का है। आप मालिक नहीं — भंडारी हैं।"
+*Voiceover:* "दस प्रतिशत परमेश्वर का। तो बाकी नब्बे किसका? बाइबल कहती है — पृथ्वी और जो कुछ उसमें है, सब यहोवा का है। यानी आप मालिक नहीं — रखवाले हैं।"
 
-*On screen:* भजन संहिता 24:1 · लूका 16:1-2 · 1 कुरिन्थियों 4:2
+*On screen:* भजन संहिता 24:1 · 1 कुरिन्थियों 4:2
 
 ```
 CAMERA: starts on the medium shot from in front of the desk and above; one slow dolly in and down; ends on the close shot of his hands holding one envelope.
@@ -745,7 +743,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पर बाइबल में देने की वजह डर नहीं, सौदा नहीं। पौलुस लिखते हैं — यीशु धनी थे, आपके लिए कंगाल बने। जिसने आपके लिए सब दिया — उसके सामने मुट्ठी अपने आप खुलती है।"
+*Voiceover:* "पर देने की वजह डर नहीं, सौदा नहीं। यीशु धनी थे — और आपके लिए कंगाल बने। जिसने आपके लिए सब कुछ दे दिया, उसके सामने मुट्ठी अपने आप खुल जाती है।"
 
 *On screen:* 2 कुरिन्थियों 8:9
 
@@ -761,7 +759,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "बाइबल कहती है — हर एक जैसा मन में ठाने, वैसा दे। दबाव से नहीं, कुढ़कर नहीं। परमेश्वर हर्ष से देने वाले से प्रेम रखता है। साफ़ सुनिए — देना परमेश्वर से कुछ खरीदता नहीं। न आशीष, न फसल।"
+*Voiceover:* "बाइबल कहती है — हर एक जैसा मन में ठाने, वैसा दे। दबाव से नहीं। परमेश्वर खुशी से देने वाले से प्रेम रखता है। साफ़ सुनिए — देना परमेश्वर से कुछ खरीदता नहीं। न आशीष, न फसल।"
 
 *On screen:* 2 कुरिन्थियों 9:7 · रोमियों 11:35 · मत्ती 10:8
 
@@ -777,9 +775,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "जो मुफ़्त मिला है, उसका जवाब भी मुफ़्त होता है। पैसा बुरा नहीं। उसका प्रेम — बाइबल उसे हर बुराई की जड़ कहती है। दवा — संतोष।"
+*Voiceover:* "और न दे पाएँ — तो कोई शाप नहीं लगता। और पैसा बुरा नहीं — पैसे से प्रेम बुरा है।"
 
-*On screen:* 1 तीमुथियुस 6:6-10
+*On screen:* गलातियों 3:13 · 1 तीमुथियुस 6:10
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -793,9 +791,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 5 · 05 (start frame only)** · HOLD · 0:40–0:50
 
-*Voiceover:* "यीशु ने कहा — लेने से देना धन्य है। जिसका सब है, उसे देने में आप ग़रीब नहीं होते — आज़ाद होते हैं।"
+*Voiceover:* "जिसका सब कुछ है, उसे देने में आप ग़रीब नहीं होते — आज़ाद होते हैं।"
 
-*On screen:* प्रेरितों के काम 20:35 · मत्ती 6:19-21
+*On screen:* मत्ती 6:19-21
 
 Dissolve into the brand outro in the edit.
 ```
@@ -811,7 +809,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·6 — सोमवार की आराधना · S2·16
 Monday. Rahul at the parcel counter where he works — a weighing scale, a queue, a ledger. A customer nods at the scale and at the ledger: round it down, nobody checks. The reel is a Monday, and the scale is honest, and the counter is where the worship is.
-**Cast:** Rahul, a customer (one-off), a colleague sweeping (background) · **Hook text on frame 01:** "या वह एक ही दिन का परमेश्वर है?"
+**Cast:** Rahul, a customer (one-off), a colleague sweeping (background) · **Hook text on frame 01:** "क्या परमेश्वर सिर्फ़ रविवार का परमेश्वर है?"
 
 **Staging.** Rahul's room at 6 AM is shot from the doorway. At work the camera
 stands **on the customer side of the counter, by the open shopfront, looking
@@ -883,7 +881,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "रविवार — आराधना। सोमवार — बस नौकरी। क्या परमेश्वर को बाकी छह दिनों से कोई मतलब है? या वह एक ही दिन का परमेश्वर है? काम पाप की सज़ा नहीं है। पाप से पहले, अदन में, परमेश्वर ने आदम को काम दिया — बाग़ सँवारना।"
+*Voiceover:* "क्या परमेश्वर सिर्फ़ रविवार का परमेश्वर है? काम पाप की सज़ा नहीं है। पाप से पहले ही, अदन में, परमेश्वर ने आदम को काम दिया था।"
 
 *On screen:* उत्पत्ति 2:15
 
@@ -899,9 +897,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "परमेश्वर ने खुद छह दिन काम किया। यीशु उपदेश से पहले बढ़ई रहे। पौलुस लिखते हैं — जो कुछ करो, मन से; प्रभु के लिए, मनुष्यों के लिए नहीं। यह दासों को लिखा — जिन्होंने अपना काम चुना नहीं।"
+*Voiceover:* "यीशु खुद बरसों बढ़ई रहे। और बाइबल कहती है — जो कुछ करो, मन लगाकर करो; प्रभु के लिए, मनुष्यों के लिए नहीं। यह बात दासों को लिखी गई — जिन्होंने अपना काम चुना भी नहीं था।"
 
-*On screen:* निर्गमन 20:9-11 · मरकुस 6:3 · कुलुस्सियों 3:22-24 · उत्पत्ति 2:2
+*On screen:* मरकुस 6:3 · कुलुस्सियों 3:22-24
 
 ```
 CAMERA: starts on the medium-wide from the customer side; one slow dolly straight in toward the counter; ends on the medium close of Rahul and the customer.
@@ -914,9 +912,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "तो कोई ईमानदार काम छोटा नहीं — न जन्म से मिला, न लोगों का ठहराया। झाड़ू हो या दफ़्तर — प्रभु के लिए हो, तो आराधना है। प्रचारक का काम इससे ऊँचा नहीं।"
+*Voiceover:* "तो कोई ईमानदार काम छोटा नहीं — न जन्म से मिला, न लोगों का ठहराया। और जन्म किसी का काम तय नहीं करता। खेत हो या दफ़्तर — प्रभु के लिए हो, तो आराधना है।"
 
-*On screen:* 1 कुरिन्थियों 10:31 · प्रेरितों के काम 18:3 · 1 थिस्सलुनीकियों 4:11-12 · 2 थिस्सलुनीकियों 3:8
+*On screen:* 1 कुरिन्थियों 10:31 · 1 कुरिन्थियों 7:21-23
 
 ```
 CAMERA: starts on the medium close of Rahul and the customer; one slow crane up and tilt down onto the counter; ends on the extreme close-up of the scale and the ledger.
@@ -929,9 +927,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "पर वचन तरक़्क़ी का वादा नहीं करता; ईमानदारी माँगता है। झूठा तराज़ू यहोवा को घिनौना है — चाहे नुक़सान हो। और काम परमेश्वर नहीं — सातवाँ दिन भी उसी ने दिया।"
+*Voiceover:* "पर वचन तरक़्क़ी का वादा नहीं करता; ईमानदारी माँगता है — चाहे नुक़सान हो। और काम परमेश्वर नहीं — आराम भी उसी ने दिया।"
 
-*On screen:* नीतिवचन 11:1 · नीतिवचन 16:8 · मरकुस 2:27 · उत्पत्ति 2:2-3
+*On screen:* नीतिवचन 16:8 · मरकुस 2:27
 
 ```
 CAMERA: starts on the extreme close-up of the scale and ledger; one slow pull back and tilt up to chest height; ends on the medium shot of Rahul alone behind the counter.
@@ -946,7 +944,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "सोमवार को जहाँ आप खड़े होंगे — वहीं आराधना की जगह है।"
 
-*On screen:* रोमियों 12:1 · 1 कुरिन्थियों 10:31
+*On screen:* रोमियों 12:1
 
 Dissolve into the brand outro in the edit.
 ```
