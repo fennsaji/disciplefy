@@ -137,9 +137,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "जिस कलीसिया में कोई वरदान कम नहीं था — उसी से पौलुस ने कहा — तुम अब तक मसीह में बालक हो। वरदान इतने — तो कमी क्या थी? पौलुस लिखते हैं — वरदान हर एक को दिया जाता है, सबके लाभ के लिए।"
+*Voiceover:* "जिस कलीसिया में कोई वरदान कम नहीं था — उसी से पौलुस ने कहा, तुम अब तक बालक हो। वरदान इतने — तो कमी क्या थी?"
 
-*On screen:* 1 कुरिन्थियों 1:7 · 1 कुरिन्थियों 3:1-3 · 1 कुरिन्थियों 12:7
+*On screen:* 1 कुरिन्थियों 1:7 · 3:1
 
 ```
 CAMERA: starts on the medium-wide from the front wall; one slow pan left with a gentle dolly forward toward the screen-left wall; ends on the medium close two-shot of the two women at the chairs.
@@ -152,9 +152,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "आत्मा जैसा चाहते हैं, बाँटते हैं। मिला है — कमाया नहीं। सेवा, दान, दया — ये भी वरदान हैं।"
+*Voiceover:* "पवित्र आत्मा हर विश्वासी को वरदान देते हैं — सबके लाभ के लिए। मिला है — कमाया नहीं। सेवा करना, देना, दया करना — ये भी वरदान हैं।"
 
-*On screen:* 1 कुरिन्थियों 12:11 · 1 कुरिन्थियों 4:7 · रोमियों 12:6-8 · 1 कुरिन्थियों 12:22
+*On screen:* 1 कुरिन्थियों 12:7, 11 · रोमियों 12:6-8
 
 ```
 CAMERA: starts on the medium close two-shot of the praying women; one slow pan right past the younger woman, tilting down; ends on the high close shot of the Bible open on the third chair.
@@ -167,9 +167,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "और वरदानों के दो अध्यायों के बीच पौलुस ने प्रेम का अध्याय रखा। प्रेम न हो — तो स्वर्गदूतों की बोली बोलने वाला भी बजता हुआ पीतल है।"
+*Voiceover:* "वरदानों के दो अध्यायों के बीच पौलुस ने प्रेम का अध्याय रखा। प्रेम न हो — तो सारे वरदान पाकर भी हम बजता हुआ पीतल हैं।"
 
-*On screen:* 1 कुरिन्थियों 12:31 – 13:1 · 1 कुरिन्थियों 13:1
+*On screen:* 1 कुरिन्थियों 13:1-2
 
 ```
 CAMERA: starts on the high close shot of the open page; one slow tilt up from the chair seat to look straight down the hall, racking focus to the open door; ends on the medium shot of Rahul handing water to the elderly man.
@@ -184,7 +184,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अन्य भाषा, भविष्यवाणी — क्या ये आज भी हैं? कुछ विश्वासी मानते हैं, ये प्रेरितों के साथ थम गए; कुछ मानते हैं, आज भी हैं। दोनों ओर वचन से प्रेम करने वाले लोग हैं। यह फ़ैसला हम यहाँ नहीं करते। पर कोई एक वरदान सबूत नहीं कि आत्मा आप में हैं। जो मसीह का है, उसमें आत्मा हैं।"
 
-*On screen:* 1 कुरिन्थियों 12:29-30 — shown, not read · रोमियों 8:9
+*On screen:* रोमियों 8:9
 
 ```
 CAMERA: starts on the medium shot of the doorway; one slow, steady pull back up the hall to the front wall, widening out; ends on the wide shot of the whole hall filling up.
@@ -199,7 +199,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "वरदान दिखावे के लिए नहीं — बगल वाले के लिए परमेश्वर का दान है।"
 
-*On screen:* 1 कुरिन्थियों 14:12, 26 · 1 पतरस 4:10
+*On screen:* 1 पतरस 4:10
 
 Dissolve into the brand outro in the edit.
 ```
@@ -215,7 +215,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·2 — एक कवच · S5·10
 An unworn set of armour laid out as a still life on a plain table — the pieces are named on screen in the edit, not in the image. A plain wooden cross on a hill at dawn. Rahul at Vikram's door, warm and ordinary — the neighbour is not the enemy. Ephesians 6 open beside the cross; and Rahul standing at his window at first light. No warrior, raised weapon, demon, smoke, chains, map, oil, charm or thread.
-**Cast:** Rahul, Vikram · **Hook text on frame 01:** "एक कवच — और उसका हर टुकड़ा आप पहले से जानते हैं।"
+**Cast:** Rahul, Vikram · **Hook text on frame 01:** "शैतान है। पर हारा हुआ है।"
 
 **Staging.** Three places. The armour and the hill are object-only frames, each
 seen straight on. At Vikram's door the camera stands **side-on in the
@@ -284,9 +284,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "पौलुस ने शैतान से लड़ाई पर लिखा। न कोई ख़ास विधि, न किसी दुष्टात्मा का नाम। एक कवच — और उसका हर टुकड़ा आप पहले से जानते हैं। शैतान है। पर हारा हुआ है।"
+*Voiceover:* "पौलुस ने शैतान से लड़ाई के बारे में लिखा। न कोई ख़ास विधि बताई, न किसी दुष्टात्मा का नाम। बस एक कवच — और उसका हर टुकड़ा आप पहले से जानते हैं। शैतान है। पर हारा हुआ है।"
 
-*On screen:* इफिसियों 6:10-11 · 1 पतरस 5:8 · मत्ती 4:1
+*On screen:* इफिसियों 6:10-11
 
 Generate from frame 01 alone. Hard-cut from the end of this clip to Clip 2.
 ```
@@ -300,9 +300,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पौलुस लिखते हैं — क्रूस पर मसीह ने उन शक्तियों को निहत्था किया, और खुलेआम उन पर जय पाई। हमारे दोष का लेख — वहीं कीलों से जड़ दिया गया।"
+*Voiceover:* "पौलुस लिखते हैं — क्रूस पर मसीह ने दुष्ट शक्तियों को निहत्था किया, और खुलेआम उन पर जय पाई।"
 
-*On screen:* कुलुस्सियों 2:15 · कुलुस्सियों 2:14 · प्रकाशितवाक्य 12:10-11
+*On screen:* कुलुस्सियों 2:14-15
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -316,9 +316,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "हमारी लड़ाई लहू और मांस से नहीं। कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं।"
+*Voiceover:* "हमारी लड़ाई लहू और मांस से नहीं। कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं। हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं सिखाता। मैदान आपका मन है।"
 
-*On screen:* इफिसियों 6:12 — first clause only
+*On screen:* इफिसियों 6:12
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -332,9 +332,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "कवच — सच्चाई, धार्मिकता, मेल का सुसमाचार, विश्वास, उद्धार, परमेश्वर का वचन। और प्रार्थना। नया हथियार नहीं — सुसमाचार ही है, पहना हुआ। आदेश एक — स्थिर रहो। हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं सिखाता। मैदान आपका मन है। सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है। याकूब लिखते हैं — परमेश्वर के अधीन हो जाओ; शैतान का सामना करो, वह भाग जाएगा।"
+*Voiceover:* "कवच यह है — सच्चाई, धार्मिकता, मेल का सुसमाचार, विश्वास, उद्धार, परमेश्वर का वचन। और प्रार्थना। नया हथियार नहीं — सुसमाचार ही है, पहना हुआ। सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है। याकूब लिखते हैं — परमेश्वर के अधीन हो जाओ; शैतान का सामना करो, वह भाग जाएगा।"
 
-*On screen:* इफिसियों 6:14-18 · रोमियों 13:12, 14 · यशायाह 59:17 · इफिसियों 6:11, 13, 14 · 2 कुरिन्थियों 10:4-5 · याकूब 1:14 · यूहन्ना 10:28 · भजन संहिता 121:5-8 · याकूब 4:7
+*On screen:* इफिसियों 6:14-18 · याकूब 4:7
 
 ```
 CAMERA: starts on the low close shot across the desk; racks focus from the open Bible to the window, then one slow dolly forward and up over the desk; ends on the medium shot of Rahul at the window.
@@ -349,7 +349,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "लड़ाई असली है। पर अगर आप मसीह में हैं — जीत पहले ही हो चुकी। अब खड़े रहना है।"
 
-*On screen:* 1 यूहन्ना 4:4 · इफिसियों 6:13
+*On screen:* इफिसियों 6:13 · 1 यूहन्ना 4:4
 
 Dissolve into the brand outro in the edit.
 ```
@@ -431,7 +431,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 *Voiceover:* "नरक के बारे में सबसे ज़्यादा किसने कहा? कोई कठोर उपदेशक नहीं। यीशु ने — वही, जो नगर को देखकर रोए।"
 
-*On screen:* मत्ती 5:22, 29-30 · मत्ती 10:28 · मरकुस 9:43-48 — shown, not read · लूका 19:41
+*On screen:* लूका 19:41
 
 ```
 CAMERA: starts on the full painting; one slow push past the small seated figure out over the valley toward the light on the horizon; the painted light settles into a real dusk sky; ends on the wide shot of empty hills at last light.
@@ -446,7 +446,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "यीशु कहते हैं — कुछ अनन्त दण्ड में जाएँगे, और धर्मी अनन्त जीवन में। दोनों के लिए एक ही शब्द — अनन्त। न अंत में सबका बच जाना, न मिट जाना।"
 
-*On screen:* मत्ती 25:46 · 2 थिस्सलुनीकियों 1:9
+*On screen:* मत्ती 25:46
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -462,7 +462,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "क्यों? क्योंकि परमेश्वर पवित्र है, और पाप सचमुच उसके दण्ड के लायक है। पर वह कहता है — दुष्ट के मरने से मैं प्रसन्न नहीं होता।"
 
-*On screen:* रोमियों 6:23 · रोमियों 3:23 · यहेजकेल 33:11 · 2 पतरस 3:9
+*On screen:* रोमियों 6:23 · यहेजकेल 33:11
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -478,7 +478,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "इसीलिए क्रूस है। जो दण्ड हमारा था, यीशु ने हमारी जगह उठाया। अगर आप मन फिराकर मसीह पर भरोसा करते हैं — आप पर दण्ड की आज्ञा नहीं।"
 
-*On screen:* यशायाह 53:5-6 · 1 पतरस 3:18 · यूहन्ना 3:18 · यूहन्ना 5:24 · रोमियों 8:1
+*On screen:* 1 पतरस 3:18 · यशायाह 53:5 · रोमियों 8:1
 
 Generate from frame 04 alone. Hold on the cross, perfectly still, for this whole section. Hard-cut (or a slow dissolve in the edit) from the end of this clip to Clip 5.
 ```
@@ -494,7 +494,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "पौलुस अपने लोगों के लिए लिखते हैं — मेरे मन में बड़ा दुख है, जो थमता नहीं। तो नरक धमकाने की लाठी नहीं। किसी का नाम लेकर नहीं — आँसुओं से कहा जाता है। यीशु ने नरक की चेतावनी दी — और हमें उससे बचाने, ख़ुद क्रूस पर गए।"
 
-*On screen:* रोमियों 9:2-3 · प्रेरितों के काम 20:31 · फिलिप्पियों 3:18 · लूका 19:10 · यूहन्ना 3:16-17
+*On screen:* रोमियों 9:2 · यूहन्ना 3:16-17
 
 Dissolve into the brand outro in the edit.
 ```
@@ -510,7 +510,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 3·4 — प्रधान चरवाहा · S5·12 · series finale
 Sunil's old hands passing his worn Bible into Rahul's — his last Thursday before he moves away. Jesus and Peter by the charcoal fire in the painting, from behind. Crowns laid down, never worn. A shepherd with his sheep on an Indian hillside. And the last frame of the series goes back to Season 1 reel 19's cemetery: Rahul, a few years older, at the same grave in morning light, looking up. No clouds-and-trumpets, timeline or calendar.
-**Cast:** Sunil and Rahul (hands), Rahul · painted scenes (the charcoal fire by the lake; crowns laid down) · **Hook text on frame 01:** "झुंड किसी और को सौंपना पड़ता है। तो झुंड था किसका?"
+**Cast:** Sunil and Rahul (hands), Rahul · painted scenes (the charcoal fire by the lake; crowns laid down) · **Hook text on frame 01:** "तो झुंड था किसका?"
 
 **Staging.** The hand-over is shot **side-on, square to the two of them**:
 **Sunil screen-left, Rahul screen-right**, both faces cropped above the
@@ -586,9 +586,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पतरस लिखते हैं — परमेश्वर के झुंड की रखवाली करो। परमेश्वर का — आपका नहीं। वही पतरस, जिसने तीन बार इनकार किया — और जिसे जी उठे यीशु ने तीन बार अपनी भेड़ें सौंपीं। अगुवा पहले ख़ुद भेड़ है — जिसके लिए अच्छे चरवाहे ने अपना प्राण दिया।"
+*Voiceover:* "पतरस ने तीन बार यीशु का इनकार किया था। जी उठे यीशु ने उन्हीं को तीन बार अपनी भेड़ें सौंपीं — मेरी भेड़ों को चरा। यीशु की — पतरस की नहीं। अगुवा पहले ख़ुद भेड़ है — जिसके लिए अच्छे चरवाहे ने अपना प्राण दिया।"
 
-*On screen:* 1 पतरस 5:2 · प्रेरितों के काम 20:28 · यहेजकेल 34:31 · लूका 22:61-62 · यूहन्ना 21:15-17 · यूहन्ना 10:11
+*On screen:* यूहन्ना 21:15-17 · यूहन्ना 10:11
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -602,9 +602,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "फिर पतरस लिखते हैं — जब प्रधान चरवाहा प्रकट होंगे, वे महिमा का मुकुट देंगे, जो मुरझाता नहीं। मुकुट पद नहीं — उनके हाथ का दान। और स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।"
+*Voiceover:* "वही पतरस लिखते हैं — जब प्रधान चरवाहा प्रकट होंगे, वे महिमा का मुकुट देंगे, जो मुरझाता नहीं। मुकुट पद नहीं — उनके हाथ का दान। स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।"
 
-*On screen:* 1 पतरस 5:4 · 2 तीमुथियुस 4:8 · 1 कुरिन्थियों 4:7 · प्रकाशितवाक्य 4:10-11
+*On screen:* 1 पतरस 5:4 · प्रकाशितवाक्य 4:10
 
 ```
 CAMERA: starts on the full painting of the crowns; one slow push into the light at the top of the steps; the painted gold settles into a real early-morning sky; ends on the wide shot of the shepherd walking among his sheep.
@@ -619,7 +619,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "कब? वह दिन कोई नहीं जानता। तब तक — भेड़ों के पास। यह सफ़र सुनने से शुरू हुआ था — विश्वासी से चेले तक; और कुछ के लिए, चरवाहे तक। बात यहाँ पूरी होती है। चरवाहे का काम नहीं।"
 
-*On screen:* मत्ती 24:36 · लूका 12:42-43 · मत्ती 28:19 · 2 तीमुथियुस 2:2
+*On screen:* मत्ती 24:36
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -635,7 +635,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "आख़िरी शब्द किसी अगुवे का नहीं — उनका है, जो लौट रहे हैं।"
 
-*On screen:* प्रेरितों के काम 1:11 · तीतुस 2:13
+*On screen:* प्रकाशितवाक्य 22:20
 
 Dissolve into the brand outro in the edit. No subscription prompt on this reel's outro.
 ```

@@ -69,7 +69,7 @@ tea glasses in the middle of the circle.
 
 ## REEL 2·1 — सूची में एक ही हुनर · S5·05
 Rahul has been asked to lead the Thursday group. At his desk he reads the list Paul wrote — one skill, the rest character. Paul dictating the letter in the painting; the uncle's lit doorway at dusk, seen from the lane; Rahul listening to his group; and Rahul on his knees at night. No office titles, no dress, no stage.
-**Cast:** Rahul, his small group (Arjun, Joseph, others) · the uncle's home seen only from outside · painted scene (Paul dictating to a scribe, from behind) · **Hook text on frame 01:** "उस सूची में न मीठी आवाज़ है, न भीड़, न चमत्कार।"
+**Cast:** Rahul, his small group (Arjun, Joseph, others) · the uncle's home seen only from outside · painted scene (Paul dictating to a scribe, from behind) · **Hook text on frame 01:** "हुनर सिर्फ़ एक है।"
 
 **Staging.** Rahul's rented room from the reference. At the desk, Rahul sits
 facing the screen-right wall; the camera is **between the desk and the wall,
@@ -140,9 +140,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT BLOOM · 0:00–0:10
 
-*Voiceover:* "पौलुस ने लिखा — अगुवा कैसा हो। उस सूची में न मीठी आवाज़ है, न भीड़, न चमत्कार। हुनर सिर्फ़ एक है। बाकी सब? हुनर — सिखाने में निपुण। बस।"
+*Voiceover:* "अच्छा अगुवा कौन? पौलुस की सूची में न मीठी आवाज़ है, न भीड़, न चमत्कार। हुनर सिर्फ़ एक है — सिखाने में निपुण। बाकी सब?"
 
-*On screen:* 1 तीमुथियुस 3:1-7 · तीतुस 1:5-9 — references only; verse text not displayed · 1 तीमुथियुस 3:2 · तीतुस 1:9
+*On screen:* 1 तीमुथियुस 3:2
 
 ```
 CAMERA: starts on the high close shot over the open Bible; one slow, steady push down into the page until the paper fills the frame; ends on the full painting of the dim room.
@@ -155,9 +155,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · PAINT FADE · 0:10–0:20
 
-*Voiceover:* "बाकी सब चरित्र — निर्दोष, संयमी, पहुनाई करने वाला, कोमल। न झगड़ालू, न लोभी, न पियक्कड़। घर में कैसा है। बाहर वाले उसे कैसे जानते हैं।"
+*Voiceover:* "बाकी सब चरित्र — निर्दोष, संयमी, सत्कार करने वाला, कोमल। न झगड़ालू, न लोभी। घर में कैसा है। बाहर वाले उसे कैसे जानते हैं।"
 
-*On screen:* 1 तीमुथियुस 3:2-3 · तीतुस 1:7 · 1 तीमुथियुस 3:4-5 · 1 तीमुथियुस 3:7
+*On screen:* 1 तीमुथियुस 3:2-7 · तीतुस 1:6-9
 
 ```
 CAMERA: starts on the full painting; one slow push into the clay lamp's warm glow on the table; the glow fills the frame and settles into the warm light of the lit doorway; ends on the wide shot across the lane.
@@ -170,9 +170,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "वरदान मंच पर दिखता है। चरित्र घर में। पौलुस ने पहले घर देखा। यह सूची किसी गुप्त किताब में नहीं — खुले वचन में है, हर विश्वासी के हाथ में। इसलिए झुंड भी अगुवे को इसी से परख सकता है — दोष ढूँढने को नहीं; आदर और प्रार्थना के साथ।"
+*Voiceover:* "वरदान मंच पर दिखता है। चरित्र घर में। पौलुस ने पहले घर देखा। यह सूची खुली बाइबल में है — इसलिए झुंड भी अगुवे को इसी से परख सकता है; दोष ढूँढने को नहीं, आदर और प्रार्थना के साथ।"
 
-*On screen:* 1 तीमुथियुस 3:4-5 · 1 तीमुथियुस 3:14-15 · 1 थिस्सलुनीकियों 5:12-13 · इब्रानियों 13:17-18
+*On screen:* 1 तीमुथियुस 3:4-5 · 1 तीमुथियुस 5:17, 19
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -186,9 +186,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "और देखिए — इस सूची की लगभग हर बात, वचन हर विश्वासी से माँगता है। यह अगुवों की अलग नैतिकता नहीं। हर चेले की दिशा है। और यह चरित्र कमाया नहीं जाता — जो मसीह के हैं, उनमें पवित्र आत्मा इसे गढ़ते हैं।"
+*Voiceover:* "और देखिए — इस सूची की लगभग हर बात बाइबल हर विश्वासी से माँगती है। यह अगुवों की अलग नैतिकता नहीं। हर चेले की दिशा है। और यह चरित्र कमाया नहीं जाता — जो मसीह के हैं, उनमें पवित्र आत्मा इसे गढ़ते हैं।"
 
-*On screen:* तीतुस 2:2-6, 12 · रोमियों 12:13 · फिलिप्पियों 4:5 · इफिसियों 5:18 · इब्रानियों 13:5 · गलातियों 5:22-23 · तीतुस 2:11-12
+*On screen:* गलातियों 5:22-23
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -220,7 +220,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 2·2 — अंगोछा · S5·06
 The hook's picture of greatness: silhouettes bowing before a raised dais, only feet and hems, no faces, no marks of any faith. The basin and the towel in the painting — hands and feet only. Then Rahul after the Thursday group, at the courtyard tap washing everyone's tea glasses; greeting an older man with folded hands; and crouching at the church gate to pick up an old woman's dropped bag. No foot-washing ceremony, and no one touching an elder's feet.
-**Cast:** Rahul, an older man (seen from behind), an old woman (one-off) · painted scene (the basin, the towel, the feet) · **Hook text on frame 01:** "गुरु ने ख़ुद कमर में अंगोछा बाँधा।"
+**Cast:** Rahul, an older man (seen from behind), an old woman (one-off) · painted scene (the basin, the towel, the feet) · **Hook text on frame 01:** "बड़ा कौन — जिसके पाँव धोए जाएँ, या जो पाँव धोए?"
 
 **Staging.** The hall: the camera is **low at the back of a dim hall looking
 toward the raised dais at the far end**, so the bowing figures have their
@@ -290,9 +290,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT BLOOM · 0:00–0:10
 
-*Voiceover:* "बड़ा वह है, जिसके पाँव छुए जाते हैं — हम यही देखते बड़े हुए। फिर एक रात, गुरु ने ख़ुद कमर में अंगोछा बाँधा — और घर के सबसे छोटे नौकर का काम किया।"
+*Voiceover:* "बड़ा कौन है — जिसके पाँव धोए जाएँ, या जो पाँव धोए? एक रात, यीशु ने ख़ुद कमर में अंगोछा बाँधा — और घर के सबसे छोटे नौकर का काम किया।"
 
-*On screen:* यूहन्ना 13:4-5 · 1 शमूएल 25:41 — shown, not read
+*On screen:* लूका 22:27 · यूहन्ना 13:4-5
 
 ```
 CAMERA: starts on the low wide shot from the back of the hall; one slow, steady push forward over the bowing silhouettes toward the lit feet on the dais until the pool of light fills the frame; ends on the full painting of the basin and the feet.
@@ -305,7 +305,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · PAINT FADE · 0:10–0:20
 
-*Voiceover:* "यीशु ने चेलों के पाँव धोए। फिर कहा — मैंने प्रभु और गुरु होकर यह किया; मैंने तुम्हें नमूना दिया है।"
+*Voiceover:* "उन्होंने अपने चेलों के पाँव धोए। फिर कहा — मैंने प्रभु और गुरु होकर यह किया; मैंने तुम्हें नमूना दिया है।"
 
 *On screen:* यूहन्ना 13:13-15
 
@@ -320,9 +320,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "उन्होंने यह भी कहा था — दुनिया के सरदार प्रभुता करते हैं। तुम में ऐसा नहीं। जो बड़ा होना चाहे, वह सेवक बने। क्योंकि मनुष्य का पुत्र सेवा कराने नहीं, सेवा करने आया — और बहुतों की छुड़ौती के लिए अपना प्राण देने।"
+*Voiceover:* "यीशु ने यह भी कहा — दुनिया के सरदार प्रभुता करते हैं। तुम में ऐसा नहीं। जो बड़ा होना चाहे, वह सेवक बने। क्योंकि मनुष्य का पुत्र सेवा कराने नहीं, सेवा करने आया — और बहुतों की छुड़ौती के लिए अपना प्राण देने।"
 
-*On screen:* मरकुस 10:42-45
+*On screen:* मरकुस 10:42-44 · मरकुस 10:45
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -338,7 +338,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "छुड़ौती — वह काम सिर्फ़ उनका था। कोई अगुवा आपके और परमेश्वर के बीच खड़ा नहीं होता। पर सेवा — वह उन्होंने हर चेले को सौंपी। अगुवों का आदर कीजिए — वचन यही सिखाता है। पर आदर माँगना — उस रात का तरीका नहीं।"
 
-*On screen:* 1 तीमुथियुस 2:5-6 · इब्रानियों 10:14 · इब्रानियों 4:16 · गलातियों 5:13 · 1 पतरस 4:10 · 1 थिस्सलुनीकियों 5:12-13 · इब्रानियों 13:17 · 1 पतरस 5:3 · 3 यूहन्ना 9 — shown, not read
+*On screen:* 1 तीमुथियुस 2:5-6 · 1 थिस्सलुनीकियों 5:12-13
 
 ```
 CAMERA: starts on the medium shot behind the older man's right shoulder; one slow pan right with a gentle dolly forward, following Rahul toward the gate; ends on the medium shot of Rahul crouching at the gate beside the old woman.
@@ -353,7 +353,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अगुवे की पहचान यह नहीं कि कितने उसके आगे झुकते हैं — यह कि वह किसके लिए झुकता है।"
 
-*On screen:* फिलिप्पियों 2:5-8 · यूहन्ना 13:14
+*On screen:* फिलिप्पियों 2:5-8
 
 Dissolve into the brand outro in the edit.
 ```
@@ -432,7 +432,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT FADE · 0:00–0:10
 
-*Voiceover:* "वचन में एक अध्याय है, जहाँ परमेश्वर का क्रोध चरवाहों पर है। भेड़ियों पर नहीं — चरवाहों पर। क्यों?"
+*Voiceover:* "बाइबल में एक अध्याय है, जहाँ परमेश्वर का क्रोध चरवाहों पर है। भेड़ियों पर नहीं — चरवाहों पर। क्यों?"
 
 *On screen:* यहेजकेल 34:1-2
 
@@ -447,7 +447,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "यहेजकेल में परमेश्वर कहता है — तुम अपना ही पेट भरते हो। चर्बी खाते, ऊन पहनते; पर भेड़ों को नहीं चराते। ज़बरदस्ती और कठोरता से राज करते हो। फिर — मैं अपनी भेड़ें उनके हाथ से छुड़ाऊँगा।"
+*Voiceover:* "परमेश्वर उनसे कहता है — तुम अपना ही पेट भरते हो; भेड़ों को नहीं चराते। ज़बरदस्ती और कठोरता से राज करते हो। फिर कहता है — मैं अपनी भेड़ें उनके हाथ से छुड़ाऊँगा।"
 
 *On screen:* यहेजकेल 34:2-4 · यहेजकेल 34:10
 
@@ -462,9 +462,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "झुंड अगुवे का नहीं — परमेश्वर का है। पतरस लिखते हैं — उसकी रखवाली करो; कमाई के लिए नहीं; अधिकार मत जताओ, नमूना बनो।"
+*Voiceover:* "झुंड अगुवे का नहीं — परमेश्वर का है। पतरस लिखते हैं — उसकी रखवाली करो; लालच से नहीं; अधिकार मत जताओ, नमूना बनो।"
 
-*On screen:* 1 पतरस 5:2-3 · प्रेरितों के काम 20:28
+*On screen:* 1 पतरस 5:2-3
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -480,7 +480,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "जो अगुवा डराकर, चुप कराकर, पैसे या देह के लिए भेड़ों का इस्तेमाल करे — यह अधिकार नहीं। पाप है। जहाँ अपराध है — वह अपराध ही है। उसे ढका नहीं जाता। जिसे चोट लगी, उससे वचन न चुप रहने को कहता है, न झुककर सहने को। सुरक्षित रहिए — पहले। परिपक्व, भरोसेमंद विश्वासियों को बताइए। बहुत-से अगुवे झुंड के लिए जागते हैं। यह अध्याय उनके ख़िलाफ़ नहीं।"
 
-*On screen:* मत्ती 20:25-26 · यहेजकेल 34:4 · रोमियों 13:3-4 — shown, not read · नीतिवचन 31:8-9 · भजन संहिता 10:17-18 · नीतिवचन 22:3 · प्रेरितों के काम 9:23-25 · गलातियों 6:1-2 · नीतिवचन 11:14 · इब्रानियों 13:17
+*On screen:* इफिसियों 5:11 · रोमियों 13:1-4 · इब्रानियों 13:17
 
 Generate from frame 04 alone. Hold almost perfectly still for the whole block — the safety lines appear on screen as text in the edit. Hard-cut (or a slow dissolve in the edit) from the end of this clip to Clip 5.
 ```
@@ -496,7 +496,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अच्छा चरवाहा भेड़ों के लिए प्राण देता है। लेता नहीं।"
 
-*On screen:* यूहन्ना 10:11 · यहेजकेल 34:15, 23
+*On screen:* यूहन्ना 10:11
 
 Dissolve into the brand outro in the edit. No subscription or plan prompt on this reel's outro.
 ```
@@ -582,9 +582,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "आपके समूह में दो लोग एक बात पर भिड़ गए। दोनों के पास आयत है। अब आप क्या करेंगे — फ़ैसला सुनाएँगे? पहले पूछिए — यह सुसमाचार है, या उसके बाद की बात?"
-
-*On screen:* 1 कुरिन्थियों 15:1-4
+*Voiceover:* "आपके समूह में दो लोग एक बात पर भिड़ गए। और दोनों के पास आयत है। अब आप क्या करेंगे — फ़ैसला सुनाएँगे? पहले पूछिए — यह सुसमाचार की बात है, या उसके बाद की?"
 
 ```
 CAMERA: starts on the medium-wide from the doorway; one slow, steady dolly straight in at seated eye level; ends on the medium close-up of Rahul.
@@ -597,9 +595,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "यीशु परमेश्वर हैं; हमारे पापों के लिए मरे; सचमुच जी उठे; उद्धार अनुग्रह से, विश्वास के द्वारा — कमाई से नहीं। यहाँ कोई समझौता नहीं। यहाँ पौलुस ने पतरस तक को टोका।"
+*Voiceover:* "यीशु परमेश्वर हैं; हमारे पापों के लिए मरे; सचमुच जी उठे; उद्धार अनुग्रह से, विश्वास के द्वारा — कमाई से नहीं। यहाँ कोई समझौता नहीं।"
 
-*On screen:* यूहन्ना 1:1 · कुलुस्सियों 2:9 · 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9 · गलातियों 2:11, 14
+*On screen:* 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -613,9 +611,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT FADE · 0:20–0:30
 
-*Voiceover:* "पर रोम की कलीसिया में झगड़ा था — कौन क्या खाए, कौन सा दिन माने। पौलुस ने कहा — हर एक अपने मन में निश्चय कर ले; एक-दूसरे पर दोष मत लगाओ। छोटी नहीं — पर सुसमाचार नहीं। जहाँ वचन ने सब पर नियम नहीं बनाया, वहाँ अगुवा भी नहीं बनाता।"
+*Voiceover:* "यहाँ पौलुस ने पतरस तक को टोका। पर रोम की कलीसिया में झगड़ा था — कौन क्या खाए, कौन सा दिन माने। पौलुस ने कहा — हर एक अपने मन में निश्चय कर ले; एक-दूसरे पर दोष मत लगाओ। छोटी नहीं — पर सुसमाचार नहीं।"
 
-*On screen:* रोमियों 14:2-3, 5-6 · रोमियों 14:5 · रोमियों 14:1, 13 · रोमियों 14:17
+*On screen:* गलातियों 2:11-14 · रोमियों 14:1-5 · रोमियों 14:13
 
 ```
 CAMERA: starts on the full painting; one slow push down onto the bare low table between the two men; the warm stone of the table settles into the warm page of Rahul's Bible; ends on the close shot of the Bible open at Romans 14 in his hands.
@@ -628,9 +626,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "अगुवे की दो ग़लतियाँ — अपनी राय को सुसमाचार बना देना, या सुसमाचार को राय। पौलुस लिखते हैं — आत्मा की एकता बनाए रखो। वह दी जा चुकी है; बनानी नहीं, बचानी है।"
+*Voiceover:* "जहाँ वचन ने सब पर नियम नहीं बनाया, वहाँ अगुवा भी नहीं बनाता। अगुवे की दो ग़लतियाँ — अपनी राय को सुसमाचार बना देना, या सुसमाचार को राय।"
 
-*On screen:* गलातियों 1:6-9 · रोमियों 14:4 · इफिसियों 4:3 · इफिसियों 4:4-6
+*On screen:* रोमियों 14:4 · कुलुस्सियों 2:16
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -646,7 +644,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "सुसमाचार में एक। बाकी में आज़ादी। दोनों में प्रेम।"
 
-*On screen:* रोमियों 15:7 · इफिसियों 4:2
+*On screen:* इफिसियों 4:3-6
 
 Dissolve into the brand outro in the edit.
 ```

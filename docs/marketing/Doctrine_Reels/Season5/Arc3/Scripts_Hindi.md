@@ -18,6 +18,8 @@ serve it cold to someone who is no shepherd at all. The fourth reel is the
 closed, on the return of Christ, and it gives the leader his true title:
 under-shepherd.
 
+**v2: simplified** — a one-line hook first, wording a 15-year-old follows, one idea per reel, about 50 seconds; each reel's *Guardrails held* note lists what was cut. Rules: *Script rules* in [Season2/Curriculum.md](../../Season2/Curriculum.md).
+
 Production IDs are `S5·09`–`S5·12` (Season 5 is 4 / 4 / 4; Arc 1 is
 S5·01–04, Arc 2 is S5·05–08). The heading gives the arc position, and the
 production ID stays in the `===` block. All four hold आप register, use no
@@ -71,18 +73,16 @@ S5·10 **builds on** Season 3 and must never contradict it. S3·02 said *शै�
 
 ```
 === DOCTRINE REELS · S5·09 · कोई वरदान कम नहीं था ===
-Target: 49–50 seconds. Register: आप. Tone: plain, a little wry at the hook; the प्रेम section slow; the three-line *आज भी हैं?* section level and even-handed, no edge in either direction; the closing warm.
+Target: about 50 seconds, unhurried. Register: आप. Tone: plain, a little wry at the hook; the प्रेम section slow; the three-line *आज भी हैं?* section level and even-handed, no edge in either direction; the closing warm.
 
-"जिस कलीसिया में कोई वरदान कम नहीं था —
-उसी से पौलुस ने कहा — तुम अब तक मसीह में बालक हो।
-वरदान इतने — तो कमी क्या थी?"
+जिस कलीसिया में कोई वरदान कम नहीं था — उसी से पौलुस ने कहा, तुम अब तक बालक हो।
+वरदान इतने — तो कमी क्या थी?
 
-पौलुस लिखते हैं — वरदान हर एक को दिया जाता है, सबके लाभ के लिए।
-आत्मा जैसा चाहते हैं, बाँटते हैं। मिला है — कमाया नहीं।
-सेवा, दान, दया — ये भी वरदान हैं।
+पवित्र आत्मा हर विश्वासी को वरदान देते हैं — सबके लाभ के लिए। मिला है — कमाया नहीं।
+सेवा करना, देना, दया करना — ये भी वरदान हैं।
 
-और वरदानों के दो अध्यायों के बीच पौलुस ने प्रेम का अध्याय रखा।
-प्रेम न हो — तो स्वर्गदूतों की बोली बोलने वाला भी बजता हुआ पीतल है।
+वरदानों के दो अध्यायों के बीच पौलुस ने प्रेम का अध्याय रखा।
+प्रेम न हो — तो सारे वरदान पाकर भी हम बजता हुआ पीतल हैं।
 
 अन्य भाषा, भविष्यवाणी — क्या ये आज भी हैं?
 कुछ विश्वासी मानते हैं, ये प्रेरितों के साथ थम गए; कुछ मानते हैं, आज भी हैं।
@@ -94,61 +94,22 @@ Target: 49–50 seconds. Register: आप. Tone: plain, a little wry at the hook
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut *"सेवा,
-दान, दया — ये भी वरदान हैं।"*. **Never** cut *"मिला है — कमाया नहीं"*, the
-प्रेम lines, any of the three *आज भी हैं?* lines (they stand or fall
-together), *"कोई एक वरदान सबूत नहीं कि आत्मा आप में हैं। जो मसीह का है,
-उसमें आत्मा हैं"*, or the closing line.
+**Length:** ~144 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"मिला है — कमाया नहीं"*, the प्रेम lines, any of the three *आज भी हैं?* lines (they stand or fall together), *"कोई एक वरदान सबूत नहीं कि आत्मा आप में हैं। जो मसीह का है, उसमें आत्मा हैं"* or the closing line. If the artist runs long, cut *"सेवा करना, देना, दया करना — ये भी वरदान हैं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "कोई वरदान कम नहीं था" | 1 कुरिन्थियों 1:7 |
-| "तुम अब तक मसीह में बालक हो" | 1 कुरिन्थियों 3:1-3 |
-| "हर एक को… सबके लाभ के लिए" | 1 कुरिन्थियों 12:7 |
-| "आत्मा जैसा चाहते हैं, बाँटते हैं" | 1 कुरिन्थियों 12:11 |
-| "मिला है — कमाया नहीं" | 1 कुरिन्थियों 4:7 |
-| "सेवा, दान, दया" | रोमियों 12:6-8 · 1 कुरिन्थियों 12:22 |
-| "दो अध्यायों के बीच… प्रेम का अध्याय" | 1 कुरिन्थियों 12:31 – 13:1 |
-| "स्वर्गदूतों की बोली… बजता हुआ पीतल" | 1 कुरिन्थियों 13:1 |
-| "कोई एक वरदान सबूत नहीं" | 1 कुरिन्थियों 12:29-30 — shown, not read |
+| "कोई वरदान कम नहीं… बालक" | 1 कुरिन्थियों 1:7 · 3:1 |
+| "हर विश्वासी को… सबके लाभ के लिए" | 1 कुरिन्थियों 12:7, 11 |
+| "सेवा, देना, दया" | रोमियों 12:6-8 |
+| "प्रेम का अध्याय… पीतल" | 1 कुरिन्थियों 13:1-2 |
 | "जो मसीह का है, उसमें आत्मा हैं" | रोमियों 8:9 |
-| closing line | 1 कुरिन्थियों 14:12, 26 · 1 पतरस 4:10 |
+| closing line | 1 पतरस 4:10 |
 
-**Why the hook works:** it is a paradox from the text itself, and most viewers
-have never put the two verses side by side. The church Paul says lacked *no*
-gift (1:7) is the church he could not speak to as spiritual, only as infants
-(3:1). Viewers from both sides of the gifts debate stop, because each expects
-the reel to prove the other side wrong. The third line (*तो कमी क्या थी?*)
-moves the question off *which* gifts to what the gifts were missing, and
-chapter 13 answers it.
+**Why the hook works:** a church that lacked no gift, called infants by the man who planted it. *So many gifts — then what was missing?* is a riddle with a one-word answer the viewer half knows.
 
-**Guardrails held:** **Continuation is declined by name, not dodged.** The
-three-line section names the question plainly (*अन्य भाषा, भविष्यवाणी — क्या
-ये आज भी हैं?*), describes both positions in their own best terms (*थम गए* /
-*आज भी हैं*), and refuses to rule: *यह फ़ैसला हम यहाँ नहीं करते*. That is
-Season 1 reel 11's decline (*वह बहस आज की नहीं*) made explicit for a shepherd,
-who will have to hold both kinds of believer in one congregation. The English
-labels (*cessationist / continuationist*) are loanwords and are not voiced; the
-positions are named by what they hold. **Neither side is treated with
-contempt.** *दोनों ओर वचन से प्रेम करने वाले लोग हैं* is uncuttable. There is
-no *dead church* and no *strange fire*, no mockery of a practice, and no named
-movement, denomination or teacher. **Tongues as proof is refused without
-adjudicating Spirit-baptism.** The claim is Season 1 reel 11's claim, stated on
-रोमियों 8:9: the Spirit's *indwelling* is the mark of belonging to Christ, and
-no one gift is its proof (12:29-30 on screen, where Paul's questions expect
-*no*). The reel says nothing about a second experience, its evidence or its
-timing. That debate is declined with the rest. **Gifts are for the body and
-are exercised in love.** Both must-land clauses are voiced from 12:7 (*सबके
-लाभ के लिए*) and from chapter 13's placement between 12 and 14, which the reel
-makes its centre. The closing restates it without the word *love*: *बगल वाले
-के लिए*. **Gifts as status are refused three ways.** They are distributed as
-the Spirit wills (12:11). They are received, not earned (*मिला है — कमाया
-नहीं*, 4:7). The ordinary gifts of service, giving and mercy are named
-alongside the rest (रोमियों 12). **No manipulation.** There is no *claim your
-gift*, no *if you had more faith*, no gift test and no invitation to seek any
-experience. The viewer is sent to the person beside him, not to a platform.
+**Guardrails held:** **Gifts are given, not earned, and for others' good** — the plain ones (serving, giving, mercy) are named beside the showy. **Love is placed where Paul placed it**, between the two gifts chapters, and is the reel's answer to the hook. **Continuation is declined by name, in three lines that stand or fall together** — both views are held by people who love Scripture, and the reel does not rule. **No gift is proof of the Spirit**: whoever is Christ's has him (रोमियों 8:9) — Season 1 reel 11's line. Gifts are not status. The brass is the loveless person, as in the verse, not the gift — and no gift is ranked above another. The giver is named (*पवित्र आत्मा हर विश्वासी को*).
 
 ---
 
@@ -156,90 +117,43 @@ experience. The viewer is sent to the person beside him, not to a platform.
 
 ```
 === DOCTRINE REELS · S5·10 · एक कवच ===
-Target: 49–50 seconds. Register: आप. Tone: calm and matter-of-fact throughout, no warfare swell, no ominous music; the armour list steady and evenly weighted; the *शत्रु नहीं* line plain and set apart; the closing settled.
+Target: about 50 seconds, unhurried. Register: आप. Tone: calm and matter-of-fact throughout, no warfare swell, no ominous music; the armour list steady and evenly weighted; the *शत्रु नहीं* line plain and set apart; the closing settled.
 
-"पौलुस ने शैतान से लड़ाई पर लिखा।
-न कोई ख़ास विधि, न किसी दुष्टात्मा का नाम।
-एक कवच — और उसका हर टुकड़ा आप पहले से जानते हैं।"
-
+पौलुस ने शैतान से लड़ाई के बारे में लिखा।
+न कोई ख़ास विधि बताई, न किसी दुष्टात्मा का नाम।
+बस एक कवच — और उसका हर टुकड़ा आप पहले से जानते हैं।
 शैतान है। पर हारा हुआ है।
-पौलुस लिखते हैं — क्रूस पर मसीह ने उन शक्तियों को निहत्था किया, और खुलेआम उन पर जय पाई।
-हमारे दोष का लेख — वहीं कीलों से जड़ दिया गया।
+
+पौलुस लिखते हैं — क्रूस पर मसीह ने दुष्ट शक्तियों को निहत्था किया, और खुलेआम उन पर जय पाई।
 
 हमारी लड़ाई लहू और मांस से नहीं। कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं।
-
-कवच — सच्चाई, धार्मिकता, मेल का सुसमाचार, विश्वास, उद्धार, परमेश्वर का वचन। और प्रार्थना।
-नया हथियार नहीं — सुसमाचार ही है, पहना हुआ। आदेश एक — स्थिर रहो।
-
 हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं सिखाता। मैदान आपका मन है।
-सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है।
-याकूब लिखते हैं — परमेश्वर के अधीन हो जाओ; शैतान का सामना करो, वह भाग जाएगा।
+
+कवच यह है — सच्चाई, धार्मिकता, मेल का सुसमाचार, विश्वास, उद्धार, परमेश्वर का वचन। और प्रार्थना।
+नया हथियार नहीं — सुसमाचार ही है, पहना हुआ।
+सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है। याकूब लिखते हैं — परमेश्वर के अधीन हो जाओ; शैतान का सामना करो, वह भाग जाएगा।
 
 लड़ाई असली है। पर अगर आप मसीह में हैं — जीत पहले ही हो चुकी। अब खड़े रहना है।
 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut *"हमारे
-दोष का लेख — वहीं कीलों से जड़ दिया गया।"*, and only if *"सुसमाचार ही है,
-पहना हुआ"* stays. **Never** cut *"शैतान है। पर हारा हुआ है"* (never either
-half alone), *"कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं"*, *"नया हथियार
-नहीं — सुसमाचार ही है, पहना हुआ"*, *"हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं
-सिखाता"*, *"सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है"*, the याकूब line, or
-the closing with its *अगर आप मसीह में हैं*.
+**Length:** ~145 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"शैतान है। पर हारा हुआ है"* (never either half alone), *"कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं"*, *"नया हथियार नहीं — सुसमाचार ही है, पहना हुआ"*, *"हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं सिखाता। मैदान आपका मन है"*, *"सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है"*, the याकूब line or the closing with its *अगर आप मसीह में हैं*. If the artist runs long, cut *"न कोई ख़ास विधि बताई, न किसी दुष्टात्मा का नाम।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "लड़ाई पर लिखा… एक कवच" | इफिसियों 6:10-11 |
-| "शैतान है" | 1 पतरस 5:8 · मत्ती 4:1 |
-| "निहत्था किया… खुलेआम उन पर जय पाई" | कुलुस्सियों 2:15 |
-| "हमारे दोष का लेख… कीलों से जड़ दिया" | कुलुस्सियों 2:14 · प्रकाशितवाक्य 12:10-11 |
-| "लहू और मांस से नहीं" | इफिसियों 6:12 — first clause only |
-| "सच्चाई… प्रार्थना" | इफिसियों 6:14-18 |
-| "सुसमाचार ही है, पहना हुआ" | रोमियों 13:12, 14 · यशायाह 59:17 |
-| "स्थिर रहो" | इफिसियों 6:11, 13, 14 |
-| "मैदान आपका मन है" | 2 कुरिन्थियों 10:4-5 · याकूब 1:14 |
-| "सुरक्षा… एक व्यक्ति है" | यूहन्ना 10:28 · भजन संहिता 121:5-8 |
-| "अधीन हो जाओ… वह भाग जाएगा" | याकूब 4:7 |
-| closing line | 1 यूहन्ना 4:4 · इफिसियों 6:13 |
+| "एक कवच" | इफिसियों 6:10-11 |
+| "निहत्था किया… जय पाई" | कुलुस्सियों 2:14-15 |
+| "लहू और मांस से नहीं" | इफिसियों 6:12 |
+| "कवच" | इफिसियों 6:14-18 |
+| "शैतान का सामना करो, वह भाग जाएगा" | याकूब 4:7 |
+| closing line | इफिसियों 6:13 · 1 यूहन्ना 4:4 |
 
-**Why the hook works:** a viewer who has met spiritual warfare teaching expects
-techniques, names and methods, and the hook tells him the apostle's own warfare
-passage has none. It then promises something stranger: he already knows every
-piece of the armour. He stays to find out how, and the answer is the gospel he
-believed on the first day.
+**Why the hook works:** what Paul did *not* write — no ritual, no demon's name — which is exactly what the viewer has been taught to expect. Then the promise that he already knows every piece.
 
-**Guardrails held:** **The devil is real and defeated, in one breath.** *शैतान
-है। पर हारा हुआ है* is uncuttable as a pair, so the reel can be heard neither
-as naturalism nor as a contest of equals. The defeat is कुलुस्सियों 2:15's,
-at the cross, and 2:14 shows *how*: the record against us was nailed there, so
-the accuser's charge (प्रकाशितवाक्य 12:10-11 on screen) has no ground. That
-ties the victory to penal substitution rather than to any rite. **The armour
-is the gospel.** The six pieces and prayer are read in इफिसियों 6's order and
-named for what they are. The reel's line is *नया हथियार नहीं — सुसमाचार ही
-है, पहना हुआ*, and the only command given is the passage's own verb, *स्थिर
-रहो*, three times in 6:11-14. No attack, no binding, no commanding. **No
-territorial spirits.** इफिसियों 6:12 is voiced in its first clause only (*लहू
-और मांस से नहीं*). Its list of rulers and powers *in the heavenly places* is
-not voiced, because voiced cold it is the proof-text of the territorial reading
-and would collide with S3·02's *लड़ाई हवा में नहीं*. The powers are named only
-as कुलुस्सियों 2:15 names them, disarmed. **6:12 is turned outward for an
-Indian viewer.** *कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं* is uncuttable.
-It closes the use of warfare language against the family or community that
-opposes a believer, which is the most dangerous misuse of this passage in the
-series' setting. **No demon behind everything.** *हर मुसीबत के पीछे दुष्टात्मा ढूँढना
-वचन नहीं सिखाता* is uncuttable. No illness, loss, quarrel or place is named,
-and no spirit is named. **Deliverance is never substituted for
-sanctification.** Resisting the devil is याकूब 4:7's order: submit to God
-*first*, then resist. *मैदान आपका मन है* keeps the fight where S3·02 put it
-(याकूब 1:14; 2 कुरिन्थियों 10:5, thoughts taken captive). **Stage 3 is
-restated, not contradicted.** S3·13's line comes back as *सुरक्षा कोई ताबीज़
-नहीं — एक व्यक्ति है*: a charm is a practice, not a community's name, and no
-religion, deity, place or practitioner is named. **Assurance is conditional.**
-The victory is handed over under *अगर आप मसीह में हैं*, with 1 यूहन्ना 4:4
-behind it on screen.
+**Guardrails held:** **The devil is real and defeated — both halves, never one alone.** The victory is the cross (कुलुस्सियों 2:15). **No person is the enemy**: not a neighbour, not a relative. **The armour is the gospel worn** — truth, righteousness, the gospel, faith, salvation, the word, and prayer — so there is no new technique, no territorial scheme and no demon behind every trouble. **Protection is a person, not a charm** (Season 3's S3·13 line, restated so the two never contradict). The closing is under the conditional. Nothing here contradicts S2·18, which says nothing about deliverance either way. Cut from v1: *हमारे दोष का लेख — वहीं कीलों से जड़ दिया गया* (shown), *आदेश एक — स्थिर रहो*. *मैदान आपका मन है* is kept — it restates S3·02 and says where the fight is, not only where it is not.
 
 ---
 
@@ -247,11 +161,11 @@ behind it on screen.
 
 ```
 === DOCTRINE REELS · S5·11 · वे रोए ===
-Target: 48–50 seconds. Register: आप. Tone: grave and quiet from the first word, never raised; the *अनन्त* line slow and plain; the क्रूस section a small lift of warmth; the पौलुस line near-broken; the closing gentle. No music swell, no pause for effect after *नरक*.
+Target: about 50 seconds, unhurried. Register: आप. Tone: grave and quiet from the first word, never raised; the *अनन्त* line slow and plain; the क्रूस section a small lift of warmth; the पौलुस line near-broken; the closing gentle. No music swell, no pause for effect after *नरक*.
 
-"नरक के बारे में सबसे ज़्यादा किसने कहा?
+नरक के बारे में सबसे ज़्यादा किसने कहा?
 कोई कठोर उपदेशक नहीं।
-यीशु ने — वही, जो नगर को देखकर रोए।"
+यीशु ने — वही, जो नगर को देखकर रोए।
 
 यीशु कहते हैं — कुछ अनन्त दण्ड में जाएँगे, और धर्मी अनन्त जीवन में।
 दोनों के लिए एक ही शब्द — अनन्त। न अंत में सबका बच जाना, न मिट जाना।
@@ -264,69 +178,29 @@ Target: 48–50 seconds. Register: आप. Tone: grave and quiet from the first 
 
 पौलुस अपने लोगों के लिए लिखते हैं — मेरे मन में बड़ा दुख है, जो थमता नहीं।
 तो नरक धमकाने की लाठी नहीं। किसी का नाम लेकर नहीं — आँसुओं से कहा जाता है।
-
 यीशु ने नरक की चेतावनी दी — और हमें उससे बचाने, ख़ुद क्रूस पर गए।
 
 === END ===
 ```
 
-**Length:** 147 tokens · 48–50 seconds. **No optional cut.** The reel sits at
-the floor of the range, and every line is either a must-land or a guard. If
-the artist runs long, slow nothing down and re-record. Never trim. In
-particular, **never** cut *"दोनों के लिए एक ही शब्द — अनन्त। न अंत में सबका
-बच जाना, न मिट जाना"*, the यहेजकेल line, **either line of the क्रूस
-section**, the पौलुस line, *"नरक धमकाने की लाठी नहीं। किसी का नाम लेकर नहीं
-— आँसुओं से कहा जाता है"*, or the closing line. **No clip, trailer or excerpt
-of this reel may run without the क्रूस section.**
+**Length:** ~147 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **No optional cut.** Every line is either a must-land or a guard; if the artist runs long, re-record — never trim. In particular **never** cut *"दोनों के लिए एक ही शब्द — अनन्त। न अंत में सबका बच जाना, न मिट जाना"*, the यहेजकेल line, **either line of the क्रूस section**, the पौलुस line, *"नरक धमकाने की लाठी नहीं। किसी का नाम लेकर नहीं — आँसुओं से कहा जाता है"* or the closing line. **No clip, trailer or excerpt of this reel may run without the क्रूस section.**
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "सबसे ज़्यादा किसने कहा?" | मत्ती 5:22, 29-30 · मत्ती 10:28 · मरकुस 9:43-48 — shown, not read |
 | "नगर को देखकर रोए" | लूका 19:41 |
 | "अनन्त दण्ड… अनन्त जीवन" | मत्ती 25:46 |
-| "न… बच जाना, न मिट जाना" | मत्ती 25:46 · 2 थिस्सलुनीकियों 1:9 |
-| "परमेश्वर पवित्र है… दण्ड के लायक" | रोमियों 6:23 · रोमियों 3:23 |
-| "दुष्ट के मरने से मैं प्रसन्न नहीं" | यहेजकेल 33:11 · 2 पतरस 3:9 |
-| "जो दण्ड हमारा था… हमारी जगह उठाया" | यशायाह 53:5-6 · 1 पतरस 3:18 |
-| "मन फिराकर… दण्ड की आज्ञा नहीं" | यूहन्ना 3:18 · यूहन्ना 5:24 · रोमियों 8:1 |
-| "मेरे मन में बड़ा दुख है, जो थमता नहीं" | रोमियों 9:2-3 |
-| "आँसुओं से कहा जाता है" | प्रेरितों के काम 20:31 · फिलिप्पियों 3:18 |
-| closing line | लूका 19:10 · यूहन्ना 3:16-17 |
+| "दण्ड के लायक" | रोमियों 6:23 |
+| "दुष्ट के मरने से प्रसन्न नहीं" | यहेजकेल 33:11 |
+| "हमारी जगह उठाया" | 1 पतरस 3:18 · यशायाह 53:5 |
+| "दण्ड की आज्ञा नहीं" | रोमियों 8:1 |
+| "बड़ा दुख है" | रोमियों 9:2 |
+| closing line | यूहन्ना 3:16-17 |
 
-**Why the hook works:** most viewers assume hell is the harsh preacher's
-subject, and many have turned away from it because of how they heard it
-preached. The hook corrects both in eleven words. The one who spoke of it most
-was Jesus (γέεννα is on his lips in eleven of its twelve New Testament uses),
-and he is the one who wept over Jerusalem. The juxtaposition is the reel's
-whole case, and the viewer stays to hear how the same person could say both.
+**Why the hook works:** a question with an answer the viewer does not expect — the one who spoke most about hell is the one who wept over a city. It tells him at once what kind of reel this is.
 
-**Guardrails held:** **It is Jesus's own teaching, from his own words.**
-मत्ती 25:46 is read in its two halves, and the reel's one piece of exegesis is
-the text's: the same adjective governs *punishment* and *life* (OV *अनन्त…
-अनन्त*). *न अंत में सबका बच जाना, न मिट जाना* then refuses universalism and
-annihilationism by their content, with no group, teacher or tradition named.
-2 थिस्सलुनीकियों 1:9 is on screen only. **It is never served cold without the
-cross.** The क्रूस section is uncuttable in every edit and every clip. It
-states penal substitution plainly (*जो दण्ड हमारा था, यीशु ने हमारी जगह
-उठाया*, Season 1 reel 5's claim) and gives the gospel response with its
-conditional (*अगर आप मन फिराकर मसीह पर भरोसा करते हैं*), so no viewer hears
-the warning without the way of escape. **Assurance is conditional.** Only the
-one who repents and trusts is told *आप पर दण्ड की आज्ञा नहीं* (यूहन्ना 3:18,
-5:24). **It is preached with tears, not relish.** लूका 19:41 is in the hook,
-रोमियों 9:2 is read, and प्रेरितों 20:31 (Paul's tears) is on screen. God's
-own heart is voiced, *दुष्ट के मरने से मैं प्रसन्न नहीं होता* (यहेजकेल
-33:11), so justice is never presented as appetite. **No threat tool.** *नरक
-धमकाने की लाठी नहीं* is said to the shepherd who might use it that way, and
-*किसी का नाम लेकर नहीं* forbids naming anyone, living or dead, individual or
-community, as bound for it. The hook frightens no one. It asks a question about
-who taught it. **No speculation.** The reel says nothing about those who never
-heard, degrees of punishment, the nature of the fire, or the intermediate
-state. Hell's justice is grounded in God's holiness and sin's desert (रोमियों
-6:23), stated once. **Romans 9 stays at verse 2.** Only Paul's grief is used.
-Nothing of the chapter's argument is voiced, shown or pinned (predestination is
-a permanent exclusion).
+**Guardrails held:** **This script is unchanged from v1**: it was already in plain Hindi, it has no optional cut, and every line is a must-land or a guard. Eternal judgment is Jesus's own teaching (मत्ती 25:46), with annihilationism and universalism closed in one line; God takes no pleasure in it (यहेजकेल 33:11); **the cross is in the reel's centre and no excerpt may run without it**; the promise is conditional on repentance and faith; and it is spoken with tears, never as a threat and never about a named person.
 
 ---
 
@@ -334,21 +208,19 @@ a permanent exclusion).
 
 ```
 === DOCTRINE REELS · S5·12 · प्रधान चरवाहा ===
-Target: 49–50 seconds. Register: आप. Tone: warm and unhurried, a little elegiac at the hook; the पतरस line gentle; the मुकुट section lifting, then quiet at *सिंहासन के आगे*; the *कब?* line brisk and plain; the series lines slow; the last line settled, with hope in it.
+Target: about 50 seconds, unhurried. Register: आप. Tone: warm and unhurried, a little elegiac at the hook; the पतरस line gentle; the मुकुट section lifting, then quiet at *सिंहासन के आगे*; the *कब?* line brisk and plain; the series lines slow; the last line settled, with hope in it.
 
-"हर अगुवे का एक आख़िरी दिन आता है।
-झुंड किसी और को सौंपना पड़ता है।
-तो झुंड था किसका?"
+हर अगुवे का एक आख़िरी दिन आता है। झुंड किसी और को सौंपना पड़ता है।
+तो झुंड था किसका?
 
-पतरस लिखते हैं — परमेश्वर के झुंड की रखवाली करो। परमेश्वर का — आपका नहीं।
-वही पतरस, जिसने तीन बार इनकार किया — और जिसे जी उठे यीशु ने तीन बार अपनी भेड़ें सौंपीं।
+पतरस ने तीन बार यीशु का इनकार किया था। जी उठे यीशु ने उन्हीं को तीन बार अपनी भेड़ें सौंपीं — मेरी भेड़ों को चरा।
+यीशु की — पतरस की नहीं।
 अगुवा पहले ख़ुद भेड़ है — जिसके लिए अच्छे चरवाहे ने अपना प्राण दिया।
 
-फिर पतरस लिखते हैं — जब प्रधान चरवाहा प्रकट होंगे, वे महिमा का मुकुट देंगे, जो मुरझाता नहीं।
-मुकुट पद नहीं — उनके हाथ का दान। और स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।
+वही पतरस लिखते हैं — जब प्रधान चरवाहा प्रकट होंगे, वे महिमा का मुकुट देंगे, जो मुरझाता नहीं।
+मुकुट पद नहीं — उनके हाथ का दान। स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।
 
 कब? वह दिन कोई नहीं जानता। तब तक — भेड़ों के पास।
-
 यह सफ़र सुनने से शुरू हुआ था — विश्वासी से चेले तक; और कुछ के लिए, चरवाहे तक।
 बात यहाँ पूरी होती है। चरवाहे का काम नहीं।
 
@@ -357,61 +229,22 @@ Target: 49–50 seconds. Register: आप. Tone: warm and unhurried, a little el
 === END ===
 ```
 
-**Length:** 150 tokens · 49–50 seconds. If the artist runs long, cut *"और
-स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते
-हैं।"*, and only if *"मुकुट पद नहीं — उनके हाथ का दान"* stays. **Never** cut
-*"परमेश्वर का — आपका नहीं"*, *"अगुवा पहले ख़ुद भेड़ है"* with its प्राण
-clause, the प्रधान चरवाहा line, *"मुकुट पद नहीं — उनके हाथ का दान"*, *"कब?
-वह दिन कोई नहीं जानता"*, the two series lines, or the closing line.
+**Length:** ~149 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"यीशु की — पतरस की नहीं"*, *"अगुवा पहले ख़ुद भेड़ है"* with its प्राण clause, the प्रधान चरवाहा line, *"मुकुट पद नहीं — उनके हाथ का दान"*, *"कब? वह दिन कोई नहीं जानता"*, the two series lines or the closing line. If the artist runs long, cut *"स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "परमेश्वर के झुंड की रखवाली करो" | 1 पतरस 5:2 |
-| "परमेश्वर का — आपका नहीं" | प्रेरितों के काम 20:28 · यहेजकेल 34:31 |
-| "तीन बार इनकार किया" | लूका 22:61-62 |
 | "तीन बार अपनी भेड़ें सौंपीं" | यूहन्ना 21:15-17 |
 | "अच्छे चरवाहे ने अपना प्राण दिया" | यूहन्ना 10:11 |
-| "प्रधान चरवाहा प्रकट होंगे… मुकुट… मुरझाता नहीं" | 1 पतरस 5:4 |
-| "उनके हाथ का दान" | 2 तीमुथियुस 4:8 · 1 कुरिन्थियों 4:7 |
-| "सिंहासन के आगे डाल देते हैं" | प्रकाशितवाक्य 4:10-11 |
+| "प्रधान चरवाहा… मुकुट" | 1 पतरस 5:4 |
+| "सिंहासन के आगे डाल देते हैं" | प्रकाशितवाक्य 4:10 |
 | "वह दिन कोई नहीं जानता" | मत्ती 24:36 |
-| "तब तक — भेड़ों के पास" | लूका 12:42-43 |
-| "विश्वासी से चेले तक; और कुछ के लिए, चरवाहे तक" | मत्ती 28:19 · 2 तीमुथियुस 2:2 |
-| closing line | प्रेरितों के काम 1:11 · तीतुस 2:13 |
+| closing line | प्रकाशितवाक्य 22:20 |
 
-**Why the hook works:** every leader knows the day is coming, and almost none
-has said it aloud. The hook says it in two plain lines, retirement or death
-left unnamed, and then asks a question that sounds simple and is not: if the
-flock can be handed on, it was never his. The viewer who leads stays because
-the question is about him. The viewer who follows stays because it is about his
-own अगुवा.
+**Why the hook works:** a fact no leader likes to think about — there is a last day, and the flock goes to someone else — and the question it forces. The series ends by taking the flock out of the leader's hands.
 
-**Guardrails held:** **The leader is an under-shepherd.** The whole reel is
-built to say this. The flock is God's (1 पतरस 5:2, *परमेश्वर का — आपका
-नहीं*, which restates S5·07's must-land in one line without repeating its
-5:3 list or यहेजकेल 34). The man who wrote the charge was restored after
-denial, not promoted for merit (लूका 22; यूहन्ना 21). The leader is himself a
-sheep for whom the Good Shepherd died (यूहन्ना 10:11), so the gospel of
-substitution stands at the centre of the finale. **Christ returns and gives
-the crown.** 1 पतरस 5:4 is voiced with Christ as the giver (*वे… देंगे*). The
-crown is *not a rank* (*मुकुट पद नहीं — उनके हाथ का दान*), and प्रकाशितवाक्य
-4:10 shows what those who wear crowns do with them: they lay them before the
-throne. That is the reward refused as status on the face of the reel. **No
-timeline.** Season 1 reel 19's *वह दिन कोई नहीं जानता* is restated, and the
-interval is given one duty only, *तब तक — भेड़ों के पास* (लूका 12:42-43,
-the faithful steward found at his work). There is no rapture, sequence, sign or
-date. **The series is closed.** The two series lines name the journey in the
-tagline's words (*विश्वासी से चेले तक*) and extend it to the ladder's last
-rung (*और कुछ के लिए, चरवाहे तक*). *बात यहाँ पूरी होती है। चरवाहे का काम नहीं*
-refuses to let the end of a video series be heard as the end of the work.
-**It ends where Season 1 ended.** The closing (*उनका है, जो लौट रहे हैं*)
-answers Season 1 reel 19's last line (*अंत वे हैं — जो लौट रहे हैं*), so
-the series begins and ends on the returning Christ, and the last word is his.
-No reward is promised to the viewer as such. The crown is spoken of as 5:4
-speaks of it, to shepherds who have fed the flock, and no one is told he has
-earned it.
+**Guardrails held:** **The flock is Christ's** — now said from यूहन्ना 21 (*feed **my** sheep*, to the man who denied him three times) instead of repeating 1 पतरस 5:2, which S5·07 voices. **The leader is first a sheep the Good Shepherd died for.** **The crown is a gift, not a rank**, and is laid down. **No timeline**: no one knows the day. The two series lines close the journey — believer to disciple, and for some, shepherd — and **the last word is not a leader's**. Cut from v1: *परमेश्वर के झुंड की रखवाली करो। परमेश्वर का — आपका नहीं* (replaced as above).
 
 ---
 
@@ -463,7 +296,7 @@ Every reel still stands alone; the order protects only the playlist viewer.
   - *नरक धमकाने की लाठी नहीं। किसी का नाम लेकर नहीं — आँसुओं से कहा जाता है*
   - the closing
 - **S5·12:**
-  - *परमेश्वर का — आपका नहीं*
+  - *यीशु की — पतरस की नहीं*
   - *मुकुट पद नहीं — उनके हाथ का दान*
   - *वह दिन कोई नहीं जानता*
   - the closing
@@ -488,9 +321,8 @@ These lines survive every edit, caption, subtitle and short clip.
   Attribute every Scripture line (*यीशु कहते हैं — / पौलुस लिखते हैं —*). No
   fire emoji, no *are you ready?* and no *share this with someone who needs
   to hear it* prompt. That prompt turns the reel into the threat it refuses.
-- **S5·12.** Carry *परमेश्वर का — आपका नहीं*, *मुकुट पद नहीं — उनके हाथ का
-  दान* and the closing line. Attribute *परमेश्वर के झुंड की रखवाली करो* to
-  पतरस. **No subscription, trial, plan or download prompt on the finale.** If
+- **S5·12.** Carry *यीशु की — पतरस की नहीं*, *मुकुट पद नहीं — उनके हाथ का
+  दान* and the closing line. **No subscription, trial, plan or download prompt on the finale.** If
   the brand outro carries one by default, remove it for S5·12. The series
   does not end on an offer. A *save this series* or *start again from the
   first reel* line is allowed. Nothing else is.
@@ -612,7 +444,7 @@ only 9:2, and chapter 9's argument is a permanent exclusion.
 **S5·12.** Comments naming a leader, church or ministry as unfaithful are
 removed (S5·07's rule). Comments asking *when?*, or offering signs, dates or
 sequences, get *वह दिन कोई नहीं जानता* and nothing more. Comments from
-leaders who are tired or leaving get the reel's *परमेश्वर का — आपका नहीं*
+leaders who are tired or leaving get the reel's *यीशु की — पतरस की नहीं*
 and a welcome, never a charge. Pin:
 
 1. **John 10: The Good Shepherd Lays Down His Life** (*यूहन्ना 10:
@@ -632,8 +464,8 @@ not with the flock.
 
 **Honorific, terminology and OV checks before recording.**
 
-- **Honorifics.** यीशु, the प्रधान चरवाहा and the Spirit take वे (*आत्मा
-  चाहते हैं, बाँटते हैं; आत्मा आप में हैं; प्रकट होंगे, वे देंगे*).
+- **Honorifics.** यीशु, the प्रधान चरवाहा and the Spirit take वे (*पवित्र
+  आत्मा वरदान देते हैं; आत्मा आप में हैं; प्रकट होंगे, वे देंगे*).
   परमेश्वर takes वह (*वह कहता है*, यहेजकेल 33:11). पौलुस, पतरस, याकूब
   *लिखते हैं*.
 - **Leaders.** Leaders are *अगुवे*, and प्राचीन is never voiced (1 पतरस 5:1;
@@ -657,8 +489,10 @@ not with the flock.
   and यूहन्ना 10:11's OV word (*अच्छा चरवाहा*), which the reel voices in the
   same breath. **Do not set *प्रधान चरवाहा* on screen as a quotation of
   5:4.** Show the OV's exact wording there once verified.
-- **यूहन्ना 21:15-17** is said as *तीन बार अपनी भेड़ें सौंपीं*, not quoted,
-  because the three commands differ in the OV.
+- **यूहन्ना 21:15-17** is said as *तीन बार अपनी भेड़ें सौंपीं — मेरी भेड़ों को
+  चरा*: the third command is quoted (21:17) and the three are not said to be
+  identical, because they differ in the OV. In v2 this passage, not 1 पतरस
+  5:2, carries *the flock is Christ's* (S5·07 voices 1 पतरस 5:2).
 - **S5·11's hook** rests on γέεννα (11 of 12 NT uses are Jesus's). *सबसे
   ज़्यादा* is the claim, never *सिर्फ़ यीशु ने*.
 

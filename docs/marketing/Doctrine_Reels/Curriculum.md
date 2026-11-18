@@ -606,7 +606,7 @@ Romans path, where a reader has chapters 1–8 in hand before chapter 9.
 
 ## Changelog
 
-**v5 — Seasons 2, 3 and 4 scripts simplified.** Each season rewritten to the
+**v5 — Seasons 2–5 scripts simplified.** Each season rewritten to the
 *Script rules* in [Season2/Curriculum.md](Season2/Curriculum.md): a one-line
 hook first, everyday Hindi a 15-year-old follows, one idea per reel, about
 50 seconds, and no line voiced twice in a season. Season 2 replaced two
@@ -618,8 +618,12 @@ Season 3 kept all 21 topics — none repeats another season — but
 words instead of repeating S3·21's line, and S4·09 keeps the brake but
 shows 1 पतरस 3:15 instead of reading it (S2·04 voices it). In four Season 4
 reels a painting played one clip after the line that tells its story; those
-lines now sit under their paintings. Each season had a doctrinal review
-pass and a check of the visual prompts against the new voiceover.
+lines now sit under their paintings. Season 5 kept all 12 topics; S5·11 (hell) is unchanged, S5·07's safety block
+is verbatim, the secondary-matters point is voiced once (S5·08, not S5·04),
+and S5·12 makes *the flock is Christ's* from यूहन्ना 21 instead of repeating
+1 पतरस 5:2. S5·06's hook no longer speaks of feet being *touched*. Each
+season had a doctrinal review pass and a check of the visual prompts against
+the new voiceover. Season 1 is released and was not touched.
 
 **v4 — gap audit; stage 3 added.** The v3 outline was audited against the
 Sermon on the Mount, गलातियों 5:19-23, the *one another* commands, the

@@ -135,7 +135,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "कलीसिया में किसी ने कहा — इस बार बाइबल अध्ययन आप लीजिए। तभी याकूब की एक आयत याद आई — बहुत लोग सिखाने वाले न बनें। तो — हाँ कहें, या ना?"
+*Voiceover:* "'इस बार बाइबल अध्ययन आप लीजिए।' और तभी एक आयत याद आई — बहुत लोग सिखाने वाले न बनें। तो हाँ कहें, या ना?"
 
 *On screen:* याकूब 3:1
 
@@ -151,9 +151,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "याकूब कारण भी लिखते हैं — सिखाने वालों का हिसाब और सख़्त होगा। और वे 'हम' लिखते हैं — अपने को भी गिनते हैं। सख़्त क्यों? जो वचन खोलता है, लोग उसकी बात पर जीते हैं।"
+*Voiceover:* "याकूब कारण भी लिखते हैं — सिखाने वालों का हिसाब और सख़्त होगा। क्यों? क्योंकि जो वचन सिखाता है, लोग उसकी बात पर जीते हैं।"
 
-*On screen:* याकूब 3:1 — hold · इब्रानियों 13:17 · 1 तीमुथियुस 4:16 · 1 पतरस 4:11
+*On screen:* याकूब 3:1 — hold
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -167,9 +167,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · PAINT BLOOM · 0:20–0:30
 
-*Voiceover:* "पर यह मनाही नहीं — होश दिलाना है। वही नया नियम कहता है — एक-दूसरे को सिखाओ। और यह चेतावनी किसी ख़ास वर्ग की नहीं — बच्चों की कक्षा में सिखाने वाले की भी है। सिखाना कोई ऊँचा दर्जा भी नहीं।"
+*Voiceover:* "पर यह मनाही नहीं — होश दिलाना है। वही बाइबल कहती है — एक-दूसरे को सिखाओ। और यह चेतावनी किसी ख़ास वर्ग की नहीं — बच्चों को वचन सिखाने वाले की भी है। सिखाना कोई ऊँचा दर्जा भी नहीं।"
 
-*On screen:* इब्रानियों 5:12 · कुलुस्सियों 3:16 · रोमियों 12:6-7 · 1 पतरस 4:10 · मत्ती 23:8 — shown, not read
+*On screen:* कुलुस्सियों 3:16 · मत्ती 23:8 — shown, not read
 
 ```
 CAMERA: starts on the close shot of the large-print page on the mat; one slow, steady push down into the page until the paper fills the frame; ends on the full painting of the scribe.
@@ -182,9 +182,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "अगली ही आयत — हम सब बहुत बार चूकते हैं। याकूब भी। अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है। एज्रा का क्रम देखिए — पहले वचन को समझा, फिर उस पर चले, तब सिखाया।"
+*Voiceover:* "एज्रा का क्रम देखिए — पहले वचन को समझा, फिर उस पर चले, तब सिखाया। और याकूब मानते हैं — हम सब बहुत बार चूकते हैं। अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है।"
 
-*On screen:* याकूब 3:2 · 1 कुरिन्थियों 3:13-15 · रोमियों 8:1 · एज्रा 7:10
+*On screen:* एज्रा 7:10 · याकूब 3:2 · 1 कुरिन्थियों 3:12-15
 
 ```
 CAMERA: starts on the full painting; a slow push toward the oil lamp's pool of light; the lamplight fills the frame and settles into the warm ceiling bulb of Rahul's room; ends on the medium-wide of the Thursday circle.
@@ -199,7 +199,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "डर से ना मत कहिए। घमंड से हाँ मत कहिए।"
 
-*On screen:* 2 तीमुथियुस 1:7 · रोमियों 12:3
+*On screen:* 1 पतरस 4:10-11
 
 Dissolve into the brand outro in the edit.
 ```
@@ -281,9 +281,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT BLOOM · 0:00–0:10
 
-*Voiceover:* "आपका पिछला पाठ याद कीजिए। अगर उसमें से बाइबल की आयत हटा दें — क्या आपकी बात फिर भी वही रहती? अगर हाँ — तो आयत खूँटी थी। बात आपकी थी, उस पर टाँग दी।"
-
-*On screen:* 2 कुरिन्थियों 4:2, 5
+*Voiceover:* "अपना पिछला पाठ याद कीजिए। अगर उसमें से बाइबल की आयत हटा दें — तो क्या आपकी बात वही रहती? अगर हाँ — तो आयत बस एक खूँटी थी। बात आपकी थी; उस पर टाँग दी।"
 
 ```
 CAMERA: starts on the close shot of the notebook from in front and above; one slow, steady push down into the lesson page until the paper fills the frame; ends on the full painting of the square.
@@ -296,9 +294,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · PAINT FADE · 0:10–0:20
 
-*Voiceover:* "नहेम्याह में — उन्होंने परमेश्वर की व्यवस्था की पुस्तक से पढ़कर अर्थ समझाया, और लोगों ने पाठ समझ लिया। पढ़ा। अर्थ बताया। लोग समझे।"
+*Voiceover:* "नहेम्याह के समय में परमेश्वर की पुस्तक पढ़ी गई, अर्थ समझाया गया — और लोग समझ गए।"
 
-*On screen:* नहेम्याह 8:8 · नहेम्याह 8:12
+*On screen:* नहेम्याह 8:8
 
 ```
 CAMERA: starts on the full painting; a slow push in toward one small group and its open scroll; the scroll's warm page settles into the open Bible under Rahul's lamp; ends on the medium close shot of Rahul at the desk.
@@ -313,7 +311,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 *Voiceover:* "पौलुस ने तीमुथियुस से कहा — वचन का प्रचार कर। तो उस हिस्से की मुख्य बात ही आपके पाठ की मुख्य बात हो। हर शब्द में छिपा अर्थ मत ढूँढिए — जो लिखने वाला कहना चाहता था, वही।"
 
-*On screen:* 2 तीमुथियुस 4:2 · 2 तीमुथियुस 2:15 · नहेम्याह 8:8 — hold
+*On screen:* 2 तीमुथियुस 4:2 · 2 पतरस 1:20-21
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -327,9 +325,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "हिम्मत की बातें, आगे बढ़ने के नुस्ख़े — आयत जोड़ने से वचन नहीं बनते। कहानी, उदाहरण — अच्छे हैं, अगर वे आयत की बात खोलें। क्योंकि दिल वचन से बदलते हैं। परमेश्वर कहता है — उसका वचन व्यर्थ नहीं लौटता। यह वादा वचन के लिए है — आपके विचार के लिए नहीं।"
+*Voiceover:* "हिम्मत बढ़ाने वाली अपनी बातों में आयत जोड़ देने से वे वचन नहीं बन जातीं। कहानी, उदाहरण — अच्छे हैं, अगर वे आयत की बात खोलें। परमेश्वर का वादा है — उसका वचन व्यर्थ नहीं लौटता। यह वादा वचन के लिए है — आपके विचार के लिए नहीं।"
 
-*On screen:* 2 तीमुथियुस 4:3-4 · 1 पतरस 1:23 · याकूब 1:18 · यशायाह 55:10-11
+*On screen:* यशायाह 55:11
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -345,7 +343,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "आयत हटाइए। अगर पूरा पाठ गिर जाए — तब आपने वचन सिखाया।"
 
-*On screen:* 1 कुरिन्थियों 2:4-5
+*On screen:* 2 तीमुथियुस 2:15
 
 Dissolve into the brand outro in the edit.
 ```
@@ -433,7 +431,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "आप बाइबल अध्ययन ले रहे हैं। कोई सवाल पूछता है — और आपको जवाब नहीं पता। सब आपकी ओर देख रहे हैं। अब?"
+*Voiceover:* "आप बाइबल अध्ययन ले रहे हैं। किसी ने सवाल पूछा — और आपको जवाब नहीं पता। सब आपकी ओर देख रहे हैं। अब?"
 
 ```
 CAMERA: starts on the medium-wide across the circle; one slow, steady dolly straight in over the near-side members' shoulders; ends on the close-up of Rahul's face.
@@ -446,9 +444,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "पतरस ने पौलुस की चिट्ठियों के बारे में लिखा — उनमें कुछ बातें समझने में कठिन हैं। एक प्रेरित — दूसरे प्रेरित के बारे में। और ख़तरा भी बताते हैं — अनसीखे लोग ऐसी बातों को खींच-तानकर अपना ही नाश करते हैं। तो ख़तरा 'नहीं पता' कहने में नहीं। बात गढ़ने में है।"
+*Voiceover:* "पतरस ने पौलुस की चिट्ठियों के बारे में लिखा — उनमें कुछ बातें समझने में कठिन हैं। और ख़तरा बताया — कुछ लोग ऐसी बातों को खींच-तानकर अपना ही नाश करते हैं। तो ख़तरा 'नहीं पता' कहने में नहीं। बात गढ़ने में है।"
 
-*On screen:* 2 पतरस 3:15-16 · 2 पतरस 3:16 — hold · नीतिवचन 30:5-6
+*On screen:* 2 पतरस 3:15-16
 
 ```
 CAMERA: starts on the close-up of Rahul; one slow, steady pull back on the same line; ends on the medium shot of Rahul, Arjun and the woman in the cream saree.
@@ -461,9 +459,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "मूसा ने कहा — गुप्त बातें परमेश्वर की हैं; जो प्रगट हुईं, वे हमारी — मानने के लिए। तो सच कहिए — मुझे नहीं पता। साथ ढूँढेंगे।"
+*Voiceover:* "मूसा ने कहा — गुप्त बातें परमेश्वर की हैं; जो प्रगट हुईं, वे हमारी हैं — मानने के लिए। तो सच कहिए — मुझे नहीं पता। साथ ढूँढेंगे।"
 
-*On screen:* व्यवस्थाविवरण 29:29 · प्रेरितों के काम 18:26 — shown, not read
+*On screen:* व्यवस्थाविवरण 29:29
 
 ```
 CAMERA: starts on the medium shot across the circle; one slow crane up over the near side of the circle while tilting down; ends directly overhead on the open Bibles in the middle of the mat, Rahul's side at the top of frame.
@@ -476,9 +474,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "साफ़ आयतों की रोशनी में कठिन को पढ़िए — वचन अपने को नहीं काटता। और 'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए। पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की। जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं।"
+*Voiceover:* "साफ़ आयतों की रोशनी में कठिन आयत पढ़िए — वचन अपने को नहीं काटता। और 'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए। पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की। जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं।"
 
-*On screen:* भजन संहिता 119:130 · यूहन्ना 10:35 · 1 यूहन्ना 4:1 · 1 कुरिन्थियों 2:12-13 · यूहन्ना 16:13-14 · 1 कुरिन्थियों 15:3-4 · 2 तीमुथियुस 3:15
+*On screen:* भजन संहिता 119:160 · 1 कुरिन्थियों 2:12-13 · 1 कुरिन्थियों 15:3-4
 
 ```
 CAMERA: starts directly overhead on the open Bibles; one slow crane down and tilt up to just above the mat; ends on the low close shot of the one Bible left open.
@@ -493,7 +491,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "'मुझे नहीं पता' — सिखाने वाले की हार नहीं। वचन का आदर है।"
 
-*On screen:* रोमियों 11:33
+*On screen:* नीतिवचन 30:5-6
 
 Dissolve into the brand outro in the edit.
 ```
@@ -509,7 +507,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## REEL 1·4 — सौंपी हुई अमानत · S5·04
 The old apostle's last letter, folded and tied, in the painting. A page with a line being written onto it in a second hand — the Galatian addition. Rahul teaching the Thursday group plainly; Rahul alone at his desk, his own teaching first; and a cloth-wrapped Bible passed from his hands into Arjun's. No gold, no building, no knife or ritual, no warning signs or wanted-poster imagery.
-**Cast:** Rahul, Arjun (hands), the Thursday group · painted scene (Paul's last letter, folded and tied) · **Hook text on frame 01:** "कौन-सी अमानत? सोना नहीं। इमारत नहीं।"
+**Cast:** Rahul, Arjun (hands), the Thursday group · painted scene (Paul's last letter, folded and tied) · **Hook text on frame 01:** "सोना नहीं। इमारत नहीं।"
 
 **Staging.** In the painting the viewer stands inside the cell door, behind
 the old man, who sits facing the high window. The old page is shot from in
@@ -575,9 +573,9 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT FADE · 0:00–0:10
 
-*Voiceover:* "पौलुस ने आख़िरी चिट्ठी में तीमुथियुस से कहा — जो अमानत सौंपी गई है, उसकी रखवाली कर। कौन-सी अमानत? सोना नहीं। इमारत नहीं। सुसमाचार — जो एक ही बार सौंपा गया। न जोड़ना, न घटाना।"
+*Voiceover:* "पौलुस ने अपनी आख़िरी चिट्ठी में एक चीज़ की रखवाली करने को कहा। सोना नहीं। इमारत नहीं। सुसमाचार — जो एक ही बार सौंपा गया। न जोड़ना, न घटाना।"
 
-*On screen:* 2 तीमुथियुस 4:6 · 2 तीमुथियुस 1:14 (OV थाती) · 1 तीमुथियुस 6:20 · यहूदा 3 · व्यवस्थाविवरण 4:2
+*On screen:* 2 तीमुथियुस 1:14 · यहूदा 3
 
 ```
 CAMERA: starts on the full painting; a slow push in over the old man's shoulder onto the folded letter in his lap; the shaft of pale gold light on the letter settles into lamplight on an old page; ends on the close shot of the handwritten page.
@@ -590,9 +588,9 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "गलातिया में कोई यीशु को नकार नहीं रहा था। बस जोड़ रहे थे — मसीह, और व्यवस्था के काम। पौलुस ने कहा — यह कोई सुसमाचार नहीं; बिगाड़ है। परख आदमी से नहीं, बात से — चाहे हम ही क्यों न हों।"
+*Voiceover:* "गलातिया में कोई यीशु को नकार नहीं रहा था। बस जोड़ रहे थे — मसीह, और व्यवस्था के काम। पौलुस ने कहा — यह कोई सुसमाचार नहीं। परख आदमी से नहीं, बात से — चाहे हम ही क्यों न हों।"
 
-*On screen:* गलातियों 2:16 · गलातियों 5:2-4 · प्रेरितों के काम 15:1 · गलातियों 1:6-7 · गलातियों 1:8
+*On screen:* गलातियों 1:6-9 · 2:16
 
 Generate from frame 02 alone. Hard-cut from the end of this clip to Clip 3.
 ```
@@ -606,9 +604,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "तीन सवाल — यीशु कौन हैं? क्रूस ने क्या किया, और क्या वे जी उठे? उद्धार — दान, या कमाई? गीत का ढंग, अंत के दिनों का क्रम — इन पर भाई अलग सोचते हैं; ये सुसमाचार नहीं।"
+*Voiceover:* "परखने के तीन सवाल — यीशु कौन हैं? क्रूस ने क्या किया, और क्या वे जी उठे? उद्धार — दान है, या कमाई?"
 
-*On screen:* यूहन्ना 1:1, 14 · 1 यूहन्ना 4:2-3 · 1 कुरिन्थियों 15:3-4, 14 · इफिसियों 2:8-9 · गलातियों 2:21 · रोमियों 14:1, 5
+*On screen:* 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -622,9 +620,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 (start frame only)** · CUT-OUT · 0:30–0:40
 
-*Voiceover:* "रखवाली पहरेदारी का शौक़ नहीं। पौलुस कहते हैं — पहले अपनी, और अपनी शिक्षा की चौकसी। नाम गिनाना नहीं — सच साफ़ सिखाना। यह अपने बल से नहीं — पवित्र आत्मा के द्वारा, जो हम में रहते हैं।"
+*Voiceover:* "पर रखवाली पहरेदारी का शौक़ नहीं। पौलुस कहते हैं — पहले अपनी, और अपनी शिक्षा की चौकसी। नाम गिनाना नहीं — सच साफ़ सिखाना। और यह अपने बल से नहीं — पवित्र आत्मा के द्वारा, जो हम में रहते हैं।"
 
-*On screen:* 1 तीमुथियुस 4:16 · तीतुस 1:9 · 2 तीमुथियुस 2:24-25 · 2 तीमुथियुस 1:14 — hold
+*On screen:* 1 तीमुथियुस 4:16 · 2 तीमुथियुस 1:14
 
 Generate from frame 04 alone. Hard-cut from the end of this clip to Clip 5.
 ```
@@ -640,7 +638,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "अमानत आपकी नहीं। जैसी मिली, वैसी ही आगे सौंपिए।"
 
-*On screen:* 2 तीमुथियुस 2:2 · 1 कुरिन्थियों 15:3
+*On screen:* 2 तीमुथियुस 2:2
 
 Dissolve into the brand outro in the edit.
 ```
@@ -656,7 +654,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ## Across the arc
 
-- **Adults only.** Every person is an adult; Arjun is 23 with a fuller short beard. The Sunday class in 1·1 is a class for new readers — the hand turning the page is an elderly woman's — while the voiceover keeps its original line.
+- **Adults only.** Every person is an adult; Arjun is 23 with a fuller short beard. The Sunday class in 1·1 is a class for new readers — the hand turning the page is an elderly woman's — while the voiceover says "बच्चों को वचन सिखाने वाले"; the picture stays adults-only.
 - **The Thursday circle never changes:** the same five members, the same wardrobe, the same seats, Rahul on the floor at the far side facing the camera, Arjun at his screen-left.
 - **No pulpit, stage, microphone, platform, robe, collar or stole**, and no real preacher, church building, logo, channel or screen with a sermon.
 - **1·1 has no gavel, scales or ledger at *हिसाब*.**

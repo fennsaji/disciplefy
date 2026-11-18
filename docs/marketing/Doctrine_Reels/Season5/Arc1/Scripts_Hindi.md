@@ -39,6 +39,8 @@ viewer's own teaching** — S5·02's *remove the verse* is run on *आपका 
 denomination, channel or movement as the false teacher or the bad teacher**.
 Every error enters as something the viewer might do himself.
 
+**v2: simplified** — a one-line hook first, wording a 15-year-old follows, one idea per reel, about 50 seconds; each reel's *Guardrails held* note lists what was cut. Rules: *Script rules* in [Season2/Curriculum.md](../../Season2/Curriculum.md).
+
 Four new reels, production IDs `S5·01`–`S5·04` (Season 5 is 4 / 4 / 4; Arc 2
 will be S5·05–08, Arc 3 S5·09–12), in arc order. Arc position is the
 heading; the production ID stays in the `===` block. All four hold आप
@@ -69,91 +71,45 @@ over the brand outro. Length is measured on the Devanagari-token counter
 
 ```
 === DOCTRINE REELS · S5·01 · हाँ कहें, या ना? ===
-Target: 49–50 seconds. Register: आप. Tone: warm and a little uncertain at the open, as someone just asked; the याकूब lines level, never stern; *मनाही नहीं — होश दिलाना है* with lift; the conditional line plain; the closing two short beats, evenly weighted.
+Target: about 50 seconds, unhurried. Register: आप. Tone: warm and a little uncertain at the open, as someone just asked; the याकूब lines level, never stern; *मनाही नहीं — होश दिलाना है* with lift; the conditional line plain; the closing two short beats, evenly weighted.
 
-"कलीसिया में किसी ने कहा — इस बार बाइबल अध्ययन आप लीजिए।
-तभी याकूब की एक आयत याद आई — बहुत लोग सिखाने वाले न बनें।
-तो — हाँ कहें, या ना?"
+"इस बार बाइबल अध्ययन आप लीजिए।"
+और तभी एक आयत याद आई — बहुत लोग सिखाने वाले न बनें।
+तो हाँ कहें, या ना?
 
 याकूब कारण भी लिखते हैं — सिखाने वालों का हिसाब और सख़्त होगा।
-और वे 'हम' लिखते हैं — अपने को भी गिनते हैं।
-सख़्त क्यों? जो वचन खोलता है, लोग उसकी बात पर जीते हैं।
+क्यों? क्योंकि जो वचन सिखाता है, लोग उसकी बात पर जीते हैं।
 
-पर यह मनाही नहीं — होश दिलाना है।
-वही नया नियम कहता है — एक-दूसरे को सिखाओ।
-और यह चेतावनी किसी ख़ास वर्ग की नहीं — बच्चों की कक्षा में सिखाने वाले की भी है।
-सिखाना कोई ऊँचा दर्जा भी नहीं।
-
-अगली ही आयत — हम सब बहुत बार चूकते हैं। याकूब भी।
-
-अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है।
+पर यह मनाही नहीं — होश दिलाना है। वही बाइबल कहती है — एक-दूसरे को सिखाओ।
+और यह चेतावनी किसी ख़ास वर्ग की नहीं — बच्चों को वचन सिखाने वाले की भी है। सिखाना कोई ऊँचा दर्जा भी नहीं।
 
 एज्रा का क्रम देखिए — पहले वचन को समझा, फिर उस पर चले, तब सिखाया।
+और याकूब मानते हैं — हम सब बहुत बार चूकते हैं।
+अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है।
 
 डर से ना मत कहिए। घमंड से हाँ मत कहिए।
 
 === END ===
 ```
 
-**Length:** 151 tokens · 49–50 seconds. If the artist runs long, cut
-*"और वे 'हम' लिखते हैं — अपने को भी गिनते हैं।"* — **never** cut *"पर यह
-मनाही नहीं — होश दिलाना है"* with the कुलुस्सियों line after it (one unit),
-**never** *"यह चेतावनी किसी ख़ास वर्ग की नहीं…"* with *"सिखाना कोई ऊँचा
-दर्जा भी नहीं"*, **never** *"अगर आप मसीह में हैं — यह हिसाब उद्धार का
-नहीं; जो सिखाया, उसका है"*, and **never** the closing pair (*डर से ना… घमंड
-से हाँ…* are one unit; either alone is the error the reel refuses).
+**Length:** ~131 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"पर यह मनाही नहीं — होश दिलाना है"* with the *एक-दूसरे को सिखाओ* line after it (one unit), *"यह चेतावनी किसी ख़ास वर्ग की नहीं…"* with *"सिखाना कोई ऊँचा दर्जा भी नहीं"*, *"अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है"* or the closing pair (one unit; either half alone is the error the reel refuses). If the artist runs long, cut *"और याकूब मानते हैं — हम सब बहुत बार चूकते हैं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
 | "बहुत लोग सिखाने वाले न बनें" | याकूब 3:1 |
-| "हिसाब और सख़्त होगा" | याकूब 3:1 · इब्रानियों 13:17 |
-| "'हम' लिखते हैं" | याकूब 3:1 — hold |
-| "लोग उसकी बात पर जीते हैं" | 1 तीमुथियुस 4:16 · 1 पतरस 4:11 |
-| "मनाही नहीं — होश दिलाना" | इब्रानियों 5:12 |
+| "हिसाब और सख़्त होगा" | याकूब 3:1 — hold |
 | "एक-दूसरे को सिखाओ" | कुलुस्सियों 3:16 |
-| "किसी ख़ास वर्ग की नहीं" | रोमियों 12:6-7 · 1 पतरस 4:10 |
 | "कोई ऊँचा दर्जा भी नहीं" | मत्ती 23:8 — shown, not read |
+| "समझा… चला… सिखाया" | एज्रा 7:10 |
 | "हम सब बहुत बार चूकते हैं" | याकूब 3:2 |
-| "हिसाब उद्धार का नहीं; जो सिखाया, उसका" | 1 कुरिन्थियों 3:13-15 · रोमियों 8:1 |
-| "पहले वचन को समझा, फिर उस पर चले, तब सिखाया" | एज्रा 7:10 |
-| closing line | 2 तीमुथियुस 1:7 · रोमियों 12:3 |
+| "हिसाब उद्धार का नहीं" | 1 कुरिन्थियों 3:12-15 |
+| closing line | 1 पतरस 4:10-11 |
 
-**Why the hook works:** it is the exact moment this stage begins — someone
-in the viewer's church has just asked him to take the study — and it sets
-against that invitation the one verse that seems to say *no*. The viewer who
-has felt the pull of both (*I want to serve / who am I to teach?*) hears his
-private dilemma asked out loud as a yes-or-no question, and stays for the
-answer, which turns out to be neither a plain yes nor a plain no.
+**Why the hook works:** the request itself, as it is made in every small church, and the verse that jumps to mind to refuse it. The viewer has been in that second and said either yes too fast or no too fast.
 
-**Guardrails held:** **A warning, not a ban.** याकूब 3:1 is read with its
-own reason (*the stricter account*) and then placed: *मनाही नहीं — होश
-दिलाना है*, uncuttable, bound to कुलुस्सियों 3:16 (*teach one another*,
-every believer's) with इब्रानियों 5:12 on screen (the NT *rebukes* believers
-who are still not teaching). The reel does not reduce 3:1 to nothing: *सख़्त
-क्यों?* is answered — people live on what the teacher opens (1 तीमुथियुस
-4:16: *you will save both yourself and your hearers*) — and James is shown
-counting himself in (*हम*) and, in the next verse, confessing that *we all
-stumble* (3:2): the warning comes from a teacher, not from a wall. **No
-clericalism in either direction**: *यह चेतावनी किसी ख़ास वर्ग की नहीं —
-बच्चों की कक्षा में सिखाने वाले की भी है* extends the warning downward to
-the humblest teaching, so it cannot be heard as *leave it to the ordained*;
-and *सिखाना कोई ऊँचा दर्जा भी नहीं* (मत्ती 23:8 shown, not read — as in
-S2·13) refuses the opposite error, the teacher as a class above. No
-office, ordination, appointment or structure is described; the hook has the
-viewer *asked* by his कलीसिया, so the reel neither licenses self-appointment
-nor rules on who may ask. **The stricter account is not loss of
-salvation**: *अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया,
-उसका है* is uncuttable and conditional — the judgment of a believer's work
-(1 कुरिन्थियों 3:13-15, *he himself will be saved*) is distinguished from
-condemnation (रोमियों 8:1), and the conditional keeps that comfort from a
-stranger outside Christ. **The positive way is Scripture's own order, not a
-technique**: एज्रा 7:10 — he set his heart to *study*, to *do*, and to
-*teach*, in that order — so preparation and obedience precede the lesson.
-**Both wrong answers are closed in one closing pair**: *डर से ना मत कहिए।
-घमंड से हाँ मत कहिए।* (2 तीमुथियुस 1:7; रोमियों 12:3) — the reel does not
-tell the viewer whether to say yes; it tells him what may not be the reason.
+**Guardrails held:** **याकूब 3:1 is a warning to enter soberly, not a ban** — said in so many words and backed by the New Testament's own *teach one another*. **No clericalism**: the warning reaches the humblest teaching, and teaching is no higher rank. **The stricter account is not about salvation**, under the verbatim conditional. Ezra's order — study, live, then teach — is the positive pattern. **The closing refuses both errors at once** and is one unit. Cut from v1: *और वे 'हम' लिखते हैं — अपने को भी गिनते हैं*; *बच्चों की कक्षा में सिखाने वाले* is now *बच्चों को वचन सिखाने वाले*.
 
 ---
 
@@ -161,84 +117,42 @@ tell the viewer whether to say yes; it tells him what may not be the reason.
 
 ```
 === DOCTRINE REELS · S5·02 · आयत हटाकर देखिए ===
-Target: 49–50 seconds. Register: आप. Tone: friendly and a little wry at the open — a test the viewer runs on himself, never on anyone else; the नहेम्याह beats slow; the *कहानी, उदाहरण — अच्छे हैं* line reassuring; the closing with a small smile.
+Target: about 50 seconds, unhurried. Register: आप. Tone: friendly and a little wry at the open — a test the viewer runs on himself, never on anyone else; the नहेम्याह beats slow; the *कहानी, उदाहरण — अच्छे हैं* line reassuring; the closing with a small smile.
 
-"आपका पिछला पाठ याद कीजिए।
-अगर उसमें से बाइबल की आयत हटा दें —
-क्या आपकी बात फिर भी वही रहती?"
+अपना पिछला पाठ याद कीजिए।
+अगर उसमें से बाइबल की आयत हटा दें — तो क्या आपकी बात वही रहती?
+अगर हाँ — तो आयत बस एक खूँटी थी। बात आपकी थी; उस पर टाँग दी।
 
-अगर हाँ — तो आयत खूँटी थी। बात आपकी थी, उस पर टाँग दी।
-
-नहेम्याह में — उन्होंने परमेश्वर की व्यवस्था की पुस्तक से पढ़कर अर्थ समझाया, और लोगों ने पाठ समझ लिया।
-पढ़ा। अर्थ बताया। लोग समझे।
+नहेम्याह के समय में परमेश्वर की पुस्तक पढ़ी गई, अर्थ समझाया गया — और लोग समझ गए।
 
 पौलुस ने तीमुथियुस से कहा — वचन का प्रचार कर।
 तो उस हिस्से की मुख्य बात ही आपके पाठ की मुख्य बात हो।
-
 हर शब्द में छिपा अर्थ मत ढूँढिए — जो लिखने वाला कहना चाहता था, वही।
-हिम्मत की बातें, आगे बढ़ने के नुस्ख़े — आयत जोड़ने से वचन नहीं बनते।
-कहानी, उदाहरण — अच्छे हैं, अगर वे आयत की बात खोलें।
 
-क्योंकि दिल वचन से बदलते हैं। परमेश्वर कहता है — उसका वचन व्यर्थ नहीं लौटता।
-यह वादा वचन के लिए है — आपके विचार के लिए नहीं।
+हिम्मत बढ़ाने वाली अपनी बातों में आयत जोड़ देने से वे वचन नहीं बन जातीं।
+कहानी, उदाहरण — अच्छे हैं, अगर वे आयत की बात खोलें।
+परमेश्वर का वादा है — उसका वचन व्यर्थ नहीं लौटता। यह वादा वचन के लिए है — आपके विचार के लिए नहीं।
 
 आयत हटाइए। अगर पूरा पाठ गिर जाए — तब आपने वचन सिखाया।
 
 === END ===
 ```
 
-**Length:** 151 tokens · 49–50 seconds. If the artist runs long, cut
-*"पढ़ा। अर्थ बताया। लोग समझे।"* — **never** cut *"तो उस हिस्से की मुख्य
-बात ही आपके पाठ की मुख्य बात हो"*, **never** *"कहानी, उदाहरण — अच्छे हैं,
-अगर वे आयत की बात खोलें"*, **never** *"यह वादा वचन के लिए है — आपके विचार
-के लिए नहीं"*, and **never** the closing line.
+**Length:** ~142 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"तो उस हिस्से की मुख्य बात ही आपके पाठ की मुख्य बात हो"*, *"कहानी, उदाहरण — अच्छे हैं, अगर वे आयत की बात खोलें"*, *"यह वादा वचन के लिए है — आपके विचार के लिए नहीं"* or the closing line. If the artist runs long, cut *"हर शब्द में छिपा अर्थ मत ढूँढिए —"* only together with its second half.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "आयत खूँटी थी… बात आपकी थी" | 2 कुरिन्थियों 4:2, 5 |
-| "पुस्तक से पढ़कर अर्थ समझाया… पाठ समझ लिया" | नहेम्याह 8:8 |
-| "लोग समझे" | नहेम्याह 8:12 |
+| "पढ़ी गई… अर्थ समझाया गया… लोग समझ गए" | नहेम्याह 8:8 |
 | "वचन का प्रचार कर" | 2 तीमुथियुस 4:2 |
-| "मुख्य बात ही पाठ की मुख्य बात" | 2 तीमुथियुस 2:15 |
-| "जो लिखने वाला कहना चाहता था" | नहेम्याह 8:8 — hold |
-| "हिम्मत की बातें, आगे बढ़ने के नुस्ख़े" | 2 तीमुथियुस 4:3-4 |
-| "कहानी, उदाहरण — अच्छे हैं" | — (no proof-text; the permission is the method's, not a verse's) |
-| "दिल वचन से बदलते हैं" | 1 पतरस 1:23 · याकूब 1:18 |
-| "उसका वचन व्यर्थ नहीं लौटता" | यशायाह 55:10-11 |
-| closing line | 1 कुरिन्थियों 2:4-5 |
+| "जो लिखने वाला कहना चाहता था" | 2 पतरस 1:20-21 |
+| "वचन व्यर्थ नहीं लौटता" | यशायाह 55:11 |
+| closing line | 2 तीमुथियुस 2:15 |
 
-**Why the hook works:** it hands the viewer a test he can run on himself in
-three seconds — take the verse out of your last lesson; does the lesson
-survive? — and almost every teacher who runs it honestly feels a flicker of
-doubt. The reel does not accuse; it lets the viewer's own lesson do the
-convicting, and he stays to find out what the answer should have been.
+**Why the hook works:** a test the viewer can run on himself in three seconds, on a lesson he actually taught. Most teachers find the answer is *yes, my point would have stood* — and stay to hear why that matters.
 
-**Guardrails held:** **The test is turned on the viewer, never on a
-preacher.** The hook says *आपका पिछला पाठ*; no sermon, pulpit, channel or
-kind of preacher is named or pictured, and production notes forbid any clip
-of one. **The positive rule is the text's**: नहेम्याह 8:8 in indirect speech
-— read from the book, gave the sense, the people understood — and 2
-तीमुथियुस 4:2's *preach the word*, drawn into one sentence the viewer can
-carry: *उस हिस्से की मुख्य बात ही आपके पाठ की मुख्य बात हो*, uncuttable.
-**Hanging a thought on a verse** is named in the viewer's own picture (*आयत
-खूँटी थी*), with 2 कुरिन्थियों 4:2 (not tampering with God's word) and 4:5
-(*we preach not ourselves*) on screen. **Allegory is refused by authorial
-intent**: *हर शब्द में छिपा अर्थ मत ढूँढिए — जो लिखने वाला कहना चाहता था,
-वही*. This does not contradict S4·01, which allowed only the connections
-Scripture itself makes; nothing here forbids reading a passage toward Christ
-where the text points there. **Motivational talks with a reference** are
-named without naming anyone — *हिम्मत की बातें, आगे बढ़ने के नुस्ख़े* —
-with 2 तीमुथियुस 4:3-4 on screen, and the reason given is positive, not
-scornful: *दिल वचन से बदलते हैं* (1 पतरस 1:23), and Isaiah's promise that
-God's word does not return empty is **the word's, not the teacher's** —
-*यह वादा वचन के लिए है — आपके विचार के लिए नहीं*, uncuttable. **The
-over-correction is closed on the reel's face**: *कहानी, उदाहरण — अच्छे हैं,
-अगर वे आयत की बात खोलें* is uncuttable, so the reel cannot be heard as
-*just read the verse and sit down* or as a ban on illustration and
-application. The closing inverts the hook's test: a lesson that *falls* when
-the verse is removed is the one that taught the word.
+**Guardrails held:** **The passage's point is the lesson's point** — the reel's one rule, taken from नहेम्याह 8:8's own three verbs. **Allegory is refused** (no hidden meaning in every word; the author's intent). **Motivational talk with a verse attached is named for what it is**, without mocking anyone. **Stories and illustrations are affirmed** when they open the text. **The promise that the word does not return empty belongs to the word, not to the teacher's thought.** Cut from v1: *क्योंकि दिल वचन से बदलते हैं*, *आगे बढ़ने के नुस्ख़े*.
 
 ---
 
@@ -246,26 +160,20 @@ the verse is removed is the one that taught the word.
 
 ```
 === DOCTRINE REELS · S5·03 · मुझे नहीं पता ===
-Target: 49–50 seconds. Register: आप. Tone: sympathetic at the open, the room's silence felt; the पतरस line with a little relief; *बात गढ़ने में है* firm; the आत्मा lines respectful, no irony on the quoted phrase; the closing warm.
+Target: about 50 seconds, unhurried. Register: आप. Tone: sympathetic at the open, the room's silence felt; the पतरस line with a little relief; *बात गढ़ने में है* firm; the आत्मा lines respectful, no irony on the quoted phrase; the closing warm.
 
-"आप बाइबल अध्ययन ले रहे हैं। कोई सवाल पूछता है — और आपको जवाब नहीं पता।
-सब आपकी ओर देख रहे हैं।
-अब?"
+आप बाइबल अध्ययन ले रहे हैं। किसी ने सवाल पूछा — और आपको जवाब नहीं पता।
+सब आपकी ओर देख रहे हैं। अब?
 
 पतरस ने पौलुस की चिट्ठियों के बारे में लिखा — उनमें कुछ बातें समझने में कठिन हैं।
-एक प्रेरित — दूसरे प्रेरित के बारे में।
-
-और ख़तरा भी बताते हैं — अनसीखे लोग ऐसी बातों को खींच-तानकर अपना ही नाश करते हैं।
+और ख़तरा बताया — कुछ लोग ऐसी बातों को खींच-तानकर अपना ही नाश करते हैं।
 तो ख़तरा 'नहीं पता' कहने में नहीं। बात गढ़ने में है।
 
-मूसा ने कहा — गुप्त बातें परमेश्वर की हैं; जो प्रगट हुईं, वे हमारी — मानने के लिए।
-
+मूसा ने कहा — गुप्त बातें परमेश्वर की हैं; जो प्रगट हुईं, वे हमारी हैं — मानने के लिए।
 तो सच कहिए — मुझे नहीं पता। साथ ढूँढेंगे।
-साफ़ आयतों की रोशनी में कठिन को पढ़िए — वचन अपने को नहीं काटता।
 
-और 'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए।
-पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की।
-
+साफ़ आयतों की रोशनी में कठिन आयत पढ़िए — वचन अपने को नहीं काटता।
+और 'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए। पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की।
 जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं।
 
 'मुझे नहीं पता' — सिखाने वाले की हार नहीं। वचन का आदर है।
@@ -273,65 +181,22 @@ Target: 49–50 seconds. Register: आप. Tone: sympathetic at the open, the ro
 === END ===
 ```
 
-**Length:** 150 tokens · 49–50 seconds. If the artist runs long, cut
-*"एक प्रेरित — दूसरे प्रेरित के बारे में।"* — **never** cut *"तो ख़तरा 'नहीं
-पता' कहने में नहीं। बात गढ़ने में है।"*, **never** the व्यवस्थाविवरण line,
-**never** *"'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए"* without *"पवित्र
-आत्मा समझ देते हैं — जो लिखा है, उसी की"* after it (one unit), **never**
-*"जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं"*, and **never** the
-closing line.
+**Length:** ~141 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"तो ख़तरा 'नहीं पता' कहने में नहीं। बात गढ़ने में है।"*, the मूसा line, *"'आत्मा ने मुझे दिखाया' कहकर नया अर्थ मत जोड़िए"* without *"पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी की"* after it (one unit), *"जो सबसे ज़रूरी है — सुसमाचार — वह धुंधला नहीं"* or the closing line. If the artist runs long, cut *"सब आपकी ओर देख रहे हैं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "कुछ बातें समझने में कठिन हैं" | 2 पतरस 3:15-16 |
-| "अनसीखे लोग… खींच-तानकर" | 2 पतरस 3:16 — hold |
-| "बात गढ़ने में है" | नीतिवचन 30:5-6 |
-| "गुप्त बातें… जो प्रगट हुईं… मानने के लिए" | व्यवस्थाविवरण 29:29 |
-| "मुझे नहीं पता। साथ ढूँढेंगे।" | प्रेरितों के काम 18:26 — shown, not read |
-| "साफ़ आयतों की रोशनी में" | भजन संहिता 119:130 |
-| "वचन अपने को नहीं काटता" | यूहन्ना 10:35 |
-| "'आत्मा ने मुझे दिखाया'" | 1 यूहन्ना 4:1 |
-| "पवित्र आत्मा समझ देते हैं — जो लिखा है" | 1 कुरिन्थियों 2:12-13 · यूहन्ना 16:13-14 |
-| "सुसमाचार — धुंधला नहीं" | 1 कुरिन्थियों 15:3-4 · 2 तीमुथियुस 3:15 |
-| closing line | रोमियों 11:33 |
+| "समझने में कठिन" | 2 पतरस 3:15-16 |
+| "गुप्त बातें परमेश्वर की हैं" | व्यवस्थाविवरण 29:29 |
+| "वचन अपने को नहीं काटता" | भजन संहिता 119:160 |
+| "जो लिखा है, उसी की" | 1 कुरिन्थियों 2:12-13 |
+| "सुसमाचार… धुंधला नहीं" | 1 कुरिन्थियों 15:3-4 |
+| closing line | नीतिवचन 30:5-6 |
 
-**Why the hook works:** every teacher dreads it — the question he cannot
-answer, asked in front of everyone — and the hook stops on the silence
-(*सब आपकी ओर देख रहे हैं। अब?*). The first line of the body is a small
-astonishment that relieves him: an apostle said of another apostle's letters
-that some things in them are hard to understand. If Peter could say it, so
-can he.
+**Why the hook works:** the moment every new teacher dreads, told in the second person, ending on one word — *अब?* The viewer wants to know what to do before it happens to him.
 
-**Guardrails held:** **Difficulty is admitted from inside Scripture**, not
-from a scholar: 2 पतरस 3:16, Peter on Paul, is the reel's warrant that some
-texts are hard, so the reel neither embarrasses the viewer nor lowers
-Scripture. **Inventing is named as the danger, not ignorance**: *ख़तरा 'नहीं
-पता' कहने में नहीं। बात गढ़ने में है।* — uncuttable, grounded in the same
-verse (the untaught and unstable *twist* such things) with नीतिवचन 30:5-6
-(*do not add to his words*) on screen. The *अपना ही नाश* clause is Peter's
-general statement and is applied to no one; the tone note keeps it level.
-**Where God has not spoken, the teacher is not required to**: व्यवस्थाविवरण
-29:29 — secret things belong to God; what is revealed belongs to us, *to do*
-— so the limit is honoured and the revealed turned into obedience, not
-speculation. **Pretending is refused positively** — *सच कहिए — मुझे नहीं
-पता। साथ ढूँढेंगे।* — and the method is Scripture interpreting Scripture:
-*साफ़ आयतों की रोशनी में कठिन को पढ़िए — वचन अपने को नहीं काटता* (भजन
-119:130; यूहन्ना 10:35 — Scripture cannot be broken). प्रेरितों 18:26 is on
-screen, not read: even Apollos, *mighty in the Scriptures*, was taught more
-accurately — the teacher who keeps learning is the biblical norm. **Mysticism
-is refused without denying the Spirit**: *'आत्मा ने मुझे दिखाया' कहकर नया
-अर्थ मत जोड़िए* is bound to *पवित्र आत्मा समझ देते हैं — जो लिखा है, उसी
-की* (1 कुरिन्थियों 2:12-13; यूहन्ना 16:13-14) — illumination of what is
-written, never a meaning added to it — so the reel cannot be heard as
-cessationist or as scorn of anyone who prays for understanding (no
-cessationism ruling; the quoted phrase carries no irony). The Spirit takes
-**वे**. **Difficulty is not allowed to spread to the gospel**: *जो सबसे
-ज़रूरी है — सुसमाचार — वह धुंधला नहीं* is uncuttable, so no viewer leaves
-thinking the whole Bible is uncertain; this is the perspicuity of the
-essentials, stated without the word. The closing makes the admission an act
-of reverence, not failure (रोमियों 11:33).
+**Guardrails held:** **An apostle says an apostle is hard to understand** — so *I don't know* is in good company. **The danger is inventing, not admitting.** व्यवस्थाविवरण 29:29 gives the boundary: some things are God's. **Scripture interprets Scripture** — the clear lights the unclear. **Mysticism is refused and the Spirit is honoured in one unit**: he gives understanding of what is written, not new meanings. **The gospel is not among the unclear things.** Cut from v1: *एक प्रेरित — दूसरे प्रेरित के बारे में*, *अनसीखे लोग*.
 
 ---
 
@@ -339,99 +204,45 @@ of reverence, not failure (रोमियों 11:33).
 
 ```
 === DOCTRINE REELS · S5·04 · सौंपी हुई अमानत ===
-Target: 49–50 seconds. Register: आप. Tone: grave and quiet at the open, a last letter; the गलातिया lines plain, like a Bible study; the three questions slow and separated; *पहरेदारी का शौक़ नहीं* level, never sarcastic; the closing gentle, a hand passing something on.
+Target: about 50 seconds, unhurried. Register: आप. Tone: grave and quiet at the open, a last letter; the गलातिया lines plain, like a Bible study; the three questions slow and separated; *पहरेदारी का शौक़ नहीं* level, never sarcastic; the closing gentle, a hand passing something on.
 
-"पौलुस ने आख़िरी चिट्ठी में तीमुथियुस से कहा — जो अमानत सौंपी गई है, उसकी रखवाली कर।
-कौन-सी अमानत? सोना नहीं। इमारत नहीं।"
-
+पौलुस ने अपनी आख़िरी चिट्ठी में एक चीज़ की रखवाली करने को कहा।
+सोना नहीं। इमारत नहीं।
 सुसमाचार — जो एक ही बार सौंपा गया। न जोड़ना, न घटाना।
 
 गलातिया में कोई यीशु को नकार नहीं रहा था। बस जोड़ रहे थे — मसीह, और व्यवस्था के काम।
-पौलुस ने कहा — यह कोई सुसमाचार नहीं; बिगाड़ है।
+पौलुस ने कहा — यह कोई सुसमाचार नहीं।
 परख आदमी से नहीं, बात से — चाहे हम ही क्यों न हों।
 
-तीन सवाल — यीशु कौन हैं? क्रूस ने क्या किया, और क्या वे जी उठे? उद्धार — दान, या कमाई?
+परखने के तीन सवाल —
+यीशु कौन हैं? क्रूस ने क्या किया, और क्या वे जी उठे? उद्धार — दान है, या कमाई?
 
-गीत का ढंग, अंत के दिनों का क्रम — इन पर भाई अलग सोचते हैं; ये सुसमाचार नहीं।
-
-रखवाली पहरेदारी का शौक़ नहीं। पौलुस कहते हैं — पहले अपनी, और अपनी शिक्षा की चौकसी।
+पर रखवाली पहरेदारी का शौक़ नहीं। पौलुस कहते हैं — पहले अपनी, और अपनी शिक्षा की चौकसी।
 नाम गिनाना नहीं — सच साफ़ सिखाना।
-यह अपने बल से नहीं — पवित्र आत्मा के द्वारा, जो हम में रहते हैं।
+और यह अपने बल से नहीं — पवित्र आत्मा के द्वारा, जो हम में रहते हैं।
 
 अमानत आपकी नहीं। जैसी मिली, वैसी ही आगे सौंपिए।
 
 === END ===
 ```
 
-**Length:** 152 tokens · 49–50 seconds. If the artist runs long, cut
-*"सोना नहीं। इमारत नहीं।"* (the hook still closes on *कौन-सी अमानत?*) —
-**never** cut *"परख आदमी से नहीं, बात से — चाहे हम ही क्यों न हों"*,
-**never** the three questions (all three, in full — the resurrection clause
-included), **never** *"गीत का ढंग, अंत के दिनों का क्रम — इन पर भाई अलग
-सोचते हैं; ये सुसमाचार नहीं"*, **never** *"रखवाली पहरेदारी का शौक़ नहीं"*
-with the 1 तीमुथियुस 4:16 line after it (one unit), **never** *"नाम गिनाना
-नहीं — सच साफ़ सिखाना"*, and **never** the पवित्र आत्मा line.
+**Length:** ~132 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"परख आदमी से नहीं, बात से — चाहे हम ही क्यों न हों"*, the three questions (all three, in full — the resurrection clause included), *"रखवाली पहरेदारी का शौक़ नहीं"* with the line after it (one unit), *"नाम गिनाना नहीं — सच साफ़ सिखाना"* or the पवित्र आत्मा line. If the artist runs long, cut *"सोना नहीं। इमारत नहीं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "आख़िरी चिट्ठी" | 2 तीमुथियुस 4:6 |
-| "जो अमानत सौंपी गई है, उसकी रखवाली कर" | 2 तीमुथियुस 1:14 (OV *थाती*) · 1 तीमुथियुस 6:20 |
+| "रखवाली करने को कहा" | 2 तीमुथियुस 1:14 |
 | "एक ही बार सौंपा गया" | यहूदा 3 |
-| "न जोड़ना, न घटाना" | व्यवस्थाविवरण 4:2 |
-| "मसीह, और व्यवस्था के काम" | गलातियों 2:16 · 5:2-4 · प्रेरितों के काम 15:1 |
-| "कोई सुसमाचार नहीं; बिगाड़ है" | गलातियों 1:6-7 |
-| "चाहे हम ही क्यों न हों" | गलातियों 1:8 |
-| "यीशु कौन हैं?" | यूहन्ना 1:1, 14 · 1 यूहन्ना 4:2-3 |
-| "क्रूस ने क्या किया, और क्या वे जी उठे?" | 1 कुरिन्थियों 15:3-4, 14 |
-| "दान, या कमाई?" | इफिसियों 2:8-9 · गलातियों 2:21 |
-| "इन पर भाई अलग सोचते हैं" | रोमियों 14:1, 5 |
-| "पहले अपनी, और अपनी शिक्षा की चौकसी" | 1 तीमुथियुस 4:16 |
-| "सच साफ़ सिखाना" | तीतुस 1:9 · 2 तीमुथियुस 2:24-25 |
-| "पवित्र आत्मा के द्वारा, जो हम में रहते हैं" | 2 तीमुथियुस 1:14 — hold |
-| closing line | 2 तीमुथियुस 2:2 · 1 कुरिन्थियों 15:3 |
+| "यह कोई सुसमाचार नहीं" | गलातियों 1:6-9 · 2:16 |
+| "तीन सवाल" | 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9 |
+| "अपनी, और अपनी शिक्षा की चौकसी" | 1 तीमुथियुस 4:16 |
+| "पवित्र आत्मा के द्वारा" | 2 तीमुथियुस 1:14 |
+| closing line | 2 तीमुथियुस 2:2 |
 
-**Why the hook works:** a dying man's last instruction to his younger
-friend — *guard what was entrusted to you* — and the viewer does not know
-what it was. The hook removes the two answers he would guess (wealth; a
-building) and leaves the question hanging. *अमानत* is a word every Indian
-household knows the weight of: what is held in trust is not yours to spend,
-to improve or to keep.
+**Why the hook works:** an old man's last letter and the one thing he asks to be guarded — with two guesses ruled out before the answer. It tells a leader what his real property is.
 
-**Guardrails held:** **False teaching is identified by content, not by
-person.** The reel's Galatian case is chosen because the error was not a
-denial of Jesus but an *addition* to him (*बस जोड़ रहे थे*) — the subtlest
-and commonest form — and Paul's verdict is voiced from 1:7 (*no gospel at
-all; a distortion*), not from 1:8's *angel* clause (Season 1 reel 13) or
-S2·03's *दूसरा सुसमाचार*. *परख आदमी से नहीं, बात से — चाहे हम ही क्यों न
-हों* is uncuttable: 1:8's *we* clause makes the apostle himself subject to
-the content test, which is the strongest possible refusal of judging by
-reputation, in either direction. **The content test is three questions and
-includes the resurrection** — who Jesus is, what the cross did and whether
-he rose, and whether salvation is gift or wage — all three uncuttable, so
-the test cannot be clipped into a partial gospel; it echoes S4·06 (*उद्धार
-दान है, कमाई नहीं*) without repeating S2·09's church test. **Secondary
-matters are named as secondary without adjudicating any**: *गीत का ढंग, अंत
-के दिनों का क्रम — इन पर भाई अलग सोचते हैं; ये सुसमाचार नहीं* (रोमियों 14
-on screen). The reel calls eschatological order a matter on which *brothers*
-differ and says nothing about any scheme. **Heresy-hunting is refused on the
-reel's face**: *रखवाली पहरेदारी का शौक़ नहीं* and the guard begins at home —
-1 तीमुथियुस 4:16, *yourself and your teaching* — then *नाम गिनाना नहीं — सच
-साफ़ सिखाना* (तीतुस 1:9; 2 तीमुथियुस 2:24-25's gentleness on screen). The
-reel does not claim Scripture forbids ever naming a false teacher (Paul
-names some, 2 तीमुथियुस 2:17); it says the guard's *work* is clear teaching,
-and it names no one itself. **No self-reliance, no मदद**: the guarding is
-*पवित्र आत्मा के द्वारा, जो हम में रहते हैं* — 2 तीमुथियुस 1:14's own
-clause, the Spirit as the one who indwells (वे), not an assistant to effort.
-**Word choice**: *व्यवस्था के काम*, not *ख़तना*, in the voiceover — in this
-market *ख़तना* is read as a remark about a neighbouring community, and the
-reel would be heard as comparative religion; Galatians' own phrase (2:16)
-carries the same point, and 5:2-4 and प्रेरितों 15:1 sit on screen for the
-viewer who wants the history. *अमानत* is spoken for the OV's *थाती*, which
-this audience no longer uses; the on-screen text follows the OV. The closing
-(*जैसी मिली, वैसी ही आगे सौंपिए*) ends the arc where 2 तीमुथियुस 2:2 does —
-a trust passed on unchanged.
+**Guardrails held:** **The deposit is the gospel, and the Galatian error was addition, not denial** — which is how it usually comes. **Teaching is tested by content, not by who says it — *ourselves included*.** The three questions are the test, whole. **Guarding is not heresy-hunting**: first one's own teaching, no naming of names, and by the Spirit, not in one's own strength. The closing makes the leader a trustee. Cut from v1: *गीत का ढंग, अंत के दिनों का क्रम — इन पर भाई अलग सोचते हैं* — the secondary-matters point is S5·08's whole subject four reels on and is not said twice in the season; *बिगाड़ है*.
 
 ---
 
@@ -461,9 +272,9 @@ one-breath gospel as given and must never be edited to re-voice गलाति�
 1:8's angel clause or *दूसरा सुसमाचार*. **Forward:** Arc 2·2 (*सेवक*, the
 spiral of S2·13) must not contradict S5·01's *सिखाना कोई ऊँचा दर्जा भी नहीं*;
 Arc 2·4 (*ज़रूरी और गौण*) will teach essentials and secondary matters at
-length — S5·04's one line is the seed, and Arc 2·4 should echo its wording
-(*भाई अलग सोचते हैं; ये सुसमाचार नहीं*) rather than restate a different
-list. Arc 3·1 (spiritual gifts) must not undo S5·03's refusal to adjudicate
+length. In v2 S5·04 no longer voices its one secondary-matters line — the
+season says that once, in Arc 2·4 — and S5·04's three questions confine its
+test to gospel content. Arc 3·1 (spiritual gifts) must not undo S5·03's refusal to adjudicate
 cessationism.
 
 **Visual rules.**
@@ -475,7 +286,7 @@ cessationism.
   signboard, logo, channel, stage event or crowd** — not even blurred. No
   screen showing a sermon or a video.
 - **S5·01**: no child's face in distress, no scolding adult at the
-  *बच्चों की कक्षा* beat — a child's hand turning a page at most. No judge,
+  *बच्चों को वचन सिखाने वाले* beat — a child's hand turning a page at most. No judge,
   gavel, scales or ledger at *हिसाब* (the reel refused the ledger frame for
   sin; it keeps it off teaching too).
 - **S5·02**: the hook's test may be pictured literally — a verse card lifted
@@ -512,7 +323,7 @@ clip.**
   paired आत्मा lines, together · *जो सबसे ज़रूरी है — सुसमाचार — वह
   धुंधला नहीं* · the closing.
 - **S5·04**: *परख आदमी से नहीं, बात से* · the three questions, whole ·
-  *ये सुसमाचार नहीं* with its line · *रखवाली पहरेदारी का शौक़ नहीं* ·
+  *रखवाली पहरेदारी का शौक़ नहीं* ·
   *नाम गिनाना नहीं — सच साफ़ सिखाना*. **No caption uses the words
   *heretic/विधर्मी*, *wolf/भेड़िया*, *expose*, *red flags* or *signs of a
   false teacher*** — the reel is about content, and listicle framing turns it
@@ -604,7 +415,7 @@ clip.**
 S5·02 *मुख्य बात ही आपके पाठ की मुख्य बात* · *कहानी, उदाहरण — अच्छे हैं* ·
 *यह वादा वचन के लिए है* · the closing. S5·03 *बात गढ़ने में है* · व्यवस्थाविवरण
 29:29 · the paired आत्मा lines · *सुसमाचार — वह धुंधला नहीं* · the closing.
-S5·04 *परख आदमी से नहीं, बात से* · the three questions · *ये सुसमाचार नहीं*
+S5·04 *परख आदमी से नहीं, बात से* · the three questions
 · *पहरेदारी का शौक़ नहीं* with 1 तीमुथियुस 4:16 · *नाम गिनाना नहीं* · the
 पवित्र आत्मा line. These survive every edit, caption, subtitle and short clip.
 

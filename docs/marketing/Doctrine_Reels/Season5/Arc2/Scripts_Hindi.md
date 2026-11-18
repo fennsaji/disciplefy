@@ -29,6 +29,8 @@ not covered. It names no preacher, church, ministry, movement or case; it
 does not say *leave your church*, and it says on its face that it is not
 against leaders as such.
 
+**v2: simplified** — a one-line hook first, wording a 15-year-old follows, one idea per reel, about 50 seconds; each reel's *Guardrails held* note lists what was cut. Rules: *Script rules* in [Season2/Curriculum.md](../../Season2/Curriculum.md).
+
 Production IDs are `S5·05`–`S5·08` (Season 5 is 4 / 4 / 4; Arc 1 is
 S5·01–04, Arc 3 is S5·09–12). Arc position is the heading; the production ID
 stays in the `===` block. All four hold आप register, no English loanwords,
@@ -56,22 +58,18 @@ outro. Length is measured on the Devanagari-token counter (145–152 =
 
 ```
 === DOCTRINE REELS · S5·05 · सूची में एक ही हुनर ===
-Target: 49–50 seconds. Register: आप. Tone: curious and a little wry at the hook; the list read as a list, even-paced; the *परख सकता है* line with its brake in the same breath; the *हर चेले की दिशा* turn warm; the closing slow.
+Target: about 50 seconds, unhurried. Register: आप. Tone: curious and a little wry at the hook; the list read as a list, even-paced; the *परख सकता है* line with its brake in the same breath; the *हर चेले की दिशा* turn warm; the closing slow.
 
-"पौलुस ने लिखा — अगुवा कैसा हो।
-उस सूची में न मीठी आवाज़ है, न भीड़, न चमत्कार।
-हुनर सिर्फ़ एक है। बाकी सब?"
+अच्छा अगुवा कौन? पौलुस की सूची में न मीठी आवाज़ है, न भीड़, न चमत्कार।
+हुनर सिर्फ़ एक है — सिखाने में निपुण। बाकी सब?
 
-हुनर — सिखाने में निपुण। बस।
-बाकी सब चरित्र — निर्दोष, संयमी, पहुनाई करने वाला, कोमल। न झगड़ालू, न लोभी, न पियक्कड़।
+बाकी सब चरित्र — निर्दोष, संयमी, सत्कार करने वाला, कोमल। न झगड़ालू, न लोभी।
 घर में कैसा है। बाहर वाले उसे कैसे जानते हैं।
 
 वरदान मंच पर दिखता है। चरित्र घर में। पौलुस ने पहले घर देखा।
+यह सूची खुली बाइबल में है — इसलिए झुंड भी अगुवे को इसी से परख सकता है; दोष ढूँढने को नहीं, आदर और प्रार्थना के साथ।
 
-यह सूची किसी गुप्त किताब में नहीं — खुले वचन में है, हर विश्वासी के हाथ में।
-इसलिए झुंड भी अगुवे को इसी से परख सकता है — दोष ढूँढने को नहीं; आदर और प्रार्थना के साथ।
-
-और देखिए — इस सूची की लगभग हर बात, वचन हर विश्वासी से माँगता है।
+और देखिए — इस सूची की लगभग हर बात बाइबल हर विश्वासी से माँगती है।
 यह अगुवों की अलग नैतिकता नहीं। हर चेले की दिशा है।
 और यह चरित्र कमाया नहीं जाता — जो मसीह के हैं, उनमें पवित्र आत्मा इसे गढ़ते हैं।
 
@@ -80,63 +78,22 @@ Target: 49–50 seconds. Register: आप. Tone: curious and a little wry at the
 === END ===
 ```
 
-**Length:** 148 tokens · 49–50 seconds. If the artist runs long, cut
-*"न झगड़ालू, न लोभी, न पियक्कड़।"* — **never** cut *"बाकी सब चरित्र"*,
-**never** *"दोष ढूँढने को नहीं; आदर और प्रार्थना के साथ"* (it is one unit
-with the *परख सकता है* clause before it — never one without the other),
-**never** *"यह अगुवों की अलग नैतिकता नहीं। हर चेले की दिशा है"*, and
-**never** *"जो मसीह के हैं, उनमें पवित्र आत्मा इसे गढ़ते हैं"*.
+**Length:** ~134 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"बाकी सब चरित्र"*, *"दोष ढूँढने को नहीं, आदर और प्रार्थना के साथ"* (one unit with the *परख सकता है* clause before it), *"यह अगुवों की अलग नैतिकता नहीं। हर चेले की दिशा है"* or *"जो मसीह के हैं, उनमें पवित्र आत्मा इसे गढ़ते हैं"*. If the artist runs long, cut *"न झगड़ालू, न लोभी।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "अगुवा कैसा हो" | 1 तीमुथियुस 3:1-7 · तीतुस 1:5-9 — references only; verse text not displayed |
-| "सिखाने में निपुण" | 1 तीमुथियुस 3:2 · तीतुस 1:9 |
-| "निर्दोष, संयमी, पहुनाई करने वाला, कोमल" | 1 तीमुथियुस 3:2-3 |
-| "न झगड़ालू, न लोभी, न पियक्कड़" | 1 तीमुथियुस 3:3 · तीतुस 1:7 |
-| "घर में कैसा है" | 1 तीमुथियुस 3:4-5 |
-| "बाहर वाले उसे कैसे जानते हैं" | 1 तीमुथियुस 3:7 |
-| "कलीसिया के नाम लिखी चिट्ठी" | 1 तीमुथियुस 3:14-15 |
-| "आदर और प्रार्थना के साथ" | 1 थिस्सलुनीकियों 5:12-13 · इब्रानियों 13:17-18 |
-| "वचन हर विश्वासी से माँगता है" | तीतुस 2:2-6, 12 · रोमियों 12:13 · फिलिप्पियों 4:5 · इफिसियों 5:18 · इब्रानियों 13:5 |
-| "पवित्र आत्मा इसे गढ़ते हैं" | गलातियों 5:22-23 · तीतुस 2:11-12 |
+| "सिखाने में निपुण" | 1 तीमुथियुस 3:2 |
+| "निर्दोष, संयमी, सत्कार करने वाला" | 1 तीमुथियुस 3:2-7 · तीतुस 1:6-9 |
+| "पहले घर देखा" | 1 तीमुथियुस 3:4-5 |
+| "आदर और प्रार्थना के साथ" | 1 तीमुथियुस 5:17, 19 |
+| "हर चेले की दिशा" | गलातियों 5:22-23 |
 | closing line | 1 शमूएल 16:7 |
 
-**Why the hook works:** every viewer carries a picture of a great leader —
-the voice, the crowd, the power — and the hook takes all three away before
-the body starts, then withholds the answer with a count: *only one skill is
-on the list. And the rest?* The viewer who has been asked to lead, and is
-afraid he is not gifted enough, stays to hear that the list was never about
-gifting. The viewer who admires a gifted leader stays for the same reason.
+**Why the hook works:** a question with an expected answer — gifted, popular, powerful — and then Paul's list with all three missing. One skill, and a cliff-hanger: *the rest?*
 
-**Guardrails held:** **character before gifting, from the list's own
-content.** Of everything Paul asks, only *सिखाने में निपुण* is a skill (3:2;
-तीतुस 1:9); the rest is conduct — sober, self-controlled, hospitable,
-gentle, not quarrelsome, not a lover of money, not a drunkard, his home, his
-name with outsiders. The reel says so and names the items, so the claim is
-checkable against the text. **No polity, on purpose.** The office words
-(*अध्यक्ष*, *सेवक* as office) are not voiced and the OV text of 3:2 is not
-set on screen; *एक ही पत्नी का पति* is **not voiced** — it is the verse on
-which the two permanently excluded questions (who may hold office; divorce
-and remarriage) turn, and the reel's must-land does not need it. *नया चेला न
-हो* (3:6) is not voiced either; S3·03 already read it as pride, not age.
-Nothing is said about how leaders are chosen, by whom, or to what structure.
-**The flock may hold leaders to it — with a brake in the same breath.** The
-list's publicity is the text's (a letter written so that the household of
-God may know how to conduct itself, 3:14-15), so the flock *knows* what its
-leaders are asked to be; *परख सकता है* is uncuttable only together with
-*दोष ढूँढने को नहीं; आदर और प्रार्थना के साथ* (1 थिस्सलुनीकियों 5:12-13), so
-the reel cannot be clipped into a licence for fault-finding or into S2·13's
-*so I can leave*. **Every believer's direction, not a second ethic** — the
-brief's reading, stated on the face: almost every item is asked of every
-believer elsewhere (the on-screen row lists them; *लगभग* is honest about
-the exceptions — teaching skill and maturity). **Growth from grace, not
-toward acceptance**: *यह चरित्र कमाया नहीं जाता — जो मसीह के हैं, उनमें
-पवित्र आत्मा इसे गढ़ते हैं* is Season 1 reel 15 in this arc's terms,
-scoped by *जो मसीह के हैं*, with the Spirit masculine and honorific. The
-closing borrows 1 शमूएल 16:7's contrast (the Lord looks on the heart) and
-sets it against the stage, not against gifts as such.
+**Guardrails held:** **Character before gifting**, straight from the qualification lists: one skill, the rest a life. **The flock may hold leaders to the list, and only with honour and prayer** — one unit, so it is neither a licence for fault-finding nor a shield for leaders. **These are not a separate ethic for leaders but every disciple's direction**, and **the character is the Spirit's work in those who are Christ's**, not earned. No office titles, no church structure. Cut from v1: *यह सूची किसी गुप्त किताब में नहीं*, *न पियक्कड़*.
 
 ---
 
@@ -144,20 +101,18 @@ sets it against the stage, not against gifts as such.
 
 ```
 === DOCTRINE REELS · S5·06 · अंगोछा ===
-Target: 49–50 seconds. Register: आप. Tone: told as a scene at the open, the third hook line quiet and slow; the ransom line weighty; the *सिर्फ़ उनका था* line plain; the honour line warm, never ironic; the closing slow, the two *झुकते/झुकता* balanced.
+Target: about 50 seconds, unhurried. Register: आप. Tone: told as a scene at the open, the third hook line quiet and slow; the ransom line weighty; the *सिर्फ़ उनका था* line plain; the honour line warm, never ironic; the closing slow, the two *झुकते/झुकता* balanced.
 
-"बड़ा वह है, जिसके पाँव छुए जाते हैं — हम यही देखते बड़े हुए।
-फिर एक रात, गुरु ने ख़ुद कमर में अंगोछा बाँधा —
-और घर के सबसे छोटे नौकर का काम किया।"
+बड़ा कौन है — जिसके पाँव धोए जाएँ, या जो पाँव धोए?
+एक रात, यीशु ने ख़ुद कमर में अंगोछा बाँधा — और घर के सबसे छोटे नौकर का काम किया।
 
-यीशु ने चेलों के पाँव धोए। फिर कहा — मैंने प्रभु और गुरु होकर यह किया; मैंने तुम्हें नमूना दिया है।
+उन्होंने अपने चेलों के पाँव धोए। फिर कहा — मैंने प्रभु और गुरु होकर यह किया; मैंने तुम्हें नमूना दिया है।
 
-उन्होंने यह भी कहा था — दुनिया के सरदार प्रभुता करते हैं। तुम में ऐसा नहीं। जो बड़ा होना चाहे, वह सेवक बने।
+यीशु ने यह भी कहा — दुनिया के सरदार प्रभुता करते हैं। तुम में ऐसा नहीं। जो बड़ा होना चाहे, वह सेवक बने।
 क्योंकि मनुष्य का पुत्र सेवा कराने नहीं, सेवा करने आया — और बहुतों की छुड़ौती के लिए अपना प्राण देने।
 
 छुड़ौती — वह काम सिर्फ़ उनका था। कोई अगुवा आपके और परमेश्वर के बीच खड़ा नहीं होता।
 पर सेवा — वह उन्होंने हर चेले को सौंपी।
-
 अगुवों का आदर कीजिए — वचन यही सिखाता है। पर आदर माँगना — उस रात का तरीका नहीं।
 
 अगुवे की पहचान यह नहीं कि कितने उसके आगे झुकते हैं — यह कि वह किसके लिए झुकता है।
@@ -165,60 +120,24 @@ Target: 49–50 seconds. Register: आप. Tone: told as a scene at the open, th
 === END ===
 ```
 
-**Length:** 151 tokens · 49–50 seconds. If the artist runs long, cut
-*"मैंने तुम्हें नमूना दिया है।"* — **never** cut the ransom line (*"और
-बहुतों की छुड़ौती के लिए अपना प्राण देने"*), **never** *"छुड़ौती — वह काम
-सिर्फ़ उनका था। कोई अगुवा आपके और परमेश्वर के बीच खड़ा नहीं होता"*,
-**never** *"अगुवों का आदर कीजिए — वचन यही सिखाता है"*, and **never** the
-closing line.
+**Length:** ~148 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut the ransom line (*"और बहुतों की छुड़ौती के लिए अपना प्राण देने"*), *"छुड़ौती — वह काम सिर्फ़ उनका था। कोई अगुवा आपके और परमेश्वर के बीच खड़ा नहीं होता"*, *"अगुवों का आदर कीजिए — वचन यही सिखाता है"* or the closing line. If the artist runs long, cut *"मैंने तुम्हें नमूना दिया है।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
+| "बड़ा कौन है?" | लूका 22:27 |
 | "कमर में अंगोछा बाँधा" | यूहन्ना 13:4-5 |
-| "सबसे छोटे नौकर का काम" | 1 शमूएल 25:41 — shown, not read |
-| "प्रभु और गुरु होकर… नमूना दिया है" | यूहन्ना 13:13-15 |
-| "सरदार प्रभुता करते हैं। तुम में ऐसा नहीं" | मरकुस 10:42-43 |
-| "जो बड़ा होना चाहे, वह सेवक बने" | मरकुस 10:43-44 |
-| "सेवा कराने नहीं… छुड़ौती के लिए अपना प्राण" | मरकुस 10:45 |
-| "वह काम सिर्फ़ उनका था" | 1 तीमुथियुस 2:5-6 · इब्रानियों 10:14 |
-| "आपके और परमेश्वर के बीच" | 1 तीमुथियुस 2:5 · इब्रानियों 4:16 |
-| "हर चेले को सौंपी" | गलातियों 5:13 · 1 पतरस 4:10 |
-| "अगुवों का आदर कीजिए" | 1 थिस्सलुनीकियों 5:12-13 · इब्रानियों 13:17 |
-| "आदर माँगना — उस रात का तरीका नहीं" | 1 पतरस 5:3 · 3 यूहन्ना 9 — shown, not read |
-| closing line | फिलिप्पियों 2:5-8 · यूहन्ना 13:14 |
+| "नमूना दिया है" | यूहन्ना 13:13-15 |
+| "जो बड़ा होना चाहे, वह सेवक बने" | मरकुस 10:42-44 |
+| "छुड़ौती के लिए अपना प्राण" | मरकुस 10:45 |
+| "बीच खड़ा नहीं होता" | 1 तीमुथियुस 2:5-6 |
+| "अगुवों का आदर" | 1 थिस्सलुनीकियों 5:12-13 |
+| closing line | फिलिप्पियों 2:5-8 |
 
-**Why the hook works:** it starts from something every Indian viewer has
-done and seen — feet touched, greatness measured by who bows — and turns it
-over with a scene: the Teacher, the night before he died, tying on a towel
-and doing the job of the lowest servant in the house. The pun in the first
-line (*बड़ा… बड़े हुए*) makes the cultural assumption audible before the
-story contradicts it. He stays to hear what the Teacher said afterwards.
+**Why the hook works:** Jesus's own question from the supper table (लूका 22:27), put as an either-or the viewer answers instantly — and then the night that turned the answer over.
 
-**Guardrails held:** **greatness is service, from both must-land texts** —
-यूहन्ना 13's act and its interpretation (*मैंने प्रभु और गुरु होकर*,
-13:13-15) and मरकुस 10:42-45's teaching, with *तुम में ऐसा नहीं* read as the
-hinge. **Service is never reduced to example.** मरकुस 10:45's second half is
-uncuttable — the Son came to give his life as a *ransom for many* — so the
-foot-washing points to the cross and the reel cannot be heard as moral
-influence alone. **Leader-as-mediator is refused out of the same verse** —
-the reel's own contribution: *छुड़ौती — वह काम सिर्फ़ उनका था*; the part of
-Jesus's service no leader can imitate is exactly the part that puts a man
-between the believer and God. This is S2·13's one-mediator line restated in
-one sentence (1 तीमुथियुस 2:5-6 on screen, where the one mediator is also the
-one who *gave himself as a ransom*), without re-voicing S2·13's मत्ती 23 or
-its *गुरु मत कहलाना*. **Guru culture is refused without an attack on honour.**
-The hook describes an assumption, not a practice; the body says *अगुवों का
-आदर कीजिए — वचन यही सिखाता है* (uncuttable), so no viewer hears that
-touching a parent's or an elder's feet is sin, and no faithful अगुवा is
-diminished; what is refused is *आदर माँगना*. No religion, guru, preacher or
-movement is named or pictured. **Every believer's**: *सेवा — वह उन्होंने हर
-चेले को सौंपी* keeps the reel from becoming a leaders-only ethic. Foot-washing
-is presented as *नमूना*, the text's word (13:15); nothing is ruled on
-whether a church should practise it as a rite. No office title anywhere;
-*सेवक* is voiced only in Jesus's reported sentence as *servant*, never as a
-role.
+**Guardrails held:** **Greatness is service, from Jesus's own act and his own words.** **The ransom is his alone** — so the towel is an example and never a second atonement, and **no leader stands between the believer and God** (S2·13's line, restated in one clause). **Service is given to every disciple.** **Leaders are to be honoured; demanding honour is not that night's way** — both halves, so the reel is neither anti-leader nor a cover for guru culture. **No custom is named or implied**: v1's hook spoke of feet being *touched*, which is how every Indian home honours its elders; the hook is now *whose feet are washed*, so no relative hears a put-down and no young viewer hears licence to refuse his grandparents. Cut from v1: *बड़ा वह है, जिसके पाँव छुए जाते हैं — हम यही देखते बड़े हुए*.
 
 ---
 
@@ -226,24 +145,21 @@ role.
 
 ```
 === DOCTRINE REELS · S5·07 · चरवाहों पर क्रोध ===
-Target: 49–50 seconds. Register: आप. Tone: grave and level at the open, never angry-sounding; यहेजकेल read steadily; *झुंड… परमेश्वर का है* slow; the *पाप है* and *अपराध* lines plain and unhurried; the safety block gentle and set apart, as to someone who was hurt; the *उनके ख़िलाफ़ नहीं* line warm; the closing quiet.
+Target: about 50 seconds, unhurried. Register: आप. Tone: grave and level at the open, never angry-sounding; यहेजकेल read steadily; *झुंड… परमेश्वर का है* slow; the *पाप है* and *अपराध* lines plain and unhurried; the safety block gentle and set apart, as to someone who was hurt; the *उनके ख़िलाफ़ नहीं* line warm; the closing quiet.
 
-"वचन में एक अध्याय है, जहाँ परमेश्वर का क्रोध चरवाहों पर है।
-भेड़ियों पर नहीं — चरवाहों पर।
-क्यों?"
+बाइबल में एक अध्याय है, जहाँ परमेश्वर का क्रोध चरवाहों पर है।
+भेड़ियों पर नहीं — चरवाहों पर। क्यों?
 
-यहेजकेल में परमेश्वर कहता है — तुम अपना ही पेट भरते हो। चर्बी खाते, ऊन पहनते; पर भेड़ों को नहीं चराते। ज़बरदस्ती और कठोरता से राज करते हो।
-फिर — मैं अपनी भेड़ें उनके हाथ से छुड़ाऊँगा।
+परमेश्वर उनसे कहता है — तुम अपना ही पेट भरते हो; भेड़ों को नहीं चराते। ज़बरदस्ती और कठोरता से राज करते हो।
+फिर कहता है — मैं अपनी भेड़ें उनके हाथ से छुड़ाऊँगा।
 
 झुंड अगुवे का नहीं — परमेश्वर का है।
-पतरस लिखते हैं — उसकी रखवाली करो; कमाई के लिए नहीं; अधिकार मत जताओ, नमूना बनो।
+पतरस लिखते हैं — उसकी रखवाली करो; लालच से नहीं; अधिकार मत जताओ, नमूना बनो।
 
 जो अगुवा डराकर, चुप कराकर, पैसे या देह के लिए भेड़ों का इस्तेमाल करे — यह अधिकार नहीं। पाप है।
 जहाँ अपराध है — वह अपराध ही है। उसे ढका नहीं जाता।
-
 जिसे चोट लगी, उससे वचन न चुप रहने को कहता है, न झुककर सहने को।
 सुरक्षित रहिए — पहले। परिपक्व, भरोसेमंद विश्वासियों को बताइए।
-
 बहुत-से अगुवे झुंड के लिए जागते हैं। यह अध्याय उनके ख़िलाफ़ नहीं।
 
 अच्छा चरवाहा भेड़ों के लिए प्राण देता है। लेता नहीं।
@@ -251,75 +167,23 @@ Target: 49–50 seconds. Register: आप. Tone: grave and level at the open, ne
 === END ===
 ```
 
-**Length:** 151 tokens · 49–50 seconds. If the artist runs long, cut
-*"चर्बी खाते, ऊन पहनते;"* — **never** cut *"झुंड अगुवे का नहीं — परमेश्वर का
-है"*, **never** *"यह अधिकार नहीं। पाप है"*, **never** *"जहाँ अपराध है — वह
-अपराध ही है। उसे ढका नहीं जाता"*, **never** *"जिसे चोट लगी, उससे वचन न
-चुप रहने को कहता है, न झुककर सहने को"*, **never** *"सुरक्षित रहिए — पहले।
-परिपक्व, भरोसेमंद विश्वासियों को बताइए"*, and **never** *"बहुत-से अगुवे
-झुंड के लिए जागते हैं। यह अध्याय उनके ख़िलाफ़ नहीं"*. The four lines from
-*जहाँ अपराध है* to *उनके ख़िलाफ़ नहीं* are **one safety block**: never split
-across clips, never shortened, never re-ordered.
+**Length:** ~145 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"झुंड अगुवे का नहीं — परमेश्वर का है"*, *"यह अधिकार नहीं। पाप है"*, *"जहाँ अपराध है — वह अपराध ही है। उसे ढका नहीं जाता"*, *"जिसे चोट लगी, उससे वचन न चुप रहने को कहता है, न झुककर सहने को"*, *"सुरक्षित रहिए — पहले। परिपक्व, भरोसेमंद विश्वासियों को बताइए"* or *"बहुत-से अगुवे झुंड के लिए जागते हैं। यह अध्याय उनके ख़िलाफ़ नहीं"*. The four lines from *जहाँ अपराध है* to *उनके ख़िलाफ़ नहीं* are **one safety block**: never split across clips, never shortened, never re-ordered. If the artist runs long, cut *"ज़बरदस्ती और कठोरता से राज करते हो।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "परमेश्वर का क्रोध चरवाहों पर" | यहेजकेल 34:1-2 |
-| "अपना ही पेट भरते… नहीं चराते" | यहेजकेल 34:2-3 |
-| "ज़बरदस्ती और कठोरता से राज" | यहेजकेल 34:4 |
-| "अपनी भेड़ें उनके हाथ से छुड़ाऊँगा" | यहेजकेल 34:10 |
-| "झुंड… परमेश्वर का है" | 1 पतरस 5:2 · प्रेरितों के काम 20:28 |
-| "कमाई के लिए नहीं… अधिकार मत जताओ, नमूना बनो" | 1 पतरस 5:2-3 |
-| "यह अधिकार नहीं। पाप है" | मत्ती 20:25-26 · यहेजकेल 34:4 |
-| "वह अपराध ही है" | रोमियों 13:3-4 — shown, not read |
-| "न चुप रहने को… न झुककर सहने को" | नीतिवचन 31:8-9 · भजन संहिता 10:17-18 |
-| "सुरक्षित रहिए — पहले" | नीतिवचन 22:3 · प्रेरितों के काम 9:23-25 |
-| "परिपक्व, भरोसेमंद विश्वासियों को" | गलातियों 6:1-2 · नीतिवचन 11:14 |
+| "क्रोध चरवाहों पर" | यहेजकेल 34:1-2 |
+| "अपना ही पेट भरते हो" | यहेजकेल 34:2-4 |
+| "अपनी भेड़ें छुड़ाऊँगा" | यहेजकेल 34:10 |
+| "रखवाली करो… नमूना बनो" | 1 पतरस 5:2-3 |
+| "ढका नहीं जाता" | इफिसियों 5:11 · रोमियों 13:1-4 |
 | "झुंड के लिए जागते हैं" | इब्रानियों 13:17 |
-| closing line | यूहन्ना 10:11 · यहेजकेल 34:15, 23 |
+| closing line | यूहन्ना 10:11 |
 
-**Why the hook works:** the viewer expects a warning about wolves — that is
-the sermon he has heard — and the hook says the chapter's anger is at the
-*shepherds*. It is surprising, it is textual, and it names no one: every
-viewer supplies his own experience, whether he was hurt, has watched it
-happen, or leads and wonders whether it describes him. *क्यों?* is the
-question all three want answered.
+**Why the hook works:** a reversal in one line — the anger is at the shepherds, not the wolves — and a one-word question. Anyone who has been hurt by a leader, or feared he might be one, wants the answer.
 
-**Guardrails held:** **the flock is God's, from both must-land texts.**
-यहेजकेल 34's charge is read in its own terms (they fed themselves, not the
-sheep; they ruled with force and harshness, 34:2-4) and its verdict is God's
-(*मैं अपनी भेड़ें उनके हाथ से छुड़ाऊँगा*, 34:10) — the judgment on leaders who
-feed on the flock is spoken by God in the text, not by the reel against
-anyone. 1 पतरस 5:2-3 gives the positive pattern: not for gain, not
-domineering, examples — written by an apostle to leaders as a fellow leader.
-**Abuse is named as sin and crime without a single name.** *डराकर, चुप
-कराकर, पैसे या देह के लिए* covers fear-based control, silencing, financial
-and sexual exploitation in four words and describes behaviour, not a church,
-movement, teaching or person; *यह अधिकार नहीं। पाप है* removes the claim of
-authority the abuser makes. **Where there is crime it is crime, on the
-face**: *वह अपराध ही है। उसे ढका नहीं जाता*, with रोमियों 13:3-4 on screen
-(the governing authority as God's servant against wrongdoing) — the reel
-refuses the most common cover, that a crime inside a church is a *spiritual
-matter* to be handled privately. This agrees with S4·14's safety line and
-S3·20's *पाप है। अपराध है।* **The victim is told neither to keep silent nor
-to submit**: *न चुप रहने को… न झुककर सहने को* is uncuttable, and the
-counsel is safety first (S3·20's *सुरक्षित रहिए — पहले*) and telling
-*परिपक्व, भरोसेमंद विश्वासियों* — deliberately **not** *अपनी कलीसिया के*,
-because where the abuser leads the congregation, its mature believers may be
-under him; the viewer may go to trusted believers wherever they are. **Not
-*leave your church*, and not *all leaders*.** The reel rules nothing on
-leaving or staying — it does not tell a victim to stay (that would contradict
-the safety line) and does not tell anyone to leave (the must-avoid); *सुरक्षित
-रहिए — पहले* governs the case the reel cannot see. *बहुत-से अगुवे झुंड के
-लिए जागते हैं* (इब्रानियों 13:17's own word) and *यह अध्याय उनके ख़िलाफ़
-नहीं* are uncuttable, so the reel cannot be clipped into an anti-leader
-video — and *बहुत-से*, not *ज़्यादातर*, because the reel makes no statistical
-claim. **Christ closes it**: the good shepherd *gives* his life for the
-sheep (यूहन्ना 10:11), the answer to यहेजकेल 34:15, 23, where God promises
-to shepherd his flock himself through one shepherd; *लेता नहीं* is the whole
-contrast in two words. No sheep-and-wolf imagery beyond the hook's refusal of
-it.
+**Guardrails held:** **The safety block is verbatim from v1 and whole**: exploitation is sin, not authority; a crime is a crime and is not covered; the wounded are told neither to be silent nor to endure; safety first; tell someone trustworthy — and good leaders are honoured in the same block, so the reel is not anti-leader. यहेजकेल 34 and 1 पतरस 5 carry the doctrine: **the flock is God's**. No case, ministry or person is named; no abuse is shown; the viewer is not sent to argue it in the comments. The only changes from v1 are in the first two clips: *वचन* is now *बाइबल* in the hook, *चर्बी खाते, ऊन पहनते* is cut, and 1 पतरस 5:2 is voiced as *लालच से नहीं* — the OV's *नीच-कमाई* — so it cannot be heard as forbidding a leader any support.
 
 ---
 
@@ -327,86 +191,44 @@ it.
 
 ```
 === DOCTRINE REELS · S5·08 · दोनों के पास आयत है ===
-Target: 49–50 seconds. Register: आप. Tone: practical and a little knowing at the hook; the gospel line firm, four beats; रोम told lightly; the two-errors line plain and slow; the closing as three measured beats.
+Target: about 50 seconds, unhurried. Register: आप. Tone: practical and a little knowing at the hook; the gospel line firm, four beats; रोम told lightly; the two-errors line plain and slow; the closing as three measured beats.
 
-"आपके समूह में दो लोग एक बात पर भिड़ गए।
-दोनों के पास आयत है।
-अब आप क्या करेंगे — फ़ैसला सुनाएँगे?"
-
-पहले पूछिए — यह सुसमाचार है, या उसके बाद की बात?
+आपके समूह में दो लोग एक बात पर भिड़ गए। और दोनों के पास आयत है।
+अब आप क्या करेंगे — फ़ैसला सुनाएँगे?
+पहले पूछिए — यह सुसमाचार की बात है, या उसके बाद की?
 
 यीशु परमेश्वर हैं; हमारे पापों के लिए मरे; सचमुच जी उठे; उद्धार अनुग्रह से, विश्वास के द्वारा — कमाई से नहीं।
-यहाँ कोई समझौता नहीं। यहाँ पौलुस ने पतरस तक को टोका।
+यहाँ कोई समझौता नहीं।
 
+यहाँ पौलुस ने पतरस तक को टोका।
 पर रोम की कलीसिया में झगड़ा था — कौन क्या खाए, कौन सा दिन माने।
 पौलुस ने कहा — हर एक अपने मन में निश्चय कर ले; एक-दूसरे पर दोष मत लगाओ।
-छोटी नहीं — पर सुसमाचार नहीं। जहाँ वचन ने सब पर नियम नहीं बनाया, वहाँ अगुवा भी नहीं बनाता।
+छोटी नहीं — पर सुसमाचार नहीं।
 
+जहाँ वचन ने सब पर नियम नहीं बनाया, वहाँ अगुवा भी नहीं बनाता।
 अगुवे की दो ग़लतियाँ — अपनी राय को सुसमाचार बना देना, या सुसमाचार को राय।
-
-पौलुस लिखते हैं — आत्मा की एकता बनाए रखो। वह दी जा चुकी है; बनानी नहीं, बचानी है।
 
 सुसमाचार में एक। बाकी में आज़ादी। दोनों में प्रेम।
 
 === END ===
 ```
 
-**Length:** 151 tokens · 49–50 seconds. If the artist runs long, cut
-*"यहाँ पौलुस ने पतरस तक को टोका।"* — **never** cut the gospel line (*"यीशु
-परमेश्वर हैं… कमाई से नहीं"*) or *"यहाँ कोई समझौता नहीं"*, **never** *"छोटी
-नहीं — पर सुसमाचार नहीं"*, **never** *"जहाँ वचन ने सब पर नियम नहीं बनाया,
-वहाँ अगुवा भी नहीं बनाता"*, **never** *"अपनी राय को सुसमाचार बना देना, या
-सुसमाचार को राय"*, and **never** the closing line.
+**Length:** ~135 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut the gospel line (*"यीशु परमेश्वर हैं… कमाई से नहीं"*) or *"यहाँ कोई समझौता नहीं"*, *"छोटी नहीं — पर सुसमाचार नहीं"*, *"जहाँ वचन ने सब पर नियम नहीं बनाया, वहाँ अगुवा भी नहीं बनाता"*, *"अपनी राय को सुसमाचार बना देना, या सुसमाचार को राय"* or the closing line. If the artist runs long, cut *"यहाँ पौलुस ने पतरस तक को टोका।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "यह सुसमाचार है?" | 1 कुरिन्थियों 15:1-4 |
-| "यीशु परमेश्वर हैं" | यूहन्ना 1:1 · कुलुस्सियों 2:9 |
-| "हमारे पापों के लिए मरे; सचमुच जी उठे" | 1 कुरिन्थियों 15:3-4 |
-| "अनुग्रह से, विश्वास के द्वारा — कमाई से नहीं" | इफिसियों 2:8-9 |
-| "पौलुस ने पतरस तक को टोका" | गलातियों 2:11, 14 |
-| "कौन क्या खाए, कौन सा दिन माने" | रोमियों 14:2-3, 5-6 |
-| "हर एक अपने मन में निश्चय कर ले" | रोमियों 14:5 |
-| "एक-दूसरे पर दोष मत लगाओ" | रोमियों 14:1, 13 |
-| "छोटी नहीं — पर सुसमाचार नहीं" | रोमियों 14:17 |
-| "अपनी राय को सुसमाचार… सुसमाचार को राय" | गलातियों 1:6-9 · रोमियों 14:4 |
-| "आत्मा की एकता बनाए रखो" | इफिसियों 4:3 |
-| "वह दी जा चुकी है" | इफिसियों 4:4-6 |
-| closing line | रोमियों 15:7 · इफिसियों 4:2 |
+| "यीशु परमेश्वर हैं… कमाई से नहीं" | 1 कुरिन्थियों 15:3-4 · इफिसियों 2:8-9 |
+| "पतरस तक को टोका" | गलातियों 2:11-14 |
+| "कौन क्या खाए, कौन सा दिन माने" | रोमियों 14:1-5 |
+| "दोष मत लगाओ" | रोमियों 14:13 |
+| "अगुवा भी नहीं बनाता" | रोमियों 14:4 · कुलुस्सियों 2:16 |
+| closing line | इफिसियों 4:3-6 |
 
-**Why the hook works:** anyone who has led a Bible study has been in this
-room — two believers, both sincere, both with a verse, and every eye turning
-to the leader. The hook names the move he is tempted to make (*फ़ैसला
-सुनाएँगे?*) and makes him wonder whether it is the wrong one. The answer is
-a question he can ask in the room tonight.
+**Why the hook works:** a small-group moment every leader meets — two people, two verses, and every eye on him. The trap is in the question: *will you give a verdict?*
 
-**Guardrails held:** **unity in the gospel, liberty in the rest, charity in
-both** — the must-land, closed on as three beats. **The gospel is not
-relativised**: the line that is *not* negotiable is stated whole — Christ's
-deity, his death for our sins, his real resurrection, salvation by grace
-through faith and not by earning — which is S2·09's two-question test
-compressed into one sentence, and *यहाँ पौलुस ने पतरस तक को टोका*
-(गलातियों 2:11-14, where Peter's conduct was *not in step with the truth of
-the gospel*) shows that at this line even an apostle was opposed. *सबके
-सामने* (2:14) is deliberately **not** voiced, so the reel does not license
-public rebuke inside a group (S4·14's private-first rule stands). **Liberty
-is scoped**: *जहाँ वचन ने सब पर नियम नहीं बनाया* — not *wherever we
-disagree*, so no moral command becomes a matter of opinion; and the leader
-application is on the face (*वहाँ अगुवा भी नहीं बनाता*). The disputed matters
-are रोमियों 14's own (food, days), read as the text's history, not as any
-present community's practice. **Secondary is not trivial**: S2·09's
-uncuttable *छोटी नहीं — पर सुसमाचार नहीं* is restated verbatim so the two
-reels never contradict. **The leader's two errors** — binding his own opinion
-as gospel, or loosening the gospel into opinion — names legalism and
-relativism in one sentence without naming anyone. **No denomination is named,
-ranked or implied**; no example of a secondary matter beyond Romans 14's is
-voiced (not baptism, not gifts, not the end times, not church order), so the
-reel settles no present dispute by classifying it. **Unity is given, not
-manufactured**: इफिसियों 4:3's verb is *keep*; *बनानी नहीं, बचानी है* is the
-reel's gloss, with 4:4-6 on screen for the ground. Charity in both is रोमियों
-15:7 (receive one another as Christ received you).
+**Guardrails held:** **The first question sorts the dispute**: gospel, or after the gospel. **The gospel is stated whole and is not negotiable** — Paul opposed Peter over it. **Secondary matters are real and are not the gospel** (रोमियों 14), and **where Scripture has made no rule for all, the leader makes none**. Both leader's errors are named in one line. No denomination is named or ranked; no polity. This reel owns the secondary-matters point for the season (S5·04 no longer voices it). Cut from v1: the इफिसियों 4:3 sentence (shown at the close).
 
 ---
 
@@ -475,9 +297,9 @@ face is actually visible — not on hand-only or Bible-only frames.
 the *घर* beat is a lit doorway or a shared meal table from outside, no
 children lined up for inspection. **S5·06** — the basin, towel and feet;
 first-century room or a plain Indian courtyard; **no church foot-washing
-ceremony** (reads as a ruling on a rite), and the hook's *पाँव छूना* beat is
-**not** a child touching a grandparent's feet (the reel does not refute
-honouring elders) — show only feet and a bowing crowd's silhouettes before a
+ceremony** (reads as a ruling on a rite), and the hook (now *जिसके पाँव धोए जाएँ, या जो
+पाँव धोए* — no longer *पाँव छूना*) is never pictured as anyone touching an
+elder's feet (the reel does not refute honouring elders) — show only feet and a bowing crowd's silhouettes before a
 dais, no faces, no religious markers. **S5·07** — **no depiction of abuse,
 no victim, no raised hand, no money changing hands, no bedroom or closed
 door**; a hillside flock and an empty shepherd's staff; no wolf. The safety
