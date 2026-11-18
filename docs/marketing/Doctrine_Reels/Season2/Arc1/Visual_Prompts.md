@@ -446,7 +446,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "क्यों? हमारी असली समस्या पाप है — और उसके लिए एक ही मरे और जी उठे। रास्ता कोई धर्म नहीं — हमारा भी नहीं। रास्ता एक व्यक्ति है। और यह आपको दान में मिला — तो घमंड कैसा?"
 
-*On screen:* प्रेरितों के काम 4:12 · इफिसियों 2:8-9
+*On screen:* प्रेरितों के काम 4:10-12 · इफिसियों 2:8-9
 
 Generate from frame 03 alone. Hard-cut from the end of this clip to Clip 4.
 ```
@@ -460,7 +460,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 4 · 04 → 05** · CONTINUOUS · 0:30–0:40
 
-*Voiceover:* "जो पड़ोसी को नीचा दिखाता है, उसने यह बात समझी ही नहीं। बाइबल कहती है — अपनी आशा का कारण बताओ; नम्रता और आदर से।"
+*Voiceover:* "जो पड़ोसी को नीचा दिखाता है, उसने यह बात समझी ही नहीं। बाइबल कहती है — जो आपकी आशा का कारण पूछे, उसे उत्तर दो; नम्रता और आदर से।"
 
 *On screen:* 1 पतरस 3:15
 

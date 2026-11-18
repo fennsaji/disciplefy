@@ -155,7 +155,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: tender at the open,
 और यह आपको दान में मिला — तो घमंड कैसा?
 
 जो पड़ोसी को नीचा दिखाता है, उसने यह बात समझी ही नहीं।
-बाइबल कहती है — अपनी आशा का कारण बताओ; नम्रता और आदर से।
+बाइबल कहती है — जो आपकी आशा का कारण पूछे, उसे उत्तर दो; नम्रता और आदर से।
 
 यीशु ही रास्ता हैं — और उसी यीशु ने कहा, पड़ोसी से अपने जैसा प्रेम रखो।
 दोनों बातें साथ चलती हैं।
@@ -163,14 +163,14 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: tender at the open,
 === END ===
 ```
 
-**Length:** ~129 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"हमारा भी नहीं"* or the नम्रता line. If the artist runs long, cut *"तो घमंड कैसा?"*
+**Length:** ~133 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"हमारा भी नहीं"* or the नम्रता line. If the artist runs long, cut *"तो घमंड कैसा?"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
 | "मार्ग, सत्य और जीवन मैं ही हूँ" | यूहन्ना 14:6 |
-| "एक ही मरे और जी उठे" | प्रेरितों के काम 4:12 |
+| "एक ही मरे और जी उठे" | प्रेरितों के काम 4:10-12 |
 | "दान में मिला" | इफिसियों 2:8-9 |
 | "नम्रता और आदर से" | 1 पतरस 3:15 |
 | "पड़ोसी से अपने जैसा प्रेम रखो" | मरकुस 12:31 |

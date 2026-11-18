@@ -752,7 +752,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "जो हर शाम पिए बिना रह नहीं पाता — उससे बात कौन करता है? लोग बहस करते हैं — एक गिलास पाप है या नहीं। बाइबल कहती है — दाखरस से मतवाले मत बनो; पवित्र आत्मा से भरते जाओ।"
+*Voiceover:* "जो हर शाम पिए बिना रह नहीं पाता — उससे बात कौन करता है? लोग बहस करते हैं — एक घूँट पाप है या नहीं। बाइबल कहती है — दाखरस से मतवाले मत बनो; पवित्र आत्मा से भरते जाओ।"
 
 *On screen:* इफिसियों 5:18
 
@@ -903,7 +903,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 (start frame only)** · CUT-OUT · 0:00–0:10
 
-*Voiceover:* "पड़ोसी के बेटे के नंबर। दोस्त की शादी। किसी का चेहरा। आपने बधाई दी — और भीतर कुछ चुभा। बाइबल इस चुभन को नाम देती है — डाह; यानी जलन।"
+*Voiceover:* "पड़ोसी के बेटे के अंक। दोस्त की शादी। किसी का चेहरा। आपने बधाई दी — और भीतर कुछ चुभा। बाइबल इस चुभन को नाम देती है — डाह; यानी जलन।"
 
 *On screen:* गलातियों 5:21, 26
 
@@ -950,7 +950,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 4 · 04 → 05** · PAINT FADE · 0:30–0:40
 
-*Voiceover:* "इलाज यह नहीं कि आपको भी वैसा ही मिलेगा। अगर आप मसीह में हैं — परमेश्वर खुद आपका है। संतोष सिर्फ़ पैसे का नहीं — चेहरे, नंबर और शादी का भी।"
+*Voiceover:* "इलाज यह नहीं कि आपको भी वैसा ही मिलेगा। अगर आप मसीह में हैं — परमेश्वर खुद आपका है। संतोष सिर्फ़ पैसे का नहीं — चेहरे, अंक और शादी का भी।"
 
 *On screen:* फिलिप्पियों 4:11-12
 
@@ -1136,6 +1136,6 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 - **2·2 has no home, couple or family member.** Its setting is a workplace and a lane, and the only overturned table is in the painting.
 - **2·3 has no person, body, silhouette, device or bed.** If a generator adds a figure, regenerate. The basin and the desk share one room and one straight-down camera.
 - **2·4 shows no wedding couple and promises no spouse.** The Sunday frame is the church's adult reading class — grey-haired learners — so the "season of service" stays without anyone under 20.
-- **2·6 shows no money.** A results sheet, an invitation, a mirror, a door. The voiceover still names *पड़ोसी के बेटे के नंबर*; the picture shows that firstborn as a bearded man of about 23 with his degree results.
+- **2·6 shows no money.** A results sheet, an invitation, a mirror, a door. The voiceover still names *पड़ोसी के बेटे के अंक*; the picture shows that firstborn as a bearded man of about 23 with his degree results.
 - **2·7 shows no deity, shrine, priest, thread, zodiac, festival or place.** A calendar, a table, a Bible and one painting of believers burning their own books.
 - **Pins** (from the arc's production notes): follow the script file.

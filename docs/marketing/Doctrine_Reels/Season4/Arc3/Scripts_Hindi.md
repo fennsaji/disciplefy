@@ -206,7 +206,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: level and serious a
 पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है।
 पौलुस लिखते हैं — ऐसे भाई को नम्रता से सँभालो।
 
-सँभालना — पौलुस का यही शब्द उन मछुओं के लिए आया है, जो अपने फटे जाल सुधार रहे थे।
+सँभालना — मूल भाषा में यही शब्द उन मछुओं के लिए है, जो अपने जाल सुधार रहे थे।
 मक़सद बहस जीतना नहीं — जाल फिर काम का बने।
 
 इसलिए धीमी आवाज़। और अपनी भी चौकसी — कल आप भी गिर सकते हैं।
@@ -218,7 +218,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: level and serious a
 === END ===
 ```
 
-**Length:** ~137 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"अकेले में। किसी और से पहले नहीं"*, *"पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है"*, *"कल आप भी गिर सकते हैं"* or *"पर जहाँ किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती"*. If the artist runs long, cut *"मक़सद बहस जीतना नहीं — जाल फिर काम का बने।"*
+**Length:** ~136 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"अकेले में। किसी और से पहले नहीं"*, *"पहले दूसरों से कहा — तो वह सुधार नहीं, चुगली है"*, *"कल आप भी गिर सकते हैं"* or *"पर जहाँ किसी और की सुरक्षा दाँव पर हो — वहाँ बात अकेले में नहीं रुकती"*. If the artist runs long, cut *"मक़सद बहस जीतना नहीं — जाल फिर काम का बने।"*
 
 **On-screen Scripture**
 
@@ -226,14 +226,14 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: level and serious a
 |---|---|
 | "अकेले में उसे समझा" | मत्ती 18:15 |
 | "नम्रता से सँभालो" | गलातियों 6:1 |
-| "फटे जाल सुधार रहे थे" | मत्ती 4:21 |
+| "जाल सुधार रहे थे" | मत्ती 4:21 |
 | "अपनी भी चौकसी" | गलातियों 6:1 |
 | "भाई को पा लिया" | मत्ती 18:15 |
 | closing line | याकूब 5:19-20 |
 
 **Why the hook works:** a situation and three exits, with the third withheld. The viewer has taken one of the first two before and knows which.
 
-**Guardrails held:** **Privately, and before anyone else** — the line that separates correction from gossip is drawn in so many words. **Gently, and watching yourself**: *कल आप भी गिर सकते हैं*. **The aim is to win the brother, not the argument** — the mended-net picture carries it, from the word Paul himself uses. **Privacy has a limit: where someone else's safety is at stake, it does not stay private** — uncuttable, so the reel cannot be used to keep harm quiet. No church-discipline procedure is described. Cut from v1: *आत्मिक — कोई पदवी नहीं। जो आत्मा के चलाए चलता है*, *भाई को पाना — उसे हराना नहीं* (carried by *मक़सद बहस जीतना नहीं*).
+**Guardrails held:** **Privately, and before anyone else** — the line that separates correction from gossip is drawn in so many words. **Gently, and watching yourself**: *कल आप भी गिर सकते हैं*. **The aim is to win the brother, not the argument** — the mended-net picture carries it, from the word Paul uses in the original language (the Hindi Bible has two different words, so the reel says *मूल भाषा में*). **Privacy has a limit: where someone else's safety is at stake, it does not stay private** — uncuttable, so the reel cannot be used to keep harm quiet. No church-discipline procedure is described. Cut from v1: *आत्मिक — कोई पदवी नहीं। जो आत्मा के चलाए चलता है*, *भाई को पाना — उसे हराना नहीं* (carried by *मक़सद बहस जीतना नहीं*).
 
 ---
 

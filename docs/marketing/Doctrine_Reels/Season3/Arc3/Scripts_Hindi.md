@@ -222,7 +222,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm throughout; th
 Target: about 50 seconds, unhurried. Register: आप. Tone: level and unembarrassed; the याकूब scene told as a scene, not preached; *साफ़ सुनिए* slow; the closing quiet, as an instruction to look.
 
 आपकी कलीसिया में सबसे अच्छी जगह किसे मिलती है — और दरवाज़े के पास कौन खड़ा रहता है?
-याकूब लिखते हैं — सभा में एक आदमी अच्छे कपड़ों में आया, एक मैले में। एक से कहा — यहाँ बैठिए; ग़रीब से — वहाँ खड़े रहो।
+याकूब लिखते हैं — सभा में एक आदमी अच्छे कपड़ों में आया, एक मैले में। एक से कहा — वहाँ अच्छी जगह बैठिए; ग़रीब से — यहाँ खड़े रहो।
 
 याकूब इसे शिष्टाचार नहीं कहते। पाप कहते हैं।
 क्योंकि परमेश्वर ने ग़रीबों को चुना है कि वे विश्वास में धनी हों — और आपने उन्हीं का अपमान किया।
@@ -238,7 +238,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: level and unembarra
 === END ===
 ```
 
-**Length:** ~139 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"याकूब इसे शिष्टाचार नहीं कहते। पाप कहते हैं"*, *"यह सुसमाचार की जगह नहीं लेता। यह उसका फल है"* or *"यह किसी दल का काम नहीं"*. If the artist runs long, cut the नबी sentence.
+**Length:** ~141 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"याकूब इसे शिष्टाचार नहीं कहते। पाप कहते हैं"*, *"यह सुसमाचार की जगह नहीं लेता। यह उसका फल है"* or *"यह किसी दल का काम नहीं"*. If the artist runs long, cut the नबी sentence.
 
 **On-screen Scripture**
 
@@ -362,7 +362,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open (
 बाइबल कहती है — इकट्ठा होना मत छोड़ो।
 और विश्राम आलस नहीं — वह दिन आराधना का है।
 
-पौलुस कहते हैं — समय को बहुमूल्य समझो।
+पौलुस कहते हैं — अवसर को बहुमूल्य समझो।
 और आज हमारे ज़्यादातर घंटे यहीं जाते हैं — इसी हाथ में।
 
 ये सब जो आप अभी देख रहे हैं — यह भी। यह कलीसिया नहीं है।
@@ -373,7 +373,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open (
 === END ===
 ```
 
-**Length:** ~122 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"तो नियम नहीं। पर आकार — हाँ"*, *"विश्राम आलस नहीं"* or *"ये सब जो आप अभी देख रहे हैं — यह भी। यह कलीसिया नहीं है। इसे बंद कीजिए"*. If the artist runs long, cut *"पौलुस कहते हैं — समय को बहुमूल्य समझो।"*
+**Length:** ~122 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"तो नियम नहीं। पर आकार — हाँ"*, *"विश्राम आलस नहीं"* or *"ये सब जो आप अभी देख रहे हैं — यह भी। यह कलीसिया नहीं है। इसे बंद कीजिए"*. If the artist runs long, cut *"पौलुस कहते हैं — अवसर को बहुमूल्य समझो।"*
 
 **On-screen Scripture**
 
@@ -382,7 +382,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open (
 | "मनुष्य के लिए बना" | मरकुस 2:27 |
 | "कोई तुम्हारा फ़ैसला न करे" | कुलुस्सियों 2:16 |
 | "इकट्ठा होना मत छोड़ो" | इब्रानियों 10:25 |
-| "समय को बहुमूल्य समझो" | इफिसियों 5:15-16 |
+| "अवसर को बहुमूल्य समझो" | इफिसियों 5:15-16 |
 | "एक देह" | 1 कुरिन्थियों 12:27 |
 | closing line | भजन संहिता 92:1 |
 

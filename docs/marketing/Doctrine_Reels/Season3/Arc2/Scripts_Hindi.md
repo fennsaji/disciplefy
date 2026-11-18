@@ -246,7 +246,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light and knowing a
 Target: about 50 seconds, unhurried. Register: आप. Tone: even and unhurried; the hook's third line slower, with no judgement in it; the बहाली section warm; the closing quiet.
 
 जो हर शाम पिए बिना रह नहीं पाता — उससे बात कौन करता है?
-लोग बहस करते हैं — एक गिलास पाप है या नहीं।
+लोग बहस करते हैं — एक घूँट पाप है या नहीं।
 बाइबल कहती है — दाखरस से मतवाले मत बनो; पवित्र आत्मा से भरते जाओ।
 
 बिल्कुल न पीना — बहुतों का अच्छा चुनाव है। पर वचन उसे सब पर नियम नहीं बनाता।
@@ -291,7 +291,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: even and unhurried;
 === DOCTRINE REELS · S3·12 · भीतर कुछ चुभा ===
 Target: about 50 seconds, unhurried. Register: आप. Tone: quiet and a little rueful at the open; honest, not accusing, at आरोप; the भजन 73:25 line slow; the closing warm.
 
-पड़ोसी के बेटे के नंबर। दोस्त की शादी। किसी का चेहरा।
+पड़ोसी के बेटे के अंक। दोस्त की शादी। किसी का चेहरा।
 आपने बधाई दी — और भीतर कुछ चुभा।
 बाइबल इस चुभन को नाम देती है — डाह; यानी जलन।
 
@@ -303,7 +303,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: quiet and a little 
 
 इलाज यह नहीं कि आपको भी वैसा ही मिलेगा।
 अगर आप मसीह में हैं — परमेश्वर खुद आपका है।
-संतोष सिर्फ़ पैसे का नहीं — चेहरे, नंबर और शादी का भी।
+संतोष सिर्फ़ पैसे का नहीं — चेहरे, अंक और शादी का भी।
 
 पवित्र आत्मा वह दिल उगाते हैं, जो दूसरे की ख़ुशी में सच में ख़ुश हो सके।
 

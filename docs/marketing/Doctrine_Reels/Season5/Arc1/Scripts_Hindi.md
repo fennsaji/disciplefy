@@ -83,7 +83,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and a little u
 पर यह मनाही नहीं — होश दिलाना है। वही बाइबल कहती है — एक-दूसरे को सिखाओ।
 और यह चेतावनी किसी ख़ास वर्ग की नहीं — बच्चों को वचन सिखाने वाले की भी है। सिखाना कोई ऊँचा दर्जा भी नहीं।
 
-एज्रा का क्रम देखिए — पहले वचन को समझा, फिर उस पर चले, तब सिखाया।
+एज्रा ने मन लगाया — वचन को समझने, उस पर चलने, फिर सिखाने में।
 और याकूब मानते हैं — हम सब बहुत बार चूकते हैं।
 अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है।
 
@@ -92,7 +92,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and a little u
 === END ===
 ```
 
-**Length:** ~131 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"पर यह मनाही नहीं — होश दिलाना है"* with the *एक-दूसरे को सिखाओ* line after it (one unit), *"यह चेतावनी किसी ख़ास वर्ग की नहीं…"* with *"सिखाना कोई ऊँचा दर्जा भी नहीं"*, *"अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है"* or the closing pair (one unit; either half alone is the error the reel refuses). If the artist runs long, cut *"और याकूब मानते हैं — हम सब बहुत बार चूकते हैं।"*
+**Length:** ~130 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"पर यह मनाही नहीं — होश दिलाना है"* with the *एक-दूसरे को सिखाओ* line after it (one unit), *"यह चेतावनी किसी ख़ास वर्ग की नहीं…"* with *"सिखाना कोई ऊँचा दर्जा भी नहीं"*, *"अगर आप मसीह में हैं — यह हिसाब उद्धार का नहीं; जो सिखाया, उसका है"* or the closing pair (one unit; either half alone is the error the reel refuses). If the artist runs long, cut *"और याकूब मानते हैं — हम सब बहुत बार चूकते हैं।"*
 
 **On-screen Scripture**
 
@@ -102,14 +102,14 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and a little u
 | "हिसाब और सख़्त होगा" | याकूब 3:1 — hold |
 | "एक-दूसरे को सिखाओ" | कुलुस्सियों 3:16 |
 | "कोई ऊँचा दर्जा भी नहीं" | मत्ती 23:8 — shown, not read |
-| "समझा… चला… सिखाया" | एज्रा 7:10 |
+| "समझने… चलने… सिखाने" | एज्रा 7:10 |
 | "हम सब बहुत बार चूकते हैं" | याकूब 3:2 |
 | "हिसाब उद्धार का नहीं" | 1 कुरिन्थियों 3:12-15 |
 | closing line | 1 पतरस 4:10-11 |
 
 **Why the hook works:** the request itself, as it is made in every small church, and the verse that jumps to mind to refuse it. The viewer has been in that second and said either yes too fast or no too fast.
 
-**Guardrails held:** **याकूब 3:1 is a warning to enter soberly, not a ban** — said in so many words and backed by the New Testament's own *teach one another*. **No clericalism**: the warning reaches the humblest teaching, and teaching is no higher rank. **The stricter account is not about salvation**, under the verbatim conditional. Ezra's order — study, live, then teach — is the positive pattern. **The closing refuses both errors at once** and is one unit. Cut from v1: *और वे 'हम' लिखते हैं — अपने को भी गिनते हैं*; *बच्चों की कक्षा में सिखाने वाले* is now *बच्चों को वचन सिखाने वाले*.
+**Guardrails held:** **याकूब 3:1 is a warning to enter soberly, not a ban** — said in so many words and backed by the New Testament's own *teach one another*. **No clericalism**: the warning reaches the humblest teaching, and teaching is no higher rank. **The stricter account is not about salvation**, under the verbatim conditional. Ezra set his heart to study, to do and then to teach (एज्रा 7:10) — the positive pattern, said as the verse says it. **The closing refuses both errors at once** and is one unit. Cut from v1: *और वे 'हम' लिखते हैं — अपने को भी गिनते हैं*; *बच्चों की कक्षा में सिखाने वाले* is now *बच्चों को वचन सिखाने वाले*.
 
 ---
 

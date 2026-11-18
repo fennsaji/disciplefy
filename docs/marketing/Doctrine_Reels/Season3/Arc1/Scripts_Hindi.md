@@ -149,7 +149,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open, 
 आपने कहा — अरे नहीं, मैं तो कुछ नहीं।
 घमंड किसमें था? शायद दोनों में।
 
-यीशु ने कहा — धन्य हैं वे, जो मन के दीन हैं; जो जानते हैं कि परमेश्वर के सामने उनके पास दिखाने को कुछ नहीं।
+यीशु ने कहा — धन्य हैं वे, जो मन के दीन हैं। यानी वे, जो जानते हैं कि परमेश्वर के सामने उनके पास दिखाने को कुछ नहीं।
 नम्रता खुद को छोटा कहना नहीं — खुद के बारे में सोचते रहना छोड़ना है। खुद को कोसना भी खुद को ही देखते रहना है।
 
 बाइबल कहती है — परमेश्वर घमंडियों का सामना करता है, और दीनों पर अनुग्रह करता है।
@@ -163,7 +163,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open, 
 === END ===
 ```
 
-**Length:** ~135 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"खुद को कोसना भी खुद को ही देखते रहना है"*, *"नम्रता ऊपर चढ़ने की सीढ़ी नहीं"* or the closing line. If the artist runs long, cut the *नए विश्वासी* sentence.
+**Length:** ~137 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"खुद को कोसना भी खुद को ही देखते रहना है"*, *"नम्रता ऊपर चढ़ने की सीढ़ी नहीं"* or the closing line. If the artist runs long, cut the *नए विश्वासी* sentence.
 
 **On-screen Scripture**
 
@@ -189,7 +189,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: light at the open, 
 === DOCTRINE REELS · S3·04 · रात के दो बजे ===
 Target: about 50 seconds, unhurried. Register: आप. Tone: quiet at the open; the मत्ती 6 section unhurried and read whole; the illness line gentle and set apart; no brightness at the close.
 
-रात के दो बजे। फ़ीस, किराया, जाँच का नतीजा। नींद नहीं।
+रात के दो बजे। पढ़ाई का ख़र्च, किराया, जाँच का नतीजा। नींद नहीं।
 और एक और बोझ — यीशु ने तो चिंता से मना किया था। क्या यह भी पाप है?
 
 पूरी बात सुनिए।
@@ -207,7 +207,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: quiet at the open; 
 === END ===
 ```
 
-**Length:** ~141 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"आख़िरी वाक्य, जो लोग छोड़ देते हैं"* and the line after it, *"यीशु ने यह वादा नहीं किया कि बुरा नहीं होगा"*, *"हालात की नहीं — मन की"* or the whole *"अगर चिंता थमती ही नहीं"* sentence group. If the artist runs long, cut *"फ़ीस, किराया, जाँच का नतीजा।"* down to two items.
+**Length:** ~143 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"आख़िरी वाक्य, जो लोग छोड़ देते हैं"* and the line after it, *"यीशु ने यह वादा नहीं किया कि बुरा नहीं होगा"*, *"हालात की नहीं — मन की"* or the whole *"अगर चिंता थमती ही नहीं"* sentence group. If the artist runs long, cut *"पढ़ाई का ख़र्च, किराया, जाँच का नतीजा।"* down to two items.
 
 **On-screen Scripture**
 
@@ -235,7 +235,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: very quiet througho
 किसी ने यह कह दिया — और आपके भीतर हफ़्तों से अँधेरा है।
 क्या यह सच है?
 
-भजन संहिता रोने के गीतों से भरी है। हे यहोवा, कब तक?
+भजन संहिता रोने के गीतों से भरी है। हे परमेश्वर, कब तक?
 और एलिय्याह नबी ने एक पेड़ के नीचे बैठकर मौत माँगी।
 
 परमेश्वर ने डाँटा नहीं। पहले रोटी और नींद दी; बात बाद में की।
@@ -251,7 +251,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: very quiet througho
 === END ===
 ```
 
-**Length:** ~140 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"परमेश्वर ने डाँटा नहीं। पहले रोटी और नींद दी"*, *"तो उदासी अविश्वास नहीं। पाप नहीं। कोई दुष्टात्मा नहीं।"*, the *"टूटी हड्डी"* line, *"यह बोझ अकेले का नहीं"* or *"उजाले की जल्दी नहीं"*. If the artist runs long, cut *"हे यहोवा, कब तक?"*
+**Length:** ~140 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"परमेश्वर ने डाँटा नहीं। पहले रोटी और नींद दी"*, *"तो उदासी अविश्वास नहीं। पाप नहीं। कोई दुष्टात्मा नहीं।"*, the *"टूटी हड्डी"* line, *"यह बोझ अकेले का नहीं"* or *"उजाले की जल्दी नहीं"*. If the artist runs long, cut *"हे परमेश्वर, कब तक?"*
 
 **On-screen Scripture**
 
@@ -284,8 +284,8 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm, unforced; the
 और यह पैदा कैसे होता है? बाइबल इसे आत्मा का फल कहती है।
 डाली ज़ोर नहीं लगाती — पेड़ से जुड़ी रहती है। फल पेड़ को पेड़ नहीं बनाता; पेड़ है, इसलिए फल आता है।
 
-फल नौ हैं — प्रेम, आनंद, मेल, धीरज, कृपा, भलाई, विश्वास, नम्रता, संयम।
-और मेल — पहले परमेश्वर से।
+फल नौ हैं — प्रेम, आनंद, शांति, धीरज, कृपा, भलाई, विश्वास, नम्रता, संयम।
+और शांति — पहले परमेश्वर से मेल।
 
 और आनंद उदासी को मिटाता नहीं। पौलुस कहते हैं — शोक करते हुए भी सदा आनंदित।
 दोनों एक ही दिल में रह सकते हैं। जबरन मुस्कान फल नहीं।
@@ -296,7 +296,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm, unforced; the
 === END ===
 ```
 
-**Length:** ~132 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut the nine, *"फल पेड़ को पेड़ नहीं बनाता"*, *"शोक करते हुए भी सदा आनंदित"* or *"जबरन मुस्कान फल नहीं"*. If the artist runs long, cut *"यानी आनंद हालात से नहीं आता — प्रभु से आता है।"*
+**Length:** ~133 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut the nine, *"फल पेड़ को पेड़ नहीं बनाता"*, *"शोक करते हुए भी सदा आनंदित"* or *"जबरन मुस्कान फल नहीं"*. If the artist runs long, cut *"यानी आनंद हालात से नहीं आता — प्रभु से आता है।"*
 
 **On-screen Scripture**
 
@@ -306,7 +306,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm, unforced; the
 | "आत्मा का फल" | गलातियों 5:22-23 |
 | "पेड़ से जुड़ी रहती है" | यूहन्ना 15:4-5 |
 | "नौ" | गलातियों 5:22-23 — hold |
-| "मेल — पहले परमेश्वर से" | रोमियों 5:1 |
+| "शांति — पहले परमेश्वर से मेल" | रोमियों 5:1 |
 | "शोक करते हुए भी सदा आनंदित" | 2 कुरिन्थियों 6:10 |
 | closing line | फिलिप्पियों 1:6 |
 

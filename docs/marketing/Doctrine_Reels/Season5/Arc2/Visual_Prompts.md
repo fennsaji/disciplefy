@@ -218,7 +218,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 ---
 
-## REEL 2·2 — अंगोछा · S5·06
+## REEL 2·2 — अँगोछा · S5·06
 The hook's picture of greatness: silhouettes bowing before a raised dais, only feet and hems, no faces, no marks of any faith. The basin and the towel in the painting — hands and feet only. Then Rahul after the Thursday group, at the courtyard tap washing everyone's tea glasses; greeting an older man with folded hands; and crouching at the church gate to pick up an old woman's dropped bag. No foot-washing ceremony, and no one touching an elder's feet.
 **Cast:** Rahul, an older man (seen from behind), an old woman (one-off) · painted scene (the basin, the towel, the feet) · **Hook text on frame 01:** "बड़ा कौन — जिसके पाँव धोए जाएँ, या जो पाँव धोए?"
 
@@ -290,7 +290,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · PAINT BLOOM · 0:00–0:10
 
-*Voiceover:* "बड़ा कौन है — जिसके पाँव धोए जाएँ, या जो पाँव धोए? एक रात, यीशु ने ख़ुद कमर में अंगोछा बाँधा — और घर के सबसे छोटे नौकर का काम किया।"
+*Voiceover:* "बड़ा कौन है — जिसके पाँव धोए जाएँ, या जो पाँव धोए? एक रात, यीशु ने ख़ुद कमर में अँगोछा बाँधा — और घर के सबसे छोटे नौकर का काम किया।"
 
 *On screen:* लूका 22:27 · यूहन्ना 13:4-5
 
@@ -447,7 +447,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "परमेश्वर उनसे कहता है — तुम अपना ही पेट भरते हो; भेड़ों को नहीं चराते। ज़बरदस्ती और कठोरता से राज करते हो। फिर कहता है — मैं अपनी भेड़ें उनके हाथ से छुड़ाऊँगा।"
+*Voiceover:* "परमेश्वर उनसे कहता है — तुम अपना ही पेट भरते हो; भेड़ों को नहीं चराते। ज़बरदस्ती और कठोरता से राज करते हो। फिर कहता है — मैं अपनी भेड़ें उनके मुँह से छुड़ाऊँगा।"
 
 *On screen:* यहेजकेल 34:2-4 · यहेजकेल 34:10
 
@@ -462,7 +462,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "झुंड अगुवे का नहीं — परमेश्वर का है। पतरस लिखते हैं — उसकी रखवाली करो; लालच से नहीं; अधिकार मत जताओ, नमूना बनो।"
+*Voiceover:* "झुंड अगुवे का नहीं — परमेश्वर का है। पतरस लिखते हैं — उसकी रखवाली करो; लालच से नहीं; अधिकार मत जताओ, आदर्श बनो।"
 
 *On screen:* 1 पतरस 5:2-3
 
@@ -613,7 +613,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "यहाँ पौलुस ने पतरस तक को टोका। पर रोम की कलीसिया में झगड़ा था — कौन क्या खाए, कौन सा दिन माने। पौलुस ने कहा — हर एक अपने मन में निश्चय कर ले; एक-दूसरे पर दोष मत लगाओ। छोटी नहीं — पर सुसमाचार नहीं।"
 
-*On screen:* गलातियों 2:11-14 · रोमियों 14:1-5 · रोमियों 14:13
+*On screen:* गलातियों 2:11-14 (OV: कैफा) · रोमियों 14:1-5 · रोमियों 14:13
 
 ```
 CAMERA: starts on the full painting; one slow push down onto the bare low table between the two men; the warm stone of the table settles into the warm page of Rahul's Bible; ends on the close shot of the Bible open at Romans 14 in his hands.

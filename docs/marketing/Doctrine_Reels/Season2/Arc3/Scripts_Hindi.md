@@ -49,7 +49,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: low and level throu
 पतरस कहते हैं, वह परमेश्वर की ठहराई योजना से हुई।
 इंसानों ने पाप किया — परमेश्वर ने उसी से उद्धार निकाला।
 
-इसीलिए लिखा है — जो परमेश्वर से प्रेम रखते हैं, उनके लिए सब बातें मिलकर भलाई करती हैं।
+इसीलिए बाइबल कहती है — जो परमेश्वर से प्रेम रखते हैं, उनके लिए सब बातें मिलकर भलाई करती हैं।
 सब भला नहीं होता। पर उसके हाथ में बेकार नहीं जाता।
 
 परमेश्वर ने हर 'क्यों' का जवाब नहीं दिया।
@@ -58,7 +58,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: low and level throu
 === END ===
 ```
 
-**Length:** ~138 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut the गौरैया line, the पतरस line or *"सब भला नहीं होता"*. If the artist runs long, cut *"दोनों ग़लत।"*
+**Length:** ~139 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut the गौरैया line, the पतरस line or *"सब भला नहीं होता"*. If the artist runs long, cut *"दोनों ग़लत।"*
 
 **On-screen Scripture**
 
@@ -177,9 +177,9 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: quiet, unhurried, n
 यीशु ने पहले ही बता दिया था — दुनिया तुमसे बैर रखेगी; पहले बैठकर कीमत गिन लो।
 और अब वही हो रहा है। तो क्या करें?
 
-साँप जैसे चतुर बनो, कबूतर जैसे भोले। चतुराई पाप नहीं है।
+साँप जैसे बुद्धिमान बनो, कबूतर जैसे भोले। चतुराई पाप नहीं है।
 यीशु ने कहा — एक जगह सताएँ, तो दूसरी जगह चले जाओ।
-चुप रहना भी इनकार नहीं — यीशु खुद कई बार भीड़ से हट गए।
+चुप रहना भी इनकार नहीं — यीशु खुद ख़तरे की जगह से कई बार हट गए।
 
 बदला — कभी नहीं। जहाँ तक हो सके, सबसे मेल रखो।
 पतरस कहते हैं — अपनी ग़लती से दुख मत उठाओ; पर मसीही होने के कारण उठाना पड़े, तो शर्मिंदा मत हो।
@@ -191,7 +191,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: quiet, unhurried, n
 === END ===
 ```
 
-**Length:** ~122 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"चतुराई पाप नहीं है"*, *"चुप रहना भी इनकार नहीं"* or *"कोई बड़ा कदम अकेले मत उठाइए"*. If the artist runs long, cut *"और अब वही हो रहा है।"*
+**Length:** ~124 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"चतुराई पाप नहीं है"*, *"चुप रहना भी इनकार नहीं"* or *"कोई बड़ा कदम अकेले मत उठाइए"*. If the artist runs long, cut *"और अब वही हो रहा है।"*
 
 **On-screen Scripture**
 
@@ -199,9 +199,9 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: quiet, unhurried, n
 |---|---|
 | "दुनिया तुमसे बैर रखेगी" | यूहन्ना 15:18-19 |
 | "पहले बैठकर कीमत गिन लो" | लूका 14:27-28 |
-| "चतुर… भोले" | मत्ती 10:16 |
+| "बुद्धिमान… भोले" | मत्ती 10:16 |
 | "दूसरी जगह चले जाओ" | मत्ती 10:23 |
-| "भीड़ से हट गए" | यूहन्ना 7:1 · यूहन्ना 11:54 |
+| "ख़तरे की जगह से हट गए" | यूहन्ना 7:1 · यूहन्ना 11:54 |
 | "बदला — कभी नहीं… मेल रखो" | रोमियों 12:17-18 |
 | "अपनी ग़लती से… शर्मिंदा मत हो" | 1 पतरस 4:15-16 |
 | "अकेले मत उठाइए" | नीतिवचन 15:22 |

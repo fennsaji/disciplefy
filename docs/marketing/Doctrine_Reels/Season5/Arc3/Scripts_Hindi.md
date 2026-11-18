@@ -82,7 +82,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: plain, a little wry
 सेवा करना, देना, दया करना — ये भी वरदान हैं।
 
 वरदानों के दो अध्यायों के बीच पौलुस ने प्रेम का अध्याय रखा।
-प्रेम न हो — तो सारे वरदान पाकर भी हम बजता हुआ पीतल हैं।
+प्रेम न हो — तो सारे वरदान पाकर भी हम ठनठनाता पीतल हैं।
 
 अन्य भाषा, भविष्यवाणी — क्या ये आज भी हैं?
 कुछ विश्वासी मानते हैं, ये प्रेरितों के साथ थम गए; कुछ मानते हैं, आज भी हैं।
@@ -94,13 +94,13 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: plain, a little wry
 === END ===
 ```
 
-**Length:** ~144 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"मिला है — कमाया नहीं"*, the प्रेम lines, any of the three *आज भी हैं?* lines (they stand or fall together), *"कोई एक वरदान सबूत नहीं कि आत्मा आप में हैं। जो मसीह का है, उसमें आत्मा हैं"* or the closing line. If the artist runs long, cut *"सेवा करना, देना, दया करना — ये भी वरदान हैं।"*
+**Length:** ~143 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"मिला है — कमाया नहीं"*, the प्रेम lines, any of the three *आज भी हैं?* lines (they stand or fall together), *"कोई एक वरदान सबूत नहीं कि आत्मा आप में हैं। जो मसीह का है, उसमें आत्मा हैं"* or the closing line. If the artist runs long, cut *"सेवा करना, देना, दया करना — ये भी वरदान हैं।"*
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
-| "कोई वरदान कम नहीं… बालक" | 1 कुरिन्थियों 1:7 · 3:1 |
+| "कोई वरदान कम नहीं… बालक" | 1 कुरिन्थियों 1:7 · 3:1-2 |
 | "हर विश्वासी को… सबके लाभ के लिए" | 1 कुरिन्थियों 12:7, 11 |
 | "सेवा, देना, दया" | रोमियों 12:6-8 |
 | "प्रेम का अध्याय… पीतल" | 1 कुरिन्थियों 13:1-2 |
@@ -129,7 +129,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and matter-of-
 हमारी लड़ाई लहू और मांस से नहीं। कोई पड़ोसी, कोई रिश्तेदार आपका शत्रु नहीं।
 हर मुसीबत के पीछे दुष्टात्मा ढूँढना वचन नहीं सिखाता। मैदान आपका मन है।
 
-कवच यह है — सच्चाई, धार्मिकता, मेल का सुसमाचार, विश्वास, उद्धार, परमेश्वर का वचन। और प्रार्थना।
+कवच यह है — सत्य, धार्मिकता, मेल का सुसमाचार, विश्वास, उद्धार, परमेश्वर का वचन। और प्रार्थना।
 नया हथियार नहीं — सुसमाचार ही है, पहना हुआ।
 सुरक्षा कोई ताबीज़ नहीं — एक व्यक्ति है। याकूब लिखते हैं — परमेश्वर के अधीन हो जाओ; शैतान का सामना करो, वह भाग जाएगा।
 
@@ -217,8 +217,8 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and unhurried,
 यीशु की — पतरस की नहीं।
 अगुवा पहले ख़ुद भेड़ है — जिसके लिए अच्छे चरवाहे ने अपना प्राण दिया।
 
-वही पतरस लिखते हैं — जब प्रधान चरवाहा प्रकट होंगे, वे महिमा का मुकुट देंगे, जो मुरझाता नहीं।
-मुकुट पद नहीं — उनके हाथ का दान। स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।
+वही पतरस लिखते हैं — जब प्रधान रखवाला, यानी प्रधान चरवाहा, प्रकट होंगे, वे महिमा का मुकुट देंगे, जो मुरझाता नहीं।
+मुकुट पद नहीं — उनके हाथ का दान। स्वर्ग में मुकुट पाने वाले उन्हें सिंहासन के आगे डाल देते हैं।
 
 कब? वह दिन कोई नहीं जानता। तब तक — भेड़ों के पास।
 यह सफ़र सुनने से शुरू हुआ था — विश्वासी से चेले तक; और कुछ के लिए, चरवाहे तक।
@@ -229,7 +229,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and unhurried,
 === END ===
 ```
 
-**Length:** ~149 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"यीशु की — पतरस की नहीं"*, *"अगुवा पहले ख़ुद भेड़ है"* with its प्राण clause, the प्रधान चरवाहा line, *"मुकुट पद नहीं — उनके हाथ का दान"*, *"कब? वह दिन कोई नहीं जानता"*, the two series lines or the closing line. If the artist runs long, cut *"स्वर्ग में जिनके सिर पर मुकुट हैं, वे उन्हें सिंहासन के आगे डाल देते हैं।"*
+**Length:** ~149 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"यीशु की — पतरस की नहीं"*, *"अगुवा पहले ख़ुद भेड़ है"* with its प्राण clause, the प्रधान चरवाहा line, *"मुकुट पद नहीं — उनके हाथ का दान"*, *"कब? वह दिन कोई नहीं जानता"*, the two series lines or the closing line. If the artist runs long, cut *"स्वर्ग में मुकुट पाने वाले उन्हें सिंहासन के आगे डाल देते हैं।"*
 
 **On-screen Scripture**
 
@@ -237,14 +237,14 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: warm and unhurried,
 |---|---|
 | "तीन बार अपनी भेड़ें सौंपीं" | यूहन्ना 21:15-17 |
 | "अच्छे चरवाहे ने अपना प्राण दिया" | यूहन्ना 10:11 |
-| "प्रधान चरवाहा… मुकुट" | 1 पतरस 5:4 |
+| "प्रधान रखवाला… मुकुट" | 1 पतरस 5:4 |
 | "सिंहासन के आगे डाल देते हैं" | प्रकाशितवाक्य 4:10 |
 | "वह दिन कोई नहीं जानता" | मत्ती 24:36 |
 | closing line | प्रकाशितवाक्य 22:20 |
 
 **Why the hook works:** a fact no leader likes to think about — there is a last day, and the flock goes to someone else — and the question it forces. The series ends by taking the flock out of the leader's hands.
 
-**Guardrails held:** **The flock is Christ's** — now said from यूहन्ना 21 (*feed **my** sheep*, to the man who denied him three times) instead of repeating 1 पतरस 5:2, which S5·07 voices. **The leader is first a sheep the Good Shepherd died for.** **The crown is a gift, not a rank**, and is laid down. **No timeline**: no one knows the day. The two series lines close the journey — believer to disciple, and for some, shepherd — and **the last word is not a leader's**. Cut from v1: *परमेश्वर के झुंड की रखवाली करो। परमेश्वर का — आपका नहीं* (replaced as above).
+**Guardrails held:** **The flock is Christ's** — now said from यूहन्ना 21 (*feed **my** sheep*, to the man who denied him three times) instead of repeating 1 पतरस 5:2, which S5·07 voices. **The leader is first a sheep the Good Shepherd died for.** The OV's own title in 1 पतरस 5:4 is *प्रधान रखवाला*; it is voiced first and glossed as *प्रधान चरवाहा*, the reel's title, so the viewer finds the phrase in his Bible. **The crown is a gift, not a rank**, and is laid down. **No timeline**: no one knows the day. The two series lines close the journey — believer to disciple, and for some, shepherd — and **the last word is not a leader's**. Cut from v1: *परमेश्वर के झुंड की रखवाली करो। परमेश्वर का — आपका नहीं* (replaced as above).
 
 ---
 

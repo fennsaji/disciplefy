@@ -422,7 +422,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "यीशु ने कहा — धन्य हैं वे, जो मन के दीन हैं; जो जानते हैं कि परमेश्वर के सामने उनके पास दिखाने को कुछ नहीं। नम्रता खुद को छोटा कहना नहीं — खुद के बारे में सोचते रहना छोड़ना है। खुद को कोसना भी खुद को ही देखते रहना है।"
+*Voiceover:* "यीशु ने कहा — धन्य हैं वे, जो मन के दीन हैं। यानी वे, जो जानते हैं कि परमेश्वर के सामने उनके पास दिखाने को कुछ नहीं। नम्रता खुद को छोटा कहना नहीं — खुद के बारे में सोचते रहना छोड़ना है। खुद को कोसना भी खुद को ही देखते रहना है।"
 
 *On screen:* मत्ती 5:3 · लूका 18:13
 
@@ -556,7 +556,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "रात के दो बजे। फ़ीस, किराया, जाँच का नतीजा। नींद नहीं। और एक और बोझ — यीशु ने तो चिंता से मना किया था। क्या यह भी पाप है?"
+*Voiceover:* "रात के दो बजे। पढ़ाई का ख़र्च, किराया, जाँच का नतीजा। नींद नहीं। और एक और बोझ — यीशु ने तो चिंता से मना किया था। क्या यह भी पाप है?"
 
 ```
 CAMERA: starts on the medium shot from behind the desk; one slow dolly straight in across the desk toward the bed; ends on the close shot of Rahul sitting on the bed's edge.
@@ -714,7 +714,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "भजन संहिता रोने के गीतों से भरी है। हे यहोवा, कब तक? और एलिय्याह नबी ने एक पेड़ के नीचे बैठकर मौत माँगी।"
+*Voiceover:* "भजन संहिता रोने के गीतों से भरी है। हे परमेश्वर, कब तक? और एलिय्याह नबी ने एक पेड़ के नीचे बैठकर मौत माँगी।"
 
 *On screen:* भजन संहिता 13:1 · भजन संहिता 88
 
@@ -876,7 +876,7 @@ Negative: morphing faces, face of Jesus, figures turning toward the viewer, flic
 
 **Clip 3 · 03 → 04** · CONTINUOUS · 0:20–0:30
 
-*Voiceover:* "फल नौ हैं — प्रेम, आनंद, मेल, धीरज, कृपा, भलाई, विश्वास, नम्रता, संयम। और मेल — पहले परमेश्वर से।"
+*Voiceover:* "फल नौ हैं — प्रेम, आनंद, शांति, धीरज, कृपा, भलाई, विश्वास, नम्रता, संयम। और शांति — पहले परमेश्वर से मेल।"
 
 *On screen:* गलातियों 5:22-23 — hold · रोमियों 5:1
 

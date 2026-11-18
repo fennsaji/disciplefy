@@ -5,7 +5,11 @@ believer to disciple**. Doctrinal review and sequencing by the
 `paul-the-apostle` agent; app-alignment claims verified against
 `backend/supabase/migrations/`.
 
-Status: **planning**. No scripts written yet.
+Status: **all five seasons scripted** — 83 reels, each with a script, visual
+prompts and a caption under `SeasonN/ArcN/`. Seasons 2–5 are at the
+simplified script version (see the changelog and *Script rules* in
+[Season2/Curriculum.md](Season2/Curriculum.md)). The sections below record
+how the series was planned.
 
 ---
 
@@ -623,7 +627,11 @@ is verbatim, the secondary-matters point is voiced once (S5·08, not S5·04),
 and S5·12 makes *the flock is Christ's* from यूहन्ना 21 instead of repeating
 1 पतरस 5:2. S5·06's hook no longer speaks of feet being *touched*. Each
 season had a doctrinal review pass and a check of the visual prompts against
-the new voiceover. Season 1 is released and was not touched.
+the new voiceover. Season 1 was not touched. English loanwords that had
+survived in Season 3 (*फ़ीस*, *गिलास*, *नंबर*) were replaced. Finally, every
+line that reports Scripture's words in Seasons 2–5 was checked against the
+fetched text of the BSI OV (Re-edited) and corrected where it differed in
+meaning or in a key term — see *Script rules* for the edition note.
 
 **v4 — gap audit; stage 3 added.** The v3 outline was audited against the
 Sermon on the Mount, गलातियों 5:19-23, the *one another* commands, the

@@ -152,7 +152,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 *Voiceover:* "तीमुथियुस ने नानी और माँ से सुना — फिर खुद भरोसा किया। सवाल कब का नहीं — तारीख नहीं पूछी जा रही। सवाल यह है — क्या आपने मन फिराकर यीशु पर भरोसा किया है?"
 
-*On screen:* 2 तीमुथियुस 1:5 · प्रेरितों के काम 20:21
+*On screen:* 2 तीमुथियुस 1:5 · 3:15 · प्रेरितों के काम 20:21
 
 ```
 CAMERA: starts on the close shot of the phone; one slow pull back, rising to seated eye level; ends on the medium close two-shot of the two men.
@@ -284,9 +284,9 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "बाइबल इसे दूसरा सुसमाचार कहती है — यानी असली नहीं। पौलुस ने अपनी तकलीफ़ के लिए तीन बार प्रार्थना की — वह नहीं हटी। जवाब मिला — मेरा अनुग्रह काफ़ी है। क्या पौलुस का विश्वास कम था?"
+*Voiceover:* "बाइबल की भाषा में यह दूसरा सुसमाचार है — यानी असली नहीं। पौलुस ने अपनी तकलीफ़ के लिए तीन बार प्रार्थना की — वह नहीं हटी। जवाब मिला — मेरा अनुग्रह काफ़ी है। क्या पौलुस का विश्वास कम था?"
 
-*On screen:* गलातियों 1:6-8 · 2 कुरिन्थियों 12:7-9 · लूका 9:58 — shown, not read
+*On screen:* गलातियों 1:6-8 · 2 कुरिन्थियों 12:7-9
 
 ```
 CAMERA: starts on the medium shot of the mother on the bed; one slow dolly in; ends on the close-up of her face with Rahul's back at the screen-right edge.
@@ -431,7 +431,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 → 03** · CONTINUOUS · 0:10–0:20
 
-*Voiceover:* "यह बात एक आयत से ली जाती है — कि पुरखों के पाप का दण्ड बच्चों तक पहुँचता है। पर वही आयत आगे कहती है — बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा।"
+*Voiceover:* "यह बात एक आयत से ली जाती है — कि पुरखों के पाप का दण्ड बच्चों तक पहुँचता है। पर वहीं आगे कहा गया है — बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा।"
 
 *On screen:* निर्गमन 20:5-6
 
@@ -446,7 +446,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 3 · 03 (start frame only)** · CUT-OUT · 0:20–0:30
 
-*Voiceover:* "और यहेजकेल में परमेश्वर साफ़ कहता है — बेटा पिता के पाप का बोझ नहीं उठाएगा। और शाप? बाइबल कहती है — मसीह हमारी जगह शापित बने, और हमें छुड़ा लिया।"
+*Voiceover:* "और यहेजकेल में परमेश्वर साफ़ कहता है — बेटा पिता के पाप का बोझ नहीं उठाएगा। और शाप? बाइबल कहती है — मसीह हमारी जगह शापित बने, और हमें व्यवस्था के शाप से छुड़ाया।"
 
 *On screen:* यहेजकेल 18:20 · गलातियों 3:13
 
@@ -568,7 +568,7 @@ Negative: cartoon, illustration, painting, 3D render, CGI, plastic skin, HDR, ov
 
 **Clip 1 · 01 → 02** · CONTINUOUS · 0:00–0:10
 
-*Voiceover:* "जो आपको बाइबल सिखाता है — उसकी बात जाँचना पाप है? बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारी आत्माओं के लिए जागते हैं। कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं।"
+*Voiceover:* "जो आपको बाइबल सिखाता है — उसकी बात जाँचना पाप है? बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारे प्राणों के लिए जागते हैं। कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं।"
 
 *On screen:* इब्रानियों 13:17
 
@@ -583,7 +583,7 @@ Negative: morphing faces, identity change, people turning to face the camera, pe
 
 **Clip 2 · 02 (start frame only)** · CUT-OUT · 0:10–0:20
 
-*Voiceover:* "पर आपके और परमेश्वर के बीच कोई अगुवा खड़ा नहीं हो सकता। बाइबल कहती है — परमेश्वर और मनुष्यों के बीच मध्यस्थ एक ही है — मसीह यीशु। मध्यस्थ — यानी जो अपनी जान देकर हमें परमेश्वर से मिलाए।"
+*Voiceover:* "पर आपके और परमेश्वर के बीच कोई अगुवा खड़ा नहीं हो सकता। बाइबल कहती है — परमेश्वर और मनुष्यों के बीच बिचवई एक ही है — मसीह यीशु। बिचवई — यानी मध्यस्थ; जो अपनी जान देकर हमें परमेश्वर से मिलाए।"
 
 *On screen:* 1 तीमुथियुस 2:5 · 1 तीमुथियुस 2:6 · मत्ती 23:8-10 — shown, not read
 

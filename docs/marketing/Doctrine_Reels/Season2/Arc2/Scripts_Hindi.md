@@ -71,7 +71,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: gentle at the open,
 |---|---|
 | "ख़ून के रिश्ते से नहीं… परमेश्वर से जन्म" | यूहन्ना 1:12-13 |
 | "नया जन्म" | यूहन्ना 3:3 |
-| "नानी और माँ से सुना" | 2 तीमुथियुस 1:5 |
+| "नानी और माँ से सुना" | 2 तीमुथियुस 1:5 · 3:15 |
 | "मन फिराकर यीशु पर भरोसा" | प्रेरितों के काम 20:21 |
 | "अगर आप मसीह में हैं… पूरे किए काम पर" | रोमियों 8:1 · इब्रानियों 10:14 |
 | closing line | प्रेरितों के काम 16:31 |
@@ -95,7 +95,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: firm and unhurried;
 तो ग़लती किसकी — आपकी? या उस बात की, जो सिखाई गई?
 सिखाया जाता है — विश्वास करो, पैसा दो, तो परमेश्वर सेहत और दौलत देगा।
 
-बाइबल इसे दूसरा सुसमाचार कहती है — यानी असली नहीं।
+बाइबल की भाषा में यह दूसरा सुसमाचार है — यानी असली नहीं।
 पौलुस ने अपनी तकलीफ़ के लिए तीन बार प्रार्थना की — वह नहीं हटी। जवाब मिला — मेरा अनुग्रह काफ़ी है।
 क्या पौलुस का विश्वास कम था?
 
@@ -111,7 +111,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: firm and unhurried;
 === END ===
 ```
 
-**Length:** ~129 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"हाँ — परमेश्वर देता है"*, the *"दबे हुए को ही दोष देती है"* line or *"— यानी असली नहीं"* (bare *दूसरा सुसमाचार* is heard as *the second Gospel*). If the artist runs long, cut *"पिता की तरह, मुफ़्त।"*
+**Length:** ~131 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"हाँ — परमेश्वर देता है"*, the *"दबे हुए को ही दोष देती है"* line or *"— यानी असली नहीं"* (bare *दूसरा सुसमाचार* is heard as *the second Gospel*). If the artist runs long, cut *"पिता की तरह, मुफ़्त।"*
 
 **On-screen Scripture**
 
@@ -119,7 +119,6 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: firm and unhurried;
 |---|---|
 | "दूसरा सुसमाचार" | गलातियों 1:6-8 |
 | "तीन बार प्रार्थना… अनुग्रह काफ़ी है" | 2 कुरिन्थियों 12:7-9 |
-| "क्या पौलुस का विश्वास कम था?" | लूका 9:58 — shown, not read |
 | "पिता की तरह, मुफ़्त" | मत्ती 7:11 |
 | "सौदा नहीं होता" | रोमियों 11:35 |
 | "पापों की क्षमा का वादा" | इफिसियों 1:7 · 1 कुरिन्थियों 15:3-4 |
@@ -127,7 +126,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: firm and unhurried;
 
 **Why the hook works:** four short beats — the teaching's own three verbs and then the result — in under three seconds. *फिर भी कुछ नहीं हुआ* is the viewer's actual experience, said aloud; the question that follows is the one the teaching never lets him ask.
 
-**Guardrails held:** **The teaching is named by its mechanism; no teacher, church, channel or city is.** The refutation is Scripture's own casualty — Paul with his thorn, unanswered three times (Jesus without a pillow is shown on screen, not read). **The over-correction is closed on the face of the reel**: God gives and heals, as Father, freely; poverty is nowhere made holy. Entitlement is the error, not asking (*उससे सौदा नहीं होता*, रोमियों 11:35). The pastoral line names the teaching's real victim. **The real gospel is stated, not only the false one**: forgiveness of sins because of the cross, then Christ himself, under the conditional. Cut from v2: *सिर रखने की जगह*, 1 तीमुथियुस 6:5, *बीज से खरीदा नहीं जाता* (S2·06 carries *खरीदता नहीं*), *काँटा* is now *तकलीफ़*.
+**Guardrails held:** **The teaching is named by its mechanism; no teacher, church, channel or city is.** The refutation is Scripture's own casualty — Paul with his thorn, unanswered three times. **The over-correction is closed on the face of the reel**: God gives and heals, as Father, freely; poverty is nowhere made holy. Entitlement is the error, not asking (*उससे सौदा नहीं होता*, रोमियों 11:35). The pastoral line names the teaching's real victim. **The real gospel is stated, not only the false one**: forgiveness of sins because of the cross, then Christ himself, under the conditional. Cut from v2: *सिर रखने की जगह*, 1 तीमुथियुस 6:5, *बीज से खरीदा नहीं जाता* (S2·06 carries *खरीदता नहीं*), *काँटा* is now *तकलीफ़*.
 
 ---
 
@@ -142,10 +141,10 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and kind, as t
 क्या यह सच है?
 
 यह बात एक आयत से ली जाती है — कि पुरखों के पाप का दण्ड बच्चों तक पहुँचता है।
-पर वही आयत आगे कहती है — बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा।
+पर वहीं आगे कहा गया है — बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा।
 
 और यहेजकेल में परमेश्वर साफ़ कहता है — बेटा पिता के पाप का बोझ नहीं उठाएगा।
-और शाप? बाइबल कहती है — मसीह हमारी जगह शापित बने, और हमें छुड़ा लिया।
+और शाप? बाइबल कहती है — मसीह हमारी जगह शापित बने, और हमें व्यवस्था के शाप से छुड़ाया।
 
 अगर आप मसीह में हैं — आप नई सृष्टि हैं; पुराना बीत गया।
 आपको न कोई ख़ास विधि चाहिए, न पैसा। क्रूस काफ़ी है।
@@ -156,7 +155,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and kind, as t
 === END ===
 ```
 
-**Length:** ~137 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा"*, *"अगर आप मसीह में हैं"* or *"क्रूस काफ़ी है"*. If the artist runs long, cut *"और तब से हर बीमारी, हर नुक़सान में वही डर।"*
+**Length:** ~140 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"बैर रखनेवालों को दण्ड; प्रेम रखनेवालों पर करुणा"*, *"अगर आप मसीह में हैं"* or *"क्रूस काफ़ी है"*. If the artist runs long, cut *"और तब से हर बीमारी, हर नुक़सान में वही डर।"*
 
 **On-screen Scripture**
 
@@ -183,12 +182,12 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and kind, as t
 Target: about 50 seconds, unhurried. Register: आप. Tone: steady and respectful throughout; the honour lines first and said as warmly as the mediator line; no edge anywhere.
 
 जो आपको बाइबल सिखाता है — उसकी बात जाँचना पाप है?
-बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारी आत्माओं के लिए जागते हैं।
+बाइबल कहती है — अपने अगुवों की मानो; वे तुम्हारे प्राणों के लिए जागते हैं।
 कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं।
 
 पर आपके और परमेश्वर के बीच कोई अगुवा खड़ा नहीं हो सकता।
-बाइबल कहती है — परमेश्वर और मनुष्यों के बीच मध्यस्थ एक ही है — मसीह यीशु।
-मध्यस्थ — यानी जो अपनी जान देकर हमें परमेश्वर से मिलाए।
+बाइबल कहती है — परमेश्वर और मनुष्यों के बीच बिचवई एक ही है — मसीह यीशु।
+बिचवई — यानी मध्यस्थ; जो अपनी जान देकर हमें परमेश्वर से मिलाए।
 
 और जाँचना? बिरीया के लोगों ने पौलुस की बातें भी बाइबल खोलकर जाँचीं — और बाइबल उनकी तारीफ़ करती है।
 
@@ -200,14 +199,14 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: steady and respectf
 === END ===
 ```
 
-**Length:** ~121 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"अपने अगुवों की मानो"*, *"कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं"* or *"यह कलीसिया छोड़ने की बात नहीं। ठहरिए।"* If the artist runs long, cut *"— और बाइबल उनकी तारीफ़ करती है"*.
+**Length:** ~122 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"अपने अगुवों की मानो"*, *"कलीसिया ज़रूरी है, अगुवे ज़रूरी हैं"* or *"यह कलीसिया छोड़ने की बात नहीं। ठहरिए।"* If the artist runs long, cut *"— और बाइबल उनकी तारीफ़ करती है"*.
 
 **On-screen Scripture**
 
 | Line | Reference |
 |---|---|
 | "अपने अगुवों की मानो… जागते हैं" | इब्रानियों 13:17 |
-| "मध्यस्थ एक ही है — मसीह यीशु" | 1 तीमुथियुस 2:5 |
+| "बिचवई एक ही है — मसीह यीशु" | 1 तीमुथियुस 2:5 |
 | "अपनी जान देकर" | 1 तीमुथियुस 2:6 |
 | "कोई अगुवा खड़ा नहीं हो सकता" | मत्ती 23:8-10 — shown, not read |
 | "बाइबल खोलकर जाँचीं" | प्रेरितों के काम 17:11 |
@@ -216,7 +215,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: steady and respectf
 
 **Why the hook works:** a yes-or-no question about something almost every believer taught not to question the pulpit has wondered and never said. It asks about *testing*, not suspecting, and names no person — *जो आपको बाइबल सिखाता है* is a role the viewer fills in himself.
 
-**Guardrails held:** **Honour and obedience are stated before testing, from Scripture** (इब्रानियों 13:17 is the first citation), and the church line keeps the reel from being cut into an anti-church clip. **The target is the mediator role, not the office** (1 तीमुथियुस 2:5 — the line says no *अगुवा* stands between, never no *इंसान*, because the one mediator is himself the man Christ Jesus; *मध्यस्थ* is glossed by 2:6's ransom, which is what no leader can be). **Testing is grounded in the Bereans**, who tested an apostle and were commended; a true अगुवा *वचन खोलकर दिखाता है*. **No counsel to leave a church.** Nothing named; church government untouched. Cut from v2: the *रब्बी / गुरु* section — मत्ती 23:8 is now shown, not read (S5·01's note that S2·13 *voiced* it should be read accordingly).
+**Guardrails held:** **Honour and obedience are stated before testing, from Scripture** (इब्रानियों 13:17 is the first citation), and the church line keeps the reel from being cut into an anti-church clip. **The target is the mediator role, not the office** (1 तीमुथियुस 2:5 — the line says no *अगुवा* stands between, never no *इंसान*, because the one mediator is himself the man Christ Jesus; the OV's own word *बिचवई* is voiced, so the viewer finds it in his Bible, and is glossed as *मध्यस्थ* and by 2:6's ransom, which is what no leader can be). **Testing is grounded in the Bereans**, who tested an apostle and were commended; a true अगुवा *वचन खोलकर दिखाता है*. **No counsel to leave a church.** Nothing named; church government untouched. Cut from v2: the *रब्बी / गुरु* section — मत्ती 23:8 is now shown, not read (S5·01's note that S2·13 *voiced* it should be read accordingly).
 
 ---
 

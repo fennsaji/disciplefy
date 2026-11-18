@@ -168,7 +168,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and level; the
 फिर मुस्कुराए — और बात वहीं ख़त्म। कसूर किसका था?
 यीशु ने कहा — नया जन्म पवित्र आत्मा से होता है।
 
-हवा जिधर चाहती है, चलती है; आप उसे चला नहीं सकते। आत्मा का काम भी ऐसा ही है।
+हवा जिधर चाहती है, चलती है; कहाँ से आई, आप नहीं जानते। आत्मा का काम भी ऐसा ही है।
 पौलुस लिखते हैं — मैंने लगाया, अपुल्लोस ने सींचा; पर बढ़ाया परमेश्वर ने।
 
 लगाना आपका काम। सींचना आपका काम। बढ़ाना — नहीं।
@@ -184,7 +184,7 @@ Target: about 50 seconds, unhurried. Register: आप. Tone: calm and level; the
 === END ===
 ```
 
-**Length:** ~129 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"इसलिए दबाव नहीं। लालच नहीं। गिनती नहीं।"*, *"पर इसका मतलब चुप रहना भी नहीं"* with the line after it, or *"तसल्ली यह नहीं कि आख़िर में सब बच ही जाएँगे"*. If the artist runs long, cut *"दबाव से सिर हिल सकता है — दिल नहीं बदलता।"*
+**Length:** ~130 words · about 50 seconds at an unhurried pace. The blank lines mark the five 10-second clips. Editor: **never** cut *"इसलिए दबाव नहीं। लालच नहीं। गिनती नहीं।"*, *"पर इसका मतलब चुप रहना भी नहीं"* with the line after it, or *"तसल्ली यह नहीं कि आख़िर में सब बच ही जाएँगे"*. If the artist runs long, cut *"दबाव से सिर हिल सकता है — दिल नहीं बदलता।"*
 
 **On-screen Scripture**
 
